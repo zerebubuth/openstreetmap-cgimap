@@ -1,0 +1,67 @@
+			      CGImap 0.5
+			      ==========
+
+Overview
+========
+
+CGImap is a C++ implementation of the OpenStreetMap "map" call as an
+FCGI process. The rails implementation of the "map" call has a few
+problems with memory - it uses a lot of it and there is a leak which
+makes it annoying to use in long-running environments, like the main
+OSM server.
+
+CGImap attempts to address these memory problems and makes it easier
+to optimise the queries, something which is also a bit of a pain to do
+in Rails.
+
+Requirements
+============
+
+CGImap depends on the following libraries. Versions used during
+development are in brackets. Other versions may work, but YMMV.
+
+  * libxml2 (2.6.32.dfsg-4ubuntu1)
+  * mysql++ (3.0.0-1)
+  * libfcgi (2.4.0-7)
+
+If you're running a Debian or Ubuntu system these can be installed
+using the following command:
+
+  sudo apt-get install libxml2-dev libmysql++-dev libfcgi-dev
+
+The build system used is GNU Make, using pkg-config to provide some of
+the flags.
+
+Setup
+=====
+
+A sample lighttpd.conf file is provided, which I've been using to
+test. No testing has been done with other FCGI servers, but if you
+find a problem please report it on the OSM trac.
+
+CGImap expects the following environment variables to be set:
+
+  * DB_HOST: Hostname or IP address of the database server.
+  * DB_NAME: Name of the database.
+  * DB_USER: Name of the user to connect as.
+  * DB_PASS: Password of the user to connect as.
+
+Optionally, DB_CHARSET can be set to the connection charset to
+use. The default is "utf8".
+
+CGImap requires permissions to SELECT and CREATE TEMPORARY on the
+MySQL server. It is recommended that a separate account is created for
+CGImap to avoid any possibility of data corruption. Care has been
+taken programming CGImap but, as with most C++ applications, there is
+the chance of an exploitable flaw leading to complete pwnage.
+
+Acknowledgements
+================
+
+CGImap contains code from and is partly based on the following:
+
+  * modosmapi (http://code.google.com/p/modosmapi/) by
+      d40cht and japplebyalis.
+  * quad_tile.c
+      (http://svn.openstreetmap.org/sites/rails_port/db/functions/maptile.c)
+      by TomH.
