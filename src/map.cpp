@@ -153,7 +153,7 @@ write_map(mysqlpp::Connection &con,
       "select w.id, u.display_name, u.data_public, w.visible, "
       "date_format(w.timestamp,'%Y-%m-%dT%TZ') as timestamp from "
       "`current_ways` w join `tmp_ways` tw on w.id=tw.id join "
-      "`users` u on w.user_id = u.id";
+      "`users` u on w.user_id = u.id where w.visible = 1";
     ways.for_each(boost::bind(write_way, boost::ref(writer), 
 			      boost::ref(con2), _1));
     
@@ -166,7 +166,7 @@ write_map(mysqlpp::Connection &con,
       "=n.id and m.member_type='node' union distinct select m.id from "
       "`current_relation_members` m join `tmp_ways` w on m.member_id"
       "=w.id and m.member_type='way') x on x.id=r.id join `users` u "
-      "on r.user_id=u.id";
+      "on r.user_id=u.id where r.visible = 1";
     relations.for_each(boost::bind(write_relation, boost::ref(writer),
 				   boost::ref(con2), _1));
   
