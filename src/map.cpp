@@ -142,7 +142,7 @@ write_map(mysqlpp::Connection &con,
       "as timestamp from `current_nodes` n join ("
       "select id from `tmp_nodes` union distinct select wn.node_id "
       "from `tmp_ways` w join `current_way_nodes` wn on w.id = wn.id) x "
-      "on n.id = x.id join `users` u on n.user_id";
+      "on n.id = x.id join `users` u on n.user_id=u.id";
     nodes.for_each(boost::bind(write_node, boost::ref(writer), _1));
     
     // grab the ways, way nodes and tags
