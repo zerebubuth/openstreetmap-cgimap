@@ -2,6 +2,7 @@ CXX=g++ -g -ggdb
 CFLAGS=\
 	$(shell pkg-config --cflags libxml-2.0) \
 	-I/usr/include/mysql \
+	-I/usr/include/mysql++ \
 	-I$(HOME)/include/mysql++ \
 	-Iinclude
 
