@@ -3,7 +3,7 @@
 
 #include "writer.hpp"
 #include "bbox.hpp"
-#include <mysql++.h>
+#include <mysql++/mysql++.h>
 
 void write_map(mysqlpp::Connection &con,
 	       mysqlpp::Connection &con2,

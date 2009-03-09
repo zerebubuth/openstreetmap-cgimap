@@ -2,7 +2,7 @@
 #define WRITER_HPP
 
 #include <string>
-#include <mysql++.h>
+#include <mysql++/mysql++.h>
 
 /**
  * Writes UTF-8 output to a file or stdout.

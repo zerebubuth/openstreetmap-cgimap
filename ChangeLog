@@ -1,0 +1,5 @@
+2009-03-09  Matt Amos  <matt@asklater.com>
+
+	* configure.ac: Added my attempt to create an autotools build
+	system for this package.
+

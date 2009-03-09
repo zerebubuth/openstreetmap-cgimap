@@ -1,7 +1,7 @@
 #ifndef TEMP_TABLES_HPP
 #define TEMP_TABLES_HPP
 
-#include <mysql++.h>
+#include <mysql++/mysql++.h>
 #include "bbox.hpp"
 
 #define SCALE (10000000.0)

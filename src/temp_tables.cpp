@@ -13,7 +13,7 @@ tmp_nodes::tmp_nodes(mysqlpp::Connection &c,
 		   bounds.maxlat, bounds.maxlon);
   
   mysqlpp::Query query = con.query();
-  query << "create temporary table `tmp_nodes` "
+  query << "create temporary table `tmp_nodes` engine=memory "
 	<< "select id from `current_nodes` where ((";
   unsigned int first_id = 0, last_id = 0;
   for (set<unsigned int>::const_iterator itr = tiles.begin();
@@ -59,7 +59,7 @@ tmp_ways::tmp_ways(mysqlpp::Connection &c)
   : con(c) {
   mysqlpp::Query query = con.query();
   
-  query << "create temporary table `tmp_ways` "
+  query << "create temporary table `tmp_ways` engine=memory "
 	<< "select distinct wn.id from `current_way_nodes` wn "
 	<< "join `tmp_nodes` tn on wn.node_id = tn.id";
   

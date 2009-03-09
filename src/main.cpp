@@ -1,6 +1,5 @@
-#include <mysql++.h>
+#include <mysql++/mysql++.h>
 #include <mysql++/options.h>
-#include <ssqls.h>
 #include <iostream>
 #include <sstream>
 #include <boost/bind.hpp>
