@@ -114,8 +114,8 @@ xml_writer::attribute(const std::string &name,
 
 void
 xml_writer::attribute(const std::string &name, 
-		      const mysqlpp::String &value) {
-  const char *c_str = (value.c_str() == NULL) ? "" : value.c_str();
+		      const char *value) {
+  const char *c_str = (value == NULL) ? "" : value;
   int rc = xmlTextWriterWriteAttribute(pimpl->writer, 
 				       BAD_CAST name.c_str(),
 				       BAD_CAST c_str);

@@ -1,4 +1,4 @@
-AC_INIT([CGImap], [0.0.1])
+AC_INIT([CGImap], [0.0.2])
 AM_INIT_AUTOMAKE
 
 AC_PROG_CXX
@@ -12,31 +12,9 @@ PKG_CHECK_MODULES(LIBXML, libxml-2.0 >= 2.6.32)
 AC_SUBST(LIBXML_CFLAGS)
 AC_SUBST(LIBXML_LIBS)
 
-AC_ARG_WITH(mysql,
-	[ --with-mysql=<path> prefix of MySQL C library.],
-	[MYSQL_PREFIX=$with_mysql],
-	AC_MSG_ERROR([You must call configure with the --with-mysql option.
-	This tells configure where to find the MySql C headers.
-	e.g. --with-mysql=/usr/local or --with-mysql=/usr])
-)
-
-AC_SUBST(MYSQL_PREFIX)
-MYSQL_CFLAGS="-I${MYSQL_PREFIX}/include/mysql"
-AC_SUBST(MYSQL_CFLAGS)
-
-AC_ARG_WITH(mysqlpp,
-	[ --with-mysqlpp=<path> prefix of MySQL++ library.],
-	[MYSQLPP_PREFIX=$with_mysqlpp],
-	AC_MSG_ERROR([You must call configure with the --with-mysqlpp option.
-	This tells configure where to find the MySql C++ library and headers.
-	e.g. --with-mysqlpp=/usr/local or --with-mysqlpp=/usr])
-)
-
-AC_SUBST(MYSQLPP_PREFIX)
-MYSQLPP_LIBS="-L${MYSQLPP_PREFIX}/lib -lmysqlpp"
-MYSQLPP_CFLAGS="-I${MYSQLPP_PREFIX}/include"
-AC_SUBST(MYSQLPP_LIBS)
-AC_SUBST(MYSQLPP_CFLAGS)
+PKG_CHECK_MODULES(LIBPQXX, libpqxx >= 2.6.9)
+AC_SUBST(LIBPQXX_CFLAGS)
+AC_SUBST(LIBPQXX_LIBS)
 
 AC_ARG_WITH(fcgi,
 	[ --with-fcgi=<path> prefix of FCGI library.],

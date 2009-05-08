@@ -1,25 +1,23 @@
 #ifndef TEMP_TABLES_HPP
 #define TEMP_TABLES_HPP
 
-#include <mysql++/mysql++.h>
+#include <pqxx/pqxx>
 #include "bbox.hpp"
 
 #define SCALE (10000000.0)
 
 class tmp_nodes {
 public:
-  tmp_nodes(mysqlpp::Connection &c, const bbox &bounds);
-  ~tmp_nodes();
+  tmp_nodes(pqxx::work &work, const bbox &bounds);
 private:
-  mysqlpp::Connection &con;
+  pqxx::work &work;
 };
 
 class tmp_ways {
 public:
-  tmp_ways(mysqlpp::Connection &c);
-  ~tmp_ways();
+  tmp_ways(pqxx::work &work);
 private:
-  mysqlpp::Connection &con;
+  pqxx::work &work;
 };
 
 

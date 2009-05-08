@@ -2,7 +2,7 @@
 #define WRITER_HPP
 
 #include <string>
-#include <mysql++/mysql++.h>
+#include <stdexcept>
 
 /**
  * Writes UTF-8 output to a file or stdout.
@@ -45,7 +45,7 @@ public:
   void attribute(const std::string &name, const std::string &value);
 
   // write a mysql string, which can be null
-  void attribute(const std::string &name, const mysqlpp::String &value);
+  void attribute(const std::string &name, const char *value);
 
   // overloaded versions of writeAttribute for convenience
   void attribute(const std::string &name, double value);

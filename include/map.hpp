@@ -3,10 +3,9 @@
 
 #include "writer.hpp"
 #include "bbox.hpp"
-#include <mysql++/mysql++.h>
+#include <pqxx/pqxx>
 
-void write_map(mysqlpp::Connection &con,
-	       mysqlpp::Connection &con2,
+void write_map(pqxx::work &work,
 	       xml_writer &writer,
 	       const bbox &bounds);
 

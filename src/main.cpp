@@ -1,5 +1,4 @@
-#include <mysql++/mysql++.h>
-#include <mysql++/options.h>
+#include <pqxx/pqxx>
 #include <iostream>
 #include <sstream>
 #include <boost/bind.hpp>
@@ -12,6 +11,7 @@
 #include <map>
 #include <string>
 #include <fcgiapp.h>
+#include <memory>
 
 #include "bbox.hpp"
 #include "temp_tables.hpp"
@@ -25,6 +25,7 @@ using std::vector;
 using std::string;
 using std::map;
 using std::ostringstream;
+using std::auto_ptr;
 
 #define MAX_AREA 0.25
 
@@ -109,9 +110,8 @@ get_env(const char *k, string &s) {
   return v == NULL ? false : (s = v, true);
 }
 
-void
-connect_db(mysqlpp::Connection &con,
-	   mysqlpp::Connection &con2) {
+auto_ptr<pqxx::connection>
+connect_db() {
   // get the DB parameters from the environment
   string db_name, db_host, db_user, db_pass, db_charset;
   if (!get_env("DB_NAME", db_name)) { 
@@ -130,15 +130,19 @@ connect_db(mysqlpp::Connection &con,
     db_charset = "utf8";
   }
   
-  // set the connections to use the appropriate charset
-  con.set_option(new mysqlpp::SetCharsetNameOption(db_charset));
-  con2.set_option(new mysqlpp::SetCharsetNameOption(db_charset));
-  
+  ostringstream ostr;
+  ostr << "dbname=" << db_name
+       << " host=" << db_host
+       << " user=" << db_user
+       << " password=" << db_pass;
+
   // connect to the database.
-  con.connect(db_user.c_str(), db_host.c_str(), 
-	      db_user.c_str(), db_pass.c_str());
-  con2.connect(db_user.c_str(), db_host.c_str(), 
-	       db_user.c_str(), db_pass.c_str());
+  auto_ptr<pqxx::connection> con(new pqxx::connection(ostr.str()));
+
+  // set the connections to use the appropriate charset
+  con->set_client_encoding(db_charset);
+
+  return con;
 }
 
 /**
@@ -177,12 +181,9 @@ main() {
       throw runtime_error("Couldn't initialise FCGX library.");
     }
 
-    // open the connections to mysql
-    mysqlpp::Connection con, con2;
-  
     // get the parameters for the connection from the environment
     // and connect to the database, throws exceptions if it fails.
-    connect_db(con, con2);
+    auto_ptr<pqxx::connection> con = connect_db();
 
     // create the request object for fcgi calls
     FCGX_Request request;
@@ -198,10 +199,13 @@ main() {
 	// validate the input
 	bbox bounds = validate_request(request);
 	
+	// start a read-only transaction to contain the request
+	pqxx::work x(*con);
+
 	// create temporary tables of nodes, ways and relations which
 	// are in or used by elements in the bbox
-	tmp_nodes tn(con, bounds);
-	tmp_ways tw(con);
+	tmp_nodes tn(x, bounds);
+	tmp_ways tw(x);
 
 	// write the response header
 	FCGX_PutS("Status: 200 OK\r\n"
@@ -214,7 +218,7 @@ main() {
 	
 	try {
 	  // call to write the map call
-	  write_map(con, con2, writer, bounds);
+	  write_map(x, writer, bounds);
 
 	} catch (const xml_writer::write_error &e) {
 	  // don't do anything - just go on to the next request.
@@ -241,9 +245,10 @@ main() {
       }
     }
 
-  } catch (const mysqlpp::Exception& er) {
-    // Catch-all for any other MySQL++ exceptions
-    std::cerr << "Error: " << er.what() << std::endl;
+  } catch (const pqxx::sql_error &er) {
+    // Catch-all for any other postgres exceptions
+    std::cerr << "Error: " << er.what() << std::endl
+	      << "Caused by: " << er.query() << std::endl;
     return 1;
 
   } catch (const std::exception &e) {

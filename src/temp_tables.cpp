@@ -1,20 +1,25 @@
 #include <stdexcept>
+#include <sstream>
+#include <iostream>
 #include "temp_tables.hpp"
 #include "quad_tile.hpp"
 
 using std::set;
 using std::runtime_error;
+using std::stringstream;
+using std::cerr;
+using std::endl;
 
-tmp_nodes::tmp_nodes(mysqlpp::Connection &c,
+tmp_nodes::tmp_nodes(pqxx::work &w,
 		     const bbox &bounds)
-  : con(c) {
+  : work(w) {
   const set<unsigned int> tiles = 
     tiles_for_area(bounds.minlat, bounds.minlon, 
 		   bounds.maxlat, bounds.maxlon);
   
-  mysqlpp::Query query = con.query();
-  query << "create temporary table `tmp_nodes` engine=memory "
-	<< "select id from `current_nodes` where ((";
+  stringstream query;
+  query << "create temporary table tmp_nodes as "
+	<< "select id from current_nodes where ((";
   unsigned int first_id = 0, last_id = 0;
   for (set<unsigned int>::const_iterator itr = tiles.begin();
        itr != tiles.end(); ++itr) {
@@ -42,35 +47,17 @@ tmp_nodes::tmp_nodes(mysqlpp::Connection &c,
 	<< " and " << int(bounds.maxlat * SCALE)
 	<< " and longitude between " << int(bounds.minlon * SCALE) 
 	<< " and " << int(bounds.maxlon * SCALE)
-	<< ") and (visible = 1)";
-  
-  if (!query.exec()) {
-    throw runtime_error("couldn't create temporary table for node IDs");
-  }
+	<< ") and (visible = true)";
+ 
+  // assume this throws if it fails?
+  work.exec(query);
 }
 
-tmp_nodes::~tmp_nodes() {
-  mysqlpp::Query query = con.query();
-  query << "drop table `tmp_nodes`";
-  query.exec();
+tmp_ways::tmp_ways(pqxx::work &w) 
+  : work(w) {
+  work.exec("create temporary table tmp_ways as "
+	    "select distinct wn.id from current_way_nodes wn "
+	    "join tmp_nodes tn on wn.node_id = tn.id");
+  work.exec("create index tmp_ways_idx on tmp_ways(id)");
 }
-
-tmp_ways::tmp_ways(mysqlpp::Connection &c) 
-  : con(c) {
-  mysqlpp::Query query = con.query();
-  
-  query << "create temporary table `tmp_ways` engine=memory "
-	<< "select distinct wn.id from `current_way_nodes` wn "
-	<< "join `tmp_nodes` tn on wn.node_id = tn.id";
-  
-  if (!query.exec()) {
-    throw runtime_error("couldn't create temporary table for way IDs");
-  }      
-}
-
-tmp_ways::~tmp_ways() {
-  mysqlpp::Query query = con.query();
-  query << "drop table `tmp_ways`";
-  query.exec();
-}    
 
