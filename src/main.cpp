@@ -28,6 +28,7 @@ using std::ostringstream;
 using std::auto_ptr;
 
 #define MAX_AREA 0.25
+#define CACHE_SIZE 1000
 
 /**
  * Lookup a string from the FCGI environment. Throws 500 error if the
@@ -184,13 +185,19 @@ main() {
     // get the parameters for the connection from the environment
     // and connect to the database, throws exceptions if it fails.
     auto_ptr<pqxx::connection> con = connect_db();
+    auto_ptr<pqxx::connection> cache_con = connect_db();
 
     // create the request object for fcgi calls
     FCGX_Request request;
     if (FCGX_InitRequest(&request, 0, 0) != 0) {
       throw runtime_error("Couldn't initialise FCGX request structure.");
     }
-    
+
+    // start a transaction using a second connection just for looking up 
+    // users/changesets for the cache.
+    pqxx::work cache_x(*cache_con, "changeset_cache");
+    cache<long int, changeset> changeset_cache(boost::bind(fetch_changeset, boost::ref(cache_x), _1), CACHE_SIZE);
+
     // enter the main loop
     while(FCGX_Accept_r(&request) >= 0) {
       try {
@@ -199,7 +206,7 @@ main() {
 	// validate the input
 	bbox bounds = validate_request(request);
 	
-	// start a read-only transaction to contain the request
+	// separate transaction for the request
 	pqxx::work x(*con);
 
 	// create temporary tables of nodes, ways and relations which
@@ -218,7 +225,7 @@ main() {
 	
 	try {
 	  // call to write the map call
-	  write_map(x, writer, bounds);
+	  write_map(x, writer, bounds, changeset_cache);
 
 	} catch (const xml_writer::write_error &e) {
 	  // don't do anything - just go on to the next request.
