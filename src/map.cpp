@@ -5,6 +5,7 @@
 #include <boost/function.hpp>
 #include <vector>
 #include <string>
+#include <algorithm>
 #include <pqxx/pqxx>
 
 #include "temp_tables.hpp"
@@ -13,6 +14,7 @@
 
 using std::vector;
 using std::string;
+using std::transform;
 using boost::shared_ptr;
 
 /**
@@ -127,8 +129,10 @@ map_writer::write_relation(const pqxx::result::tuple &r) {
 				pqxx::to_string(id) + " order by sequence_id asc");
   for (pqxx::result::const_iterator itr = members.begin();
        itr != members.end(); ++itr) {
+    string type = (*itr)[0].c_str();
+    transform(type.begin(), type.end(), type.begin(), ::tolower);
     writer.start("nd");
-    writer.attribute("type", (*itr)[0].c_str()); // TODO: downcase
+    writer.attribute("type", type);
     writer.attribute("ref", (*itr)[1].as<long long int>());
     writer.attribute("role", (*itr)[2].c_str());
     writer.end();
