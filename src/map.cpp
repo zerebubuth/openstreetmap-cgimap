@@ -131,7 +131,7 @@ map_writer::write_relation(const pqxx::result::tuple &r) {
        itr != members.end(); ++itr) {
     string type = (*itr)[0].c_str();
     transform(type.begin(), type.end(), type.begin(), ::tolower);
-    writer.start("nd");
+    writer.start("member");
     writer.attribute("type", type);
     writer.attribute("ref", (*itr)[1].as<long long int>());
     writer.attribute("role", (*itr)[2].c_str());
