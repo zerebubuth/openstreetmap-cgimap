@@ -12,6 +12,7 @@
 #include <string>
 #include <fcgiapp.h>
 #include <memory>
+#include <algorithm>
 
 #include "bbox.hpp"
 #include "temp_tables.hpp"
@@ -51,6 +52,47 @@ fcgi_get_env(FCGX_Request &req, const char* name) {
 }
 
 /**
+ * get a query string by hook or by crook.
+ *
+ * the $QUERY_STRING variable is supposed to be set, but it isn't if 
+ * cgimap is invoked on the 404 path, which seems to be a pretty common
+ * case for doing routing/queueing in lighttpd. in that case, try and
+ * parse the $REQUEST_URI.
+ */
+string
+get_query_string(FCGX_Request &req) {
+  // try the query string that's supposed to be present first
+  const char *query_string = FCGX_GetParam("QUERY_STRING", req.envp);
+  
+  // if that isn't present, then this may be being invoked as part of a
+  // 404 handler, so look at the request uri instead.
+  if ((query_string == NULL) || (strlen(query_string) == 0)) {
+    const char *request_uri = FCGX_GetParam("REQUEST_URI", req.envp);
+
+    if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
+      // fail. something has obviously gone massively wrong.
+      ostringstream ostr;
+      ostr << "FCGI didn't set the $QUERY_STRING or $REQUEST_URI "
+	   << "environment variables.";
+      throw http::server_error(ostr.str());
+    }
+
+    const char *request_uri_end = request_uri + strlen(request_uri);
+    // i think the only valid position for the '?' char is at the beginning
+    // of the query string.
+    const char *question_mark = std::find(request_uri, request_uri_end, '?');
+    if (question_mark == request_uri_end) {
+      return string();
+    } else {
+      return string(question_mark + 1);
+    }
+
+  } else {
+    return string(query_string);
+  }
+}
+
+/**
  * Validates an FCGI request, returning the valid bounding box or 
  * throwing an error if there was no valid bounding box.
  */
@@ -62,12 +104,12 @@ validate_request(FCGX_Request &request) {
 				   "map requests.");
 
   const map<string, string> params = 
-    http::parse_params(fcgi_get_env(request, "QUERY_STRING"));
+    http::parse_params(get_query_string(request));
   map<string, string>::const_iterator itr = params.find("bbox");
 
   bbox bounds;
   if ((itr == params.end()) ||
-      !bounds.parse(itr->second)) { 
+      !bounds.parse(itr->second)) {
     throw http::bad_request("The parameter bbox is required, and must be "
 			    "of the form min_lon,min_lat,max_lon,max_lat.");
   }
