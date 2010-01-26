@@ -163,21 +163,19 @@ connect_db() {
   if (!get_env("DB_HOST", db_host)) { 
     throw runtime_error("$DB_HOST not set."); 
   }
-  if (!get_env("DB_USER", db_user)) { 
-    throw runtime_error("$DB_USER not set."); 
-  }
-  if (!get_env("DB_PASS", db_pass)) { 
-    throw runtime_error("$DB_PASS not set."); 
-  }
   if (!get_env("DB_CHARSET", db_charset)) {
     db_charset = "utf8";
   }
   
   ostringstream ostr;
-  ostr << "dbname=" << db_name
-       << " host=" << db_host
-       << " user=" << db_user
-       << " password=" << db_pass;
+  ostr << "dbname=" << db_name;
+  ostr << " host=" << db_host;
+  if (get_env("DB_USER", db_user)) {
+    ostr << " user=" << db_user;
+  }
+  if (get_env("DB_PASS", db_pass)) {
+    ostr << " password=" << db_pass;
+  }
 
   // connect to the database.
   auto_ptr<pqxx::connection> con(new pqxx::connection(ostr.str()));
