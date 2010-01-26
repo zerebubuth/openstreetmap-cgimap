@@ -153,7 +153,8 @@ void
 map_writer::write() {
     // hack around problem with postgres' statistics, which was 
     // making it do seq scans all the time on smaug...
-    w.exec("set enable_seqscan=false");
+    w.exec("set enable_mergejoin=false");
+    w.exec("set enable_hashjoin=false");
 
     // get all nodes - they already contain their own tags, so
     // we don't need to do anything else.
