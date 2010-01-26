@@ -151,6 +151,10 @@ map_writer::write_relation(const pqxx::result::tuple &r) {
 
 void
 map_writer::write() {
+    // hack around problem with postgres' statistics, which was 
+    // making it do seq scans all the time on smaug...
+    w.exec("set enable_seqscan=false");
+
     // get all nodes - they already contain their own tags, so
     // we don't need to do anything else.
     pqxx::result nodes = w.exec(
