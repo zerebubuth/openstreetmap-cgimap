@@ -258,6 +258,7 @@ main() {
 	FCGX_PutS("Status: 200 OK\r\n"
 		  "Content-Type: text/xml; charset=utf-8\r\n"
                   "Content-Disposition: attachment; filename=\"map.osm\"\r\n"
+                  "Cache-Control: private, max-age=0, must-revalidate\r\n"
 		  "\r\n", request.out);
 	
 	// create the XML writer with the FCGI streams as output
