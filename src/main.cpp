@@ -139,7 +139,7 @@ void
 respond_error(const http::exception &e, FCGX_Request &r) {
   ostringstream ostr;
   ostr << "Status: " << e.code() << " " << e.header() << "\r\n"
-       << "Content-type: text/html\r\n"
+       << "Content-Type: text/html\r\n"
        << "\r\n"
        << "<html><head><title>" << e.header() << "</title></head>"
        << "<body><p>" << e.what() << "</p></body></html>\n";
@@ -256,7 +256,8 @@ main() {
 
 	// write the response header
 	FCGX_PutS("Status: 200 OK\r\n"
-		  "Content-type: text/xml\r\n"
+		  "Content-Type: text/xml; charset=utf-8\r\n"
+                  "Content-Disposition: attachment; filename=\"map.osm\"\r\n"
 		  "\r\n", request.out);
 	
 	// create the XML writer with the FCGI streams as output
