@@ -252,6 +252,16 @@ main() {
 	// create temporary tables of nodes, ways and relations which
 	// are in or used by elements in the bbox
 	tmp_nodes tn(x, bounds);
+
+	// check how many nodes we got
+	pqxx::result res = x.exec("select count(*) from tmp_nodes");
+	int num_nodes = res[0][0].as<int>();
+	if (num_nodes > 50000) {
+	  throw http::bad_request("You requested too many nodes (limit is "
+				  "50000). Either request a smaller area, "
+				  "or use planet.osm");
+	}
+
 	tmp_ways tw(x);
 
 	// write the response header

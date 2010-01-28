@@ -17,6 +17,11 @@ tmp_nodes::tmp_nodes(pqxx::work &w,
     tiles_for_area(bounds.minlat, bounds.minlon, 
 		   bounds.maxlat, bounds.maxlon);
   
+  // hack around problem with postgres' statistics, which was 
+  // making it do seq scans all the time on smaug...
+  w.exec("set enable_mergejoin=false");
+  w.exec("set enable_hashjoin=false");
+
   stringstream query;
   query << "create temporary table tmp_nodes as "
 	<< "select id from current_nodes where ((";
@@ -47,7 +52,8 @@ tmp_nodes::tmp_nodes(pqxx::work &w,
 	<< " and " << int(bounds.maxlat * SCALE)
 	<< " and longitude between " << int(bounds.minlon * SCALE) 
 	<< " and " << int(bounds.maxlon * SCALE)
-	<< ") and (visible = true)";
+	<< ") and (visible = true)"
+	<< " limit 50001"; // limit here as a quick hack to reduce load...
  
   // assume this throws if it fails?
   work.exec(query);
@@ -55,6 +61,10 @@ tmp_nodes::tmp_nodes(pqxx::work &w,
 
 tmp_ways::tmp_ways(pqxx::work &w) 
   : work(w) {
+  // we already did this in tmp_nodes, but it can't hurt to do it twice
+  work.exec("set enable_mergejoin=false");
+  work.exec("set enable_hashjoin=false");
+
   work.exec("create temporary table tmp_ways as "
 	    "select distinct wn.id from current_way_nodes wn "
 	    "join tmp_nodes tn on wn.node_id = tn.id");
