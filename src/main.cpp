@@ -235,7 +235,7 @@ main() {
 
     // start a transaction using a second connection just for looking up 
     // users/changesets for the cache.
-    pqxx::work cache_x(*cache_con, "changeset_cache");
+    pqxx::nontransaction cache_x(*cache_con, "changeset_cache");
     cache<long int, changeset> changeset_cache(boost::bind(fetch_changeset, boost::ref(cache_x), _1), CACHE_SIZE);
 
     // enter the main loop

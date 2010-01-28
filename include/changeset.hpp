@@ -17,6 +17,6 @@ struct changeset {
   changeset(bool dp, const std::string &dn, long int id);
 };
 
-changeset *fetch_changeset(pqxx::work &w, long int id);
+changeset *fetch_changeset(pqxx::transaction_base &w, long int id);
 
 #endif /* CHANGESET_HPP */

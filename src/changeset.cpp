@@ -7,7 +7,7 @@ changeset::changeset(bool dp, const string &dn, long int id)
 }
 
 changeset *
-fetch_changeset(pqxx::work &w, long int id) {
+fetch_changeset(pqxx::transaction_base &w, long int id) {
   pqxx::result res = w.exec("select u.data_public, u.display_name, u.id from users u "
 			    "join changesets c on u.id=c.user_id where c.id=" + pqxx::to_string(id));
   
