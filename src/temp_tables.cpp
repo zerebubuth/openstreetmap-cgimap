@@ -57,7 +57,7 @@ tmp_nodes::tmp_nodes(pqxx::work &w,
 	<< " limit 50001"; // limit here as a quick hack to reduce load...
 
   logger() << "Creating tmp_nodes";
-  logger() << query;
+  logger() << query.str();
 
   // assume this throws if it fails?
   work.exec(query);
