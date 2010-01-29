@@ -3,6 +3,7 @@
 #include <iostream>
 #include "temp_tables.hpp"
 #include "quad_tile.hpp"
+#include "logger.hpp"
 
 using std::set;
 using std::runtime_error;
@@ -54,7 +55,10 @@ tmp_nodes::tmp_nodes(pqxx::work &w,
 	<< " and " << int(bounds.maxlon * SCALE)
 	<< ") and (visible = true)"
 	<< " limit 50001"; // limit here as a quick hack to reduce load...
- 
+
+  logger() << "Creating tmp_nodes";
+  logger() << query;
+
   // assume this throws if it fails?
   work.exec(query);
 }
@@ -64,6 +68,8 @@ tmp_ways::tmp_ways(pqxx::work &w)
   // we already did this in tmp_nodes, but it can't hurt to do it twice
   work.exec("set enable_mergejoin=false");
   work.exec("set enable_hashjoin=false");
+
+  logger() << "Creating tmp_ways";
 
   work.exec("create temporary table tmp_ways as "
 	    "select distinct wn.id from current_way_nodes wn "

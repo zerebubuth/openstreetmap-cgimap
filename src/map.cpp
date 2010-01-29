@@ -11,6 +11,7 @@
 #include "temp_tables.hpp"
 #include "split_tags.hpp"
 #include "cache.hpp"
+#include "logger.hpp"
 
 using std::vector;
 using std::string;
@@ -153,6 +154,7 @@ void
 map_writer::write() {
     // get all nodes - they already contain their own tags, so
     // we don't need to do anything else.
+    logger() << "Fetching nodes";
     pqxx::result nodes = w.exec(
       "select n.id, n.latitude, n.longitude, n.visible, "
       "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as timestamp, "
@@ -168,6 +170,7 @@ map_writer::write() {
     // grab the ways, way nodes and tags
     // way nodes and tags are on a separate connections so that the
     // entire result set can be streamed from a single query.
+    logger() << "Fetching ways";
     pqxx::result ways = w.exec(
       "select w.id, w.visible, w.version, w.changeset_id, "
       "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as timestamp from "
@@ -177,6 +180,7 @@ map_writer::write() {
       write_way(*itr);
     }
     
+    logger() << "Fetching relations";
     pqxx::result relations = w.exec(
       "select r.id, r.visible, r.version, r.changeset_id, "
       "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as timestamp from "

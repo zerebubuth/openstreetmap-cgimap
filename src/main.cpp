@@ -20,6 +20,7 @@
 #include "split_tags.hpp"
 #include "map.hpp"
 #include "http.hpp"
+#include "logger.hpp"
 
 using std::runtime_error;
 using std::vector;
@@ -238,6 +239,8 @@ main() {
     pqxx::nontransaction cache_x(*cache_con, "changeset_cache");
     cache<long int, changeset> changeset_cache(boost::bind(fetch_changeset, boost::ref(cache_x), _1), CACHE_SIZE);
 
+    logger() << "Initialised";
+
     // enter the main loop
     while(FCGX_Accept_r(&request) >= 0) {
       try {
@@ -245,7 +248,9 @@ main() {
 	
 	// validate the input
 	bbox bounds = validate_request(request);
-	
+
+        logger() << "Started request for " << bounds.minlat << "," << bounds.minlon << "," << bounds.maxlat << "," << bounds.maxlon;
+
 	// separate transaction for the request
 	pqxx::work x(*con);
 
@@ -290,6 +295,8 @@ main() {
 	  writer.text(e.what());
 	  writer.end();
 	}
+
+        logger() << "Completed request";
       } catch (const http::exception &e) {
 	// errors here occur before we've started writing the response
 	// so we can send something helpful back to the client.
