@@ -242,7 +242,6 @@ main() {
     pqxx::nontransaction cache_x(*cache_con, "changeset_cache");
     cache<long int, changeset> changeset_cache(boost::bind(fetch_changeset, boost::ref(cache_x), _1), CACHE_SIZE);
 
-    pt::ptime start_time(pt::second_clock::local_time());
     logger() << "Initialised";
 
     // enter the main loop
@@ -253,6 +252,7 @@ main() {
 	// validate the input
 	bbox bounds = validate_request(request);
 
+        pt::ptime start_time(pt::second_clock::local_time());
         logger() << "Started request for " << bounds.minlat << "," << bounds.minlon << "," << bounds.maxlat << "," << bounds.maxlon;
 
 	// separate transaction for the request
