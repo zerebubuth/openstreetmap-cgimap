@@ -5,6 +5,7 @@
 #include <boost/ref.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/function.hpp>
+#include <boost/date_time.hpp>
 #include <cmath>
 #include <stdexcept>
 #include <vector>
@@ -28,6 +29,8 @@ using std::string;
 using std::map;
 using std::ostringstream;
 using std::auto_ptr;
+
+namespace pt = boost::posix_time;
 
 #define MAX_AREA 0.25
 #define CACHE_SIZE 1000
@@ -239,6 +242,7 @@ main() {
     pqxx::nontransaction cache_x(*cache_con, "changeset_cache");
     cache<long int, changeset> changeset_cache(boost::bind(fetch_changeset, boost::ref(cache_x), _1), CACHE_SIZE);
 
+    pt::ptime start_time(pt::second_clock::local_time());
     logger() << "Initialised";
 
     // enter the main loop
@@ -296,7 +300,8 @@ main() {
 	  writer.end();
 	}
 
-        logger() << "Completed request";
+        pt::ptime end_time(pt::second_clock::local_time());
+        logger() << "Completed request in " << (end_time - start_time);
       } catch (const http::exception &e) {
 	// errors here occur before we've started writing the response
 	// so we can send something helpful back to the client.
