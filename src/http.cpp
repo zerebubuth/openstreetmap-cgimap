@@ -9,7 +9,6 @@ using std::string;
 using std::map;
 using std::vector;
 using boost::shared_ptr;
-using boost::make_shared;
 
 namespace http {
 
@@ -102,13 +101,13 @@ namespace http {
     }
 
     if (deflate_quality >= gzip_quality && deflate_quality >= identity_quality) {
-      return make_shared<deflate>(deflate());
+      return shared_ptr<deflate>(new deflate());
     }
     else if (gzip_quality >= identity_quality) {
-      return make_shared<gzip>(gzip());
+      return shared_ptr<gzip>(new gzip());
     }
     else {
-      return make_shared<identity>(identity());
+      return shared_ptr<identity>(new identity());
     }
   }
 }

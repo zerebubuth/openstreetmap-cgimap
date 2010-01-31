@@ -5,7 +5,6 @@
 #include <map>
 #include <stdexcept>
 #include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
 
 #include "writer.hpp"
 #include "zlib.hpp"
@@ -124,7 +123,7 @@ namespace http {
       : encoding("deflate") {};
     virtual boost::shared_ptr<xml_writer::output_buffer>
     output_buffer(boost::shared_ptr<xml_writer::output_buffer> out) {
-      return boost::make_shared<zlib_output_buffer>(zlib_output_buffer(out, zlib_output_buffer::zlib));
+      return boost::shared_ptr<zlib_output_buffer>(new zlib_output_buffer(out, zlib_output_buffer::zlib));
     }
   };
 

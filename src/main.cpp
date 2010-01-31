@@ -7,7 +7,6 @@
 #include <boost/function.hpp>
 #include <boost/date_time.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
 #include <cmath>
 #include <stdexcept>
 #include <vector>
@@ -32,7 +31,6 @@ using std::map;
 using std::ostringstream;
 using std::auto_ptr;
 using boost::shared_ptr;
-using boost::make_shared;
 
 namespace pt = boost::posix_time;
 
@@ -111,7 +109,7 @@ get_encoding(FCGX_Request &req) {
      return http::choose_encoding(string(accept_encoding));
   }
   else {
-     return make_shared<http::identity>(http::identity());
+     return shared_ptr<http::identity>(new http::identity());
   }
 }
 
@@ -306,7 +304,7 @@ main() {
 	
 	// create the XML writer with the FCGI streams as output
 	shared_ptr<xml_writer::output_buffer> out =
-	  make_shared<fcgi_output_buffer>(fcgi_output_buffer(request));
+	  shared_ptr<fcgi_output_buffer>(new fcgi_output_buffer(request));
 	out = encoding->output_buffer(out);
 	xml_writer writer(out, true);
 	
