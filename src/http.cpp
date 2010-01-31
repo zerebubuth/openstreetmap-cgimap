@@ -40,7 +40,10 @@ namespace http {
   
   method_not_allowed::method_not_allowed(const string &message)
     : exception(405, "Method Not Allowed", message) {}  
-  
+    
+  not_acceptable::not_acceptable(const string &message)
+    : exception(406, "Not Acceptable", message) {}  
+
   map<string, string>
   parse_params(const string &p) {
     // Split the query string into components
@@ -98,19 +101,31 @@ namespace http {
       else if (al::iequals(name, "gzip")) {
         gzip_quality = quality;
       }
+      else if (al::iequals(name, "*")) {
+         if (identity_quality == 0.000) identity_quality = quality;
+         if (deflate_quality == 0.000) deflate_quality = quality;
+         if (gzip_quality == 0.001) gzip_quality = quality;
+      }
     }
 
 #ifdef ENABLE_DEFLATE
-    if (deflate_quality >= gzip_quality && deflate_quality >= identity_quality) {
+    if (deflate_quality > 0.0 &&
+        deflate_quality >= gzip_quality && 
+        deflate_quality >= identity_quality) {
       return shared_ptr<deflate>(new deflate());
     }
     else
 #endif
-    if (gzip_quality >= identity_quality) {
+    if (gzip_quality > 0.0 &&
+        gzip_quality >= identity_quality) {
       return shared_ptr<gzip>(new gzip());
     }
-    else {
+    else if (identity_quality > 0.0) {
       return shared_ptr<identity>(new identity());
+    }
+    else {
+       throw http::not_acceptable("No acceptable content encoding found. Only "
+                                  "identity and gzip are supported.");
     }
   }
 }

@@ -80,6 +80,17 @@ namespace http {
   };
 
   /**
+   * Content negotiation failed to find a matching format which
+   * the server is able to return and which the client is prepared
+   * to accept.
+   */
+  class not_acceptable
+    : public exception {
+  public:
+    not_acceptable(const std::string &message);
+  };
+
+  /**
    * Parses a query string into a key-value map.
    *
    * Expects an URL-encoded query string and returns a map with strings
