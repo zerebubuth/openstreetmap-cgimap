@@ -19,6 +19,8 @@ AC_SUBST(LIBPQXX_LIBS)
 AX_BOOST_BASE(1.34.1)
 AX_BOOST_REGEX
 
+AX_CHECK_ZLIB
+
 AC_ARG_WITH(fcgi,
 	[ --with-fcgi=<path> prefix of FCGI library.],
 	[FCGI_PREFIX=$with_fcgi],
