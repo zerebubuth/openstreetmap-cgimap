@@ -16,6 +16,9 @@ PKG_CHECK_MODULES(LIBPQXX, libpqxx >= 2.6.9)
 AC_SUBST(LIBPQXX_CFLAGS)
 AC_SUBST(LIBPQXX_LIBS)
 
+AX_BOOST_BASE
+AX_BOOST_REGEX
+
 AC_ARG_WITH(fcgi,
 	[ --with-fcgi=<path> prefix of FCGI library.],
 	[FCGI_PREFIX=$with_fcgi],

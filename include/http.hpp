@@ -4,6 +4,11 @@
 #include <string>
 #include <map>
 #include <stdexcept>
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
+
+#include "writer.hpp"
+#include "zlib.hpp"
 
 /**
  * Contains the generic HTTP methods and classes involved in the
@@ -84,6 +89,63 @@ namespace http {
   std::map<std::string, std::string>
   parse_params(const std::string &p);
 
+  /*
+   * HTTP Content Encodings.
+   */
+  class encoding {
+  private:
+    const std::string name_;
+  public:
+    encoding(const std::string &name)
+      : name_(name) {};
+    virtual ~encoding(void) {};
+    const std::string &name(void) const {
+      return name_;
+    };
+    virtual boost::shared_ptr<xml_writer::output_buffer>
+    output_buffer(boost::shared_ptr<xml_writer::output_buffer> out) {
+      return out;
+    }
+  };
+
+  class identity
+    : public encoding 
+  {
+  public:
+    identity(void)
+      : encoding("identity") {};
+  };
+
+  class deflate
+    : public encoding 
+  {
+  public:
+    deflate(void)
+      : encoding("deflate") {};
+    virtual boost::shared_ptr<xml_writer::output_buffer>
+    output_buffer(boost::shared_ptr<xml_writer::output_buffer> out) {
+      return boost::make_shared<zlib_output_buffer>(zlib_output_buffer(out, zlib_output_buffer::zlib));
+    }
+  };
+
+  class gzip
+    : public encoding 
+  {
+  public:
+    gzip(void)
+      : encoding("gzip") {};
+    virtual boost::shared_ptr<xml_writer::output_buffer>
+    output_buffer(boost::shared_ptr<xml_writer::output_buffer> out) {
+      return boost::shared_ptr<zlib_output_buffer>(new zlib_output_buffer(out, zlib_output_buffer::gzip));
+    }
+  };
+
+  /*
+   * Parses an Accept-Encoding header and returns the chosen
+   * encoding.
+   */
+  boost::shared_ptr<http::encoding>
+  choose_encoding(const std::string &accept_encoding);
 }
 
 #endif /* HTTP_HPP */

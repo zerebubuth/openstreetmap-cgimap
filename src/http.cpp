@@ -2,11 +2,14 @@
 #include <vector>
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/regex.hpp>
 
 namespace al = boost::algorithm;
 using std::string;
 using std::map;
 using std::vector;
+using boost::shared_ptr;
+using boost::make_shared;
 
 namespace http {
 
@@ -58,5 +61,54 @@ namespace http {
     }
     return queryKVPairs;
   }
-}
 
+  shared_ptr<encoding>
+  choose_encoding(const string &accept_encoding) {
+    vector<string> encodings;
+     
+    al::split(encodings, accept_encoding, al::is_any_of(","));
+
+    float identity_quality = 0.001;
+    float deflate_quality = 0.000;
+    float gzip_quality = 0.000;
+
+    BOOST_FOREACH(const string &encoding, encodings) {
+      boost::smatch what;
+      string name;
+      float quality;
+
+      if (boost::regex_match(encoding, what, boost::regex("\\s*([^()<>@,;:\\\\\"/[\\]\\\\?={} \\t]+)\\s*;\\s*q\\s*=(\\d+(\\.\\d+)?)\\s*"))) {
+        name = what[1];
+        quality = std::atof(string(what[2]).c_str());
+      }
+      else if (boost::regex_match(encoding, what, boost::regex("\\s*([^()<>@,;:\\\\\"/[\\]\\\\?={} \\t]+)\\s*"))) {
+        name = what[1];
+        quality = 1.0;
+      }
+      else {
+        name = "";
+        quality = 0.0;
+      }
+
+      if (al::iequals(name, "identity")) {
+        identity_quality = quality;
+      }
+      else if (al::iequals(name, "deflate")) {
+        deflate_quality = quality;
+      }
+      else if (al::iequals(name, "gzip")) {
+        gzip_quality = quality;
+      }
+    }
+
+    if (deflate_quality >= gzip_quality && deflate_quality >= identity_quality) {
+      return make_shared<deflate>(deflate());
+    }
+    else if (gzip_quality >= identity_quality) {
+      return make_shared<gzip>(gzip());
+    }
+    else {
+      return make_shared<identity>(identity());
+    }
+  }
+}

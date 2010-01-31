@@ -6,6 +6,8 @@
 #include <boost/lambda/lambda.hpp>
 #include <boost/function.hpp>
 #include <boost/date_time.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 #include <cmath>
 #include <stdexcept>
 #include <vector>
@@ -29,6 +31,8 @@ using std::string;
 using std::map;
 using std::ostringstream;
 using std::auto_ptr;
+using boost::shared_ptr;
+using boost::make_shared;
 
 namespace pt = boost::posix_time;
 
@@ -93,6 +97,21 @@ get_query_string(FCGX_Request &req) {
 
   } else {
     return string(query_string);
+  }
+}
+
+/**
+ * get encoding to use for response.
+ */
+shared_ptr<http::encoding>
+get_encoding(FCGX_Request &req) {
+  const char *accept_encoding = FCGX_GetParam("HTTP_ACCEPT_ENCODING", req.envp);
+
+  if (accept_encoding) {
+     return http::choose_encoding(string(accept_encoding));
+  }
+  else {
+     return make_shared<http::identity>(http::identity());
   }
 }
 
@@ -273,15 +292,22 @@ main() {
 
 	tmp_ways tw(x);
 
+	// get encoding to use
+	shared_ptr<http::encoding> encoding = get_encoding(request);
+
 	// write the response header
-	FCGX_PutS("Status: 200 OK\r\n"
-		  "Content-Type: text/xml; charset=utf-8\r\n"
-                  "Content-Disposition: attachment; filename=\"map.osm\"\r\n"
-                  "Cache-Control: private, max-age=0, must-revalidate\r\n"
-		  "\r\n", request.out);
+	FCGX_FPrintF(request.out,
+		     "Status: 200 OK\r\n"
+		     "Content-Type: text/xml; charset=utf-8\r\n"
+		     "Content-Disposition: attachment; filename=\"map.osm\"\r\n"
+		     "Content-Encoding: %s\r\n"
+		     "Cache-Control: private, max-age=0, must-revalidate\r\n"
+		     "\r\n", encoding->name().c_str());
 	
 	// create the XML writer with the FCGI streams as output
-	fcgi_output_buffer out(request);
+	shared_ptr<xml_writer::output_buffer> out =
+	  make_shared<fcgi_output_buffer>(fcgi_output_buffer(request));
+	out = encoding->output_buffer(out);
 	xml_writer writer(out, true);
 	
 	try {

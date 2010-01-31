@@ -1,5 +1,5 @@
 #!/bin/bash
 
-aclocal
+aclocal -I aclocal
 autoconf
 automake -a
