@@ -100,10 +100,13 @@ namespace http {
       }
     }
 
+#ifdef ENABLE_DEFLATE
     if (deflate_quality >= gzip_quality && deflate_quality >= identity_quality) {
       return shared_ptr<deflate>(new deflate());
     }
-    else if (gzip_quality >= identity_quality) {
+    else
+#endif
+    if (gzip_quality >= identity_quality) {
       return shared_ptr<gzip>(new gzip());
     }
     else {
