@@ -67,7 +67,7 @@ zlib_output_buffer::write(const char *buffer, int len)
       throw xml_writer::write_error("deflate failed");
     }
 
-    if (stream.avail_out > 0) {
+    if (stream.avail_out == 0) {
       flush_output();
     }
   }
