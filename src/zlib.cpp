@@ -60,14 +60,15 @@ zlib_output_buffer::write(const char *buffer, int len)
     for (status = deflate(&stream, Z_NO_FLUSH);
          status == Z_OK && stream.avail_in > 0;
          status = deflate(&stream, Z_NO_FLUSH)) {
-      out->write(outbuf, sizeof(outbuf) - stream.avail_out);
-
-      stream.next_out = (Bytef *)outbuf;
-      stream.avail_out = sizeof(outbuf);
+      flush_output();
     }
 
     if (status != Z_OK) {
       throw xml_writer::write_error("deflate failed");
+    }
+
+    if (stream.avail_out > 0) {
+      flush_output();
     }
   }
 
@@ -84,10 +85,7 @@ zlib_output_buffer::close(void)
   for (status = deflate(&stream, Z_FINISH);
        status == Z_OK;
        status = deflate(&stream, Z_FINISH)) {
-    out->write(outbuf, sizeof(outbuf) - stream.avail_out);
-
-    stream.next_out = (Bytef *)outbuf;
-    stream.avail_out = sizeof(outbuf);
+    flush_output();
   }
 
   if (status == Z_STREAM_END) {
@@ -102,4 +100,13 @@ zlib_output_buffer::close(void)
   }
 
   return out->close();
+}
+
+void
+zlib_output_buffer::flush_output(void)
+{
+  out->write(outbuf, sizeof(outbuf) - stream.avail_out);
+
+  stream.next_out = (Bytef *)outbuf;
+  stream.avail_out = sizeof(outbuf);
 }

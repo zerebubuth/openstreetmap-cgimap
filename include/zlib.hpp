@@ -30,6 +30,8 @@ public:
   virtual int close(void);
 
 private:
+  void flush_output(void);
+
   boost::shared_ptr<xml_writer::output_buffer> out;
   z_stream stream;
   char outbuf[4096];
