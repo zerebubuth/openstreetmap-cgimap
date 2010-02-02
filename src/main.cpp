@@ -7,6 +7,7 @@
 #include <boost/function.hpp>
 #include <boost/date_time.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/program_options.hpp>
 #include <cmath>
 #include <stdexcept>
 #include <vector>
@@ -33,6 +34,7 @@ using std::auto_ptr;
 using boost::shared_ptr;
 
 namespace pt = boost::posix_time;
+namespace po = boost::program_options;
 
 #define MAX_AREA 0.25
 #define CACHE_SIZE 1000
@@ -175,34 +177,25 @@ get_env(const char *k, string &s) {
 }
 
 auto_ptr<pqxx::connection>
-connect_db() {
-  // get the DB parameters from the environment
-  string db_name, db_host, db_user, db_pass, db_charset;
-  if (!get_env("DB_NAME", db_name)) { 
-    throw runtime_error("$DB_NAME not set."); 
-  }
-  if (!get_env("DB_HOST", db_host)) { 
-    throw runtime_error("$DB_HOST not set."); 
-  }
-  if (!get_env("DB_CHARSET", db_charset)) {
-    db_charset = "utf8";
-  }
-  
+connect_db(const po::variables_map &options) {
+  // build the connection string.
   ostringstream ostr;
-  ostr << "dbname=" << db_name;
-  ostr << " host=" << db_host;
-  if (get_env("DB_USER", db_user)) {
-    ostr << " user=" << db_user;
+  ostr << "dbname=" << options["dbname"].as<std::string>();
+  if (options.count("host")) {
+    ostr << " host=" << options["host"].as<std::string>();
   }
-  if (get_env("DB_PASS", db_pass)) {
-    ostr << " password=" << db_pass;
+  if (options.count("username")) {
+    ostr << " user=" << options["username"].as<std::string>();
+  }
+  if (options.count("password")) {
+    ostr << " password=" << options["password"].as<std::string>();
   }
 
   // connect to the database.
   auto_ptr<pqxx::connection> con(new pqxx::connection(ostr.str()));
 
-  // set the connections to use the appropriate charset
-  con->set_client_encoding(db_charset);
+  // set the connections to use the appropriate charset.
+  con->set_client_encoding(options["charset"].as<std::string>());
 
   return con;
 }
@@ -235,9 +228,41 @@ private:
   FCGX_Request &r;
 };
 
+static void
+get_options(int argc, char **argv, po::variables_map &options)
+{
+  po::options_description desc("Allowed options");
+
+  desc.add_options()
+    ("help", "display this help and exit")
+    ("dbname", po::value<std::string>(), "database name")
+    ("host", po::value<std::string>(), "database server host")
+    ("username", po::value<std::string>(), "database user name")
+    ("password", po::value<std::string>(), "database password")
+    ("charset", po::value<std::string>()->default_value("utf8"), "database character set");
+   
+  po::store(po::parse_command_line(argc, argv, desc), options);
+  po::store(po::parse_environment(desc, "CGIMAP_"), options);
+  po::notify(options);
+
+  if (options.count("help")) {
+    std::cout << desc << std::endl;
+    exit(1);
+  }
+
+  if (options.count("dbname") == 0) {
+    throw runtime_error("database name not specified");
+  }
+}
+
 int
-main() {
+main(int argc, char **argv) {
   try {
+    po::variables_map options;
+
+    // get options
+    get_options(argc, argv, options);
+
     // initialise FCGI
     if (FCGX_Init() != 0) {
       throw runtime_error("Couldn't initialise FCGX library.");
@@ -245,8 +270,8 @@ main() {
 
     // get the parameters for the connection from the environment
     // and connect to the database, throws exceptions if it fails.
-    auto_ptr<pqxx::connection> con = connect_db();
-    auto_ptr<pqxx::connection> cache_con = connect_db();
+    auto_ptr<pqxx::connection> con = connect_db(options);
+    auto_ptr<pqxx::connection> cache_con = connect_db(options);
 
     // create the request object for fcgi calls
     FCGX_Request request;
