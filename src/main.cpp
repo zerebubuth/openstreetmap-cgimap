@@ -252,7 +252,8 @@ get_options(int argc, char **argv, po::variables_map &options) {
     ("charset", po::value<std::string>()->default_value("utf8"), "database character set")
     ("port", po::value<int>(), "port number to use")
     ("daemon", "run as a daemon")
-    ("instances", po::value<int>()->default_value(5), "number of daemon instances to run");
+    ("instances", po::value<int>()->default_value(5), "number of daemon instances to run")
+    ("pidfile", po::value<std::string>(), "file to write pid to");
 
   po::store(po::parse_command_line(argc, argv, desc), options);
   po::store(po::parse_environment(desc, "CGIMAP_"), options);
@@ -461,6 +462,12 @@ main(int argc, char **argv) {
       // make ourselves into a daemon
       daemonise();
 
+      // record our pid if requested
+      if (options.count("pidfile")) {
+	std::ofstream pidfile(options["pidfile"].as<std::string>().c_str());
+	pidfile << getpid() << std::endl;
+      }
+
       // loop until we have been asked to stop and have no more children
       while (!terminate_requested || children.size() > 0) {
 	pid_t pid;
@@ -495,6 +502,11 @@ main(int argc, char **argv) {
 
 	  children_terminated = true;
 	}
+      }
+
+      // remove any pid file
+      if (options.count("pidfile")) {
+	remove(options["pidfile"].as<std::string>().c_str());
       }
     }
     else
