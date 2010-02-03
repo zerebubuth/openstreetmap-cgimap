@@ -9,6 +9,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/program_options.hpp>
 #include <boost/foreach.hpp>
+#include <boost/format.hpp>
 #include <cmath>
 #include <stdexcept>
 #include <vector>
@@ -35,6 +36,7 @@ using std::map;
 using std::ostringstream;
 using std::auto_ptr;
 using boost::shared_ptr;
+using boost::format;
 
 namespace pt = boost::posix_time;
 namespace po = boost::program_options;
@@ -43,9 +45,10 @@ namespace po = boost::program_options;
 #define CACHE_SIZE 1000
 
 /**
- * global flag set when we are asked to exit.
+ * global flags set by signal handlers.
  */
 static bool terminate_requested = false;
+static bool reload_requested = false;
 
 /**
  * Lookup a string from the FCGI environment. Throws 500 error if the
@@ -245,15 +248,16 @@ get_options(int argc, char **argv, po::variables_map &options) {
 
   desc.add_options()
     ("help", "display this help and exit")
-    ("dbname", po::value<std::string>(), "database name")
-    ("host", po::value<std::string>(), "database server host")
-    ("username", po::value<std::string>(), "database user name")
-    ("password", po::value<std::string>(), "database password")
-    ("charset", po::value<std::string>()->default_value("utf8"), "database character set")
+    ("dbname", po::value<string>(), "database name")
+    ("host", po::value<string>(), "database server host")
+    ("username", po::value<string>(), "database user name")
+    ("password", po::value<string>(), "database password")
+    ("charset", po::value<string>()->default_value("utf8"), "database character set")
     ("port", po::value<int>(), "port number to use")
     ("daemon", "run as a daemon")
     ("instances", po::value<int>()->default_value(5), "number of daemon instances to run")
-    ("pidfile", po::value<std::string>(), "file to write pid to");
+    ("pidfile", po::value<string>(), "file to write pid to")
+    ("logfile", po::value<string>(), "file to write log messages to");
 
   po::store(po::parse_command_line(argc, argv, desc), options);
   po::store(po::parse_environment(desc, "CGIMAP_"), options);
@@ -279,6 +283,11 @@ get_options(int argc, char **argv, po::variables_map &options) {
  */
 static void
 process_requests(int socket, const po::variables_map &options) {
+  // open any log file
+  if (options.count("logfile")) {
+    logger::initialise(options["logfile"].as<string>());
+  }
+
   // initialise FCGI
   if (FCGX_Init() != 0) {
     throw runtime_error("Couldn't initialise FCGX library.");
@@ -300,84 +309,99 @@ process_requests(int socket, const po::variables_map &options) {
   pqxx::nontransaction cache_x(*cache_con, "changeset_cache");
   cache<long int, changeset> changeset_cache(boost::bind(fetch_changeset, boost::ref(cache_x), _1), CACHE_SIZE);
 
-  logger() << "Initialised";
+  logger::message("Initialised");
 
   // enter the main loop
-  while(!terminate_requested && FCGX_Accept_r(&request) >= 0) {
-    try {
-      // read all the input data..?
-	
-      // validate the input
-      bbox bounds = validate_request(request);
-
-      pt::ptime start_time(pt::second_clock::local_time());
-      logger() << "Started request for " << bounds.minlat << "," << bounds.minlon << "," << bounds.maxlat << "," << bounds.maxlon;
-
-      // separate transaction for the request
-      pqxx::work x(*con);
-
-      // create temporary tables of nodes, ways and relations which
-      // are in or used by elements in the bbox
-      tmp_nodes tn(x, bounds);
-
-      // check how many nodes we got
-      pqxx::result res = x.exec("select count(*) from tmp_nodes");
-      int num_nodes = res[0][0].as<int>();
-      if (num_nodes > 50000) {
-	throw http::bad_request("You requested too many nodes (limit is "
-				"50000). Either request a smaller area, "
-				"or use planet.osm");
+  while (!terminate_requested) {
+    // process any reload request
+    if (reload_requested) {
+      if (options.count("logfile")) {
+	logger::initialise(options["logfile"].as<string>());
       }
 
-      tmp_ways tw(x);
+      reload_requested = false;
+    }
 
-      // get encoding to use
-      shared_ptr<http::encoding> encoding = get_encoding(request);
-
-      // write the response header
-      FCGX_FPrintF(request.out,
-		   "Status: 200 OK\r\n"
-		   "Content-Type: text/xml; charset=utf-8\r\n"
-		   "Content-Disposition: attachment; filename=\"map.osm\"\r\n"
-		   "Content-Encoding: %s\r\n"
-		   "Cache-Control: private, max-age=0, must-revalidate\r\n"
-		   "\r\n", encoding->name().c_str());
-	
-      // create the XML writer with the FCGI streams as output
-      shared_ptr<xml_writer::output_buffer> out =
-	shared_ptr<fcgi_output_buffer>(new fcgi_output_buffer(request));
-      out = encoding->output_buffer(out);
-      xml_writer writer(out, true);
-	
+    // get the next request
+    if (FCGX_Accept_r(&request) >= 0)
+    {
       try {
-	// call to write the map call
-	write_map(x, writer, bounds, changeset_cache);
+	// read all the input data..?
 
-      } catch (const xml_writer::write_error &e) {
-	// don't do anything - just go on to the next request.
+	// validate the input
+	bbox bounds = validate_request(request);
+
+	pt::ptime start_time(pt::second_clock::local_time());
+	logger::message(format("Started request for %1%,%2%,%3%,%4%") % bounds.minlat % bounds.minlon % bounds.maxlat % bounds.maxlon);
+
+	// separate transaction for the request
+	pqxx::work x(*con);
+
+	// create temporary tables of nodes, ways and relations which
+	// are in or used by elements in the bbox
+	tmp_nodes tn(x, bounds);
+
+	// check how many nodes we got
+	pqxx::result res = x.exec("select count(*) from tmp_nodes");
+	int num_nodes = res[0][0].as<int>();
+	if (num_nodes > 50000) {
+	  throw http::bad_request("You requested too many nodes (limit is "
+				  "50000). Either request a smaller area, "
+				  "or use planet.osm");
+	}
+
+	tmp_ways tw(x);
+
+	// get encoding to use
+	shared_ptr<http::encoding> encoding = get_encoding(request);
+
+	// write the response header
+	FCGX_FPrintF(request.out,
+		     "Status: 200 OK\r\n"
+		     "Content-Type: text/xml; charset=utf-8\r\n"
+		     "Content-Disposition: attachment; filename=\"map.osm\"\r\n"
+		     "Content-Encoding: %s\r\n"
+		     "Cache-Control: private, max-age=0, must-revalidate\r\n"
+		     "\r\n", encoding->name().c_str());
+	
+	// create the XML writer with the FCGI streams as output
+	shared_ptr<xml_writer::output_buffer> out =
+	  shared_ptr<fcgi_output_buffer>(new fcgi_output_buffer(request));
+	out = encoding->output_buffer(out);
+	xml_writer writer(out, true);
+	
+	try {
+	  // call to write the map call
+	  write_map(x, writer, bounds, changeset_cache);
+
+	} catch (const xml_writer::write_error &e) {
+	  // don't do anything - just go on to the next request.
 	  
+	} catch (const std::exception &e) {
+	  // errors here are unrecoverable (fatal to the request but maybe
+	  // not fatal to the process) since we already started writing to
+	  // the client.
+	  writer.start("error");
+	  writer.text(e.what());
+	  writer.end();
+	}
+
+	pt::ptime end_time(pt::second_clock::local_time());
+	logger::message(format("Completed request in %1%") % (end_time - start_time));
+      } catch (const http::exception &e) {
+	// errors here occur before we've started writing the response
+	// so we can send something helpful back to the client.
+	respond_error(e, request);
+
       } catch (const std::exception &e) {
-	// errors here are unrecoverable (fatal to the request but maybe
-	// not fatal to the process) since we already started writing to
-	// the client.
-	writer.start("error");
-	writer.text(e.what());
-	writer.end();
+	// catch an error here to provide feedback to the user
+	respond_error(http::server_error(e.what()), request);
+	
+	// re-throw the exception for higher-level handling
+	throw;
       }
-
-      pt::ptime end_time(pt::second_clock::local_time());
-      logger() << "Completed request in " << (end_time - start_time);
-    } catch (const http::exception &e) {
-      // errors here occur before we've started writing the response
-      // so we can send something helpful back to the client.
-      respond_error(e, request);
-
-    } catch (const std::exception &e) {
-      // catch an error here to provide feedback to the user
-      respond_error(http::server_error(e.what()), request);
-
-      // re-throw the exception for higher-level handling
-      throw;
+    } else if (errno != EINTR) {
+      throw runtime_error("error accepting request.");
     }
   }
 
@@ -393,6 +417,15 @@ static void
 terminate(int signum) {
   // termination has been requested
   terminate_requested = true;
+}
+
+/**
+ * SIGHUP handler.
+ */
+static void
+reload(int signum) {
+  // reload has been requested
+  reload_requested = true;
 }
 
 /**
@@ -415,13 +448,19 @@ daemonise(void) {
     throw runtime_error("setsid failed");
   }
 
-  // setup signal handler descriptor
+  // install a SIGTERM handler
   sa.sa_handler = terminate;
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = 0;
-
-  // install a SIGTERM handler
   if (sigaction(SIGTERM, &sa, NULL) < 0) {
+    throw runtime_error("sigaction failed");
+  }
+
+  // install a SIGHUP handler
+  sa.sa_handler = reload;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = 0;
+  if (sigaction(SIGHUP, &sa, NULL) < 0) {
     throw runtime_error("sigaction failed");
   }
 
@@ -464,7 +503,7 @@ main(int argc, char **argv) {
 
       // record our pid if requested
       if (options.count("pidfile")) {
-	std::ofstream pidfile(options["pidfile"].as<std::string>().c_str());
+	std::ofstream pidfile(options["pidfile"].as<string>().c_str());
 	pidfile << getpid() << std::endl;
       }
 
@@ -502,11 +541,20 @@ main(int argc, char **argv) {
 
 	  children_terminated = true;
 	}
+
+	// pass on any reload request to our children
+	if (reload_requested) {
+	  BOOST_FOREACH(pid, children) {
+	    kill(pid, SIGHUP);
+	  }
+
+	  reload_requested = false;
+	}
       }
 
       // remove any pid file
       if (options.count("pidfile")) {
-	remove(options["pidfile"].as<std::string>().c_str());
+	remove(options["pidfile"].as<string>().c_str());
       }
     }
     else
@@ -521,6 +569,7 @@ main(int argc, char **argv) {
     return 1;
 
   } catch (const std::exception &e) {
+    logger::message(e.what());
     std::cerr << "Exception: " << e.what() << std::endl;
     return 1;
 

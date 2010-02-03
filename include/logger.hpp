@@ -1,20 +1,26 @@
 #ifndef LOGGER_HPP
 #define LOGGER_HPP
 
-#include <iostream>
+#include <boost/format.hpp>
 
-class logger {
-public:
-  logger(void);
-  ~logger(void);
-  template <typename T> logger &operator<<(const T &t);
-};
+/**
+ * Contains support for logging.
+ */
+namespace logger {
 
-template<typename T> logger &
-logger::operator<<(const T &t)
-{
-  std::cout << t;
-  return *this;
+   /**
+    * Initialise logging.
+    */
+   void
+   initialise(const std::string &filename);
+
+   /**
+    * Log a message.
+    */
+   void
+   message(const std::string &m);
+   void
+   message(const boost::format &m);
 }
 
 #endif /* LOGGER_HPP */

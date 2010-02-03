@@ -56,8 +56,8 @@ tmp_nodes::tmp_nodes(pqxx::work &w,
 	<< ") and (visible = true)"
 	<< " limit 50001"; // limit here as a quick hack to reduce load...
 
-  logger() << "Creating tmp_nodes";
-  logger() << query.str();
+  logger::message("Creating tmp_nodes");
+  logger::message(query.str());
 
   // assume this throws if it fails?
   work.exec(query);
@@ -69,7 +69,7 @@ tmp_ways::tmp_ways(pqxx::work &w)
   work.exec("set enable_mergejoin=false");
   work.exec("set enable_hashjoin=false");
 
-  logger() << "Creating tmp_ways";
+  logger::message("Creating tmp_ways");
 
   work.exec("create temporary table tmp_ways as "
 	    "select distinct wn.id from current_way_nodes wn "
