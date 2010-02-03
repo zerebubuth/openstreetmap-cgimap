@@ -8,6 +8,7 @@
 #include <boost/date_time.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/program_options.hpp>
+#include <boost/foreach.hpp>
 #include <cmath>
 #include <stdexcept>
 #include <vector>
@@ -16,6 +17,8 @@
 #include <fcgiapp.h>
 #include <memory>
 #include <algorithm>
+#include <errno.h>
+#include <sys/wait.h>
 
 #include "bbox.hpp"
 #include "temp_tables.hpp"
@@ -38,6 +41,11 @@ namespace po = boost::program_options;
 
 #define MAX_AREA 0.25
 #define CACHE_SIZE 1000
+
+/**
+ * global flag set when we are asked to exit.
+ */
+static bool terminate_requested = false;
 
 /**
  * Lookup a string from the FCGI environment. Throws 500 error if the
@@ -228,9 +236,11 @@ private:
   FCGX_Request &r;
 };
 
+/**
+ * parse the comment line and environment for options.
+ */
 static void
-get_options(int argc, char **argv, po::variables_map &options)
-{
+get_options(int argc, char **argv, po::variables_map &options) {
   po::options_description desc("Allowed options");
 
   desc.add_options()
@@ -239,8 +249,11 @@ get_options(int argc, char **argv, po::variables_map &options)
     ("host", po::value<std::string>(), "database server host")
     ("username", po::value<std::string>(), "database user name")
     ("password", po::value<std::string>(), "database password")
-    ("charset", po::value<std::string>()->default_value("utf8"), "database character set");
-   
+    ("charset", po::value<std::string>()->default_value("utf8"), "database character set")
+    ("port", po::value<int>(), "port number to use")
+    ("daemon", "run as a daemon")
+    ("instances", po::value<int>()->default_value(5), "number of daemon instances to run");
+
   po::store(po::parse_command_line(argc, argv, desc), options);
   po::store(po::parse_environment(desc, "CGIMAP_"), options);
   po::notify(options);
@@ -253,118 +266,242 @@ get_options(int argc, char **argv, po::variables_map &options)
   if (options.count("dbname") == 0) {
     throw runtime_error("database name not specified");
   }
+
+  if (options.count("daemon") != 0 && options.count("port") == 0) {
+    throw runtime_error("a port number is required in daemon mode");
+  }
+}
+
+/**
+ * loop processing fasctgi requests until are asked to stop by
+ * somebody sending us a TERM signal.
+ */
+static void
+process_requests(int socket, const po::variables_map &options) {
+  // initialise FCGI
+  if (FCGX_Init() != 0) {
+    throw runtime_error("Couldn't initialise FCGX library.");
+  }
+
+  // get the parameters for the connection from the environment
+  // and connect to the database, throws exceptions if it fails.
+  auto_ptr<pqxx::connection> con = connect_db(options);
+  auto_ptr<pqxx::connection> cache_con = connect_db(options);
+
+  // create the request object for fcgi calls
+  FCGX_Request request;
+  if (FCGX_InitRequest(&request, socket, FCGI_FAIL_ACCEPT_ON_INTR) != 0) {
+    throw runtime_error("Couldn't initialise FCGX request structure.");
+  }
+
+  // start a transaction using a second connection just for looking up 
+  // users/changesets for the cache.
+  pqxx::nontransaction cache_x(*cache_con, "changeset_cache");
+  cache<long int, changeset> changeset_cache(boost::bind(fetch_changeset, boost::ref(cache_x), _1), CACHE_SIZE);
+
+  logger() << "Initialised";
+
+  // enter the main loop
+  while(!terminate_requested && FCGX_Accept_r(&request) >= 0) {
+    try {
+      // read all the input data..?
+	
+      // validate the input
+      bbox bounds = validate_request(request);
+
+      pt::ptime start_time(pt::second_clock::local_time());
+      logger() << "Started request for " << bounds.minlat << "," << bounds.minlon << "," << bounds.maxlat << "," << bounds.maxlon;
+
+      // separate transaction for the request
+      pqxx::work x(*con);
+
+      // create temporary tables of nodes, ways and relations which
+      // are in or used by elements in the bbox
+      tmp_nodes tn(x, bounds);
+
+      // check how many nodes we got
+      pqxx::result res = x.exec("select count(*) from tmp_nodes");
+      int num_nodes = res[0][0].as<int>();
+      if (num_nodes > 50000) {
+	throw http::bad_request("You requested too many nodes (limit is "
+				"50000). Either request a smaller area, "
+				"or use planet.osm");
+      }
+
+      tmp_ways tw(x);
+
+      // get encoding to use
+      shared_ptr<http::encoding> encoding = get_encoding(request);
+
+      // write the response header
+      FCGX_FPrintF(request.out,
+		   "Status: 200 OK\r\n"
+		   "Content-Type: text/xml; charset=utf-8\r\n"
+		   "Content-Disposition: attachment; filename=\"map.osm\"\r\n"
+		   "Content-Encoding: %s\r\n"
+		   "Cache-Control: private, max-age=0, must-revalidate\r\n"
+		   "\r\n", encoding->name().c_str());
+	
+      // create the XML writer with the FCGI streams as output
+      shared_ptr<xml_writer::output_buffer> out =
+	shared_ptr<fcgi_output_buffer>(new fcgi_output_buffer(request));
+      out = encoding->output_buffer(out);
+      xml_writer writer(out, true);
+	
+      try {
+	// call to write the map call
+	write_map(x, writer, bounds, changeset_cache);
+
+      } catch (const xml_writer::write_error &e) {
+	// don't do anything - just go on to the next request.
+	  
+      } catch (const std::exception &e) {
+	// errors here are unrecoverable (fatal to the request but maybe
+	// not fatal to the process) since we already started writing to
+	// the client.
+	writer.start("error");
+	writer.text(e.what());
+	writer.end();
+      }
+
+      pt::ptime end_time(pt::second_clock::local_time());
+      logger() << "Completed request in " << (end_time - start_time);
+    } catch (const http::exception &e) {
+      // errors here occur before we've started writing the response
+      // so we can send something helpful back to the client.
+      respond_error(e, request);
+
+    } catch (const std::exception &e) {
+      // catch an error here to provide feedback to the user
+      respond_error(http::server_error(e.what()), request);
+
+      // re-throw the exception for higher-level handling
+      throw;
+    }
+  }
+
+  // finish up
+  FCGX_Finish_r(&request);
+  FCGX_Free(&request, true);
+}
+
+/**
+ * SIGTERM handler.
+ */
+static void
+terminate(int signum) {
+  // termination has been requested
+  terminate_requested = true;
+}
+
+/**
+ * make the process into a daemon by detaching from the console.
+ */
+static void
+daemonise(void) {
+  pid_t pid;
+  struct sigaction sa;
+
+  // fork to make sure we aren't a session leader
+  if ((pid = fork()) < 0) {
+    throw runtime_error("fork failed.");
+  } else if (pid > 0) {
+    exit(0);
+  }
+
+  // start a new session
+  if (setsid() < 0) {
+    throw runtime_error("setsid failed");
+  }
+
+  // setup signal handler descriptor
+  sa.sa_handler = terminate;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = 0;
+
+  // install a SIGTERM handler
+  if (sigaction(SIGTERM, &sa, NULL) < 0) {
+    throw runtime_error("sigaction failed");
+  }
+
+  // close standard descriptors
+  close(0);
+  close(1);
+  close(2);
 }
 
 int
 main(int argc, char **argv) {
   try {
     po::variables_map options;
+    int socket;
 
     // get options
     get_options(argc, argv, options);
 
-    // initialise FCGI
-    if (FCGX_Init() != 0) {
-      throw runtime_error("Couldn't initialise FCGX library.");
+    // get the socket to use
+    if (options.count("port")) {
+      ostringstream path;
+
+      path << ":" << options["port"].as<int>();
+
+      if ((socket = FCGX_OpenSocket(path.str().c_str(), 5)) < 0) {
+	throw runtime_error("Couldn't open FCGX socket.");
+      }
+    } else {
+      socket = 0;
     }
 
-    // get the parameters for the connection from the environment
-    // and connect to the database, throws exceptions if it fails.
-    auto_ptr<pqxx::connection> con = connect_db(options);
-    auto_ptr<pqxx::connection> cache_con = connect_db(options);
+    // are we supposed to run as a daemon?
+    if (options.count("daemon")) {
+      int instances = options["instances"].as<int>();
+      bool children_terminated = false;
+      std::set<pid_t> children;
 
-    // create the request object for fcgi calls
-    FCGX_Request request;
-    if (FCGX_InitRequest(&request, 0, 0) != 0) {
-      throw runtime_error("Couldn't initialise FCGX request structure.");
-    }
+      // make ourselves into a daemon
+      daemonise();
 
-    // start a transaction using a second connection just for looking up 
-    // users/changesets for the cache.
-    pqxx::nontransaction cache_x(*cache_con, "changeset_cache");
-    cache<long int, changeset> changeset_cache(boost::bind(fetch_changeset, boost::ref(cache_x), _1), CACHE_SIZE);
+      // loop until we have been asked to stop and have no more children
+      while (!terminate_requested || children.size() > 0) {
+	pid_t pid;
 
-    logger() << "Initialised";
+	// start more children if we don't have enough
+	while (!terminate_requested && children.size() < instances) {
+	  if ((pid = fork()) < 0)
+	  {
+	    throw runtime_error("fork failed.");
+	  }
+	  else if (pid == 0)
+	  {
+	    process_requests(socket, options);
+	    exit(0);
+	  }
 
-    // enter the main loop
-    while(FCGX_Accept_r(&request) >= 0) {
-      try {
-	// read all the input data..?
-	
-	// validate the input
-	bbox bounds = validate_request(request);
-
-        pt::ptime start_time(pt::second_clock::local_time());
-        logger() << "Started request for " << bounds.minlat << "," << bounds.minlon << "," << bounds.maxlat << "," << bounds.maxlon;
-
-	// separate transaction for the request
-	pqxx::work x(*con);
-
-	// create temporary tables of nodes, ways and relations which
-	// are in or used by elements in the bbox
-	tmp_nodes tn(x, bounds);
-
-	// check how many nodes we got
-	pqxx::result res = x.exec("select count(*) from tmp_nodes");
-	int num_nodes = res[0][0].as<int>();
-	if (num_nodes > 50000) {
-	  throw http::bad_request("You requested too many nodes (limit is "
-				  "50000). Either request a smaller area, "
-				  "or use planet.osm");
+	  children.insert(pid);
 	}
 
-	tmp_ways tw(x);
-
-	// get encoding to use
-	shared_ptr<http::encoding> encoding = get_encoding(request);
-
-	// write the response header
-	FCGX_FPrintF(request.out,
-		     "Status: 200 OK\r\n"
-		     "Content-Type: text/xml; charset=utf-8\r\n"
-		     "Content-Disposition: attachment; filename=\"map.osm\"\r\n"
-		     "Content-Encoding: %s\r\n"
-		     "Cache-Control: private, max-age=0, must-revalidate\r\n"
-		     "\r\n", encoding->name().c_str());
-	
-	// create the XML writer with the FCGI streams as output
-	shared_ptr<xml_writer::output_buffer> out =
-	  shared_ptr<fcgi_output_buffer>(new fcgi_output_buffer(request));
-	out = encoding->output_buffer(out);
-	xml_writer writer(out, true);
-	
-	try {
-	  // call to write the map call
-	  write_map(x, writer, bounds, changeset_cache);
-
-	} catch (const xml_writer::write_error &e) {
-	  // don't do anything - just go on to the next request.
-	  
-	} catch (const std::exception &e) {
-	  // errors here are unrecoverable (fatal to the request but maybe
-	  // not fatal to the process) since we already started writing to
-	  // the client.
-	  writer.start("error");
-	  writer.text(e.what());
-	  writer.end();
+	// wait for a child to exit
+	if ((pid = wait(NULL)) >= 0) {
+	  children.erase(pid);
+	} else if (errno != EINTR) {
+	  throw runtime_error("wait failed.");
 	}
 
-        pt::ptime end_time(pt::second_clock::local_time());
-        logger() << "Completed request in " << (end_time - start_time);
-      } catch (const http::exception &e) {
-	// errors here occur before we've started writing the response
-	// so we can send something helpful back to the client.
-	respond_error(e, request);
+	// pass on any termination request to our children
+	if (terminate_requested && !children_terminated) {
+	  BOOST_FOREACH(pid, children) {
+	    kill(pid, SIGTERM);
+	  }
 
-      } catch (const std::exception &e) {
-	// catch an error here to provide feedback to the user
-	respond_error(http::server_error(e.what()), request);
-
-	// re-throw the exception for higher-level handling
-	throw;
+	  children_terminated = true;
+	}
       }
     }
-
+    else
+    {
+      // do work here
+      process_requests(socket, options);
+    }
   } catch (const pqxx::sql_error &er) {
     // Catch-all for any other postgres exceptions
     std::cerr << "Error: " << er.what() << std::endl
