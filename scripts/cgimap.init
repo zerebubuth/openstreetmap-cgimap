@@ -1,0 +1,37 @@
+#!/bin/bash
+
+CGIMAP_HOST=localhost; export CGIMAP_HOST
+CGIMAP_DBNAME=openstreetmap; export CGIMAP_DBNAME
+CGIMAP_USERNAME=openstreetmap; export CGIMAP_USERNAME
+CGIMAP_PASSWORD=openstreetmap; export CGIMAP_PASSWORD
+
+CGIMAP_PIDFILE=cgimap.pid; export CGIMAP_PIDFILE
+CGIMAP_LOGFILE=cgimap.log; export CGIMAP_LOGFILE
+
+start() {
+  start-stop-daemon --start --chuid rails --exec /home/rails/bin/map -- --daemon --port=8000 --instances=30
+}
+
+stop() {
+  start-stop-daemon --stop --retry 300 --pidfile $CGIMAP_PIDFILE --exec /home/rails/bin/map
+}
+
+reload() {
+  start-stop-daemon --stop --signal HUP --pidfile $CGIMAP_PIDFILE --exec /home/rails/bin/map
+}
+
+case "$1" in
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  reload)
+    reload
+    ;;
+  restart)
+    stop || exit $?
+    start
+    ;;
+esac
