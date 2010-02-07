@@ -174,6 +174,7 @@ respond_error(const http::exception &e, FCGX_Request &r) {
   ostringstream ostr;
   ostr << "Status: " << e.code() << " " << e.header() << "\r\n"
        << "Content-Type: text/html\r\n"
+       << "Error: " << e.what() << "\r\n"
        << "\r\n"
        << "<html><head><title>" << e.header() << "</title></head>"
        << "<body><p>" << e.what() << "</p></body></html>\n";
