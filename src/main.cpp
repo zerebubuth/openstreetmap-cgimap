@@ -137,8 +137,8 @@ validate_request(FCGX_Request &request) {
     throw http::method_not_allowed("Only the GET method is supported for "
 				   "map requests.");
 
-  const map<string, string> params = 
-    http::parse_params(get_query_string(request));
+  string decoded = http::urldecode(get_query_string(request));
+  const map<string, string> params = http::parse_params(decoded);
   map<string, string>::const_iterator itr = params.find("bbox");
 
   bbox bounds;

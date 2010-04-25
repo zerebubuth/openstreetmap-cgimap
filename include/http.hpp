@@ -91,10 +91,15 @@ namespace http {
   };
 
   /**
+   * Decodes a url-encoded string.
+   */
+  std::string urldecode(const std::string &s);
+
+  /**
    * Parses a query string into a key-value map.
    *
-   * Expects an URL-encoded query string and returns a map with strings
-   * in the key and value parts URL-encoded as well.
+   * The string should already have been url-decoded (i.e: no %-encoded
+   * chars remain).
    */
   std::map<std::string, std::string>
   parse_params(const std::string &p);

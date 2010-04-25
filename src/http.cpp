@@ -3,12 +3,67 @@
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
+#include <iterator> 	// for distance
+#include <cctype> 	// for toupper, isxdigit
 
 namespace al = boost::algorithm;
 using std::string;
 using std::map;
 using std::vector;
 using boost::shared_ptr;
+
+namespace {
+/**
+ * Functions hexToChar and form_urldecode were taken from GNU CGICC by 
+ * Stephen F. Booth and Sebastien Diaz, which is also released under the
+ * GPL.
+ */
+char
+hexToChar(char first,
+	  char second)
+{
+  int digit;
+  
+  digit = (first >= 'A' ? ((first & 0xDF) - 'A') + 10 : (first - '0'));
+  digit *= 16;
+  digit += (second >= 'A' ? ((second & 0xDF) - 'A') + 10 : (second - '0'));
+  return static_cast<char>(digit);
+}
+
+std::string
+form_urldecode(const std::string& src)
+{
+  std::string result;
+  std::string::const_iterator iter;
+  char c;
+
+  for(iter = src.begin(); iter != src.end(); ++iter) {
+    switch(*iter) {
+    case '+':
+      result.append(1, ' ');
+      break;
+    case '%':
+      // Don't assume well-formed input
+      if(std::distance(iter, src.end()) >= 2
+	 && std::isxdigit(*(iter + 1)) && std::isxdigit(*(iter + 2))) {
+	c = *++iter;
+	result.append(1, hexToChar(c, *++iter));
+      }
+      // Just pass the % through untouched
+      else {
+	result.append(1, '%');
+      }
+      break;
+    
+    default:
+      result.append(1, *iter);
+      break;
+    }
+  }
+  
+  return result;
+}
+}
 
 namespace http {
 
@@ -43,6 +98,11 @@ namespace http {
     
   not_acceptable::not_acceptable(const string &message)
     : exception(406, "Not Acceptable", message) {}  
+
+  string
+  urldecode(const string &s) {
+    return form_urldecode(s);
+  }
 
   map<string, string>
   parse_params(const string &p) {
