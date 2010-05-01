@@ -77,3 +77,19 @@ tmp_ways::tmp_ways(pqxx::work &w)
   work.exec("create index tmp_ways_idx on tmp_ways(id)");
 }
 
+tmp_relations::tmp_relations(pqxx::work &w) 
+  : work(w) {
+  // we already did this in tmp_nodes and tmp_ways, but three times is a charm
+  work.exec("set enable_mergejoin=false");
+  work.exec("set enable_hashjoin=false");
+
+  logger::message("Creating tmp_relations");
+
+  work.exec("create temporary table tmp_relations as "
+	    "select distinct rm.id from current_relation_members rm "
+	    "where (rm.member_type='Node' and rm.member_id in (select id from tmp_nodes)) "
+	    "or (rm.member_type='Way' and rm.member_id in (select id from tmp_ways))");
+  work.exec("insert into tmp_relations select id from current_relation_members rm "
+	    "where rm.member_type='Relation' and rm.member_id in (select id from tmp_relations) "
+	    "and id not in (select id from tmp_relations)");
+}

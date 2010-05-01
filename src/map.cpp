@@ -184,11 +184,7 @@ map_writer::write() {
     pqxx::result relations = w.exec(
       "select r.id, r.visible, r.version, r.changeset_id, "
       "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as timestamp from "
-      "current_relations r join (select m.id from "
-      "current_relation_members m join tmp_nodes n on m.member_id"
-      "=n.id and m.member_type='Node' union distinct select m.id from "
-      "current_relation_members m join tmp_ways w on m.member_id"
-      "=w.id and m.member_type='Way') x on x.id=r.id where r.visible = true");
+      "current_relations r join tmp_relations x on x.id=r.id where r.visible = true");
     for (pqxx::result::const_iterator itr = relations.begin(); 
 	 itr != relations.end(); ++itr) {
       write_relation(*itr);

@@ -352,6 +352,7 @@ process_requests(int socket, const po::variables_map &options) {
 	}
 
 	tmp_ways tw(x);
+	tmp_relations tr(x);
 
 	// get encoding to use
 	shared_ptr<http::encoding> encoding = get_encoding(request);

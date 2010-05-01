@@ -20,5 +20,11 @@ private:
   pqxx::work &work;
 };
 
+class tmp_relations {
+public:
+  tmp_relations(pqxx::work &work);
+private:
+  pqxx::work &work;
+};
 
 #endif /* TEMP_TABLES_HPP */
