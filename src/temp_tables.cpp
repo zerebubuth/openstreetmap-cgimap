@@ -85,12 +85,15 @@ tmp_relations::tmp_relations(pqxx::work &w)
 
   logger::message("Creating tmp_relations");
 
-  work.exec("create temporary table tmp_relations as select distinct rm.id from "
-	    "current_relation_members rm where rm.member_type='Node' and "
-	    "rm.member_id in (select id from tmp_nodes) union distinct select "
-	    "distinct rm2.id from current_relation_members rm2 where "
-	    "rm2.member_type='Way' and rm2.member_id in (select id from tmp_ways)");
-  work.exec("insert into tmp_relations select id from current_relation_members rm "
+  work.exec("create temporary table tmp_relations as "
+	    "select distinct id from current_relation_members rm where rm.member_type='Way' "
+	    "and rm.member_id in (select id from tmp_ways)");
+  work.exec("create index tmp_relations_idx on tmp_relations(id)");
+  work.exec("insert into tmp_relations select distinct id from current_relation_members rm "
+	    "where rm.member_type='Node' and rm.member_id in (select distinct "
+	    "node_id from current_way_nodes where id in (select id from tmp_ways)) "
+	    "and id not in (select id from tmp_relations)");
+  work.exec("insert into tmp_relations select distinct id from current_relation_members rm "
 	    "where rm.member_type='Relation' and rm.member_id in (select id from tmp_relations) "
 	    "and id not in (select id from tmp_relations)");
 }
