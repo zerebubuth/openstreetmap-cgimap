@@ -89,6 +89,9 @@ tmp_relations::tmp_relations(pqxx::work &w)
 	    "select distinct id from current_relation_members rm where rm.member_type='Way' "
 	    "and rm.member_id in (select id from tmp_ways)");
   work.exec("create index tmp_relations_idx on tmp_relations(id)");
+  work.exec("insert into tmp_relations select distinct rm.id from current_relation_members rm "
+	    "where rm.member_type='Node' and rm.member_id in (select n.id from tmp_nodes n) "
+	    "and rm.id not in (select id from tmp_relations)");
   work.exec("insert into tmp_relations select distinct id from current_relation_members rm "
 	    "where rm.member_type='Node' and rm.member_id in (select distinct "
 	    "node_id from current_way_nodes where id in (select id from tmp_ways)) "
