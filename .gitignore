@@ -9,8 +9,12 @@ config.status
 configure
 depcomp
 install-sh
+map
 missing
 src/.deps/
 src/Makefile
 src/Makefile.in
 src/*.o
+*~
+include/*~
+src/*~
