@@ -4,22 +4,16 @@
 #include <string>
 #include <stdexcept>
 #include <boost/shared_ptr.hpp>
+#include <boost/noncopyable.hpp>
+#include "output_buffer.hpp"
 
 /**
  * Writes UTF-8 output to a file or stdout.
  */
-class xml_writer {
+class xml_writer 
+  : public boost::noncopyable {
 public:
  
-  /**
-   * Implement this interface to provide custom output.
-   */
-  struct output_buffer {
-    virtual int write(const char *buffer, int len) = 0;
-    virtual int close() = 0;
-    virtual ~output_buffer();
-  };
-
   /**
    * Thrown when writing fails.
    */

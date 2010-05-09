@@ -5,6 +5,7 @@
 #include "bbox.hpp"
 #include "cache.hpp"
 #include "changeset.hpp"
+#include "output_formatter.hpp"
 #include <pqxx/pqxx>
 
 /**
@@ -13,8 +14,7 @@
  * cache rather than joined in SQL.
  */
 void write_map(pqxx::work &work,
-	       xml_writer &writer,
-	       const bbox &bounds,
-	       cache<long int, changeset> &changeset_cache);
+	       output_formatter &formatter,
+	       const bbox &bounds);
 
 #endif /* MAP_HPP */

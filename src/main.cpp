@@ -28,6 +28,9 @@
 #include "map.hpp"
 #include "http.hpp"
 #include "logger.hpp"
+#include "xml_formatter.hpp"
+#include "json_writer.hpp"
+#include "json_formatter.hpp"
 
 using std::runtime_error;
 using std::vector;
@@ -217,7 +220,7 @@ connect_db(const po::variables_map &options) {
  * library.
  */
 class fcgi_output_buffer
-  : public xml_writer::output_buffer {
+  : public output_buffer {
 public:
   virtual int write(const char *buffer, int len) {
     return FCGX_PutStr(buffer, len, r.out);
@@ -367,14 +370,23 @@ process_requests(int socket, const po::variables_map &options) {
 		     "\r\n", encoding->name().c_str());
 	
 	// create the XML writer with the FCGI streams as output
-	shared_ptr<xml_writer::output_buffer> out =
+	shared_ptr<output_buffer> out =
 	  shared_ptr<fcgi_output_buffer>(new fcgi_output_buffer(request));
-	out = encoding->output_buffer(out);
+	out = encoding->buffer(out);
+#ifdef HAVE_YAJL
+	json_writer writer(out, true);
+#else
 	xml_writer writer(out, true);
+#endif
 	
 	try {
 	  // call to write the map call
-	  write_map(x, writer, bounds, changeset_cache);
+#ifdef HAVE_YAJL
+	  json_formatter formatter(writer, changeset_cache);
+#else
+	  xml_formatter formatter(writer, changeset_cache);
+#endif
+	  write_map(x, formatter, bounds);
 
 	} catch (const xml_writer::write_error &e) {
 	  // don't do anything - just go on to the next request.
@@ -383,9 +395,11 @@ process_requests(int socket, const po::variables_map &options) {
 	  // errors here are unrecoverable (fatal to the request but maybe
 	  // not fatal to the process) since we already started writing to
 	  // the client.
+#ifndef HAVE_YAJL
 	  writer.start("error");
 	  writer.text(e.what());
 	  writer.end();
+#endif
 	}
 
 	pt::ptime end_time(pt::second_clock::local_time());

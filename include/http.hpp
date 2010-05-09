@@ -8,6 +8,7 @@
 
 #include "writer.hpp"
 #include "zlib.hpp"
+#include "output_buffer.hpp"
 
 /**
  * Contains the generic HTTP methods and classes involved in the
@@ -117,8 +118,8 @@ namespace http {
     const std::string &name(void) const {
       return name_;
     };
-    virtual boost::shared_ptr<xml_writer::output_buffer>
-    output_buffer(boost::shared_ptr<xml_writer::output_buffer> out) {
+    virtual boost::shared_ptr<output_buffer> 
+    buffer(boost::shared_ptr<output_buffer> out) {
       return out;
     }
   };
@@ -137,8 +138,8 @@ namespace http {
   public:
     deflate(void)
       : encoding("deflate") {};
-    virtual boost::shared_ptr<xml_writer::output_buffer>
-    output_buffer(boost::shared_ptr<xml_writer::output_buffer> out) {
+    virtual boost::shared_ptr<output_buffer>
+    buffer(boost::shared_ptr<output_buffer> out) {
       return boost::shared_ptr<zlib_output_buffer>(new zlib_output_buffer(out, zlib_output_buffer::zlib));
     }
   };
@@ -149,8 +150,8 @@ namespace http {
   public:
     gzip(void)
       : encoding("gzip") {};
-    virtual boost::shared_ptr<xml_writer::output_buffer>
-    output_buffer(boost::shared_ptr<xml_writer::output_buffer> out) {
+    virtual boost::shared_ptr<output_buffer>
+    buffer(boost::shared_ptr<output_buffer> out) {
       return boost::shared_ptr<zlib_output_buffer>(new zlib_output_buffer(out, zlib_output_buffer::gzip));
     }
   };

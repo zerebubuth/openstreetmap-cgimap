@@ -3,7 +3,7 @@
 
 #include "zlib.hpp"
 
-zlib_output_buffer::zlib_output_buffer(boost::shared_ptr<xml_writer::output_buffer> o,
+zlib_output_buffer::zlib_output_buffer(boost::shared_ptr<output_buffer> o,
                                        zlib_output_buffer::mode m)
   : out(o) {
   int windowBits;

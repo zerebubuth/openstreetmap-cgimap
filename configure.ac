@@ -36,6 +36,22 @@ FCGI_CFLAGS="-I${FCGI_PREFIX}/include"
 AC_SUBST(FCGI_LIBS)
 AC_SUBST(FCGI_CFLAGS)
 
+AC_MSG_CHECKING(--enable-yajl argument)
+AC_ARG_ENABLE(yajl,
+    [  --enable-yajl         Enable JSON output with the YAJL library.],
+    [enable_yajl=$enableval],
+    [enable_yajl="no"])
+AC_MSG_RESULT($enable_yajl)
+AS_IF([test "x$enable_yajl" != xno],
+            [AC_CHECK_LIB([yajl], [yajl_gen_alloc2],
+              [AC_SUBST([YAJL_LIBS], ["-lyajl"])
+               AC_DEFINE([HAVE_YAJL], [1],
+                         [Define if you have YAJL JSON library])
+              ],
+              [AC_MSG_FAILURE(
+                 [--enable-yajl was given, but test for YAJL failed])])])
+AM_CONDITIONAL([HAVE_YAJL], [test "x$enable_yajl" != xno])
+
 AC_CONFIG_FILES([
 	Makefile
 	src/Makefile])
