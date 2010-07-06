@@ -128,7 +128,7 @@ void
 xml_writer::attribute(const std::string &name, double value) {
   int rc = xmlTextWriterWriteFormatAttribute(pimpl->writer, 
 					     BAD_CAST name.c_str(),
-					     "%.9g", value);
+					     "%.7f", value);
   if (rc < 0) {
     throw write_error("cannot write double-precision attribute.");
   }
