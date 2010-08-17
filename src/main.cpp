@@ -31,6 +31,10 @@
 #include "xml_formatter.hpp"
 #include "json_writer.hpp"
 #include "json_formatter.hpp"
+#include "output_formatter.hpp"
+#include "output_writer.hpp"
+#include "handler.hpp"
+#include "routes.hpp"
 
 using std::runtime_error;
 using std::vector;
@@ -44,7 +48,6 @@ using boost::format;
 namespace pt = boost::posix_time;
 namespace po = boost::program_options;
 
-#define MAX_AREA 0.25
 #define CACHE_SIZE 1000
 
 /**
@@ -52,67 +55,6 @@ namespace po = boost::program_options;
  */
 static bool terminate_requested = false;
 static bool reload_requested = false;
-
-/**
- * Lookup a string from the FCGI environment. Throws 500 error if the
- * string isn't there.
- */
-string
-fcgi_get_env(FCGX_Request &req, const char* name) {
-  assert(name);
-  const char* v = FCGX_GetParam(name, req.envp);
-
-  // since the map script is so simple i'm just going to assume that
-  // any time we fail to get an environment variable is a fatal error.
-  if (v == NULL) {
-    ostringstream ostr;
-    ostr << "FCGI didn't set the $" << name << " environment variable.";
-    throw http::server_error(ostr.str());
-  }
-
-  return string(v);
-}
-
-/**
- * get a query string by hook or by crook.
- *
- * the $QUERY_STRING variable is supposed to be set, but it isn't if 
- * cgimap is invoked on the 404 path, which seems to be a pretty common
- * case for doing routing/queueing in lighttpd. in that case, try and
- * parse the $REQUEST_URI.
- */
-string
-get_query_string(FCGX_Request &req) {
-  // try the query string that's supposed to be present first
-  const char *query_string = FCGX_GetParam("QUERY_STRING", req.envp);
-  
-  // if that isn't present, then this may be being invoked as part of a
-  // 404 handler, so look at the request uri instead.
-  if ((query_string == NULL) || (strlen(query_string) == 0)) {
-    const char *request_uri = FCGX_GetParam("REQUEST_URI", req.envp);
-
-    if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
-      // fail. something has obviously gone massively wrong.
-      ostringstream ostr;
-      ostr << "FCGI didn't set the $QUERY_STRING or $REQUEST_URI "
-	   << "environment variables.";
-      throw http::server_error(ostr.str());
-    }
-
-    const char *request_uri_end = request_uri + strlen(request_uri);
-    // i think the only valid position for the '?' char is at the beginning
-    // of the query string.
-    const char *question_mark = std::find(request_uri, request_uri_end, '?');
-    if (question_mark == request_uri_end) {
-      return string();
-    } else {
-      return string(question_mark + 1);
-    }
-
-  } else {
-    return string(query_string);
-  }
-}
 
 /**
  * get encoding to use for response.
@@ -127,49 +69,6 @@ get_encoding(FCGX_Request &req) {
   else {
      return shared_ptr<http::identity>(new http::identity());
   }
-}
-
-/**
- * Validates an FCGI request, returning the valid bounding box or 
- * throwing an error if there was no valid bounding box.
- */
-bbox
-validate_request(FCGX_Request &request) {
-  // check that the REQUEST_METHOD is a GET
-  if (fcgi_get_env(request, "REQUEST_METHOD") != "GET") 
-    throw http::method_not_allowed("Only the GET method is supported for "
-				   "map requests.");
-
-  string decoded = http::urldecode(get_query_string(request));
-  const map<string, string> params = http::parse_params(decoded);
-  map<string, string>::const_iterator itr = params.find("bbox");
-
-  bbox bounds;
-  if ((itr == params.end()) ||
-      !bounds.parse(itr->second)) {
-    throw http::bad_request("The parameter bbox is required, and must be "
-			    "of the form min_lon,min_lat,max_lon,max_lat.");
-  }
-
-  // clip the bounding box against the world
-  bounds.clip_to_world();
-
-  // check that the bounding box is within acceptable limits. these
-  // limits taken straight from the ruby map implementation.
-  if (!bounds.valid()) {
-    throw http::bad_request("The latitudes must be between -90 and 90, "
-			    "longitudes between -180 and 180 and the "
-			    "minima must be less than the maxima.");
-  }
-
-  if (bounds.area() > MAX_AREA) {
-    ostringstream ostr;
-    ostr << "The maximum bbox size is " << MAX_AREA << ", and your request "
-      "was too large. Either request a smaller area, or use planet.osm";
-    throw http::bad_request(ostr.str());
-  }
-
-  return bounds;
 }
 
 void
@@ -332,34 +231,24 @@ process_requests(int socket, const po::variables_map &options) {
       try {
 	// read all the input data..?
 
-	// validate the input
-	bbox bounds = validate_request(request);
-
+	// figure how to handle the request
+	handler_ptr_t handler = route_request(request);
+	
+	// request start logging
+	string request_name = handler->log_name();
 	pt::ptime start_time(pt::second_clock::local_time());
-	logger::message(format("Started request for %1%,%2%,%3%,%4%") % bounds.minlat % bounds.minlon % bounds.maxlat % bounds.maxlon);
+	logger::message(format("Started request for %1%") % request_name);
 
 	// separate transaction for the request
 	pqxx::work x(*con);
 
-	// create temporary tables of nodes, ways and relations which
-	// are in or used by elements in the bbox
-	tmp_nodes tn(x, bounds);
-
-	// check how many nodes we got
-	pqxx::result res = x.exec("select count(*) from tmp_nodes");
-	int num_nodes = res[0][0].as<int>();
-	if (num_nodes > 50000) {
-	  throw http::bad_request("You requested too many nodes (limit is "
-				  "50000). Either request a smaller area, "
-				  "or use planet.osm");
-	}
-
-	tmp_ways tw(x);
-	tmp_relations tr(x);
+	// constructor of responder handles dynamic validation (i.e: with db access).
+	responder_ptr_t responder = handler->responder(x);
 
 	// get encoding to use
 	shared_ptr<http::encoding> encoding = get_encoding(request);
 
+	// TODO: use handler/responder to setup response headers.
 	// write the response header
 	FCGX_FPrintF(request.out,
 		     "Status: 200 OK\r\n"
@@ -373,37 +262,39 @@ process_requests(int socket, const po::variables_map &options) {
 	shared_ptr<output_buffer> out =
 	  shared_ptr<fcgi_output_buffer>(new fcgi_output_buffer(request));
 	out = encoding->buffer(out);
+
+	auto_ptr<output_writer> o_writer;
+	auto_ptr<output_formatter> o_formatter;
 #ifdef HAVE_YAJL
-	json_writer writer(out, true);
+	if (handler->format() == formats::JSON) {
+	  json_writer *jwriter = new json_writer(out, true);
+	  o_writer = auto_ptr<output_writer>(jwriter);
+	  o_formatter = auto_ptr<output_formatter>(new json_formatter(*jwriter, changeset_cache));
+	} else {
 #else
-	xml_writer writer(out, true);
+	  writer *xwriter = new writer(out, true);
+	  o_writer = auto_ptr<output_writer>(xwriter);
+	  o_formatter = auto_ptr<output_formatter>(new xml_formatter(*xwriter, changeset_cache));
 #endif
+	}
 	
 	try {
-	  // call to write the map call
-#ifdef HAVE_YAJL
-	  json_formatter formatter(writer, changeset_cache);
-#else
-	  xml_formatter formatter(writer, changeset_cache);
-#endif
-	  write_map(x, formatter, bounds);
+	  // call to write the response
+	  responder->write(o_formatter);
 
-	} catch (const xml_writer::write_error &e) {
+	} catch (const output_writer::write_error &e) {
 	  // don't do anything - just go on to the next request.
 	  
 	} catch (const std::exception &e) {
 	  // errors here are unrecoverable (fatal to the request but maybe
 	  // not fatal to the process) since we already started writing to
 	  // the client.
-#ifndef HAVE_YAJL
-	  writer.start("error");
-	  writer.text(e.what());
-	  writer.end();
-#endif
+	  o_writer->error(e.what());
 	}
 
 	pt::ptime end_time(pt::second_clock::local_time());
-	logger::message(format("Completed request in %1%") % (end_time - start_time));
+	logger::message(format("Completed request for %1% in %2%") % request_name % (end_time - start_time));
+
       } catch (const http::exception &e) {
 	// errors here occur before we've started writing the response
 	// so we can send something helpful back to the client.

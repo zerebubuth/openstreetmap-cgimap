@@ -4,25 +4,16 @@
 #include <string>
 #include <stdexcept>
 #include <boost/shared_ptr.hpp>
-#include <boost/noncopyable.hpp>
 #include "output_buffer.hpp"
+#include "output_writer.hpp"
 
 /**
  * Writes UTF-8 output to a file or stdout.
  */
 class xml_writer 
-  : public boost::noncopyable {
+  : public output_writer {
 public:
  
-  /**
-   * Thrown when writing fails.
-   */
-  class write_error
-    : public std::runtime_error {
-  public:
-    write_error(const char *message);
-  };
-
   // create a new XML writer writing to file_name, which can be 
   // "-" for stdout.
   xml_writer(const std::string &file_name, bool indent = false);
@@ -31,7 +22,7 @@ public:
   xml_writer(boost::shared_ptr<output_buffer> &out, bool indent = false);
 
   // closes and flushes the XML writer
-  ~xml_writer();
+  ~xml_writer() throw();
 
   // begin a new element with the given name
   void start(const std::string &name);
@@ -57,6 +48,8 @@ public:
 
   // flushes the output buffer
   void flush();
+
+  void error(const std::string &);
 
 private:
 

@@ -16,6 +16,11 @@ PKG_CHECK_MODULES(LIBPQXX, libpqxx >= 2.6.9)
 AC_SUBST(LIBPQXX_CFLAGS)
 AC_SUBST(LIBPQXX_LIBS)
 
+#m4_include([aclocal/ax_boost_base.m4])
+#m4_include([aclocal/ax_boost_regex.m4])
+#m4_include([aclocal/ax_boost_program_options.m4])
+#m4_include([aclocal/ax_check_zlib.m4])
+
 AX_BOOST_BASE(1.34.1)
 AX_BOOST_REGEX
 AX_BOOST_PROGRAM_OPTIONS

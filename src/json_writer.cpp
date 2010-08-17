@@ -43,7 +43,7 @@ json_writer::json_writer(boost::shared_ptr<output_buffer> &out, bool indent)
   }
 }
 
-json_writer::~json_writer() {
+json_writer::~json_writer() throw() {
   yajl_gen_clear(pimpl->gen);
   yajl_gen_free(pimpl->gen);
   delete pimpl;
@@ -105,4 +105,12 @@ json_writer::start_array() {
 void 
 json_writer::end_array() {
   yajl_gen_array_close(pimpl->gen);  
+}
+
+void
+json_writer::error(const std::string &s) {
+  start_object();
+  object_key("error");
+  entry_string(s);
+  end_object();
 }

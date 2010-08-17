@@ -74,7 +74,7 @@ xml_writer::init(bool indent) {
   }
 }
 
-xml_writer::~xml_writer() {
+xml_writer::~xml_writer() throw() {
   // close and flush the xml writer object. note - if this fails then
   // there isn't much we can do, as this object is going to be deleted
   // anyway.
@@ -192,6 +192,13 @@ xml_writer::flush() {
   if (xmlTextWriterFlush(pimpl->writer) < 0) {
     throw write_error("cannot flush output stream");
   }
+}
+
+void
+xml_writer::error(const std::string &s) {
+  start("error");
+  text(s);
+  end();
 }
 
 // TODO: move this to its own file

@@ -92,6 +92,16 @@ namespace http {
   };
 
   /**
+   * The request resource could not be found, or is not handled
+   * by the server.
+   */
+  class not_found
+    : public exception {
+  public:
+    not_found(const std::string &uri);
+  };
+
+  /**
    * Decodes a url-encoded string.
    */
   std::string urldecode(const std::string &s);
