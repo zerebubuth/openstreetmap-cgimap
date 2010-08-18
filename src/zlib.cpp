@@ -102,6 +102,12 @@ zlib_output_buffer::close(void)
   return out->close();
 }
 
+int
+zlib_output_buffer::written(void)
+{
+   return stream.total_in;
+}
+
 void
 zlib_output_buffer::flush_output(void)
 {

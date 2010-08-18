@@ -17,6 +17,7 @@ public:
   struct output_buffer {
     virtual int write(const char *buffer, int len) = 0;
     virtual int close() = 0;
+    virtual int written() = 0;
     virtual ~output_buffer();
   };
 

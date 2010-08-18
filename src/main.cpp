@@ -220,6 +220,7 @@ class fcgi_output_buffer
   : public xml_writer::output_buffer {
 public:
   virtual int write(const char *buffer, int len) {
+    w += len;
     return FCGX_PutStr(buffer, len, r.out);
   }
 
@@ -229,15 +230,20 @@ public:
     return 0;
   }
 
+  virtual int written() {
+    return w;
+  }
+
   virtual ~fcgi_output_buffer() {
   }
 
   fcgi_output_buffer(FCGX_Request &req) 
-    : r(req) {
+    : r(req), w(0) {
   }
 
 private:
   FCGX_Request &r;
+  int w;
 };
 
 /**
@@ -389,7 +395,7 @@ process_requests(int socket, const po::variables_map &options) {
 	}
 
 	pt::ptime end_time(pt::second_clock::local_time());
-	logger::message(format("Completed request in %1%") % (end_time - start_time));
+	logger::message(format("Completed request in %1% returning %2% bytes") % (end_time - start_time) % out->written());
       } catch (const http::exception &e) {
 	// errors here occur before we've started writing the response
 	// so we can send something helpful back to the client.
