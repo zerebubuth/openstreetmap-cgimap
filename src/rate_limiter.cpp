@@ -25,6 +25,10 @@ rate_limiter::rate_limiter(const boost::program_options::variables_map &options)
 
     memcached_server_list_free(server_list);
   }
+  else
+  {
+    ptr = NULL;
+  }
 
   if (options.count("ratelimit"))
   {
@@ -47,7 +51,8 @@ rate_limiter::rate_limiter(const boost::program_options::variables_map &options)
 
 rate_limiter::~rate_limiter(void)
 {
-  memcached_free(ptr);
+  if (ptr) 
+    memcached_free(ptr);
 }
 
 bool rate_limiter::check(const std::string &ip)
