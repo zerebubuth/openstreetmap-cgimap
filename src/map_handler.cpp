@@ -19,7 +19,7 @@ map_responder::map_responder(bbox b, pqxx::work &x)
   : bounds(b), w(x) {
   // create temporary tables of nodes, ways and relations which
   // are in or used by elements in the bbox
-  osm_helpers::create_tmp_nodes_from_bbox(w, bounds);
+  osm_helpers::create_tmp_nodes_from_bbox(w, bounds, MAX_NODES);
 
   // check how many nodes we got
   int num_nodes = osm_helpers::num_nodes(w);
@@ -123,10 +123,13 @@ map_responder::write_map(pqxx::work &w,
   try {
     formatter.start_document(bounds);
 
-    // TODO: fix the zeros here - gonna need them for AMF
-    osm_helpers::write_tmp_nodes(w, formatter, 0);
-    osm_helpers::write_tmp_ways(w, formatter, 0);
-    osm_helpers::write_tmp_relations(w, formatter, 0);
+    int num_nodes = osm_helpers::num_nodes(w);
+    int num_ways = osm_helpers::num_ways(w);
+    int num_relations = osm_helpers::num_relations(w);
+
+    osm_helpers::write_tmp_nodes(w, formatter, num_nodes);
+    osm_helpers::write_tmp_ways(w, formatter, num_ways);
+    osm_helpers::write_tmp_relations(w, formatter, num_relations);
   
   } catch (const std::exception &e) {
     formatter.error(e);

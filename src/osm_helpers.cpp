@@ -95,7 +95,7 @@ num_relations(pqxx::work &x) {
 }
 
 void
-create_tmp_nodes_from_bbox(pqxx::work &w, const bbox &bounds) {
+create_tmp_nodes_from_bbox(pqxx::work &w, const bbox &bounds, int max_nodes) {
   const set<unsigned int> tiles = 
     tiles_for_area(bounds.minlat, bounds.minlon, 
 		   bounds.maxlat, bounds.maxlon);
@@ -136,7 +136,7 @@ create_tmp_nodes_from_bbox(pqxx::work &w, const bbox &bounds) {
 	<< " and longitude between " << int(bounds.minlon * SCALE) 
 	<< " and " << int(bounds.maxlon * SCALE)
 	<< ") and (visible = true)"
-	<< " limit 50001"; // limit here as a quick hack to reduce load...
+	<< " limit " << (max_nodes + 1); // limit here as a quick hack to reduce load...
 
   logger::message("Creating tmp_nodes");
   logger::message(query.str());

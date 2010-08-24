@@ -25,8 +25,8 @@ int num_relations(pqxx::work &x);
 
 /* functions to update the tmp_* tables. */
 
-/// given a bounding box, populate the tmp_nodes table
-void create_tmp_nodes_from_bbox(pqxx::work &w, const bbox &bounds);
+/// given a bounding box, populate the tmp_nodes table up to a limit of max_nodes
+void create_tmp_nodes_from_bbox(pqxx::work &w, const bbox &bounds, int max_nodes);
 
 /// creates tmp_ways from nodes via the way_nodes table
 void create_tmp_ways_from_nodes(pqxx::work &w);
