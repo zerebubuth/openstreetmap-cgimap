@@ -102,9 +102,7 @@ void rate_limiter::update(const std::string &ip, int bytes)
       int elapsed = now - sp->last_update;
 
       sp->last_update = now;
-
-      sp->bytes_served -= elapsed * bytes_per_cs;
-      sp->bytes_served += bytes;
+      sp->bytes_served = std::max(sp->bytes_served - elapsed * bytes_per_cs, 0) + bytes;
 
       // should use CAS but it's a right pain so we'll wing it for now...
       memcached_replace(ptr, key.data(), key.size(), (char *)sp, sizeof(state), 0, 0);
