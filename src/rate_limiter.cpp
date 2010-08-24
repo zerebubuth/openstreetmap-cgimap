@@ -32,7 +32,7 @@ rate_limiter::rate_limiter(const boost::program_options::variables_map &options)
 
   if (options.count("ratelimit"))
   {
-    bytes_per_cs = options["ratelimit"].as<int>() * 100;
+    bytes_per_cs = options["ratelimit"].as<int>() / 100;
   }
   else
   {
