@@ -35,6 +35,7 @@
 #include "output_writer.hpp"
 #include "handler.hpp"
 #include "routes.hpp"
+#include "fcgi_helpers.hpp"
 #include "rate_limiter.hpp"
 
 using std::runtime_error;
