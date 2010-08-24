@@ -99,6 +99,9 @@ namespace http {
   not_acceptable::not_acceptable(const string &message)
     : exception(406, "Not Acceptable", message) {}  
 
+  bandwidth_limit_exceeded::bandwidth_limit_exceeded(const string &message)
+    : exception(509, "Bandwidth Limit Exceeded", message) {}  
+
   string
   urldecode(const string &s) {
     return form_urldecode(s);

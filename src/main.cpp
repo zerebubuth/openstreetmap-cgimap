@@ -35,6 +35,7 @@
 #include "output_writer.hpp"
 #include "handler.hpp"
 #include "routes.hpp"
+#include "rate_limiter.hpp"
 
 using std::runtime_error;
 using std::vector;
@@ -122,6 +123,7 @@ class fcgi_output_buffer
   : public output_buffer {
 public:
   virtual int write(const char *buffer, int len) {
+    w += len;
     return FCGX_PutStr(buffer, len, r.out);
   }
 
@@ -131,15 +133,20 @@ public:
     return 0;
   }
 
+  virtual int written() {
+    return w;
+  }
+
   virtual ~fcgi_output_buffer() {
   }
 
   fcgi_output_buffer(FCGX_Request &req) 
-    : r(req) {
+    : r(req), w(0) {
   }
 
 private:
   FCGX_Request &r;
+  int w;
 };
 
 /**
@@ -160,7 +167,10 @@ get_options(int argc, char **argv, po::variables_map &options) {
     ("daemon", "run as a daemon")
     ("instances", po::value<int>()->default_value(5), "number of daemon instances to run")
     ("pidfile", po::value<string>(), "file to write pid to")
-    ("logfile", po::value<string>(), "file to write log messages to");
+    ("logfile", po::value<string>(), "file to write log messages to")
+    ("memcache", po::value<string>(), "memcache server specification")
+    ("ratelimit", po::value<int>(), "average number of bytes/s to allow each client")
+    ("maxdebt", po::value<int>(), "maximum debt (in Mb) to allow each client before rate limiting");
 
   po::store(po::parse_command_line(argc, argv, desc), options);
   po::store(po::parse_environment(desc, "CGIMAP_"), options);
@@ -196,6 +206,9 @@ process_requests(int socket, const po::variables_map &options) {
     throw runtime_error("Couldn't initialise FCGX library.");
   }
 
+  // create the rate limiter
+  rate_limiter limiter(options);
+
   // get the parameters for the connection from the environment
   // and connect to the database, throws exceptions if it fails.
   auto_ptr<pqxx::connection> con = connect_db(options);
@@ -230,6 +243,16 @@ process_requests(int socket, const po::variables_map &options) {
     {
       try {
 	// read all the input data..?
+
+        // get the client IP address
+        string ip = fcgi_get_env(request, "REMOTE_ADDR");
+
+        // check whether the client is being rate limited
+        if (!limiter.check(ip)) {
+          logger::message(format("Rate limiter rejected request from %1%") % ip);
+          throw http::bandwidth_limit_exceeded("You have downloaded too much "
+                                               "data. Please try again later.");
+        }
 
 	// figure how to handle the request
 	handler_ptr_t handler = route_request(request);
@@ -292,8 +315,12 @@ process_requests(int socket, const po::variables_map &options) {
 	  o_writer->error(e.what());
 	}
 
+        // log the completion time
 	pt::ptime end_time(pt::second_clock::local_time());
-	logger::message(format("Completed request for %1% in %2%") % request_name % (end_time - start_time));
+	logger::message(format("Completed request for %1% in %2% returning %3% bytes") % request_name % (end_time - start_time) % out->written());
+
+        // update the rate limiter
+        limiter.update(ip, out->written());
 
       } catch (const http::exception &e) {
 	// errors here occur before we've started writing the response

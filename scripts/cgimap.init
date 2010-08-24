@@ -8,6 +8,10 @@ CGIMAP_PASSWORD=openstreetmap; export CGIMAP_PASSWORD
 CGIMAP_PIDFILE=cgimap.pid; export CGIMAP_PIDFILE
 CGIMAP_LOGFILE=cgimap.log; export CGIMAP_LOGFILE
 
+CGIMAP_MEMCACHE=localhost; export CGIMAP_MEMCACHE
+CGIMAP_RATELIMIT=1024; export CGIMAP_RATELIMIT
+CGIMAP_MAXDEBT=250; export CGIMAP_MAXDEBT
+
 start() {
   start-stop-daemon --start --chuid rails --exec /home/rails/bin/map -- --daemon --port=8000 --instances=30
 }

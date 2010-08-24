@@ -28,6 +28,7 @@ public:
   zlib_output_buffer(const zlib_output_buffer &old);
   virtual ~zlib_output_buffer(void);
   virtual int write(const char *buffer, int len);
+  virtual int written(void);
   virtual int close(void);
 
 private:
