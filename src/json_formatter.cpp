@@ -29,8 +29,12 @@ json_formatter::write_tags(pqxx::result &tags) {
 }
 
 void 
-json_formatter::start_document(const bbox &bounds) {
+json_formatter::start_document() {
   writer.start_object();
+}
+
+void
+json_formatter::write_bounds(const bbox &bounds) {
   writer.object_key("bounds");
   writer.start_object();
   writer.object_key("minlat"); writer.entry_double(bounds.minlat);

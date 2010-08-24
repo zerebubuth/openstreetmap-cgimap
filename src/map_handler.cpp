@@ -121,7 +121,8 @@ map_responder::write_map(pqxx::work &w,
 			 output_formatter &formatter,
 			 const bbox &bounds) {
   try {
-    formatter.start_document(bounds);
+    formatter.start_document();
+    formatter.write_bounds(bounds);
 
     int num_nodes = osm_helpers::num_nodes(w);
     int num_ways = osm_helpers::num_ways(w);

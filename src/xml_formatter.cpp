@@ -15,11 +15,19 @@ xml_formatter::~xml_formatter() {
 }
 
 void
-xml_formatter::start_document(const bbox &bounds) {
+xml_formatter::start_document() {
   writer.start("osm");
   writer.attribute("version", string("0.6"));
   writer.attribute("generator", string(PACKAGE_STRING));
-  
+}
+
+void 
+xml_formatter::end_document() {
+  writer.end();
+}
+
+void
+xml_formatter::write_bounds(const bbox &bounds) {  
   // bounds element, which seems to be standard in the 
   // main map call.
   writer.start("bounds");
@@ -27,11 +35,6 @@ xml_formatter::start_document(const bbox &bounds) {
   writer.attribute("minlon", bounds.minlon);
   writer.attribute("maxlat", bounds.maxlat);
   writer.attribute("maxlon", bounds.maxlon);
-  writer.end();
-}
-
-void 
-xml_formatter::end_document() {
   writer.end();
 }
 

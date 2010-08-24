@@ -22,8 +22,9 @@ public:
   json_formatter(json_writer &w, cache<long int, changeset> &cc);
   virtual ~json_formatter();
 
-  void start_document(const bbox &bounds);
+  void start_document();
   void end_document();
+  void write_bounds(const bbox &bounds);
   void start_element_type(element_type type, size_t num_elements); 
   void end_element_type(element_type type); 
   void error(const std::exception &e);

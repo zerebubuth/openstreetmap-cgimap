@@ -24,7 +24,7 @@ struct output_formatter {
 
   // called once to start the document - this will be the first call
   // to this object after construction.
-  virtual void start_document(const bbox &bounds) = 0;
+  virtual void start_document() = 0;
 
   // called once to end the document - there will be no calls after this
   // one. this will be called, even if an error has occurred.
@@ -33,6 +33,10 @@ struct output_formatter {
   // this is called if there is an error during reading data from the
   // database. hopefully this is a very very rare occurrance.
   virtual void error(const std::exception &e) = 0;
+
+  // write a bounds object to the document. this seems to be generally used
+  // to record the box used by a map call.
+  virtual void write_bounds(const bbox &bounds) = 0;
 
   // start a type of element. this is called once for nodes, ways or 
   // relations. between the start and end called for a particular element
