@@ -347,6 +347,7 @@ process_requests(int socket, const po::variables_map &options) {
 
         // check whether the client is being rate limited
         if (!limiter.check(ip)) {
+          logger::message(format("Rate limiter rejected request from %1%") % ip);
           throw http::bandwidth_limit_exceeded("You have downloaded too much "
                                                "data. Please try again later.");
         }
