@@ -19,7 +19,7 @@ rate_limiter::rate_limiter(const boost::program_options::variables_map &options)
     memcached_behavior_set(ptr, MEMCACHED_BEHAVIOR_BINARY_PROTOCOL, 1);
 //    memcached_behavior_set(ptr, MEMCACHED_BEHAVIOR_SUPPORT_CAS, 1);
 
-    server_list = memcached_servers_parse(options["memcache"].as<char *>());
+    server_list = memcached_servers_parse(options["memcache"].as<std::string>().c_str());
 
     memcached_server_push(ptr, server_list);
 
