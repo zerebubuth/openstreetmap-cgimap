@@ -28,6 +28,7 @@
 #include "map.hpp"
 #include "http.hpp"
 #include "logger.hpp"
+#include "rate_limiter.hpp"
 
 using std::runtime_error;
 using std::vector;
@@ -264,7 +265,10 @@ get_options(int argc, char **argv, po::variables_map &options) {
     ("daemon", "run as a daemon")
     ("instances", po::value<int>()->default_value(5), "number of daemon instances to run")
     ("pidfile", po::value<string>(), "file to write pid to")
-    ("logfile", po::value<string>(), "file to write log messages to");
+    ("logfile", po::value<string>(), "file to write log messages to")
+    ("memcache", po::value<string>(), "memcache server specification")
+    ("ratelimit", po::value<int>(), "average number of bytes/s to allow each client")
+    ("maxdebt", po::value<int>(), "maximum debt (in Mb) to allow each client before rate limiting");
 
   po::store(po::parse_command_line(argc, argv, desc), options);
   po::store(po::parse_environment(desc, "CGIMAP_"), options);
@@ -299,6 +303,9 @@ process_requests(int socket, const po::variables_map &options) {
   if (FCGX_Init() != 0) {
     throw runtime_error("Couldn't initialise FCGX library.");
   }
+
+  // create the rate limiter
+  rate_limiter limiter(options);
 
   // get the parameters for the connection from the environment
   // and connect to the database, throws exceptions if it fails.
@@ -335,11 +342,21 @@ process_requests(int socket, const po::variables_map &options) {
       try {
 	// read all the input data..?
 
+        // get the client IP address
+        string ip = fcgi_get_env(request, "REMOTE_ADDR");
+
+        // check whether the client is being rate limited
+        if (!limiter.check(ip)) {
+          throw http::bandwidth_limit_exceeded("You have downloaded too much "
+                                               "data. Please try again later.");
+        }
+
 	// validate the input
 	bbox bounds = validate_request(request);
 
+        /// log the start of the request
 	pt::ptime start_time(pt::second_clock::local_time());
-	logger::message(format("Started request for %1%,%2%,%3%,%4%") % bounds.minlat % bounds.minlon % bounds.maxlat % bounds.maxlon);
+	logger::message(format("Started request for %1%,%2%,%3%,%4% from %5%") % bounds.minlat % bounds.minlon % bounds.maxlat % bounds.maxlon % ip);
 
 	// separate transaction for the request
 	pqxx::work x(*con);
@@ -394,8 +411,12 @@ process_requests(int socket, const po::variables_map &options) {
 	  writer.end();
 	}
 
+        // log the completion time
 	pt::ptime end_time(pt::second_clock::local_time());
 	logger::message(format("Completed request in %1% returning %2% bytes") % (end_time - start_time) % out->written());
+
+        // update the rate limiter
+        limiter.update(ip, out->written());
       } catch (const http::exception &e) {
 	// errors here occur before we've started writing the response
 	// so we can send something helpful back to the client.

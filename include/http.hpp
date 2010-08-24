@@ -91,6 +91,15 @@ namespace http {
   };
 
   /**
+   * The client has exceeded the bandwidth limit.
+   */
+  class bandwidth_limit_exceeded
+    : public exception {
+  public:
+    bandwidth_limit_exceeded(const std::string &message);
+  };
+
+  /**
    * Decodes a url-encoded string.
    */
   std::string urldecode(const std::string &s);
