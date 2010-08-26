@@ -34,6 +34,9 @@ private:
   void flush_output(void);
 
   boost::shared_ptr<xml_writer::output_buffer> out;
+  // keep track of bytes written because the z_stream struct doesn't seem to 
+  // update unless its flushed.
+  size_t bytes_in;
   z_stream stream;
   char outbuf[4096];
 };
