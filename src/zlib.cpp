@@ -118,3 +118,8 @@ zlib_output_buffer::flush_output(void)
   stream.next_out = (Bytef *)outbuf;
   stream.avail_out = sizeof(outbuf);
 }
+
+void
+zlib_output_buffer::flush() { 
+  flush_output(); 
+}

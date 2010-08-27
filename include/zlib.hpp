@@ -29,6 +29,7 @@ public:
   virtual int write(const char *buffer, int len);
   virtual int written(void);
   virtual int close(void);
+  virtual void flush();
 
 private:
   void flush_output(void);

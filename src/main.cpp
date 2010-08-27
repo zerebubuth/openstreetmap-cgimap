@@ -235,6 +235,12 @@ public:
     return w;
   }
 
+  virtual void flush() {
+    // there's a note that says this causes too many writes and decreases 
+    // efficiency, but we're only calling it once...
+    FCGX_FFlush(r.out);
+  }
+
   virtual ~fcgi_output_buffer() {
   }
 
@@ -411,6 +417,10 @@ process_requests(int socket, const po::variables_map &options) {
 	  writer.text(e.what());
 	  writer.end();
 	}
+
+	// make sure all bytes have been written before figuring out how many there are
+	writer.flush();
+	out->flush();
 
         // log the completion time
 	pt::ptime end_time(pt::second_clock::local_time());

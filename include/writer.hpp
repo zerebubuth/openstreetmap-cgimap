@@ -18,6 +18,7 @@ public:
     virtual int write(const char *buffer, int len) = 0;
     virtual int close() = 0;
     virtual int written() = 0;
+    virtual void flush() = 0;
     virtual ~output_buffer();
   };
 
