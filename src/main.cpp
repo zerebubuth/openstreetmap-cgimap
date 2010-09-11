@@ -406,8 +406,15 @@ process_requests(int socket, const po::variables_map &options) {
 	  // call to write the map call
 	  write_map(x, writer, bounds, changeset_cache);
 
+	  // make sure all bytes have been written. note that the writer can
+	  // throw an exception here, leaving the xml document in a 
+	  // half-written state...
+	  writer.flush();
+	  out->flush();
+
 	} catch (const xml_writer::write_error &e) {
 	  // don't do anything - just go on to the next request.
+	  logger::message(format("Caught write error, aborting request: %1%") % e.what());
 	  
 	} catch (const std::exception &e) {
 	  // errors here are unrecoverable (fatal to the request but maybe
@@ -417,10 +424,6 @@ process_requests(int socket, const po::variables_map &options) {
 	  writer.text(e.what());
 	  writer.end();
 	}
-
-	// make sure all bytes have been written before figuring out how many there are
-	writer.flush();
-	out->flush();
 
         // log the completion time
 	pt::ptime end_time(pt::second_clock::local_time());
