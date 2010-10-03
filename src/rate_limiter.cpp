@@ -51,7 +51,7 @@ rate_limiter::rate_limiter(const boost::program_options::variables_map &options)
 
 rate_limiter::~rate_limiter(void)
 {
-  if (ptr) 
+  if (ptr)
     memcached_free(ptr);
 }
 
@@ -71,9 +71,12 @@ bool rate_limiter::check(const std::string &ip)
   {
     assert(length == sizeof(state));
 
-    int elapsed = time(NULL) - sp->last_update;
+    int64_t elapsed = time(NULL) - sp->last_update;
 
-    bytes_served = sp->bytes_served - elapsed * bytes_per_cs;
+    if (elapsed * bytes_per_cs < sp->bytes_served)
+    {
+       bytes_served = sp->bytes_served - elapsed * bytes_per_cs;
+    }
   }
 
   return bytes_served < max_bytes;
@@ -99,10 +102,18 @@ void rate_limiter::update(const std::string &ip, int bytes)
     {
       assert(length == sizeof(state));
 
-      int elapsed = now - sp->last_update;
+      int64_t elapsed = now - sp->last_update;
 
       sp->last_update = now;
-      sp->bytes_served = std::max(sp->bytes_served - elapsed * bytes_per_cs, 0) + bytes;
+
+      if (elapsed * bytes_per_cs < sp->bytes_served)
+      {
+         sp->bytes_served = sp->bytes_served - elapsed * bytes_per_cs + bytes;
+      }
+      else
+      {
+         sp->bytes_served = bytes;
+      }
 
       // should use CAS but it's a right pain so we'll wing it for now...
       memcached_replace(ptr, key.data(), key.size(), (char *)sp, sizeof(state), 0, 0);
