@@ -19,6 +19,9 @@ public:
    */
   virtual void error(const std::string &) = 0;
 
+  // flushes the output buffer
+  virtual void flush() = 0;
+
   /**
    * Thrown when writing fails.
    */

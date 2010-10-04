@@ -34,6 +34,8 @@ public:
   void entry_double(double d);
   void entry_string(const std::string &s);
 
+  void flush();
+
   void error(const std::string &);
 
 private:

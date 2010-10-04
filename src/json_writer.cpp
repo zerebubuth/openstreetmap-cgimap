@@ -108,6 +108,11 @@ json_writer::end_array() {
 }
 
 void
+json_writer::flush() {
+  yajl_gen_clear(pimpl->gen);
+}
+
+void
 json_writer::error(const std::string &s) {
   start_object();
   object_key("error");

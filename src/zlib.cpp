@@ -5,7 +5,7 @@
 
 zlib_output_buffer::zlib_output_buffer(boost::shared_ptr<output_buffer> o,
                                        zlib_output_buffer::mode m)
-  : out(o) {
+  : out(o), bytes_in(0) {
   int windowBits;
 
   switch (m) {
@@ -72,6 +72,8 @@ zlib_output_buffer::write(const char *buffer, int len)
     }
   }
 
+  bytes_in += len;
+
   return len;
 }
 
@@ -105,7 +107,7 @@ zlib_output_buffer::close(void)
 int
 zlib_output_buffer::written(void)
 {
-   return stream.total_in;
+   return bytes_in;
 }
 
 void
@@ -115,4 +117,9 @@ zlib_output_buffer::flush_output(void)
 
   stream.next_out = (Bytef *)outbuf;
   stream.avail_out = sizeof(outbuf);
+}
+
+void
+zlib_output_buffer::flush() { 
+  flush_output(); 
 }
