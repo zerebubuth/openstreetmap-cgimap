@@ -35,7 +35,10 @@ public:
 
 private:
   bbox bounds;
+  formats::format_type output_format;
+
   static bbox validate_request(FCGX_Request &request);
+  static formats::format_type parse_format(FCGX_Request &request);
 };
 
 #endif /* MAP_HANDLER_HPP */

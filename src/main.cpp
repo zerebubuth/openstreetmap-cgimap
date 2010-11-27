@@ -301,12 +301,13 @@ process_requests(int socket, const po::variables_map &options) {
 	  o_writer = auto_ptr<output_writer>(jwriter);
 	  o_formatter = auto_ptr<output_formatter>(new json_formatter(*jwriter, changeset_cache));
 	} else {
-#else
-	  writer *xwriter = new writer(out, true);
+#endif
+	  xml_writer *xwriter = new xml_writer(out, true);
 	  o_writer = auto_ptr<output_writer>(xwriter);
 	  o_formatter = auto_ptr<output_formatter>(new xml_formatter(*xwriter, changeset_cache));
-#endif
+#ifdef HAVE_YAJL
 	}
+#endif
 	
 	try {
 	  // call to write the response

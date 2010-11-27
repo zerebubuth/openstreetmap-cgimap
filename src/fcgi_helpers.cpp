@@ -55,3 +55,23 @@ get_query_string(FCGX_Request &req) {
   }
 }
 
+std::string
+get_request_path(FCGX_Request &req) {
+  const char *request_uri = FCGX_GetParam("REQUEST_URI", req.envp);
+  
+  if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
+    ostringstream ostr;
+    ostr << "FCGI didn't set the $REQUEST_URI environment variable.";
+    throw http::server_error(ostr.str());
+  }
+  
+  const char *request_uri_end = request_uri + strlen(request_uri);
+  // i think the only valid position for the '?' char is at the beginning
+  // of the query string.
+  const char *question_mark = std::find(request_uri, request_uri_end, '?');
+  if (question_mark == request_uri_end) {
+    return string(request_uri);
+  } else {
+    return string(request_uri, question_mark);
+  }
+}

@@ -22,4 +22,10 @@ fcgi_get_env(FCGX_Request &req, const char* name);
 std::string
 get_query_string(FCGX_Request &req);
 
+/**
+ * get the path from the $REQUEST_URI variable.
+ */
+std::string
+get_request_path(FCGX_Request &req);
+
 #endif /* FCGI_HELPERS_HPP */

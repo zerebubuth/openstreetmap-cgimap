@@ -21,7 +21,7 @@ write_tmp_nodes(pqxx::work &w, output_formatter &formatter, int num_nodes) {
   pqxx::result nodes = w.exec(
       "select n.id, n.latitude, n.longitude, n.visible, "
       "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as timestamp, "
-      "n.changeset_id, n.version from current_nodes n tmp_nodes x "
+      "n.changeset_id, n.version from current_nodes n join tmp_nodes x "
       "on n.id = x.id");
   for (pqxx::result::const_iterator itr = nodes.begin(); 
        itr != nodes.end(); ++itr) {

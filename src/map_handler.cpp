@@ -47,7 +47,8 @@ map_responder::write(auto_ptr<output_formatter> formatter) {
 }
 
 map_handler::map_handler(FCGX_Request &request) 
-  : bounds(validate_request(request)) {
+  : bounds(validate_request(request)),
+    output_format(parse_format(request)) {
 }
 
 map_handler::~map_handler() throw() {
@@ -65,7 +66,7 @@ map_handler::responder(pqxx::work &x) const {
 
 formats::format_type
 map_handler::format() const {
-  return formats::XML;
+  return output_format;
 }
 
 /**
@@ -137,4 +138,14 @@ map_responder::write_map(pqxx::work &w,
   }
 
   formatter.end_document();
+}
+
+formats::format_type 
+map_handler::parse_format(FCGX_Request &request) {
+  string request_path = get_request_path(request);
+  if (request_path.substr(request_path.size() - 5) == string(".json")) {
+    return formats::JSON;
+  } else {
+    return formats::XML;
+  }
 }
