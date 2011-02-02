@@ -363,7 +363,7 @@ process_requests(int socket, const po::variables_map &options) {
 
         /// log the start of the request
 	pt::ptime start_time(pt::second_clock::local_time());
-	logger::message(format("Started request for %1%,%2%,%3%,%4% from %5%") % bounds.minlat % bounds.minlon % bounds.maxlat % bounds.maxlon % ip);
+	logger::message(format("Started request for %1%,%2%,%3%,%4% from %5%") % bounds.minlon % bounds.minlat % bounds.maxlon % bounds.maxlat % ip);
 
 	// separate transaction for the request
 	pqxx::work x(*con);
