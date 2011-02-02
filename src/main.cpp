@@ -427,7 +427,7 @@ process_requests(int socket, const po::variables_map &options) {
 
         // log the completion time
 	pt::ptime end_time(pt::second_clock::local_time());
-	logger::message(format("Completed request in %1% returning %2% bytes") % (end_time - start_time) % out->written());
+	logger::message(format("Completed request for %1%,%2%,%3%,%4% from %5% in %6% returning %7% bytes") % bounds.minlon % bounds.minlat % bounds.maxlon % bounds.maxlat % ip % (end_time - start_time) % out->written());
 
         // update the rate limiter
         limiter.update(ip, out->written());
