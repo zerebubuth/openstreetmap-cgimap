@@ -216,6 +216,9 @@ process_requests(int socket, const po::variables_map &options) {
   // create the rate limiter
   rate_limiter limiter(options);
 
+	// create the routes map (from URIs to handlers)
+	routes route;
+
   // get the parameters for the connection from the environment
   // and connect to the database, throws exceptions if it fails.
   auto_ptr<pqxx::connection> con = connect_db(options);
@@ -262,7 +265,7 @@ process_requests(int socket, const po::variables_map &options) {
         }
 
 	// figure how to handle the request
-	handler_ptr_t handler = route_request(request);
+	handler_ptr_t handler = route(request);
 	
 	// request start logging
 	string request_name = handler->log_name();

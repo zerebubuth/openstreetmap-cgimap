@@ -5,6 +5,7 @@
 #include <memory>
 #include <pqxx/pqxx>
 #include "output_formatter.hpp"
+#include <boost/shared_ptr.hpp>
 
 /**
  * object which is able to respond to an already-setup request.
@@ -15,7 +16,7 @@ public:
   virtual void write(std::auto_ptr<output_formatter> f) = 0;
 };
 
-typedef std::auto_ptr<responder> responder_ptr_t;
+typedef boost::shared_ptr<responder> responder_ptr_t;
 
 namespace formats {
 enum format_type {
@@ -36,6 +37,6 @@ public:
   virtual formats::format_type format() const = 0;
 };
 
-typedef std::auto_ptr<handler> handler_ptr_t;
+typedef boost::shared_ptr<handler> handler_ptr_t;
 
 #endif /* HANDLER_HPP */

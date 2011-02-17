@@ -110,6 +110,16 @@ namespace http {
     bandwidth_limit_exceeded(const std::string &message);
   };
 
+/**
+ * Indicates that a resource which was previously present has been deleted.
+ */
+class gone 
+	: public exception {
+public:
+	 // TODO: fix up so that error message is meaningful
+	 gone();
+};
+
   /**
    * Decodes a url-encoded string.
    */

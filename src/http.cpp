@@ -93,6 +93,9 @@ namespace http {
   bad_request::bad_request(const string &message)
     : exception(400, "Bad Request", message) {}
   
+not_found::not_found(const string &uri)
+	: exception(404, "Not Found", uri) {}
+
   method_not_allowed::method_not_allowed(const string &message)
     : exception(405, "Method Not Allowed", message) {}  
     
@@ -101,6 +104,9 @@ namespace http {
 
   bandwidth_limit_exceeded::bandwidth_limit_exceeded(const string &message)
     : exception(509, "Bandwidth Limit Exceeded", message) {}  
+
+gone::gone()
+	: exception(304, "Gone", "") {}
 
   string
   urldecode(const string &s) {
