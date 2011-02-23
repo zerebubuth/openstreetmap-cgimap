@@ -88,7 +88,7 @@ private:
 };
 
 routes::routes() 
-	: r(new router()), common_prefix("api/0.6/") {
+	: r(new router()), common_prefix("/api/0.6/") {
   using match::root_;
   using match::int_;
 
