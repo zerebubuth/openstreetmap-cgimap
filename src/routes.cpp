@@ -2,6 +2,7 @@
 #include "handler.hpp"
 #include "map_handler.hpp"
 #include "node_handler.hpp"
+#include "nodes_handler.hpp"
 #include "router.hpp"
 #include "fcgi_helpers.hpp"
 #include "http.hpp"
@@ -93,6 +94,7 @@ routes::routes()
   using match::int_;
 
 	r->add<map_handler>(root_ / "map");
+	r->add<nodes_handler>(root_ / "nodes");
 	r->add<node_handler>(root_ / "node" / int_);
 }
 

@@ -9,7 +9,7 @@ ___map_SOURCES=bbox.cpp http.cpp main.cpp map.cpp quad_tile.cpp \
 	output_formatter.cpp handler.cpp map_handler.cpp \
 	fcgi_helpers.cpp output_writer.cpp routes.cpp \
 	osm_helpers.cpp rate_limiter.cpp router.cpp \
-	node_handler.cpp
+	node_handler.cpp nodes_handler.cpp
 
 if HAVE_YAJL
 ___map_SOURCES+=json_formatter.cpp json_writer.cpp
