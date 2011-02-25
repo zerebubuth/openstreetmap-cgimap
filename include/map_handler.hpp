@@ -1,7 +1,6 @@
 #ifndef MAP_HANDLER_HPP
 #define MAP_HANDLER_HPP
 
-#include "writer.hpp"
 #include "bbox.hpp"
 #include "cache.hpp"
 #include "changeset.hpp"

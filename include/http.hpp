@@ -6,7 +6,6 @@
 #include <stdexcept>
 #include <boost/shared_ptr.hpp>
 
-#include "writer.hpp"
 #include "zlib.hpp"
 #include "output_buffer.hpp"
 

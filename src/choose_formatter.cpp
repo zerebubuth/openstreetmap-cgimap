@@ -3,7 +3,7 @@
 #include "mime_types.hpp"
 #include "http.hpp"
 #include "fcgi_helpers.hpp"
-#include "writer.hpp"
+#include "xml_writer.hpp"
 #include "xml_formatter.hpp"
 #include "json_writer.hpp"
 #include "json_formatter.hpp"

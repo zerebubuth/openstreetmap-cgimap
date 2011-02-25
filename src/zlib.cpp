@@ -2,6 +2,7 @@
 #include <algorithm>
 
 #include "zlib.hpp"
+#include "output_writer.hpp"
 
 zlib_output_buffer::zlib_output_buffer(boost::shared_ptr<output_buffer> o,
                                        zlib_output_buffer::mode m)
@@ -25,7 +26,7 @@ zlib_output_buffer::zlib_output_buffer(boost::shared_ptr<output_buffer> o,
 
   if (deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, windowBits,
                    8, Z_DEFAULT_STRATEGY) != Z_OK) {
-    throw xml_writer::write_error("deflateInit2 failed");
+    throw output_writer::write_error("deflateInit2 failed");
   }
 
   stream.next_in = NULL;
@@ -64,7 +65,7 @@ zlib_output_buffer::write(const char *buffer, int len)
     }
 
     if (status != Z_OK) {
-      throw xml_writer::write_error("deflate failed");
+      throw output_writer::write_error("deflate failed");
     }
 
     if (stream.avail_out == 0) {
@@ -94,11 +95,11 @@ zlib_output_buffer::close(void)
     out->write(outbuf, sizeof(outbuf) - stream.avail_out);
   }
   else {
-    throw xml_writer::write_error("deflate failed");
+    throw output_writer::write_error("deflate failed");
   }
 
   if (deflateEnd(&stream) != Z_OK) {
-    throw xml_writer::write_error("deflateEnd failed");
+    throw output_writer::write_error("deflateEnd failed");
   }
 
   return out->close();

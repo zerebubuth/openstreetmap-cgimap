@@ -3,7 +3,6 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "writer.hpp"
 #include "zlib.h"
 #include "output_buffer.hpp"
 

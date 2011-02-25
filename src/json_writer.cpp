@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "json_writer.hpp"
-#include "writer.hpp"
 
 struct json_writer::pimpl_ {
   // not sure whether the config has to live as long as the generator itself, so
@@ -15,13 +14,13 @@ struct json_writer::pimpl_ {
 static void wrap_write(void *context, const char *str, unsigned int len) {
   output_buffer *out = static_cast<output_buffer *>(context);
   if (out == 0) {
-    throw xml_writer::write_error("Output buffer was NULL in json_writer wrap_write().");
+    throw output_writer::write_error("Output buffer was NULL in json_writer wrap_write().");
   }
 
   int wrote_len = out->write(str, len);
 
   if (wrote_len != len) {
-    throw xml_writer::write_error("Output buffer wrote a different amount than was expected.");
+    throw output_writer::write_error("Output buffer wrote a different amount than was expected.");
   }
 }
 

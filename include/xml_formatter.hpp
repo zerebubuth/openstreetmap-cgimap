@@ -4,7 +4,7 @@
 #include "output_formatter.hpp"
 #include "cache.hpp"
 #include "changeset.hpp"
-#include "writer.hpp"
+#include "xml_writer.hpp"
 
 /**
  * Outputs an XML-formatted document, i.e: the OSM document type we all know

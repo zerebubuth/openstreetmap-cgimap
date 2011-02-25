@@ -4,7 +4,7 @@ AM_CPPFLAGS=-I../include @FCGI_CFLAGS@ @LIBPQXX_CFLAGS@ @LIBXML_CFLAGS@ @LIBMEMC
 
 bin_PROGRAMS=../map
 ___map_SOURCES=bbox.cpp http.cpp main.cpp map.cpp quad_tile.cpp \
-	split_tags.cpp writer.cpp changeset.cpp \
+	split_tags.cpp xml_writer.cpp changeset.cpp \
 	logger.cpp zlib.cpp xml_formatter.cpp \
 	output_formatter.cpp handler.cpp map_handler.cpp \
 	fcgi_helpers.cpp output_writer.cpp routes.cpp \
