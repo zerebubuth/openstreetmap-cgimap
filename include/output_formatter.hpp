@@ -54,6 +54,12 @@ struct output_formatter {
 
   // output a single relation given a row and iterators over members and tags
   virtual void write_relation(const pqxx::result::tuple &t, pqxx::result &members, pqxx::result &tags) = 0;
+
+	 // flush the current state
+	 virtual void flush() = 0;
+	 
+	 // write an error to the output stream
+	 virtual void error(const std::string &) = 0;
 };
 
 #endif /* OUTPUT_FORMATTER_HPP */

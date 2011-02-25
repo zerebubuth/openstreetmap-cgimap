@@ -6,12 +6,17 @@
 #include "router.hpp"
 #include "fcgi_helpers.hpp"
 #include "http.hpp"
+#include "mime_types.hpp"
+
 #include <boost/algorithm/string.hpp>
+#include <boost/optional.hpp>
 
 using std::auto_ptr;
 using std::list;
 using std::string;
+using std::pair;
 using boost::shared_ptr;
+using boost::optional;
 using boost::fusion::make_cons;
 using boost::fusion::invoke;
 using boost::ref;
@@ -101,6 +106,17 @@ routes::routes()
 routes::~routes() {
 }
 
+
+namespace {
+/**
+ * figures out the mime type from the path specification, e.g: a resource ending 
+ * in .xml should be text/xml, .json should be text/json, etc...
+ */
+pair<string, mime::type> resource_mime_type(const string &path) {
+	return make_pair(path, mime::unspecified_type);
+}
+}
+
 handler_ptr_t
 routes::operator()(FCGX_Request &request) const {
 	// full path from request handler
@@ -108,15 +124,22 @@ routes::operator()(FCGX_Request &request) const {
 
 	// check the prefix
 	if (path.compare(0, common_prefix.size(), common_prefix) == 0) {
-		string suffix(path, common_prefix.size());
+		// strip off the format-spec, if there is one
+		pair<string, mime::type> resource = resource_mime_type(string(path, common_prefix.size()));
+
+		// split the URL into bits to be matched.
 		list<string> path_components;
-		al::split(path_components, suffix, al::is_any_of("/"));
+		al::split(path_components, resource.first, al::is_any_of("/"));
 
 		handler_ptr_t hptr(r->match(path_components, request));
-		
+
 		// if the pointer points at something, then the path was found. otherwise,
 		// it must have exhausted all the possible routes.
 		if (hptr) {
+			// ugly hack - need this info later on to choose the output formatter,
+			// but don't want to parse the URI again...
+			hptr->set_resource_type(resource.second);
+			
 			return hptr;
 		}
 	}

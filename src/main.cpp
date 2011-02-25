@@ -28,15 +28,15 @@
 #include "map.hpp"
 #include "http.hpp"
 #include "logger.hpp"
-#include "xml_formatter.hpp"
-#include "json_writer.hpp"
-#include "json_formatter.hpp"
 #include "output_formatter.hpp"
 #include "output_writer.hpp"
 #include "handler.hpp"
 #include "routes.hpp"
 #include "fcgi_helpers.hpp"
 #include "rate_limiter.hpp"
+#include "choose_formatter.hpp"
+#include "cache.hpp"
+#include "changeset.hpp"
 
 using std::runtime_error;
 using std::vector;
@@ -296,21 +296,8 @@ process_requests(int socket, const po::variables_map &options) {
 	  shared_ptr<fcgi_output_buffer>(new fcgi_output_buffer(request));
 	out = encoding->buffer(out);
 
-	auto_ptr<output_writer> o_writer;
-	auto_ptr<output_formatter> o_formatter;
-#ifdef HAVE_YAJL
-	if (handler->format() == formats::JSON) {
-	  json_writer *jwriter = new json_writer(out, true);
-	  o_writer = auto_ptr<output_writer>(jwriter);
-	  o_formatter = auto_ptr<output_formatter>(new json_formatter(*jwriter, changeset_cache));
-	} else {
-#endif
-	  xml_writer *xwriter = new xml_writer(out, true);
-	  o_writer = auto_ptr<output_writer>(xwriter);
-	  o_formatter = auto_ptr<output_formatter>(new xml_formatter(*xwriter, changeset_cache));
-#ifdef HAVE_YAJL
-	}
-#endif
+	// create the correct mime type output formatter.
+	auto_ptr<output_formatter> o_formatter = choose_formatter(request, responder, out, changeset_cache);
 	
 	try {
 	  // call to write the response
@@ -319,7 +306,7 @@ process_requests(int socket, const po::variables_map &options) {
 	  // make sure all bytes have been written. note that the writer can
 	  // throw an exception here, leaving the xml document in a 
 	  // half-written state...
-	  o_writer->flush();
+	  o_formatter->flush();
 	  out->flush();
 
 	} catch (const output_writer::write_error &e) {
@@ -330,7 +317,7 @@ process_requests(int socket, const po::variables_map &options) {
 	  // errors here are unrecoverable (fatal to the request but maybe
 	  // not fatal to the process) since we already started writing to
 	  // the client.
-	  o_writer->error(e.what());
+	  o_formatter->error(e.what());
 	}
 
         // log the completion time

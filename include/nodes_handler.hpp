@@ -2,6 +2,7 @@
 #define NODES_HANDLER_HPP
 
 #include "handler.hpp"
+#include "osm_responder.hpp"
 #include "fcgi_helpers.hpp"
 #include <fcgiapp.h>
 #include <pqxx/pqxx>
@@ -10,18 +11,14 @@
 
 using std::list;
 
-
 class nodes_responder
-	: public responder {
+	: public osm_responder {
 public:
-	 nodes_responder(list<id_t>, pqxx::work &);
+	 nodes_responder(mime::type, list<id_t>, pqxx::work &);
 	 ~nodes_responder() throw();
-	 void write(std::auto_ptr<output_formatter> f);
 
 private:
 	 list<id_t> ids;
-	 pqxx::work &w;
-
 };
 
 class nodes_handler 
@@ -32,7 +29,6 @@ public:
 
 	 std::string log_name() const;
 	 responder_ptr_t responder(pqxx::work &x) const;
-	 formats::format_type format() const;
 
 private:
 	 list<id_t> ids;

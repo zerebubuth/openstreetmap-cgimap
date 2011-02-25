@@ -6,8 +6,8 @@
 
 using std::stringstream;
 
-node_responder::node_responder(id_t id_, pqxx::work &w_)
-	: id(id_), w(w_) {
+node_responder::node_responder(mime::type mt, id_t id_, pqxx::work &w_)
+	: osm_responder(mt, w_), id(id_) {
 	check_visibility();
 
 	stringstream query;
@@ -16,17 +16,6 @@ node_responder::node_responder(id_t id_, pqxx::work &w_)
 }
 
 node_responder::~node_responder() throw() {
-}
-
-void 
-node_responder::write(std::auto_ptr<output_formatter> f) {
-	try {
-		f->start_document();
-		osm_helpers::write_tmp_nodes(w, *f, 1);
-	} catch (const std::exception &e) {
-		f->error(e);
-	}
-	f->end_document();
 }
 
 node_handler::node_handler(FCGX_Request &request, id_t id_) 
@@ -43,12 +32,7 @@ node_handler::log_name() const {
 
 responder_ptr_t 
 node_handler::responder(pqxx::work &x) const {
-	return responder_ptr_t(new node_responder(id, x));
-}
-
-formats::format_type 
-node_handler::format() const {
-	return formats::XML;
+	return responder_ptr_t(new node_responder(mime_type, id, x));
 }
 
 void

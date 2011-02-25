@@ -20,8 +20,8 @@ using boost::format;
 using boost::lexical_cast;
 using boost::bad_lexical_cast;
 
-nodes_responder::nodes_responder(list<id_t> ids_, pqxx::work &w_)
-	: ids(ids_), w(w_) {
+nodes_responder::nodes_responder(mime::type mt, list<id_t> ids_, pqxx::work &w_)
+	: osm_responder(mt, w_), ids(ids_) {
 
 	stringstream query;
 	list<id_t>::const_iterator it;
@@ -34,17 +34,6 @@ nodes_responder::nodes_responder(list<id_t> ids_, pqxx::work &w_)
 }
 
 nodes_responder::~nodes_responder() throw() {
-}
-
-void 
-nodes_responder::write(std::auto_ptr<output_formatter> f) {
-	try {
-		f->start_document();
-		osm_helpers::write_tmp_nodes(w, *f, 1);
-	} catch (const std::exception &e) {
-		f->error(e);
-	}
-	f->end_document();
 }
 
 nodes_handler::nodes_handler(FCGX_Request &request) 
@@ -61,12 +50,7 @@ nodes_handler::log_name() const {
 
 responder_ptr_t 
 nodes_handler::responder(pqxx::work &x) const {
-	return responder_ptr_t(new nodes_responder(ids, x));
-}
-
-formats::format_type 
-nodes_handler::format() const {
-	return formats::XML;
+	return responder_ptr_t(new nodes_responder(mime_type, ids, x));
 }
 
 /**

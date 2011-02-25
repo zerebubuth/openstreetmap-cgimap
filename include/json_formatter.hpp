@@ -31,6 +31,8 @@ public:
   void write_node(const pqxx::result::tuple &t, pqxx::result &tags);
   void write_way(const pqxx::result::tuple &t, pqxx::result &nodes, pqxx::result &tags);
   void write_relation(const pqxx::result::tuple &t, pqxx::result &members, pqxx::result &tags);
+	 void flush();
+	 void error(const std::string &);
 };
 
 #endif /* JSON_FORMATTER_HPP */

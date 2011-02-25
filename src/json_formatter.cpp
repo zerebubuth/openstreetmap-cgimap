@@ -165,3 +165,14 @@ json_formatter::write_relation(const pqxx::result::tuple &r, pqxx::result &membe
 
   writer.end_object();
 }
+
+void 
+json_formatter::flush() {
+	writer.flush();
+}
+
+void 
+json_formatter::error(const std::string &s) {
+	writer.error(s);
+}
+

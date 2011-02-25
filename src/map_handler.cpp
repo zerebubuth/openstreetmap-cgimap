@@ -15,11 +15,11 @@ using std::map;
 #define MAX_AREA 0.25
 #define MAX_NODES 50000
 
-map_responder::map_responder(bbox b, pqxx::work &x)
-  : bounds(b), w(x) {
+map_responder::map_responder(mime::type mt, bbox b, pqxx::work &x)
+  : osm_responder(mt, x, boost::optional<bbox>(b)) {
   // create temporary tables of nodes, ways and relations which
   // are in or used by elements in the bbox
-  osm_helpers::create_tmp_nodes_from_bbox(w, bounds, MAX_NODES);
+  osm_helpers::create_tmp_nodes_from_bbox(w, b, MAX_NODES);
 
   // check how many nodes we got
   int num_nodes = osm_helpers::num_nodes(w);
@@ -41,14 +41,8 @@ map_responder::map_responder(bbox b, pqxx::work &x)
 map_responder::~map_responder() throw() {
 }
 
-void
-map_responder::write(auto_ptr<output_formatter> formatter) {
-  write_map(w, *formatter, bounds);
-}
-
 map_handler::map_handler(FCGX_Request &request) 
-  : bounds(validate_request(request)),
-    output_format(parse_format(request)) {
+  : bounds(validate_request(request)) {
 }
 
 map_handler::~map_handler() throw() {
@@ -61,12 +55,7 @@ map_handler::log_name() const {
 
 responder_ptr_t
 map_handler::responder(pqxx::work &x) const {
-  return responder_ptr_t(new map_responder(bounds, x));
-}
-
-formats::format_type
-map_handler::format() const {
-  return output_format;
+  return responder_ptr_t(new map_responder(mime_type, bounds, x));
 }
 
 /**
@@ -112,40 +101,3 @@ map_handler::validate_request(FCGX_Request &request) {
   return bounds;
 }
 
-/**
- * writes the temporary nodes and ways, which must have been previously created,
- * to the xml_writer. changesets and users are looked up directly from the 
- * cache rather than joined in SQL.
- */
-void
-map_responder::write_map(pqxx::work &w,
-			 output_formatter &formatter,
-			 const bbox &bounds) {
-  try {
-    formatter.start_document();
-    formatter.write_bounds(bounds);
-
-    int num_nodes = osm_helpers::num_nodes(w);
-    int num_ways = osm_helpers::num_ways(w);
-    int num_relations = osm_helpers::num_relations(w);
-
-    osm_helpers::write_tmp_nodes(w, formatter, num_nodes);
-    osm_helpers::write_tmp_ways(w, formatter, num_ways);
-    osm_helpers::write_tmp_relations(w, formatter, num_relations);
-  
-  } catch (const std::exception &e) {
-    formatter.error(e);
-  }
-
-  formatter.end_document();
-}
-
-formats::format_type 
-map_handler::parse_format(FCGX_Request &request) {
-  string request_path = get_request_path(request);
-  if (request_path.substr(request_path.size() - 5) == string(".json")) {
-    return formats::JSON;
-  } else {
-    return formats::XML;
-  }
-}

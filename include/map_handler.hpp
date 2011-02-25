@@ -7,21 +7,16 @@
 #include "changeset.hpp"
 #include "output_formatter.hpp"
 #include "handler.hpp"
+#include "osm_responder.hpp"
 #include <fcgiapp.h>
 #include <pqxx/pqxx>
 #include <string>
 
 class map_responder
-  : public responder {
+  : public osm_responder {
 public:
-  map_responder(bbox, pqxx::work&);
+	 map_responder(mime::type, bbox, pqxx::work&);
   ~map_responder() throw();
-  void write(std::auto_ptr<output_formatter> f);
-
-private:
-  bbox bounds;
-  pqxx::work &w;
-  static void write_map(pqxx::work &w, output_formatter &formatter, const bbox &bounds);
 };
 
 class map_handler 
@@ -31,14 +26,11 @@ public:
   ~map_handler() throw();
   std::string log_name() const;
   responder_ptr_t responder(pqxx::work &x) const;
-  formats::format_type format() const;
 
 private:
   bbox bounds;
-  formats::format_type output_format;
 
   static bbox validate_request(FCGX_Request &request);
-  static formats::format_type parse_format(FCGX_Request &request);
 };
 
 #endif /* MAP_HANDLER_HPP */
