@@ -2,6 +2,7 @@
 #include "osm_helpers.hpp"
 #include "http.hpp"
 #include "logger.hpp"
+#include "infix_ostream_iterator.hpp"
 
 #include <sstream>
 #include <boost/format.hpp>
@@ -26,13 +27,7 @@ nodes_responder::nodes_responder(list<id_t> ids_, pqxx::work &w_)
 	list<id_t>::const_iterator it;
 	
 	query << "create temporary table tmp_nodes as select id from current_nodes where id IN (";
-	for(it=ids.begin(); it!=ids.end(); ++it) {
-		if (it != --ids.end()) {
-			query << *it << ",";
-		} else {
-			query << *it;
-		}
-	}
+	std::copy(ids.begin(), ids.end(), infix_ostream_iterator<id_t>(query, ","));
 	query << ") and visible";
 
 	w.exec(query);
@@ -95,8 +90,8 @@ nodes_handler::validate_request(FCGX_Request &request) {
 		vector<string> strs;
 		al::split(strs, itr->second, al::is_any_of(","));
 		try {
-			for (int i = 0; i < strs.size(); i++) {
-				id_t id = lexical_cast<int>(strs[i]);
+			for (vector<string>::iterator itr = strs.begin(); itr != strs.end(); ++itr) { 
+				id_t id = lexical_cast<id_t>(*itr);
 				myids.push_back(id);
 			}
 		} catch (const bad_lexical_cast &) {
