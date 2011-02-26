@@ -23,8 +23,6 @@
 
 #include "bbox.hpp"
 #include "temp_tables.hpp"
-#include "split_tags.hpp"
-#include "map.hpp"
 #include "http.hpp"
 #include "logger.hpp"
 #include "output_formatter.hpp"
