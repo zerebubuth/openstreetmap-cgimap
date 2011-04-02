@@ -10,8 +10,10 @@ string to_string(type t) {
 		return "*/*";
 	} else if (text_xml == t) {
 		return "text/xml";
+#ifdef HAVE_YAJL
 	} else if (text_json == t) {
 		return "text/json";
+#endif
 	} else {
 		throw runtime_error("No string conversion for unspecified MIME type.");
 	}
