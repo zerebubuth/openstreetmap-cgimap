@@ -6,6 +6,7 @@
 
 #include <pqxx/pqxx>
 #include <boost/optional.hpp>
+#include <boost/shared_ptr.hpp>
 
 /**
  * utility class - use this as a base class when the derived class is going to
@@ -30,7 +31,7 @@ public:
 
 	 // writes whatever is in the tmp_nodes/ways/relations tables to the given 
 	 // formatter.
-	 void write(std::auto_ptr<output_formatter> f);
+  void write(boost::shared_ptr<output_formatter> f);
 
 protected:
 	 // current transaction

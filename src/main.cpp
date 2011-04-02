@@ -294,7 +294,7 @@ process_requests(int socket, const po::variables_map &options) {
 	out = encoding->buffer(out);
 
 	// create the correct mime type output formatter.
-	auto_ptr<output_formatter> o_formatter = choose_formatter(request, responder, out, changeset_cache);
+	shared_ptr<output_formatter> o_formatter = choose_formatter(request, responder, out, changeset_cache);
 	
 	try {
 	  // call to write the response

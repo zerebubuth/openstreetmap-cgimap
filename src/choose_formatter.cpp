@@ -13,6 +13,8 @@
 #include <map>
 #include <limits>
 #include <boost/optional.hpp>
+#include <iostream>
+#include <string>
 
 using std::auto_ptr;
 using std::ostringstream;
@@ -20,6 +22,7 @@ using std::list;
 using std::runtime_error;
 using std::map;
 using std::numeric_limits;
+using std::make_pair;
 using boost::optional;
 using boost::shared_ptr;
 
@@ -27,12 +30,20 @@ namespace {
 
 class acceptable_types {
 public:
-	 bool is_acceptable(mime::type) const;
-   // note: returns mime::unspecified_type if none were acceptable
-	 mime::type most_acceptable_of(const list<mime::type> &available) const;
+  acceptable_types();
+  bool is_acceptable(mime::type) const;
+  // note: returns mime::unspecified_type if none were acceptable
+  mime::type most_acceptable_of(const list<mime::type> &available) const;
 private:
-	 map<mime::type, float> mapping;
+  map<mime::type, float> mapping;
 };
+
+acceptable_types::acceptable_types() {
+  mapping.insert(make_pair(mime::text_xml, 1.0));
+#ifdef HAVE_YAJL
+  mapping.insert(make_pair(mime::text_json, 0.9));
+#endif
+}
 
 bool acceptable_types::is_acceptable(mime::type mt) const {
 	return mapping.find(mt) != mapping.end();
@@ -58,11 +69,11 @@ acceptable_types::most_acceptable_of(const list<mime::type> &available) const {
  * relative acceptability.
  */
 acceptable_types header_mime_type(FCGX_Request &req) {
-	return acceptable_types();
+  return acceptable_types();
 }
 }
 
-auto_ptr<output_formatter>
+shared_ptr<output_formatter>
 choose_formatter(FCGX_Request &request, 
 								 responder_ptr_t hptr, 
 								 shared_ptr<output_buffer> out,
@@ -90,19 +101,16 @@ choose_formatter(FCGX_Request &request,
 		// otherwise we've chosen the most acceptable and available type...
 	}
 	
-	auto_ptr<output_writer> o_writer;
-	auto_ptr<output_formatter> o_formatter;
+	shared_ptr<output_formatter> o_formatter;
 
 	if (best_type == mime::text_xml) {
 	  xml_writer *xwriter = new xml_writer(out, true);
-	  o_writer = auto_ptr<output_writer>(xwriter);
-	  o_formatter = auto_ptr<output_formatter>(new xml_formatter(*xwriter, changeset_cache));
+	  o_formatter = shared_ptr<output_formatter>(new xml_formatter(xwriter, changeset_cache));
 
 #ifdef HAVE_YAJL
 	} else if (best_type == mime::text_json) {
 	  json_writer *jwriter = new json_writer(out, true);
-	  o_writer = auto_ptr<output_writer>(jwriter);
-	  o_formatter = auto_ptr<output_formatter>(new json_formatter(*jwriter, changeset_cache));
+	  o_formatter = shared_ptr<output_formatter>(new json_formatter(jwriter, changeset_cache));
 #endif
 
 	} else {

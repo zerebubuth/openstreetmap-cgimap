@@ -5,6 +5,7 @@
 #include "cache.hpp"
 #include "changeset.hpp"
 #include "json_writer.hpp"
+#include <boost/scoped_ptr.hpp>
 
 /**
  * Outputs a JSON-formatted document, which might be useful for javascript
@@ -13,13 +14,14 @@
 class json_formatter 
   : public output_formatter {
 private:
-  json_writer &writer;
+  boost::scoped_ptr<json_writer> writer;
   cache<long int, changeset> &changeset_cache;
 
   void write_tags(pqxx::result &tags);
 
 public:
-  json_formatter(json_writer &w, cache<long int, changeset> &cc);
+  // NOTE: takes ownership of the writer!
+  json_formatter(json_writer *w, cache<long int, changeset> &cc);
   virtual ~json_formatter();
 
   void start_document();

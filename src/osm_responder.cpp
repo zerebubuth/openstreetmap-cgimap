@@ -2,6 +2,7 @@
 #include "osm_helpers.hpp"
 
 using std::list;
+using boost::shared_ptr;
 
 osm_responder::osm_responder(mime::type mt, pqxx::work &x, boost::optional<bbox> b) 
 	: responder(mt), w(x), bounds(b) {
@@ -21,7 +22,7 @@ osm_responder::types_available() const {
 }
 
 void
-osm_responder::write(std::auto_ptr<output_formatter> formatter) {
+osm_responder::write(shared_ptr<output_formatter> formatter) {
   try {
     formatter->start_document();
 		if (bounds) {
