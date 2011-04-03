@@ -28,8 +28,14 @@ int num_relations(pqxx::work &x);
 /// given a bounding box, populate the tmp_nodes table up to a limit of max_nodes
 void create_tmp_nodes_from_bbox(pqxx::work &w, const bbox &bounds, int max_nodes);
 
+/// creates the tmp_nodes table from the node members of any relations in tmp_relations
+void create_tmp_nodes_from_relations(pqxx::work &w);
+
 /// creates tmp_ways from nodes via the way_nodes table
 void create_tmp_ways_from_nodes(pqxx::work &w);
+
+/// creates tmp_ways from tmp_relations via relation_members
+void create_tmp_ways_from_relations(pqxx::work &w);
 
 /// create tmp_relations from the tmp_ways table
 void create_tmp_relations_from_ways(pqxx::work &w);

@@ -146,12 +146,34 @@ create_tmp_nodes_from_bbox(pqxx::work &w, const bbox &bounds, int max_nodes) {
 }
 
 void
+create_tmp_nodes_from_relations(pqxx::work &work) {
+  logger::message("Creating tmp_nodes (from relations)");
+
+  work.exec("create temporary table tmp_nodes as "
+	    "select distinct rm.member_id as id from "
+	    "current_relation_members rm join tmp_relations "
+	    "tr on rm.id = tr.id where rm.member_type='Node'");
+  work.exec("create index tmp_nodes_idx on tmp_nodes(id)");
+}
+
+void
 create_tmp_ways_from_nodes(pqxx::work &work) {
   logger::message("Creating tmp_ways");
 
   work.exec("create temporary table tmp_ways as "
 	    "select distinct wn.id from current_way_nodes wn "
 	    "join tmp_nodes tn on wn.node_id = tn.id");
+  work.exec("create index tmp_ways_idx on tmp_ways(id)");
+}
+
+void
+create_tmp_ways_from_relations(pqxx::work &work) {
+  logger::message("Creating tmp_ways (from relations)");
+
+  work.exec("create temporary table tmp_ways as "
+	    "select distinct rm.member_id as id from "
+	    "current_relation_members rm join tmp_relations "
+	    "tr on rm.id = tr.id where rm.member_type='Way'");
   work.exec("create index tmp_ways_idx on tmp_ways(id)");
 }
 
