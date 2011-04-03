@@ -89,6 +89,15 @@ nodes_handler::validate_request(FCGX_Request &request) {
 									"of the form nodes=id[,id[,id...]].");
 		}
 	}
+
+    if (myids.size() < 1) {
+        throw http::bad_request("The parameter nodes is required, and must be "
+            "of the form nodes=id[,id[,id...]].");
+    }
+
+	stringstream msg;
+	std::copy(myids.begin(), myids.end(), infix_ostream_iterator<id_t>(msg, ", "));
+	logger::message(format("processing nodes with ids:  %1%") % msg.str());
     
   return myids;
 }
