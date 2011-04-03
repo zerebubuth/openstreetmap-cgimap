@@ -17,6 +17,7 @@ enum type {
 };
 
 std::string to_string(type);
+type parse_from(const std::string &);
 
 }
 
