@@ -101,6 +101,7 @@ routes::routes()
 	r->add<map_handler>(root_ / "map");
 	r->add<nodes_handler>(root_ / "nodes");
 	r->add<node_handler>(root_ / "node" / int_);
+	r->add<way_handler>(root_ / "way" / int_);
 }
 
 routes::~routes() {
