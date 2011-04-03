@@ -31,6 +31,12 @@ nodes_responder::nodes_responder(mime::type mt, list<id_t> ids_, pqxx::work &w_)
 	query << ") and visible";
 
 	w.exec(query);
+
+	int num_nodes = osm_helpers::num_nodes(w);
+
+    if ( num_nodes != ids.size()) {
+        throw http::not_found("One or more of the nodes were not found.");			
+    }
 }
 
 nodes_responder::~nodes_responder() throw() {
