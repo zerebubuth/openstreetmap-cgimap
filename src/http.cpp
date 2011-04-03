@@ -5,12 +5,15 @@
 #include <boost/regex.hpp>
 #include <iterator> 	// for distance
 #include <cctype> 	// for toupper, isxdigit
+#include "logger.hpp"
+#include <boost/format.hpp>
 
 namespace al = boost::algorithm;
 using std::string;
 using std::map;
 using std::vector;
 using boost::shared_ptr;
+using boost::format;
 
 namespace {
 /**
@@ -143,6 +146,8 @@ gone::gone()
     float deflate_quality = 0.000;
     float gzip_quality = 0.000;
 
+	logger::message(format("Determining output encoding from http header %1%") % accept_encoding);
+
     BOOST_FOREACH(const string &encoding, encodings) {
       boost::smatch what;
       string name;
@@ -181,15 +186,18 @@ gone::gone()
     if (deflate_quality > 0.0 &&
         deflate_quality >= gzip_quality && 
         deflate_quality >= identity_quality) {
+	  logger::message(format("Using deflate encoding"));
       return shared_ptr<deflate>(new deflate());
     }
     else
 #endif
     if (gzip_quality > 0.0 &&
         gzip_quality >= identity_quality) {
+	  logger::message(format("Using gzip encoding"));
       return shared_ptr<gzip>(new gzip());
     }
     else if (identity_quality > 0.0) {
+	  logger::message(format("Using identity encoding"));
       return shared_ptr<identity>(new identity());
     }
     else {
