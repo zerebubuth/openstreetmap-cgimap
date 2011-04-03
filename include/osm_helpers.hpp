@@ -40,6 +40,9 @@ void create_tmp_ways_from_relations(pqxx::work &w);
 /// create tmp_relations from the tmp_ways table
 void create_tmp_relations_from_ways(pqxx::work &w);
 
+/// create tmp_nodes from way nodes from tmp_ways
+void create_tmp_nodes_from_way_nodes(pqxx::work &w);
+
 /// update tmp_nodes to include way nodes from tmp_ways
 void insert_tmp_nodes_from_way_nodes(pqxx::work &w);
 

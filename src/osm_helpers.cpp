@@ -188,6 +188,13 @@ create_tmp_relations_from_ways(pqxx::work &work) {
 }
 
 void
+create_tmp_nodes_from_way_nodes(pqxx::work &work) {
+  work.exec("create temporary table tmp_nodes as select distinct wn.node_id as id from current_way_nodes wn "
+	    "where wn.id in (select w.id from tmp_ways w)");
+  work.exec("create index tmp_nodes_idx on tmp_nodes(id)");
+}
+
+void
 insert_tmp_nodes_from_way_nodes(pqxx::work &work) {
   work.exec("insert into tmp_nodes select distinct wn.node_id from current_way_nodes wn "
 	    "where wn.id in (select w.id from tmp_ways w) and wn.node_id not in (select "

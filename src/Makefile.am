@@ -11,7 +11,8 @@ ___map_SOURCES=bbox.cpp http.cpp main.cpp quad_tile.cpp \
 	osm_helpers.cpp rate_limiter.cpp router.cpp \
 	node_handler.cpp nodes_handler.cpp choose_formatter.cpp \
 	mime_types.cpp osm_responder.cpp relations_handler.cpp\
-	relation_full_handler.cpp way_handler.cpp ways_handler.cpp
+	relation_full_handler.cpp way_handler.cpp ways_handler.cpp \
+	way_full_handler.cpp
 
 if HAVE_YAJL
 ___map_SOURCES+=json_formatter.cpp json_writer.cpp
