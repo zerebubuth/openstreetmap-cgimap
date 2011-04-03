@@ -7,7 +7,7 @@
 using std::stringstream;
 
 node_responder::node_responder(mime::type mt, id_t id_, pqxx::work &w_)
-	: osm_responder(mt, w_), id(id_) {
+	: osm_responder(mt, w_, true, false, false), id(id_) {
 	check_visibility();
 
 	stringstream query;

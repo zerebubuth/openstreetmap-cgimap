@@ -21,7 +21,7 @@ using boost::lexical_cast;
 using boost::bad_lexical_cast;
 
 nodes_responder::nodes_responder(mime::type mt, list<id_t> ids_, pqxx::work &w_)
-	: osm_responder(mt, w_), ids(ids_) {
+	: osm_responder(mt, w_, true, false, false), ids(ids_) {
 
 	stringstream query;
 	list<id_t>::const_iterator it;
@@ -83,6 +83,10 @@ nodes_handler::validate_request(FCGX_Request &request) {
 									"of the form nodes=id[,id[,id...]].");
 		}
 	}
+
+	stringstream msg;
+	std::copy(myids.begin(), myids.end(), infix_ostream_iterator<id_t>(msg, ", "));
+	logger::message(format("processing nodes with ids:  %1%") % msg.str());
     
   return myids;
 }

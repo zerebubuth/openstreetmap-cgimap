@@ -23,6 +23,9 @@ public:
    // optional bounds are stored at this level, but available to derived classes.
 	 osm_responder(mime::type, pqxx::work &, boost::optional<bbox> bounds = boost::optional<bbox>());
 
+	 // construct with specifying if the subclass will create the nodes, ways and / or relations tmp tables
+	 osm_responder(mime::type mt, pqxx::work &x, bool has_nodes, bool has_ways, bool has_relations);
+
 	 virtual ~osm_responder() throw();
 
 	 // lists the standard types that OSM format can respond in, currently XML and, if 
@@ -40,6 +43,9 @@ protected:
 	 // optional bounds element - this is only for information and has no effect on 
    // behaviour other than whether the bounds element gets written.
 	 boost::optional<bbox> bounds;
+
+	//specifies whether the appropriate tmp tables were created and thus should be outputted.
+	bool write_nodes, write_ways, write_relations;
 };
 
 #endif /* OSM_RESPONDER_HPP */
