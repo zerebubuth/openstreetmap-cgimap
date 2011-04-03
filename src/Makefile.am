@@ -10,7 +10,7 @@ ___map_SOURCES=bbox.cpp http.cpp main.cpp quad_tile.cpp \
 	fcgi_helpers.cpp output_writer.cpp routes.cpp \
 	osm_helpers.cpp rate_limiter.cpp router.cpp \
 	node_handler.cpp nodes_handler.cpp ways_handler.cpp relations_handler.cpp \
-    choose_formatter.cpp mime_types.cpp osm_responder.cpp \
+    way_full_handler.cpp choose_formatter.cpp mime_types.cpp osm_responder.cpp \
 	relation_full_handler.cpp
 
 if HAVE_YAJL

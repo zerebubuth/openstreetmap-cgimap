@@ -4,6 +4,7 @@
 #include "node_handler.hpp"
 #include "nodes_handler.hpp"
 #include "ways_handler.hpp"
+#include "way_full_handler.hpp"
 #include "relations_handler.hpp"
 #include "relation_full_handler.hpp"
 #include "router.hpp"
@@ -105,6 +106,7 @@ routes::routes()
 	r->add<nodes_handler>(root_ / "nodes");
 	r->add<node_handler>(root_ / "node" / int_);
 	r->add<ways_handler>(root_ / "ways");
+	r->add<way_full_handler>(root_ / "way" / int_ / "full");
 	r->add<relations_handler>(root_ / "relations");
 	r->add<relation_full_handler>(root_ / "relation" / int_ / "full");
 }
