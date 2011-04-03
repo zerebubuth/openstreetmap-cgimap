@@ -3,6 +3,7 @@
 #include "map_handler.hpp"
 #include "node_handler.hpp"
 #include "nodes_handler.hpp"
+#include "way_handler.hpp"
 #include "router.hpp"
 #include "fcgi_helpers.hpp"
 #include "http.hpp"
