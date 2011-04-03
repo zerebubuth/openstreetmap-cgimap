@@ -90,6 +90,11 @@ relations_handler::validate_request(FCGX_Request &request) {
 		}
 	}
 
+    if (myids.size() < 1) {
+        throw http::bad_request("The parameter relations is required, and must be "
+            "of the form relations=id[,id[,id...]].");
+    }
+
 	stringstream msg;
 	std::copy(myids.begin(), myids.end(), infix_ostream_iterator<id_t>(msg, ", "));
 	logger::message(format("processing relations with ids:  %1%") % msg.str());
