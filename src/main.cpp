@@ -72,6 +72,9 @@ get_encoding(FCGX_Request &req) {
 
 void
 respond_error(const http::exception &e, FCGX_Request &r) {
+
+  logger::message(format("Returning with http error %1% with reason %2%") % e.code() %e.what());
+
   ostringstream ostr;
   ostr << "Status: " << e.code() << " " << e.header() << "\r\n"
        << "Content-Type: text/html\r\n"
