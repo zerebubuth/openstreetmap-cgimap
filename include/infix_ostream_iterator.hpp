@@ -30,7 +30,7 @@ public:
 		 if ((_M_string != 0) && (_M_first == false)) {
 			 *_M_stream << _M_string;
 		 } else {
-			 _M_first = true;
+			 _M_first = false;
 		 }
 		 *_M_stream << value;
 		 return *this;
