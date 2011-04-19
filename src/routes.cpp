@@ -4,6 +4,7 @@
 #include "node_handler.hpp"
 #include "nodes_handler.hpp"
 #include "relation_full_handler.hpp"
+#include "way_handler.hpp"
 #include "router.hpp"
 #include "fcgi_helpers.hpp"
 #include "http.hpp"
@@ -103,6 +104,7 @@ routes::routes()
 	r->add<nodes_handler>(root_ / "nodes");
 	r->add<node_handler>(root_ / "node" / int_);
 	r->add<relation_full_handler>(root_ / "relation" / int_ / "full");
+	r->add<way_handler>(root_ / "way" / int_);
 }
 
 routes::~routes() {
