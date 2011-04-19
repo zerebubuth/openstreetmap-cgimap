@@ -51,7 +51,10 @@ relations_handler::~relations_handler() throw() {
 
 std::string 
 relations_handler::log_name() const {
-	return "relations";
+  stringstream msg;
+  msg << "relations?relations=";
+  std::copy(ids.begin(), ids.end(), infix_ostream_iterator<id_t>(msg, ", "));
+  return msg.str();
 }
 
 responder_ptr_t 
@@ -95,9 +98,5 @@ relations_handler::validate_request(FCGX_Request &request) {
             "of the form relations=id[,id[,id...]].");
     }
 
-	stringstream msg;
-	std::copy(myids.begin(), myids.end(), infix_ostream_iterator<id_t>(msg, ", "));
-	logger::message(format("processing relations with ids:  %1%") % msg.str());
-    
   return myids;
 }

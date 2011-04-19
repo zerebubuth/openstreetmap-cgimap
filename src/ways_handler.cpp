@@ -51,7 +51,10 @@ ways_handler::~ways_handler() throw() {
 
 std::string 
 ways_handler::log_name() const {
-	return "ways";
+  stringstream msg;
+  msg << "ways?ways=";
+  std::copy(ids.begin(), ids.end(), infix_ostream_iterator<id_t>(msg, ", "));
+  return msg.str();
 }
 
 responder_ptr_t 
@@ -94,10 +97,6 @@ ways_handler::validate_request(FCGX_Request &request) {
         throw http::bad_request("The parameter ways is required, and must be "
             "of the form ways=id[,id[,id...]].");
     }
-
-	stringstream msg;
-	std::copy(myids.begin(), myids.end(), infix_ostream_iterator<id_t>(msg, ", "));
-	logger::message(format("processing ways with ids:  %1%") % msg.str());
     
   return myids;
 }
