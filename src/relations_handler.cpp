@@ -21,7 +21,7 @@ using boost::lexical_cast;
 using boost::bad_lexical_cast;
 
 relations_responder::relations_responder(mime::type mt, list<id_t> ids_, pqxx::work &w_)
-	: osm_responder(mt, w_, false, false, true), ids(ids_) {
+	: osm_responder(mt, w_), ids(ids_) {
 
 	stringstream query;
 	list<id_t>::const_iterator it;

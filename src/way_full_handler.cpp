@@ -8,7 +8,7 @@
 using std::stringstream;
 
 way_full_responder::way_full_responder(mime::type mt_, id_t id_, pqxx::work &w_) 
-	: osm_responder(mt_, w_, true, true, false), id(id_) {
+	: osm_responder(mt_, w_), id(id_) {
   check_visibility();
   
   stringstream query;
