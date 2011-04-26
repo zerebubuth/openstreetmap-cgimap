@@ -10,6 +10,7 @@
 #include <boost/program_options.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
+#include <boost/algorithm/string.hpp>
 #include <cmath>
 #include <stdexcept>
 #include <vector>
@@ -39,6 +40,7 @@ using std::auto_ptr;
 using boost::shared_ptr;
 using boost::format;
 
+namespace al = boost::algorithm;
 namespace pt = boost::posix_time;
 namespace po = boost::program_options;
 
@@ -172,14 +174,27 @@ validate_request(FCGX_Request &request) {
 
 void
 respond_error(const http::exception &e, FCGX_Request &r) {
+  const char *error_format = FCGX_GetParam("HTTP_X_ERROR_FORMAT", r.envp);
   ostringstream ostr;
-  ostr << "Status: " << e.code() << " " << e.header() << "\r\n"
-       << "Content-Type: text/html\r\n"
-       << "Error: " << e.what() << "\r\n"
-       << "\r\n"
-       << "<html><head><title>" << e.header() << "</title></head>"
-       << "<body><p>" << e.what() << "</p></body></html>\n";
-  
+
+  if (error_format && al::iequals(error_format, "xml")) {
+    ostr << "Status: 200 OK\r\n"
+         << "Content-Type: text/xml; charset=utf-8\r\n"
+         << "\r\n"
+         << "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\r\n"
+         << "<osmError>\r\n"
+         << "<status>" << e.code() << " " << e.header() << "</status>\r\n"
+         << "<message>" << e.what() << "</message>\r\n"
+         << "</osmError>\r\n";
+  } else {
+    ostr << "Status: " << e.code() << " " << e.header() << "\r\n"
+         << "Content-Type: text/html\r\n"
+         << "Error: " << e.what() << "\r\n"
+         << "\r\n"
+         << "<html><head><title>" << e.header() << "</title></head>"
+         << "<body><p>" << e.what() << "</p></body></html>\n";
+  }
+
   FCGX_PutS(ostr.str().c_str(), r.out);
 }
 
