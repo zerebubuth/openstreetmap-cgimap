@@ -50,7 +50,7 @@ map_handler::~map_handler() throw() {
 
 string
 map_handler::log_name() const {
-  return (boost::format("map(%1%,%2%,%3%,%4%)") % bounds.minlat % bounds.minlon % bounds.maxlat % bounds.maxlon).str();
+  return (boost::format("map(%1%,%2%,%3%,%4%)") % bounds.minlon % bounds.minlat % bounds.maxlon % bounds.maxlat).str();
 }
 
 responder_ptr_t
