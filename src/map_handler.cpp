@@ -2,7 +2,6 @@
 #include "temp_tables.hpp"
 #include "http.hpp"
 #include "fcgi_helpers.hpp"
-#include "osm_helpers.hpp"
 #include "logger.hpp"
 #include <boost/format.hpp>
 #include <map>
@@ -15,14 +14,14 @@ using std::map;
 #define MAX_AREA 0.25
 #define MAX_NODES 50000
 
-map_responder::map_responder(mime::type mt, bbox b, pqxx::work &x)
+map_responder::map_responder(mime::type mt, bbox b, data_selection &x)
   : osm_responder(mt, x, boost::optional<bbox>(b)) {
   // create temporary tables of nodes, ways and relations which
   // are in or used by elements in the bbox
-  osm_helpers::create_tmp_nodes_from_bbox(w, b, MAX_NODES);
+  sel.select_nodes_from_bbox(b, MAX_NODES);
 
   // check how many nodes we got
-  int num_nodes = osm_helpers::num_nodes(w);
+  int num_nodes = sel.num_nodes();
   // TODO: make configurable parameter?
   if (num_nodes > MAX_NODES) {
     throw http::bad_request((format("You requested too many nodes (limit is %1%). "
@@ -30,22 +29,22 @@ map_responder::map_responder(mime::type mt, bbox b, pqxx::work &x)
 			     % MAX_NODES).str());
   }
 
-  osm_helpers::create_tmp_ways_from_nodes(w);
-  osm_helpers::insert_tmp_nodes_from_way_nodes(w);
-  osm_helpers::create_tmp_relations_from_ways(w);
-  osm_helpers::insert_tmp_relations_from_nodes(w);
-  osm_helpers::insert_tmp_relations_from_way_nodes(w);
-  osm_helpers::insert_tmp_relations_from_relations(w);
+  sel.select_ways_from_nodes();
+  sel.select_nodes_from_way_nodes();
+  sel.select_relations_from_ways();
+  sel.select_relations_from_nodes();
+  sel.select_relations_from_way_nodes();
+  sel.select_relations_from_relations();
 }
 
-map_responder::~map_responder() throw() {
+map_responder::~map_responder() {
 }
 
 map_handler::map_handler(FCGX_Request &request) 
   : bounds(validate_request(request)) {
 }
 
-map_handler::~map_handler() throw() {
+map_handler::~map_handler() {
 }
 
 string
@@ -54,7 +53,7 @@ map_handler::log_name() const {
 }
 
 responder_ptr_t
-map_handler::responder(pqxx::work &x) const {
+map_handler::responder(data_selection &x) const {
   return responder_ptr_t(new map_responder(mime_type, bounds, x));
 }
 

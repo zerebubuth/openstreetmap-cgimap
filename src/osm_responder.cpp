@@ -1,14 +1,13 @@
 #include "osm_responder.hpp"
-#include "osm_helpers.hpp"
 
 using std::list;
 using boost::shared_ptr;
 
-osm_responder::osm_responder(mime::type mt, pqxx::work &x, boost::optional<bbox> b) 
-	: responder(mt), w(x), bounds(b) {
+osm_responder::osm_responder(mime::type mt, data_selection &s, boost::optional<bbox> b) 
+	: responder(mt), sel(s), bounds(b) {
 }
 
-osm_responder::~osm_responder() throw() {
+osm_responder::~osm_responder() {
 }
 
 list<mime::type> 
@@ -29,13 +28,13 @@ osm_responder::write(shared_ptr<output_formatter> formatter) {
 			formatter->write_bounds(bounds.get());
 		}
 
-    int num_nodes = osm_helpers::num_nodes(w);
-    int num_ways = osm_helpers::num_ways(w);
-    int num_relations = osm_helpers::num_relations(w);
+    int num_nodes = sel.num_nodes();
+    int num_ways = sel.num_ways();
+    int num_relations = sel.num_relations();
 
-    if (num_nodes > 0)     osm_helpers::write_tmp_nodes(w, *formatter, num_nodes);
-    if (num_ways > 0)      osm_helpers::write_tmp_ways(w, *formatter, num_ways);
-    if (num_relations > 0) osm_helpers::write_tmp_relations(w, *formatter, num_relations);
+    if (num_nodes > 0)     sel.write_nodes(*formatter);
+    if (num_ways > 0)      sel.write_ways(*formatter);
+    if (num_relations > 0) sel.write_relations(*formatter);
   
   } catch (const std::exception &e) {
     formatter->error(e);

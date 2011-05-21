@@ -1,5 +1,4 @@
 #include "relations_handler.hpp"
-#include "osm_helpers.hpp"
 #include "http.hpp"
 #include "logger.hpp"
 #include "infix_ostream_iterator.hpp"
@@ -20,33 +19,26 @@ using boost::format;
 using boost::lexical_cast;
 using boost::bad_lexical_cast;
 
-relations_responder::relations_responder(mime::type mt, list<id_t> ids_, pqxx::work &w_)
-	: osm_responder(mt, w_), ids(ids_) {
+relations_responder::relations_responder(mime::type mt, list<id_t> ids_, data_selection &s_)
+	: osm_responder(mt, s_), ids(ids_) {
 
-	stringstream query;
-	list<id_t>::const_iterator it;
-	
-	query << "create temporary table tmp_relations as select id from current_relations where id IN (";
-	std::copy(ids.begin(), ids.end(), infix_ostream_iterator<id_t>(query, ","));
-	query << ") and visible";
+	sel.select_visible_relations(ids_);
 
-	w.exec(query);
-
-	int num_relations = osm_helpers::num_relations(w);
+	int num_relations = sel.num_relations();
 
     if ( num_relations != ids.size()) {
         throw http::not_found("One or more of the relations were not found.");			
     }
 }
 
-relations_responder::~relations_responder() throw() {
+relations_responder::~relations_responder() {
 }
 
 relations_handler::relations_handler(FCGX_Request &request) 
 	: ids(validate_request(request)) {
 }
 
-relations_handler::~relations_handler() throw() {
+relations_handler::~relations_handler() {
 }
 
 std::string 
@@ -58,7 +50,7 @@ relations_handler::log_name() const {
 }
 
 responder_ptr_t 
-relations_handler::responder(pqxx::work &x) const {
+relations_handler::responder(data_selection &x) const {
 	return responder_ptr_t(new relations_responder(mime_type, ids, x));
 }
 

@@ -1,28 +1,29 @@
 #include "node_handler.hpp"
-#include "osm_helpers.hpp"
 #include "http.hpp"
 
 #include <sstream>
 
 using std::stringstream;
+using std::list;
 
-node_responder::node_responder(mime::type mt, id_t id_, pqxx::work &w_)
+node_responder::node_responder(mime::type mt, id_t id_, data_selection &w_)
 	: osm_responder(mt, w_), id(id_) {
+	list<id_t> ids;
+
 	check_visibility();
 
-	stringstream query;
-	query << "create temporary table tmp_nodes as select id from current_nodes where id = " << id << " and visible";
-	w.exec(query);
+	ids.push_back(id);
+	sel.select_visible_nodes(ids);
 }
 
-node_responder::~node_responder() throw() {
+node_responder::~node_responder() {
 }
 
 node_handler::node_handler(FCGX_Request &request, id_t id_) 
 	: id(id_) {
 }
 
-node_handler::~node_handler() throw() {
+node_handler::~node_handler() {
 }
 
 std::string 
@@ -31,19 +32,18 @@ node_handler::log_name() const {
 }
 
 responder_ptr_t 
-node_handler::responder(pqxx::work &x) const {
+node_handler::responder(data_selection &x) const {
 	return responder_ptr_t(new node_responder(mime_type, id, x));
 }
 
 void
 node_responder::check_visibility() {
-	stringstream query;
-	query << "select visible from nodes where id = " << id;
-	pqxx::result res = w.exec(query);
-	if (res.size() == 0) {
+	switch (sel.check_node_visibility(id)) {
+
+	case data_selection::non_exist:
 		throw http::not_found(""); // TODO: fix error message / throw structure to emit better error message
-	}
-	if (!res[0][0].as<bool>()) {
+	
+	case data_selection::deleted:
 		throw http::gone(); // TODO: fix error message / throw structure to emit better error message
 	}
 }

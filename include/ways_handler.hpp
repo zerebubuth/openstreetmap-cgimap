@@ -5,7 +5,6 @@
 #include "osm_responder.hpp"
 #include "fcgi_helpers.hpp"
 #include <fcgiapp.h>
-#include <pqxx/pqxx>
 #include <string>
 #include <list>
 
@@ -14,8 +13,8 @@ using std::list;
 class ways_responder
 	: public osm_responder {
 public:
-	 ways_responder(mime::type, list<id_t>, pqxx::work &);
-	 ~ways_responder() throw();
+	 ways_responder(mime::type, list<id_t>, data_selection &);
+	 ~ways_responder();
 
 private:
 	 list<id_t> ids;
@@ -25,10 +24,10 @@ class ways_handler
 	: public handler {
 public:
 	 ways_handler(FCGX_Request &request);
-	 ~ways_handler() throw();
+	 ~ways_handler();
 
 	 std::string log_name() const;
-	 responder_ptr_t responder(pqxx::work &x) const;
+	 responder_ptr_t responder(data_selection &x) const;
 
 private:
 	 list<id_t> ids;

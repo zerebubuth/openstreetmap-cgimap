@@ -1,13 +1,14 @@
 #ifndef HANDLER_HPP
 #define HANDLER_HPP
 
+#include "types.hpp"
 #include "output_formatter.hpp"
 #include "mime_types.hpp"
+#include "data_selection.hpp"
 
 #include <list>
 #include <string>
 #include <memory>
-#include <pqxx/pqxx>
 #include <boost/shared_ptr.hpp>
 
 /**
@@ -16,7 +17,7 @@
 class responder {
 public:
 	 responder(mime::type);
-  virtual ~responder() throw();
+  virtual ~responder();
   virtual void write(boost::shared_ptr<output_formatter> f) = 0;
 
 	 mime::type resource_type() const;
@@ -37,9 +38,9 @@ typedef boost::shared_ptr<responder> responder_ptr_t;
 class handler {
 public:
 	 handler(mime::type default_type = mime::unspecified_type);
-  virtual ~handler() throw();
+  virtual ~handler();
   virtual std::string log_name() const = 0;
-  virtual responder_ptr_t responder(pqxx::work &) const = 0;
+  virtual responder_ptr_t responder(data_selection &) const = 0;
 
 	 void set_resource_type(mime::type);
 

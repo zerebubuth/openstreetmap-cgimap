@@ -1,5 +1,4 @@
 #include "ways_handler.hpp"
-#include "osm_helpers.hpp"
 #include "http.hpp"
 #include "logger.hpp"
 #include "infix_ostream_iterator.hpp"
@@ -20,33 +19,26 @@ using boost::format;
 using boost::lexical_cast;
 using boost::bad_lexical_cast;
 
-ways_responder::ways_responder(mime::type mt, list<id_t> ids_, pqxx::work &w_)
+ways_responder::ways_responder(mime::type mt, list<id_t> ids_, data_selection &w_)
 	: osm_responder(mt, w_), ids(ids_) {
 
-	stringstream query;
-	list<id_t>::const_iterator it;
-	
-	query << "create temporary table tmp_ways as select id from current_ways where id IN (";
-	std::copy(ids.begin(), ids.end(), infix_ostream_iterator<id_t>(query, ","));
-	query << ") and visible";
+	sel.select_visible_ways(ids_);
 
-	w.exec(query);
-
-	int num_ways = osm_helpers::num_ways(w);
+	int num_ways = sel.num_ways();
 
     if ( num_ways != ids.size()) {
         throw http::not_found("One or more of the ways were not found.");
     }
 }
 
-ways_responder::~ways_responder() throw() {
+ways_responder::~ways_responder() {
 }
 
 ways_handler::ways_handler(FCGX_Request &request) 
 	: ids(validate_request(request)) {
 }
 
-ways_handler::~ways_handler() throw() {
+ways_handler::~ways_handler() {
 }
 
 std::string 
@@ -58,7 +50,7 @@ ways_handler::log_name() const {
 }
 
 responder_ptr_t 
-ways_handler::responder(pqxx::work &x) const {
+ways_handler::responder(data_selection &x) const {
 	return responder_ptr_t(new ways_responder(mime_type, ids, x));
 }
 

@@ -3,8 +3,8 @@
 
 #include "handler.hpp"
 #include "bbox.hpp"
+#include "data_selection.hpp"
 
-#include <pqxx/pqxx>
 #include <boost/optional.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -21,9 +21,9 @@ class osm_responder : public responder {
 public:
 	 // construct, passing the mime type down to the responder. the current transaction 
    // optional bounds are stored at this level, but available to derived classes.
-	 osm_responder(mime::type, pqxx::work &, boost::optional<bbox> bounds = boost::optional<bbox>());
+	 osm_responder(mime::type, data_selection &, boost::optional<bbox> bounds = boost::optional<bbox>());
 
-	 virtual ~osm_responder() throw();
+	 virtual ~osm_responder();
 
 	 // lists the standard types that OSM format can respond in, currently XML and, if 
    // the yajl library is provided, JSON.
@@ -34,8 +34,8 @@ public:
   void write(boost::shared_ptr<output_formatter> f);
 
 protected:
-	 // current transaction
-	 pqxx::work &w;
+	 // current selection of elements to be written out
+	 data_selection &sel;
 
 	 // optional bounds element - this is only for information and has no effect on 
    // behaviour other than whether the bounds element gets written.

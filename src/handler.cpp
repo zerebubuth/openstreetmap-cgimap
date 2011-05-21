@@ -4,7 +4,7 @@ responder::responder(mime::type mt)
 	: mime_type(mt) {
 }
 
-responder::~responder() throw() {}
+responder::~responder() {}
 
 bool
 responder::is_available(mime::type mt) const {
@@ -26,7 +26,7 @@ handler::handler(mime::type default_type)
 	: mime_type(default_type) {
 }
 
-handler::~handler() throw() {}
+handler::~handler() {}
 
 void 
 handler::set_resource_type(mime::type mt) {

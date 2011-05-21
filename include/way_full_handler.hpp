@@ -4,14 +4,13 @@
 #include "handler.hpp"
 #include "osm_responder.hpp"
 #include <fcgiapp.h>
-#include <pqxx/pqxx>
 #include <string>
 
 class way_full_responder
   : public osm_responder {
 public:
-  way_full_responder(mime::type, id_t, pqxx::work &);
-  ~way_full_responder() throw();
+  way_full_responder(mime::type, id_t, data_selection &);
+  ~way_full_responder();
 
 private:
   id_t id;
@@ -23,10 +22,10 @@ class way_full_handler
   : public handler {
 public:
   way_full_handler(FCGX_Request &request, id_t id);
-  ~way_full_handler() throw();
+  ~way_full_handler();
   
   std::string log_name() const;
-  responder_ptr_t responder(pqxx::work &x) const;
+  responder_ptr_t responder(data_selection &x) const;
   
 private:
   id_t id;

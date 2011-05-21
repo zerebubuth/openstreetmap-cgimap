@@ -4,8 +4,8 @@
 #include "handler.hpp"
 #include "osm_responder.hpp"
 #include "fcgi_helpers.hpp"
+#include "data_selection.hpp"
 #include <fcgiapp.h>
-#include <pqxx/pqxx>
 #include <string>
 #include <list>
 
@@ -14,8 +14,8 @@ using std::list;
 class relations_responder
 	: public osm_responder {
 public:
-	 relations_responder(mime::type, list<id_t>, pqxx::work &);
-	 ~relations_responder() throw();
+	 relations_responder(mime::type, list<id_t>, data_selection &);
+	 ~relations_responder();
 
 private:
 	 list<id_t> ids;
@@ -25,10 +25,10 @@ class relations_handler
 	: public handler {
 public:
 	 relations_handler(FCGX_Request &request);
-	 ~relations_handler() throw();
+	 ~relations_handler();
 
 	 std::string log_name() const;
-	 responder_ptr_t responder(pqxx::work &x) const;
+	 responder_ptr_t responder(data_selection &x) const;
 
 private:
 	 list<id_t> ids;

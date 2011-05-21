@@ -8,23 +8,22 @@
 #include "handler.hpp"
 #include "osm_responder.hpp"
 #include <fcgiapp.h>
-#include <pqxx/pqxx>
 #include <string>
 
 class map_responder
   : public osm_responder {
 public:
-	 map_responder(mime::type, bbox, pqxx::work&);
-  ~map_responder() throw();
+	 map_responder(mime::type, bbox, data_selection &);
+  ~map_responder();
 };
 
 class map_handler 
   : public handler {
 public:
   map_handler(FCGX_Request &request);
-  ~map_handler() throw();
+  ~map_handler();
   std::string log_name() const;
-  responder_ptr_t responder(pqxx::work &x) const;
+  responder_ptr_t responder(data_selection &x) const;
 
 private:
   bbox bounds;

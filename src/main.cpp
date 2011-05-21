@@ -35,6 +35,7 @@
 #include "choose_formatter.hpp"
 #include "cache.hpp"
 #include "changeset.hpp"
+#include "writeable_pgsql_selection.hpp"
 
 using std::runtime_error;
 using std::vector;
@@ -288,9 +289,10 @@ process_requests(int socket, const po::variables_map &options) {
 
 	// separate transaction for the request
 	pqxx::work x(*con);
+	writeable_pgsql_selection selection(x);
 
 	// constructor of responder handles dynamic validation (i.e: with db access).
-	responder_ptr_t responder = handler->responder(x);
+	responder_ptr_t responder = handler->responder(selection);
 
 	// get encoding to use
 	shared_ptr<http::encoding> encoding = get_encoding(request);

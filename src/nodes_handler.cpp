@@ -1,5 +1,4 @@
 #include "nodes_handler.hpp"
-#include "osm_helpers.hpp"
 #include "http.hpp"
 #include "logger.hpp"
 #include "infix_ostream_iterator.hpp"
@@ -20,33 +19,26 @@ using boost::format;
 using boost::lexical_cast;
 using boost::bad_lexical_cast;
 
-nodes_responder::nodes_responder(mime::type mt, list<id_t> ids_, pqxx::work &w_)
+nodes_responder::nodes_responder(mime::type mt, list<id_t> ids_, data_selection &w_)
 	: osm_responder(mt, w_), ids(ids_) {
 
-	stringstream query;
-	list<id_t>::const_iterator it;
-	
-	query << "create temporary table tmp_nodes as select id from current_nodes where id IN (";
-	std::copy(ids.begin(), ids.end(), infix_ostream_iterator<id_t>(query, ","));
-	query << ") and visible";
+	sel.select_visible_nodes(ids_);
 
-	w.exec(query);
+	int num_nodes = sel.num_nodes();
 
-	int num_nodes = osm_helpers::num_nodes(w);
-
-    if ( num_nodes != ids.size()) {
-        throw http::not_found("One or more of the nodes were not found.");			
-    }
+	if (num_nodes != ids.size()) {
+		throw http::not_found("One or more of the nodes were not found.");			
+	}
 }
 
-nodes_responder::~nodes_responder() throw() {
+nodes_responder::~nodes_responder() {
 }
 
 nodes_handler::nodes_handler(FCGX_Request &request) 
 	: ids(validate_request(request)) {
 }
 
-nodes_handler::~nodes_handler() throw() {
+nodes_handler::~nodes_handler() {
 }
 
 std::string 
@@ -58,7 +50,7 @@ nodes_handler::log_name() const {
 }
 
 responder_ptr_t 
-nodes_handler::responder(pqxx::work &x) const {
+nodes_handler::responder(data_selection &x) const {
 	return responder_ptr_t(new nodes_responder(mime_type, ids, x));
 }
 
