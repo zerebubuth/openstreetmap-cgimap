@@ -1,4 +1,4 @@
-#include "nodes_handler.hpp"
+#include "api06/relations_handler.hpp"
 #include "http.hpp"
 #include "logger.hpp"
 #include "infix_ostream_iterator.hpp"
@@ -19,39 +19,41 @@ using boost::format;
 using boost::lexical_cast;
 using boost::bad_lexical_cast;
 
-nodes_responder::nodes_responder(mime::type mt, list<id_t> ids_, data_selection &w_)
-	: osm_responder(mt, w_), ids(ids_) {
+namespace api06 {
 
-	sel.select_visible_nodes(ids_);
+relations_responder::relations_responder(mime::type mt, list<id_t> ids_, data_selection &s_)
+	: osm_responder(mt, s_), ids(ids_) {
 
-	int num_nodes = sel.num_nodes();
+	sel.select_visible_relations(ids_);
 
-	if (num_nodes != ids.size()) {
-		throw http::not_found("One or more of the nodes were not found.");			
-	}
+	int num_relations = sel.num_relations();
+
+    if ( num_relations != ids.size()) {
+        throw http::not_found("One or more of the relations were not found.");			
+    }
 }
 
-nodes_responder::~nodes_responder() {
+relations_responder::~relations_responder() {
 }
 
-nodes_handler::nodes_handler(FCGX_Request &request) 
+relations_handler::relations_handler(FCGX_Request &request) 
 	: ids(validate_request(request)) {
 }
 
-nodes_handler::~nodes_handler() {
+relations_handler::~relations_handler() {
 }
 
 std::string 
-nodes_handler::log_name() const {
+relations_handler::log_name() const {
   stringstream msg;
-  msg << "nodes?nodes=";
+  msg << "relations?relations=";
   std::copy(ids.begin(), ids.end(), infix_ostream_iterator<id_t>(msg, ", "));
   return msg.str();
 }
 
 responder_ptr_t 
-nodes_handler::responder(data_selection &x) const {
-	return responder_ptr_t(new nodes_responder(mime_type, ids, x));
+relations_handler::responder(data_selection &x) const {
+	return responder_ptr_t(new relations_responder(mime_type, ids, x));
 }
 
 /**
@@ -59,15 +61,15 @@ nodes_handler::responder(data_selection &x) const {
  * throwing an error if there was no valid list of node ids.
  */
 list<id_t>
-nodes_handler::validate_request(FCGX_Request &request) {
+relations_handler::validate_request(FCGX_Request &request) {
 	// check that the REQUEST_METHOD is a GET
 	if (fcgi_get_env(request, "REQUEST_METHOD") != "GET") 
 		throw http::method_not_allowed("Only the GET method is supported for "
-									   "nodes requests.");
+									   "relations requests.");
 
 	string decoded = http::urldecode(get_query_string(request));
 	const map<string, string> params = http::parse_params(decoded);
-	map<string, string>::const_iterator itr = params.find("nodes");
+	map<string, string>::const_iterator itr = params.find("relations");
 
 	list <id_t> myids;
 
@@ -80,15 +82,18 @@ nodes_handler::validate_request(FCGX_Request &request) {
 				myids.push_back(id);
 			}
 		} catch (const bad_lexical_cast &) {
-			throw http::bad_request("The parameter nodes is required, and must be "
-									"of the form nodes=id[,id[,id...]].");
+			throw http::bad_request("The parameter relations is required, and must be "
+									"of the form relations=id[,id[,id...]].");
 		}
 	}
 
     if (myids.size() < 1) {
-        throw http::bad_request("The parameter nodes is required, and must be "
-            "of the form nodes=id[,id[,id...]].");
+        throw http::bad_request("The parameter relations is required, and must be "
+            "of the form relations=id[,id[,id...]].");
     }
 
   return myids;
 }
+
+} // namespace api06
+

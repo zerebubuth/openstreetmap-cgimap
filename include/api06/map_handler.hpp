@@ -1,5 +1,5 @@
-#ifndef MAP_HANDLER_HPP
-#define MAP_HANDLER_HPP
+#ifndef API06_MAP_HANDLER_HPP
+#define API06_MAP_HANDLER_HPP
 
 #include "bbox.hpp"
 #include "cache.hpp"
@@ -9,6 +9,8 @@
 #include "osm_responder.hpp"
 #include <fcgiapp.h>
 #include <string>
+
+namespace api06 {
 
 class map_responder
   : public osm_responder {
@@ -31,4 +33,6 @@ private:
   static bbox validate_request(FCGX_Request &request);
 };
 
-#endif /* MAP_HANDLER_HPP */
+} // namespace api06
+
+#endif /* API06_MAP_HANDLER_HPP */

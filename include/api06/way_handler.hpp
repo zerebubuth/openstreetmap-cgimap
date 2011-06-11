@@ -1,10 +1,12 @@
-#ifndef WAY_HANDLER_HPP
-#define WAY_HANDLER_HPP
+#ifndef API06_WAY_HANDLER_HPP
+#define API06_WAY_HANDLER_HPP
 
 #include "handler.hpp"
 #include "osm_responder.hpp"
 #include <fcgiapp.h>
 #include <string>
+
+namespace api06 {
 
 class way_responder
 	: public osm_responder {
@@ -31,4 +33,6 @@ private:
 	 id_t id;
 };
 
-#endif /* WAY_HANDLER_HPP */
+} // namespace api06
+
+#endif /* API06_WAY_HANDLER_HPP */

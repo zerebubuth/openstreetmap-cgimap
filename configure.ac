@@ -1,5 +1,9 @@
-AC_INIT([CGImap], [0.0.3])
-AM_INIT_AUTOMAKE
+AC_INIT([CGImap], 
+        [0.0.3], 
+	[https://github.com/zerebubuth/openstreetmap-cgimap/issues], 
+	[cgimap-0.0.3], 
+	[https://github.com/zerebubuth/openstreetmap-cgimap])
+AM_INIT_AUTOMAKE([subdir-objects])
 
 AC_PROG_CXX
 AC_PROG_INSTALL
@@ -34,7 +38,7 @@ AX_BOOST_DATE_TIME
 AX_CHECK_ZLIB
 
 AC_ARG_WITH(fcgi,
-	[ --with-fcgi=<path> prefix of FCGI library.],
+	[AS_HELP_STRING([--with-fcgi=<path>], [Path containing FCGI library (e.g: /usr).])],
 	[FCGI_PREFIX=$with_fcgi],
 	AC_MSG_ERROR([You must call configure with the --with-fcgi option.
 	This tells configure where to find the FCGI library and headers.
@@ -47,9 +51,9 @@ FCGI_CFLAGS="-I${FCGI_PREFIX}/include"
 AC_SUBST(FCGI_LIBS)
 AC_SUBST(FCGI_CFLAGS)
 
-AC_MSG_CHECKING(--enable-yajl argument)
+AC_MSG_CHECKING(whether to enable JSON output using YAJL)
 AC_ARG_ENABLE(yajl,
-    [  --enable-yajl         Enable JSON output with the YAJL library.],
+    [AS_HELP_STRING([--enable-yajl], [Enable JSON output with the YAJL library. API 0.7 only.])],
     [enable_yajl=$enableval],
     [enable_yajl="no"])
 AC_MSG_RESULT($enable_yajl)
@@ -62,6 +66,17 @@ AS_IF([test "x$enable_yajl" != xno],
               [AC_MSG_FAILURE(
                  [--enable-yajl was given, but test for YAJL failed])])])
 AM_CONDITIONAL([HAVE_YAJL], [test "x$enable_yajl" != xno])
+
+AC_MSG_CHECKING([whether to enable experimental API 0.7 features])
+AC_ARG_ENABLE([api07],
+	[AS_HELP_STRING([--enable-api07],
+		[Enable experimental API 0.7 features])],
+	[enable_api07="yes"],
+	[enable_api07="no"])
+AC_MSG_RESULT($enable_api07)
+AS_IF([test "x$enable_api07" == xyes],
+	[AC_DEFINE([ENABLE_API07], [1], [Define for experimental API 0.7 features.])])
+AM_CONDITIONAL([ENABLE_API07], [test "x$enable_api07" == xyes])
 
 AC_CONFIG_FILES([
 	Makefile

@@ -1,4 +1,4 @@
-#include "relation_full_handler.hpp"
+#include "api06/relation_full_handler.hpp"
 #include "http.hpp"
 #include "logger.hpp"
 #include <sstream>
@@ -6,6 +6,8 @@
 
 using std::stringstream;
 using std::list;
+
+namespace api06 {
 
 relation_full_responder::relation_full_responder(mime::type mt_, id_t id_, data_selection &w_) 
   : osm_responder(mt_, w_), id(id_) {
@@ -54,4 +56,6 @@ responder_ptr_t
 relation_full_handler::responder(data_selection &x) const {
   return responder_ptr_t(new relation_full_responder(mime_type, id, x));
 }
+
+} // namespace api06
 

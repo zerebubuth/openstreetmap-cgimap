@@ -1,4 +1,4 @@
-#include "ways_handler.hpp"
+#include "api06/ways_handler.hpp"
 #include "http.hpp"
 #include "logger.hpp"
 #include "infix_ostream_iterator.hpp"
@@ -18,6 +18,8 @@ using std::map;
 using boost::format;
 using boost::lexical_cast;
 using boost::bad_lexical_cast;
+
+namespace api06 {
 
 ways_responder::ways_responder(mime::type mt, list<id_t> ids_, data_selection &w_)
 	: osm_responder(mt, w_), ids(ids_) {
@@ -92,3 +94,6 @@ ways_handler::validate_request(FCGX_Request &request) {
     
   return myids;
 }
+
+} // namespace api06
+

@@ -1,4 +1,4 @@
-#include "map_handler.hpp"
+#include "api06/map_handler.hpp"
 #include "temp_tables.hpp"
 #include "http.hpp"
 #include "fcgi_helpers.hpp"
@@ -13,6 +13,8 @@ using std::map;
 
 #define MAX_AREA 0.25
 #define MAX_NODES 50000
+
+namespace api06 {
 
 map_responder::map_responder(mime::type mt, bbox b, data_selection &x)
   : osm_responder(mt, x, boost::optional<bbox>(b)) {
@@ -100,3 +102,4 @@ map_handler::validate_request(FCGX_Request &request) {
   return bounds;
 }
 
+} // namespace api06

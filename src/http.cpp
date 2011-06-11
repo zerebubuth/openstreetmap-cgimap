@@ -177,6 +177,7 @@ gone::gone()
       }
     }
 
+#ifdef HAVE_LIBZ
 #ifdef ENABLE_DEFLATE
     if (deflate_quality > 0.0 &&
         deflate_quality >= gzip_quality && 
@@ -184,11 +185,12 @@ gone::gone()
       return shared_ptr<deflate>(new deflate());
     }
     else
-#endif
+#endif /* ENABLE_DEFLATE */
     if (gzip_quality > 0.0 &&
         gzip_quality >= identity_quality) {
       return shared_ptr<gzip>(new gzip());
     }
+#endif /* HAVE_LIBZ */
     else if (identity_quality > 0.0) {
       return shared_ptr<identity>(new identity());
     }

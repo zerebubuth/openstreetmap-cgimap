@@ -1,4 +1,4 @@
-#include "way_full_handler.hpp"
+#include "api06/way_full_handler.hpp"
 #include "http.hpp"
 #include "logger.hpp"
 #include <sstream>
@@ -6,6 +6,8 @@
 
 using std::stringstream;
 using std::list;
+
+namespace api06 {
 
 way_full_responder::way_full_responder(mime::type mt_, id_t id_, data_selection &w_) 
 	: osm_responder(mt_, w_), id(id_) {
@@ -51,4 +53,6 @@ responder_ptr_t
 way_full_handler::responder(data_selection &x) const {
   return responder_ptr_t(new way_full_responder(mime_type, id, x));
 }
+
+} // namespace api06
 

@@ -14,26 +14,32 @@ ___map_SOURCES=\
 	http.cpp \
 	logger.cpp \
 	main.cpp \
-	map_handler.cpp \
 	mime_types.cpp \
-	node_handler.cpp \
-	nodes_handler.cpp \
 	osm_responder.cpp \
 	output_formatter.cpp \
 	output_writer.cpp \
 	quad_tile.cpp \
 	rate_limiter.cpp \
-	relation_full_handler.cpp \
-	relations_handler.cpp \
 	router.cpp \
 	routes.cpp \
-	way_full_handler.cpp \
-	way_handler.cpp \
-	ways_handler.cpp \
 	writeable_pgsql_selection.cpp \
 	xml_formatter.cpp \
 	xml_writer.cpp \
 	zlib.cpp
+
+___map_SOURCES+=\
+	api06/map_handler.cpp \
+	api06/node_handler.cpp \
+	api06/nodes_handler.cpp \
+	api06/relation_full_handler.cpp \
+	api06/relations_handler.cpp \
+	api06/way_full_handler.cpp \
+	api06/way_handler.cpp \
+	api06/ways_handler.cpp
+
+if ENABLE_API07
+___map_SOURCES+=api07/map_handler.cpp
+endif
 
 if HAVE_YAJL
 ___map_SOURCES+=json_formatter.cpp json_writer.cpp

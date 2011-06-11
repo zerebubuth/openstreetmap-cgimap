@@ -1,5 +1,5 @@
-#ifndef WAYS_HANDLER_HPP
-#define WAYSS_HANDLER_HPP
+#ifndef API06_WAYS_HANDLER_HPP
+#define API06_WAYS_HANDLER_HPP
 
 #include "handler.hpp"
 #include "osm_responder.hpp"
@@ -8,16 +8,16 @@
 #include <string>
 #include <list>
 
-using std::list;
+namespace api06 {
 
 class ways_responder
 	: public osm_responder {
 public:
-	 ways_responder(mime::type, list<id_t>, data_selection &);
+	 ways_responder(mime::type, std::list<id_t>, data_selection &);
 	 ~ways_responder();
 
 private:
-	 list<id_t> ids;
+	 std::list<id_t> ids;
 };
 
 class ways_handler 
@@ -30,9 +30,11 @@ public:
 	 responder_ptr_t responder(data_selection &x) const;
 
 private:
-	 list<id_t> ids;
+	 std::list<id_t> ids;
 
-	static list<id_t> validate_request(FCGX_Request &request);
+	 static std::list<id_t> validate_request(FCGX_Request &request);
 };
 
-#endif /* WAY_HANDLER_HPP */
+} // namespace api06
+
+#endif /* API06_WAYS_HANDLER_HPP */

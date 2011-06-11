@@ -1,6 +1,10 @@
 #ifndef ZLIB_HPP
 #define ZLIB_HPP
 
+#ifndef HAVE_LIBZ
+#error This file should not be included when zlib is not available.
+#endif
+
 #include <boost/shared_ptr.hpp>
 
 #include "zlib.h"

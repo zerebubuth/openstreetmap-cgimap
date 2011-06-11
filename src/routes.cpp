@@ -1,17 +1,23 @@
 #include "routes.hpp"
 #include "handler.hpp"
-#include "map_handler.hpp"
-#include "node_handler.hpp"
-#include "nodes_handler.hpp"
-#include "ways_handler.hpp"
-#include "way_full_handler.hpp"
-#include "relations_handler.hpp"
-#include "relation_full_handler.hpp"
-#include "way_handler.hpp"
+
+#include "api06/map_handler.hpp"
+#include "api06/node_handler.hpp"
+#include "api06/nodes_handler.hpp"
+#include "api06/ways_handler.hpp"
+#include "api06/way_full_handler.hpp"
+#include "api06/relations_handler.hpp"
+#include "api06/relation_full_handler.hpp"
+#include "api06/way_handler.hpp"
+
 #include "router.hpp"
 #include "fcgi_helpers.hpp"
 #include "http.hpp"
 #include "mime_types.hpp"
+
+#ifdef ENABLE_API07
+#include "api07/map_handler.hpp"
+#endif /* ENABLE_API07 */
 
 #include <boost/algorithm/string.hpp>
 #include <boost/optional.hpp>
@@ -21,6 +27,7 @@ using std::list;
 using std::string;
 using std::pair;
 using boost::shared_ptr;
+using boost::scoped_ptr;
 using boost::optional;
 using boost::fusion::make_cons;
 using boost::fusion::invoke;
@@ -99,18 +106,35 @@ private:
 };
 
 routes::routes() 
-	: r(new router()), common_prefix("/api/0.6/") {
+	: common_prefix("/api/0.6/")
+	,	r(new router())
+#ifdef ENABLE_API07
+	, experimental_prefix("/api/0.7/")
+	, r_experimental(new router()) 
+#endif /* ENABLE_API07 */
+{
   using match::root_;
   using match::int_;
 
-	r->add<map_handler>(root_ / "map");
-	r->add<nodes_handler>(root_ / "nodes");
-	r->add<node_handler>(root_ / "node" / int_);
-	r->add<ways_handler>(root_ / "ways");
-	r->add<way_full_handler>(root_ / "way" / int_ / "full");
-	r->add<relations_handler>(root_ / "relations");
-	r->add<relation_full_handler>(root_ / "relation" / int_ / "full");
-	r->add<way_handler>(root_ / "way" / int_);
+	{
+		using namespace api06;
+		r->add<map_handler>(root_ / "map");
+		r->add<nodes_handler>(root_ / "nodes");
+		r->add<node_handler>(root_ / "node" / int_);
+		r->add<ways_handler>(root_ / "ways");
+		r->add<way_full_handler>(root_ / "way" / int_ / "full");
+		r->add<relations_handler>(root_ / "relations");
+		r->add<relation_full_handler>(root_ / "relation" / int_ / "full");
+		r->add<way_handler>(root_ / "way" / int_);
+	}
+
+#ifdef ENABLE_API07
+	{
+		using namespace api07;
+		r_experimental->add<map_handler>(root_ / "map");
+		r_experimental->add<map_handler>(root_ / "map" / "tile" / int_);
+	}
+#endif /* ENABLE_API07 */
 }
 
 routes::~routes() {
@@ -125,7 +149,28 @@ namespace {
 pair<string, mime::type> resource_mime_type(const string &path) {
 	return make_pair(path, mime::unspecified_type);
 }
+
+handler_ptr_t route_resource(FCGX_Request &request, const string &path, const scoped_ptr<router> &r) {
+	// strip off the format-spec, if there is one
+	pair<string, mime::type> resource = resource_mime_type(path);
+	
+	// split the URL into bits to be matched.
+	list<string> path_components;
+	al::split(path_components, resource.first, al::is_any_of("/"));
+	
+	handler_ptr_t hptr(r->match(path_components, request));
+	
+	// if the pointer points at something, then the path was found. otherwise,
+	// it must have exhausted all the possible routes.
+	if (hptr) {
+		// ugly hack - need this info later on to choose the output formatter,
+		// but don't want to parse the URI again...
+		hptr->set_resource_type(resource.second);
+		
+		return hptr;
+	}
 }
+} // anonymous namespace
 
 handler_ptr_t
 routes::operator()(FCGX_Request &request) const {
@@ -134,24 +179,12 @@ routes::operator()(FCGX_Request &request) const {
 
 	// check the prefix
 	if (path.compare(0, common_prefix.size(), common_prefix) == 0) {
-		// strip off the format-spec, if there is one
-		pair<string, mime::type> resource = resource_mime_type(string(path, common_prefix.size()));
+		return route_resource(request, string(path, common_prefix.size()), r);
 
-		// split the URL into bits to be matched.
-		list<string> path_components;
-		al::split(path_components, resource.first, al::is_any_of("/"));
-
-		handler_ptr_t hptr(r->match(path_components, request));
-
-		// if the pointer points at something, then the path was found. otherwise,
-		// it must have exhausted all the possible routes.
-		if (hptr) {
-			// ugly hack - need this info later on to choose the output formatter,
-			// but don't want to parse the URI again...
-			hptr->set_resource_type(resource.second);
-			
-			return hptr;
-		}
+#ifdef ENABLE_API07
+	} else if (path.compare(0, experimental_prefix.size(), experimental_prefix) == 0) {
+		return route_resource(request, string(path, experimental_prefix.size()), r_experimental);
+#endif /* ENABLE_API07 */
 	}
 
 	// doesn't match prefix...

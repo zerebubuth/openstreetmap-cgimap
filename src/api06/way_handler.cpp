@@ -1,10 +1,12 @@
-#include "way_handler.hpp"
+#include "api06/way_handler.hpp"
 #include "http.hpp"
 
 #include <sstream>
 
 using std::stringstream;
 using std::list;
+
+namespace api06 {
 
 way_responder::way_responder(mime::type mt, id_t id_, data_selection &w_)
 	: osm_responder(mt, w_), id(id_) {
@@ -47,3 +49,5 @@ way_responder::check_visibility() {
 		throw http::gone(); // TODO: fix error message / throw structure to emit better error message
 	}
 }
+
+} // namespace api06

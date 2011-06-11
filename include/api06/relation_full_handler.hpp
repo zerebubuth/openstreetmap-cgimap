@@ -1,10 +1,12 @@
-#ifndef RELATION_FULL_HANDLER_HPP
-#define RELATION_FULL_HANDLER_HPP
+#ifndef API06_RELATION_FULL_HANDLER_HPP
+#define API06_RELATION_FULL_HANDLER_HPP
 
 #include "handler.hpp"
 #include "osm_responder.hpp"
 #include <fcgiapp.h>
 #include <string>
+
+namespace api06 {
 
 class relation_full_responder
   : public osm_responder {
@@ -31,4 +33,6 @@ private:
   id_t id;
 };
 
-#endif /* RELATION_FULL_HANDLER_HPP */
+} // namespace api06
+
+#endif /* API06_RELATION_FULL_HANDLER_HPP */

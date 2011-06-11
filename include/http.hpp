@@ -6,7 +6,9 @@
 #include <stdexcept>
 #include <boost/shared_ptr.hpp>
 
+#ifdef HAVE_LIBZ
 #include "zlib.hpp"
+#endif
 #include "output_buffer.hpp"
 
 /**
@@ -160,6 +162,7 @@ public:
       : encoding("identity") {};
   };
 
+#ifdef HAVE_LIBZ
   class deflate
     : public encoding 
   {
@@ -183,6 +186,7 @@ public:
       return boost::shared_ptr<zlib_output_buffer>(new zlib_output_buffer(out, zlib_output_buffer::gzip));
     }
   };
+#endif /* HAVE_LIBZ */
 
   /*
    * Parses an Accept-Encoding header and returns the chosen

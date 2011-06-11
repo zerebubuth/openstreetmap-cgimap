@@ -1,5 +1,5 @@
-#ifndef RELATIONS_HANDLER_HPP
-#define RELATIONS_HANDLER_HPP
+#ifndef API06_RELATIONS_HANDLER_HPP
+#define API06_RELATIONS_HANDLER_HPP
 
 #include "handler.hpp"
 #include "osm_responder.hpp"
@@ -9,16 +9,16 @@
 #include <string>
 #include <list>
 
-using std::list;
+namespace api06 {
 
 class relations_responder
 	: public osm_responder {
 public:
-	 relations_responder(mime::type, list<id_t>, data_selection &);
+	 relations_responder(mime::type, std::list<id_t>, data_selection &);
 	 ~relations_responder();
 
 private:
-	 list<id_t> ids;
+	 std::list<id_t> ids;
 };
 
 class relations_handler 
@@ -31,9 +31,11 @@ public:
 	 responder_ptr_t responder(data_selection &x) const;
 
 private:
-	 list<id_t> ids;
+	 std::list<id_t> ids;
 
-	static list<id_t> validate_request(FCGX_Request &request);
+	 static std::list<id_t> validate_request(FCGX_Request &request);
 };
 
-#endif /* RELATION_HANDLER_HPP */
+} // namespace api06
+
+#endif /* API06_RELATION_HANDLER_HPP */
