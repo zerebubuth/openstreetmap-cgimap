@@ -20,6 +20,7 @@ ___map_SOURCES=\
 	output_writer.cpp \
 	quad_tile.cpp \
 	rate_limiter.cpp \
+	readonly_pgsql_selection.cpp \
 	router.cpp \
 	routes.cpp \
 	writeable_pgsql_selection.cpp \
