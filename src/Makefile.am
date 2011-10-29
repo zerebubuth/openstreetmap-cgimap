@@ -33,6 +33,7 @@ ___map_SOURCES+=\
 	api06/node_handler.cpp \
 	api06/nodes_handler.cpp \
 	api06/relation_full_handler.cpp \
+	api06/relation_handler.cpp \
 	api06/relations_handler.cpp \
 	api06/way_full_handler.cpp \
 	api06/way_handler.cpp \
