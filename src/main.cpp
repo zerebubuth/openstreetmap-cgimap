@@ -11,6 +11,7 @@
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/make_shared.hpp>
 #include <cmath>
 #include <stdexcept>
 #include <vector>
@@ -36,6 +37,7 @@
 #include "cache.hpp"
 #include "changeset.hpp"
 #include "writeable_pgsql_selection.hpp"
+#include "readonly_pgsql_selection.hpp"
 
 using std::runtime_error;
 using std::vector;
@@ -223,6 +225,9 @@ process_requests(int socket, const po::variables_map &options) {
     logger::initialise(options["logfile"].as<string>());
   }
 
+	// database type
+	bool db_is_writeable = options.count("readonly") == 0;
+
   // initialise FCGI
   if (FCGX_Init() != 0) {
     throw runtime_error("Couldn't initialise FCGX library.");
@@ -289,10 +294,15 @@ process_requests(int socket, const po::variables_map &options) {
 
 	// separate transaction for the request
 	pqxx::work x(*con);
-	writeable_pgsql_selection selection(x);
+	shared_ptr<data_selection> selection;
+	if (db_is_writeable) {
+		selection = boost::make_shared<writeable_pgsql_selection>(boost::ref(x));
+	} else {
+		selection = boost::make_shared<readonly_pgsql_selection>(boost::ref(x));
+	}
 
 	// constructor of responder handles dynamic validation (i.e: with db access).
-	responder_ptr_t responder = handler->responder(selection);
+	responder_ptr_t responder = handler->responder(*selection);
 
 	// get encoding to use
 	shared_ptr<http::encoding> encoding = get_encoding(request);
