@@ -14,8 +14,9 @@ way_responder::way_responder(mime::type mt, id_t id_, data_selection &w_)
 
 	check_visibility();
 
+	ids.push_back(id);
+
 	sel.select_visible_ways(ids);
-	sel.select_nodes_from_way_nodes();
 }
 
 way_responder::~way_responder() {
