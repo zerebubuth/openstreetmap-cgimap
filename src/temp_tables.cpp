@@ -72,7 +72,7 @@ tmp_ways::tmp_ways(pqxx::work &w)
   logger::message("Creating tmp_ways");
 
   work.exec("create temporary table tmp_ways as "
-	    "select distinct wn.id from current_way_nodes wn "
+	    "select distinct wn.way_id as id from current_way_nodes wn "
 	    "join tmp_nodes tn on wn.node_id = tn.id");
   work.exec("create index tmp_ways_idx on tmp_ways(id)");
 }
@@ -86,17 +86,17 @@ tmp_relations::tmp_relations(pqxx::work &w)
   logger::message("Creating tmp_relations");
 
   work.exec("create temporary table tmp_relations as "
-	    "select distinct id from current_relation_members rm where rm.member_type='Way' "
+	    "select distinct relation_id as id from current_relation_members rm where rm.member_type='Way' "
 	    "and rm.member_id in (select id from tmp_ways)");
   work.exec("create index tmp_relations_idx on tmp_relations(id)");
-  work.exec("insert into tmp_relations select distinct rm.id from current_relation_members rm "
+  work.exec("insert into tmp_relations select distinct rm.relation_id as id from current_relation_members rm "
 	    "where rm.member_type='Node' and rm.member_id in (select n.id from tmp_nodes n) "
-	    "and rm.id not in (select id from tmp_relations)");
-  work.exec("insert into tmp_relations select distinct id from current_relation_members rm "
+	    "and rm.relation_id not in (select id from tmp_relations)");
+  work.exec("insert into tmp_relations select distinct relation_id as id from current_relation_members rm "
 	    "where rm.member_type='Node' and rm.member_id in (select distinct "
-	    "node_id from current_way_nodes where id in (select id from tmp_ways)) "
-	    "and id not in (select id from tmp_relations)");
-  work.exec("insert into tmp_relations select distinct id from current_relation_members rm "
+	    "node_id from current_way_nodes where way_id in (select id from tmp_ways)) "
+	    "and relation_id not in (select id from tmp_relations)");
+  work.exec("insert into tmp_relations select distinct relation_id as id from current_relation_members rm "
 	    "where rm.member_type='Relation' and rm.member_id in (select id from tmp_relations) "
-	    "and id not in (select id from tmp_relations)");
+	    "and relation_id not in (select id from tmp_relations)");
 }
