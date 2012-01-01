@@ -60,7 +60,7 @@ map_writer::write_node(const pqxx::result::tuple &r) {
   writer.attribute("changeset", cs_id);
   writer.attribute("timestamp", r["timestamp"].c_str());
 
-  pqxx::result tags = w.exec("select k, v from current_node_tags where id=" + pqxx::to_string(id));
+  pqxx::result tags = w.exec("select k, v from current_node_tags where node_id=" + pqxx::to_string(id));
   for (pqxx::result::const_iterator itr = tags.begin();
        itr != tags.end(); ++itr) {
     writer.start("tag");
@@ -88,7 +88,7 @@ map_writer::write_way(const pqxx::result::tuple &r) {
   writer.attribute("changeset", cs_id);
   writer.attribute("timestamp", r["timestamp"].c_str());
 
-  pqxx::result nodes = w.exec("select node_id from current_way_nodes where id=" + 
+  pqxx::result nodes = w.exec("select node_id from current_way_nodes where way_id=" + 
 			      pqxx::to_string(id) + " order by sequence_id asc");
   for (pqxx::result::const_iterator itr = nodes.begin();
        itr != nodes.end(); ++itr) {
@@ -97,7 +97,7 @@ map_writer::write_way(const pqxx::result::tuple &r) {
     writer.end();
   }
 
-  pqxx::result tags = w.exec("select k, v from current_way_tags where id=" + pqxx::to_string(id));
+  pqxx::result tags = w.exec("select k, v from current_way_tags where way_id=" + pqxx::to_string(id));
   for (pqxx::result::const_iterator itr = tags.begin();
        itr != tags.end(); ++itr) {
     writer.start("tag");
@@ -126,7 +126,7 @@ map_writer::write_relation(const pqxx::result::tuple &r) {
   writer.attribute("timestamp", r["timestamp"].c_str());
 
   pqxx::result members = w.exec("select member_type, member_id, member_role from "
-				"current_relation_members where id=" + 
+				"current_relation_members where relation_id=" + 
 				pqxx::to_string(id) + " order by sequence_id asc");
   for (pqxx::result::const_iterator itr = members.begin();
        itr != members.end(); ++itr) {
@@ -139,7 +139,7 @@ map_writer::write_relation(const pqxx::result::tuple &r) {
     writer.end();
   }
 
-  pqxx::result tags = w.exec("select k, v from current_relation_tags where id=" + pqxx::to_string(id));
+  pqxx::result tags = w.exec("select k, v from current_relation_tags where relation_id=" + pqxx::to_string(id));
   for (pqxx::result::const_iterator itr = tags.begin();
        itr != tags.end(); ++itr) {
     writer.start("tag");
@@ -160,7 +160,7 @@ map_writer::write() {
       "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as timestamp, "
       "n.changeset_id, n.version from current_nodes n join ("
       "select id from tmp_nodes union distinct select wn.node_id "
-      "from tmp_ways w join current_way_nodes wn on w.id = wn.id) x "
+      "from tmp_ways w join current_way_nodes wn on w.id = wn.way_id) x "
       "on n.id = x.id");
     for (pqxx::result::const_iterator itr = nodes.begin(); 
 	 itr != nodes.end(); ++itr) {
