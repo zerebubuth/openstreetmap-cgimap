@@ -59,7 +59,7 @@ bool rate_limiter::check(const std::string &ip)
 {
   int bytes_served = 0;
   std::string key;
-  const state *sp;
+  state *sp;
   size_t length;
   uint32_t flags;
   memcached_return error;
@@ -77,6 +77,8 @@ bool rate_limiter::check(const std::string &ip)
     {
        bytes_served = sp->bytes_served - elapsed * bytes_per_cs;
     }
+
+    free(sp);
   }
 
   return bytes_served < max_bytes;
@@ -117,6 +119,8 @@ void rate_limiter::update(const std::string &ip, int bytes)
 
       // should use CAS but it's a right pain so we'll wing it for now...
       memcached_replace(ptr, key.data(), key.size(), (char *)sp, sizeof(state), 0, 0);
+
+      free(sp);
     }
     else
     {
