@@ -32,11 +32,11 @@ rate_limiter::rate_limiter(const boost::program_options::variables_map &options)
 
   if (options.count("ratelimit"))
   {
-    bytes_per_cs = options["ratelimit"].as<int>() / 100;
+    bytes_per_sec = options["ratelimit"].as<int>();
   }
   else
   {
-    bytes_per_cs = 1024;
+    bytes_per_sec = 100 * 1024;
   }
 
   if (options.count("maxdebt"))
@@ -73,9 +73,9 @@ bool rate_limiter::check(const std::string &ip)
 
     int64_t elapsed = time(NULL) - sp->last_update;
 
-    if (elapsed * bytes_per_cs < sp->bytes_served)
+    if (elapsed * bytes_per_sec < sp->bytes_served)
     {
-       bytes_served = sp->bytes_served - elapsed * bytes_per_cs;
+       bytes_served = sp->bytes_served - elapsed * bytes_per_sec;
     }
 
     free(sp);
@@ -108,9 +108,9 @@ void rate_limiter::update(const std::string &ip, int bytes)
 
       sp->last_update = now;
 
-      if (elapsed * bytes_per_cs < sp->bytes_served)
+      if (elapsed * bytes_per_sec < sp->bytes_served)
       {
-         sp->bytes_served = sp->bytes_served - elapsed * bytes_per_cs + bytes;
+         sp->bytes_served = sp->bytes_served - elapsed * bytes_per_sec + bytes;
       }
       else
       {
