@@ -243,9 +243,9 @@ writeable_pgsql_selection::select_ways_from_nodes() {
   logger::message("Filling tmp_ways (from nodes)");
 
   w.exec("insert into tmp_ways "
-				 "select distinct wn.id from current_way_nodes wn "
+				 "select distinct wn.way_id from current_way_nodes wn "
 				 "join tmp_nodes tn on wn.node_id = tn.id "
-				 "and wn.id not in (select id from tmp_ways)");
+				 "and wn.way_id not in (select id from tmp_ways)");
 }
 
 void 
@@ -255,7 +255,7 @@ writeable_pgsql_selection::select_ways_from_relations() {
   w.exec("insert into tmp_ways "
 				 "select distinct rm.member_id as id from "
 				 "current_relation_members rm join tmp_relations "
-				 "tr on rm.id = tr.id where rm.member_type='Way' "
+				 "tr on rm.relation_id = tr.id where rm.member_type='Way' "
 				 "and rm.member_id not in (select id from tmp_ways");
 }
 
@@ -264,35 +264,35 @@ writeable_pgsql_selection::select_relations_from_ways() {
   logger::message("Filling tmp_relations (from ways)");
 
   w.exec("insert into tmp_relations "
-				 "select distinct id from current_relation_members rm where rm.member_type='Way' "
+				 "select distinct rm.relation_id from current_relation_members rm where rm.member_type='Way' "
 				 "and rm.member_id in (select id from tmp_ways) "
-				 "and id not in (select id from tmp_relations)");
+				 "and rm.relation_id not in (select id from tmp_relations)");
 }
 
 void 
 writeable_pgsql_selection::select_nodes_from_way_nodes() {
   w.exec("insert into tmp_nodes select distinct wn.node_id as id from current_way_nodes wn "
-				 "where wn.id in (select w.id from tmp_ways w) and wn.node_id not in (select id from tmp_nodes)");
+				 "where wn.way_id in (select w.id from tmp_ways w) and wn.node_id not in (select id from tmp_nodes)");
 }
 
 void 
 writeable_pgsql_selection::select_relations_from_nodes() {
-  w.exec("insert into tmp_relations select distinct rm.id from current_relation_members rm "
+  w.exec("insert into tmp_relations select distinct rm.relation_id from current_relation_members rm "
 				 "where rm.member_type='Node' and rm.member_id in (select n.id from tmp_nodes n) "
-				 "and rm.id not in (select id from tmp_relations)");
+				 "and rm.relation_id not in (select id from tmp_relations)");
 }
 
 void 
 writeable_pgsql_selection::select_relations_from_way_nodes() {
-  w.exec("insert into tmp_relations select distinct id from current_relation_members rm "
+  w.exec("insert into tmp_relations select distinct rm.relation_id from current_relation_members rm "
 				 "where rm.member_type='Node' and rm.member_id in (select distinct "
-				 "node_id from current_way_nodes where id in (select id from tmp_ways)) "
-				 "and id not in (select id from tmp_relations)");
+				 "node_id from current_way_nodes where way_id in (select id from tmp_ways)) "
+				 "and rm.relation_id not in (select id from tmp_relations)");
 }
 
 void 
 writeable_pgsql_selection::select_relations_from_relations() {
-  w.exec("insert into tmp_relations select distinct id from current_relation_members rm "
+  w.exec("insert into tmp_relations select distinct rm.relation_id from current_relation_members rm "
 				 "where rm.member_type='Relation' and rm.member_id in (select id from tmp_relations) "
-				 "and id not in (select id from tmp_relations)");
+				 "and rm.relation_id not in (select id from tmp_relations)");
 }
