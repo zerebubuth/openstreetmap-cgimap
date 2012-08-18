@@ -176,9 +176,9 @@ handler_ptr_t route_resource(FCGX_Request &request, const string &path, const sc
 		// ugly hack - need this info later on to choose the output formatter,
 		// but don't want to parse the URI again...
 		hptr->set_resource_type(resource.second);
-		
-		return hptr;
 	}
+		
+	return hptr;
 }
 } // anonymous namespace
 
@@ -186,17 +186,23 @@ handler_ptr_t
 routes::operator()(FCGX_Request &request) const {
 	// full path from request handler
 	string path = get_request_path(request);
+	handler_ptr_t hptr;
 
 	// check the prefix
 	if (path.compare(0, common_prefix.size(), common_prefix) == 0) {
-		return route_resource(request, string(path, common_prefix.size()), r);
+		hptr = route_resource(request, string(path, common_prefix.size()), r);
 
 #ifdef ENABLE_API07
 	} else if (path.compare(0, experimental_prefix.size(), experimental_prefix) == 0) {
-		return route_resource(request, string(path, experimental_prefix.size()), r_experimental);
+		hptr = route_resource(request, string(path, experimental_prefix.size()), r_experimental);
 #endif /* ENABLE_API07 */
 	}
 
-	// doesn't match prefix...
-	throw http::not_found(path);
+	if (hptr) {
+	  return hptr;
+
+	} else {
+	  // doesn't match prefix...
+	  throw http::not_found(path);
+	}
 }
