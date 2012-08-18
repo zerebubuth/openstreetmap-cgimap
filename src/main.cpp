@@ -307,6 +307,14 @@ process_requests(int socket, const po::variables_map &options) {
 	// get encoding to use
 	shared_ptr<http::encoding> encoding = get_encoding(request);
 
+	// create the XML writer with the FCGI streams as output
+	shared_ptr<output_buffer> out =
+	  shared_ptr<fcgi_output_buffer>(new fcgi_output_buffer(request));
+	out = encoding->buffer(out);
+
+	// create the correct mime type output formatter.
+	shared_ptr<output_formatter> o_formatter = choose_formatter(request, responder, out, changeset_cache);
+	
 	// TODO: use handler/responder to setup response headers.
 	// write the response header
 	FCGX_FPrintF(request.out,
@@ -316,14 +324,6 @@ process_requests(int socket, const po::variables_map &options) {
 		     "Content-Encoding: %s\r\n"
 		     "Cache-Control: private, max-age=0, must-revalidate\r\n"
 		     "\r\n", encoding->name().c_str());
-	
-	// create the XML writer with the FCGI streams as output
-	shared_ptr<output_buffer> out =
-	  shared_ptr<fcgi_output_buffer>(new fcgi_output_buffer(request));
-	out = encoding->buffer(out);
-
-	// create the correct mime type output formatter.
-	shared_ptr<output_formatter> o_formatter = choose_formatter(request, responder, out, changeset_cache);
 	
 	try {
 	  // call to write the response
@@ -524,8 +524,19 @@ main(int argc, char **argv) {
     }
     else
     {
+      // record our pid if requested
+      if (options.count("pidfile")) {
+	std::ofstream pidfile(options["pidfile"].as<string>().c_str());
+	pidfile << getpid() << std::endl;
+      }
+
       // do work here
       process_requests(socket, options);
+
+      // remove any pid file
+      if (options.count("pidfile")) {
+	remove(options["pidfile"].as<string>().c_str());
+      }
     }
   } catch (const pqxx::sql_error &er) {
     // Catch-all for any other postgres exceptions
