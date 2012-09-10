@@ -64,7 +64,6 @@ psql -q -f "$BUILD_DIR/test/structure.sql" "$TMPDB"
 # shut it down.
 cgi-fcgi -start -connect "$CGIMAP_SOCKET" "$TMPDIR/map.sh"
 
-sleep 5 
 # call the test program with the socket and temporary database
 # as arguments
 $1 "$CGIMAP_SOCKET" "$TMPDB"
