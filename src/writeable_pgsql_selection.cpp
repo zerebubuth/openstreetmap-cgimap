@@ -57,7 +57,7 @@ writeable_pgsql_selection::write_nodes(output_formatter &formatter) {
   for (pqxx::result::const_iterator itr = nodes.begin(); 
        itr != nodes.end(); ++itr) {
     const long int id = (*itr)["id"].as<long int>();
-    pqxx::result tags = w.exec("select k, v from current_node_tags where id=" + pqxx::to_string(id));
+    pqxx::result tags = w.exec("select k, v from current_node_tags where node_id=" + pqxx::to_string(id));
     formatter.write_node(*itr, tags);
   }
   formatter.end_element_type(element_type_node);
@@ -80,7 +80,7 @@ writeable_pgsql_selection::write_ways(output_formatter &formatter) {
     const long int id = (*itr)["id"].as<long int>();
     pqxx::result nodes = w.exec("select node_id from current_way_nodes where id=" + 
 				pqxx::to_string(id) + " order by sequence_id asc");
-    pqxx::result tags = w.exec("select k, v from current_way_tags where id=" + pqxx::to_string(id));
+    pqxx::result tags = w.exec("select k, v from current_way_tags where way_id=" + pqxx::to_string(id));
     formatter.write_way(*itr, nodes, tags);
   }
   formatter.end_element_type(element_type_way);
@@ -101,7 +101,7 @@ writeable_pgsql_selection::write_relations(output_formatter &formatter) {
     pqxx::result members = w.exec("select member_type, member_id, member_role from "
 				  "current_relation_members where id=" + 
 				  pqxx::to_string(id) + " order by sequence_id asc");
-    pqxx::result tags = w.exec("select k, v from current_relation_tags where id=" + pqxx::to_string(id));
+    pqxx::result tags = w.exec("select k, v from current_relation_tags where relation_id=" + pqxx::to_string(id));
     formatter.write_relation(*itr, members, tags);
   }
   formatter.end_element_type(element_type_relation);
