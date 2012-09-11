@@ -200,7 +200,10 @@ write_map(pqxx::work &w,
     writer.start("osm");
     writer.attribute("version", string("0.6"));
     writer.attribute("generator", string(PACKAGE_STRING));
-    
+    writer.attribute("copyright",  string("OpenStreetMap and contributors"));
+    writer.attribute("attribution", string("http://www.openstreetmap.org/copyright/"));
+    writer.attribute("license", string("http://creativecommons.org/licenses/by-sa/2.0/"));
+
     // bounds element, which seems to be standard in the 
     // main map call.
     writer.start("bounds");
