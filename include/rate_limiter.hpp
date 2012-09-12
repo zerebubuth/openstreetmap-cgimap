@@ -17,7 +17,7 @@ public:
 
 private:
   memcached_st *ptr;
-  int bytes_per_cs;
+  int bytes_per_sec;
   int max_bytes;
 
   struct state;
