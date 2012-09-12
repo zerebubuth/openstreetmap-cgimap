@@ -19,6 +19,10 @@ xml_formatter::start_document() {
   writer->start("osm");
   writer->attribute("version", string("0.6"));
   writer->attribute("generator", string(PACKAGE_STRING));
+
+  writer->attribute("copyright", string("OpenStreetMap and contributors"));
+  writer->attribute("attribution", string("http://www.openstreetmap.org/copyright"));
+  writer->attribute("license", string("http://opendatacommons.org/licenses/odbl/1-0/"));  
 }
 
 void 
