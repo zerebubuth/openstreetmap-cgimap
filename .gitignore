@@ -19,3 +19,5 @@ src/*.o
 *~
 include/*~
 src/*~
+test-suite.log
+test/*.log
