@@ -1,4 +1,6 @@
 require 'open3'
+require 'xml/libxml'
+require 'date'
 
 def assert(actual, expected, message = nil)
   unless actual == expected
@@ -20,5 +22,34 @@ def test_request(method, uri, env = {})
     
     assert(thr.value.success?, true, "FCGI exited successfully.")
     yield(headers, data)
+  end
+end
+
+def load_osm_file(file_name, conn)
+  doc = XML::Parser.file(file_name).parse
+
+  # extract the users and changesets for setting up the users table
+  users = Hash.new
+  changesets = Hash.new
+  doc.find("node").each do |n|
+    uid = n["uid"].to_i
+    csid = n["changeset"].to_i
+
+    timestamp = DateTime.strptime(n["timestamp"], "%Y-%m-%dT%H:%M:%S%Z")
+    u_timestamp = users.has_key?(uid) ? [timestamp, users[uid][:timestamp]].min : timestamp
+    cs_min_timestamp = changesets.has_key?(csid) ? [timestamp, changesets[csid][:timestamp]].min : timestamp
+    cs_max_timestamp = changesets.has_key?(csid) ? [timestamp, changesets[csid][:timestamp]].max : timestamp
+    cs_num_changes = changesets.has_key?(csid) ? changesets[csid][:num_changes] + 1 : 1
+
+    users[uid] = { :display_name => n["user"], :timestamp => u_timestamp }
+    changesets[csid] = { :uid => uid, :min_timestamp => cs_min_timestamp, :max_timestamp => cs_max_timestamp, :num_changes => cs_num_changes }
+  end
+
+  users.each do |uid,data|
+    conn.exec("insert into users(id,email,pass_crypt,creation_time,display_name,data_public) values (#{uid},'user_#{uid}@example.com','','#{data[:timestamp]}','#{data[:display_name]}',true)")
+  end
+
+  changesets.each do |csid,data|
+    conn.exec("insert into changesets (id, user_id, created_at, min_lat, max_lat, min_lon, max_lon, closed_at, num_changes) values (#{csid}, #{data[:uid]}, '#{data[:min_timestamp]}', 0, 0, 0, 0, '#{data[:max_timestamp]}', #{data[:num_changes]})")
   end
 end

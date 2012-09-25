@@ -6,8 +6,7 @@ $LOAD_PATH << File.dirname(__FILE__)
 require 'test_functions.rb'
 
 conn = PG.connect(dbname: ARGV[1])
-conn.exec("insert into users (id, email, pass_crypt, creation_time, display_name, data_public) values (1, 'foo@example.com', '', now(), 'foo', true)")
-conn.exec("insert into changesets (id, user_id, created_at, min_lat, max_lat, min_lon, max_lon, closed_at, num_changes) values (1, 1, now(), 0, 0, 0, 0, now(), 1)")
+load_osm_file("#{File.dirname(__FILE__)}/test_node.osm", conn)
 conn.exec("insert into current_nodes (id, latitude, longitude, changeset_id, visible, \"timestamp\", tile, version) values (1, 0, 0, 1, true, now(), 0, 1)")
 
 test_request("GET", "/api/0.6/node/1", "HTTP_ACCEPT" => "text/xml") do |headers, data|
