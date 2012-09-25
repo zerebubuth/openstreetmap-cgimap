@@ -7,7 +7,6 @@ require 'test_functions.rb'
 
 conn = PG.connect(dbname: ARGV[1])
 load_osm_file("#{File.dirname(__FILE__)}/test_node.osm", conn)
-conn.exec("insert into current_nodes (id, latitude, longitude, changeset_id, visible, \"timestamp\", tile, version) values (1, 0, 0, 1, true, now(), 0, 1)")
 
 test_request("GET", "/api/0.6/node/1", "HTTP_ACCEPT" => "text/xml") do |headers, data|
   assert(headers["Status"], "200 OK", "Response status code.")

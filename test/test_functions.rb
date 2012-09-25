@@ -25,6 +25,8 @@ def test_request(method, uri, env = {})
   end
 end
 
+GEO_SCALE = 10000000
+
 def load_osm_file(file_name, conn)
   doc = XML::Parser.file(file_name).parse
 
@@ -51,5 +53,19 @@ def load_osm_file(file_name, conn)
 
   changesets.each do |csid,data|
     conn.exec("insert into changesets (id, user_id, created_at, min_lat, max_lat, min_lon, max_lon, closed_at, num_changes) values (#{csid}, #{data[:uid]}, '#{data[:min_timestamp]}', 0, 0, 0, 0, '#{data[:max_timestamp]}', #{data[:num_changes]})")
+  end
+
+  doc.find("node").each do |n|
+    nid = n["id"].to_i
+    uid = n["uid"].to_i
+    csid = n["changeset"].to_i
+    lon = (n["lon"].to_f * GEO_SCALE).to_i
+    lat = (n["lat"].to_f * GEO_SCALE).to_i
+    visible = n["visible"] == "true"
+    version = n["version"].to_i
+    timestamp = DateTime.strptime(n["timestamp"], "%Y-%m-%dT%H:%M:%S%Z")
+    
+    # TODO: node tile calculation
+    conn.exec("insert into current_nodes (id, latitude, longitude, changeset_id, visible, \"timestamp\", tile, version) values (#{nid}, #{lat}, #{lon}, #{csid}, #{visible}, '#{timestamp}', 0, #{version})")
   end
 end
