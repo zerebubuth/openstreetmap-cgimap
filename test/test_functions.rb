@@ -63,8 +63,8 @@ def load_osm_file(file_name, conn)
 
     timestamp = DateTime.strptime(n["timestamp"], "%Y-%m-%dT%H:%M:%S%Z")
     u_timestamp = users.has_key?(uid) ? [timestamp, users[uid][:timestamp]].min : timestamp
-    cs_min_timestamp = changesets.has_key?(csid) ? [timestamp, changesets[csid][:timestamp]].min : timestamp
-    cs_max_timestamp = changesets.has_key?(csid) ? [timestamp, changesets[csid][:timestamp]].max : timestamp
+    cs_min_timestamp = changesets.has_key?(csid) ? [timestamp, changesets[csid][:min_timestamp]].min : timestamp
+    cs_max_timestamp = changesets.has_key?(csid) ? [timestamp, changesets[csid][:max_timestamp]].max : timestamp
     cs_num_changes = changesets.has_key?(csid) ? changesets[csid][:num_changes] + 1 : 1
 
     users[uid] = { :display_name => n["user"], :timestamp => u_timestamp }
