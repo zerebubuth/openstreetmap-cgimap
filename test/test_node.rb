@@ -31,5 +31,4 @@ end
 
 test_request("GET", "/api/0.6/node/3", "HTTP_ACCEPT" => "text/xml") do |headers, data|
   assert(headers["Status"], "410 Gone", "Response status code.")
-  assert(data.size, 0, "Size of body.")
 end
