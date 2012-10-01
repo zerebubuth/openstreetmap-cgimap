@@ -26,7 +26,6 @@ test_request("GET", "/api/0.6/node/1", "HTTP_ACCEPT" => "text/xml") do |headers,
   assert(node["visible"], "true", "Visibility attribute")
   assert(node["version"].to_i, 1, "Version attribute")
   assert(node["changeset"].to_i, 1, "Changeset ID")
-  # TODO: figure out how to test this...
-  # timestamp="2012-09-10T08:06:58Z"
+  assert(node["timestamp"], "2012-09-25T00:00:00Z", "Timestamp")
 end
 
