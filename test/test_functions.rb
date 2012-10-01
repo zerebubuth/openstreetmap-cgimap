@@ -91,5 +91,11 @@ def load_osm_file(file_name, conn)
     tile = tile_for_point(n["lat"], n["lon"])
 
     conn.exec("insert into current_nodes (id, latitude, longitude, changeset_id, visible, \"timestamp\", tile, version) values (#{nid}, #{lat}, #{lon}, #{csid}, #{visible}, '#{timestamp}', #{tile}, #{version})")
+
+    n.find("tag").each do |t|
+      k = t['k']
+      v = t['v']
+      conn.exec("insert into current_node_tags (node_id, k, v) values (#{nid}, '#{k}', '#{v}')");
+    end
   end
 end
