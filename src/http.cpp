@@ -106,7 +106,7 @@ not_found::not_found(const string &uri)
     : exception(509, "Bandwidth Limit Exceeded", message) {}  
 
 gone::gone()
-	: exception(304, "Gone", "") {}
+	: exception(410, "Gone", "") {}
 
   string
   urldecode(const string &s) {
