@@ -27,6 +27,30 @@ end
 
 GEO_SCALE = 10000000
 
+## from the rails port sources
+def tile_for_point(lat, lon)
+  x = ((lon.to_f + 180) * 65535 / 360).round
+  y = ((lat.to_f + 90) * 65535 / 180).round
+  
+  return tile_for_xy(x, y)
+end
+
+## from the rails port sources
+def self.tile_for_xy(x, y)
+  t = 0
+  
+  16.times do
+    t = t << 1
+    t = t | 1 unless (x & 0x8000).zero?
+    x <<= 1
+    t = t << 1
+    t = t | 1 unless (y & 0x8000).zero?
+    y <<= 1
+  end
+  
+  return t
+end
+
 def load_osm_file(file_name, conn)
   doc = XML::Parser.file(file_name).parse
 
@@ -64,8 +88,8 @@ def load_osm_file(file_name, conn)
     visible = n["visible"] == "true"
     version = n["version"].to_i
     timestamp = DateTime.strptime(n["timestamp"], "%Y-%m-%dT%H:%M:%S%Z")
-    
-    # TODO: node tile calculation
-    conn.exec("insert into current_nodes (id, latitude, longitude, changeset_id, visible, \"timestamp\", tile, version) values (#{nid}, #{lat}, #{lon}, #{csid}, #{visible}, '#{timestamp}', 0, #{version})")
+    tile = tile_for_point(n["lat"], n["lon"])
+
+    conn.exec("insert into current_nodes (id, latitude, longitude, changeset_id, visible, \"timestamp\", tile, version) values (#{nid}, #{lat}, #{lon}, #{csid}, #{visible}, '#{timestamp}', #{tile}, #{version})")
   end
 end
