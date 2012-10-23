@@ -130,6 +130,24 @@ get_encoding(FCGX_Request &req) {
 }
 
 /**
+ * get CORS access control headers to include in response.
+ */
+string
+get_cors_headers(FCGX_Request &req) {
+  const char *origin = FCGX_GetParam("HTTP_ORIGIN", req.envp);
+  ostringstream headers;
+
+  if (origin) {
+     headers << "Access-Control-Allow-Credentials: true\r\n";
+     headers << "Access-Control-Allow-Methods: GET\r\n";
+     headers << "Access-Control-Allow-Origin: " << origin << "\r\n";
+     headers << "Access-Control-Max-Age: 1728000\r\n";
+  }
+
+  return headers.str();
+}
+
+/**
  * Validates an FCGI request, returning the valid bounding box or 
  * throwing an error if there was no valid bounding box.
  */
@@ -402,6 +420,9 @@ process_requests(int socket, const po::variables_map &options) {
 	// get encoding to use
 	shared_ptr<http::encoding> encoding = get_encoding(request);
 
+        // get any CORS headers to return
+        string cors_headers = get_cors_headers(request);
+
 	// write the response header
 	FCGX_FPrintF(request.out,
 		     "Status: 200 OK\r\n"
@@ -409,7 +430,8 @@ process_requests(int socket, const po::variables_map &options) {
 		     "Content-Disposition: attachment; filename=\"map.osm\"\r\n"
 		     "Content-Encoding: %s\r\n"
 		     "Cache-Control: private, max-age=0, must-revalidate\r\n"
-		     "\r\n", encoding->name().c_str());
+                     "%s"
+		     "\r\n", encoding->name().c_str(), cors_headers.c_str());
 	
 	// create the XML writer with the FCGI streams as output
 	shared_ptr<xml_writer::output_buffer> out =
