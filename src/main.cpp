@@ -130,16 +130,29 @@ get_encoding(FCGX_Request &req) {
 }
 
 /**
+ * get CORS access control headers to include in response.
+ */
+string
+get_cors_headers(FCGX_Request &req) {
+  const char *origin = FCGX_GetParam("HTTP_ORIGIN", req.envp);
+  ostringstream headers;
+
+  if (origin) {
+     headers << "Access-Control-Allow-Credentials: true\r\n";
+     headers << "Access-Control-Allow-Methods: GET\r\n";
+     headers << "Access-Control-Allow-Origin: " << origin << "\r\n";
+     headers << "Access-Control-Max-Age: 1728000\r\n";
+  }
+
+  return headers.str();
+}
+
+/**
  * Validates an FCGI request, returning the valid bounding box or 
  * throwing an error if there was no valid bounding box.
  */
 bbox
 validate_request(FCGX_Request &request) {
-  // check that the REQUEST_METHOD is a GET
-  if (fcgi_get_env(request, "REQUEST_METHOD") != "GET") 
-    throw http::method_not_allowed("Only the GET method is supported for "
-				   "map requests.");
-
   string decoded = http::urldecode(get_query_string(request));
   const map<string, string> params = http::parse_params(decoded);
   map<string, string>::const_iterator itr = params.find("bbox");
@@ -310,6 +323,126 @@ get_options(int argc, char **argv, po::variables_map &options) {
 }
 
 /**
+ * process a GET request.
+ */
+void
+process_get_request(FCGX_Request &request, pqxx::connection &con,
+                    cache<long int, changeset> &changeset_cache,
+                    rate_limiter &limiter) {
+  // get the client IP address
+  string ip = fcgi_get_env(request, "REMOTE_ADDR");
+
+  // check whether the client is being rate limited
+  if (!limiter.check(ip)) {
+    logger::message(format("Rate limiter rejected request from %1%") % ip);
+    throw http::bandwidth_limit_exceeded("You have downloaded too much "
+                                         "data. Please try again later.");
+  }
+
+  // validate the input
+  bbox bounds = validate_request(request);
+
+  /// log the start of the request
+  pt::ptime start_time(pt::second_clock::local_time());
+  logger::message(format("Started request for %1%,%2%,%3%,%4% from %5%") % bounds.minlon % bounds.minlat % bounds.maxlon % bounds.maxlat % ip);
+
+  // separate transaction for the request
+  pqxx::work x(con);
+
+  // create temporary tables of nodes, ways and relations which
+  // are in or used by elements in the bbox
+  tmp_nodes tn(x, bounds);
+
+  // check how many nodes we got
+  pqxx::result res = x.exec("select count(*) from tmp_nodes");
+  int num_nodes = res[0][0].as<int>();
+  if (num_nodes > 50000) {
+    throw http::bad_request("You requested too many nodes (limit is "
+                            "50000). Either request a smaller area, "
+                            "or use planet.osm");
+  }
+
+  tmp_ways tw(x);
+  tmp_relations tr(x);
+
+  // get encoding to use
+  shared_ptr<http::encoding> encoding = get_encoding(request);
+
+  // get any CORS headers to return
+  string cors_headers = get_cors_headers(request);
+
+  // write the response header
+  FCGX_FPrintF(request.out,
+               "Status: 200 OK\r\n"
+               "Content-Type: text/xml; charset=utf-8\r\n"
+               "Content-Disposition: attachment; filename=\"map.osm\"\r\n"
+               "Content-Encoding: %s\r\n"
+               "Cache-Control: private, max-age=0, must-revalidate\r\n"
+               "%s"
+               "\r\n", encoding->name().c_str(), cors_headers.c_str());
+	
+  // create the XML writer with the FCGI streams as output
+  shared_ptr<xml_writer::output_buffer> out =
+    shared_ptr<fcgi_output_buffer>(new fcgi_output_buffer(request));
+  out = encoding->output_buffer(out);
+  xml_writer writer(out, true);
+	
+  try {
+    // call to write the map call
+    write_map(x, writer, bounds, changeset_cache);
+
+    // make sure all bytes have been written. note that the writer can
+    // throw an exception here, leaving the xml document in a 
+    // half-written state...
+    writer.flush();
+    out->flush();
+
+  } catch (const xml_writer::write_error &e) {
+    // don't do anything - just go on to the next request.
+    logger::message(format("Caught write error, aborting request: %1%") % e.what());
+	  
+  } catch (const std::exception &e) {
+    // errors here are unrecoverable (fatal to the request but maybe
+    // not fatal to the process) since we already started writing to
+    // the client.
+    writer.start("error");
+    writer.text(e.what());
+    writer.end();
+  }
+
+  // log the completion time
+  pt::ptime end_time(pt::second_clock::local_time());
+  logger::message(format("Completed request for %1%,%2%,%3%,%4% from %5% in %6% returning %7% bytes") % bounds.minlon % bounds.minlat % bounds.maxlon % bounds.maxlat % ip % (end_time - start_time) % out->written());
+
+  // update the rate limiter
+  limiter.update(ip, out->written());
+}
+
+/**
+ * process an OPTIONS request.
+ */
+void
+process_options_request(FCGX_Request &request) {
+  const char *origin = FCGX_GetParam("HTTP_ORIGIN", request.envp);
+  const char *method = FCGX_GetParam("HTTP_ACCESS_CONTROL_REQUEST_METHOD", request.envp);
+
+  if (origin && strcasecmp(method, "GET") == 0) {
+    // get the CORS headers to return
+    string cors_headers = get_cors_headers(request);
+
+    // write the response
+    FCGX_FPrintF(request.out,
+                 "Status: 200 OK\r\n"
+                 "Content-Type: text/plain\r\n"
+                 "%s"
+                 "\r\n\r\n", cors_headers.c_str());
+  } else {
+    throw http::method_not_allowed("Only the GET method is supported for "
+                                   "map requests.");
+  }
+}
+
+/**
  * loop processing fasctgi requests until are asked to stop by
  * somebody sending us a TERM signal.
  */
@@ -363,89 +496,18 @@ process_requests(int socket, const po::variables_map &options) {
       try {
 	// read all the input data..?
 
-        // get the client IP address
-        string ip = fcgi_get_env(request, "REMOTE_ADDR");
+        // get the request method
+        string method = fcgi_get_env(request, "REQUEST_METHOD");
 
-        // check whether the client is being rate limited
-        if (!limiter.check(ip)) {
-          logger::message(format("Rate limiter rejected request from %1%") % ip);
-          throw http::bandwidth_limit_exceeded("You have downloaded too much "
-                                               "data. Please try again later.");
+        // process request
+        if (method == "GET") {
+          process_get_request(request, *con, changeset_cache, limiter);
+        } else if (method == "OPTIONS") {
+          process_options_request(request);
+        } else {
+          throw http::method_not_allowed("Only the GET method is supported for "
+                                         "map requests.");
         }
-
-	// validate the input
-	bbox bounds = validate_request(request);
-
-        /// log the start of the request
-	pt::ptime start_time(pt::second_clock::local_time());
-	logger::message(format("Started request for %1%,%2%,%3%,%4% from %5%") % bounds.minlon % bounds.minlat % bounds.maxlon % bounds.maxlat % ip);
-
-	// separate transaction for the request
-	pqxx::work x(*con);
-
-	// create temporary tables of nodes, ways and relations which
-	// are in or used by elements in the bbox
-	tmp_nodes tn(x, bounds);
-
-	// check how many nodes we got
-	pqxx::result res = x.exec("select count(*) from tmp_nodes");
-	int num_nodes = res[0][0].as<int>();
-	if (num_nodes > 50000) {
-	  throw http::bad_request("You requested too many nodes (limit is "
-				  "50000). Either request a smaller area, "
-				  "or use planet.osm");
-	}
-
-	tmp_ways tw(x);
-	tmp_relations tr(x);
-
-	// get encoding to use
-	shared_ptr<http::encoding> encoding = get_encoding(request);
-
-	// write the response header
-	FCGX_FPrintF(request.out,
-		     "Status: 200 OK\r\n"
-		     "Content-Type: text/xml; charset=utf-8\r\n"
-		     "Content-Disposition: attachment; filename=\"map.osm\"\r\n"
-		     "Content-Encoding: %s\r\n"
-		     "Cache-Control: private, max-age=0, must-revalidate\r\n"
-		     "\r\n", encoding->name().c_str());
-	
-	// create the XML writer with the FCGI streams as output
-	shared_ptr<xml_writer::output_buffer> out =
-	  shared_ptr<fcgi_output_buffer>(new fcgi_output_buffer(request));
-	out = encoding->output_buffer(out);
-	xml_writer writer(out, true);
-	
-	try {
-	  // call to write the map call
-	  write_map(x, writer, bounds, changeset_cache);
-
-	  // make sure all bytes have been written. note that the writer can
-	  // throw an exception here, leaving the xml document in a 
-	  // half-written state...
-	  writer.flush();
-	  out->flush();
-
-	} catch (const xml_writer::write_error &e) {
-	  // don't do anything - just go on to the next request.
-	  logger::message(format("Caught write error, aborting request: %1%") % e.what());
-	  
-	} catch (const std::exception &e) {
-	  // errors here are unrecoverable (fatal to the request but maybe
-	  // not fatal to the process) since we already started writing to
-	  // the client.
-	  writer.start("error");
-	  writer.text(e.what());
-	  writer.end();
-	}
-
-        // log the completion time
-	pt::ptime end_time(pt::second_clock::local_time());
-	logger::message(format("Completed request for %1%,%2%,%3%,%4% from %5% in %6% returning %7% bytes") % bounds.minlon % bounds.minlat % bounds.maxlon % bounds.maxlat % ip % (end_time - start_time) % out->written());
-
-        // update the rate limiter
-        limiter.update(ip, out->written());
       } catch (const http::exception &e) {
 	// errors here occur before we've started writing the response
 	// so we can send something helpful back to the client.
