@@ -38,3 +38,11 @@ test_request("GET", "/api/0.6/way/1", "HTTP_ACCEPT" => "text/xml") do |headers, 
   assert(tags['highway'], 'motorway', "First tag.")
   assert(tags['name'], 'Foo', "Second tag.")
 end
+
+test_request("GET", "/api/0.6/way/2", "HTTP_ACCEPT" => "text/xml") do |headers, data|
+  assert(headers["Status"], "410 Gone", "Response status code.")
+end
+
+test_request("GET", "/api/0.6/way/3", "HTTP_ACCEPT" => "text/xml") do |headers, data|
+  assert(headers['Status'], "404 Not Found", "Response status code.")
+end
