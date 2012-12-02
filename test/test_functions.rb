@@ -98,4 +98,26 @@ def load_osm_file(file_name, conn)
       conn.exec("insert into current_node_tags (node_id, k, v) values (#{nid}, '#{k}', '#{v}')");
     end
   end
+
+  doc.find("way").each do |w|
+    wid = w["id"].to_i
+    uid = w["uid"].to_i
+    csid = w["changeset"].to_i
+    visible = w["visible"] == "true"
+    version = w["version"].to_i
+    timestamp = DateTime.strptime(w["timestamp"], "%Y-%m-%dT%H:%M:%S%Z")
+
+    conn.exec("insert into current_ways (id, changeset_id, visible, \"timestamp\", version) values (#{wid}, #{csid}, #{visible}, '#{timestamp}', #{version})")
+
+    w.find("tag").each do |t|
+      k = t['k']
+      v = t['v']
+      conn.exec("insert into current_way_tags (way_id, k, v) values (#{wid}, '#{k}', '#{v}')")
+    end
+
+    w.find("nd").each_with_index do |wn,ix|
+      ref = wn['ref'].to_i
+      conn.exec("insert into current_way_nodes (way_id, node_id, sequence_id) values (#{wid}, #{ref}, #{ix})")
+    end
+  end
 end
