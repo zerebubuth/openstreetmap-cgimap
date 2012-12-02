@@ -29,6 +29,12 @@ function clean_up() {
 	    dropdb "$TMPDB"
 	fi
 
+	if [[ $1 -ne 0 ]]; then
+	    echo "== map.log =="
+	    cat "$TMPDIR/map.log"
+	    echo "== out.log =="
+	    cat "$TMPDIR/out.log"
+	fi
 	rm -rf "$TMPDIR"
     fi
 }
@@ -37,7 +43,7 @@ function clean_up() {
 # with a status code that automake's system will interpret as a
 # "hard error".
 function trapped_clean_up() {
-    clean_up
+    clean_up 1
     exit 99
 }
 
@@ -71,5 +77,5 @@ $1 "$CGIMAP_SOCKET" "$TMPDB"
 # if the test program didn't exit with a bad status then i
 # guess we passed the test.
 trap - EXIT
-clean_up
+clean_up 0
 exit 0
