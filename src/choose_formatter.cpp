@@ -79,6 +79,7 @@ struct http_accept_grammar : qi::grammar<iterator, vector<media_range>(), ascii:
     using qi::_1;
     using qi::_2;
     using qi::lexeme;
+    using qi::raw;
 
     // RFC2616 definition of a token
     token %= +(char_(33, 126) - 
@@ -89,7 +90,7 @@ struct http_accept_grammar : qi::grammar<iterator, vector<media_range>(), ascii:
     quoted_string %= lit("\"") >> *((char_(32,126) - char_("\"")) | (lit("\\") >> char_)) >> lit("\"");
     
     // TODO: WTF?! do this properly!
-    mime_type %= (token >> lit("/") >> token)[_val = _1 + "/" + _2];
+    mime_type %= raw[token >> lit("/") >> token];
     param %= token >> '=' >> (token | quoted_string);
     range %= mime_type >> *(';' >> param);
     start %= range % ',';
