@@ -78,7 +78,7 @@ writeable_pgsql_selection::write_ways(output_formatter &formatter) {
   for (pqxx::result::const_iterator itr = ways.begin(); 
        itr != ways.end(); ++itr) {
     const long int id = (*itr)["id"].as<long int>();
-    pqxx::result nodes = w.exec("select node_id from current_way_nodes where id=" + 
+    pqxx::result nodes = w.exec("select node_id from current_way_nodes where way_id=" + 
 				pqxx::to_string(id) + " order by sequence_id asc");
     pqxx::result tags = w.exec("select k, v from current_way_tags where way_id=" + pqxx::to_string(id));
     formatter.write_way(*itr, nodes, tags);
