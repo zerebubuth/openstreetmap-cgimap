@@ -17,7 +17,7 @@ way_full_responder::way_full_responder(mime::type mt_, id_t id_, data_selection 
 
 	ids.push_back(id);
 
-	sel.select_visible_ways(ids);
+	sel.select_ways(ids);
   sel.select_nodes_from_way_nodes();
 }
 

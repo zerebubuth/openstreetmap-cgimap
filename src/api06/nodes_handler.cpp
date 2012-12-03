@@ -24,7 +24,7 @@ namespace api06 {
 nodes_responder::nodes_responder(mime::type mt, list<id_t> ids_, data_selection &w_)
 	: osm_responder(mt, w_), ids(ids_) {
 
-	sel.select_visible_nodes(ids_);
+	sel.select_nodes(ids_);
 
 	int num_nodes = sel.num_nodes();
 

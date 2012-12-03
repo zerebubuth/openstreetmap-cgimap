@@ -25,9 +25,9 @@ public:
 	 visibility_t check_way_visibility(id_t id);
 	 visibility_t check_relation_visibility(id_t id);
 
-	 void select_visible_nodes(const std::list<id_t> &);
-	 void select_visible_ways(const std::list<id_t> &);
-	 void select_visible_relations(const std::list<id_t> &);
+	 void select_nodes(const std::list<id_t> &);
+	 void select_ways(const std::list<id_t> &);
+	 void select_relations(const std::list<id_t> &);
 	 void select_nodes_from_bbox(const bbox &bounds, int max_nodes);
 	 void select_nodes_from_relations();
 	 void select_ways_from_nodes();

@@ -17,7 +17,7 @@ relation_full_responder::relation_full_responder(mime::type mt_, id_t id_, data_
 
 	ids.push_back(id);
 
-	sel.select_visible_relations(ids);
+	sel.select_relations(ids);
   sel.select_nodes_from_relations();
   sel.select_ways_from_relations();
   sel.select_nodes_from_way_nodes();

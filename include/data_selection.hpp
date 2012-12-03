@@ -54,14 +54,14 @@ public:
 
 	 /******************* manipulation functions ******************/
 
-	 /// select the nodes in the list, where they are visible
-	 virtual void select_visible_nodes(const std::list<id_t> &) = 0;
+	 /// select the nodes in the list
+	 virtual void select_nodes(const std::list<id_t> &) = 0;
 
-	 /// select the ways in the list, where they are visible
-	 virtual void select_visible_ways(const std::list<id_t> &) = 0;
+	 /// select the ways in the list
+	 virtual void select_ways(const std::list<id_t> &) = 0;
 
-	 /// select the relations in the list, where they are visible
-	 virtual void select_visible_relations(const std::list<id_t> &) = 0;
+	 /// select the relations in the list
+	 virtual void select_relations(const std::list<id_t> &) = 0;
 
    /// given a bounding box, select nodes within that bbox up to a limit of max_nodes
 	 virtual void select_nodes_from_bbox(const bbox &bounds, int max_nodes) = 0;

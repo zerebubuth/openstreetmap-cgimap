@@ -16,7 +16,7 @@ way_responder::way_responder(mime::type mt, id_t id_, data_selection &w_)
 
 	ids.push_back(id);
 
-	sel.select_visible_ways(ids);
+	sel.select_ways(ids);
 }
 
 way_responder::~way_responder() {

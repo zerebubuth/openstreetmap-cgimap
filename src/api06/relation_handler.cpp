@@ -16,7 +16,7 @@ relation_responder::relation_responder(mime::type mt, id_t id_, data_selection &
 
 	ids.push_back(id);
 
-	sel.select_visible_relations(ids);
+	sel.select_relations(ids);
 }
 
 relation_responder::~relation_responder() {

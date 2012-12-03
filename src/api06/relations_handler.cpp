@@ -24,7 +24,7 @@ namespace api06 {
 relations_responder::relations_responder(mime::type mt, list<id_t> ids_, data_selection &s_)
 	: osm_responder(mt, s_), ids(ids_) {
 
-	sel.select_visible_relations(ids_);
+	sel.select_relations(ids_);
 
 	int num_relations = sel.num_relations();
 

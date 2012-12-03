@@ -74,7 +74,7 @@ writeable_pgsql_selection::write_ways(output_formatter &formatter) {
   pqxx::result ways = w.exec(
       "select w.id, w.visible, w.version, w.changeset_id, "
       "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as timestamp from "
-      "current_ways w join tmp_ways tw on w.id=tw.id where w.visible = true");
+      "current_ways w join tmp_ways tw on w.id=tw.id");
   for (pqxx::result::const_iterator itr = ways.begin(); 
        itr != ways.end(); ++itr) {
     const long int id = (*itr)["id"].as<long int>();
@@ -141,37 +141,37 @@ writeable_pgsql_selection::check_relation_visibility(id_t id) {
 }
 
 void
-writeable_pgsql_selection::select_visible_nodes(const std::list<id_t> &ids) {
+writeable_pgsql_selection::select_nodes(const std::list<id_t> &ids) {
 	stringstream query;
 	list<id_t>::const_iterator it;
 	
 	query << "insert into tmp_nodes select id from current_nodes where id IN (";
 	std::copy(ids.begin(), ids.end(), infix_ostream_iterator<id_t>(query, ","));
-	query << ") and visible and id not in (select id from tmp_nodes)";
+	query << ") and id not in (select id from tmp_nodes)";
 
 	w.exec(query);
 }
 
 void
-writeable_pgsql_selection::select_visible_ways(const std::list<id_t> &ids) {
+writeable_pgsql_selection::select_ways(const std::list<id_t> &ids) {
 	stringstream query;
 	list<id_t>::const_iterator it;
 	
 	query << "insert into tmp_ways select id from current_ways where id IN (";
 	std::copy(ids.begin(), ids.end(), infix_ostream_iterator<id_t>(query, ","));
-	query << ") and visible and id not in (select id from tmp_ways)";
+	query << ") and id not in (select id from tmp_ways)";
 
 	w.exec(query);
 }
 
 void
-writeable_pgsql_selection::select_visible_relations(const std::list<id_t> &ids) {
+writeable_pgsql_selection::select_relations(const std::list<id_t> &ids) {
 	stringstream query;
 	list<id_t>::const_iterator it;
 	
 	query << "insert into tmp_relations select id from current_relations where id IN (";
 	std::copy(ids.begin(), ids.end(), infix_ostream_iterator<id_t>(query, ","));
-	query << ") and visible and id not in (select id from tmp_relations)";
+	query << ") and id not in (select id from tmp_relations)";
 
 	w.exec(query);
 }

@@ -15,7 +15,7 @@ node_responder::node_responder(mime::type mt, id_t id_, data_selection &w_)
 	check_visibility();
 
 	ids.push_back(id);
-	sel.select_visible_nodes(ids);
+	sel.select_nodes(ids);
 }
 
 node_responder::~node_responder() {

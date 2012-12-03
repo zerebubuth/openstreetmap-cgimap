@@ -200,37 +200,37 @@ readonly_pgsql_selection::check_relation_visibility(id_t id) {
 }
 
 void
-readonly_pgsql_selection::select_visible_nodes(const std::list<id_t> &ids) {
+readonly_pgsql_selection::select_nodes(const std::list<id_t> &ids) {
 	stringstream query;
 	list<id_t>::const_iterator it;
 	
 	query << "select id from current_nodes where id IN (";
 	std::copy(ids.begin(), ids.end(), infix_ostream_iterator<id_t>(query, ","));
-	query << ") and visible";
+	query << ")";
 
 	insert_results_of(w, query, sel_nodes);
 }
 
 void
-readonly_pgsql_selection::select_visible_ways(const std::list<id_t> &ids) {
+readonly_pgsql_selection::select_ways(const std::list<id_t> &ids) {
 	stringstream query;
 	list<id_t>::const_iterator it;
 	
 	query << "select id from current_ways where id IN (";
 	std::copy(ids.begin(), ids.end(), infix_ostream_iterator<id_t>(query, ","));
-	query << ") and visible";
+	query << ")";
 
 	insert_results_of(w, query, sel_ways);
 }
 
 void
-readonly_pgsql_selection::select_visible_relations(const std::list<id_t> &ids) {
+readonly_pgsql_selection::select_relations(const std::list<id_t> &ids) {
 	stringstream query;
 	list<id_t>::const_iterator it;
 	
 	query << "select id from current_relations where id IN (";
 	std::copy(ids.begin(), ids.end(), infix_ostream_iterator<id_t>(query, ","));
-	query << ") and visible";
+	query << ")";
 
 	insert_results_of(w, query, sel_relations);
 }

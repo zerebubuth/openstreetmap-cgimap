@@ -24,7 +24,7 @@ namespace api06 {
 ways_responder::ways_responder(mime::type mt, list<id_t> ids_, data_selection &w_)
 	: osm_responder(mt, w_), ids(ids_) {
 
-	sel.select_visible_ways(ids_);
+	sel.select_ways(ids_);
 
 	int num_ways = sel.num_ways();
 
