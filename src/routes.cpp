@@ -130,8 +130,8 @@ routes::routes()
 		r->add<node_handler>(root_ / "node" / int_);
 
 		r->add<ways_handler>(root_ / "ways");
-		r->add<way_handler>(root_ / "way" / int_);
 		r->add<way_full_handler>(root_ / "way" / int_ / "full");
+		r->add<way_handler>(root_ / "way" / int_);
 
 		r->add<relations_handler>(root_ / "relations");
 		r->add<relation_handler>(root_ / "relation" / int_);
