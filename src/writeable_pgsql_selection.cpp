@@ -99,7 +99,7 @@ writeable_pgsql_selection::write_relations(output_formatter &formatter) {
        itr != relations.end(); ++itr) {
     const long int id = (*itr)["id"].as<long int>();
     pqxx::result members = w.exec("select member_type, member_id, member_role from "
-				  "current_relation_members where id=" + 
+				  "current_relation_members where relation_id=" + 
 				  pqxx::to_string(id) + " order by sequence_id asc");
     pqxx::result tags = w.exec("select k, v from current_relation_tags where relation_id=" + pqxx::to_string(id));
     formatter.write_relation(*itr, members, tags);

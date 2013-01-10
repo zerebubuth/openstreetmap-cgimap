@@ -120,4 +120,28 @@ def load_osm_file(file_name, conn)
       conn.exec("insert into current_way_nodes (way_id, node_id, sequence_id) values (#{wid}, #{ref}, #{ix})")
     end
   end
+
+  doc.find("relation").each do |r|
+    rid = r['id'].to_i
+    uid = r['uid'].to_i
+    csid = r['changeset'].to_i
+    visible = r['visible'] == 'true'
+    version = r['version'].to_i
+    timestamp = DateTime.strptime(r['timestamp'], '%Y-%m-%dT%H:%M:%S%Z')
+
+    conn.exec("insert into current_relations (id, changeset_id, visible, \"timestamp\", version) values (#{rid}, #{csid}, #{visible}, '#{timestamp}', #{version})")
+
+    r.find('tag').each do |t|
+      k = t['k']
+      v = t['v']
+      conn.exec("insert into current_relation_tags (relation_id, k, v) values (#{rid}, '#{k}', '#{v}')")
+    end
+
+    r.find('member').each_with_index do |rm,ix|
+      type = rm['type'].capitalize
+      role = rm['role']
+      ref = rm['ref'].to_i
+      conn.exec("insert into current_relation_members (relation_id, member_type, member_id, member_role, sequence_id) values (#{rid}, '#{type}'::nwr_enum, #{ref}, '#{role}', #{ix})")
+    end
+  end
 end
