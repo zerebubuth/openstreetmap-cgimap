@@ -56,7 +56,10 @@ trap trapped_clean_up EXIT
 # parameters.
 cat <<EOF > $MAPSCRIPT
 #!/bin/bash
-$BUILD_DIR/map --dbname "$TMPDB" --pidfile "$CGIMAP_PIDFILE" --logfile "$TMPDIR/map.log" > "$TMPDIR/out.log" 2>&1
+ulimit -c unlimited
+cd "$TMPDIR"
+"$PWD/$BUILD_DIR/map" --dbname "$TMPDB" --pidfile "$CGIMAP_PIDFILE" --logfile "$TMPDIR/map.log" > "$TMPDIR/out.log" 2>&1
+echo "Return value: \$?" >> "$TMPDIR/out.log"
 EOF
 chmod +x "$MAPSCRIPT"
 
