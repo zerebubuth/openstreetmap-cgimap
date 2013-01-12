@@ -14,4 +14,6 @@
     <tag k="type" v="route"/>
     <tag k="ref" v="W8"/>
   </relation>
+
+  <relation id="2" version="2" changeset="3" user="foo" uid="1" visible="false" timestamp="2013-01-12T00:00:00Z"/>
 </osm>

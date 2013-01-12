@@ -9,6 +9,8 @@ require 'test_functions.rb'
 conn = PG.connect(dbname: ARGV[1])
 load_osm_file("#{File.dirname(__FILE__)}/test_relation.osm", conn)
 
+# test that a relation get returns OK and the content is what 
+# we expected.
 test_request("GET", "/api/0.6/relation/1", "HTTP_ACCEPT" => "text/xml") do |headers, data|
   assert(headers["Status"], "200 OK", "Response status code.")
   assert(headers["Content-Type"], "text/xml; charset=utf-8", "Response content type.")
@@ -28,3 +30,14 @@ test_request("GET", "/api/0.6/relation/1", "HTTP_ACCEPT" => "text/xml") do |head
   assert(node["changeset"].to_i, 1, "Changeset ID")
   assert(node["timestamp"], "2012-12-01T00:00:00Z", "Timestamp")
 end
+
+# a deleted relation should say 'gone'
+test_request("GET", "/api/0.6/relation/2", "HTTP_ACCEPT" => "text/xml") do |headers, data|
+  assert(headers["Status"], "410 Gone", "Response status code.")
+end
+
+# a relation that has never existed should say 'not found'
+test_request("GET", "/api/0.6/relation/3", "HTTP_ACCEPT" => "text/xml") do |headers, data|
+  assert(headers['Status'], "404 Not Found", "Response status code.")
+end
+
