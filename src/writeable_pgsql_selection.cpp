@@ -234,7 +234,7 @@ writeable_pgsql_selection::select_nodes_from_relations() {
   w.exec("insert into tmp_nodes "
 				 "select distinct rm.member_id as id from "
 				 "current_relation_members rm join tmp_relations "
-				 "tr on rm.id = tr.id where rm.member_type='Node' "
+				 "tr on rm.relation_id = tr.id where rm.member_type='Node' "
 				 "and rm.member_id not in (select id from tmp_nodes)");
 }
 
@@ -256,7 +256,7 @@ writeable_pgsql_selection::select_ways_from_relations() {
 				 "select distinct rm.member_id as id from "
 				 "current_relation_members rm join tmp_relations "
 				 "tr on rm.relation_id = tr.id where rm.member_type='Way' "
-				 "and rm.member_id not in (select id from tmp_ways");
+				 "and rm.member_id not in (select id from tmp_ways)");
 }
 
 void 

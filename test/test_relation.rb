@@ -64,3 +64,29 @@ end
 test_request("GET", "/api/0.6/relations?relations=", "HTTP_ACCEPT" => "text/xml") do |headers, data|
   assert(headers['Status'], "400 Bad Request", "Response status code.")
 end
+
+# relation/full returns the relation, plus all the unique members, plus nodes
+# which are part of included ways.
+test_request("GET", "/api/0.6/relation/1/full", "HTTP_ACCEPT" => "text/xml") do |headers, data|
+  assert(headers["Status"], "200 OK", "Response status code.")
+  assert(headers["Content-Type"], "text/xml; charset=utf-8", "Response content type.")
+
+  doc = XML::Parser.string(data).parse
+  assert(doc.root.name, "osm", "Document root element.")
+  children = doc.root.children.select {|n| n.element?}
+
+  # elements should be returned in node, way, relation order
+  assert(children.map {|n| n.name}, ['node', 'node', 'way', 'relation'], "Element types")
+  # check the element IDs
+  assert(children.map {|n| n.name + "/" + n['id']}.sort, ['node/1', 'node/2', 'way/1', 'relation/1'].sort, "Element types and IDs")
+end
+
+# a deleted relation/full should say 'gone', same as plain relation get
+test_request("GET", "/api/0.6/relation/2/full", "HTTP_ACCEPT" => "text/xml") do |headers, data|
+  assert(headers["Status"], "410 Gone", "Response status code.")
+end
+
+# a relation/full that has never existed should say 'not found', same as plain relation get
+test_request("GET", "/api/0.6/relation/3/full", "HTTP_ACCEPT" => "text/xml") do |headers, data|
+  assert(headers['Status'], "404 Not Found", "Response status code.")
+end

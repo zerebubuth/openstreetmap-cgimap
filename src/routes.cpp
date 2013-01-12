@@ -134,8 +134,8 @@ routes::routes()
 		r->add<way_handler>(root_ / "way" / int_);
 
 		r->add<relations_handler>(root_ / "relations");
-		r->add<relation_handler>(root_ / "relation" / int_);
 		r->add<relation_full_handler>(root_ / "relation" / int_ / "full");
+		r->add<relation_handler>(root_ / "relation" / int_);
 	}
 
 #ifdef ENABLE_API07
