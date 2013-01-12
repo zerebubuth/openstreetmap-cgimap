@@ -94,7 +94,7 @@ writeable_pgsql_selection::write_relations(output_formatter &formatter) {
   pqxx::result relations = w.exec(
       "select r.id, r.visible, r.version, r.changeset_id, "
       "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as timestamp from "
-      "current_relations r join tmp_relations x on x.id=r.id where r.visible = true");
+      "current_relations r join tmp_relations x on x.id=r.id");
   for (pqxx::result::const_iterator itr = relations.begin(); 
        itr != relations.end(); ++itr) {
     const long int id = (*itr)["id"].as<long int>();

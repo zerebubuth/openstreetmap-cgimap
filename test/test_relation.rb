@@ -41,3 +41,26 @@ test_request("GET", "/api/0.6/relation/3", "HTTP_ACCEPT" => "text/xml") do |head
   assert(headers['Status'], "404 Not Found", "Response status code.")
 end
 
+# relations call returns all relations, even deleted ones, in the request
+test_request("GET", "/api/0.6/relations?relations=1,2", "HTTP_ACCEPT" => "text/xml") do |headers, data|
+  assert(headers["Status"], "200 OK", "Response status code.")
+  assert(headers["Content-Type"], "text/xml; charset=utf-8", "Response content type.")
+
+  doc = XML::Parser.string(data).parse
+  assert(doc.root.name, "osm", "Document root element.")
+  children = doc.root.children.select {|n| n.element?}
+  assert(children.size, 2, "Number of children of the <osm> element.")
+  
+  ids = Set.new(children.map {|n| assert(n.name, "relation", "Name of <osm> child."); n['id'].to_i })
+  assert(ids, Set.new([1,2]), "IDs of relations.")
+end
+
+# however, the whole thing returns 404 if just one of the relations can't be found
+test_request("GET", "/api/0.6/relations?relations=1,2,3", "HTTP_ACCEPT" => "text/xml") do |headers, data|
+  assert(headers['Status'], "404 Not Found", "Response status code.")  
+end
+
+# relations call returns bad request if the list of relations is empty
+test_request("GET", "/api/0.6/relations?relations=", "HTTP_ACCEPT" => "text/xml") do |headers, data|
+  assert(headers['Status'], "400 Bad Request", "Response status code.")
+end
