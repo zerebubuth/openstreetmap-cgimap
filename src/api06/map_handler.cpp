@@ -81,9 +81,6 @@ map_handler::validate_request(FCGX_Request &request) {
 			    "of the form min_lon,min_lat,max_lon,max_lat.");
   }
 
-  // clip the bounding box against the world
-  bounds.clip_to_world();
-
   // check that the bounding box is within acceptable limits. these
   // limits taken straight from the ruby map implementation.
   if (!bounds.valid()) {
