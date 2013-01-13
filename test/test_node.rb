@@ -64,6 +64,11 @@ test_request("GET", "/api/0.6/node/4", "HTTP_ACCEPT" => "text/xml") do |headers,
   assert(headers['Status'], "404 Not Found", "Response status code.")
 end
 
+# node call returns not found if the node number isn't a number
+test_request('GET', '/api/0.6/node/five', 'HTTP_ACCEPT' => 'text/xml') do |headers, data|
+  assert(headers['Status'], '404 Not Found', 'Response status code.')
+end
+
 # nodes call returns all nodes, even deleted ones, in the request
 test_request("GET", "/api/0.6/nodes?nodes=1,2,3", "HTTP_ACCEPT" => "text/xml") do |headers, data|
   assert(headers["Status"], "200 OK", "Response status code.")
@@ -86,4 +91,9 @@ end
 # nodes call returns bad request if the list of nodes is empty
 test_request("GET", "/api/0.6/nodes?nodes=", "HTTP_ACCEPT" => "text/xml") do |headers, data|
   assert(headers['Status'], "400 Bad Request", "Response status code.")
+end
+
+# nodes call returns bad request if the list of nodes isn't numeric
+test_request('GET', '/api/0.6/nodes?nodes=1,two,3', 'HTTP_ACCEPT' => 'text/xml') do |headers, data|
+  assert(headers['Status'], '400 Bad Request', 'Response status code.')
 end
