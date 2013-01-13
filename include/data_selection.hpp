@@ -90,7 +90,9 @@ public:
 	 
    /// select relations which include selected relations
 	 virtual void select_relations_from_relations() = 0;
-	 
+
+  /// select relations which are members of selected relations
+  virtual void select_relations_members_of_relations() = 0;
 };
 
 #endif /* DATA_SELECTION_HPP */

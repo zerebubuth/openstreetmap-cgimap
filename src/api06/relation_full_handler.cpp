@@ -21,7 +21,7 @@ relation_full_responder::relation_full_responder(mime::type mt_, id_t id_, data_
   sel.select_nodes_from_relations();
   sel.select_ways_from_relations();
   sel.select_nodes_from_way_nodes();
-  sel.select_relations_from_relations();  
+  sel.select_relations_members_of_relations();
 }
 
 relation_full_responder::~relation_full_responder() {

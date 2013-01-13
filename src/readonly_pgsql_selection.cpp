@@ -374,3 +374,7 @@ readonly_pgsql_selection::select_relations_from_relations() {
 	query << ")";
 	insert_results_of(w, query, sel_relations);
 }
+
+void 
+readonly_pgsql_selection::select_relations_members_of_relations() {
+}

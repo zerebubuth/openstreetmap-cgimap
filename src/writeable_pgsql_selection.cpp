@@ -296,3 +296,11 @@ writeable_pgsql_selection::select_relations_from_relations() {
 				 "where rm.member_type='Relation' and rm.member_id in (select id from tmp_relations) "
 				 "and rm.relation_id not in (select id from tmp_relations)");
 }
+
+void 
+writeable_pgsql_selection::select_relations_members_of_relations() {
+  w.exec("insert into tmp_relations select distinct rm.member_id from current_relation_members rm "
+	 "where rm.member_type='Relation' and rm.relation_id in (select id from tmp_relations) "
+	 "and rm.member_id not in (select id from tmp_relations)");
+}
+
