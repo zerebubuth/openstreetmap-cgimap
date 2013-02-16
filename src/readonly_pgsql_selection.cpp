@@ -400,4 +400,12 @@ readonly_pgsql_selection::select_relations_from_relations() {
 
 void 
 readonly_pgsql_selection::select_relations_members_of_relations() {
+   if (!sel_relations.empty()) {
+      stringstream query;
+      query << "select distinct rm.member_id as id from current_relation_members rm "
+         "where rm.member_type='Relation' and rm.relation_id in (";
+      std::copy(sel_relations.begin(), sel_relations.end(), infix_ostream_iterator<id_t>(query, ","));
+      query << ")";
+      insert_results_of(w, query, sel_relations);
+   }
 }
