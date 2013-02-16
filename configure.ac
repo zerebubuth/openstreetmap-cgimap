@@ -4,6 +4,7 @@ AC_INIT([CGImap],
 	[cgimap-0.0.3], 
 	[https://github.com/zerebubuth/openstreetmap-cgimap])
 AM_INIT_AUTOMAKE([subdir-objects parallel-tests])
+AM_SILENT_RULES([yes])
 
 AC_PROG_CXX
 AC_PROG_INSTALL
