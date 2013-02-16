@@ -213,7 +213,8 @@ get_options(int argc, char **argv, po::variables_map &options) {
     ("logfile", po::value<string>(), "file to write log messages to")
     ("memcache", po::value<string>(), "memcache server specification")
     ("ratelimit", po::value<int>(), "average number of bytes/s to allow each client")
-    ("maxdebt", po::value<int>(), "maximum debt (in Mb) to allow each client before rate limiting");
+    ("maxdebt", po::value<int>(), "maximum debt (in Mb) to allow each client before rate limiting")
+    ("readonly", "use the database in read-only mode");
 
   po::store(po::parse_command_line(argc, argv, desc), options);
   po::store(po::parse_environment(desc, "CGIMAP_"), options);
