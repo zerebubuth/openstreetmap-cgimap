@@ -2,10 +2,17 @@ require 'open3'
 require 'xml/libxml'
 require 'date'
 
+class AssertionError < StandardError
+  attr_reader :message
+
+  def initialize(message)
+    @message = message
+  end
+end
+
 def assert(actual, expected, message = nil)
   unless actual == expected
-    STDERR.puts("Expected #{expected.inspect}, got #{actual.inspect}: #{message}") unless message.nil?
-    exit 1
+    raise AssertionError.new("Expected #{expected.inspect}, got #{actual.inspect}: #{message.inspect}")
   end
 end
 
@@ -23,7 +30,15 @@ def test_request(method, uri, env = {})
     headers = Hash[*headers.split("\r\n").collect_concat{|l| k,v = l.split(": "); [k,v]}]
     
     assert(thr.value.success?, true, "FCGI exited successfully.")
-    yield(headers, data)
+    
+    begin
+      yield(headers, data)
+    rescue AssertionError => e
+      STDERR.puts "ERROR: #{e.message}"
+      STDERR.puts "HEADERS: #{headers.inspect}"
+      STDERR.puts "BODY: #{data.inspect}"
+      exit 1
+    end
   end
 end
 
