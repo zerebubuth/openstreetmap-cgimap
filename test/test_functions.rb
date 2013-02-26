@@ -74,18 +74,20 @@ def load_osm_file(file_name, conn)
   # extract the users and changesets for setting up the users table
   users = Hash.new
   changesets = Hash.new
-  doc.find("node").each do |n|
-    uid = n["uid"].to_i
-    csid = n["changeset"].to_i
-
-    timestamp = DateTime.strptime(n["timestamp"], "%Y-%m-%dT%H:%M:%S%Z")
-    u_timestamp = users.has_key?(uid) ? [timestamp, users[uid][:timestamp]].min : timestamp
-    cs_min_timestamp = changesets.has_key?(csid) ? [timestamp, changesets[csid][:min_timestamp]].min : timestamp
-    cs_max_timestamp = changesets.has_key?(csid) ? [timestamp, changesets[csid][:max_timestamp]].max : timestamp
-    cs_num_changes = changesets.has_key?(csid) ? changesets[csid][:num_changes] + 1 : 1
-
-    users[uid] = { :display_name => n["user"], :timestamp => u_timestamp }
-    changesets[csid] = { :uid => uid, :min_timestamp => cs_min_timestamp, :max_timestamp => cs_max_timestamp, :num_changes => cs_num_changes }
+  ['node', 'way', 'relation'].each do |type|
+    doc.find(type).each do |n|
+      uid = n["uid"].to_i
+      csid = n["changeset"].to_i
+      
+      timestamp = DateTime.strptime(n["timestamp"], "%Y-%m-%dT%H:%M:%S%Z")
+      u_timestamp = users.has_key?(uid) ? [timestamp, users[uid][:timestamp]].min : timestamp
+      cs_min_timestamp = changesets.has_key?(csid) ? [timestamp, changesets[csid][:min_timestamp]].min : timestamp
+      cs_max_timestamp = changesets.has_key?(csid) ? [timestamp, changesets[csid][:max_timestamp]].max : timestamp
+      cs_num_changes = changesets.has_key?(csid) ? changesets[csid][:num_changes] + 1 : 1
+      
+      users[uid] = { :display_name => n["user"], :timestamp => u_timestamp }
+      changesets[csid] = { :uid => uid, :min_timestamp => cs_min_timestamp, :max_timestamp => cs_max_timestamp, :num_changes => cs_num_changes }
+    end
   end
 
   users.each do |uid,data|

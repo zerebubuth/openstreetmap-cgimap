@@ -312,7 +312,7 @@ readonly_pgsql_selection::select_ways_from_nodes() {
    
    if (!sel_nodes.empty()) {
       stringstream query;
-      query << "select distinct wn.way_id from current_way_nodes wn "
+      query << "select distinct wn.way_id as id from current_way_nodes wn "
          "where wn.node_id in (";
       std::copy(sel_nodes.begin(), sel_nodes.end(), infix_ostream_iterator<id_t>(query, ","));	
       query << ")";
@@ -365,7 +365,7 @@ void
 readonly_pgsql_selection::select_relations_from_nodes() {
    if (!sel_nodes.empty()) {
       stringstream query;
-      query << "select distinct rm.relation_id from current_relation_members rm "
+      query << "select distinct rm.relation_id as id from current_relation_members rm "
          "where rm.member_type='Node' and rm.member_id in (";
       std::copy(sel_nodes.begin(), sel_nodes.end(), infix_ostream_iterator<id_t>(query, ","));
       query << ")";
@@ -381,7 +381,7 @@ readonly_pgsql_selection::select_relations_from_way_nodes() {
          "where rm.member_type='Node' and rm.member_id in (select distinct "
          "node_id from current_way_nodes where way_id in (";
       std::copy(sel_ways.begin(), sel_ways.end(), infix_ostream_iterator<id_t>(query, ","));
-      query << ")";
+      query << "))";
       insert_results_of(w, query, sel_relations);
    }
 }

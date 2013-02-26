@@ -8,7 +8,8 @@ require 'test_functions.rb'
 
 conn = PG.connect(dbname: ARGV[1])
 conn.transaction do |tx|
-  load_osm_file("#{File.dirname(__FILE__)}/test_map.osm", tx)
+  load_osm_file("#{File.dirname(__FILE__)}/test_map_nodes.osm", tx)
+  load_osm_file("#{File.dirname(__FILE__)}/test_map_ways.osm", tx)
 end
 
 # bad requests:
@@ -86,7 +87,7 @@ test_request('GET', '/api/0.6/map?bbox=-0.0005,-0.0005,0.0015,0.0015') do |heade
   # first child should be <bounds>
   assert(children[0].name, 'bounds', 'First element in map response should be bounds.')
 
-  # only other element should be the single node.
+  # only other elements should be the nodes.
   (1..4).each do |i|
     node = children[i]
     assert(node.name, 'node', "Name of #{i}th element.")
@@ -98,3 +99,34 @@ test_request('GET', '/api/0.6/map?bbox=-0.0005,-0.0005,0.3005,0.3005') do |heade
   assert(headers["Status"], "400 Bad Request", "Response status code.")
 end
 
+# tests grabbing a small area with a node which is used in a way. the result should
+# contain not only the node but also the way and all the other nodes used in that
+# way.
+test_request('GET', '/api/0.6/map?bbox=0.2995,-0.0005,0.3005,0.3005') do |headers, data|
+  assert(headers["Status"], "200 OK", "Response status code.")
+  assert(headers["Content-Type"], "text/xml; charset=utf-8", "Response content type.")
+
+  doc = XML::Parser.string(data).parse
+  assert(doc.root.name, "osm", "Document root element.")
+  children = doc.root.children.select {|n| n.element?}
+  # 1 original node + 300 other nodes + 1 way + bounds
+  assert(children.size, 303, "Number of children of the <osm> element.")
+
+  # first child should be <bounds>
+  assert(children[0].name, 'bounds', 'First element in map response should be bounds.')
+
+  # nodes should come first
+  node_nums = Array.new
+  (1..301).each do |i|
+    node = children[i]
+    assert(node.name, 'node', "Name of #{i}th element.")
+    node_nums << node['id'].to_i
+  end
+  
+  # there should be one way
+  node = children[302]
+  assert(node.name, 'way', "Name of way element.")
+  nds = node.children.select {|n| n.element?}.map {|n| n['ref'].to_i}
+  assert(nds.size, node_nums.size, 'Number of nds and nodes.')
+  assert(nds, node_nums, 'Way nodes and node elements.')
+end
