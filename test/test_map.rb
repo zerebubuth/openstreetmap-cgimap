@@ -72,3 +72,29 @@ test_request('GET', '/api/0.6/map?bbox=-0.0005,-0.0005,0.0005,0.0005') do |heade
   assert(node["changeset"].to_i, 1, "Changeset ID")
   assert(node["timestamp"], "2013-02-16T19:02:00Z", "Timestamp")
 end
+
+# tests grabbing a bunch of nodes which aren't connected to anything else.
+test_request('GET', '/api/0.6/map?bbox=-0.0005,-0.0005,0.0015,0.0015') do |headers, data|
+  assert(headers["Status"], "200 OK", "Response status code.")
+  assert(headers["Content-Type"], "text/xml; charset=utf-8", "Response content type.")
+
+  doc = XML::Parser.string(data).parse
+  assert(doc.root.name, "osm", "Document root element.")
+  children = doc.root.children.select {|n| n.element?}
+  assert(children.size, 5, "Number of children of the <osm> element.")
+
+  # first child should be <bounds>
+  assert(children[0].name, 'bounds', 'First element in map response should be bounds.')
+
+  # only other element should be the single node.
+  (1..4).each do |i|
+    node = children[i]
+    assert(node.name, 'node', "Name of #{i}th element.")
+  end
+end
+
+# tests grabbing too many nodes
+test_request('GET', '/api/0.6/map?bbox=-0.0005,-0.0005,0.3005,0.3005') do |headers, data|
+  assert(headers["Status"], "400 Bad Request", "Response status code.")
+end
+
