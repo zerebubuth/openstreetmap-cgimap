@@ -29,7 +29,10 @@ ___map_SOURCES=\
 	zlib.cpp
 
 ___map_SOURCES+=\
-	api06/map_handler.cpp \
+	api06/map_handler.cpp
+
+if ENABLE_EXPERIMENTAL
+___map_SOURCES+=\
 	api06/node_handler.cpp \
 	api06/nodes_handler.cpp \
 	api06/relation_full_handler.cpp \
@@ -38,6 +41,7 @@ ___map_SOURCES+=\
 	api06/way_full_handler.cpp \
 	api06/way_handler.cpp \
 	api06/ways_handler.cpp
+endif
 
 if ENABLE_API07
 ___map_SOURCES+=api07/map_handler.cpp

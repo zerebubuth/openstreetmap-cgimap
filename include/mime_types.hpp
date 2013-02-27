@@ -2,6 +2,7 @@
 #define MIME_TYPES_HPP
 
 #include <string>
+#include "config.h"
 
 /**
  * simple set of supported mime types.

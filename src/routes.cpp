@@ -1,9 +1,11 @@
+#include "config.h"
 #include "routes.hpp"
 #include "handler.hpp"
 
 /*** API 0.6 ***/
 #include "api06/map_handler.hpp"
 
+#ifdef ENABLE_EXPERIMENTAL
 #include "api06/node_handler.hpp"
 #include "api06/nodes_handler.hpp"
 
@@ -14,6 +16,7 @@
 #include "api06/relation_handler.hpp"
 #include "api06/relations_handler.hpp"
 #include "api06/relation_full_handler.hpp"
+#endif /* ENABLE_EXPERIMENTAL */
 
 #ifdef ENABLE_API07
 /*** API 0.7 ***/
@@ -126,6 +129,7 @@ routes::routes()
 		using namespace api06;
 		r->add<map_handler>(root_ / "map");
 
+#ifdef ENABLE_EXPERIMENTAL
 		r->add<nodes_handler>(root_ / "nodes");
 		r->add<node_handler>(root_ / "node" / int_);
 
@@ -136,6 +140,7 @@ routes::routes()
 		r->add<relations_handler>(root_ / "relations");
 		r->add<relation_full_handler>(root_ / "relation" / int_ / "full");
 		r->add<relation_handler>(root_ / "relation" / int_);
+#endif /* ENABLE_EXPERIMENTAL */
 	}
 
 #ifdef ENABLE_API07

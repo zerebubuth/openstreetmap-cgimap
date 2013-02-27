@@ -5,6 +5,7 @@ AC_INIT([CGImap],
 	[https://github.com/zerebubuth/openstreetmap-cgimap])
 AM_INIT_AUTOMAKE([subdir-objects parallel-tests])
 AM_SILENT_RULES([yes])
+AC_CONFIG_HEADERS([include/config.h])
 
 AC_PROG_CXX
 AC_PROG_INSTALL
@@ -51,6 +52,17 @@ FCGI_LIBS="-L${FCGI_PREFIX}/lib -lfcgi"
 FCGI_CFLAGS="-I${FCGI_PREFIX}/include"
 AC_SUBST(FCGI_LIBS)
 AC_SUBST(FCGI_CFLAGS)
+
+AC_MSG_CHECKING([whether to enable experimental other API 0.6 calls])
+AC_ARG_ENABLE([experimental],
+	[AS_HELP_STRING([--enable-experimental],
+		[Enable experimental other API 0.6 calls])],
+	[enable_experimental="yes"],
+	[enable_experimental="no"])
+AC_MSG_RESULT($enable_experimental)
+AS_IF([test "x$enable_experimental" == xyes],
+	    [AC_DEFINE([ENABLE_EXPERIMENTAL], [1], [Define for experimental other API 0.6 calls.])])
+AM_CONDITIONAL([ENABLE_EXPERIMENTAL], [test "x$enable_experimental" == xyes])
 
 AC_MSG_CHECKING(whether to enable JSON output using YAJL)
 AC_ARG_ENABLE(yajl,

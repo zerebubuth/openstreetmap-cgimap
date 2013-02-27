@@ -5,6 +5,7 @@
 #include <fcgiapp.h>
 #include <boost/scoped_ptr.hpp>
 #include <boost/noncopyable.hpp>
+#include "config.h"
 
 // internal implementation of the routes
 struct router;

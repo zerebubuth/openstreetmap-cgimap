@@ -5,6 +5,7 @@
 #include <map>
 #include <stdexcept>
 #include <boost/shared_ptr.hpp>
+#include "config.h"
 
 #ifdef HAVE_LIBZ
 #include "zlib.hpp"

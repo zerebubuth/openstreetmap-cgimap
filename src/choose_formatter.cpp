@@ -1,3 +1,4 @@
+#include "config.h"
 #include "choose_formatter.hpp"
 #include "output_writer.hpp"
 #include "mime_types.hpp"

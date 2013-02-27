@@ -1,3 +1,4 @@
+#include "config.h"
 #include "http.hpp"
 #include <vector>
 #include <boost/foreach.hpp>
