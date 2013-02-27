@@ -10,6 +10,7 @@ conn = PG.connect(dbname: ARGV[1])
 conn.transaction do |tx|
   load_osm_file("#{File.dirname(__FILE__)}/test_map_nodes.osm", tx)
   load_osm_file("#{File.dirname(__FILE__)}/test_map_ways.osm", tx)
+  load_osm_file("#{File.dirname(__FILE__)}/test_map_relations.osm", tx)
 end
 
 # bad requests:
@@ -130,3 +131,47 @@ test_request('GET', '/api/0.6/map?bbox=0.2995,-0.0005,0.3005,0.3005') do |header
   assert(nds.size, node_nums.size, 'Number of nds and nodes.')
   assert(nds, node_nums, 'Way nodes and node elements.')
 end
+
+# tests grabbing a small area with a node which is used in a way, which itself is 
+# used in a relation, which is also used in a relation. the result should contain
+# all of these, but not other elements that the relation uses. unlike ways, 
+# relations in map calls don't do a "full".
+test_request('GET', '/api/0.6/map?bbox=0.1995,-0.0005,0.2005,0.3005') do |headers, data|
+  assert(headers["Status"], "200 OK", "Response status code.")
+  assert(headers["Content-Type"], "text/xml; charset=utf-8", "Response content type.")
+
+  doc = XML::Parser.string(data).parse
+  assert(doc.root.name, "osm", "Document root element.")
+  children = doc.root.children.select {|n| n.element?}
+  # 1 original node + 300 other nodes + 1 way + 2 relations + bounds
+  assert(children.size, 305, "Number of children of the <osm> element.")
+
+  # first child should be <bounds>
+  assert(children[0].name, 'bounds', 'First element in map response should be bounds.')
+
+  # nodes should come first
+  node_nums = Array.new
+  (1..301).each do |i|
+    node = children[i]
+    assert(node.name, 'node', "Name of #{i}th element.")
+    node_nums << node['id'].to_i
+  end
+  
+  # there should be one way
+  node = children[302]
+  assert(node.name, 'way', "Name of way element.")
+  nds = node.children.select {|n| n.element?}.map {|n| n['ref'].to_i}
+  assert(nds.size, node_nums.size, 'Number of nds and nodes.')
+  assert(nds, node_nums, 'Way nodes and node elements.')
+
+  # further, there should be 2 relations
+  assert(children[303].name, 'relation', 'Name of relation element.')
+  assert(children[304].name, 'relation', 'Name of relation element.')
+
+  # ordering of the relations isn't certain, but one should be the one
+  # containing the way, and the other should contain that relation.
+  rel1, rel2 = [303, 304].map {|i| children[i]}.sort_by {|n| n['id'].to_i}
+  assert(rel1['id'].to_i, 1, 'ID of first relation.')
+  assert(rel2['id'].to_i, 2, 'ID of second relation.')
+end
+

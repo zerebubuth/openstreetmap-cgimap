@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<osm version="0.6" generator="by hand">
+  <!-- users start from 30, changesets from 200 -->
+  <relation id="1" version="1" visible="true" changeset="200" uid="30" user="user_30" timestamp="2013-02-27T00:30:00Z">
+    <member type="way" ref="2" role=""/>
+    <member type="node" ref="30101" role=""/>
+    <tag k="type" v="test"/>
+  </relation>
+  <relation id="2" version="1" visible="true" changeset="200" uid="30" user="user_30" timestamp="2013-02-27T00:30:00Z">
+    <member type="relation" ref="1" role=""/>
+    <member type="relation" ref="2" role="self"/>
+  </relation>
+</osm>
