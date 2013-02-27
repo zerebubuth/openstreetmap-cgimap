@@ -38,6 +38,7 @@
 #include "changeset.hpp"
 #include "writeable_pgsql_selection.hpp"
 #include "readonly_pgsql_selection.hpp"
+#include "config.h"
 
 using std::runtime_error;
 using std::vector;
@@ -197,7 +198,7 @@ private:
  */
 static void
 get_options(int argc, char **argv, po::variables_map &options) {
-  po::options_description desc("Allowed options");
+  po::options_description desc(PACKAGE_STRING ": Allowed options");
 
   desc.add_options()
     ("help", "display this help and exit")
