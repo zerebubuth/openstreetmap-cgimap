@@ -183,7 +183,7 @@ acceptable_types::most_acceptable_of(const list<mime::type> &available) const {
  */
 acceptable_types header_mime_type(FCGX_Request &req) {
   // need to look at HTTP_ACCEPT request environment
-  string accept_header = fcgi_get_env(req, "HTTP_ACCEPT");
+  string accept_header = fcgi_get_env(req, "HTTP_ACCEPT", "*/*");
   return acceptable_types(accept_header);
 }
 }
