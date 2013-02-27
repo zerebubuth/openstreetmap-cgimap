@@ -7,16 +7,20 @@ using std::string;
 using std::ostringstream;
 
 string
-fcgi_get_env(FCGX_Request &req, const char* name) {
+fcgi_get_env(FCGX_Request &req, const char* name, const char* default_value) {
   assert(name);
   const char* v = FCGX_GetParam(name, req.envp);
 
   // since the map script is so simple i'm just going to assume that
   // any time we fail to get an environment variable is a fatal error.
   if (v == NULL) {
-    ostringstream ostr;
-    ostr << "FCGI didn't set the $" << name << " environment variable.";
-    throw http::server_error(ostr.str());
+    if (default_value) {
+      v = default_value;
+    } else {
+      ostringstream ostr;
+      ostr << "FCGI didn't set the $" << name << " environment variable.";
+      throw http::server_error(ostr.str());
+    }
   }
 
   return string(v);

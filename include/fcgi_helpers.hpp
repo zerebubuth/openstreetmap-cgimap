@@ -6,10 +6,10 @@
 
 /**
  * Lookup a string from the FCGI environment. Throws 500 error if the
- * string isn't there.
+ * string isn't there and no default value is given.
  */
 std::string
-fcgi_get_env(FCGX_Request &req, const char* name);
+fcgi_get_env(FCGX_Request &req, const char* name, const char* default_value = NULL);
 
 /**
  * get a query string by hook or by crook.
