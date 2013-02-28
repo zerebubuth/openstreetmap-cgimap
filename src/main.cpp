@@ -150,6 +150,9 @@ connect_db(const po::variables_map &options) {
   // set the connections to use the appropriate charset.
   con->set_client_encoding(options["charset"].as<std::string>());
 
+  // ignore notice messages
+  con->set_noticer(auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
+
   return con;
 }
 
