@@ -23,7 +23,9 @@ string to_string(type t) {
 type parse_from(const std::string &name) {
   type t = unspecified_type;
 
-  if (name == "*/*") {
+  if (name == "*") {
+    t = any_type;
+  } else if (name == "*/*") {
     t = any_type;
   } else if (name == "text/*") {
     t = any_type;
