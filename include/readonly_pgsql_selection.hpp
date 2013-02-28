@@ -14,7 +14,7 @@
 class readonly_pgsql_selection
 	: public data_selection {
 public:
-	 readonly_pgsql_selection(pqxx::work &w_);
+	 readonly_pgsql_selection(pqxx::connection &conn);
 	 ~readonly_pgsql_selection();
 
 	 void write_nodes(output_formatter &formatter);
@@ -42,11 +42,27 @@ public:
 	 void select_relations_from_relations();
   void select_relations_members_of_relations();
 
+   /**
+    * a factory for the creation of read-only selections, so it
+    * can set up prepared statements.
+    */
+   class factory
+      : public data_selection::factory {
+   public:
+      factory(pqxx::connection &);
+      virtual ~factory();
+      virtual boost::shared_ptr<data_selection> make_selection();
+
+   private:
+      /// connection to the database
+      pqxx::connection &m_connection;
+   };
+
 private:
 	 // the transaction in which the selection takes place. this is
 	 // fully read-only, and cannot create any temporary tables, 
 	 // unlike writeable_pgsql_selection.
-	 pqxx::work &w;
+	 pqxx::work w;
 
 	 // the set of selected nodes, ways and relations
 	 std::set<id_t> sel_nodes, sel_ways, sel_relations;

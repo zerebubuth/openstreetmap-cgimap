@@ -239,9 +239,9 @@ get_options(int argc, char **argv, po::variables_map &options) {
  * process a GET request.
  */
 void 
-process_get_request(FCGX_Request &request, routes &route, pqxx::connection &con,
+process_get_request(FCGX_Request &request, routes &route, 
                     cache<long int, changeset> &changeset_cache,
-                    rate_limiter &limiter, bool db_is_writeable) {
+                    rate_limiter &limiter, boost::shared_ptr<data_selection::factory> factory) {
   // get the client IP address
   string ip = fcgi_get_env(request, "REMOTE_ADDR");
   
@@ -261,13 +261,7 @@ process_get_request(FCGX_Request &request, routes &route, pqxx::connection &con,
   logger::message(format("Started request for %1% from %2%") % request_name % ip);
   
   // separate transaction for the request
-  pqxx::work x(con);
-  shared_ptr<data_selection> selection;
-  if (db_is_writeable) {
-    selection = boost::make_shared<writeable_pgsql_selection>(boost::ref(x));
-  } else {
-    selection = boost::make_shared<readonly_pgsql_selection>(boost::ref(x));
-  }
+  shared_ptr<data_selection> selection = factory->make_selection();
   
   // constructor of responder handles dynamic validation (i.e: with db access).
   responder_ptr_t responder = handler->responder(*selection);
@@ -391,6 +385,15 @@ process_requests(int socket, const po::variables_map &options) {
   pqxx::nontransaction cache_x(*cache_con, "changeset_cache");
   cache<long int, changeset> changeset_cache(boost::bind(fetch_changeset, boost::ref(cache_x), _1), CACHE_SIZE);
 
+  // create a factory for data selections - the mechanism for actually
+  // getting at data.
+  boost::shared_ptr<data_selection::factory> factory;
+  if (db_is_writeable) {
+     factory = boost::make_shared<writeable_pgsql_selection::factory>(boost::ref(*con));
+  } else {
+     factory = boost::make_shared<readonly_pgsql_selection::factory>(boost::ref(*con));
+  }
+
   logger::message("Initialised");
 
   // enter the main loop
@@ -415,7 +418,7 @@ process_requests(int socket, const po::variables_map &options) {
 
         // process request
         if (method == "GET") {
-          process_get_request(request, route, *con, changeset_cache, limiter, db_is_writeable);
+          process_get_request(request, route, changeset_cache, limiter, factory);
         } else if (method == "OPTIONS") {
           process_options_request(request);
         } else {

@@ -6,6 +6,8 @@
 
 #include <sstream>
 #include <list>
+#include <boost/make_shared.hpp>
+#include <boost/ref.hpp>
 
 using std::set;
 using std::stringstream;
@@ -44,8 +46,8 @@ insert_results_of(pqxx::work &w, std::stringstream &query, set<id_t> &elems) {
 }
 } // anonymous namespace
 
-readonly_pgsql_selection::readonly_pgsql_selection(pqxx::work &w_)
-   : w(w_) {
+readonly_pgsql_selection::readonly_pgsql_selection(pqxx::connection &conn)
+   : w(conn) {
 }
 
 readonly_pgsql_selection::~readonly_pgsql_selection() {
@@ -408,4 +410,15 @@ readonly_pgsql_selection::select_relations_members_of_relations() {
       query << ")";
       insert_results_of(w, query, sel_relations);
    }
+}
+
+readonly_pgsql_selection::factory::factory(pqxx::connection &conn)
+   : m_connection(conn) {
+}
+
+readonly_pgsql_selection::factory::~factory() {
+}
+
+boost::shared_ptr<data_selection> readonly_pgsql_selection::factory::make_selection() {
+   return boost::make_shared<readonly_pgsql_selection>(boost::ref(m_connection));
 }

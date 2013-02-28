@@ -7,6 +7,8 @@
 #include <set>
 #include <sstream>
 #include <list>
+#include <boost/make_shared.hpp>
+#include <boost/ref.hpp>
 
 using std::set;
 using std::stringstream;
@@ -32,8 +34,8 @@ check_table_visibility(pqxx::work &w, id_t id, const char *table) {
 }
 } // anonymous namespace
 
-writeable_pgsql_selection::writeable_pgsql_selection(pqxx::work &w_)
-	: w(w_) {
+writeable_pgsql_selection::writeable_pgsql_selection(pqxx::connection &conn)
+	: w(conn) {
 	w.exec("create temporary table tmp_nodes (id bigint primary key)");
 	w.exec("create temporary table tmp_ways (id bigint primary key)");
 	w.exec("create temporary table tmp_relations (id bigint primary key)");
@@ -307,3 +309,13 @@ writeable_pgsql_selection::select_relations_members_of_relations() {
 	 "and rm.member_id not in (select id from tmp_relations)");
 }
 
+writeable_pgsql_selection::factory::factory(pqxx::connection &conn)
+   : m_connection(conn) {
+}
+
+writeable_pgsql_selection::factory::~factory() {
+}
+
+boost::shared_ptr<data_selection> writeable_pgsql_selection::factory::make_selection() {
+   return boost::make_shared<writeable_pgsql_selection>(boost::ref(m_connection));
+}

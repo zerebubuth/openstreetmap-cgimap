@@ -11,7 +11,7 @@
 class writeable_pgsql_selection
 	: public data_selection {
 public:
-	 writeable_pgsql_selection(pqxx::work &w_);
+	 writeable_pgsql_selection(pqxx::connection &conn);
 	 ~writeable_pgsql_selection();
 
 	 void write_nodes(output_formatter &formatter);
@@ -39,10 +39,25 @@ public:
 	 void select_relations_from_relations();
   void select_relations_members_of_relations();
 
+   /**
+    * abstracts the creation of transactions for the writeable
+    * data selection.
+    */
+   class factory
+      : public data_selection::factory {
+   public:
+      factory(pqxx::connection &);
+      virtual ~factory();
+      virtual boost::shared_ptr<data_selection> make_selection();
+
+   private:
+      pqxx::connection &m_connection;
+   };
+
 private:
 	 // the transaction in which the selection takes place. although 
 	 // this *is* read-only, it may create temporary tables.
-	 pqxx::work &w;
+	 pqxx::work w;
 };
 
 #endif /* WRITEABLE_PGSQL_SELECTION_HPP */

@@ -5,6 +5,7 @@
 #include "output_formatter.hpp"
 
 #include <list>
+#include <boost/shared_ptr.hpp>
 
 /** 
  * represents a selected set of data which can be written out to
@@ -93,6 +94,20 @@ public:
 
   /// select relations which are members of selected relations
   virtual void select_relations_members_of_relations() = 0;
+
+   /**
+    * factory for the creation of data selections. this abstracts away
+    * the creation process of transactions, and allows some up-front
+    * work to be done. for example, setting up prepared statements on
+    * a database connection.
+    */
+   struct factory {
+      virtual ~factory();
+      
+      /// get a handle to a selection which can be used to build up
+      /// a working set of data.
+      virtual boost::shared_ptr<data_selection> make_selection() = 0;
+   };
 };
 
 #endif /* DATA_SELECTION_HPP */

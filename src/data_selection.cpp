@@ -2,3 +2,6 @@
 
 data_selection::~data_selection() {
 }
+
+data_selection::factory::~factory() {
+}
