@@ -110,18 +110,21 @@ writeable_pgsql_selection::write_relations(output_formatter &formatter) {
 int 
 writeable_pgsql_selection::num_nodes() {
   pqxx::result res = w.exec("select count(*) from tmp_nodes");
+  // count should always return a single row, right?
   return res[0][0].as<int>();
 }
 
 int 
 writeable_pgsql_selection::num_ways() {
   pqxx::result res = w.exec("select count(*) from tmp_ways");
+  // count should always return a single row, right?
   return res[0][0].as<int>();
 }
 
 int 
 writeable_pgsql_selection::num_relations() {
   pqxx::result res = w.exec("select count(*) from tmp_relations");
+  // count should always return a single row, right?
   return res[0][0].as<int>();
 }
 
