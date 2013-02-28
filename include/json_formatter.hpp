@@ -15,13 +15,13 @@ class json_formatter
   : public output_formatter {
 private:
   boost::scoped_ptr<json_writer> writer;
-  cache<long int, changeset> &changeset_cache;
+  cache<osm_id_t, changeset> &changeset_cache;
 
   void write_tags(pqxx::result &tags);
 
 public:
   // NOTE: takes ownership of the writer!
-  json_formatter(json_writer *w, cache<long int, changeset> &cc);
+  json_formatter(json_writer *w, cache<osm_id_t, changeset> &cc);
   virtual ~json_formatter();
 
   void start_document();

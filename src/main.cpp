@@ -240,7 +240,7 @@ get_options(int argc, char **argv, po::variables_map &options) {
  */
 void 
 process_get_request(FCGX_Request &request, routes &route, 
-                    cache<long int, changeset> &changeset_cache,
+                    cache<osm_id_t, changeset> &changeset_cache,
                     rate_limiter &limiter, boost::shared_ptr<data_selection::factory> factory) {
   // get the client IP address
   string ip = fcgi_get_env(request, "REMOTE_ADDR");
@@ -383,7 +383,7 @@ process_requests(int socket, const po::variables_map &options) {
   // start a transaction using a second connection just for looking up 
   // users/changesets for the cache.
   pqxx::nontransaction cache_x(*cache_con, "changeset_cache");
-  cache<long int, changeset> changeset_cache(boost::bind(fetch_changeset, boost::ref(cache_x), _1), CACHE_SIZE);
+  cache<osm_id_t, changeset> changeset_cache(boost::bind(fetch_changeset, boost::ref(cache_x), _1), CACHE_SIZE);
 
   // create a factory for data selections - the mechanism for actually
   // getting at data.

@@ -49,7 +49,7 @@ public:
   typedef std::map<Key, list_iterator> map_type;
   typedef typename map_type::iterator map_iterator;
   typedef typename list_type::size_type size_type;
-  typedef boost::function<Object *(long int)> function_type;
+  typedef boost::function<Object *(Key)> function_type;
 
   cache(function_type f, size_type m);
   

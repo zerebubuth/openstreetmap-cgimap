@@ -133,17 +133,17 @@ xml_writer::attribute(const std::string &name, double value) {
 }  
 
 void 
-xml_writer::attribute(const std::string &name, long int value) {
+xml_writer::attribute(const std::string &name, unsigned long int value) {
   int rc = xmlTextWriterWriteFormatAttribute(pimpl->writer, 
 					     BAD_CAST name.c_str(),
 					     "%ld", value);
   if (rc < 0) {
-    throw write_error("cannot write long int attribute.");
+    throw write_error("cannot write osm_id_t attribute.");
   }
 }  
 
 void 
-xml_writer::attribute(const std::string &name, long long int value) {
+xml_writer::attribute(const std::string &name, unsigned long long int value) {
   int rc = xmlTextWriterWriteFormatAttribute(pimpl->writer, 
 					     BAD_CAST name.c_str(),
 					     "%lld", value);

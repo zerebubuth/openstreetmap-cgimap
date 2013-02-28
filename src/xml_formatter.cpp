@@ -8,7 +8,7 @@ using std::string;
 using boost::shared_ptr;
 using std::transform;
 
-xml_formatter::xml_formatter(xml_writer *w, cache<long int, changeset> &cc)
+xml_formatter::xml_formatter(xml_writer *w, cache<osm_id_t, changeset> &cc)
   : writer(w), changeset_cache(cc) {
 }
 
@@ -79,8 +79,8 @@ void
 xml_formatter::write_node(const pqxx::result::tuple &r, pqxx::result &tags) {
   const int lat = r["latitude"].as<int>();
   const int lon = r["longitude"].as<int>();
-  const long int id = r["id"].as<long int>();
-  const long int cs_id = r["changeset_id"].as<long int>();
+  const osm_id_t id = r["id"].as<osm_id_t>();
+  const osm_id_t cs_id = r["changeset_id"].as<osm_id_t>();
   shared_ptr<changeset const> cs = changeset_cache.get(cs_id);
 
   writer->start("node");
@@ -103,8 +103,8 @@ xml_formatter::write_node(const pqxx::result::tuple &r, pqxx::result &tags) {
 
 void 
 xml_formatter::write_way(const pqxx::result::tuple &r, pqxx::result &nodes, pqxx::result &tags) {
-  const long int id = r["id"].as<long int>();
-  const long int cs_id = r["changeset_id"].as<long int>();
+  const osm_id_t id = r["id"].as<osm_id_t>();
+  const osm_id_t cs_id = r["changeset_id"].as<osm_id_t>();
   shared_ptr<changeset const> cs = changeset_cache.get(cs_id);
 
   writer->start("way");
@@ -121,7 +121,7 @@ xml_formatter::write_way(const pqxx::result::tuple &r, pqxx::result &nodes, pqxx
   for (pqxx::result::const_iterator itr = nodes.begin();
        itr != nodes.end(); ++itr) {
     writer->start("nd");
-    writer->attribute("ref", (*itr)[0].as<long long int>());
+    writer->attribute("ref", (*itr)[0].as<osm_id_t>());
     writer->end();
   }
 
@@ -132,8 +132,8 @@ xml_formatter::write_way(const pqxx::result::tuple &r, pqxx::result &nodes, pqxx
 
 void 
 xml_formatter::write_relation(const pqxx::result::tuple &r, pqxx::result &members, pqxx::result &tags) {
-  const long int id = r["id"].as<long int>();
-  const long int cs_id = r["changeset_id"].as<long int>();
+  const osm_id_t id = r["id"].as<osm_id_t>();
+  const osm_id_t cs_id = r["changeset_id"].as<osm_id_t>();
   shared_ptr<changeset const> cs = changeset_cache.get(cs_id);
 
   writer->start("relation");
@@ -153,7 +153,7 @@ xml_formatter::write_relation(const pqxx::result::tuple &r, pqxx::result &member
     transform(type.begin(), type.end(), type.begin(), ::tolower);
     writer->start("member");
     writer->attribute("type", type);
-    writer->attribute("ref", (*itr)[1].as<long long int>());
+    writer->attribute("ref", (*itr)[1].as<osm_id_t>());
     writer->attribute("role", (*itr)[2].c_str());
     writer->end();
   }

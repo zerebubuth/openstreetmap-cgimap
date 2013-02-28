@@ -15,13 +15,13 @@ class xml_formatter
   : public output_formatter {
 private:
   boost::shared_ptr<xml_writer> writer;
-  cache<long int, changeset> &changeset_cache;
+  cache<osm_id_t, changeset> &changeset_cache;
   
   void write_tags(pqxx::result &tags);
 
 public:
   // NOTE: takes ownership of the writer!
-  xml_formatter(xml_writer *w, cache<long int, changeset> &cc);
+  xml_formatter(xml_writer *w, cache<osm_id_t, changeset> &cc);
   virtual ~xml_formatter();
 
   void start_document();

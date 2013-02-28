@@ -18,6 +18,6 @@
  */
 boost::shared_ptr<output_formatter> choose_formatter(
 	FCGX_Request &req, responder_ptr_t hptr, 
-	boost::shared_ptr<output_buffer>, cache<long int, changeset> &);
+	boost::shared_ptr<output_buffer>, cache<osm_id_t, changeset> &);
 
 #endif /* CHOOSE_FORMATTER_HPP */

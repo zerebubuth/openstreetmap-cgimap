@@ -192,7 +192,7 @@ shared_ptr<output_formatter>
 choose_formatter(FCGX_Request &request, 
 								 responder_ptr_t hptr, 
 								 shared_ptr<output_buffer> out,
-								 cache<long int, changeset> &changeset_cache) {
+								 cache<osm_id_t, changeset> &changeset_cache) {
 	// figure out what, if any, the Accept-able resource mime types are
 	acceptable_types types = header_mime_type(request);
 	const list<mime::type> types_available = hptr->types_available();

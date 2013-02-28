@@ -1,6 +1,7 @@
 #ifndef CHANGESET_HPP
 #define CHANGESET_HPP
 
+#include "types.hpp"
 #include <string>
 #include <pqxx/pqxx>
 
@@ -12,11 +13,11 @@
 struct changeset {
   bool data_public;
   std::string display_name;
-  long int user_id;
+  osm_id_t user_id;
 
-  changeset(bool dp, const std::string &dn, long int id);
+  changeset(bool dp, const std::string &dn, osm_id_t id);
 };
 
-changeset *fetch_changeset(pqxx::transaction_base &w, long int id);
+changeset *fetch_changeset(pqxx::transaction_base &w, osm_id_t id);
 
 #endif /* CHANGESET_HPP */

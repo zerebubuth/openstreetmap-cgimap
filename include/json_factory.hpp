@@ -14,7 +14,7 @@ public:
   json_factory();
   ~json_factory();
   json_writer &create_writer(boost::shared_ptr<output_buffer> &out, bool indent = true);
-  json_formatter &create_formatter(cache<long int, changeset> &changeset_cache);
+  json_formatter &create_formatter(cache<osm_id_t, changeset> &changeset_cache);
 
 private:
   boost::shared_ptr<json_writer> writer;

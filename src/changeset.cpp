@@ -6,12 +6,12 @@
 using std::string;
 using boost::format;
 
-changeset::changeset(bool dp, const string &dn, long int id)
+changeset::changeset(bool dp, const string &dn, osm_id_t id)
   : data_public(dp), display_name(dn), user_id(id) {
 }
 
 changeset *
-fetch_changeset(pqxx::transaction_base &w, long int id) {
+fetch_changeset(pqxx::transaction_base &w, osm_id_t id) {
   pqxx::result res = w.exec("select u.data_public, u.display_name, u.id from users u "
 			    "join changesets c on u.id=c.user_id where c.id=" + pqxx::to_string(id));
 
@@ -25,6 +25,6 @@ fetch_changeset(pqxx::transaction_base &w, long int id) {
      throw http::server_error((format("Possible database inconsistency with changeset %1%.") % id).str());
   }
 
-  return new changeset(res[0][0].as<bool>(), res[0][1].as<string>(), res[0][2].as<long int>());
+  return new changeset(res[0][0].as<bool>(), res[0][1].as<string>(), res[0][2].as<osm_id_t>());
 }
 

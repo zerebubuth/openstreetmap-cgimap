@@ -13,7 +13,7 @@ json_factory::create_writer(boost::shared_ptr<output_buffer> &out, bool indent) 
 }
 
 json_formatter &
-json_factory::create_formatter(cache<long int, changeset> &changeset_cache) {
+json_factory::create_formatter(cache<osm_id_t, changeset> &changeset_cache) {
   formatter = new json_formatter(*writer, changeset_cache);
   return *formatter;
 }
