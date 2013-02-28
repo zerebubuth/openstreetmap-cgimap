@@ -94,7 +94,7 @@ struct http_accept_grammar : qi::grammar<iterator, vector<media_range>(), ascii:
     quoted_string %= lit("\"") >> *((char_(32,126) - char_("\"")) | (lit("\\") >> char_)) >> lit("\"");
     
     // TODO: WTF?! do this properly!
-    mime_type %= raw[token >> lit("/") >> token];
+    mime_type %= raw[token >> lit("/") >> token] | lit("*");
     param %= token >> '=' >> (token | quoted_string);
     range %= mime_type >> *(';' >> param);
     start %= range % ',';
