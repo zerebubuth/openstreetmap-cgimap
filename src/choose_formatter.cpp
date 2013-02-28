@@ -8,6 +8,7 @@
 #include "xml_formatter.hpp"
 #include "json_writer.hpp"
 #include "json_formatter.hpp"
+#include "logger.hpp"
 
 #include <stdexcept>
 #include <list>
@@ -26,6 +27,7 @@
 #include <boost/spirit/include/qi.hpp>
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/format.hpp>
 
 using std::auto_ptr;
 using std::ostringstream;
@@ -40,6 +42,7 @@ using boost::lexical_cast;
 using std::string;
 using std::vector;
 using std::pair;
+using boost::format;
 
 namespace {
 
@@ -143,6 +146,7 @@ acceptable_types::acceptable_types(const std::string &accept_header) {
     }
 
   } else {
+    logger::message(format("Failed to parse accept header '%1%'") % accept_header);
     throw http::bad_request("Accept header could not be parsed.");
   }
 }
