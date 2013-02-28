@@ -9,9 +9,9 @@ using std::list;
 
 namespace api06 {
 
-way_full_responder::way_full_responder(mime::type mt_, id_t id_, data_selection &w_) 
+way_full_responder::way_full_responder(mime::type mt_, osm_id_t id_, data_selection &w_) 
 	: osm_responder(mt_, w_), id(id_) {
-	list<id_t> ids;
+	list<osm_id_t> ids;
 
   check_visibility();
 
@@ -36,7 +36,7 @@ way_full_responder::check_visibility() {
 	}
 }
 
-way_full_handler::way_full_handler(FCGX_Request &request, id_t id_)
+way_full_handler::way_full_handler(FCGX_Request &request, osm_id_t id_)
   : id(id_) {
   logger::message((boost::format("starting way/full handler with id = %1%") % id).str());
 }

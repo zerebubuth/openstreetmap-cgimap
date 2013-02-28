@@ -18,7 +18,7 @@ using std::list;
 
 namespace {
 inline data_selection::visibility_t 
-check_table_visibility(pqxx::work &w, id_t id, const char *table) {
+check_table_visibility(pqxx::work &w, osm_id_t id, const char *table) {
    stringstream query;
    query << "select visible from current_" << table << "s where id = " << id;
    pqxx::result res = w.exec(query);
@@ -35,7 +35,7 @@ check_table_visibility(pqxx::work &w, id_t id, const char *table) {
 }
 
 inline void
-insert_results_of(pqxx::work &w, std::stringstream &query, set<id_t> &elems) {
+insert_results_of(pqxx::work &w, std::stringstream &query, set<osm_id_t> &elems) {
    pqxx::result res = w.exec(query);
 
    for (pqxx::result::const_iterator itr = res.begin(); 
@@ -61,9 +61,9 @@ readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
 
    formatter.start_element_type(element_type_node, num_nodes());
    // fetch in chunks...
-   set<id_t>::iterator prev_itr = sel_nodes.begin();
+   set<osm_id_t>::iterator prev_itr = sel_nodes.begin();
    size_t chunk_i = 0;
-   for (set<id_t>::iterator n_itr = sel_nodes.begin();
+   for (set<osm_id_t>::iterator n_itr = sel_nodes.begin();
         ; ++n_itr, ++chunk_i) {
       bool at_end = n_itr == sel_nodes.end();
       if ((chunk_i >= STRIDE) || at_end) {
@@ -71,7 +71,7 @@ readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
          query << "select n.id, n.latitude, n.longitude, n.visible, "
             "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as timestamp, "
             "n.changeset_id, n.version from current_nodes n where n.id in (";
-         std::copy(prev_itr, n_itr, infix_ostream_iterator<id_t>(query, ","));
+         std::copy(prev_itr, n_itr, infix_ostream_iterator<osm_id_t>(query, ","));
          query << ")";
          pqxx::result nodes = w.exec(query);
 				
@@ -100,9 +100,9 @@ readonly_pgsql_selection::write_ways(output_formatter &formatter) {
 
    formatter.start_element_type(element_type_way, num_ways());
    // fetch in chunks...
-   set<id_t>::iterator prev_itr = sel_ways.begin();
+   set<osm_id_t>::iterator prev_itr = sel_ways.begin();
    size_t chunk_i = 0;
-   for (set<id_t>::iterator n_itr = sel_ways.begin();
+   for (set<osm_id_t>::iterator n_itr = sel_ways.begin();
         ; ++n_itr, ++chunk_i) {
       bool at_end = n_itr == sel_ways.end();
       if ((chunk_i >= STRIDE) || at_end) {
@@ -110,7 +110,7 @@ readonly_pgsql_selection::write_ways(output_formatter &formatter) {
          query << "select w.id, w.visible, w.version, w.changeset_id, "
             "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as timestamp from "
             "current_ways w where w.id in (";
-         std::copy(prev_itr, n_itr, infix_ostream_iterator<id_t>(query, ","));
+         std::copy(prev_itr, n_itr, infix_ostream_iterator<osm_id_t>(query, ","));
          query << ")";
          pqxx::result ways = w.exec(query);
 
@@ -138,9 +138,9 @@ readonly_pgsql_selection::write_relations(output_formatter &formatter) {
 
    formatter.start_element_type(element_type_relation, num_relations());
    // fetch in chunks...
-   set<id_t>::iterator prev_itr = sel_relations.begin();
+   set<osm_id_t>::iterator prev_itr = sel_relations.begin();
    size_t chunk_i = 0;
-   for (set<id_t>::iterator n_itr = sel_relations.begin();
+   for (set<osm_id_t>::iterator n_itr = sel_relations.begin();
         ; ++n_itr, ++chunk_i) {
       bool at_end = n_itr == sel_relations.end();
       if ((chunk_i >= STRIDE) || at_end) {
@@ -148,7 +148,7 @@ readonly_pgsql_selection::write_relations(output_formatter &formatter) {
          query << "select r.id, r.visible, r.version, r.changeset_id, "
             "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as timestamp from "
             "current_relations r where r.id in (";
-         std::copy(prev_itr, n_itr, infix_ostream_iterator<id_t>(query, ","));
+         std::copy(prev_itr, n_itr, infix_ostream_iterator<osm_id_t>(query, ","));
          query << ")";
          pqxx::result relations = w.exec(query);
 			
@@ -187,28 +187,28 @@ readonly_pgsql_selection::num_relations() {
 }
 
 data_selection::visibility_t 
-readonly_pgsql_selection::check_node_visibility(id_t id) {
+readonly_pgsql_selection::check_node_visibility(osm_id_t id) {
    return check_table_visibility(w, id, "node");
 }
 
 data_selection::visibility_t 
-readonly_pgsql_selection::check_way_visibility(id_t id) {
+readonly_pgsql_selection::check_way_visibility(osm_id_t id) {
    return check_table_visibility(w, id, "way");
 }
 
 data_selection::visibility_t 
-readonly_pgsql_selection::check_relation_visibility(id_t id) {
+readonly_pgsql_selection::check_relation_visibility(osm_id_t id) {
    return check_table_visibility(w, id, "relation");
 }
 
 void
-readonly_pgsql_selection::select_nodes(const std::list<id_t> &ids) {
+readonly_pgsql_selection::select_nodes(const std::list<osm_id_t> &ids) {
    if (!ids.empty()) {
       stringstream query;
-      list<id_t>::const_iterator it;
+      list<osm_id_t>::const_iterator it;
       
       query << "select id from current_nodes where id IN (";
-      std::copy(ids.begin(), ids.end(), infix_ostream_iterator<id_t>(query, ","));
+      std::copy(ids.begin(), ids.end(), infix_ostream_iterator<osm_id_t>(query, ","));
       query << ")";
       
       insert_results_of(w, query, sel_nodes);
@@ -216,13 +216,13 @@ readonly_pgsql_selection::select_nodes(const std::list<id_t> &ids) {
 }
 
 void
-readonly_pgsql_selection::select_ways(const std::list<id_t> &ids) {
+readonly_pgsql_selection::select_ways(const std::list<osm_id_t> &ids) {
    if (!ids.empty()) {
       stringstream query;
-      list<id_t>::const_iterator it;
+      list<osm_id_t>::const_iterator it;
       
       query << "select id from current_ways where id IN (";
-      std::copy(ids.begin(), ids.end(), infix_ostream_iterator<id_t>(query, ","));
+      std::copy(ids.begin(), ids.end(), infix_ostream_iterator<osm_id_t>(query, ","));
       query << ")";
       logger::message(query.str());
       
@@ -231,13 +231,13 @@ readonly_pgsql_selection::select_ways(const std::list<id_t> &ids) {
 }
 
 void
-readonly_pgsql_selection::select_relations(const std::list<id_t> &ids) {
+readonly_pgsql_selection::select_relations(const std::list<osm_id_t> &ids) {
    if (!ids.empty()) {
       stringstream query;
-      list<id_t>::const_iterator it;
+      list<osm_id_t>::const_iterator it;
       
       query << "select id from current_relations where id IN (";
-      std::copy(ids.begin(), ids.end(), infix_ostream_iterator<id_t>(query, ","));
+      std::copy(ids.begin(), ids.end(), infix_ostream_iterator<osm_id_t>(query, ","));
       query << ")";
       
       insert_results_of(w, query, sel_relations);
@@ -302,7 +302,7 @@ readonly_pgsql_selection::select_nodes_from_relations() {
       query << "select distinct rm.member_id as id from "
          "current_relation_members rm where rm.member_type='Node'"
          "and rm.relation_id in (";
-      std::copy(sel_relations.begin(), sel_relations.end(), infix_ostream_iterator<id_t>(query, ","));	
+      std::copy(sel_relations.begin(), sel_relations.end(), infix_ostream_iterator<osm_id_t>(query, ","));	
       query << ")";
       insert_results_of(w, query, sel_nodes);
    }
@@ -316,7 +316,7 @@ readonly_pgsql_selection::select_ways_from_nodes() {
       stringstream query;
       query << "select distinct wn.way_id as id from current_way_nodes wn "
          "where wn.node_id in (";
-      std::copy(sel_nodes.begin(), sel_nodes.end(), infix_ostream_iterator<id_t>(query, ","));	
+      std::copy(sel_nodes.begin(), sel_nodes.end(), infix_ostream_iterator<osm_id_t>(query, ","));	
       query << ")";
       insert_results_of(w, query, sel_ways);
    }
@@ -331,7 +331,7 @@ readonly_pgsql_selection::select_ways_from_relations() {
       query << "select distinct rm.member_id as id from "
          "current_relation_members rm where rm.member_type='Way' "
          "and rm.relation_id in (";
-      std::copy(sel_relations.begin(), sel_relations.end(), infix_ostream_iterator<id_t>(query, ","));
+      std::copy(sel_relations.begin(), sel_relations.end(), infix_ostream_iterator<osm_id_t>(query, ","));
       query << ")";
       insert_results_of(w, query, sel_ways);
    }
@@ -345,7 +345,7 @@ readonly_pgsql_selection::select_relations_from_ways() {
       stringstream query;
       query << "select distinct relation_id as id from current_relation_members rm where rm.member_type='Way' "
          "and rm.member_id in (";
-      std::copy(sel_ways.begin(), sel_ways.end(), infix_ostream_iterator<id_t>(query, ","));
+      std::copy(sel_ways.begin(), sel_ways.end(), infix_ostream_iterator<osm_id_t>(query, ","));
       query << ")";
       insert_results_of(w, query, sel_relations);
    }
@@ -357,7 +357,7 @@ readonly_pgsql_selection::select_nodes_from_way_nodes() {
       stringstream query;
       query << "select distinct wn.node_id as id from current_way_nodes wn "
          "where wn.way_id in ("; 
-      std::copy(sel_ways.begin(), sel_ways.end(), infix_ostream_iterator<id_t>(query, ","));
+      std::copy(sel_ways.begin(), sel_ways.end(), infix_ostream_iterator<osm_id_t>(query, ","));
       query << ")";
       insert_results_of(w, query, sel_nodes);
    }
@@ -369,7 +369,7 @@ readonly_pgsql_selection::select_relations_from_nodes() {
       stringstream query;
       query << "select distinct rm.relation_id as id from current_relation_members rm "
          "where rm.member_type='Node' and rm.member_id in (";
-      std::copy(sel_nodes.begin(), sel_nodes.end(), infix_ostream_iterator<id_t>(query, ","));
+      std::copy(sel_nodes.begin(), sel_nodes.end(), infix_ostream_iterator<osm_id_t>(query, ","));
       query << ")";
       insert_results_of(w, query, sel_relations);
    }
@@ -382,7 +382,7 @@ readonly_pgsql_selection::select_relations_from_way_nodes() {
       query << "select distinct relation_id as id from current_relation_members rm "
          "where rm.member_type='Node' and rm.member_id in (select distinct "
          "node_id from current_way_nodes where way_id in (";
-      std::copy(sel_ways.begin(), sel_ways.end(), infix_ostream_iterator<id_t>(query, ","));
+      std::copy(sel_ways.begin(), sel_ways.end(), infix_ostream_iterator<osm_id_t>(query, ","));
       query << "))";
       insert_results_of(w, query, sel_relations);
    }
@@ -394,7 +394,7 @@ readonly_pgsql_selection::select_relations_from_relations() {
       stringstream query;
       query << "select distinct relation_id as id from current_relation_members rm "
          "where rm.member_type='Relation' and rm.member_id in (";
-      std::copy(sel_relations.begin(), sel_relations.end(), infix_ostream_iterator<id_t>(query, ","));
+      std::copy(sel_relations.begin(), sel_relations.end(), infix_ostream_iterator<osm_id_t>(query, ","));
       query << ")";
       insert_results_of(w, query, sel_relations);
    }
@@ -406,7 +406,7 @@ readonly_pgsql_selection::select_relations_members_of_relations() {
       stringstream query;
       query << "select distinct rm.member_id as id from current_relation_members rm "
          "where rm.member_type='Relation' and rm.relation_id in (";
-      std::copy(sel_relations.begin(), sel_relations.end(), infix_ostream_iterator<id_t>(query, ","));
+      std::copy(sel_relations.begin(), sel_relations.end(), infix_ostream_iterator<osm_id_t>(query, ","));
       query << ")";
       insert_results_of(w, query, sel_relations);
    }

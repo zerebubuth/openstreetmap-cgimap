@@ -9,9 +9,9 @@ using std::list;
 
 namespace api06 {
 
-relation_full_responder::relation_full_responder(mime::type mt_, id_t id_, data_selection &w_) 
+relation_full_responder::relation_full_responder(mime::type mt_, osm_id_t id_, data_selection &w_) 
   : osm_responder(mt_, w_), id(id_) {
-	list<id_t> ids;
+	list<osm_id_t> ids;
 
   check_visibility();
 
@@ -39,7 +39,7 @@ relation_full_responder::check_visibility() {
 	}
 }
 
-relation_full_handler::relation_full_handler(FCGX_Request &request, id_t id_)
+relation_full_handler::relation_full_handler(FCGX_Request &request, osm_id_t id_)
   : id(id_) {
   logger::message((boost::format("starting relation/full handler with id = %1%") % id).str());
 }

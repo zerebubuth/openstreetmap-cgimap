@@ -45,24 +45,24 @@ public:
 	 virtual int num_relations() = 0;
 
 	 // check if the node is visible, deleted or has never existed
-	 virtual visibility_t check_node_visibility(id_t id) = 0;
+	 virtual visibility_t check_node_visibility(osm_id_t id) = 0;
 
 	 // check if the way is visible, deleted or has never existed
-	 virtual visibility_t check_way_visibility(id_t id) = 0;
+	 virtual visibility_t check_way_visibility(osm_id_t id) = 0;
 
 	 // check if the relation is visible, deleted or has never existed
-	 virtual visibility_t check_relation_visibility(id_t id) = 0;
+	 virtual visibility_t check_relation_visibility(osm_id_t id) = 0;
 
 	 /******************* manipulation functions ******************/
 
 	 /// select the nodes in the list
-	 virtual void select_nodes(const std::list<id_t> &) = 0;
+	 virtual void select_nodes(const std::list<osm_id_t> &) = 0;
 
 	 /// select the ways in the list
-	 virtual void select_ways(const std::list<id_t> &) = 0;
+	 virtual void select_ways(const std::list<osm_id_t> &) = 0;
 
 	 /// select the relations in the list
-	 virtual void select_relations(const std::list<id_t> &) = 0;
+	 virtual void select_relations(const std::list<osm_id_t> &) = 0;
 
    /// given a bounding box, select nodes within that bbox up to a limit of max_nodes
 	 virtual void select_nodes_from_bbox(const bbox &bounds, int max_nodes) = 0;

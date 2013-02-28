@@ -13,11 +13,11 @@ namespace api06 {
 class ways_responder
 	: public osm_responder {
 public:
-	 ways_responder(mime::type, std::list<id_t>, data_selection &);
+	 ways_responder(mime::type, std::list<osm_id_t>, data_selection &);
 	 ~ways_responder();
 
 private:
-	 std::list<id_t> ids;
+	 std::list<osm_id_t> ids;
 };
 
 class ways_handler 
@@ -30,9 +30,9 @@ public:
 	 responder_ptr_t responder(data_selection &x) const;
 
 private:
-	 std::list<id_t> ids;
+	 std::list<osm_id_t> ids;
 
-	 static std::list<id_t> validate_request(FCGX_Request &request);
+	 static std::list<osm_id_t> validate_request(FCGX_Request &request);
 };
 
 } // namespace api06

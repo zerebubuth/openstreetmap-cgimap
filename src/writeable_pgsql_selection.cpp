@@ -17,7 +17,7 @@ using std::list;
 
 namespace {
 inline data_selection::visibility_t 
-check_table_visibility(pqxx::work &w, id_t id, const char *table) {
+check_table_visibility(pqxx::work &w, osm_id_t id, const char *table) {
 	stringstream query;
 	query << "select visible from current_" << table << "s where id = " << id;
 	pqxx::result res = w.exec(query);
@@ -131,51 +131,51 @@ writeable_pgsql_selection::num_relations() {
 }
 
 data_selection::visibility_t 
-writeable_pgsql_selection::check_node_visibility(id_t id) {
+writeable_pgsql_selection::check_node_visibility(osm_id_t id) {
 	return check_table_visibility(w, id, "node");
 }
 
 data_selection::visibility_t 
-writeable_pgsql_selection::check_way_visibility(id_t id) {
+writeable_pgsql_selection::check_way_visibility(osm_id_t id) {
 	return check_table_visibility(w, id, "way");
 }
 
 data_selection::visibility_t 
-writeable_pgsql_selection::check_relation_visibility(id_t id) {
+writeable_pgsql_selection::check_relation_visibility(osm_id_t id) {
 	return check_table_visibility(w, id, "relation");
 }
 
 void
-writeable_pgsql_selection::select_nodes(const std::list<id_t> &ids) {
+writeable_pgsql_selection::select_nodes(const std::list<osm_id_t> &ids) {
 	stringstream query;
-	list<id_t>::const_iterator it;
+	list<osm_id_t>::const_iterator it;
 	
 	query << "insert into tmp_nodes select id from current_nodes where id IN (";
-	std::copy(ids.begin(), ids.end(), infix_ostream_iterator<id_t>(query, ","));
+	std::copy(ids.begin(), ids.end(), infix_ostream_iterator<osm_id_t>(query, ","));
 	query << ") and id not in (select id from tmp_nodes)";
 
 	w.exec(query);
 }
 
 void
-writeable_pgsql_selection::select_ways(const std::list<id_t> &ids) {
+writeable_pgsql_selection::select_ways(const std::list<osm_id_t> &ids) {
 	stringstream query;
-	list<id_t>::const_iterator it;
+	list<osm_id_t>::const_iterator it;
 	
 	query << "insert into tmp_ways select id from current_ways where id IN (";
-	std::copy(ids.begin(), ids.end(), infix_ostream_iterator<id_t>(query, ","));
+	std::copy(ids.begin(), ids.end(), infix_ostream_iterator<osm_id_t>(query, ","));
 	query << ") and id not in (select id from tmp_ways)";
 
 	w.exec(query);
 }
 
 void
-writeable_pgsql_selection::select_relations(const std::list<id_t> &ids) {
+writeable_pgsql_selection::select_relations(const std::list<osm_id_t> &ids) {
 	stringstream query;
-	list<id_t>::const_iterator it;
+	list<osm_id_t>::const_iterator it;
 	
 	query << "insert into tmp_relations select id from current_relations where id IN (";
-	std::copy(ids.begin(), ids.end(), infix_ostream_iterator<id_t>(query, ","));
+	std::copy(ids.begin(), ids.end(), infix_ostream_iterator<osm_id_t>(query, ","));
 	query << ") and id not in (select id from tmp_relations)";
 
 	w.exec(query);

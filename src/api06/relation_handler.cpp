@@ -8,9 +8,9 @@ using std::list;
 
 namespace api06 {
 
-relation_responder::relation_responder(mime::type mt, id_t id_, data_selection &w_)
+relation_responder::relation_responder(mime::type mt, osm_id_t id_, data_selection &w_)
 	: osm_responder(mt, w_), id(id_) {
-	list<id_t> ids;
+	list<osm_id_t> ids;
 
 	check_visibility();
 
@@ -22,7 +22,7 @@ relation_responder::relation_responder(mime::type mt, id_t id_, data_selection &
 relation_responder::~relation_responder() {
 }
 
-relation_handler::relation_handler(FCGX_Request &request, id_t id_) 
+relation_handler::relation_handler(FCGX_Request &request, osm_id_t id_) 
 	: id(id_) {
 }
 

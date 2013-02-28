@@ -3,6 +3,6 @@
 
 #include <stdint.h>
 
-typedef uint32_t id_t;
+typedef uint64_t osm_id_t;
 
 #endif /* TYPES_HPP */

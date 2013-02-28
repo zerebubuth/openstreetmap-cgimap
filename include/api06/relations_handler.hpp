@@ -14,11 +14,11 @@ namespace api06 {
 class relations_responder
 	: public osm_responder {
 public:
-	 relations_responder(mime::type, std::list<id_t>, data_selection &);
+	 relations_responder(mime::type, std::list<osm_id_t>, data_selection &);
 	 ~relations_responder();
 
 private:
-	 std::list<id_t> ids;
+	 std::list<osm_id_t> ids;
 };
 
 class relations_handler 
@@ -31,9 +31,9 @@ public:
 	 responder_ptr_t responder(data_selection &x) const;
 
 private:
-	 std::list<id_t> ids;
+	 std::list<osm_id_t> ids;
 
-	 static std::list<id_t> validate_request(FCGX_Request &request);
+	 static std::list<osm_id_t> validate_request(FCGX_Request &request);
 };
 
 } // namespace api06

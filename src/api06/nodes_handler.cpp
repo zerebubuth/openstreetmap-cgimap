@@ -21,7 +21,7 @@ using boost::bad_lexical_cast;
 
 namespace api06 {
 
-nodes_responder::nodes_responder(mime::type mt, list<id_t> ids_, data_selection &w_)
+nodes_responder::nodes_responder(mime::type mt, list<osm_id_t> ids_, data_selection &w_)
 	: osm_responder(mt, w_), ids(ids_) {
 
 	sel.select_nodes(ids_);
@@ -47,7 +47,7 @@ std::string
 nodes_handler::log_name() const {
   stringstream msg;
   msg << "nodes?nodes=";
-  std::copy(ids.begin(), ids.end(), infix_ostream_iterator<id_t>(msg, ", "));
+  std::copy(ids.begin(), ids.end(), infix_ostream_iterator<osm_id_t>(msg, ", "));
   return msg.str();
 }
 
@@ -60,7 +60,7 @@ nodes_handler::responder(data_selection &x) const {
  * Validates an FCGI request, returning the valid list of ids or 
  * throwing an error if there was no valid list of node ids.
  */
-list<id_t>
+list<osm_id_t>
 nodes_handler::validate_request(FCGX_Request &request) {
 	// check that the REQUEST_METHOD is a GET
 	if (fcgi_get_env(request, "REQUEST_METHOD") != "GET") 
@@ -71,14 +71,14 @@ nodes_handler::validate_request(FCGX_Request &request) {
 	const map<string, string> params = http::parse_params(decoded);
 	map<string, string>::const_iterator itr = params.find("nodes");
 
-	list <id_t> myids;
+	list <osm_id_t> myids;
 
 	if (itr != params.end()) {
 		vector<string> strs;
 		al::split(strs, itr->second, al::is_any_of(","));
 		try {
 			for (vector<string>::iterator itr = strs.begin(); itr != strs.end(); ++itr) { 
-				id_t id = lexical_cast<id_t>(*itr);
+				osm_id_t id = lexical_cast<osm_id_t>(*itr);
 				myids.push_back(id);
 			}
 		} catch (const bad_lexical_cast &) {
