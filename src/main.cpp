@@ -609,9 +609,14 @@ main(int argc, char **argv) {
       }
     }
   } catch (const pqxx::sql_error &er) {
-    // Catch-all for any other postgres exceptions
+    // Catch-all for query related postgres exceptions
     std::cerr << "Error: " << er.what() << std::endl
 	      << "Caused by: " << er.query() << std::endl;
+    return 1;
+
+  } catch (const pqxx::pqxx_exception &e) {
+    // Catch-all for any other postgres exceptions
+    std::cerr << "Error: " << e.base().what() << std::endl;
     return 1;
 
   } catch (const std::exception &e) {
