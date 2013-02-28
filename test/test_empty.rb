@@ -4,9 +4,10 @@ require 'xml/libxml'
 $LOAD_PATH << File.dirname(__FILE__)
 require 'test_functions.rb'
 
-[nil,       # no Accept header
- '*/*',     # Accept: */*
- 'text/xml' # Accept: text/xml
+[nil,        # no Accept header
+ '*/*',      # Accept: */*
+ 'text/xml', # Accept: text/xml
+ 'text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2' # Nonsense from JOSM
 ].each do |accept|
   test_request("GET", "/api/0.6/map?bbox=0,0,0,0", "HTTP_ACCEPT" => accept) do |headers, data|
     assert(headers["Status"], "200 OK", "Response status code.")
