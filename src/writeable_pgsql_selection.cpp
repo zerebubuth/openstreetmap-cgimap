@@ -14,31 +14,52 @@ using std::set;
 using std::stringstream;
 using std::list;
 
+namespace pqxx {
+template<> struct string_traits<list<osm_id_t> >
+{
+   static const char *name() { return "list<osm_id_t>"; }
+   static bool has_null() { return false; }
+   static bool is_null(const list<osm_id_t> &) { return false; }
+   static stringstream null()
+   {
+      internal::throw_null_conversion(name());
+      // No, dear compiler, we don't need a return here.                                                                                                
+      throw 0;
+   }
+   static void from_string(const char Str[], list<osm_id_t> &Obj) {
+   }
+   static std::string to_string(const list<osm_id_t> &ids) {
+      stringstream ostr;
+      ostr << "{";
+      std::copy(ids.begin(), ids.end(), infix_ostream_iterator<osm_id_t>(ostr, ","));
+      ostr << "}";
+      return ostr.str();
+   }
+};
+}
 
 namespace {
 inline data_selection::visibility_t 
-check_table_visibility(pqxx::work &w, osm_id_t id, const char *table) {
-	stringstream query;
-	query << "select visible from current_" << table << "s where id = " << id;
-	pqxx::result res = w.exec(query);
-
-	if (res.size() > 0) {
-		if (res[0][0].as<bool>()) {
-			return data_selection::exists;
-		} else {
-			return data_selection::deleted;
-		}
-	} else {
-		return data_selection::non_exist;
-	}	
+check_table_visibility(pqxx::work &w, osm_id_t id, const std::string &prepared_name) {
+   pqxx::result res = w.prepared(prepared_name)(id).exec();
+   
+   if (res.size() > 0) {
+      if (res[0][0].as<bool>()) {
+         return data_selection::exists;
+      } else {
+         return data_selection::deleted;
+      }
+   } else {
+      return data_selection::non_exist;
+   }	
 }
 } // anonymous namespace
 
 writeable_pgsql_selection::writeable_pgsql_selection(pqxx::connection &conn)
-	: w(conn) {
-	w.exec("create temporary table tmp_nodes (id bigint primary key)");
-	w.exec("create temporary table tmp_ways (id bigint primary key)");
-	w.exec("create temporary table tmp_relations (id bigint primary key)");
+   : w(conn) {
+   w.exec("create temporary table tmp_nodes (id bigint primary key)");
+   w.exec("create temporary table tmp_ways (id bigint primary key)");
+   w.exec("create temporary table tmp_relations (id bigint primary key)");
 }
 
 writeable_pgsql_selection::~writeable_pgsql_selection() {
@@ -51,15 +72,11 @@ writeable_pgsql_selection::write_nodes(output_formatter &formatter) {
   logger::message("Fetching nodes");
 
   formatter.start_element_type(element_type_node, num_nodes());
-  pqxx::result nodes = w.exec(
-      "select n.id, n.latitude, n.longitude, n.visible, "
-      "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as timestamp, "
-      "n.changeset_id, n.version from current_nodes n join tmp_nodes x "
-      "on n.id = x.id");
+  pqxx::result nodes = w.prepared("extract_nodes").exec();
   for (pqxx::result::const_iterator itr = nodes.begin(); 
        itr != nodes.end(); ++itr) {
     const osm_id_t id = (*itr)["id"].as<osm_id_t>();
-    pqxx::result tags = w.exec("select k, v from current_node_tags where node_id=" + pqxx::to_string(id));
+    pqxx::result tags = w.prepared("extract_node_tags")(id).exec();
     formatter.write_node(*itr, tags);
   }
   formatter.end_element_type(element_type_node);
@@ -73,16 +90,12 @@ writeable_pgsql_selection::write_ways(output_formatter &formatter) {
   logger::message("Fetching ways");
 
   formatter.start_element_type(element_type_way, num_ways());
-  pqxx::result ways = w.exec(
-      "select w.id, w.visible, w.version, w.changeset_id, "
-      "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as timestamp from "
-      "current_ways w join tmp_ways tw on w.id=tw.id");
+  pqxx::result ways = w.prepared("extract_ways").exec();
   for (pqxx::result::const_iterator itr = ways.begin(); 
        itr != ways.end(); ++itr) {
     const osm_id_t id = (*itr)["id"].as<osm_id_t>();
-    pqxx::result nodes = w.exec("select node_id from current_way_nodes where way_id=" + 
-				pqxx::to_string(id) + " order by sequence_id asc");
-    pqxx::result tags = w.exec("select k, v from current_way_tags where way_id=" + pqxx::to_string(id));
+    pqxx::result nodes = w.prepared("extract_way_nds")(id).exec();
+    pqxx::result tags = w.prepared("extract_way_tags")(id).exec();
     formatter.write_way(*itr, nodes, tags);
   }
   formatter.end_element_type(element_type_way);
@@ -93,17 +106,12 @@ writeable_pgsql_selection::write_relations(output_formatter &formatter) {
   logger::message("Fetching relations");
 
   formatter.start_element_type(element_type_relation, num_relations());
-  pqxx::result relations = w.exec(
-      "select r.id, r.visible, r.version, r.changeset_id, "
-      "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as timestamp from "
-      "current_relations r join tmp_relations x on x.id=r.id");
+  pqxx::result relations = w.prepared("extract_relations").exec();
   for (pqxx::result::const_iterator itr = relations.begin(); 
        itr != relations.end(); ++itr) {
     const osm_id_t id = (*itr)["id"].as<osm_id_t>();
-    pqxx::result members = w.exec("select member_type, member_id, member_role from "
-				  "current_relation_members where relation_id=" + 
-				  pqxx::to_string(id) + " order by sequence_id asc");
-    pqxx::result tags = w.exec("select k, v from current_relation_tags where relation_id=" + pqxx::to_string(id));
+    pqxx::result members = w.prepared("extract_relation_members")(id).exec();
+    pqxx::result tags = w.prepared("extract_relation_tags")(id).exec();
     formatter.write_relation(*itr, members, tags);
   }
   formatter.end_element_type(element_type_relation);
@@ -111,206 +119,264 @@ writeable_pgsql_selection::write_relations(output_formatter &formatter) {
 
 int 
 writeable_pgsql_selection::num_nodes() {
-  pqxx::result res = w.exec("select count(*) from tmp_nodes");
-  // count should always return a single row, right?
-  return res[0][0].as<int>();
+   pqxx::result res = w.prepared("count_nodes").exec();
+   // count should always return a single row, right?
+   return res[0][0].as<int>();
 }
 
 int 
 writeable_pgsql_selection::num_ways() {
-  pqxx::result res = w.exec("select count(*) from tmp_ways");
-  // count should always return a single row, right?
-  return res[0][0].as<int>();
+   pqxx::result res = w.prepared("count_ways").exec();
+   // count should always return a single row, right?
+   return res[0][0].as<int>();
 }
 
 int 
 writeable_pgsql_selection::num_relations() {
-  pqxx::result res = w.exec("select count(*) from tmp_relations");
-  // count should always return a single row, right?
-  return res[0][0].as<int>();
+   pqxx::result res = w.prepared("count_relations").exec();
+   // count should always return a single row, right?
+   return res[0][0].as<int>();
 }
 
 data_selection::visibility_t 
 writeable_pgsql_selection::check_node_visibility(osm_id_t id) {
-	return check_table_visibility(w, id, "node");
+   return check_table_visibility(w, id, "visible_node");
 }
 
 data_selection::visibility_t 
 writeable_pgsql_selection::check_way_visibility(osm_id_t id) {
-	return check_table_visibility(w, id, "way");
+   return check_table_visibility(w, id, "visible_way");
 }
 
 data_selection::visibility_t 
 writeable_pgsql_selection::check_relation_visibility(osm_id_t id) {
-	return check_table_visibility(w, id, "relation");
+   return check_table_visibility(w, id, "visible_relation");
 }
 
 void
 writeable_pgsql_selection::select_nodes(const std::list<osm_id_t> &ids) {
-	stringstream query;
-	list<osm_id_t>::const_iterator it;
-	
-	query << "insert into tmp_nodes select id from current_nodes where id IN (";
-	std::copy(ids.begin(), ids.end(), infix_ostream_iterator<osm_id_t>(query, ","));
-	query << ") and id not in (select id from tmp_nodes)";
-
-	w.exec(query);
+   w.prepared("add_nodes_list")(ids).exec();
 }
 
 void
 writeable_pgsql_selection::select_ways(const std::list<osm_id_t> &ids) {
-	stringstream query;
-	list<osm_id_t>::const_iterator it;
-	
-	query << "insert into tmp_ways select id from current_ways where id IN (";
-	std::copy(ids.begin(), ids.end(), infix_ostream_iterator<osm_id_t>(query, ","));
-	query << ") and id not in (select id from tmp_ways)";
-
-	w.exec(query);
+   w.prepared("add_ways_list")(ids).exec();
 }
 
 void
 writeable_pgsql_selection::select_relations(const std::list<osm_id_t> &ids) {
-	stringstream query;
-	list<osm_id_t>::const_iterator it;
-	
-	query << "insert into tmp_relations select id from current_relations where id IN (";
-	std::copy(ids.begin(), ids.end(), infix_ostream_iterator<osm_id_t>(query, ","));
-	query << ") and id not in (select id from tmp_relations)";
-
-	w.exec(query);
+   w.prepared("add_relations_list")(ids).exec();
 }
 
 void 
 writeable_pgsql_selection::select_nodes_from_bbox(const bbox &bounds, int max_nodes) {
-  const set<unsigned int> tiles = 
-		 tiles_for_area(bounds.minlat, bounds.minlon, 
-										bounds.maxlat, bounds.maxlon);
-  
-  // hack around problem with postgres' statistics, which was 
-  // making it do seq scans all the time on smaug...
-  w.exec("set enable_mergejoin=false");
-  w.exec("set enable_hashjoin=false");
-	
-  stringstream query;
-  query << "insert into tmp_nodes "
-				<< "select id from current_nodes where ((";
-  unsigned int first_id = 0, last_id = 0;
-  for (set<unsigned int>::const_iterator itr = tiles.begin();
-       itr != tiles.end(); ++itr) {
-    if (first_id == 0) {
-      last_id = first_id = *itr;
-    } else if (*itr == last_id + 1) {
-      ++last_id;
-    } else {
-      if (last_id == first_id) {
-				query << "tile = " << last_id << " or ";
+   const set<unsigned int> tiles = 
+      tiles_for_area(bounds.minlat, bounds.minlon, 
+                     bounds.maxlat, bounds.maxlon);
+   
+   // hack around problem with postgres' statistics, which was 
+   // making it do seq scans all the time on smaug...
+   w.exec("set enable_mergejoin=false");
+   w.exec("set enable_hashjoin=false");
+   
+   stringstream query;
+   query << "insert into tmp_nodes "
+         << "select id from current_nodes where ((";
+   unsigned int first_id = 0, last_id = 0;
+   for (set<unsigned int>::const_iterator itr = tiles.begin();
+        itr != tiles.end(); ++itr) {
+      if (first_id == 0) {
+         last_id = first_id = *itr;
+      } else if (*itr == last_id + 1) {
+         ++last_id;
       } else {
-				query << "tile between " << first_id 
-							<< " and " << last_id << " or ";
+         if (last_id == first_id) {
+            query << "tile = " << last_id << " or ";
+         } else {
+            query << "tile between " << first_id 
+                  << " and " << last_id << " or ";
+         }
+         last_id = first_id = *itr;
       }
-      last_id = first_id = *itr;
-    }
-  }
-  if (last_id == first_id) {
-    query << "tile = " << last_id << ") ";
-  } else {
-    query << "tile between " << first_id 
-					<< " and " << last_id << ") ";
-  }
-  query << "and latitude between " << int(bounds.minlat * SCALE) 
-				<< " and " << int(bounds.maxlat * SCALE)
-				<< " and longitude between " << int(bounds.minlon * SCALE) 
-				<< " and " << int(bounds.maxlon * SCALE)
-				<< ") and (visible = true) and (id not in (select id from tmp_nodes))"
-				<< " limit " << (max_nodes + 1); // limit here as a quick hack to reduce load...
-
-  logger::message("Filling tmp_nodes from bbox");
-  logger::message(query.str());
-
-  // assume this throws if it fails?
-  w.exec(query);
+   }
+   if (last_id == first_id) {
+      query << "tile = " << last_id << ") ";
+   } else {
+      query << "tile between " << first_id 
+            << " and " << last_id << ") ";
+   }
+   query << "and latitude between " << int(bounds.minlat * SCALE) 
+         << " and " << int(bounds.maxlat * SCALE)
+         << " and longitude between " << int(bounds.minlon * SCALE) 
+         << " and " << int(bounds.maxlon * SCALE)
+         << ") and (visible = true) and (id not in (select id from tmp_nodes))"
+         << " limit " << (max_nodes + 1); // limit here as a quick hack to reduce load...
+   
+   logger::message("Filling tmp_nodes from bbox");
+   logger::message(query.str());
+   
+   // assume this throws if it fails?
+   w.exec(query);
 }
 
 void 
 writeable_pgsql_selection::select_nodes_from_relations() {
-  logger::message("Filling tmp_nodes (from relations)");
+   logger::message("Filling tmp_nodes (from relations)");
 
-  w.exec("insert into tmp_nodes "
-				 "select distinct rm.member_id as id from "
-				 "current_relation_members rm join tmp_relations "
-				 "tr on rm.relation_id = tr.id where rm.member_type='Node' "
-				 "and rm.member_id not in (select id from tmp_nodes)");
+   w.prepared("nodes_from_relations").exec();
 }
 
 void 
 writeable_pgsql_selection::select_ways_from_nodes() {
   logger::message("Filling tmp_ways (from nodes)");
 
-  w.exec("insert into tmp_ways "
-				 "select distinct wn.way_id from current_way_nodes wn "
-				 "join tmp_nodes tn on wn.node_id = tn.id "
-				 "and wn.way_id not in (select id from tmp_ways)");
+  w.prepared("ways_from_nodes").exec();
 }
 
 void 
 writeable_pgsql_selection::select_ways_from_relations() {
-  logger::message("Filling tmp_ways (from relations)");
-
-  w.exec("insert into tmp_ways "
-				 "select distinct rm.member_id as id from "
-				 "current_relation_members rm join tmp_relations "
-				 "tr on rm.relation_id = tr.id where rm.member_type='Way' "
-				 "and rm.member_id not in (select id from tmp_ways)");
+   logger::message("Filling tmp_ways (from relations)");
+   w.prepared("ways_from_relations").exec();
 }
 
 void 
 writeable_pgsql_selection::select_relations_from_ways() {
   logger::message("Filling tmp_relations (from ways)");
 
-  w.exec("insert into tmp_relations "
-				 "select distinct rm.relation_id from current_relation_members rm where rm.member_type='Way' "
-				 "and rm.member_id in (select id from tmp_ways) "
-				 "and rm.relation_id not in (select id from tmp_relations)");
+  w.prepared("relations_from_ways").exec();
 }
 
 void 
 writeable_pgsql_selection::select_nodes_from_way_nodes() {
-  w.exec("insert into tmp_nodes select distinct wn.node_id as id from current_way_nodes wn "
-				 "where wn.way_id in (select w.id from tmp_ways w) and wn.node_id not in (select id from tmp_nodes)");
+   w.prepared("nodes_from_way_nodes").exec();
 }
 
 void 
 writeable_pgsql_selection::select_relations_from_nodes() {
-  w.exec("insert into tmp_relations select distinct rm.relation_id from current_relation_members rm "
-				 "where rm.member_type='Node' and rm.member_id in (select n.id from tmp_nodes n) "
-				 "and rm.relation_id not in (select id from tmp_relations)");
+   w.prepared("relations_from_nodes").exec();
 }
 
 void 
 writeable_pgsql_selection::select_relations_from_way_nodes() {
-  w.exec("insert into tmp_relations select distinct rm.relation_id from current_relation_members rm "
-				 "where rm.member_type='Node' and rm.member_id in (select distinct "
-				 "node_id from current_way_nodes where way_id in (select id from tmp_ways)) "
-				 "and rm.relation_id not in (select id from tmp_relations)");
+   w.prepared("relations_from_way_nodes").exec();
 }
 
 void 
 writeable_pgsql_selection::select_relations_from_relations() {
-  w.exec("insert into tmp_relations select distinct rm.relation_id from current_relation_members rm "
-				 "where rm.member_type='Relation' and rm.member_id in (select id from tmp_relations) "
-				 "and rm.relation_id not in (select id from tmp_relations)");
+   w.prepared("relations_from_relations").exec();
 }
 
 void 
 writeable_pgsql_selection::select_relations_members_of_relations() {
-  w.exec("insert into tmp_relations select distinct rm.member_id from current_relation_members rm "
-	 "where rm.member_type='Relation' and rm.relation_id in (select id from tmp_relations) "
-	 "and rm.member_id not in (select id from tmp_relations)");
+   w.prepared("relation_members_of_relations").exec();
 }
 
 writeable_pgsql_selection::factory::factory(pqxx::connection &conn)
    : m_connection(conn) {
+   logger::message("Preparing prepared statements.");
+
+   // selecting node, way and relation visibility information
+   m_connection.prepare("visible_node",     "select visible from current_nodes     where id = $1")("bigint");
+   m_connection.prepare("visible_way",      "select visible from current_ways      where id = $1")("bigint");
+   m_connection.prepare("visible_relation", "select visible from current_relations where id = $1")("bigint");
+
+   // extraction functions for getting the data back out when the
+   // selection set has been built up.
+   m_connection.prepare("extract_nodes",
+      "select n.id, n.latitude, n.longitude, n.visible, "
+      "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as timestamp, "
+      "n.changeset_id, n.version from current_nodes n join tmp_nodes x "
+      "on n.id = x.id");
+   m_connection.prepare("extract_ways",
+      "select w.id, w.visible, w.version, w.changeset_id, "
+      "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as timestamp from "
+      "current_ways w join tmp_ways tw on w.id=tw.id");
+   m_connection.prepare("extract_relations",
+      "select r.id, r.visible, r.version, r.changeset_id, "
+      "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as timestamp from "
+      "current_relations r join tmp_relations x on x.id=r.id");
+   m_connection.prepare("extract_way_nds", 
+      "select node_id from current_way_nodes where way_id=$1 "
+      "order by sequence_id asc")
+      ("bigint");
+   m_connection.prepare("extract_relation_members",
+      "select member_type, member_id, member_role from current_relation_members "
+      "where relation_id=$1 order by sequence_id asc")
+      ("bigint");
+   m_connection.prepare("extract_node_tags",     "select k, v from current_node_tags     where node_id=$1")    ("bigint");
+   m_connection.prepare("extract_way_tags",      "select k, v from current_way_tags      where way_id=$1")     ("bigint");
+   m_connection.prepare("extract_relation_tags", "select k, v from current_relation_tags where relation_id=$1")("bigint");
+
+   // counting things which are in the working set
+   m_connection.prepare("count_nodes",     "select count(*) from tmp_nodes");
+   m_connection.prepare("count_ways",      "select count(*) from tmp_ways");
+   m_connection.prepare("count_relations", "select count(*) from tmp_relations");
+
+   // selecting a set of nodes as a list
+   m_connection.prepare("add_nodes_list",
+      "insert into tmp_nodes select id from current_nodes where "
+      "id = ANY($1) and id not in (select id from tmp_nodes)")
+      ("bigint[]");
+   m_connection.prepare("add_ways_list",
+      "insert into tmp_ways select id from current_ways where id = ANY($1) "
+      "and id not in (select id from tmp_ways)")
+      ("bigint[]");
+   m_connection.prepare("add_relations_list",
+      "insert into tmp_relations select id from current_relations where id = ANY($1) "
+      "and id not in (select id from tmp_relations)")
+      ("bigint[]");
+
+   // queries for filling elements which are used as members in relations
+   m_connection.prepare("nodes_from_relations",
+      "insert into tmp_nodes select distinct rm.member_id as id from "
+      "current_relation_members rm join tmp_relations tr on "
+      "rm.relation_id = tr.id where rm.member_type='Node' "
+      "and rm.member_id not in (select id from tmp_nodes)");
+   m_connection.prepare("ways_from_relations",
+      "insert into tmp_ways select distinct rm.member_id as id from "
+      "current_relation_members rm join tmp_relations tr on "
+      "rm.relation_id = tr.id where rm.member_type='Way' "
+      "and rm.member_id not in (select id from tmp_ways)");
+   m_connection.prepare("relation_members_of_relations",
+      "insert into tmp_relations select distinct rm.member_id as id from "
+      "current_relation_members rm join tmp_relations tr on "
+      "rm.relation_id = tr.id where rm.member_type='Relation' "
+      "and rm.member_id not in (select id from tmp_relations)");
+
+   // select ways which use nodes already in the working set
+   m_connection.prepare("ways_from_nodes",
+      "insert into tmp_ways select distinct wn.way_id from "
+      "current_way_nodes wn join tmp_nodes tn on wn.node_id "
+      "= tn.id and wn.way_id not in (select id from tmp_ways)");
+   // select nodes used by ways already in the working set
+   m_connection.prepare("nodes_from_way_nodes",
+      "insert into tmp_nodes select distinct wn.node_id as id from "
+      "current_way_nodes wn where wn.way_id in (select w.id from "
+      "tmp_ways w) and wn.node_id not in (select id from tmp_nodes)");
+
+   // selecting relations which have members which are already in
+   // the working set.
+   m_connection.prepare("relations_from_nodes",
+      "insert into tmp_relations select distinct rm.relation_id from "
+      "current_relation_members rm where rm.member_type='Node' and "
+      "rm.member_id in (select n.id from tmp_nodes n) and rm.relation_id "
+      "not in (select id from tmp_relations)");
+   m_connection.prepare("relations_from_ways",
+      "insert into tmp_relations select distinct rm.relation_id from "
+      "current_relation_members rm where rm.member_type='Way' "
+      "and rm.member_id in (select id from tmp_ways) "
+      "and rm.relation_id not in (select id from tmp_relations)");
+   m_connection.prepare("relations_from_relations",
+      "insert into tmp_relations select distinct rm.relation_id from "
+      "current_relation_members rm where rm.member_type='Relation' and "
+      "rm.member_id in (select id from tmp_relations) and rm.relation_id "
+      "not in (select id from tmp_relations)");
+   m_connection.prepare("relations_from_way_nodes",
+      "insert into tmp_relations select distinct rm.relation_id from "
+      "current_relation_members rm where rm.member_type='Node' and "
+      "rm.member_id in (select distinct node_id from current_way_nodes "
+      "where way_id in (select id from tmp_ways)) and rm.relation_id "
+      "not in (select id from tmp_relations)");
 }
 
 writeable_pgsql_selection::factory::~factory() {
