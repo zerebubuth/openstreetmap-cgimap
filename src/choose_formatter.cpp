@@ -93,8 +93,11 @@ struct http_accept_grammar : qi::grammar<iterator, vector<media_range>(), ascii:
     // RFC2616 definition of a quoted string
     quoted_string %= lit("\"") >> *((char_(32,126) - char_("\"")) | (lit("\\") >> char_)) >> lit("\"");
     
-    // TODO: WTF?! do this properly!
-    mime_type %= raw[token >> lit("/") >> token] | lit("*");
+    // the string here can be either a token/token pair (where token can include
+    // '*') or a single '*' character. 
+    // TODO: this will accept '*/something', but that is an invalid mime type 
+    // and should be rejected.
+    mime_type %= raw[(token >> lit("/") >> token) | lit("*")];
     param %= token >> '=' >> (token | quoted_string);
     range %= mime_type >> *(';' >> param);
     start %= range % ',';

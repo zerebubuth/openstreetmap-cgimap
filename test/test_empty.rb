@@ -5,7 +5,9 @@ $LOAD_PATH << File.dirname(__FILE__)
 require 'test_functions.rb'
 
 [nil,        # no Accept header
+ '*',        # Accept: *
  '*/*',      # Accept: */*
+ 'text/*',   # Accept: text/*
  'text/xml', # Accept: text/xml
  'text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2' # Nonsense from JOSM
 ].each do |accept|
@@ -23,3 +25,4 @@ require 'test_functions.rb'
     end
   end
 end
+
