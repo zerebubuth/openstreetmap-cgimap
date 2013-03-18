@@ -12,6 +12,7 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/tuple/tuple.hpp>
 #include <cmath>
 #include <stdexcept>
 #include <vector>
@@ -241,26 +242,16 @@ get_options(int argc, char **argv, po::variables_map &options) {
 /**
  * process a GET request.
  */
-void 
+boost::tuple<string, size_t>
 process_get_request(FCGX_Request &request, routes &route, 
                     cache<osm_id_t, changeset> &changeset_cache,
-                    rate_limiter &limiter, boost::shared_ptr<data_selection::factory> factory) {
-  // get the client IP address
-  string ip = fcgi_get_env(request, "REMOTE_ADDR");
-  
-  // check whether the client is being rate limited
-  if (!limiter.check(ip)) {
-    logger::message(format("Rate limiter rejected request from %1%") % ip);
-    throw http::bandwidth_limit_exceeded("You have downloaded too much "
-                                         "data. Please try again later.");
-  }
-
+                    boost::shared_ptr<data_selection::factory> factory,
+		    const string &ip) {
   // figure how to handle the request
   handler_ptr_t handler = route(request);
   
   // request start logging
   string request_name = handler->log_name();
-  pt::ptime start_time(pt::second_clock::local_time());
   logger::message(format("Started request for %1% from %2%") % request_name % ip);
   
   // separate transaction for the request
@@ -314,20 +305,16 @@ process_get_request(FCGX_Request &request, routes &route,
     // the client.
     o_formatter->error(e.what());
   }
-  
-  // log the completion time
-  pt::ptime end_time(pt::second_clock::local_time());
-  logger::message(format("Completed request for %1% from %2% in %3% returning %4% bytes") % request_name % ip % (end_time - start_time) % out->written());
-  
-  // update the rate limiter
-  limiter.update(ip, out->written());
+
+  return boost::make_tuple(request_name, out->written());
 }
 
 /**
  * process an OPTIONS request.
  */
-void
+boost::tuple<string, size_t>
 process_options_request(FCGX_Request &request) {
+  static const string request_name = "OPTIONS";
   const char *origin = FCGX_GetParam("HTTP_ORIGIN", request.envp);
   const char *method = FCGX_GetParam("HTTP_ACCESS_CONTROL_REQUEST_METHOD", request.envp);
 
@@ -345,6 +332,8 @@ process_options_request(FCGX_Request &request) {
     throw http::method_not_allowed("Only the GET method is supported for "
                                    "map requests.");
   }
+
+  return boost::make_tuple(request_name, 0);
 }
 
 /**
@@ -414,20 +403,46 @@ process_requests(int socket, const po::variables_map &options) {
     if (FCGX_Accept_r(&request) >= 0)
     {
       try {
-	// read all the input data..?
+	// get the client IP address
+	string ip = fcgi_get_env(request, "REMOTE_ADDR");
+	pt::ptime start_time(pt::second_clock::local_time());
+	
+	// check whether the client is being rate limited
+	if (!limiter.check(ip)) {
+	  logger::message(format("Rate limiter rejected request from %1%") % ip);
+	  throw http::bandwidth_limit_exceeded("You have downloaded too much "
+					       "data. Please try again later.");
+	}
 
         // get the request method
         string method = fcgi_get_env(request, "REQUEST_METHOD");
 
+	// data returned from request methods
+	string request_name;
+	size_t bytes_written;
+
         // process request
         if (method == "GET") {
-          process_get_request(request, route, changeset_cache, limiter, factory);
+	  boost::tie(request_name, bytes_written) = process_get_request(request, route, changeset_cache, factory, ip);
+
         } else if (method == "OPTIONS") {
-          process_options_request(request);
+          boost::tie(request_name, bytes_written) = process_options_request(request);
+
         } else {
           throw http::method_not_allowed("Only the GET method is supported for "
                                          "map requests.");
         }
+
+	// update the rate limiter, if anything was written
+	if (bytes_written > 0) {
+	  limiter.update(ip, bytes_written);
+	}
+	
+	// log the completion time (note: this comes last to avoid
+	// logging twice when an error is thrown.)
+	pt::ptime end_time(pt::second_clock::local_time());
+	logger::message(format("Completed request for %1% from %2% in %3% ms returning %4% bytes") 
+			% request_name % ip % (end_time - start_time).total_milliseconds() % bytes_written);
 
       } catch (const http::exception &e) {
 	// errors here occur before we've started writing the response
