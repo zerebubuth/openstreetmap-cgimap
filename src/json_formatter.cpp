@@ -2,6 +2,7 @@
 
 #include "json_formatter.hpp"
 #include "temp_tables.hpp"
+#include "config.h"
 
 using boost::shared_ptr;
 using std::string;
@@ -127,7 +128,7 @@ json_formatter::write_way(const pqxx::result::tuple &r, pqxx::result &nodes, pqx
   writer->start_array();
   for (pqxx::result::const_iterator itr = nodes.begin();
        itr != nodes.end(); ++itr) {
-    writer->entry_int((*itr)[0].as<long osm_id_t>());
+    writer->entry_int((*itr)[0].as<osm_id_t>());
   }
   writer->end_array();
 
@@ -161,7 +162,7 @@ json_formatter::write_relation(const pqxx::result::tuple &r, pqxx::result &membe
     transform(type.begin(), type.end(), type.begin(), ::tolower);
     writer->start_object();
     writer->object_key("type"); writer->entry_string(type);
-    writer->object_key("ref"); writer->entry_int((*itr)[1].as<long osm_id_t>());
+    writer->object_key("ref"); writer->entry_int((*itr)[1].as<osm_id_t>());
     writer->object_key("role"); writer->entry_string((*itr)[2].c_str());
     writer->end_object();
   }

@@ -29,8 +29,8 @@ public:
 
   void entry_bool(bool b);
   void entry_int(int i);
-  void entry_int(long int i);
-  void entry_int(long long int i);
+  void entry_int(unsigned long int i);
+  void entry_int(unsigned long long int i);
   void entry_double(double d);
   void entry_string(const std::string &s);
 

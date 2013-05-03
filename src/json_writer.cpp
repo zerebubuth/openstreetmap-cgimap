@@ -3,12 +3,18 @@
 #include <string.h>
 
 #include "json_writer.hpp"
+#include "config.h"
 
 struct json_writer::pimpl_ {
   // not sure whether the config has to live as long as the generator itself, so
   // seems best to be on the safe side.
-  yajl_gen_config config;
   yajl_gen gen;
+
+#ifdef HAVE_YAJL2
+  yajl_alloc_funcs alloc_funcs;
+#else
+  yajl_gen_config config;
+#endif
 };
 
 static void wrap_write(void *context, const char *str, unsigned int len) {
@@ -27,6 +33,10 @@ static void wrap_write(void *context, const char *str, unsigned int len) {
 json_writer::json_writer(boost::shared_ptr<output_buffer> &out, bool indent)
   : pimpl(new pimpl_()) {
   // setup whether the generator should produce pretty output
+#ifdef HAVE_YAJL2
+  pimpl->gen = yajl_gen_alloc(NULL);
+
+#else /* older version of YAJL */
   if (indent) {
     pimpl->config.beautify = 1;
     pimpl->config.indentString = " ";
@@ -36,10 +46,22 @@ json_writer::json_writer(boost::shared_ptr<output_buffer> &out, bool indent)
   }
 
   pimpl->gen = yajl_gen_alloc2(&wrap_write, &pimpl->config, NULL, out.get());
+#endif /* HAVE_YAJL2 */
 
   if (pimpl->gen == 0) {
     throw std::runtime_error("error creating json writer.");
   }
+
+#ifdef HAVE_YAJL2
+  if (indent) {
+    yajl_gen_config(pimpl->gen, yajl_gen_beautify, 1);
+    yajl_gen_config(pimpl->gen, yajl_gen_indent_string, " ");
+  } else {
+    yajl_gen_config(pimpl->gen, yajl_gen_beautify, 0);
+    yajl_gen_config(pimpl->gen, yajl_gen_indent_string, "");
+  }
+  yajl_gen_config(pimpl->gen, yajl_gen_print_callback, &wrap_write, (void *)out.get());
+#endif /* HAVE_YAJL2 */
 }
 
 json_writer::~json_writer() throw() {
@@ -74,12 +96,12 @@ json_writer::entry_int(int i) {
 }
 
 void 
-json_writer::entry_int(long int i) {
+json_writer::entry_int(unsigned long int i) {
   yajl_gen_integer(pimpl->gen, i);
 }
 
 void 
-json_writer::entry_int(long long int i) {
+json_writer::entry_int(unsigned long long int i) {
   yajl_gen_integer(pimpl->gen, i);
 }
 

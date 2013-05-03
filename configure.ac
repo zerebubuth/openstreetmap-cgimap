@@ -76,8 +76,15 @@ AS_IF([test "x$enable_yajl" != xno],
                AC_DEFINE([HAVE_YAJL], [1],
                          [Define if you have YAJL JSON library])
               ],
-              [AC_MSG_FAILURE(
-                 [--enable-yajl was given, but test for YAJL failed])])])
+	      [AC_CHECK_LIB([yajl], [yajl_gen_config],
+	      	[AC_SUBST([YAJL_LIBS], ["-lyajl"])
+	      	 AC_DEFINE([HAVE_YAJL], [1],
+                 	   [Define if you have YAJL JSON library])
+		 AC_DEFINE([HAVE_YAJL2], [1],
+			   [Define if you have version 2 of the YAJL library])
+		],
+	        [AC_MSG_FAILURE(
+                  [--enable-yajl was given, but test for YAJL failed])])])])
 AM_CONDITIONAL([HAVE_YAJL], [test "x$enable_yajl" != xno])
 
 AC_MSG_CHECKING([whether to enable experimental API 0.7 features])
