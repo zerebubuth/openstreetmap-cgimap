@@ -29,9 +29,30 @@ If you're running a Debian or Ubuntu system these can be installed
 using the following command:
 
   sudo apt-get install libxml2-dev libpqxx3-dev libfcgi-dev libboost-dev
+    libboost-dev libboost-regex-dev libboost-program-options-dev 
+    libboost-date-time-dev libmemcached-dev
 
 The build system used is GNU Make, using pkg-config to provide some of
 the flags.
+
+Note that the full set of packages needed from a fresh install (tested
+with Ubuntu 13.04) - you may already have many or all of these - is:
+
+  sudo apt-get install git build-essential automake autoconf
+
+To build the system from scratch, first check out the source code (skip
+this step if you've already got the source):
+
+  git clone git://github.com/zerebubuth/openstreetmap-cgimap.git
+
+Then change to the source code directory to configure and build:
+
+  cd openstreetmap-cgimap/
+  ./autogen.sh
+  ./configure --with-fcgi=/usr
+  make
+
+You should now have a "./map" executable in the current directory.
 
 Setup
 =====
@@ -42,12 +63,12 @@ find a problem please report it on the OSM trac.
 
 CGImap expects the following environment variables to be set:
 
-  * DB_HOST: Hostname or IP address of the database server.
-  * DB_NAME: Name of the database.
-  * DB_USER: Name of the user to connect as.
-  * DB_PASS: Password of the user to connect as.
+  * CGIMAP_HOST: Hostname or IP address of the database server.
+  * CGIMAP_NAME: Name of the database.
+  * CGIMAP_USER: Name of the user to connect as.
+  * CGIMAP_PASS: Password of the user to connect as.
 
-Optionally, DB_CHARSET can be set to the connection charset to
+Optionally, CGIMAP_CHARSET can be set to the connection charset to
 use. The default is "utf8".
 
 CGImap requires permissions to SELECT and CREATE TEMPORARY on the
@@ -55,6 +76,20 @@ Postgres server. It is recommended that a separate account is created for
 CGImap to avoid any possibility of data corruption. Care has been
 taken programming CGImap but, as with most C++ applications, there is
 the chance of an exploitable flaw leading to complete pwnage.
+
+Testing
+=======
+
+To run the test suite using `make check` you will need additional 
+packages installed:
+
+  sudo apt-get install postgresql postgresql-contrib ruby libxml-ruby 
+    ruby-pg
+
+And you will need to be able to create databases as your user:
+
+  sudo -u postgres createuser $USER
+  (say yes to superuser)
 
 Acknowledgements
 ================
