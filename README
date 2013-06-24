@@ -28,9 +28,9 @@ development are in brackets. Other versions may work, but YMMV.
 If you're running a Debian or Ubuntu system these can be installed
 using the following command:
 
-  sudo apt-get install libxml2-dev libpqxx3-dev libfcgi-dev libboost-dev
-    libboost-dev libboost-regex-dev libboost-program-options-dev 
-    libboost-date-time-dev libmemcached-dev
+    sudo apt-get install libxml2-dev libpqxx3-dev libfcgi-dev libboost-dev \
+      libboost-dev libboost-regex-dev libboost-program-options-dev \
+      libboost-date-time-dev libmemcached-dev
 
 The build system used is GNU Make, using pkg-config to provide some of
 the flags.
@@ -38,19 +38,19 @@ the flags.
 Note that the full set of packages needed from a fresh install (tested
 with Ubuntu 13.04) - you may already have many or all of these - is:
 
-  sudo apt-get install git build-essential automake autoconf
+    sudo apt-get install git build-essential automake autoconf
 
 To build the system from scratch, first check out the source code (skip
 this step if you've already got the source):
 
-  git clone git://github.com/zerebubuth/openstreetmap-cgimap.git
+    git clone git://github.com/zerebubuth/openstreetmap-cgimap.git
 
 Then change to the source code directory to configure and build:
 
-  cd openstreetmap-cgimap/
-  ./autogen.sh
-  ./configure --with-fcgi=/usr
-  make
+    cd openstreetmap-cgimap/
+    ./autogen.sh
+    ./configure --with-fcgi=/usr
+    make
 
 You should now have a "./map" executable in the current directory.
 
@@ -63,10 +63,10 @@ find a problem please report it on the OSM trac.
 
 CGImap expects the following environment variables to be set:
 
-  * CGIMAP_HOST: Hostname or IP address of the database server.
-  * CGIMAP_NAME: Name of the database.
-  * CGIMAP_USER: Name of the user to connect as.
-  * CGIMAP_PASS: Password of the user to connect as.
+* CGIMAP_HOST: Hostname or IP address of the database server.
+* CGIMAP_NAME: Name of the database.
+* CGIMAP_USER: Name of the user to connect as.
+* CGIMAP_PASS: Password of the user to connect as.
 
 Optionally, CGIMAP_CHARSET can be set to the connection charset to
 use. The default is "utf8".
@@ -83,23 +83,23 @@ Testing
 To run the test suite using `make check` you will need additional 
 packages installed:
 
-  sudo apt-get install postgresql postgresql-contrib ruby libxml-ruby 
-    ruby-pg
+    sudo apt-get install postgresql postgresql-contrib ruby libxml-ruby \
+      ruby-pg
 
 And you will need to be able to create databases as your user:
 
-  sudo -u postgres createuser $USER
-  (say yes to superuser)
+    sudo -u postgres createuser $USER
+    (say yes to superuser)
 
 Acknowledgements
 ----------------
 
 CGImap contains code from and is partly based on the following:
 
-  * modosmapi (http://code.google.com/p/modosmapi/) by
-      d40cht and japplebyalis.
-  * quad_tile.c
-      (http://svn.openstreetmap.org/sites/rails_port/db/functions/maptile.c)
-      by TomH.
-  * GNU CGICC (http://www.gnu.org/software/cgicc/)
-      by Stephen F. Booth and Sebastien Diaz.
+* modosmapi (http://code.google.com/p/modosmapi/) by
+  d40cht and japplebyalis.
+* quad_tile.c
+  (http://svn.openstreetmap.org/sites/rails_port/db/functions/maptile.c)
+  by TomH.
+* GNU CGICC (http://www.gnu.org/software/cgicc/)
+  by Stephen F. Booth and Sebastien Diaz.
