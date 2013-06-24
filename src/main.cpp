@@ -37,8 +37,8 @@
 #include "choose_formatter.hpp"
 #include "cache.hpp"
 #include "changeset.hpp"
-#include "writeable_pgsql_selection.hpp"
-#include "readonly_pgsql_selection.hpp"
+#include "backend/apidb/writeable_pgsql_selection.hpp"
+#include "backend/apidb/readonly_pgsql_selection.hpp"
 #include "config.h"
 
 using std::runtime_error;

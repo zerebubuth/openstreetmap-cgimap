@@ -20,13 +20,15 @@ ___map_SOURCES=\
 	output_writer.cpp \
 	quad_tile.cpp \
 	rate_limiter.cpp \
-	readonly_pgsql_selection.cpp \
 	router.cpp \
 	routes.cpp \
-	writeable_pgsql_selection.cpp \
 	xml_formatter.cpp \
 	xml_writer.cpp \
 	zlib.cpp
+
+___map_SOURCES+=\
+	backend/apidb/writeable_pgsql_selection.cpp \
+	backend/apidb/readonly_pgsql_selection.cpp 
 
 ___map_SOURCES+=\
 	api06/map_handler.cpp
