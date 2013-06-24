@@ -1,8 +1,8 @@
-			      CGImap 0.5
-			      ==========
+CGImap 0.5
+==========
 
 Overview
-========
+--------
 
 CGImap is a C++ implementation of the OpenStreetMap "map" call as an
 FCGI process. The rails implementation of the "map" call has a few
@@ -15,15 +15,15 @@ to optimise the queries, something which is also a bit of a pain to do
 in Rails.
 
 Requirements
-============
+------------
 
 CGImap depends on the following libraries. Versions used during
 development are in brackets. Other versions may work, but YMMV.
 
-  * libxml2  (2.6.32.dfsg-4ubuntu1)
-  * libpqxx  (???)
-  * libfcgi  (2.4.0-7)
-  * libboost (???)
+* libxml2  (2.7.8.dfsg-5.1ubuntu4.4)
+* libpqxx3 (3.1-1)
+* libfcgi  (2.4.0-8.1)
+* libboost (1.48.0.2)
 
 If you're running a Debian or Ubuntu system these can be installed
 using the following command:
@@ -55,7 +55,7 @@ Then change to the source code directory to configure and build:
 You should now have a "./map" executable in the current directory.
 
 Setup
-=====
+-----
 
 A sample lighttpd.conf file is provided, which I've been using to
 test. No testing has been done with other FCGI servers, but if you
@@ -78,7 +78,7 @@ taken programming CGImap but, as with most C++ applications, there is
 the chance of an exploitable flaw leading to complete pwnage.
 
 Testing
-=======
+-------
 
 To run the test suite using `make check` you will need additional 
 packages installed:
@@ -92,7 +92,7 @@ And you will need to be able to create databases as your user:
   (say yes to superuser)
 
 Acknowledgements
-================
+----------------
 
 CGImap contains code from and is partly based on the following:
 
