@@ -76,7 +76,7 @@ def load_osm_file(file_name, conn)
   changesets = Hash.new
   ['node', 'way', 'relation'].each do |type|
     doc.find(type).each do |n|
-      uid = n["uid"].to_i
+      uid = (n["uid"] || "-1").to_i
       csid = n["changeset"].to_i
       
       timestamp = DateTime.strptime(n["timestamp"], "%Y-%m-%dT%H:%M:%S%Z")

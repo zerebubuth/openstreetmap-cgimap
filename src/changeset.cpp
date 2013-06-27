@@ -25,6 +25,14 @@ fetch_changeset(pqxx::transaction_base &w, osm_id_t id) {
      throw http::server_error((format("Possible database inconsistency with changeset %1%.") % id).str());
   }
 
-  return new changeset(res[0][0].as<bool>(), res[0][1].as<string>(), res[0][2].as<osm_id_t>());
+  int64_t user_id = res[0][2].as<int64_t>();
+  // apidb instances external to OSM don't have access to anonymous
+  // user information and so use an ID which isn't in use for any 
+  // other user to indicate this - generally 0 or negative.
+  if (user_id <= 0) {
+      return new changeset(false, "", 0);
+  } else {
+      return new changeset(res[0][0].as<bool>(), res[0][1].as<string>(), osm_id_t(user_id));
+  }
 }
 
