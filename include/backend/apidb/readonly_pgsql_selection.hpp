@@ -2,6 +2,7 @@
 #define READONLY_PGSQL_SELECTION_HPP
 
 #include "data_selection.hpp"
+#include <pqxx/pqxx>
 #include <set>
 
 /**

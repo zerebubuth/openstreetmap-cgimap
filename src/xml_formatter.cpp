@@ -8,6 +8,23 @@ using std::string;
 using boost::shared_ptr;
 using std::transform;
 
+namespace {
+
+const std::string &element_type_name(element_type elt) {
+   static std::string name_node("node"), name_way("way"), name_relation("relation");
+
+   switch (elt) {
+   case element_type_node:
+      return name_node;
+   case element_type_way:
+      return name_way;
+   case element_type_relation:
+      return name_relation;
+   }
+}
+
+} // anonymous namespace
+
 xml_formatter::xml_formatter(xml_writer *w, cache<osm_id_t, changeset> &cc)
   : writer(w), changeset_cache(cc) {
 }
@@ -65,36 +82,37 @@ xml_formatter::error(const std::exception &e) {
 }
 
 void
-xml_formatter::write_tags(pqxx::result &tags) {
-  for (pqxx::result::const_iterator itr = tags.begin();
+xml_formatter::write_tags(const tags_t &tags) {
+  for (tags_t::const_iterator itr = tags.begin();
        itr != tags.end(); ++itr) {
     writer->start("tag");
-    writer->attribute("k", (*itr)["k"].c_str());
-    writer->attribute("v", (*itr)["v"].c_str());
+    writer->attribute("k", itr->first);
+    writer->attribute("v", itr->second);
     writer->end();
   }
 }
 
-void 
-xml_formatter::write_node(const pqxx::result::tuple &r, pqxx::result &tags) {
-  const int lat = r["latitude"].as<int>();
-  const int lon = r["longitude"].as<int>();
-  const osm_id_t id = r["id"].as<osm_id_t>();
-  const osm_id_t cs_id = r["changeset_id"].as<osm_id_t>();
-  shared_ptr<changeset const> cs = changeset_cache.get(cs_id);
+void
+xml_formatter::write_common(const element_info &elem) {
+  shared_ptr<changeset const> cs = changeset_cache.get(elem.changeset);
 
-  writer->start("node");
-  writer->attribute("id", id);
-  writer->attribute("lat", double(lat) / double(SCALE));
-  writer->attribute("lon", double(lon) / double(SCALE));
+  writer->attribute("id", elem.id);
   if (cs->data_public) {
     writer->attribute("user", cs->display_name);
     writer->attribute("uid", cs->user_id);
   }
-  writer->attribute("visible", r["visible"].as<bool>());
-  writer->attribute("version", r["version"].as<int>());
-  writer->attribute("changeset", cs_id);
-  writer->attribute("timestamp", r["timestamp"].c_str());
+  writer->attribute("visible", elem.visible);
+  writer->attribute("version", elem.version);
+  writer->attribute("changeset", elem.changeset);
+  writer->attribute("timestamp", elem.timestamp);
+}
+
+void 
+xml_formatter::write_node(const element_info &elem, double lon, double lat, const tags_t &tags) {
+  writer->start("node");
+  write_common(elem);
+  writer->attribute("lat", lat);
+  writer->attribute("lon", lon);
 
   write_tags(tags);
 
@@ -102,26 +120,14 @@ xml_formatter::write_node(const pqxx::result::tuple &r, pqxx::result &tags) {
 }
 
 void 
-xml_formatter::write_way(const pqxx::result::tuple &r, pqxx::result &nodes, pqxx::result &tags) {
-  const osm_id_t id = r["id"].as<osm_id_t>();
-  const osm_id_t cs_id = r["changeset_id"].as<osm_id_t>();
-  shared_ptr<changeset const> cs = changeset_cache.get(cs_id);
-
+xml_formatter::write_way(const element_info &elem, const nodes_t &nodes, const tags_t &tags) {
   writer->start("way");
-  writer->attribute("id", id);
-  if (cs->data_public) {
-    writer->attribute("user", cs->display_name);
-    writer->attribute("uid", cs->user_id);
-  }
-  writer->attribute("visible", r["visible"].as<bool>());
-  writer->attribute("version", r["version"].as<int>());
-  writer->attribute("changeset", cs_id);
-  writer->attribute("timestamp", r["timestamp"].c_str());
+  write_common(elem);
 
-  for (pqxx::result::const_iterator itr = nodes.begin();
+  for (nodes_t::const_iterator itr = nodes.begin();
        itr != nodes.end(); ++itr) {
     writer->start("nd");
-    writer->attribute("ref", (*itr)[0].as<osm_id_t>());
+    writer->attribute("ref", *itr);
     writer->end();
   }
 
@@ -131,30 +137,16 @@ xml_formatter::write_way(const pqxx::result::tuple &r, pqxx::result &nodes, pqxx
 }
 
 void 
-xml_formatter::write_relation(const pqxx::result::tuple &r, pqxx::result &members, pqxx::result &tags) {
-  const osm_id_t id = r["id"].as<osm_id_t>();
-  const osm_id_t cs_id = r["changeset_id"].as<osm_id_t>();
-  shared_ptr<changeset const> cs = changeset_cache.get(cs_id);
-
+xml_formatter::write_relation(const element_info &elem, const members_t &members, const tags_t &tags) {
   writer->start("relation");
-  writer->attribute("id", id);
-  if (cs->data_public) {
-    writer->attribute("user", cs->display_name);
-    writer->attribute("uid", cs->user_id);
-  }
-  writer->attribute("visible", r["visible"].as<bool>());
-  writer->attribute("version", r["version"].as<int>());
-  writer->attribute("changeset", cs_id);
-  writer->attribute("timestamp", r["timestamp"].c_str());
+  write_common(elem);
 
-  for (pqxx::result::const_iterator itr = members.begin();
+  for (members_t::const_iterator itr = members.begin();
        itr != members.end(); ++itr) {
-    string type = (*itr)[0].c_str();
-    transform(type.begin(), type.end(), type.begin(), ::tolower);
     writer->start("member");
-    writer->attribute("type", type);
-    writer->attribute("ref", (*itr)[1].as<osm_id_t>());
-    writer->attribute("role", (*itr)[2].c_str());
+    writer->attribute("type", element_type_name(itr->type));
+    writer->attribute("ref",  itr->ref);
+    writer->attribute("role", itr->role);
     writer->end();
   }
 

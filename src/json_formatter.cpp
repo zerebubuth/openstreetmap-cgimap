@@ -8,6 +8,23 @@ using boost::shared_ptr;
 using std::string;
 using std::transform;
 
+namespace {
+
+const std::string &element_type_name(element_type elt) {
+   static std::string name_node("node"), name_way("way"), name_relation("relation");
+
+   switch (elt) {
+   case element_type_node:
+      return name_node;
+   case element_type_way:
+      return name_way;
+   case element_type_relation:
+      return name_relation;
+   }
+}
+
+} // anonymous namespace
+
 json_formatter::json_formatter(json_writer *w, cache<osm_id_t, changeset> &cc) 
   : writer(w), changeset_cache(cc) {
 }
@@ -16,14 +33,14 @@ json_formatter::~json_formatter() {
 }
 
 void 
-json_formatter::write_tags(pqxx::result &tags) {
+json_formatter::write_tags(const tags_t &tags) {
   if (tags.size() > 0) {
     writer->object_key("tags");
     writer->start_object();
-    for (pqxx::result::const_iterator itr = tags.begin();
+    for (tags_t::const_iterator itr = tags.begin();
 	 itr != tags.end(); ++itr) {
-      writer->object_key((*itr)["k"].c_str()); 
-      writer->entry_string((*itr)["v"].c_str());
+      writer->object_key(itr->first);
+      writer->entry_string(itr->second);
     }
     writer->end_object();
   }
@@ -81,26 +98,28 @@ json_formatter::error(const std::exception &e) {
   writer->end_object();
 }
 
-void 
-json_formatter::write_node(const pqxx::result::tuple &r, pqxx::result &tags) {
-  const int lat = r["latitude"].as<int>();
-  const int lon = r["longitude"].as<int>();
-  const osm_id_t id = r["id"].as<osm_id_t>();
-  const osm_id_t cs_id = r["changeset_id"].as<osm_id_t>();
-  shared_ptr<changeset const> cs = changeset_cache.get(cs_id);
+void
+json_formatter::write_common(const element_info &elem) {
+   shared_ptr<changeset const> cs = changeset_cache.get(elem.changeset);
 
+   writer->object_key("id"); writer->entry_int(elem.id);
+   if (cs->data_public) {
+      writer->object_key("user"); writer->entry_string(cs->display_name);
+      writer->object_key("uid"); writer->entry_int(cs->user_id);
+   }
+   writer->object_key("visible"); writer->entry_bool(elem.visible);
+   writer->object_key("version"); writer->entry_int(elem.version);
+   writer->object_key("changeset"); writer->entry_int(elem.changeset);
+   writer->object_key("timestamp"); writer->entry_string(elem.timestamp);
+}
+
+void 
+json_formatter::write_node(const element_info &elem, double lon, double lat, const tags_t &tags) {
   writer->start_object();
-  writer->object_key("id"); writer->entry_int(id);
-  writer->object_key("lat"); writer->entry_double(double(lat) / double(SCALE));
-  writer->object_key("lon"); writer->entry_double(double(lon) / double(SCALE));
-  if (cs->data_public) {
-    writer->object_key("user"); writer->entry_string(cs->display_name);
-    writer->object_key("uid"); writer->entry_int(cs->user_id);
-  }
-  writer->object_key("visible"); writer->entry_bool(r["visible"].as<bool>());
-  writer->object_key("version"); writer->entry_int(r["version"].as<int>());
-  writer->object_key("changeset"); writer->entry_int(cs_id);
-  writer->object_key("timestamp"); writer->entry_string(r["timestamp"].c_str());
+  
+  write_common(elem);
+  writer->object_key("lat"); writer->entry_double(lat);
+  writer->object_key("lon"); writer->entry_double(lon);
 
   write_tags(tags);
 
@@ -108,27 +127,15 @@ json_formatter::write_node(const pqxx::result::tuple &r, pqxx::result &tags) {
 }
 
 void 
-json_formatter::write_way(const pqxx::result::tuple &r, pqxx::result &nodes, pqxx::result &tags) {
-  const osm_id_t id = r["id"].as<osm_id_t>();
-  const osm_id_t cs_id = r["changeset_id"].as<osm_id_t>();
-  shared_ptr<changeset const> cs = changeset_cache.get(cs_id);
-
+json_formatter::write_way(const element_info &elem, const nodes_t &nodes, const tags_t &tags) {
   writer->start_object();
-  writer->object_key("id"); writer->entry_int(id);
-  if (cs->data_public) {
-    writer->object_key("user"); writer->entry_string(cs->display_name);
-    writer->object_key("uid"); writer->entry_int(cs->user_id);
-  }
-  writer->object_key("visible"); writer->entry_bool(r["visible"].as<bool>());
-  writer->object_key("version"); writer->entry_int(r["version"].as<int>());
-  writer->object_key("changeset"); writer->entry_int(cs_id);
-  writer->object_key("timestamp"); writer->entry_string(r["timestamp"].c_str());
 
+  write_common(elem);
   writer->object_key("nds");
   writer->start_array();
-  for (pqxx::result::const_iterator itr = nodes.begin();
+  for (nodes_t::const_iterator itr = nodes.begin();
        itr != nodes.end(); ++itr) {
-    writer->entry_int((*itr)[0].as<osm_id_t>());
+    writer->entry_int(*itr);
   }
   writer->end_array();
 
@@ -138,32 +145,18 @@ json_formatter::write_way(const pqxx::result::tuple &r, pqxx::result &nodes, pqx
 }
 
 void 
-json_formatter::write_relation(const pqxx::result::tuple &r, pqxx::result &members, pqxx::result &tags) {
-  const osm_id_t id = r["id"].as<osm_id_t>();
-  const osm_id_t cs_id = r["changeset_id"].as<osm_id_t>();
-  shared_ptr<changeset const> cs = changeset_cache.get(cs_id);
-
+json_formatter::write_relation(const element_info &elem, const members_t &members, const tags_t &tags) {
   writer->start_object();
-  writer->object_key("id"); writer->entry_int(id);
-  if (cs->data_public) {
-    writer->object_key("user"); writer->entry_string(cs->display_name);
-    writer->object_key("uid"); writer->entry_int(cs->user_id);
-  }
-  writer->object_key("visible"); writer->entry_bool(r["visible"].as<bool>());
-  writer->object_key("version"); writer->entry_int(r["version"].as<int>());
-  writer->object_key("changeset"); writer->entry_int(cs_id);
-  writer->object_key("timestamp"); writer->entry_string(r["timestamp"].c_str());
 
+  write_common(elem);
   writer->object_key("members"); 
   writer->start_array();
-  for (pqxx::result::const_iterator itr = members.begin();
+  for (members_t::const_iterator itr = members.begin();
        itr != members.end(); ++itr) {
-    string type = (*itr)[0].c_str();
-    transform(type.begin(), type.end(), type.begin(), ::tolower);
     writer->start_object();
-    writer->object_key("type"); writer->entry_string(type);
-    writer->object_key("ref"); writer->entry_int((*itr)[1].as<osm_id_t>());
-    writer->object_key("role"); writer->entry_string((*itr)[2].c_str());
+    writer->object_key("type"); writer->entry_string(element_type_name(itr->type));
+    writer->object_key("ref"); writer->entry_int(itr->ref);
+    writer->object_key("role"); writer->entry_string(itr->role);
     writer->end_object();
   }
   writer->end_array();

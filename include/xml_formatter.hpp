@@ -17,7 +17,8 @@ private:
   boost::shared_ptr<xml_writer> writer;
   cache<osm_id_t, changeset> &changeset_cache;
   
-  void write_tags(pqxx::result &tags);
+  void write_tags(const tags_t &tags);
+  void write_common(const element_info &elem);
 
 public:
   // NOTE: takes ownership of the writer!
@@ -30,11 +31,13 @@ public:
   void start_element_type(element_type type, size_t num_elements); 
   void end_element_type(element_type type); 
   void error(const std::exception &e);
-  void write_node(const pqxx::result::tuple &t, pqxx::result &tags);
-  void write_way(const pqxx::result::tuple &t, pqxx::result &nodes, pqxx::result &tags);
-  void write_relation(const pqxx::result::tuple &t, pqxx::result &members, pqxx::result &tags);
-	 void flush();
-	 void error(const std::string &);
+
+   void write_node(const element_info &elem, double lon, double lat, const tags_t &tags);
+   void write_way(const element_info &elem, const nodes_t &nodes, const tags_t &tags);
+   void write_relation(const element_info &elem, const members_t &members, const tags_t &tags);
+
+   void flush();
+   void error(const std::string &);
 };
 
 #endif /* XML_FORMATTER_HPP */

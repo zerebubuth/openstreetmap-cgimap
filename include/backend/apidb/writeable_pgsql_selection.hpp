@@ -2,6 +2,7 @@
 #define WRITEABLE_PGSQL_SELECTION_HPP
 
 #include "data_selection.hpp"
+#include <pqxx/pqxx>
 
 /**
  * a selection which operates against a writeable (i.e: non read-only
@@ -55,9 +56,10 @@ public:
    };
 
 private:
-	 // the transaction in which the selection takes place. although 
-	 // this *is* read-only, it may create temporary tables.
-	 pqxx::work w;
+
+   // the transaction in which the selection takes place. although 
+   // this *is* read-only, it may create temporary tables.
+   pqxx::work w;
 };
 
 #endif /* WRITEABLE_PGSQL_SELECTION_HPP */

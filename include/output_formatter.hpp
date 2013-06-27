@@ -2,8 +2,10 @@
 #define OUTPUT_FORMATTER_HPP
 
 #include "bbox.hpp"
-#include <pqxx/pqxx>
+#include "types.hpp"
+#include <list>
 #include <stdexcept>
+#include <boost/optional.hpp>
 
 /**
  * What type of element the formatter is starting to write.
@@ -13,6 +15,23 @@ enum element_type {
   element_type_way,
   element_type_relation
 };
+
+struct element_info {
+   osm_id_t id, version, changeset, uid;
+   bool visible;
+   boost::optional<std::string> display_name;
+   std::string timestamp;
+};
+
+struct member_info {
+   element_type type;
+   osm_id_t ref;
+   std::string role;
+};
+
+typedef std::list<osm_id_t> nodes_t;
+typedef std::list<member_info> members_t;
+typedef std::list<std::pair<std::string, std::string> > tags_t;
 
 /**
  * Base type for different output formats. Hopefully this is general
@@ -46,14 +65,20 @@ struct output_formatter {
   // end a type of element. this is called once for nodes, ways or relations 
   virtual void end_element_type(element_type type) = 0; 
 
-  // output a single node given that node's row and an iterator over its tags
-  virtual void write_node(const pqxx::result::tuple &t, pqxx::result &tags) = 0;
+   // output a single node given that node's row and an iterator over its tags
+   virtual void write_node(const element_info &elem,
+                           double lon, double lat, 
+                           const tags_t &tags) = 0;
 
-  // output a single way given a row and iterators for nodes and tags
-  virtual void write_way(const pqxx::result::tuple &t, pqxx::result &nodes, pqxx::result &tags) = 0;
-
-  // output a single relation given a row and iterators over members and tags
-  virtual void write_relation(const pqxx::result::tuple &t, pqxx::result &members, pqxx::result &tags) = 0;
+   // output a single way given a row and iterators for nodes and tags
+   virtual void write_way(const element_info &elem,
+                          const nodes_t &nodes, 
+                          const tags_t &tags) = 0;
+   
+   // output a single relation given a row and iterators over members and tags
+   virtual void write_relation(const element_info &elem,
+                               const members_t &members,
+                               const tags_t &tags) = 0;
 
 	 // flush the current state
 	 virtual void flush() = 0;

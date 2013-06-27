@@ -53,6 +53,69 @@ check_table_visibility(pqxx::work &w, osm_id_t id, const std::string &prepared_n
       return data_selection::non_exist;
    }	
 }
+
+void extract_elem(const pqxx::result::tuple &row, element_info &elem) {
+   elem.id = row["id"].as<osm_id_t>();
+   elem.version = row["version"].as<int>();
+   elem.changeset = row["changeset_id"].as<osm_id_t>();
+   elem.visible = row["visible"].as<bool>();
+   elem.uid = 0;
+   elem.display_name = boost::none;
+   elem.timestamp = row["timestamp"].c_str();
+}
+
+void extract_tags(const pqxx::result &res, tags_t &tags) {
+   tags.clear();
+   for (pqxx::result::const_iterator itr = res.begin();
+        itr != res.end(); ++itr) {
+      tags.push_back(std::make_pair(std::string((*itr)["k"].c_str()),
+                                    std::string((*itr)["v"].c_str())));
+   }
+}
+
+void extract_nodes(const pqxx::result &res, nodes_t &nodes) {
+   nodes.clear();
+   for (pqxx::result::const_iterator itr = res.begin();
+        itr != res.end(); ++itr) {
+      nodes.push_back((*itr)[0].as<osm_id_t>());
+   }
+}
+
+element_type type_from_name(const char *name) {
+   element_type type;
+
+   switch (name[0]) {
+   case 'N':
+   case 'n':
+      type = element_type_node;
+      break;
+
+   case 'W':
+   case 'w':
+      type = element_type_way;
+      break;
+
+   case 'R':
+   case 'r':
+      type = element_type_relation;
+      break;
+   }
+
+   return type;
+}
+
+void extract_members(const pqxx::result &res, members_t &members) {
+   member_info member;
+   members.clear();
+   for (pqxx::result::const_iterator itr = res.begin();
+        itr != res.end(); ++itr) {
+      member.type = type_from_name((*itr)["member_type"].c_str());
+      member.ref = (*itr)["member_id"].as<osm_id_t>();
+      member.role = (*itr)["member_role"].c_str();
+      members.push_back(member);
+   }
+}
+
 } // anonymous namespace
 
 writeable_pgsql_selection::writeable_pgsql_selection(pqxx::connection &conn)
@@ -70,14 +133,19 @@ writeable_pgsql_selection::write_nodes(output_formatter &formatter) {
   // get all nodes - they already contain their own tags, so
   // we don't need to do anything else.
   logger::message("Fetching nodes");
+  element_info elem;
+  double lon, lat;
+  tags_t tags;
 
   formatter.start_element_type(element_type_node, num_nodes());
   pqxx::result nodes = w.prepared("extract_nodes").exec();
   for (pqxx::result::const_iterator itr = nodes.begin(); 
        itr != nodes.end(); ++itr) {
-    const osm_id_t id = (*itr)["id"].as<osm_id_t>();
-    pqxx::result tags = w.prepared("extract_node_tags")(id).exec();
-    formatter.write_node(*itr, tags);
+     extract_elem(*itr, elem);
+     lon = double((*itr)["longitude"].as<int64_t>()) / (SCALE);
+     lat = double((*itr)["latitude"].as<int64_t>()) / (SCALE);
+     extract_tags(w.prepared("extract_node_tags")(elem.id).exec(), tags);
+     formatter.write_node(elem, lon, lat, tags);
   }
   formatter.end_element_type(element_type_node);
 }
@@ -88,15 +156,18 @@ writeable_pgsql_selection::write_ways(output_formatter &formatter) {
   // way nodes and tags are on a separate connections so that the
   // entire result set can be streamed from a single query.
   logger::message("Fetching ways");
+  element_info elem;
+  nodes_t nodes;
+  tags_t tags;
 
   formatter.start_element_type(element_type_way, num_ways());
   pqxx::result ways = w.prepared("extract_ways").exec();
   for (pqxx::result::const_iterator itr = ways.begin(); 
        itr != ways.end(); ++itr) {
-    const osm_id_t id = (*itr)["id"].as<osm_id_t>();
-    pqxx::result nodes = w.prepared("extract_way_nds")(id).exec();
-    pqxx::result tags = w.prepared("extract_way_tags")(id).exec();
-    formatter.write_way(*itr, nodes, tags);
+     extract_elem(*itr, elem);
+     extract_nodes(w.prepared("extract_way_nds")(elem.id).exec(), nodes);
+     extract_tags(w.prepared("extract_way_tags")(elem.id).exec(), tags);
+     formatter.write_way(elem, nodes, tags);
   }
   formatter.end_element_type(element_type_way);
 }
@@ -104,15 +175,18 @@ writeable_pgsql_selection::write_ways(output_formatter &formatter) {
 void 
 writeable_pgsql_selection::write_relations(output_formatter &formatter) {
   logger::message("Fetching relations");
+  element_info elem;
+  members_t members;
+  tags_t tags;
 
   formatter.start_element_type(element_type_relation, num_relations());
   pqxx::result relations = w.prepared("extract_relations").exec();
   for (pqxx::result::const_iterator itr = relations.begin(); 
        itr != relations.end(); ++itr) {
-    const osm_id_t id = (*itr)["id"].as<osm_id_t>();
-    pqxx::result members = w.prepared("extract_relation_members")(id).exec();
-    pqxx::result tags = w.prepared("extract_relation_tags")(id).exec();
-    formatter.write_relation(*itr, members, tags);
+     extract_elem(*itr, elem);
+     extract_members(w.prepared("extract_relation_members")(elem.id).exec(), members);
+     extract_tags(w.prepared("extract_relation_tags")(elem.id).exec(), tags);
+     formatter.write_relation(elem, members, tags);
   }
   formatter.end_element_type(element_type_relation);
 }
