@@ -18,7 +18,6 @@ ___map_SOURCES=\
 	osm_responder.cpp \
 	output_formatter.cpp \
 	output_writer.cpp \
-	quad_tile.cpp \
 	rate_limiter.cpp \
 	router.cpp \
 	routes.cpp \
@@ -28,7 +27,8 @@ ___map_SOURCES=\
 
 ___map_SOURCES+=\
 	backend/apidb/writeable_pgsql_selection.cpp \
-	backend/apidb/readonly_pgsql_selection.cpp 
+	backend/apidb/readonly_pgsql_selection.cpp \
+	backend/apidb/quad_tile.cpp
 
 ___map_SOURCES+=\
 	api06/map_handler.cpp
