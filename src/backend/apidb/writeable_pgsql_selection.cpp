@@ -1,6 +1,6 @@
 #include "backend/apidb/writeable_pgsql_selection.hpp"
 #include "logger.hpp"
-#include "quad_tile.hpp"
+#include "backend/apidb/quad_tile.hpp"
 #include "temp_tables.hpp"
 #include "infix_ostream_iterator.hpp"
 
