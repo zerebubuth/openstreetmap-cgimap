@@ -28,7 +28,7 @@ development are in brackets. Other versions may work, but YMMV.
 If you're running a Debian or Ubuntu system these can be installed
 using the following command:
 
-    sudo apt-get install libxml2-dev libpqxx3-dev libfcgi-dev libboost-dev \
+    sudo apt-get install libxml2-dev libpqxx3-dev libfcgi-dev \
       libboost-dev libboost-regex-dev libboost-program-options-dev \
       libboost-date-time-dev libmemcached-dev
 
