@@ -25,7 +25,6 @@
 #include <sys/wait.h>
 
 #include "bbox.hpp"
-#include "temp_tables.hpp"
 #include "http.hpp"
 #include "logger.hpp"
 #include "output_formatter.hpp"
