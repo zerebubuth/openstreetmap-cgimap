@@ -2,8 +2,6 @@
 #define XML_FORMATTER_HPP
 
 #include "output_formatter.hpp"
-#include "backend/apidb/cache.hpp"
-#include "backend/apidb/changeset.hpp"
 #include "xml_writer.hpp"
 #include <boost/scoped_ptr.hpp>
 
@@ -15,14 +13,13 @@ class xml_formatter
   : public output_formatter {
 private:
   boost::shared_ptr<xml_writer> writer;
-  cache<osm_id_t, changeset> &changeset_cache;
   
   void write_tags(const tags_t &tags);
   void write_common(const element_info &elem);
 
 public:
   // NOTE: takes ownership of the writer!
-  xml_formatter(xml_writer *w, cache<osm_id_t, changeset> &cc);
+  xml_formatter(xml_writer *w);
   virtual ~xml_formatter();
 
   void start_document();

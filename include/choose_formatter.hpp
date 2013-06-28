@@ -4,8 +4,6 @@
 #include "handler.hpp"
 #include "output_formatter.hpp"
 #include "output_buffer.hpp"
-#include "backend/apidb/cache.hpp"
-#include "backend/apidb/changeset.hpp"
 
 #include <fcgiapp.h>
 #include <memory>
@@ -18,6 +16,6 @@
  */
 boost::shared_ptr<output_formatter> choose_formatter(
 	FCGX_Request &req, responder_ptr_t hptr, 
-	boost::shared_ptr<output_buffer>, cache<osm_id_t, changeset> &);
+	boost::shared_ptr<output_buffer>);
 
 #endif /* CHOOSE_FORMATTER_HPP */
