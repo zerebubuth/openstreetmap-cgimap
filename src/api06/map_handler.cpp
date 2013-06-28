@@ -1,5 +1,4 @@
 #include "api06/map_handler.hpp"
-#include "temp_tables.hpp"
 #include "http.hpp"
 #include "fcgi_helpers.hpp"
 #include "logger.hpp"
