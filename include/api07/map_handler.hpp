@@ -6,8 +6,8 @@
 #endif /* ENABLE_API07 */
 
 #include "bbox.hpp"
-#include "cache.hpp"
-#include "changeset.hpp"
+#include "backend/apidb/cache.hpp"
+#include "backend/apidb/changeset.hpp"
 #include "output_formatter.hpp"
 #include "handler.hpp"
 #include "osm_responder.hpp"

@@ -2,8 +2,8 @@
 #define JSON_FORMATTER_HPP
 
 #include "output_formatter.hpp"
-#include "cache.hpp"
-#include "changeset.hpp"
+#include "backend/apidb/cache.hpp"
+#include "backend/apidb/changeset.hpp"
 #include "json_writer.hpp"
 #include <boost/scoped_ptr.hpp>
 

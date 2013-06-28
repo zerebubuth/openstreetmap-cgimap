@@ -4,8 +4,8 @@
 #include "handler.hpp"
 #include "output_formatter.hpp"
 #include "output_buffer.hpp"
-#include "cache.hpp"
-#include "changeset.hpp"
+#include "backend/apidb/cache.hpp"
+#include "backend/apidb/changeset.hpp"
 
 #include <fcgiapp.h>
 #include <memory>

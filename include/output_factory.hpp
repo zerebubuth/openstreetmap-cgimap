@@ -3,7 +3,7 @@
 
 #include "output_formatter.hpp"
 #include "output_buffer.hpp"
-#include "cache.hpp"
+#include "backend/apidb/cache.hpp"
 
 #include <boost/shared_ptr.hpp>
 
