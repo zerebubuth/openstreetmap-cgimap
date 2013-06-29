@@ -104,8 +104,10 @@ json_formatter::write_common(const element_info &elem) {
    writer->object_key("version"); writer->entry_int(elem.version);
    writer->object_key("changeset"); writer->entry_int(elem.changeset);
    writer->object_key("timestamp"); writer->entry_string(elem.timestamp);
-   if (elem.display_name) writer->object_key("id"); writer->entry_int(elem.id);
-   if (elem.uid) writer->object_key("id"); writer->entry_int(elem.id);
+   if (elem.display_name && elem.uid) {
+       writer->object_key("user"); writer->entry_string(elem.display_name.get());
+       writer->object_key("uid"); writer->entry_int(elem.uid.get());
+   }
 }
 
 void 

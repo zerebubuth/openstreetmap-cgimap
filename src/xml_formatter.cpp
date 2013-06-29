@@ -99,8 +99,10 @@ xml_formatter::write_common(const element_info &elem) {
   writer->attribute("version", elem.version);
   writer->attribute("changeset", elem.changeset);
   writer->attribute("timestamp", elem.timestamp);
-  if (elem.display_name) writer->attribute("user", elem.display_name.get());
-  if (elem.uid) writer->attribute("uid", elem.uid.get());
+  if (elem.display_name && elem.uid) {
+      writer->attribute("user", elem.display_name.get());
+      writer->attribute("uid", elem.uid.get());
+  }
 }
 
 void 
