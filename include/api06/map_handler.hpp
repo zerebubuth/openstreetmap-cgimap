@@ -2,8 +2,6 @@
 #define API06_MAP_HANDLER_HPP
 
 #include "bbox.hpp"
-#include "cache.hpp"
-#include "changeset.hpp"
 #include "output_formatter.hpp"
 #include "handler.hpp"
 #include "osm_responder.hpp"

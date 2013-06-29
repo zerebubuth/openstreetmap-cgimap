@@ -24,8 +24,8 @@ const std::string &element_type_name(element_type elt) {
 
 } // anonymous namespace
 
-json_formatter::json_formatter(json_writer *w, cache<osm_id_t, changeset> &cc) 
-  : writer(w), changeset_cache(cc) {
+json_formatter::json_formatter(json_writer *w)
+  : writer(w) {
 }
 
 json_formatter::~json_formatter() {
@@ -99,17 +99,12 @@ json_formatter::error(const std::exception &e) {
 
 void
 json_formatter::write_common(const element_info &elem) {
-   shared_ptr<changeset const> cs = changeset_cache.get(elem.changeset);
-
-   writer->object_key("id"); writer->entry_int(elem.id);
-   if (cs->data_public) {
-      writer->object_key("user"); writer->entry_string(cs->display_name);
-      writer->object_key("uid"); writer->entry_int(cs->user_id);
-   }
    writer->object_key("visible"); writer->entry_bool(elem.visible);
    writer->object_key("version"); writer->entry_int(elem.version);
    writer->object_key("changeset"); writer->entry_int(elem.changeset);
    writer->object_key("timestamp"); writer->entry_string(elem.timestamp);
+   if (elem.display_name) writer->object_key("id"); writer->entry_int(elem.id);
+   if (elem.uid) writer->object_key("id"); writer->entry_int(elem.id);
 }
 
 void 

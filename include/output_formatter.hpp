@@ -17,10 +17,14 @@ enum element_type {
 };
 
 struct element_info {
-   osm_id_t id, version, changeset, uid;
-   bool visible;
-   boost::optional<std::string> display_name;
-   std::string timestamp;
+  // Standard meanings
+  osm_id_t id, version, changeset;
+  std::string timestamp;
+  // Anonymous objects will not have uids or display names
+  boost::optional<osm_id_t> uid;
+  boost::optional<std::string> display_name;
+  // If an object has been deleted
+  bool visible;
 };
 
 struct member_info {

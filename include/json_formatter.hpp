@@ -2,8 +2,6 @@
 #define JSON_FORMATTER_HPP
 
 #include "output_formatter.hpp"
-#include "cache.hpp"
-#include "changeset.hpp"
 #include "json_writer.hpp"
 #include <boost/scoped_ptr.hpp>
 
@@ -15,14 +13,13 @@ class json_formatter
   : public output_formatter {
 private:
   boost::scoped_ptr<json_writer> writer;
-  cache<osm_id_t, changeset> &changeset_cache;
 
   void write_tags(const tags_t &tags);
   void write_common(const element_info &elem);
 
 public:
   // NOTE: takes ownership of the writer!
-  json_formatter(json_writer *w, cache<osm_id_t, changeset> &cc);
+  json_formatter(json_writer *w);
   virtual ~json_formatter();
 
   void start_document();

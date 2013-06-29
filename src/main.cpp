@@ -34,8 +34,8 @@
 #include "fcgi_helpers.hpp"
 #include "rate_limiter.hpp"
 #include "choose_formatter.hpp"
-#include "cache.hpp"
-#include "changeset.hpp"
+#include "backend/apidb/cache.hpp"
+#include "backend/apidb/changeset.hpp"
 #include "backend/apidb/writeable_pgsql_selection.hpp"
 #include "backend/apidb/readonly_pgsql_selection.hpp"
 #include "config.h"
@@ -268,7 +268,7 @@ process_get_request(FCGX_Request &request, routes &route,
   out = encoding->buffer(out);
   
   // create the correct mime type output formatter.
-  shared_ptr<output_formatter> o_formatter = choose_formatter(request, responder, out, changeset_cache);
+  shared_ptr<output_formatter> o_formatter = choose_formatter(request, responder, out);
   
   // get any CORS headers to return
   string cors_headers = get_cors_headers(request);
@@ -380,9 +380,9 @@ process_requests(int socket, const po::variables_map &options) {
   // getting at data.
   boost::shared_ptr<data_selection::factory> factory;
   if (db_is_writeable) {
-     factory = boost::make_shared<writeable_pgsql_selection::factory>(boost::ref(*con));
+     factory = boost::make_shared<writeable_pgsql_selection::factory>(boost::ref(*con), boost::ref(changeset_cache));
   } else {
-     factory = boost::make_shared<readonly_pgsql_selection::factory>(boost::ref(*con));
+     factory = boost::make_shared<readonly_pgsql_selection::factory>(boost::ref(*con), boost::ref(changeset_cache));
   }
 
   logger::message("Initialised");

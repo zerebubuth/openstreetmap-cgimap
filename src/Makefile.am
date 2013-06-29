@@ -6,7 +6,6 @@ bin_PROGRAMS=../map
 ################################################################################
 ___map_SOURCES=\
 	bbox.cpp \
-	changeset.cpp \
 	choose_formatter.cpp \
 	data_selection.cpp \
 	fcgi_helpers.cpp \
@@ -28,6 +27,7 @@ ___map_SOURCES=\
 ___map_SOURCES+=\
 	backend/apidb/writeable_pgsql_selection.cpp \
 	backend/apidb/readonly_pgsql_selection.cpp \
+	backend/apidb/changeset.cpp \
 	backend/apidb/quad_tile.cpp
 
 ___map_SOURCES+=\

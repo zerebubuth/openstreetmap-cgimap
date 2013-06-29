@@ -2,6 +2,8 @@
 #define WRITEABLE_PGSQL_SELECTION_HPP
 
 #include "data_selection.hpp"
+#include "backend/apidb/changeset.hpp"
+#include "backend/apidb/cache.hpp"
 #include <pqxx/pqxx>
 
 /**
@@ -12,7 +14,7 @@
 class writeable_pgsql_selection
 	: public data_selection {
 public:
-	 writeable_pgsql_selection(pqxx::connection &conn);
+	 writeable_pgsql_selection(pqxx::connection &conn, cache<osm_id_t, changeset> &changeset_cache);
 	 ~writeable_pgsql_selection();
 
 	 void write_nodes(output_formatter &formatter);
@@ -47,12 +49,13 @@ public:
    class factory
       : public data_selection::factory {
    public:
-      factory(pqxx::connection &);
+      factory(pqxx::connection &, cache<osm_id_t, changeset> &);
       virtual ~factory();
       virtual boost::shared_ptr<data_selection> make_selection();
 
    private:
       pqxx::connection &m_connection;
+      cache<osm_id_t, changeset> &cc;
    };
 
 private:
@@ -60,6 +63,9 @@ private:
    // the transaction in which the selection takes place. although 
    // this *is* read-only, it may create temporary tables.
    pqxx::work w;
+   
+  cache<osm_id_t, changeset> cc;
+
 };
 
 #endif /* WRITEABLE_PGSQL_SELECTION_HPP */
