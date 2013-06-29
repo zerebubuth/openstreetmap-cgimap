@@ -1,7 +1,7 @@
 #include "backend/apidb/readonly_pgsql_selection.hpp"
+#include "backend/apidb/apidb.hpp"
 #include "logger.hpp"
 #include "backend/apidb/quad_tile.hpp"
-#include "temp_tables.hpp"
 #include "infix_ostream_iterator.hpp"
 
 #include <sstream>
