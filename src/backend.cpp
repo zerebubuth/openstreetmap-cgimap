@@ -2,6 +2,7 @@
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
+#include <stdexcept>
 
 namespace po = boost::program_options;
 using boost::shared_ptr;
@@ -19,13 +20,36 @@ private:
 };
 
 bool registry::add(shared_ptr<backend> ptr) {
+  if (default_backend) {
+    if (ptr->name() <= default_backend->name()) {
+      default_backend = ptr;
+    }
+  } else {
+    default_backend = ptr;
+  }
+
   backends[ptr->name()] = ptr;
+
   return true;
 }
 
 void registry::setup_options(po::options_description &desc) {
+  if (backends.empty() || !default_backend) {
+    throw std::runtime_error("No backends available - this is most likely a compile-time configuration error.");
+  }
+
   std::ostringstream all_backends;
-  std::string description = (boost::format("backend to use, available options are %1%") % all_backends).str();
+  bool first = true;
+  BOOST_FOREACH(const backend_map_t::value_type &val, backends) {
+    if (first) {
+      first = false;
+    } else {
+      all_backends << ", ";
+    }
+    all_backends << val.second->name();
+  }
+
+  std::string description = (boost::format("backend to use, available options are: %1%") % all_backends.str()).str();
   desc.add_options()
     ("backend", po::value<std::string>()->default_value(default_backend->name()), description.c_str())
     ;

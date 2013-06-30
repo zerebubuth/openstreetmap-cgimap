@@ -26,6 +26,7 @@ ___map_SOURCES=\
 	zlib.cpp
 
 ___map_SOURCES+=\
+	backend/apidb/apidb.cpp \
 	backend/apidb/writeable_pgsql_selection.cpp \
 	backend/apidb/readonly_pgsql_selection.cpp \
 	backend/apidb/changeset.cpp \

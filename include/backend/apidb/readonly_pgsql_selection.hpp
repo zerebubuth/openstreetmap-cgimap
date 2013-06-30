@@ -5,6 +5,7 @@
 #include "backend/apidb/changeset.hpp"
 #include "backend/apidb/cache.hpp"
 #include <pqxx/pqxx>
+#include <boost/program_options.hpp>
 #include <set>
 
 /**
@@ -52,14 +53,14 @@ public:
    class factory
       : public data_selection::factory {
    public:
-      factory(pqxx::connection &, cache<osm_id_t, changeset> &);
-      virtual ~factory();
-      virtual boost::shared_ptr<data_selection> make_selection();
+     factory(const boost::program_options::variables_map &);
+     virtual ~factory();
+     virtual boost::shared_ptr<data_selection> make_selection();
 
    private:
-      /// connection to the database
-      pqxx::connection &m_connection;
-      cache<osm_id_t, changeset> &cc;
+     pqxx::connection m_connection, m_cache_connection;
+     pqxx::nontransaction m_cache_tx;
+     cache<osm_id_t, changeset> m_cache;
    };
 
 private:

@@ -50,8 +50,6 @@ namespace al = boost::algorithm;
 namespace pt = boost::posix_time;
 namespace po = boost::program_options;
 
-#define CACHE_SIZE 1000
-
 /**
  * global flags set by signal handlers.
  */
@@ -126,33 +124,6 @@ get_env(const char *k, string &s) {
   return v == NULL ? false : (s = v, true);
 }
 
-auto_ptr<pqxx::connection>
-connect_db(const po::variables_map &options) {
-  // build the connection string.
-  ostringstream ostr;
-  ostr << "dbname=" << options["dbname"].as<std::string>();
-  if (options.count("host")) {
-    ostr << " host=" << options["host"].as<std::string>();
-  }
-  if (options.count("username")) {
-    ostr << " user=" << options["username"].as<std::string>();
-  }
-  if (options.count("password")) {
-    ostr << " password=" << options["password"].as<std::string>();
-  }
-
-  // connect to the database.
-  auto_ptr<pqxx::connection> con(new pqxx::connection(ostr.str()));
-
-  // set the connections to use the appropriate charset.
-  con->set_client_encoding(options["charset"].as<std::string>());
-
-  // ignore notice messages
-  con->set_noticer(auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
-
-  return con;
-}
-
 /**
  * Bindings to allow libxml to write directly to the FCGI
  * library.
@@ -202,12 +173,6 @@ get_options(int argc, char **argv, po::variables_map &options) {
 
   desc.add_options()
     ("help", "display this help and exit")
-    ("dbname", po::value<string>(), "database name")
-    ("host", po::value<string>(), "database server host")
-    ("username", po::value<string>(), "database user name")
-    ("password", po::value<string>(), "database password")
-    ("charset", po::value<string>()->default_value("utf8"), "database character set")
-    ("port", po::value<int>(), "port number to use")
     ("daemon", "run as a daemon")
     ("instances", po::value<int>()->default_value(5), "number of daemon instances to run")
     ("pidfile", po::value<string>(), "file to write pid to")
@@ -215,7 +180,10 @@ get_options(int argc, char **argv, po::variables_map &options) {
     ("memcache", po::value<string>(), "memcache server specification")
     ("ratelimit", po::value<int>(), "average number of bytes/s to allow each client")
     ("maxdebt", po::value<int>(), "maximum debt (in Mb) to allow each client before rate limiting")
-    ("readonly", "use the database in read-only mode");
+    ;
+
+  // add the backend options to the options description
+  setup_backend_options(desc);
 
   po::store(po::parse_command_line(argc, argv, desc), options);
   po::store(po::parse_environment(desc, "CGIMAP_"), options);
@@ -358,26 +326,6 @@ process_requests(int socket, const po::variables_map &options) {
   if (FCGX_InitRequest(&request, socket, FCGI_FAIL_ACCEPT_ON_INTR) != 0) {
     throw runtime_error("Couldn't initialise FCGX request structure.");
   }
-
-  /*
-  // database type
-  bool db_is_writeable = options.count("readonly") == 0;
-
-  // get the parameters for the connection from the environment
-  // and connect to the database, throws exceptions if it fails.
-  auto_ptr<pqxx::connection> con = connect_db(options);
-  auto_ptr<pqxx::connection> cache_con = connect_db(options);
-
-  // start a transaction using a second connection just for looking up 
-  // users/changesets for the cache.
-  pqxx::nontransaction cache_x(*cache_con, "changeset_cache");
-  cache<osm_id_t, changeset> changeset_cache(boost::bind(fetch_changeset, boost::ref(cache_x), _1), CACHE_SIZE);
-  if (db_is_writeable) {
-     factory = boost::make_shared<writeable_pgsql_selection::factory>(boost::ref(*con), boost::ref(changeset_cache));
-  } else {
-     factory = boost::make_shared<readonly_pgsql_selection::factory>(boost::ref(*con), boost::ref(changeset_cache));
-  }
-  */
 
   // create a factory for data selections - the mechanism for actually
   // getting at data.

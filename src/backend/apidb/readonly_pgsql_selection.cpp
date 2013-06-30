@@ -9,7 +9,9 @@
 #include <boost/make_shared.hpp>
 #include <boost/ref.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/bind.hpp>
 
+namespace po = boost::program_options;
 using std::set;
 using std::stringstream;
 using std::list;
@@ -19,6 +21,23 @@ using boost::shared_ptr;
 #define STRIDE (1000)
 
 namespace {
+std::string connect_db_str(const po::variables_map &options) {
+  // build the connection string.
+  std::ostringstream ostr;
+  ostr << "dbname=" << options["dbname"].as<std::string>();
+  if (options.count("host")) {
+    ostr << " host=" << options["host"].as<std::string>();
+  }
+  if (options.count("username")) {
+    ostr << " user=" << options["username"].as<std::string>();
+  }
+  if (options.count("password")) {
+    ostr << " password=" << options["password"].as<std::string>();
+  }
+
+  return ostr.str();
+}
+
 inline data_selection::visibility_t 
 check_table_visibility(pqxx::work &w, osm_id_t id, const char *table) {
    stringstream query;
@@ -491,13 +510,24 @@ readonly_pgsql_selection::select_relations_members_of_relations() {
    }
 }
 
-readonly_pgsql_selection::factory::factory(pqxx::connection &conn, cache<osm_id_t, changeset> &changeset_cache)
-   : m_connection(conn), cc(changeset_cache) {
+readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
+  : m_connection(connect_db_str(opts)),
+    m_cache_connection(connect_db_str(opts)),
+    m_cache_tx(m_cache_connection, "changeset_cache"),
+    m_cache(boost::bind(fetch_changeset, boost::ref(m_cache_tx), _1), opts["cachesize"].as<size_t>()) {
+
+   // set the connections to use the appropriate charset.
+   m_connection.set_client_encoding(opts["charset"].as<std::string>());
+   m_cache_connection.set_client_encoding(opts["charset"].as<std::string>());
+
+   // ignore notice messages
+   m_connection.set_noticer(std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
+   m_cache_connection.set_noticer(std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
 }
 
 readonly_pgsql_selection::factory::~factory() {
 }
 
 boost::shared_ptr<data_selection> readonly_pgsql_selection::factory::make_selection() {
-   return boost::make_shared<readonly_pgsql_selection>(boost::ref(m_connection), boost::ref(cc));
+   return boost::make_shared<readonly_pgsql_selection>(boost::ref(m_connection), boost::ref(m_cache));
 }

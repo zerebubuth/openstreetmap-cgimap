@@ -10,7 +10,7 @@
  */
 struct backend {
   virtual ~backend();
-  virtual const std::string &name() = 0;
+  virtual const std::string &name() const = 0;
   virtual const boost::program_options::options_description &options() const = 0;
   virtual boost::shared_ptr<data_selection::factory> create(const boost::program_options::variables_map &) = 0;
 };
