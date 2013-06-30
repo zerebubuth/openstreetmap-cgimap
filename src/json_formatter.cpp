@@ -1,7 +1,6 @@
 #include <boost/shared_ptr.hpp>
 
 #include "json_formatter.hpp"
-#include "temp_tables.hpp"
 #include "config.h"
 
 using boost::shared_ptr;

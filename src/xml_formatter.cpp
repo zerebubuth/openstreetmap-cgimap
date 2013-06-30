@@ -1,5 +1,4 @@
 #include "xml_formatter.hpp"
-#include "temp_tables.hpp"
 #include "config.h"
 #include <string>
 #include <boost/shared_ptr.hpp>
