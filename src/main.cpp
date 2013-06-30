@@ -35,10 +35,7 @@
 #include "fcgi_helpers.hpp"
 #include "rate_limiter.hpp"
 #include "choose_formatter.hpp"
-#include "backend/apidb/cache.hpp"
-#include "backend/apidb/changeset.hpp"
-#include "backend/apidb/writeable_pgsql_selection.hpp"
-#include "backend/apidb/readonly_pgsql_selection.hpp"
+#include "backend.hpp"
 #include "config.h"
 
 using std::runtime_error;
@@ -244,7 +241,6 @@ get_options(int argc, char **argv, po::variables_map &options) {
  */
 boost::tuple<string, size_t>
 process_get_request(FCGX_Request &request, routes &route, 
-                    cache<osm_id_t, changeset> &changeset_cache,
                     boost::shared_ptr<data_selection::factory> factory,
 		    const string &ip) {
   // figure how to handle the request
@@ -347,9 +343,6 @@ process_requests(int socket, const po::variables_map &options) {
     logger::initialise(options["logfile"].as<string>());
   }
 
-  // database type
-  bool db_is_writeable = options.count("readonly") == 0;
-
   // initialise FCGI
   if (FCGX_Init() != 0) {
     throw runtime_error("Couldn't initialise FCGX library.");
@@ -361,30 +354,35 @@ process_requests(int socket, const po::variables_map &options) {
   // create the routes map (from URIs to handlers)
   routes route;
 
-  // get the parameters for the connection from the environment
-  // and connect to the database, throws exceptions if it fails.
-  auto_ptr<pqxx::connection> con = connect_db(options);
-  auto_ptr<pqxx::connection> cache_con = connect_db(options);
-
   // create the request object for fcgi calls
   FCGX_Request request;
   if (FCGX_InitRequest(&request, socket, FCGI_FAIL_ACCEPT_ON_INTR) != 0) {
     throw runtime_error("Couldn't initialise FCGX request structure.");
   }
 
+  /*
+  // database type
+  bool db_is_writeable = options.count("readonly") == 0;
+
+  // get the parameters for the connection from the environment
+  // and connect to the database, throws exceptions if it fails.
+  auto_ptr<pqxx::connection> con = connect_db(options);
+  auto_ptr<pqxx::connection> cache_con = connect_db(options);
+
   // start a transaction using a second connection just for looking up 
   // users/changesets for the cache.
   pqxx::nontransaction cache_x(*cache_con, "changeset_cache");
   cache<osm_id_t, changeset> changeset_cache(boost::bind(fetch_changeset, boost::ref(cache_x), _1), CACHE_SIZE);
-
-  // create a factory for data selections - the mechanism for actually
-  // getting at data.
-  boost::shared_ptr<data_selection::factory> factory;
   if (db_is_writeable) {
      factory = boost::make_shared<writeable_pgsql_selection::factory>(boost::ref(*con), boost::ref(changeset_cache));
   } else {
      factory = boost::make_shared<readonly_pgsql_selection::factory>(boost::ref(*con), boost::ref(changeset_cache));
   }
+  */
+
+  // create a factory for data selections - the mechanism for actually
+  // getting at data.
+  boost::shared_ptr<data_selection::factory> factory = create_backend(options);
 
   logger::message("Initialised");
 
@@ -423,7 +421,7 @@ process_requests(int socket, const po::variables_map &options) {
 
         // process request
         if (method == "GET") {
-	  boost::tie(request_name, bytes_written) = process_get_request(request, route, changeset_cache, factory, ip);
+	  boost::tie(request_name, bytes_written) = process_get_request(request, route, factory, ip);
 
         } else if (method == "OPTIONS") {
           boost::tie(request_name, bytes_written) = process_options_request(request);

@@ -5,6 +5,7 @@ AM_CPPFLAGS=-I../include @FCGI_CFLAGS@ @LIBPQXX_CFLAGS@ @LIBXML_CFLAGS@ @LIBMEMC
 bin_PROGRAMS=../map
 ################################################################################
 ___map_SOURCES=\
+	backend.cpp \
 	bbox.cpp \
 	choose_formatter.cpp \
 	data_selection.cpp \
