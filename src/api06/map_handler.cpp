@@ -34,7 +34,6 @@ map_responder::map_responder(mime::type mt, bbox b, data_selection &x)
   sel.select_nodes_from_way_nodes();
   sel.select_relations_from_ways();
   sel.select_relations_from_nodes();
-  sel.select_relations_from_way_nodes();
   sel.select_relations_from_relations();
 }
 
