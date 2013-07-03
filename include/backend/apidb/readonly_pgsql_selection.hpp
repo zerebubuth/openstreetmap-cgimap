@@ -39,7 +39,6 @@ public:
 	 void select_relations_from_ways();
 	 void select_nodes_from_way_nodes();
 	 void select_relations_from_nodes();
-	 void select_relations_from_way_nodes();
 	 void select_relations_from_relations();
   void select_relations_members_of_relations();
 
