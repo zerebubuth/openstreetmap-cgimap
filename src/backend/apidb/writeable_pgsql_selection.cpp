@@ -331,11 +331,6 @@ writeable_pgsql_selection::select_relations_from_nodes() {
 }
 
 void 
-writeable_pgsql_selection::select_relations_from_way_nodes() {
-   w.prepared("relations_from_way_nodes").exec();
-}
-
-void 
 writeable_pgsql_selection::select_relations_from_relations() {
    w.prepared("relations_from_relations").exec();
 }
@@ -444,12 +439,6 @@ writeable_pgsql_selection::factory::factory(pqxx::connection &conn)
       "insert into tmp_relations select distinct rm.relation_id from "
       "current_relation_members rm where rm.member_type='Relation' and "
       "rm.member_id in (select id from tmp_relations) and rm.relation_id "
-      "not in (select id from tmp_relations)");
-   m_connection.prepare("relations_from_way_nodes",
-      "insert into tmp_relations select distinct rm.relation_id from "
-      "current_relation_members rm where rm.member_type='Node' and "
-      "rm.member_id in (select distinct node_id from current_way_nodes "
-      "where way_id in (select id from tmp_ways)) and rm.relation_id "
       "not in (select id from tmp_relations)");
 }
 

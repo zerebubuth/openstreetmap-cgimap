@@ -85,10 +85,6 @@ public:
    /// select relations which include selected nodes 
 	 virtual void select_relations_from_nodes() = 0;
 	 
-   /// update relations to include relations which have node members
-	 /// which are used in already selected ways.
-	 virtual void select_relations_from_way_nodes() = 0;
-	 
    /// select relations which include selected relations
 	 virtual void select_relations_from_relations() = 0;
 
