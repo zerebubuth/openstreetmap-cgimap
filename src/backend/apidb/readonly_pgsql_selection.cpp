@@ -8,15 +8,36 @@
 #include <list>
 #include <boost/make_shared.hpp>
 #include <boost/ref.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/bind.hpp>
 
+namespace po = boost::program_options;
 using std::set;
 using std::stringstream;
 using std::list;
+using boost::shared_ptr;
 
 // number of nodes to chunk together
 #define STRIDE (1000)
 
 namespace {
+std::string connect_db_str(const po::variables_map &options) {
+  // build the connection string.
+  std::ostringstream ostr;
+  ostr << "dbname=" << options["dbname"].as<std::string>();
+  if (options.count("host")) {
+    ostr << " host=" << options["host"].as<std::string>();
+  }
+  if (options.count("username")) {
+    ostr << " user=" << options["username"].as<std::string>();
+  }
+  if (options.count("password")) {
+    ostr << " password=" << options["password"].as<std::string>();
+  }
+
+  return ostr.str();
+}
+
 inline data_selection::visibility_t 
 check_table_visibility(pqxx::work &w, osm_id_t id, const char *table) {
    stringstream query;
@@ -45,14 +66,17 @@ insert_results_of(pqxx::work &w, std::stringstream &query, set<osm_id_t> &elems)
    }
 }
 
-void extract_elem(const pqxx::result::tuple &row, element_info &elem) {
-   elem.id = row["id"].as<osm_id_t>();
-   elem.version = row["version"].as<int>();
-   elem.changeset = row["changeset_id"].as<osm_id_t>();
-   elem.visible = row["visible"].as<bool>();
-   elem.uid = 0;
-   elem.display_name = boost::none;
-   elem.timestamp = row["timestamp"].c_str();
+void extract_elem(const pqxx::result::tuple &row, element_info &elem, cache<osm_id_t, changeset> &changeset_cache) {
+  elem.id = row["id"].as<osm_id_t>();
+  elem.version = row["version"].as<int>();
+  elem.timestamp = row["timestamp"].c_str();
+  elem.changeset = row["changeset_id"].as<osm_id_t>();
+  elem.visible = row["visible"].as<bool>();
+  shared_ptr<changeset const> cs = changeset_cache.get(elem.changeset);
+  if (cs->data_public) {
+    elem.uid = cs->user_id;
+    elem.display_name = cs->display_name;
+  }
 }
 
 void extract_tags(const pqxx::result &res, tags_t &tags) {
@@ -109,8 +133,8 @@ void extract_members(const pqxx::result &res, members_t &members) {
 
 } // anonymous namespace
 
-readonly_pgsql_selection::readonly_pgsql_selection(pqxx::connection &conn)
-   : w(conn) {
+readonly_pgsql_selection::readonly_pgsql_selection(pqxx::connection &conn, cache<osm_id_t, changeset> &changeset_cache)
+   : w(conn), cc(changeset_cache) {
 }
 
 readonly_pgsql_selection::~readonly_pgsql_selection() {
@@ -143,7 +167,7 @@ readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
 				
          for (pqxx::result::const_iterator itr = nodes.begin(); 
               itr != nodes.end(); ++itr) {
-            extract_elem(*itr, elem);
+            extract_elem(*itr, elem, cc);
             lon = double((*itr)["longitude"].as<int64_t>()) / (SCALE);
             lat = double((*itr)["latitude"].as<int64_t>()) / (SCALE);
             extract_tags(w.exec("select k, v from current_node_tags where node_id=" + pqxx::to_string(elem.id)), tags);
@@ -187,7 +211,7 @@ readonly_pgsql_selection::write_ways(output_formatter &formatter) {
 
          for (pqxx::result::const_iterator itr = ways.begin(); 
               itr != ways.end(); ++itr) {
-            extract_elem(*itr, elem);
+            extract_elem(*itr, elem, cc);
             extract_nodes(w.exec("select node_id from current_way_nodes where way_id=" + 
                                  pqxx::to_string(elem.id) + " order by sequence_id asc"), nodes);
             extract_tags(w.exec("select k, v from current_way_tags where way_id=" + pqxx::to_string(elem.id)), tags);
@@ -228,7 +252,7 @@ readonly_pgsql_selection::write_relations(output_formatter &formatter) {
 			
          for (pqxx::result::const_iterator itr = relations.begin(); 
               itr != relations.end(); ++itr) {
-            extract_elem(*itr, elem);
+            extract_elem(*itr, elem, cc);
             extract_members(w.exec("select member_type, member_id, member_role from "
                                    "current_relation_members where relation_id=" + 
                                    pqxx::to_string(elem.id) + " order by sequence_id asc"), members);
@@ -473,13 +497,24 @@ readonly_pgsql_selection::select_relations_members_of_relations() {
    }
 }
 
-readonly_pgsql_selection::factory::factory(pqxx::connection &conn)
-   : m_connection(conn) {
+readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
+  : m_connection(connect_db_str(opts)),
+    m_cache_connection(connect_db_str(opts)),
+    m_cache_tx(m_cache_connection, "changeset_cache"),
+    m_cache(boost::bind(fetch_changeset, boost::ref(m_cache_tx), _1), opts["cachesize"].as<size_t>()) {
+
+   // set the connections to use the appropriate charset.
+   m_connection.set_client_encoding(opts["charset"].as<std::string>());
+   m_cache_connection.set_client_encoding(opts["charset"].as<std::string>());
+
+   // ignore notice messages
+   m_connection.set_noticer(std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
+   m_cache_connection.set_noticer(std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
 }
 
 readonly_pgsql_selection::factory::~factory() {
 }
 
 boost::shared_ptr<data_selection> readonly_pgsql_selection::factory::make_selection() {
-   return boost::make_shared<readonly_pgsql_selection>(boost::ref(m_connection));
+   return boost::make_shared<readonly_pgsql_selection>(boost::ref(m_connection), boost::ref(m_cache));
 }

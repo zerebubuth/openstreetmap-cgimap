@@ -2,7 +2,10 @@
 #define READONLY_PGSQL_SELECTION_HPP
 
 #include "data_selection.hpp"
+#include "backend/apidb/changeset.hpp"
+#include "backend/apidb/cache.hpp"
 #include <pqxx/pqxx>
+#include <boost/program_options.hpp>
 #include <set>
 
 /**
@@ -15,7 +18,7 @@
 class readonly_pgsql_selection
 	: public data_selection {
 public:
-	 readonly_pgsql_selection(pqxx::connection &conn);
+	 readonly_pgsql_selection(pqxx::connection &conn, cache<osm_id_t, changeset> &changeset_cache);
 	 ~readonly_pgsql_selection();
 
 	 void write_nodes(output_formatter &formatter);
@@ -49,13 +52,14 @@ public:
    class factory
       : public data_selection::factory {
    public:
-      factory(pqxx::connection &);
-      virtual ~factory();
-      virtual boost::shared_ptr<data_selection> make_selection();
+     factory(const boost::program_options::variables_map &);
+     virtual ~factory();
+     virtual boost::shared_ptr<data_selection> make_selection();
 
    private:
-      /// connection to the database
-      pqxx::connection &m_connection;
+     pqxx::connection m_connection, m_cache_connection;
+     pqxx::nontransaction m_cache_tx;
+     cache<osm_id_t, changeset> m_cache;
    };
 
 private:
@@ -66,6 +70,7 @@ private:
 
 	 // the set of selected nodes, ways and relations
 	 std::set<osm_id_t> sel_nodes, sel_ways, sel_relations;
+   cache<osm_id_t, changeset> &cc;
 };
 
 #endif /* READONLY_PGSQL_SELECTION_HPP */

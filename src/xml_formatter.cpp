@@ -24,8 +24,8 @@ const std::string &element_type_name(element_type elt) {
 
 } // anonymous namespace
 
-xml_formatter::xml_formatter(xml_writer *w, cache<osm_id_t, changeset> &cc)
-  : writer(w), changeset_cache(cc) {
+xml_formatter::xml_formatter(xml_writer *w)
+  : writer(w){
 }
 
 xml_formatter::~xml_formatter() {
@@ -93,17 +93,15 @@ xml_formatter::write_tags(const tags_t &tags) {
 
 void
 xml_formatter::write_common(const element_info &elem) {
-  shared_ptr<changeset const> cs = changeset_cache.get(elem.changeset);
-
   writer->attribute("id", elem.id);
-  if (cs->data_public) {
-    writer->attribute("user", cs->display_name);
-    writer->attribute("uid", cs->user_id);
-  }
   writer->attribute("visible", elem.visible);
   writer->attribute("version", elem.version);
   writer->attribute("changeset", elem.changeset);
   writer->attribute("timestamp", elem.timestamp);
+  if (elem.display_name && elem.uid) {
+      writer->attribute("user", elem.display_name.get());
+      writer->attribute("uid", elem.uid.get());
+  }
 }
 
 void 

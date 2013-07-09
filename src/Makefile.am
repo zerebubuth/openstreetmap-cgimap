@@ -5,8 +5,8 @@ AM_CPPFLAGS=-I../include @FCGI_CFLAGS@ @LIBPQXX_CFLAGS@ @LIBXML_CFLAGS@ @LIBMEMC
 bin_PROGRAMS=../map
 ################################################################################
 ___map_SOURCES=\
+	backend.cpp \
 	bbox.cpp \
-	changeset.cpp \
 	choose_formatter.cpp \
 	data_selection.cpp \
 	fcgi_helpers.cpp \
@@ -25,10 +25,14 @@ ___map_SOURCES=\
 	xml_writer.cpp \
 	zlib.cpp
 
+if ENABLE_APIDB
 ___map_SOURCES+=\
+	backend/apidb/apidb.cpp \
 	backend/apidb/writeable_pgsql_selection.cpp \
 	backend/apidb/readonly_pgsql_selection.cpp \
+	backend/apidb/changeset.cpp \
 	backend/apidb/quad_tile.cpp
+endif
 
 ___map_SOURCES+=\
 	api06/map_handler.cpp
