@@ -65,7 +65,7 @@ public:
 	 virtual void select_relations(const std::list<osm_id_t> &) = 0;
 
    /// given a bounding box, select nodes within that bbox up to a limit of max_nodes
-	 virtual void select_nodes_from_bbox(const bbox &bounds, int max_nodes) = 0;
+	 virtual int select_nodes_from_bbox(const bbox &bounds, int max_nodes) = 0;
 
    /// selects the node members of any already selected relations
 	 virtual void select_nodes_from_relations() = 0;

@@ -19,10 +19,8 @@ map_responder::map_responder(mime::type mt, bbox b, data_selection &x)
   : osm_responder(mt, x, boost::optional<bbox>(b)) {
   // create temporary tables of nodes, ways and relations which
   // are in or used by elements in the bbox
-  sel.select_nodes_from_bbox(b, MAX_NODES);
+  int num_nodes = sel.select_nodes_from_bbox(b, MAX_NODES);
 
-  // check how many nodes we got
-  int num_nodes = sel.num_nodes();
   // TODO: make configurable parameter?
   if (num_nodes > MAX_NODES) {
     throw http::bad_request((format("You requested too many nodes (limit is %1%). "
