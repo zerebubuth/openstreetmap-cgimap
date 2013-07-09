@@ -25,12 +25,14 @@ ___map_SOURCES=\
 	xml_writer.cpp \
 	zlib.cpp
 
+if ENABLE_APIDB
 ___map_SOURCES+=\
 	backend/apidb/apidb.cpp \
 	backend/apidb/writeable_pgsql_selection.cpp \
 	backend/apidb/readonly_pgsql_selection.cpp \
 	backend/apidb/changeset.cpp \
 	backend/apidb/quad_tile.cpp
+endif
 
 ___map_SOURCES+=\
 	api06/map_handler.cpp

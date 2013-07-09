@@ -98,6 +98,20 @@ AS_IF([test "x$enable_api07" == xyes],
 	[AC_DEFINE([ENABLE_API07], [1], [Define for experimental API 0.7 features.])])
 AM_CONDITIONAL([ENABLE_API07], [test "x$enable_api07" == xyes])
 
+AC_MSG_CHECKING([whether to enable APIDB backend])
+AC_ARG_ENABLE([apidb],
+	[AS_HELP_STRING([--enable-apidb],
+		[Enable APIDB backend, as used by the OSM servers (default: enabled)])],
+	[case "${enableval}" in
+	  yes | no ) enable_apidb="${enableval}" ;;
+	  * ) AC_MSG_ERROR(value for --enable-apidb should be yes or no) ;;
+	 esac],
+	[enable_apidb="yes"])
+AC_MSG_RESULT($enable_apidb)
+AS_IF([test "x$enable_apidb" == xyes],
+      [AC_DEFINE([ENABLE_APIDB], [1], [Define for APIDB backend support.])])
+AM_CONDITIONAL([ENABLE_APIDB], [test "x$enable_apidb" == xyes])
+
 AC_CONFIG_FILES([
 	Makefile
 	src/Makefile])
