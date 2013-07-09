@@ -266,7 +266,7 @@ writeable_pgsql_selection::select_relations(const std::list<osm_id_t> &ids) {
    w.prepared("add_relations_list")(ids).exec();
 }
 
-void 
+int
 writeable_pgsql_selection::select_nodes_from_bbox(const bbox &bounds, int max_nodes) {
    const set<unsigned int> tiles = 
       tiles_for_area(bounds.minlat, bounds.minlon, 
@@ -314,7 +314,7 @@ writeable_pgsql_selection::select_nodes_from_bbox(const bbox &bounds, int max_no
    logger::message(query.str());
    
    // assume this throws if it fails?
-   w.exec(query);
+   return w.exec(query).affected_rows();
 }
 
 void 

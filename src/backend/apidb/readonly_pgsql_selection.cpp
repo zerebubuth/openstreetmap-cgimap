@@ -55,7 +55,7 @@ check_table_visibility(pqxx::work &w, osm_id_t id, const char *table) {
    }	
 }
 
-inline void
+inline int
 insert_results_of(pqxx::work &w, std::stringstream &query, set<osm_id_t> &elems) {
    pqxx::result res = w.exec(query);
 
@@ -64,6 +64,7 @@ insert_results_of(pqxx::work &w, std::stringstream &query, set<osm_id_t> &elems)
       const osm_id_t id = (*itr)["id"].as<osm_id_t>();
       elems.insert(id);
    }
+   return res.affected_rows();
 }
 
 void extract_elem(const pqxx::result::tuple &row, element_info &elem, cache<osm_id_t, changeset> &changeset_cache) {
@@ -342,7 +343,7 @@ readonly_pgsql_selection::select_relations(const std::list<osm_id_t> &ids) {
    }
 }
 
-void 
+int
 readonly_pgsql_selection::select_nodes_from_bbox(const bbox &bounds, int max_nodes) {
    const set<unsigned int> tiles = 
       tiles_for_area(bounds.minlat, bounds.minlon, 
@@ -387,8 +388,8 @@ readonly_pgsql_selection::select_nodes_from_bbox(const bbox &bounds, int max_nod
   
    logger::message("Filling sel_nodes from bbox");
    logger::message(query.str());
-  
-   insert_results_of(w, query, sel_nodes);
+
+   return insert_results_of(w, query, sel_nodes);
 }
 
 void 

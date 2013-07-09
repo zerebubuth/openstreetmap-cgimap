@@ -35,7 +35,7 @@ public:
 	 void select_nodes(const std::list<osm_id_t> &);
 	 void select_ways(const std::list<osm_id_t> &);
 	 void select_relations(const std::list<osm_id_t> &);
-	 void select_nodes_from_bbox(const bbox &bounds, int max_nodes);
+	 int select_nodes_from_bbox(const bbox &bounds, int max_nodes);
 	 void select_nodes_from_relations();
 	 void select_ways_from_nodes();
 	 void select_ways_from_relations();
