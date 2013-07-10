@@ -23,7 +23,6 @@ struct apidb_backend : public backend {
       ("username", po::value<string>(), "database user name")
       ("password", po::value<string>(), "database password")
       ("charset", po::value<string>()->default_value("utf8"), "database character set")
-      ("port", po::value<int>(), "port number to use")
       ("readonly", "use the database in read-only mode")
       ("cachesize", po::value<size_t>()->default_value(CACHE_SIZE), "maximum size of changeset cache")
       ;
@@ -36,6 +35,10 @@ struct apidb_backend : public backend {
   shared_ptr<data_selection::factory> create(const po::variables_map &opts) {
     // database type
     bool db_is_writeable = opts.count("readonly") == 0;
+
+    if (opts.count("dbname") == 0) {
+      throw std::runtime_error("database name not specified");
+    }
 
     shared_ptr<data_selection::factory> factory;
     if (db_is_writeable) {

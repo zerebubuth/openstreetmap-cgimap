@@ -180,6 +180,7 @@ get_options(int argc, char **argv, po::variables_map &options) {
     ("memcache", po::value<string>(), "memcache server specification")
     ("ratelimit", po::value<int>(), "average number of bytes/s to allow each client")
     ("maxdebt", po::value<int>(), "maximum debt (in Mb) to allow each client before rate limiting")
+    ("port", po::value<int>(), "port number to use")
     ;
 
   // add the backend options to the options description
@@ -192,10 +193,6 @@ get_options(int argc, char **argv, po::variables_map &options) {
   if (options.count("help")) {
     std::cout << desc << std::endl;
     exit(1);
-  }
-
-  if (options.count("dbname") == 0) {
-    throw runtime_error("database name not specified");
   }
 
   if (options.count("daemon") != 0 && options.count("port") == 0) {
