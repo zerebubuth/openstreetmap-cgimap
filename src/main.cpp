@@ -398,8 +398,25 @@ process_requests(int socket, const po::variables_map &options) {
 	// re-throw the exception for higher-level handling
 	throw;
       }
+
     } else if (errno != EINTR) {
-      throw runtime_error("error accepting request.");
+       char err_buf[1024];
+       std::ostringstream out;
+
+       if (errno == ENOTSOCK) {
+          out << "FCGI port not set properly, please use the --port option "
+              << "(caused by ENOTSOCK).";
+
+       } else {
+          out << "error accepting request: ";
+          if (strerror_r(errno, err_buf, sizeof err_buf) == 0) {
+             out << err_buf;
+          } else {
+             out << "error encountered while getting error message";
+          }
+       }
+
+       throw runtime_error(out.str());
     }
   }
 
