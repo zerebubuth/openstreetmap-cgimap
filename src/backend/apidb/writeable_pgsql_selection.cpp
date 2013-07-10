@@ -56,6 +56,9 @@ std::string connect_db_str(const po::variables_map &options) {
   if (options.count("password")) {
     ostr << " password=" << options["password"].as<std::string>();
   }
+  if (options.count("dbport")) {
+     ostr << " port=" << options["dbport"].as<std::string>();
+  }
 
   return ostr.str();
 }

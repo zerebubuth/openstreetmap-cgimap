@@ -25,6 +25,7 @@ struct apidb_backend : public backend {
       ("charset", po::value<string>()->default_value("utf8"), "database character set")
       ("readonly", "use the database in read-only mode")
       ("cachesize", po::value<size_t>()->default_value(CACHE_SIZE), "maximum size of changeset cache")
+      ("dbport", po::value<string>(), "database port number or UNIX socket file name")
       ;
   }
   virtual ~apidb_backend() {}
