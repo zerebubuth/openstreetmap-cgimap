@@ -180,7 +180,7 @@ get_options(int argc, char **argv, po::variables_map &options) {
     ("memcache", po::value<string>(), "memcache server specification")
     ("ratelimit", po::value<int>(), "average number of bytes/s to allow each client")
     ("maxdebt", po::value<int>(), "maximum debt (in Mb) to allow each client before rate limiting")
-    ("port", po::value<int>(), "port number to use")
+    ("port", po::value<int>(), "FCGI port number to listen on")
     ;
 
   // add the backend options to the options description
@@ -196,7 +196,7 @@ get_options(int argc, char **argv, po::variables_map &options) {
   }
 
   if (options.count("daemon") != 0 && options.count("port") == 0) {
-    throw runtime_error("a port number is required in daemon mode");
+    throw runtime_error("an FCGI port number is required in daemon mode");
   }
 }
 
