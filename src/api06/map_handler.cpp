@@ -27,12 +27,14 @@ map_responder::map_responder(mime::type mt, bbox b, data_selection &x)
 				    "Either request a smaller area, or use planet.osm")
 			     % MAX_NODES).str());
   }
-
-  sel.select_ways_from_nodes();
-  sel.select_nodes_from_way_nodes();
-  sel.select_relations_from_ways();
-  sel.select_relations_from_nodes();
-  sel.select_relations_from_relations();
+  // Short-circuit empty areas
+  if (num_nodes > 0) {
+    sel.select_ways_from_nodes();
+    sel.select_nodes_from_way_nodes();
+    sel.select_relations_from_ways();
+    sel.select_relations_from_nodes();
+    sel.select_relations_from_relations();
+  }
 }
 
 map_responder::~map_responder() {
