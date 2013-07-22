@@ -109,10 +109,10 @@ respond_error(const http::exception &e, FCGX_Request &r) {
   } else {
     ostr << "Status: " << e.code() << " " << e.header() << "\r\n"
          << "Content-Type: text/html\r\n"
+         << "Content-Length: 0\r\n"
          << "Error: " << e.what() << "\r\n"
-         << "\r\n"
-         << "<html><head><title>" << e.header() << "</title></head>"
-         << "<body><p>" << e.what() << "</p></body></html>\n";
+         << "Cache-Control: no-cache\r\n"
+         << "\r\n";
   }
 
   FCGX_PutS(ostr.str().c_str(), r.out);
