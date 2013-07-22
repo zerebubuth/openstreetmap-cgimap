@@ -254,19 +254,19 @@ writeable_pgsql_selection::check_relation_visibility(osm_id_t id) {
    return check_table_visibility(w, id, "visible_relation");
 }
 
-void
+int
 writeable_pgsql_selection::select_nodes(const std::list<osm_id_t> &ids) {
-   w.prepared("add_nodes_list")(ids).exec();
+   return w.prepared("add_nodes_list")(ids).exec().affected_rows();
 }
 
-void
+int
 writeable_pgsql_selection::select_ways(const std::list<osm_id_t> &ids) {
-   w.prepared("add_ways_list")(ids).exec();
+   return w.prepared("add_ways_list")(ids).exec().affected_rows();
 }
 
-void
+int
 writeable_pgsql_selection::select_relations(const std::list<osm_id_t> &ids) {
-   w.prepared("add_relations_list")(ids).exec();
+   return w.prepared("add_relations_list")(ids).exec().affected_rows();
 }
 
 int
