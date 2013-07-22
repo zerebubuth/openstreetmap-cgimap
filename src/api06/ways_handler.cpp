@@ -22,15 +22,11 @@ using boost::bad_lexical_cast;
 namespace api06 {
 
 ways_responder::ways_responder(mime::type mt, list<osm_id_t> ids_, data_selection &w_)
-	: osm_responder(mt, w_), ids(ids_) {
+  : osm_responder(mt, w_), ids(ids_) {
 
-	sel.select_ways(ids_);
-
-	int num_ways = sel.num_ways();
-
-    if ( num_ways != ids.size()) {
-        throw http::not_found("One or more of the ways were not found.");
-    }
+  if ( sel.select_ways(ids_) != ids.size()) {
+    throw http::not_found("One or more of the ways were not found.");
+  }
 }
 
 ways_responder::~ways_responder() {
