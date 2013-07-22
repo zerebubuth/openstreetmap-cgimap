@@ -22,15 +22,10 @@ using boost::bad_lexical_cast;
 namespace api06 {
 
 relations_responder::relations_responder(mime::type mt, list<osm_id_t> ids_, data_selection &s_)
-	: osm_responder(mt, s_), ids(ids_) {
-
-	sel.select_relations(ids_);
-
-	int num_relations = sel.num_relations();
-
-    if ( num_relations != ids.size()) {
-        throw http::not_found("One or more of the relations were not found.");			
-    }
+  : osm_responder(mt, s_), ids(ids_) {
+  if ( sel.select_relations(ids_) != ids.size()) {
+    throw http::not_found("One or more of the relations were not found.");		
+  }
 }
 
 relations_responder::~relations_responder() {

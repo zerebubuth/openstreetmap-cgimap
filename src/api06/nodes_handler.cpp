@@ -24,11 +24,7 @@ namespace api06 {
 nodes_responder::nodes_responder(mime::type mt, list<osm_id_t> ids_, data_selection &w_)
 	: osm_responder(mt, w_), ids(ids_) {
 
-	sel.select_nodes(ids_);
-
-	int num_nodes = sel.num_nodes();
-
-	if (num_nodes != ids.size()) {
+	if (sel.select_nodes(ids_) != ids.size()) {
 		throw http::not_found("One or more of the nodes were not found.");			
 	}
 }
