@@ -303,7 +303,7 @@ readonly_pgsql_selection::check_relation_visibility(osm_id_t id) {
    return check_table_visibility(w, id, "relation");
 }
 
-void
+int
 readonly_pgsql_selection::select_nodes(const std::list<osm_id_t> &ids) {
    if (!ids.empty()) {
       stringstream query;
@@ -313,11 +313,14 @@ readonly_pgsql_selection::select_nodes(const std::list<osm_id_t> &ids) {
       std::copy(ids.begin(), ids.end(), infix_ostream_iterator<osm_id_t>(query, ","));
       query << ")";
       
-      insert_results_of(w, query, sel_nodes);
+      return insert_results_of(w, query, sel_nodes);
+   }
+   else {
+      return 0;
    }
 }
 
-void
+int
 readonly_pgsql_selection::select_ways(const std::list<osm_id_t> &ids) {
    if (!ids.empty()) {
       stringstream query;
@@ -328,11 +331,14 @@ readonly_pgsql_selection::select_ways(const std::list<osm_id_t> &ids) {
       query << ")";
       logger::message(query.str());
       
-      insert_results_of(w, query, sel_ways);
+      return insert_results_of(w, query, sel_ways);
+   }
+   else {
+      return 0;
    }
 }
 
-void
+int
 readonly_pgsql_selection::select_relations(const std::list<osm_id_t> &ids) {
    if (!ids.empty()) {
       stringstream query;
@@ -342,7 +348,10 @@ readonly_pgsql_selection::select_relations(const std::list<osm_id_t> &ids) {
       std::copy(ids.begin(), ids.end(), infix_ostream_iterator<osm_id_t>(query, ","));
       query << ")";
       
-      insert_results_of(w, query, sel_relations);
+      return insert_results_of(w, query, sel_relations);
+   }
+   else {
+      return 0;
    }
 }
 
