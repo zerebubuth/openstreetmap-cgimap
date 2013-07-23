@@ -26,7 +26,6 @@ def test_request(method, uri, env = {})
     sin.close
     headers, data = sout.read.split("\r\n\r\n")
     assert(headers.nil?, false, "FCGI should have returned headers.")
-    assert(data.nil?, false, "FCGI should have returned data.")
     headers = Hash[*headers.split("\r\n").collect_concat{|l| k,v = l.split(": "); [k,v]}]
     
     assert(thr.value.success?, true, "FCGI exited successfully.")
