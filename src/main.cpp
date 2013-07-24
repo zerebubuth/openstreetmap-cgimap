@@ -22,6 +22,7 @@
 #include <memory>
 #include <algorithm>
 #include <errno.h>
+#include <signal.h>
 #include <sys/wait.h>
 
 #include "bbox.hpp"
