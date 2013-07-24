@@ -118,6 +118,10 @@ element_type type_from_name(const char *name) {
    case 'r':
       type = element_type_relation;
       break;
+
+   default:
+      // in case the name match isn't exhaustive...
+      throw std::runtime_error("Unexpected name not matched to type in type_from_name().");
    }
 
    return type;

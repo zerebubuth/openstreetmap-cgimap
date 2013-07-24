@@ -510,7 +510,7 @@ main(int argc, char **argv) {
 
     // are we supposed to run as a daemon?
     if (options.count("daemon")) {
-      int instances = options["instances"].as<int>();
+      size_t instances = options["instances"].as<size_t>();
       bool children_terminated = false;
       std::set<pid_t> children;
 

@@ -2,6 +2,7 @@
 #include "config.h"
 #include <string>
 #include <boost/shared_ptr.hpp>
+#include <stdexcept>
 
 using std::string;
 using boost::shared_ptr;
@@ -19,6 +20,9 @@ const std::string &element_type_name(element_type elt) {
       return name_way;
    case element_type_relation:
       return name_relation;
+   default:
+      // in case the switch isn't exhaustive?
+      throw std::runtime_error("Unhandled element type in element_type_name().");
    }
 }
 
