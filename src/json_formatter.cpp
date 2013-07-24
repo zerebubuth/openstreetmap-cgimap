@@ -114,9 +114,10 @@ json_formatter::write_node(const element_info &elem, double lon, double lat, con
   writer->start_object();
   
   write_common(elem);
-  writer->object_key("lat"); writer->entry_double(lat);
-  writer->object_key("lon"); writer->entry_double(lon);
-
+  if (elem.visible) {
+    writer->object_key("lat"); writer->entry_double(lat);
+    writer->object_key("lon"); writer->entry_double(lon);
+  }
   write_tags(tags);
 
   writer->end_object();  
