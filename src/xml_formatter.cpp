@@ -108,9 +108,10 @@ void
 xml_formatter::write_node(const element_info &elem, double lon, double lat, const tags_t &tags) {
   writer->start("node");
   write_common(elem);
-  writer->attribute("lat", lat);
-  writer->attribute("lon", lon);
-
+  if (elem.visible) {
+    writer->attribute("lat", lat);
+    writer->attribute("lon", lon);
+  }
   write_tags(tags);
 
   writer->end();
