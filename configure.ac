@@ -24,6 +24,7 @@ AC_SUBST(LIBPQXX_LIBS)
 
 #m4_include([aclocal/ax_boost_base.m4])
 #m4_include([aclocal/ax_boost_regex.m4])
+#m4_include([aclocal/ax_boost_system.m4])
 #m4_include([aclocal/ax_boost_program_options.m4])
 #m4_include([aclocal/ax_boost_date_time.m4])
 #m4_include([aclocal/ax_check_zlib.m4])
@@ -34,6 +35,7 @@ AC_SUBST(LIBMEMCACHED_LIBS)
 
 AX_BOOST_BASE([1.43], , [AC_MSG_ERROR([Boost libraries are required for building CGImap. Please install libboost-dev.])])
 AX_BOOST_REGEX
+AX_BOOST_SYSTEM
 AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_DATE_TIME
 
