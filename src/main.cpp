@@ -185,7 +185,7 @@ get_options(int argc, char **argv, po::variables_map &options) {
     ;
 
   // add the backend options to the options description
-  setup_backend_options(desc);
+  setup_backend_options(argc, argv, desc);
 
   po::store(po::parse_command_line(argc, argv, desc), options);
   po::store(po::parse_environment(desc, "CGIMAP_"), options);
@@ -193,6 +193,7 @@ get_options(int argc, char **argv, po::variables_map &options) {
 
   if (options.count("help")) {
     std::cout << desc << std::endl;
+    output_backend_options(std::cout);
     exit(1);
   }
 
