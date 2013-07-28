@@ -22,6 +22,9 @@ PKG_CHECK_MODULES(LIBPQXX, libpqxx >= 2.6.9)
 AC_SUBST(LIBPQXX_CFLAGS)
 AC_SUBST(LIBPQXX_LIBS)
 
+PKG_CHECK_MODULES(LIBPQXX, libpqxx >= 3.0,
+   [AC_DEFINE([HAVE_LIBPQXX_3], [1], [define if libpqxx is version 3 or later])])
+
 #m4_include([aclocal/ax_boost_base.m4])
 #m4_include([aclocal/ax_boost_regex.m4])
 #m4_include([aclocal/ax_boost_system.m4])
