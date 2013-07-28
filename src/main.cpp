@@ -596,11 +596,13 @@ main(int argc, char **argv) {
 	      << "Caused by: " << er.query() << std::endl;
     return 1;
 
+#ifdef HAVE_LIBPQXX_3
   } catch (const pqxx::pqxx_exception &e) {
     // Catch-all for any other postgres exceptions
     std::cerr << "Error: " << e.base().what() << std::endl;
     return 1;
 
+#endif
   } catch (const std::exception &e) {
     logger::message(e.what());
     std::cerr << "Exception: " << e.what() << std::endl;
