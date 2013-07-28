@@ -388,9 +388,9 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
    logger::message("Preparing prepared statements.");
 
    // selecting node, way and relation visibility information
-   m_connection.prepare("visible_node",     "select visible from current_nodes     where id = $1")("bigint", pqxx::prepare::treat_direct);
-   m_connection.prepare("visible_way",      "select visible from current_ways      where id = $1")("bigint", pqxx::prepare::treat_direct);
-   m_connection.prepare("visible_relation", "select visible from current_relations where id = $1")("bigint", pqxx::prepare::treat_direct);
+   m_connection.prepare("visible_node",     "select visible from current_nodes     where id = $1")("bigint");
+   m_connection.prepare("visible_way",      "select visible from current_ways      where id = $1")("bigint");
+   m_connection.prepare("visible_relation", "select visible from current_relations where id = $1")("bigint");
 
    // extraction functions for getting the data back out when the
    // selection set has been built up.
@@ -410,14 +410,14 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
    m_connection.prepare("extract_way_nds", 
       "select node_id from current_way_nodes where way_id=$1 "
       "order by sequence_id asc")
-      ("bigint", pqxx::prepare::treat_direct);
+      ("bigint");
    m_connection.prepare("extract_relation_members",
       "select member_type, member_id, member_role from current_relation_members "
       "where relation_id=$1 order by sequence_id asc")
-      ("bigint", pqxx::prepare::treat_direct);
-   m_connection.prepare("extract_node_tags",     "select k, v from current_node_tags     where node_id=$1")    ("bigint", pqxx::prepare::treat_direct);
-   m_connection.prepare("extract_way_tags",      "select k, v from current_way_tags      where way_id=$1")     ("bigint", pqxx::prepare::treat_direct);
-   m_connection.prepare("extract_relation_tags", "select k, v from current_relation_tags where relation_id=$1")("bigint", pqxx::prepare::treat_direct);
+      ("bigint");
+   m_connection.prepare("extract_node_tags",     "select k, v from current_node_tags     where node_id=$1")    ("bigint");
+   m_connection.prepare("extract_way_tags",      "select k, v from current_way_tags      where way_id=$1")     ("bigint");
+   m_connection.prepare("extract_relation_tags", "select k, v from current_relation_tags where relation_id=$1")("bigint");
 
    // counting things which are in the working set
    m_connection.prepare("count_nodes",     "select count(*) from tmp_nodes");
@@ -428,15 +428,15 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
    m_connection.prepare("add_nodes_list",
       "insert into tmp_nodes select id from current_nodes where "
       "id = ANY($1) and id not in (select id from tmp_nodes)")
-      ("bigint[]", pqxx::prepare::treat_direct);
+      ("bigint[]");
    m_connection.prepare("add_ways_list",
       "insert into tmp_ways select id from current_ways where id = ANY($1) "
       "and id not in (select id from tmp_ways)")
-      ("bigint[]", pqxx::prepare::treat_direct);
+      ("bigint[]");
    m_connection.prepare("add_relations_list",
       "insert into tmp_relations select id from current_relations where id = ANY($1) "
       "and id not in (select id from tmp_relations)")
-      ("bigint[]", pqxx::prepare::treat_direct);
+      ("bigint[]");
 
    // queries for filling elements which are used as members in relations
    m_connection.prepare("nodes_from_relations",
