@@ -39,7 +39,7 @@ relation_full_responder::check_visibility() {
 	}
 }
 
-relation_full_handler::relation_full_handler(FCGX_Request &request, osm_id_t id_)
+relation_full_handler::relation_full_handler(request &req, osm_id_t id_)
   : id(id_) {
   logger::message((boost::format("starting relation/full handler with id = %1%") % id).str());
 }

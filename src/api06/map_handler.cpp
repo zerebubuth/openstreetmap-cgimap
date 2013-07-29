@@ -40,8 +40,8 @@ map_responder::map_responder(mime::type mt, bbox b, data_selection &x)
 map_responder::~map_responder() {
 }
 
-map_handler::map_handler(FCGX_Request &request) 
-  : bounds(validate_request(request)) {
+map_handler::map_handler(request &req) 
+  : bounds(validate_request(req)) {
 }
 
 map_handler::~map_handler() {
@@ -62,13 +62,13 @@ map_handler::responder(data_selection &x) const {
  * throwing an error if there was no valid bounding box.
  */
 bbox
-map_handler::validate_request(FCGX_Request &request) {
+map_handler::validate_request(request &req) {
   // check that the REQUEST_METHOD is a GET
-  if (fcgi_get_env(request, "REQUEST_METHOD") != "GET") 
+  if (fcgi_get_env(req, "REQUEST_METHOD") != "GET") 
     throw http::method_not_allowed("Only the GET method is supported for "
 				   "map requests.");
 
-  string decoded = http::urldecode(get_query_string(request));
+  string decoded = http::urldecode(get_query_string(req));
   const map<string, string> params = http::parse_params(decoded);
   map<string, string>::const_iterator itr = params.find("bbox");
 

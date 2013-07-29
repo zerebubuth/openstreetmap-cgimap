@@ -9,7 +9,7 @@
 #include "output_formatter.hpp"
 #include "handler.hpp"
 #include "osm_responder.hpp"
-#include <fcgiapp.h>
+#include "request.hpp"
 #include <string>
 
 namespace api07 {
@@ -24,8 +24,8 @@ public:
 class map_handler 
   : public handler {
 public:
-	 explicit map_handler(FCGX_Request &request);
-	 map_handler(FCGX_Request &request, int tile_id);
+	 explicit map_handler(request &req);
+	 map_handler(request &req, int tile_id);
 	 ~map_handler();
 	 std::string log_name() const;
 	 responder_ptr_t responder(data_selection &x) const;
@@ -33,7 +33,7 @@ public:
 private:
 	 bbox bounds;
 	 
-	 static bbox validate_request(FCGX_Request &request);
+	 static bbox validate_request(request &req);
 };
 
 } // namespace api07

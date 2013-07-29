@@ -24,7 +24,7 @@ node_responder::node_responder(mime::type mt, osm_id_t id_, data_selection &w_)
 node_responder::~node_responder() {
 }
 
-node_handler::node_handler(FCGX_Request &request, osm_id_t id_) 
+node_handler::node_handler(request &req, osm_id_t id_) 
 	: id(id_) {
 }
 

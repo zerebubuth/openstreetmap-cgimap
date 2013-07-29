@@ -36,7 +36,7 @@ way_full_responder::check_visibility() {
 	}
 }
 
-way_full_handler::way_full_handler(FCGX_Request &request, osm_id_t id_)
+way_full_handler::way_full_handler(request &req, osm_id_t id_)
   : id(id_) {
   logger::message((boost::format("starting way/full handler with id = %1%") % id).str());
 }

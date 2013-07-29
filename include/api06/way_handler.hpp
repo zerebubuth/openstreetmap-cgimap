@@ -3,7 +3,7 @@
 
 #include "handler.hpp"
 #include "osm_responder.hpp"
-#include <fcgiapp.h>
+#include "request.hpp"
 #include <string>
 
 namespace api06 {
@@ -23,7 +23,7 @@ private:
 class way_handler 
 	: public handler {
 public:
-	 way_handler(FCGX_Request &request, osm_id_t id);
+	 way_handler(request &req, osm_id_t id);
 	 ~way_handler();
 
 	 std::string log_name() const;

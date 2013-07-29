@@ -32,8 +32,8 @@ nodes_responder::nodes_responder(mime::type mt, list<osm_id_t> ids_, data_select
 nodes_responder::~nodes_responder() {
 }
 
-nodes_handler::nodes_handler(FCGX_Request &request) 
-	: ids(validate_request(request)) {
+nodes_handler::nodes_handler(request &req) 
+	: ids(validate_request(req)) {
 }
 
 nodes_handler::~nodes_handler() {
@@ -57,13 +57,13 @@ nodes_handler::responder(data_selection &x) const {
  * throwing an error if there was no valid list of node ids.
  */
 list<osm_id_t>
-nodes_handler::validate_request(FCGX_Request &request) {
+nodes_handler::validate_request(request &req) {
 	// check that the REQUEST_METHOD is a GET
-	if (fcgi_get_env(request, "REQUEST_METHOD") != "GET") 
+	if (fcgi_get_env(req, "REQUEST_METHOD") != "GET") 
 		throw http::method_not_allowed("Only the GET method is supported for "
 									   "nodes requests.");
 
-	string decoded = http::urldecode(get_query_string(request));
+	string decoded = http::urldecode(get_query_string(req));
 	const map<string, string> params = http::parse_params(decoded);
 	map<string, string>::const_iterator itr = params.find("nodes");
 
