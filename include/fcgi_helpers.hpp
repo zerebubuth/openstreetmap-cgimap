@@ -2,14 +2,16 @@
 #define FCGI_HELPERS_HPP
 
 #include <string>
-#include <fcgiapp.h>
+#include <boost/shared_ptr.hpp>
+#include "request.hpp"
+#include "http.hpp"
 
 /**
  * Lookup a string from the FCGI environment. Throws 500 error if the
  * string isn't there and no default value is given.
  */
 std::string
-fcgi_get_env(FCGX_Request &req, const char* name, const char* default_value = NULL);
+fcgi_get_env(request &req, const char* name, const char* default_value = NULL);
 
 /**
  * get a query string by hook or by crook.
@@ -20,12 +22,31 @@ fcgi_get_env(FCGX_Request &req, const char* name, const char* default_value = NU
  * parse the $REQUEST_URI.
  */
 std::string
-get_query_string(FCGX_Request &req);
+get_query_string(request &req);
 
 /**
  * get the path from the $REQUEST_URI variable.
  */
 std::string
-get_request_path(FCGX_Request &req);
+get_request_path(request &req);
+
+/**
+ * get encoding to use for response.
+ */
+boost::shared_ptr<http::encoding> 
+get_encoding(request &req);
+
+/**
+ * get CORS access control headers to include in response.
+ */
+std::string 
+get_cors_headers(request &req);
+
+/**
+ * return shared pointer to a buffer object which can be
+ * used to write to the response body.
+ */
+boost::shared_ptr<output_buffer>
+make_output_buffer(request &req);
 
 #endif /* FCGI_HELPERS_HPP */

@@ -1,15 +1,15 @@
 #include "fcgi_helpers.hpp"
-#include "http.hpp"
 #include <sstream>
 #include <cstring>
+#include <fcgiapp.h>
 
 using std::string;
 using std::ostringstream;
 
 string
-fcgi_get_env(FCGX_Request &req, const char* name, const char* default_value) {
+fcgi_get_env(request &req, const char* name, const char* default_value) {
   assert(name);
-  const char* v = FCGX_GetParam(name, req.envp);
+  const char* v = FCGX_GetParam(name, req.req.envp);
 
   // since the map script is so simple i'm just going to assume that
   // any time we fail to get an environment variable is a fatal error.
@@ -27,14 +27,14 @@ fcgi_get_env(FCGX_Request &req, const char* name, const char* default_value) {
 }
 
 string
-get_query_string(FCGX_Request &req) {
+get_query_string(request &req) {
   // try the query string that's supposed to be present first
-  const char *query_string = FCGX_GetParam("QUERY_STRING", req.envp);
+  const char *query_string = FCGX_GetParam("QUERY_STRING", req.req.envp);
   
   // if that isn't present, then this may be being invoked as part of a
   // 404 handler, so look at the request uri instead.
   if ((query_string == NULL) || (strlen(query_string) == 0)) {
-    const char *request_uri = FCGX_GetParam("REQUEST_URI", req.envp);
+    const char *request_uri = FCGX_GetParam("REQUEST_URI", req.req.envp);
 
     if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
       // fail. something has obviously gone massively wrong.
@@ -60,8 +60,8 @@ get_query_string(FCGX_Request &req) {
 }
 
 std::string
-get_request_path(FCGX_Request &req) {
-  const char *request_uri = FCGX_GetParam("REQUEST_URI", req.envp);
+get_request_path(request &req) {
+  const char *request_uri = FCGX_GetParam("REQUEST_URI", req.req.envp);
   
   if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
     ostringstream ostr;
@@ -78,4 +78,85 @@ get_request_path(FCGX_Request &req) {
   } else {
     return string(request_uri, question_mark);
   }
+}
+
+/**
+ * get encoding to use for response.
+ */
+boost::shared_ptr<http::encoding>
+get_encoding(request &req) {
+  const char *accept_encoding = FCGX_GetParam("HTTP_ACCEPT_ENCODING", req.req.envp);
+
+  if (accept_encoding) {
+     return http::choose_encoding(string(accept_encoding));
+  }
+  else {
+      return boost::shared_ptr<http::identity>(new http::identity());
+  }
+}
+
+/**
+ * get CORS access control headers to include in response.
+ */
+string
+get_cors_headers(request &req) {
+  const char *origin = FCGX_GetParam("HTTP_ORIGIN", req.req.envp);
+  ostringstream headers;
+
+  if (origin) {
+     headers << "Access-Control-Allow-Credentials: true\r\n";
+     headers << "Access-Control-Allow-Methods: GET\r\n";
+     headers << "Access-Control-Allow-Origin: " << origin << "\r\n";
+     headers << "Access-Control-Max-Age: 1728000\r\n";
+  }
+
+  return headers.str();
+}
+
+namespace {
+/**
+ * Bindings to allow libxml to write directly to the FCGI
+ * library.
+ */
+class fcgi_output_buffer
+  : public output_buffer {
+public:
+  virtual int write(const char *buffer, int len) {
+    w += len;
+    return FCGX_PutStr(buffer, len, r.req.out);
+  }
+
+  virtual int close() {
+    // we don't actually close the FCGI output, as that happens
+    // automatically on the next call to accept.
+    return 0;
+  }
+
+  virtual int written() {
+    return w;
+  }
+
+  virtual void flush() {
+    // there's a note that says this causes too many writes and decreases 
+    // efficiency, but we're only calling it once...
+    FCGX_FFlush(r.req.out);
+  }
+
+  virtual ~fcgi_output_buffer() {
+  }
+
+  fcgi_output_buffer(request &req) 
+    : r(req), w(0) {
+  }
+
+private:
+  request &r;
+  int w;
+};
+
+} // anonymous namespace
+
+boost::shared_ptr<output_buffer>
+make_output_buffer(request &req) {
+    return boost::shared_ptr<output_buffer>(new fcgi_output_buffer(req));
 }

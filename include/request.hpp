@@ -3,6 +3,8 @@
 
 #include <fcgiapp.h>
 
-typedef FCGX_Request request;
+struct request {
+    FCGX_Request req;
+};
 
 #endif /* REQUEST_HPP */
