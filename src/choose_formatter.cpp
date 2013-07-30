@@ -188,7 +188,7 @@ acceptable_types::most_acceptable_of(const list<mime::type> &available) const {
  * figures out the preferred mime type(s) from the Accept headers, mapped to their
  * relative acceptability.
  */
-acceptable_types header_mime_type(FCGX_Request &req) {
+acceptable_types header_mime_type(request &req) {
   // need to look at HTTP_ACCEPT request environment
   string accept_header = fcgi_get_env(req, "HTTP_ACCEPT", "*/*");
   return acceptable_types(accept_header);
@@ -196,11 +196,11 @@ acceptable_types header_mime_type(FCGX_Request &req) {
 }
 
 shared_ptr<output_formatter>
-choose_formatter(FCGX_Request &request, 
+choose_formatter(request &req, 
 								 responder_ptr_t hptr, 
 								 shared_ptr<output_buffer> out) {
 	// figure out what, if any, the Accept-able resource mime types are
-	acceptable_types types = header_mime_type(request);
+	acceptable_types types = header_mime_type(req);
 	const list<mime::type> types_available = hptr->types_available();
 		
 	mime::type best_type = hptr->resource_type();
@@ -208,13 +208,13 @@ choose_formatter(FCGX_Request &request,
 	if (best_type != mime::unspecified_type) {
 		// check that this doesn't conflict with anything in the Accept header.
 		if (!hptr->is_available(best_type) || !types.is_acceptable(best_type)) {
-			throw http::not_acceptable(get_request_path(request)); // TODO , types_available);
+			throw http::not_acceptable(get_request_path(req)); // TODO , types_available);
 		}
 	} else {
 		best_type = types.most_acceptable_of(types_available);
 		// if none were acceptable then...
 		if (best_type == mime::unspecified_type) {
-			throw http::not_acceptable(get_request_path(request)); // TODO , types_available);
+			throw http::not_acceptable(get_request_path(req)); // TODO , types_available);
 		} else if (best_type == mime::any_type) {
 			// choose the first of the available types if nothing is preferred.
 			best_type = *(hptr->types_available().begin());

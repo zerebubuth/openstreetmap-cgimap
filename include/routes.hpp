@@ -2,7 +2,7 @@
 #define ROUTES_HPP
 
 #include "handler.hpp"
-#include <fcgiapp.h>
+#include "request.hpp"
 #include <boost/scoped_ptr.hpp>
 #include <boost/noncopyable.hpp>
 #include "config.h"
@@ -23,7 +23,7 @@ public:
 	 /**
 		* returns the handler which matches a request, or throws a 404 error.
 		*/
-	 handler_ptr_t operator()(FCGX_Request &request) const;
+	 handler_ptr_t operator()(request &req) const;
 
 private:
 	 // common prefix of all routes

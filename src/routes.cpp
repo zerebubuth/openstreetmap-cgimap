@@ -52,7 +52,7 @@ struct router {
 	 // interface through which all matches and constructions are performed.
 	 struct rule_base {
 			virtual ~rule_base() {}
-			virtual bool invoke_if(const list<string> &, FCGX_Request &, handler_ptr_t &) = 0;
+			virtual bool invoke_if(const list<string> &, request &, handler_ptr_t &) = 0;
 	 };
 
 	 typedef boost::shared_ptr<rule_base> rule_ptr;
@@ -70,7 +70,7 @@ struct router {
 			
 			// try to match the expression. if it succeeds, call the provided function
 			// with the provided params and the matched DSL arguments.
-			bool invoke_if(const list<string> &parts, FCGX_Request &params, handler_ptr_t &ptr) {
+			bool invoke_if(const list<string> &parts, request &params, handler_ptr_t &ptr) {
 				try {
 					list<string>::const_iterator begin = parts.begin();
 					ptr.reset(invoke(func,make_cons(ref(params), r.match(begin, parts.end()))));
@@ -95,7 +95,7 @@ struct router {
 	 /* match the list of path components given in p. if a match is found, construct an
 		* object of the handler type with the provided params and the matched params.
 		*/
-	 handler_ptr_t match(const list<string> &p, FCGX_Request &params) {
+	 handler_ptr_t match(const list<string> &p, request &params) {
     handler_ptr_t hptr;
 		// it probably isn't necessary to have any more sophisticated data structure
 		// than a list at this point. also means the semantics for rule matching are
@@ -165,7 +165,7 @@ pair<string, mime::type> resource_mime_type(const string &path) {
 	return make_pair(path, mime::unspecified_type);
 }
 
-handler_ptr_t route_resource(FCGX_Request &request, const string &path, const scoped_ptr<router> &r) {
+handler_ptr_t route_resource(request &req, const string &path, const scoped_ptr<router> &r) {
 	// strip off the format-spec, if there is one
 	pair<string, mime::type> resource = resource_mime_type(path);
 	
@@ -173,7 +173,7 @@ handler_ptr_t route_resource(FCGX_Request &request, const string &path, const sc
 	list<string> path_components;
 	al::split(path_components, resource.first, al::is_any_of("/"));
 	
-	handler_ptr_t hptr(r->match(path_components, request));
+	handler_ptr_t hptr(r->match(path_components, req));
 	
 	// if the pointer points at something, then the path was found. otherwise,
 	// it must have exhausted all the possible routes.
@@ -188,18 +188,18 @@ handler_ptr_t route_resource(FCGX_Request &request, const string &path, const sc
 } // anonymous namespace
 
 handler_ptr_t
-routes::operator()(FCGX_Request &request) const {
+routes::operator()(request &req) const {
 	// full path from request handler
-	string path = get_request_path(request);
+	string path = get_request_path(req);
 	handler_ptr_t hptr;
 
 	// check the prefix
 	if (path.compare(0, common_prefix.size(), common_prefix) == 0) {
-		hptr = route_resource(request, string(path, common_prefix.size()), r);
+		hptr = route_resource(req, string(path, common_prefix.size()), r);
 
 #ifdef ENABLE_API07
 	} else if (path.compare(0, experimental_prefix.size(), experimental_prefix) == 0) {
-		hptr = route_resource(request, string(path, experimental_prefix.size()), r_experimental);
+		hptr = route_resource(req, string(path, experimental_prefix.size()), r_experimental);
 #endif /* ENABLE_API07 */
 	}
 
