@@ -243,7 +243,7 @@ process_get_request(FCGX_Request &request, routes &route,
 	       "Content-Type: text/xml; charset=utf-8\r\n"
 	       "Content-Disposition: attachment; filename=\"map.osm\"\r\n"
 	       "Content-Encoding: %s\r\n"
-	       "Cache-Control: private, max-age=0, must-revalidate\r\n"
+	       "Cache-Control: no-cache\r\n"
 	       "%s"
 	       "\r\n", encoding->name().c_str(), cors_headers.c_str());
   
