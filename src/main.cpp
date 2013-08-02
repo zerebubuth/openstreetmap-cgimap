@@ -274,7 +274,7 @@ process_get_request(FCGX_Request &request, routes &route,
 /**
  * process a HEAD request.
  */
-void
+boost::tuple<string, size_t>
 process_head_request(FCGX_Request &request, routes &route,
                     boost::shared_ptr<data_selection::factory> factory,
 		    const string &ip) {
@@ -312,6 +312,8 @@ process_head_request(FCGX_Request &request, routes &route,
 	       "Cache-Control: no-cache\r\n"
 	       "%s"
 	       "\r\n", encoding->name().c_str(), cors_headers.c_str());
+
+  return boost::make_tuple(request_name, 0);
 }
 
 /**
@@ -334,7 +336,7 @@ process_options_request(FCGX_Request &request) {
                  "%s"
                  "\r\n\r\n", cors_headers.c_str());
   } else {
-    throw http::method_not_allowed("Cgimap only supports GET requests.");
+    throw http::method_not_allowed("Cgimap only supports GET and HEAD requests.");
   }
 
   return boost::make_tuple(request_name, 0);
@@ -411,11 +413,11 @@ process_requests(int socket, const po::variables_map &options) {
         if (method == "GET") {
           boost::tie(request_name, bytes_written) = process_get_request(request, route, factory, ip);
         } else if (method == "HEAD") {
-          process_head_request(request, route, factory, ip);
+          boost::tie(request_name, bytes_written) = process_head_request(request, route, factory, ip);
         } else if (method == "OPTIONS") {
           boost::tie(request_name, bytes_written) = process_options_request(request);
         } else {
-          throw http::method_not_allowed("Cgimap only supports GET requests.");
+          throw http::method_not_allowed("Cgimap only supports GET and HEAD requests.");
         }
 
 	// update the rate limiter, if anything was written
