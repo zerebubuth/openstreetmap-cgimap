@@ -209,7 +209,7 @@ void
 process_not_allowed(FCGX_Request &request) {
   FCGX_FPrintF(request.out,
                "Status: 405 Method Not Allowed\r\n"
-               "Allow: GET, HEAD\r\n"
+               "Allow: GET, HEAD, OPTIONS\r\n"
                "Content-Type: text/html\r\n"
                "Content-Length: 0\r\n"
                "Cache-Control: no-cache\r\n\r\n");
