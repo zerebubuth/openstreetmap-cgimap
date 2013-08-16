@@ -35,18 +35,18 @@ ___map_SOURCES+=\
 endif
 
 ___map_SOURCES+=\
-	api06/map_handler.cpp
+	api06/map_handler.cpp \
+	api06/node_handler.cpp \
+	api06/nodes_handler.cpp \
+	api06/relation_handler.cpp \
+	api06/relations_handler.cpp \
+	api06/way_handler.cpp \
+	api06/ways_handler.cpp
 
 if ENABLE_EXPERIMENTAL
 ___map_SOURCES+=\
-	api06/node_handler.cpp \
-	api06/nodes_handler.cpp \
 	api06/relation_full_handler.cpp \
-	api06/relation_handler.cpp \
-	api06/relations_handler.cpp \
-	api06/way_full_handler.cpp \
-	api06/way_handler.cpp \
-	api06/ways_handler.cpp
+	api06/way_full_handler.cpp
 endif
 
 if ENABLE_API07
