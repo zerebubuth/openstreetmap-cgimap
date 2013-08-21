@@ -272,6 +272,51 @@ process_get_request(FCGX_Request &request, routes &route,
 }
 
 /**
+ * process a HEAD request.
+ */
+boost::tuple<string, size_t>
+process_head_request(FCGX_Request &request, routes &route,
+                    boost::shared_ptr<data_selection::factory> factory,
+		    const string &ip) {
+  // figure how to handle the request
+  handler_ptr_t handler = route(request);
+
+  // request start logging
+  string request_name = handler->log_name();
+  logger::message(format("Started HEAD request for %1% from %2%") % request_name % ip);
+
+  // We don't actually use the resulting data from the DB request,
+  // but it might throw an error which results in a 404 or 410 response
+
+  // The 404 and 410 responses have an empty message-body so we're safe using them unmodified
+
+  // separate transaction for the request
+  shared_ptr<data_selection> selection = factory->make_selection();
+
+  // constructor of responder handles dynamic validation (i.e: with db access).
+  responder_ptr_t responder = handler->responder(*selection);
+
+  // get encoding to use
+  shared_ptr<http::encoding> encoding = get_encoding(request);
+
+  // get any CORS headers to return
+  string cors_headers = get_cors_headers(request);
+
+  // TODO: use handler/responder to setup response headers.
+  // write the response header
+  FCGX_FPrintF(request.out,
+	       "Status: 200 OK\r\n"
+	       "Content-Type: text/xml; charset=utf-8\r\n"
+	       "Content-Disposition: attachment; filename=\"map.osm\"\r\n"
+	       "Content-Encoding: %s\r\n"
+	       "Cache-Control: no-cache\r\n"
+	       "%s"
+	       "\r\n", encoding->name().c_str(), cors_headers.c_str());
+
+  return boost::make_tuple(request_name, 0);
+}
+
+/**
  * process an OPTIONS request.
  */
 boost::tuple<string, size_t>
@@ -280,7 +325,7 @@ process_options_request(FCGX_Request &request) {
   const char *origin = FCGX_GetParam("HTTP_ORIGIN", request.envp);
   const char *method = FCGX_GetParam("HTTP_ACCESS_CONTROL_REQUEST_METHOD", request.envp);
 
-  if (origin && strcasecmp(method, "GET") == 0) {
+  if (origin && (strcasecmp(method, "GET") == 0 || strcasecmp(method, "HEAD") == 0)) {
     // get the CORS headers to return
     string cors_headers = get_cors_headers(request);
 
@@ -291,8 +336,7 @@ process_options_request(FCGX_Request &request) {
                  "%s"
                  "\r\n\r\n", cors_headers.c_str());
   } else {
-    throw http::method_not_allowed("Only the GET method is supported for "
-                                   "map requests.");
+    throw http::method_not_allowed("Cgimap only supports GET and HEAD requests.");
   }
 
   return boost::make_tuple(request_name, 0);
@@ -367,14 +411,13 @@ process_requests(int socket, const po::variables_map &options) {
 
         // process request
         if (method == "GET") {
-	  boost::tie(request_name, bytes_written) = process_get_request(request, route, factory, ip);
-
+          boost::tie(request_name, bytes_written) = process_get_request(request, route, factory, ip);
+        } else if (method == "HEAD") {
+          boost::tie(request_name, bytes_written) = process_head_request(request, route, factory, ip);
         } else if (method == "OPTIONS") {
           boost::tie(request_name, bytes_written) = process_options_request(request);
-
         } else {
-          throw http::method_not_allowed("Only the GET method is supported for "
-                                         "map requests.");
+          throw http::method_not_allowed("Cgimap only supports GET and HEAD requests.");
         }
 
 	// update the rate limiter, if anything was written
