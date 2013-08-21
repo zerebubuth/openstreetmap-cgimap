@@ -4,6 +4,9 @@ TESTS =
 if ENABLE_APIDB
 TESTS += test/test_empty.rb test/test_map.rb test/test_anon.rb
 TESTS += test/test_node.rb test/test_way.rb test/test_relation.rb
+if ENABLE_EXPERIMENTAL
+TESTS += test/test_way_experimental.rb test/test_relation_experimental.rb
+endif
 endif
 TEST_EXTENSIONS = .rb
 RB_LOG_COMPILER = test/test.sh
