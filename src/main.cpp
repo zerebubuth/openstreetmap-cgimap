@@ -203,6 +203,19 @@ get_options(int argc, char **argv, po::variables_map &options) {
 }
 
 /**
+ * Return a 405 error.
+ */
+void
+process_not_allowed(FCGX_Request &request) {
+  FCGX_FPrintF(request.out,
+               "Status: 405 Method Not Allowed\r\n"
+               "Allow: GET, HEAD, OPTIONS\r\n"
+               "Content-Type: text/html\r\n"
+               "Content-Length: 0\r\n"
+               "Cache-Control: no-cache\r\n\r\n");
+}
+
+/**
  * process a GET request.
  */
 boost::tuple<string, size_t>
@@ -336,9 +349,8 @@ process_options_request(FCGX_Request &request) {
                  "%s"
                  "\r\n\r\n", cors_headers.c_str());
   } else {
-    throw http::method_not_allowed("Cgimap only supports GET and HEAD requests.");
+    process_not_allowed(request);
   }
-
   return boost::make_tuple(request_name, 0);
 }
 
@@ -417,7 +429,7 @@ process_requests(int socket, const po::variables_map &options) {
         } else if (method == "OPTIONS") {
           boost::tie(request_name, bytes_written) = process_options_request(request);
         } else {
-          throw http::method_not_allowed("Cgimap only supports GET and HEAD requests.");
+          process_not_allowed(request);
         }
 
 	// update the rate limiter, if anything was written
