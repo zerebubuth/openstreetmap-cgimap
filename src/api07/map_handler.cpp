@@ -68,11 +68,6 @@ map_handler::responder(data_selection &x) const {
  */
 bbox
 map_handler::validate_request(FCGX_Request &request) {
-  // check that the REQUEST_METHOD is a GET
-  if (fcgi_get_env(request, "REQUEST_METHOD") != "GET") 
-    throw http::method_not_allowed("Only the GET method is supported for "
-				   "map requests.");
-
   string decoded = http::urldecode(get_query_string(request));
   const map<string, string> params = http::parse_params(decoded);
   map<string, string>::const_iterator itr = params.find("bbox");
