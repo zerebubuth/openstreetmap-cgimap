@@ -566,7 +566,16 @@ main(int argc, char **argv) {
 
     // are we supposed to run as a daemon?
     if (options.count("daemon")) {
-      size_t instances = options["instances"].as<size_t>();
+      size_t instances = 0;
+      {
+        int opt_instances = options["instances"].as<int>();
+        if (opt_instances > 0) {
+           instances = opt_instances;
+        } else {
+           throw std::runtime_error("Number of instances must be strictly positive.");
+        }
+      }
+      
       bool children_terminated = false;
       std::set<pid_t> children;
 
@@ -584,7 +593,7 @@ main(int argc, char **argv) {
 	pid_t pid;
 
 	// start more children if we don't have enough
-	while (!terminate_requested && children.size() < instances) {
+	while (!terminate_requested && (children.size() < instances)) {
 	  if ((pid = fork()) < 0)
 	  {
 	    throw runtime_error("fork failed.");
