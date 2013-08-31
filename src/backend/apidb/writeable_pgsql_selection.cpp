@@ -402,7 +402,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
         "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
         "n.changeset_id, n.version "
       "FROM current_nodes n "
-        "JOIN tmp_nodes x ON n.id = x.id");
+        "JOIN tmp_nodes tn ON n.id = tn.id");
   m_connection.prepare("extract_ways",
     "SELECT w.id, w.visible, w.version, w.changeset_id, "
         "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp "
@@ -412,7 +412,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
      "SELECT r.id, r.visible, r.version, r.changeset_id, "
         "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp "
       "FROM current_relations r "
-        "JOIN tmp_relations x ON x.id=r.id");
+        "JOIN tmp_relations tr ON tr.id=r.id");
   m_connection.prepare("extract_way_nds",
     "SELECT node_id "
       "FROM current_way_nodes "
@@ -498,7 +498,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
     "INSERT INTO tmp_nodes "
     "SELECT DISTINCT wn.node_id AS id "
     "FROM current_way_nodes wn "
-    "WHERE wn.way_id IN (SELECT w.id FROM tmp_ways w) "
+    "WHERE wn.way_id IN (SELECT id FROM tmp_ways) "
     "AND wn.node_id NOT IN (SELECT id FROM tmp_nodes)");
 
   // selecting relations which have members which are already in
@@ -508,7 +508,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       "SELECT DISTINCT rm.relation_id "
         "FROM current_relation_members rm "
         "WHERE rm.member_type='Node' "
-          "AND rm.member_id IN (SELECT n.id FROM tmp_nodes n) "
+          "AND rm.member_id IN (SELECT id FROM tmp_nodes) "
           "AND rm.relation_id NOT IN (SELECT id FROM tmp_relations)");
   m_connection.prepare("relations_from_ways",
     "INSERT INTO tmp_relations "
