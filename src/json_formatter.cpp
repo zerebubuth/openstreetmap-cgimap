@@ -103,6 +103,7 @@ json_formatter::error(const std::exception &e) {
 
 void
 json_formatter::write_common(const element_info &elem) {
+   writer->object_key("id"); writer->entry_int(elem.id);
    writer->object_key("visible"); writer->entry_bool(elem.visible);
    writer->object_key("version"); writer->entry_int(elem.version);
    writer->object_key("changeset"); writer->entry_int(elem.changeset);
