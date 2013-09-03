@@ -34,6 +34,12 @@ ___map_SOURCES+=\
 	backend/apidb/quad_tile.cpp
 endif
 
+if ENABLE_PGSNAPSHOT
+___map_SOURCES+=\
+	backend/pgsnapshot/pgsnapshot.cpp \
+	backend/pgsnapshot/snapshot_selection.cpp
+endif
+
 ___map_SOURCES+=\
 	api06/map_handler.cpp \
 	api06/node_handler.cpp \
