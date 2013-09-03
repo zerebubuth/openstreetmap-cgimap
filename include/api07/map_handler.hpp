@@ -1,16 +1,17 @@
 #ifndef API07_MAP_HANDLER_HPP
 #define API07_MAP_HANDLER_HPP
 
-#ifndef ENABLE_API07
-#error This file should not be included unless experimental API 0.7 features are enabled.
-#endif /* ENABLE_API07 */
-
 #include "bbox.hpp"
 #include "output_formatter.hpp"
 #include "handler.hpp"
 #include "osm_responder.hpp"
+#include "config.h"
 #include <fcgiapp.h>
 #include <string>
+
+#ifndef ENABLE_API07
+#error This file should not be included unless experimental API 0.7 features are enabled.
+#endif /* ENABLE_API07 */
 
 namespace api07 {
 
