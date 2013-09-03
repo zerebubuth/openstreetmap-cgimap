@@ -22,6 +22,8 @@ public:
   json_formatter(json_writer *w);
   virtual ~json_formatter();
 
+  mime::type mime_type() const;
+
   void start_document();
   void end_document();
   void write_bounds(const bbox &bounds);

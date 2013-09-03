@@ -35,6 +35,10 @@ xml_formatter::xml_formatter(xml_writer *w)
 xml_formatter::~xml_formatter() {
 }
 
+mime::type xml_formatter::mime_type() const {
+   return mime::text_xml;
+}
+
 void
 xml_formatter::start_document() {
   writer->start("osm");

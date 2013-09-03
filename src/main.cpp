@@ -253,12 +253,14 @@ process_get_request(FCGX_Request &request, routes &route,
   // write the response header
   FCGX_FPrintF(request.out,
 	       "Status: 200 OK\r\n"
-	       "Content-Type: text/xml; charset=utf-8\r\n"
+	       "Content-Type: %s; charset=utf-8\r\n"
 	       "Content-Disposition: attachment; filename=\"map.osm\"\r\n"
 	       "Content-Encoding: %s\r\n"
 	       "Cache-Control: no-cache\r\n"
 	       "%s"
-	       "\r\n", encoding->name().c_str(), cors_headers.c_str());
+	       "\r\n", 
+               mime::to_string(o_formatter->mime_type()).c_str(),
+               encoding->name().c_str(), cors_headers.c_str());
   
   try {
     // call to write the response

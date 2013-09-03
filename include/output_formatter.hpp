@@ -3,6 +3,7 @@
 
 #include "bbox.hpp"
 #include "types.hpp"
+#include "mime_types.hpp"
 #include <list>
 #include <stdexcept>
 #include <boost/optional.hpp>
@@ -44,6 +45,10 @@ typedef std::list<std::pair<std::string, std::string> > tags_t;
  */
 struct output_formatter {
   virtual ~output_formatter();
+
+  // returns the mime type of the content that this formatter will 
+  // produce.
+  virtual mime::type mime_type() const = 0;
 
   // called once to start the document - this will be the first call
   // to this object after construction.
