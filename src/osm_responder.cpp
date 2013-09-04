@@ -33,9 +33,9 @@ osm_responder::write(shared_ptr<output_formatter> formatter) {
     int num_ways = sel.num_ways();
     int num_relations = sel.num_relations();
 
-    if (num_nodes > 0)     sel.write_nodes(*formatter);
-    if (num_ways > 0)      sel.write_ways(*formatter);
-    if (num_relations > 0) sel.write_relations(*formatter);
+    sel.write_nodes(*formatter);
+    sel.write_ways(*formatter);
+    sel.write_relations(*formatter);
   
   } catch (const std::exception &e) {
     formatter->error(e);

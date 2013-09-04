@@ -37,16 +37,14 @@ mime::type json_formatter::mime_type() const {
 
 void 
 json_formatter::write_tags(const tags_t &tags) {
-  if (tags.size() > 0) {
-    writer->object_key("tags");
-    writer->start_object();
-    for (tags_t::const_iterator itr = tags.begin();
-	 itr != tags.end(); ++itr) {
-      writer->object_key(itr->first);
-      writer->entry_string(itr->second);
-    }
-    writer->end_object();
+  writer->object_key("tags");
+  writer->start_object();
+  for (tags_t::const_iterator itr = tags.begin();
+       itr != tags.end(); ++itr) {
+    writer->object_key(itr->first);
+    writer->entry_string(itr->second);
   }
+  writer->end_object();
 }
 
 void 
