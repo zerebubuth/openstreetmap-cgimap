@@ -164,7 +164,7 @@ readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
    for (set<osm_id_t>::iterator n_itr = sel_nodes.begin();
         ; ++n_itr, ++chunk_i) {
       bool at_end = n_itr == sel_nodes.end();
-      if ((chunk_i >= STRIDE) || at_end) {
+      if ((chunk_i >= STRIDE) || ((chunk_i > 0) && at_end)) {
          stringstream query;
          query << "select n.id, n.latitude, n.longitude, n.visible, "
             "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as timestamp, "
@@ -182,11 +182,11 @@ readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
             formatter.write_node(elem, lon, lat, tags);
          }
 
-         if (at_end) break;
-
          chunk_i = 0;
          prev_itr = n_itr;
       }
+
+      if (at_end) break;
    }
    formatter.end_element_type(element_type_node);
 }
@@ -208,7 +208,7 @@ readonly_pgsql_selection::write_ways(output_formatter &formatter) {
    for (set<osm_id_t>::iterator n_itr = sel_ways.begin();
         ; ++n_itr, ++chunk_i) {
       bool at_end = n_itr == sel_ways.end();
-      if ((chunk_i >= STRIDE) || at_end) {
+      if ((chunk_i >= STRIDE) || ((chunk_i > 0) && at_end)) {
          stringstream query;
          query << "select w.id, w.visible, w.version, w.changeset_id, "
             "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as timestamp from "
@@ -226,11 +226,11 @@ readonly_pgsql_selection::write_ways(output_formatter &formatter) {
             formatter.write_way(elem, nodes, tags);
          }
 			
-         if (at_end) break;
-
          chunk_i = 0;
          prev_itr = n_itr;
       }
+
+      if (at_end) break;
    }
    formatter.end_element_type(element_type_way);
 }
@@ -249,7 +249,7 @@ readonly_pgsql_selection::write_relations(output_formatter &formatter) {
    for (set<osm_id_t>::iterator n_itr = sel_relations.begin();
         ; ++n_itr, ++chunk_i) {
       bool at_end = n_itr == sel_relations.end();
-      if ((chunk_i >= STRIDE) || at_end) {
+      if ((chunk_i >= STRIDE) || ((chunk_i > 0) && at_end)) {
          stringstream query;
          query << "select r.id, r.visible, r.version, r.changeset_id, "
             "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as timestamp from "
@@ -268,11 +268,11 @@ readonly_pgsql_selection::write_relations(output_formatter &formatter) {
             formatter.write_relation(elem, members, tags);
          }
 			
-         if (at_end) break;
-			
          chunk_i = 0;
          prev_itr = n_itr;
       }
+
+      if (at_end) break;
    }
    formatter.end_element_type(element_type_relation);
 }
