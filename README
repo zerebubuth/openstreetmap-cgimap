@@ -57,22 +57,42 @@ You should now have a "./map" executable in the current directory.
 Setup
 -----
 
-A sample lighttpd.conf file is provided, which I've been using to
-test. No testing has been done with other FCGI servers, but if you
-find a problem please report it on the OSM trac.
+A sample lighttpd.conf file is provided, which can be used to test. To test 
+CGImap with lighttpd use the supplied config file with lighttpd and run cgimap
+on the command line with a command like
 
-CGImap expects the following environment variables to be set:
+    ./map --port 54321 --backend apidb --dbname openstreetmap
 
-* CGIMAP_HOST: Hostname or IP address of the database server.
-* CGIMAP_NAME: Name of the database.
-* CGIMAP_USER: Name of the user to connect as.
-* CGIMAP_PASS: Password of the user to connect as.
+You can then access the running instance at `http://localhost:31337/api/0.6/map?bbox=...`
 
-Optionally, CGIMAP_CHARSET can be set to the connection charset to
-use. The default is "utf8".
+The api.osm.org instance runs CGImap as a daemon and Apache with 
+[mod_fastcgi_handler](https://github.com/hollow/mod_fastcgi_handler).
+An init.d script to run CGImap as a daemon is supplied in
+scripts/cgimap.init. To use it modify the paths and environment 
+variables to suit your installation, copy it to `/etc/init.d/cgibin` and 
+change the mode to 755, and owner:group to root:root.
 
-CGImap requires permissions to SELECT and CREATE TEMPORARY on the
-Postgres server. It is recommended that a separate account is created for
+An example of this can be found in 
+[OSM Chef](http://git.openstreetmap.org/chef.git/blob/HEAD:/cookbooks/web/recipes/cgimap.rb).
+
+Typically you will need to modify the database connection parameters and path
+to the executable. See `./map --help` for a list of options. To convert a
+command line option to an environment variable append `CGIMAP_` to the option
+and capatalize it. For example, the option `--dbname` becomes the environment
+variable `CGIMAP_DBNAME`.
+
+Database Permissions
+--------------------
+
+The apidb backend requires permissions to SELECT and CREATE TEMPORARY on the 
+Postgres server. For situations where temporary tables cannot be created there 
+is the `--readonly` option.
+
+The pgsnapshot backend requires permissions to SELECT and CREATE TEMPORARY on 
+the Postgres server, but will not work in situations where temporary tables 
+cannot be created.
+
+In both cases it is recommended that a separate account is created for
 CGImap to avoid any possibility of data corruption. Care has been
 taken programming CGImap but, as with most C++ applications, there is
 the chance of an exploitable flaw leading to complete pwnage.
