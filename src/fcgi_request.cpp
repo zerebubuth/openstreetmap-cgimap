@@ -1,0 +1,84 @@
+#include "fcgi_request.hpp"
+#include <stdexcept>
+#include <sstream>
+#include <fcgiapp.h>
+#include <errno.h>
+#include <string.h>
+
+using std::runtime_error;
+
+struct fcgi_request::pimpl {
+  FCGX_Request req;
+};
+
+fcgi_request::fcgi_request(int socket) 
+  : m_impl(new pimpl) {
+  // initialise FCGI
+  if (FCGX_Init() != 0) {
+    throw runtime_error("Couldn't initialise FCGX library.");
+  }
+  if (FCGX_InitRequest(&m_impl->req, socket, FCGI_FAIL_ACCEPT_ON_INTR) != 0) {
+    throw runtime_error("Couldn't initialise FCGX request structure.");
+  }
+}
+
+fcgi_request::~fcgi_request() {
+  FCGX_Free(&m_impl->req, true);
+}
+
+const char *fcgi_request::get_param(const char *key) {
+  return FCGX_GetParam(key, m_impl->req.envp);
+}
+
+int fcgi_request::put(const char *buf, int len) {
+  return FCGX_PutStr(buf, len, m_impl->req.out);
+}
+
+int fcgi_request::put(const std::string &str) {
+  return FCGX_PutStr(str.c_str(), str.size(), m_impl->req.out);
+}
+
+boost::shared_ptr<output_buffer> fcgi_request::get_buffer() {
+}
+
+std::string fcgi_request::cors_headers() {
+}
+
+void fcgi_request::flush() {
+  FCGX_FFlush(m_impl->req.out);
+}
+
+void fcgi_request::finish() {
+  FCGX_Finish_r(&m_impl->req);
+}
+
+int fcgi_request::accept_r() {
+  int status = FCGX_Accept_r(&m_impl->req);
+  if (status < 0) {
+    if (errno != EINTR) {
+      char err_buf[1024];
+      std::ostringstream out;
+      
+      if (errno == ENOTSOCK) {
+        out << "FCGI port not set properly, please use the --port option "
+            << "(caused by ENOTSOCK).";
+        
+      } else {
+        out << "error accepting request: ";
+        if (strerror_r(errno, err_buf, sizeof err_buf) == 0) {
+          out << err_buf;
+        } else {
+          out << "error encountered while getting error message";
+        }
+      }
+      
+      throw runtime_error(out.str());
+    }
+  }
+  return status;
+}
+
+int fcgi_request::open_socket(const std::string &path, int backlog) {
+  return FCGX_OpenSocket(path.c_str(), backlog);
+}
+

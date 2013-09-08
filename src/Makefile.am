@@ -10,6 +10,7 @@ ___map_SOURCES=\
 	choose_formatter.cpp \
 	data_selection.cpp \
 	fcgi_helpers.cpp \
+	fcgi_request.cpp \
 	handler.cpp \
 	http.cpp \
 	logger.cpp \
@@ -19,6 +20,7 @@ ___map_SOURCES=\
 	output_formatter.cpp \
 	output_writer.cpp \
 	rate_limiter.cpp \
+	request.cpp \
 	router.cpp \
 	routes.cpp \
 	xml_formatter.cpp \

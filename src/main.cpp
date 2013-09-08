@@ -18,7 +18,6 @@
 #include <vector>
 #include <map>
 #include <string>
-#include <fcgiapp.h>
 #include <memory>
 #include <algorithm>
 #include <errno.h>
@@ -36,6 +35,7 @@
 #include "rate_limiter.hpp"
 #include "choose_formatter.hpp"
 #include "backend.hpp"
+#include "fcgi_request.hpp"
 #include "config.h"
 
 using std::runtime_error;
@@ -61,7 +61,7 @@ void
 respond_error(const http::exception &e, request &r) {
   logger::message(format("Returning with http error %1% with reason %2%") % e.code() %e.what());
 
-  const char *error_format = FCGX_GetParam("HTTP_X_ERROR_FORMAT", r.req.envp);
+  const char *error_format = r.get_param("HTTP_X_ERROR_FORMAT");
 
   ostringstream ostr;
   if (error_format && al::iequals(error_format, "xml")) {
@@ -82,13 +82,7 @@ respond_error(const http::exception &e, request &r) {
          << "\r\n";
   }
 
-  FCGX_PutS(ostr.str().c_str(), r.req.out);
-}
-
-bool
-get_env(const char *k, string &s) {
-  char *v = getenv(k);
-  return v == NULL ? false : (s = v, true);
+  r.put(ostr.str());
 }
 
 /**
@@ -152,25 +146,28 @@ process_get_request(request &req, routes &route,
   shared_ptr<http::encoding> encoding = get_encoding(req);
   
   // create the XML writer with the FCGI streams as output
-  shared_ptr<output_buffer> out = make_output_buffer(req);
+  shared_ptr<output_buffer> out = req.get_buffer();
   out = encoding->buffer(out);
   
   // create the correct mime type output formatter.
   shared_ptr<output_formatter> o_formatter = choose_formatter(req, responder, out);
   
   // get any CORS headers to return
-  string cors_headers = get_cors_headers(req);
+  string cors_headers = req.cors_headers();
   
   // TODO: use handler/responder to setup response headers.
   // write the response header
-  FCGX_FPrintF(req.req.out,
-	       "Status: 200 OK\r\n"
-	       "Content-Type: text/xml; charset=utf-8\r\n"
-	       "Content-Disposition: attachment; filename=\"map.osm\"\r\n"
-	       "Content-Encoding: %s\r\n"
-	       "Cache-Control: private, max-age=0, must-revalidate\r\n"
-	       "%s"
-	       "\r\n", encoding->name().c_str(), cors_headers.c_str());
+  {
+    ostringstream ostr;
+    ostr << "Status: 200 OK\r\n"
+            "Content-Type: text/xml; charset=utf-8\r\n"
+            "Content-Disposition: attachment; filename=\"map.osm\"\r\n"
+            "Content-Encoding: " << encoding->name() << "\r\n"
+            "Cache-Control: private, max-age=0, must-revalidate\r\n"
+            << cors_headers
+            << "\r\n";
+    req.put(ostr.str());
+  }
   
   try {
     // call to write the response
@@ -202,19 +199,20 @@ process_get_request(request &req, routes &route,
 boost::tuple<string, size_t>
 process_options_request(request &req) {
   static const string request_name = "OPTIONS";
-  const char *origin = FCGX_GetParam("HTTP_ORIGIN", req.req.envp);
-  const char *method = FCGX_GetParam("HTTP_ACCESS_CONTROL_REQUEST_METHOD", req.req.envp);
+  const char *origin = req.get_param("HTTP_ORIGIN");
+  const char *method = req.get_param("HTTP_ACCESS_CONTROL_REQUEST_METHOD");
 
   if (origin && strcasecmp(method, "GET") == 0) {
     // get the CORS headers to return
     string cors_headers = get_cors_headers(req);
 
     // write the response
-    FCGX_FPrintF(req.req.out,
-                 "Status: 200 OK\r\n"
-                 "Content-Type: text/plain\r\n"
-                 "%s"
-                 "\r\n\r\n", cors_headers.c_str());
+    req.put(
+      "Status: 200 OK\r\n"
+      "Content-Type: text/plain\r\n");
+    req.put(cors_headers);
+    req.put("\r\n\r\n");
+
   } else {
     throw http::method_not_allowed("Only the GET method is supported for "
                                    "map requests.");
@@ -233,23 +231,15 @@ process_requests(int socket, const po::variables_map &options) {
   if (options.count("logfile")) {
     logger::initialise(options["logfile"].as<string>());
   }
-
-  // initialise FCGI
-  if (FCGX_Init() != 0) {
-    throw runtime_error("Couldn't initialise FCGX library.");
-  }
-
+  
   // create the rate limiter
   rate_limiter limiter(options);
 
   // create the routes map (from URIs to handlers)
   routes route;
 
-  // create the request object for fcgi calls
-  request req;
-  if (FCGX_InitRequest(&req.req, socket, FCGI_FAIL_ACCEPT_ON_INTR) != 0) {
-    throw runtime_error("Couldn't initialise FCGX request structure.");
-  }
+  // create the request object (persists over several calls)
+  boost::scoped_ptr<request> req(new fcgi_request(socket));
 
   // create a factory for data selections - the mechanism for actually
   // getting at data.
@@ -269,87 +259,66 @@ process_requests(int socket, const po::variables_map &options) {
     }
 
     // get the next request
-    if (FCGX_Accept_r(&req.req) >= 0)
-    {
-      try {
-	// get the client IP address
-	string ip = fcgi_get_env(req, "REMOTE_ADDR");
-	pt::ptime start_time(pt::second_clock::local_time());
-	
-	// check whether the client is being rate limited
-	if (!limiter.check(ip)) {
-	  logger::message(format("Rate limiter rejected request from %1%") % ip);
-	  throw http::bandwidth_limit_exceeded("You have downloaded too much "
-					       "data. Please try again later.");
-	}
+    req->accept_r();
 
-        // get the request method
-        string method = fcgi_get_env(req, "REQUEST_METHOD");
-
-	// data returned from request methods
-	string request_name;
-	size_t bytes_written;
-
-        // process request
-        if (method == "GET") {
-	  boost::tie(request_name, bytes_written) = process_get_request(req, route, factory, ip);
-
-        } else if (method == "OPTIONS") {
-          boost::tie(request_name, bytes_written) = process_options_request(req);
-
-        } else {
-          throw http::method_not_allowed("Only the GET method is supported for "
-                                         "map requests.");
-        }
-
-	// update the rate limiter, if anything was written
-	if (bytes_written > 0) {
-	  limiter.update(ip, bytes_written);
-	}
-	
-	// log the completion time (note: this comes last to avoid
-	// logging twice when an error is thrown.)
-	pt::ptime end_time(pt::second_clock::local_time());
-	logger::message(format("Completed request for %1% from %2% in %3% ms returning %4% bytes") 
-			% request_name % ip % (end_time - start_time).total_milliseconds() % bytes_written);
-
-      } catch (const http::exception &e) {
-	// errors here occur before we've started writing the response
-	// so we can send something helpful back to the client.
-	respond_error(e, req);
-
-      } catch (const std::exception &e) {
-	// catch an error here to provide feedback to the user
-	respond_error(http::server_error(e.what()), req);
-	
-	// re-throw the exception for higher-level handling
-	throw;
+    try {
+      // get the client IP address
+      string ip = fcgi_get_env(*req, "REMOTE_ADDR");
+      pt::ptime start_time(pt::second_clock::local_time());
+      
+      // check whether the client is being rate limited
+      if (!limiter.check(ip)) {
+        logger::message(format("Rate limiter rejected request from %1%") % ip);
+        throw http::bandwidth_limit_exceeded("You have downloaded too much "
+                                             "data. Please try again later.");
       }
-
-    } else if (errno != EINTR) {
-       char err_buf[1024];
-       std::ostringstream out;
-
-       if (errno == ENOTSOCK) {
-          out << "FCGI port not set properly, please use the --port option "
-              << "(caused by ENOTSOCK).";
-
-       } else {
-          out << "error accepting request: ";
-          if (strerror_r(errno, err_buf, sizeof err_buf) == 0) {
-             out << err_buf;
-          } else {
-             out << "error encountered while getting error message";
-          }
-       }
-
-       throw runtime_error(out.str());
+      
+      // get the request method
+      string method = fcgi_get_env(*req, "REQUEST_METHOD");
+      
+      // data returned from request methods
+      string request_name;
+      size_t bytes_written;
+      
+      // process request
+      if (method == "GET") {
+        boost::tie(request_name, bytes_written) = process_get_request(*req, route, factory, ip);
+        
+      } else if (method == "OPTIONS") {
+        boost::tie(request_name, bytes_written) = process_options_request(*req);
+        
+      } else {
+        throw http::method_not_allowed("Only the GET method is supported for "
+                                       "map requests.");
+      }
+      
+      // update the rate limiter, if anything was written
+      if (bytes_written > 0) {
+        limiter.update(ip, bytes_written);
+      }
+      
+      // log the completion time (note: this comes last to avoid
+      // logging twice when an error is thrown.)
+      pt::ptime end_time(pt::second_clock::local_time());
+      logger::message(format("Completed request for %1% from %2% in %3% ms returning %4% bytes") 
+                      % request_name % ip % (end_time - start_time).total_milliseconds() % bytes_written);
+      
+    } catch (const http::exception &e) {
+      // errors here occur before we've started writing the response
+      // so we can send something helpful back to the client.
+      respond_error(e, *req);
+      
+    } catch (const std::exception &e) {
+      // catch an error here to provide feedback to the user
+      respond_error(http::server_error(e.what()), *req);
+      
+      // re-throw the exception for higher-level handling
+      throw;
     }
   }
 
   // finish up
-  FCGX_Finish_r(&req.req);
-  FCGX_Free(&req.req, true);
+  req->finish();
 }
 
 /**
@@ -427,7 +396,7 @@ main(int argc, char **argv) {
 
       path << ":" << options["port"].as<int>();
 
-      if ((socket = FCGX_OpenSocket(path.str().c_str(), 5)) < 0) {
+      if ((socket = fcgi_request::open_socket(path.str(), 5)) < 0) {
 	throw runtime_error("Couldn't open FCGX socket.");
       }
     } else {

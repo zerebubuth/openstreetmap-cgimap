@@ -9,7 +9,7 @@ using std::ostringstream;
 string
 fcgi_get_env(request &req, const char* name, const char* default_value) {
   assert(name);
-  const char* v = FCGX_GetParam(name, req.req.envp);
+  const char* v = req.get_param(name);
 
   // since the map script is so simple i'm just going to assume that
   // any time we fail to get an environment variable is a fatal error.
@@ -29,12 +29,12 @@ fcgi_get_env(request &req, const char* name, const char* default_value) {
 string
 get_query_string(request &req) {
   // try the query string that's supposed to be present first
-  const char *query_string = FCGX_GetParam("QUERY_STRING", req.req.envp);
+  const char *query_string = req.get_param("QUERY_STRING");
   
   // if that isn't present, then this may be being invoked as part of a
   // 404 handler, so look at the request uri instead.
   if ((query_string == NULL) || (strlen(query_string) == 0)) {
-    const char *request_uri = FCGX_GetParam("REQUEST_URI", req.req.envp);
+    const char *request_uri = req.get_param("REQUEST_URI");
 
     if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
       // fail. something has obviously gone massively wrong.
@@ -61,7 +61,7 @@ get_query_string(request &req) {
 
 std::string
 get_request_path(request &req) {
-  const char *request_uri = FCGX_GetParam("REQUEST_URI", req.req.envp);
+  const char *request_uri = req.get_param("REQUEST_URI");
   
   if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
     ostringstream ostr;
@@ -85,7 +85,7 @@ get_request_path(request &req) {
  */
 boost::shared_ptr<http::encoding>
 get_encoding(request &req) {
-  const char *accept_encoding = FCGX_GetParam("HTTP_ACCEPT_ENCODING", req.req.envp);
+  const char *accept_encoding = req.get_param("HTTP_ACCEPT_ENCODING");
 
   if (accept_encoding) {
      return http::choose_encoding(string(accept_encoding));
@@ -100,7 +100,7 @@ get_encoding(request &req) {
  */
 string
 get_cors_headers(request &req) {
-  const char *origin = FCGX_GetParam("HTTP_ORIGIN", req.req.envp);
+  const char *origin = req.get_param("HTTP_ORIGIN");
   ostringstream headers;
 
   if (origin) {
@@ -123,7 +123,7 @@ class fcgi_output_buffer
 public:
   virtual int write(const char *buffer, int len) {
     w += len;
-    return FCGX_PutStr(buffer, len, r.req.out);
+    return r.put(buffer, len);
   }
 
   virtual int close() {
@@ -139,7 +139,7 @@ public:
   virtual void flush() {
     // there's a note that says this causes too many writes and decreases 
     // efficiency, but we're only calling it once...
-    FCGX_FFlush(r.req.out);
+    r.flush();
   }
 
   virtual ~fcgi_output_buffer() {
