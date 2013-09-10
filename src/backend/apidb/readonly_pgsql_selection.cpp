@@ -21,7 +21,7 @@ using boost::shared_ptr;
 #define STRIDE (1000)
 
 namespace {
-std::string connect_db_str(const po::variables_map &options) {
+  std::string connect_db_str(const po::variables_map &options) {
   // build the connection string.
   std::ostringstream ostr;
   ostr << "dbname=" << options["dbname"].as<std::string>();
@@ -39,10 +39,10 @@ std::string connect_db_str(const po::variables_map &options) {
   }
 
   return ostr.str();
-}
+  }
 
-inline data_selection::visibility_t 
-check_table_visibility(pqxx::work &w, osm_id_t id, const char *table) {
+  inline data_selection::visibility_t
+  check_table_visibility(pqxx::work &w, osm_id_t id, const char *table) {
    stringstream query;
    query << "select visible from current_" << table << "s where id = " << id;
    pqxx::result res = w.exec(query);
@@ -56,10 +56,10 @@ check_table_visibility(pqxx::work &w, osm_id_t id, const char *table) {
    } else {
       return data_selection::non_exist;
    }	
-}
+  }
 
-inline int
-insert_results_of(pqxx::work &w, std::stringstream &query, set<osm_id_t> &elems) {
+  inline int
+  insert_results_of(pqxx::work &w, std::stringstream &query, set<osm_id_t> &elems) {
    pqxx::result res = w.exec(query);
 
    for (pqxx::result::const_iterator itr = res.begin(); 
@@ -68,9 +68,9 @@ insert_results_of(pqxx::work &w, std::stringstream &query, set<osm_id_t> &elems)
       elems.insert(id);
    }
    return res.affected_rows();
-}
+  }
 
-void extract_elem(const pqxx::result::tuple &row, element_info &elem, cache<osm_id_t, changeset> &changeset_cache) {
+  void extract_elem(const pqxx::result::tuple &row, element_info &elem, cache<osm_id_t, changeset> &changeset_cache) {
   elem.id = row["id"].as<osm_id_t>();
   elem.version = row["version"].as<int>();
   elem.timestamp = row["timestamp"].c_str();
@@ -81,26 +81,26 @@ void extract_elem(const pqxx::result::tuple &row, element_info &elem, cache<osm_
     elem.uid = cs->user_id;
     elem.display_name = cs->display_name;
   }
-}
+  }
 
-void extract_tags(const pqxx::result &res, tags_t &tags) {
+  void extract_tags(const pqxx::result &res, tags_t &tags) {
    tags.clear();
    for (pqxx::result::const_iterator itr = res.begin();
         itr != res.end(); ++itr) {
       tags.push_back(std::make_pair(std::string((*itr)["k"].c_str()),
                                     std::string((*itr)["v"].c_str())));
    }
-}
+  }
 
-void extract_nodes(const pqxx::result &res, nodes_t &nodes) {
+  void extract_nodes(const pqxx::result &res, nodes_t &nodes) {
    nodes.clear();
    for (pqxx::result::const_iterator itr = res.begin();
         itr != res.end(); ++itr) {
       nodes.push_back((*itr)[0].as<osm_id_t>());
    }
-}
+  }
 
-element_type type_from_name(const char *name) {
+  element_type type_from_name(const char *name) {
    element_type type;
 
    switch (name[0]) {
@@ -125,9 +125,9 @@ element_type type_from_name(const char *name) {
    }
 
    return type;
-}
+  }
 
-void extract_members(const pqxx::result &res, members_t &members) {
+  void extract_members(const pqxx::result &res, members_t &members) {
    member_info member;
    members.clear();
    for (pqxx::result::const_iterator itr = res.begin();
@@ -137,7 +137,7 @@ void extract_members(const pqxx::result &res, members_t &members) {
       member.role = (*itr)["member_role"].c_str();
       members.push_back(member);
    }
-}
+  }
 
 } // anonymous namespace
 
@@ -318,8 +318,7 @@ readonly_pgsql_selection::select_nodes(const std::list<osm_id_t> &ids) {
       query << ")";
       
       return insert_results_of(w, query, sel_nodes);
-   }
-   else {
+  } else {
       return 0;
    }
 }
@@ -336,8 +335,7 @@ readonly_pgsql_selection::select_ways(const std::list<osm_id_t> &ids) {
       logger::message(query.str());
       
       return insert_results_of(w, query, sel_ways);
-   }
-   else {
+  } else {
       return 0;
    }
 }
@@ -353,8 +351,7 @@ readonly_pgsql_selection::select_relations(const std::list<osm_id_t> &ids) {
       query << ")";
       
       return insert_results_of(w, query, sel_relations);
-   }
-   else {
+  } else {
       return 0;
    }
 }
