@@ -81,6 +81,22 @@ command line option to an environment variable append `CGIMAP_` to the option
 and capatalize it. For example, the option `--dbname` becomes the environment
 variable `CGIMAP_DBNAME`.
 
+Fcgi programs can be deployed with Apache using `mod_fastcgi_handler`,
+`mod_fcgid`, `mod_fastcgi`, and on recent versions `mod_proxy_fcgi`. A sample
+Apache configuration file that will work in conjunction with CGImap as a
+daemon is supplied in `scripts/cgibin.conf`. To use this on a Ubuntu-based
+system you need to copy the cofiguration to where Apache will read it and
+create an api directory:
+
+	sudo cp scripts/cgimap.conf /etc/apache2/sites-available/cgimap
+    sudo chmod 644 /etc/apache2/sites-available/cgimap
+    sudo chown root:root /etc/apache2/sites-available/cgimap
+	sudo mkdir /var/www/api
+    sudo a2ensite cgimap
+    sudo service apache2 restart
+
+The apache modules mod_proxy and mod_fastcgi_handler must also be enabled.
+
 Database Permissions
 --------------------
 
