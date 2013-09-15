@@ -497,10 +497,11 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
   // select nodes used by ways already in the working set
   m_connection.prepare("nodes_from_way_nodes",
     "INSERT INTO tmp_nodes "
-    "SELECT DISTINCT wn.node_id AS id "
-    "FROM current_way_nodes wn "
-    "WHERE wn.way_id IN (SELECT id FROM tmp_ways) "
-    "AND wn.node_id NOT IN (SELECT id FROM tmp_nodes)");
+      "SELECT DISTINCT wn.node_id AS id "
+        "FROM tmp_ways tw "
+          "JOIN current_way_nodes wn ON tw.id = wn.way_id "
+          "LEFT JOIN tmp_nodes tn ON wn.node_id = tn.id "
+        "WHERE tn.id IS NULL");
 
   // selecting relations which have members which are already in
   // the working set.
