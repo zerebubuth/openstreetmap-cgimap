@@ -358,7 +358,7 @@ readonly_pgsql_selection::select_relations(const std::list<osm_id_t> &ids) {
 
 int
 readonly_pgsql_selection::select_nodes_from_bbox(const bbox &bounds, int max_nodes) {
-  const set<unsigned int> tiles = 
+  const std::list<osm_id_t> tiles = 
     tiles_for_area(bounds.minlat, bounds.minlon, 
                    bounds.maxlat, bounds.maxlon);
   
@@ -370,7 +370,7 @@ readonly_pgsql_selection::select_nodes_from_bbox(const bbox &bounds, int max_nod
   stringstream query;
   query << "select id from current_nodes where ((";
   unsigned int first_id = 0, last_id = 0;
-  for (set<unsigned int>::const_iterator itr = tiles.begin();
+  for (std::list<osm_id_t>::const_iterator itr = tiles.begin();
        itr != tiles.end(); ++itr) {
     if (first_id == 0) {
       last_id = first_id = *itr;

@@ -1,9 +1,10 @@
 #ifndef QUAD_TILE_HPP
 #define QUAD_TILE_HPP
 
-#include <set>
+#include <list>
+#include "types.hpp"
 
-std::set<unsigned int> 
+std::list<osm_id_t> 
 tiles_for_area(double minlat, double minlon, 
 	       double maxlat, double maxlon);
 

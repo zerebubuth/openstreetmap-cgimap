@@ -154,6 +154,7 @@ writeable_pgsql_selection::writeable_pgsql_selection(pqxx::connection &conn, cac
   w.exec("CREATE TEMPORARY TABLE tmp_nodes (id bigint PRIMARY KEY)");
   w.exec("CREATE TEMPORARY TABLE tmp_ways (id bigint PRIMARY KEY)");
   w.exec("CREATE TEMPORARY TABLE tmp_relations (id bigint PRIMARY KEY)");
+  m_first_query = true;
 }
 
 writeable_pgsql_selection::~writeable_pgsql_selection() {
@@ -224,58 +225,76 @@ writeable_pgsql_selection::write_relations(output_formatter &formatter) {
 
 int 
 writeable_pgsql_selection::num_nodes() {
-  pqxx::result res = w.prepared("count_nodes").exec();
-  // count should always return a single row, right?
-  return res[0][0].as<int>();
+  if (m_first_query) {
+    return 0;
+  } else {
+    pqxx::result res = w.prepared("count_nodes").exec();
+    // count should always return a single row, right?
+    return res[0][0].as<int>();
+  }
 }
 
 int 
 writeable_pgsql_selection::num_ways() {
-  pqxx::result res = w.prepared("count_ways").exec();
-  // count should always return a single row, right?
-  return res[0][0].as<int>();
+  if (m_first_query) {
+    return 0;
+  } else {
+    pqxx::result res = w.prepared("count_ways").exec();
+    // count should always return a single row, right?
+    return res[0][0].as<int>();
+  }
 }
 
 int 
 writeable_pgsql_selection::num_relations() {
-  pqxx::result res = w.prepared("count_relations").exec();
-  // count should always return a single row, right?
-  return res[0][0].as<int>();
+  if (m_first_query) {
+    return 0;
+  } else {
+    pqxx::result res = w.prepared("count_relations").exec();
+    // count should always return a single row, right?
+    return res[0][0].as<int>();
+  }
 }
 
 data_selection::visibility_t 
 writeable_pgsql_selection::check_node_visibility(osm_id_t id) {
+  m_first_query = false;
   return check_table_visibility(w, id, "visible_node");
 }
 
 data_selection::visibility_t 
 writeable_pgsql_selection::check_way_visibility(osm_id_t id) {
+  m_first_query = false;
   return check_table_visibility(w, id, "visible_way");
 }
 
 data_selection::visibility_t 
 writeable_pgsql_selection::check_relation_visibility(osm_id_t id) {
+  m_first_query = false;
   return check_table_visibility(w, id, "visible_relation");
 }
 
 int
 writeable_pgsql_selection::select_nodes(const std::list<osm_id_t> &ids) {
+  m_first_query = false;
   return w.prepared("add_nodes_list")(ids).exec().affected_rows();
 }
 
 int
 writeable_pgsql_selection::select_ways(const std::list<osm_id_t> &ids) {
+  m_first_query = false;
   return w.prepared("add_ways_list")(ids).exec().affected_rows();
 }
 
 int
 writeable_pgsql_selection::select_relations(const std::list<osm_id_t> &ids) {
+  m_first_query = false;
   return w.prepared("add_relations_list")(ids).exec().affected_rows();
 }
 
 int
 writeable_pgsql_selection::select_nodes_from_bbox(const bbox &bounds, int max_nodes) {
-  const set<unsigned int> tiles =
+  const list<osm_id_t> tiles =
     tiles_for_area(bounds.minlat, bounds.minlon, 
                    bounds.maxlat, bounds.maxlon);
    
@@ -283,45 +302,18 @@ writeable_pgsql_selection::select_nodes_from_bbox(const bbox &bounds, int max_no
   // making it do seq scans all the time on smaug...
   w.exec("set enable_mergejoin=false");
   w.exec("set enable_hashjoin=false");
-   
-  stringstream query;
-  query << "insert into tmp_nodes "
-        << "select id from current_nodes where ((";
-  unsigned int first_id = 0, last_id = 0;
-  for (set<unsigned int>::const_iterator itr = tiles.begin();
-       itr != tiles.end(); ++itr) {
-    if (first_id == 0) {
-      last_id = first_id = *itr;
-    } else if (*itr == last_id + 1) {
-      ++last_id;
-    } else {
-      if (last_id == first_id) {
-        query << "tile = " << last_id << " or ";
-      } else {
-        query << "tile between " << first_id
-              << " and " << last_id << " or ";
-      }
-      last_id = first_id = *itr;
-    }
-  }
-  if (last_id == first_id) {
-    query << "tile = " << last_id << ") ";
-  } else {
-    query << "tile between " << first_id
-          << " and " << last_id << ") ";
-  }
-  query << "and latitude between " << int(bounds.minlat * SCALE)
-        << " and " << int(bounds.maxlat * SCALE)
-        << " and longitude between " << int(bounds.minlon * SCALE)
-        << " and " << int(bounds.maxlon * SCALE)
-        << ") and (visible = true) and (id not in (select id from tmp_nodes))"
-        << " limit " << (max_nodes + 1); // limit here as a quick hack to reduce load...
 
   logger::message("Filling tmp_nodes from bbox");
-  logger::message(query.str());
+  // optimise for the case where this is the first query run.
+  // apparently it's significantly faster without the check.
+  const std::string statement = m_first_query ? "visible_node_in_bbox_unchecked" : "visible_node_in_bbox";
+  m_first_query = false;
 
-  // assume this throws if it fails?
-  return w.exec(query).affected_rows();
+  return w.prepared(statement)
+    (tiles)
+    (int(bounds.minlat * SCALE))(int(bounds.maxlat * SCALE))
+    (int(bounds.minlon * SCALE))(int(bounds.maxlon * SCALE))
+    (max_nodes + 1).exec().affected_rows();
 }
 
 void 
@@ -329,6 +321,7 @@ writeable_pgsql_selection::select_nodes_from_relations() {
   logger::message("Filling tmp_nodes (from relations)");
 
   w.prepared("nodes_from_relations").exec();
+  m_first_query = false;
 }
 
 void 
@@ -336,12 +329,14 @@ writeable_pgsql_selection::select_ways_from_nodes() {
   logger::message("Filling tmp_ways (from nodes)");
 
   w.prepared("ways_from_nodes").exec();
+  m_first_query = false;
 }
 
 void 
 writeable_pgsql_selection::select_ways_from_relations() {
   logger::message("Filling tmp_ways (from relations)");
   w.prepared("ways_from_relations").exec();
+  m_first_query = false;
 }
 
 void 
@@ -349,26 +344,31 @@ writeable_pgsql_selection::select_relations_from_ways() {
   logger::message("Filling tmp_relations (from ways)");
 
   w.prepared("relations_from_ways").exec();
+  m_first_query = false;
 }
 
 void 
 writeable_pgsql_selection::select_nodes_from_way_nodes() {
   w.prepared("nodes_from_way_nodes").exec();
+  m_first_query = false;
 }
 
 void 
 writeable_pgsql_selection::select_relations_from_nodes() {
   w.prepared("relations_from_nodes").exec();
+  m_first_query = false;
 }
 
 void 
 writeable_pgsql_selection::select_relations_from_relations() {
   w.prepared("relations_from_relations").exec();
+  m_first_query = false;
 }
 
 void 
 writeable_pgsql_selection::select_relations_members_of_relations() {
   w.prepared("relation_members_of_relations").exec();
+  m_first_query = false;
 }
 
 writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
@@ -386,6 +386,30 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
   m_cache_connection.set_noticer(std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
 
   logger::message("Preparing prepared statements.");
+
+  // select nodes with bbox
+  // version with exclusion for existing IDs in tmp table
+  m_connection.prepare("visible_node_in_bbox",
+    "INSERT INTO tmp_nodes "
+      "SELECT id "
+        "FROM current_nodes WHERE ("
+          "tile = ANY($1) AND "
+          "latitude BETWEEN $2 AND $3 AND "
+          "longitude BETWEEN $4 AND $5"
+        ") AND (visible = true) AND (id NOT IN (SELECT id FROM tmp_nodes)) "
+      "LIMIT $6")
+    ("bigint[]")("integer")("integer")("integer")("integer")("integer");
+  // version which ignores any existing tmp_nodes IDs
+  m_connection.prepare("visible_node_in_bbox_unchecked",
+    "INSERT INTO tmp_nodes "
+      "SELECT id "
+        "FROM current_nodes WHERE ("
+          "tile = ANY($1) AND "
+          "latitude BETWEEN $2 AND $3 AND "
+          "longitude BETWEEN $4 AND $5"
+        ") AND (visible = true) "
+      "LIMIT $6")
+    ("bigint[]")("integer")("integer")("integer")("integer")("integer");
 
   // selecting node, way and relation visibility information
   m_connection.prepare("visible_node",
