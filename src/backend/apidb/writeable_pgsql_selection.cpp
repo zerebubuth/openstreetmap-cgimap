@@ -524,10 +524,11 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
   m_connection.prepare("relations_from_relations",
     "INSERT INTO tmp_relations "
       "SELECT DISTINCT rm.relation_id "
-        "FROM current_relation_members rm "
-        "WHERE rm.member_type='Relation' "
-          "AND rm.member_id IN (SELECT id FROM tmp_relations) "
-          "AND rm.relation_id NOT IN (SELECT id FROM tmp_relations)");
+        "FROM tmp_relations tr "
+          "JOIN current_relation_members rm "
+            "ON (tr.id = rm.member_id AND rm.member_type='Relation') "
+          "LEFT JOIN tmp_relations xr ON rm.relation_id = xr.id "
+        "WHERE xr.id IS NULL");
 }
 
 writeable_pgsql_selection::factory::~factory() {
