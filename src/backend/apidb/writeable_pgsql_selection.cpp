@@ -451,10 +451,11 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
     ("bigint[]");
   m_connection.prepare("add_ways_list",
     "INSERT INTO tmp_ways "
-      "SELECT id "
-        "FROM current_ways "
-        "WHERE id = ANY($1) "
-          "AND id NOT IN (SELECT id FROM tmp_ways)")
+      "SELECT w.id AS id "
+        "FROM current_ways w "
+          "LEFT JOIN tmp_ways tw ON w.id = tw.id "
+        "WHERE w.id = ANY($1) "
+          "AND tw.id IS NULL")
     ("bigint[]");
   m_connection.prepare("add_relations_list",
     "INSERT INTO tmp_relations "
