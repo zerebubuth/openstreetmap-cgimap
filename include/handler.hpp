@@ -18,7 +18,7 @@ class responder {
 public:
 	 responder(mime::type);
   virtual ~responder();
-  virtual void write(boost::shared_ptr<output_formatter> f) = 0;
+  virtual void write(boost::shared_ptr<output_formatter> f, const std::string &generator) = 0;
 
 	 mime::type resource_type() const;
 

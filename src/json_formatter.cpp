@@ -48,11 +48,11 @@ json_formatter::write_tags(const tags_t &tags) {
 }
 
 void 
-json_formatter::start_document() {
+json_formatter::start_document(const std::string &generator) {
   writer->start_object();
 
   writer->object_key("version");     writer->entry_string("0.6");
-  writer->object_key("generator");   writer->entry_string(PACKAGE_STRING);
+  writer->object_key("generator");   writer->entry_string(generator);
   writer->object_key("copyright");   writer->entry_string("OpenStreetMap and contributors");
   writer->object_key("attribution"); writer->entry_string("http://www.openstreetmap.org/copyright");
   writer->object_key("license");     writer->entry_string("http://opendatacommons.org/licenses/odbl/1-0/");

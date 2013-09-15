@@ -221,7 +221,7 @@ process_not_allowed(FCGX_Request &request) {
 boost::tuple<string, size_t>
 process_get_request(FCGX_Request &request, routes &route, 
                     boost::shared_ptr<data_selection::factory> factory,
-		    const string &ip) {
+		    const string &ip, const string &generator) {
   // figure how to handle the request
   handler_ptr_t handler = route(request);
   
@@ -264,7 +264,7 @@ process_get_request(FCGX_Request &request, routes &route,
   
   try {
     // call to write the response
-    responder->write(o_formatter);
+    responder->write(o_formatter, generator);
     
     // make sure all bytes have been written. note that the writer can
     // throw an exception here, leaving the xml document in a 
@@ -357,11 +357,28 @@ process_options_request(FCGX_Request &request) {
 }
 
 /**
+ * make a string to be used as the generator header
+ * attribute of output files. includes some instance
+ * identifying information.
+ */
+string get_generator_string() {
+  char hostname[HOST_NAME_MAX];
+  if (gethostname(hostname, sizeof hostname) != 0) {
+    throw std::runtime_error("gethostname returned error.");
+  }
+  
+  return (boost::format(PACKAGE_STRING " (%1% %2%)") 
+          % getpid() % hostname).str();
+}
+
+/**
  * loop processing fasctgi requests until are asked to stop by
  * somebody sending us a TERM signal.
  */
 static void
 process_requests(int socket, const po::variables_map &options) {
+  // generator string - identifies the cgimap instance.
+  string generator = get_generator_string();
   // open any log file
   if (options.count("logfile")) {
     logger::initialise(options["logfile"].as<string>());
@@ -425,7 +442,7 @@ process_requests(int socket, const po::variables_map &options) {
 
         // process request
         if (method == "GET") {
-          boost::tie(request_name, bytes_written) = process_get_request(request, route, factory, ip);
+          boost::tie(request_name, bytes_written) = process_get_request(request, route, factory, ip, generator);
         } else if (method == "HEAD") {
           boost::tie(request_name, bytes_written) = process_head_request(request, route, factory, ip);
         } else if (method == "OPTIONS") {

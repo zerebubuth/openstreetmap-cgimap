@@ -40,10 +40,10 @@ mime::type xml_formatter::mime_type() const {
 }
 
 void
-xml_formatter::start_document() {
+xml_formatter::start_document(const std::string &generator) {
   writer->start("osm");
   writer->attribute("version", string("0.6"));
-  writer->attribute("generator", string(PACKAGE_STRING));
+  writer->attribute("generator", generator);
 
   writer->attribute("copyright", string("OpenStreetMap and contributors"));
   writer->attribute("attribution", string("http://www.openstreetmap.org/copyright"));

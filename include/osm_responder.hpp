@@ -31,7 +31,7 @@ public:
 
 	 // writes whatever is in the tmp_nodes/ways/relations tables to the given 
 	 // formatter.
-  void write(boost::shared_ptr<output_formatter> f);
+  void write(boost::shared_ptr<output_formatter> f, const std::string &generator);
 
 protected:
 	 // current selection of elements to be written out

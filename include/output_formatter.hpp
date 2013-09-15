@@ -51,8 +51,9 @@ struct output_formatter {
   virtual mime::type mime_type() const = 0;
 
   // called once to start the document - this will be the first call
-  // to this object after construction.
-  virtual void start_document() = 0;
+  // to this object after construction. the string passed will be
+  // used as the "generator" header attribute.
+  virtual void start_document(const std::string &generator) = 0;
 
   // called once to end the document - there will be no calls after this
   // one. this will be called, even if an error has occurred.

@@ -24,7 +24,7 @@ public:
 
   mime::type mime_type() const;
 
-  void start_document();
+  void start_document(const std::string &generator);
   void end_document();
   void write_bounds(const bbox &bounds);
   void start_element_type(element_type type, size_t num_elements); 
