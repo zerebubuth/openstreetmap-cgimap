@@ -443,10 +443,11 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
   // selecting a set of nodes as a list
   m_connection.prepare("add_nodes_list",
     "INSERT INTO tmp_nodes "
-      "SELECT id "
-        "FROM current_nodes "
-        "WHERE id = ANY($1) "
-          "AND id NOT IN (SELECT id FROM tmp_nodes)")
+      "SELECT n.id AS id "
+        "FROM current_nodes n "
+          "LEFT JOIN tmp_nodes tn ON n.id = tn.id "
+        "WHERE n.id = ANY($1) "
+          "AND tn.id IS NULL")
     ("bigint[]");
   m_connection.prepare("add_ways_list",
     "INSERT INTO tmp_ways "
