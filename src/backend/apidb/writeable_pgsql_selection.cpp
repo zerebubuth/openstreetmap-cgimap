@@ -443,87 +443,98 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
   // selecting a set of nodes as a list
   m_connection.prepare("add_nodes_list",
     "INSERT INTO tmp_nodes "
-      "SELECT id "
-        "FROM current_nodes "
-        "WHERE id = ANY($1) "
-          "AND id NOT IN (SELECT id FROM tmp_nodes)")
+      "SELECT n.id AS id "
+        "FROM current_nodes n "
+          "LEFT JOIN tmp_nodes tn ON n.id = tn.id "
+        "WHERE n.id = ANY($1) "
+          "AND tn.id IS NULL")
     ("bigint[]");
   m_connection.prepare("add_ways_list",
     "INSERT INTO tmp_ways "
-      "SELECT id "
-        "FROM current_ways "
-        "WHERE id = ANY($1) "
-          "AND id NOT IN (SELECT id FROM tmp_ways)")
+      "SELECT w.id AS id "
+        "FROM current_ways w "
+          "LEFT JOIN tmp_ways tw ON w.id = tw.id "
+        "WHERE w.id = ANY($1) "
+          "AND tw.id IS NULL")
     ("bigint[]");
   m_connection.prepare("add_relations_list",
     "INSERT INTO tmp_relations "
-      "SELECT id "
-        "FROM current_relations "
-        "WHERE id = ANY($1) "
-          "AND id NOT IN (SELECT id FROM tmp_relations)")
+      "SELECT r.id AS id "
+        "FROM current_relations r "
+          "LEFT JOIN tmp_relations tr ON r.id = tr.id "
+        "WHERE r.id = ANY($1) "
+          "AND tr.id IS NULL")
     ("bigint[]");
 
   // queries for filling elements which are used as members in relations
   m_connection.prepare("nodes_from_relations",
     "INSERT INTO tmp_nodes "
       "SELECT DISTINCT rm.member_id AS id "
-        "FROM current_relation_members rm "
-          "JOIN tmp_relations tr ON rm.relation_id = tr.id "
+        "FROM tmp_relations tr "
+          "JOIN current_relation_members rm ON rm.relation_id = tr.id "
+          "LEFT JOIN tmp_nodes tn ON rm.member_id = tn.id "
         "WHERE rm.member_type='Node' "
-          "AND rm.member_id NOT IN (SELECT id FROM tmp_nodes)");
+          "AND tn.id IS NULL");
   m_connection.prepare("ways_from_relations",
     "INSERT INTO tmp_ways "
       "SELECT DISTINCT rm.member_id AS id "
-        "FROM current_relation_members rm "
-          "JOIN tmp_relations tr ON rm.relation_id = tr.id "
+        "FROM tmp_relations tr "
+          "JOIN current_relation_members rm ON rm.relation_id = tr.id "
+          "LEFT JOIN tmp_ways tw ON rm.member_id = tw.id "
         "WHERE rm.member_type='Way' "
-          "AND rm.member_id NOT IN (SELECT id FROM tmp_ways)");
+          "AND tw.id IS NULL");
   m_connection.prepare("relation_members_of_relations",
     "INSERT INTO tmp_relations "
       "SELECT DISTINCT rm.member_id AS id "
-        "FROM current_relation_members rm "
-          "JOIN tmp_relations tr ON rm.relation_id = tr.id "
+        "FROM tmp_relations tr "
+          "JOIN current_relation_members rm ON rm.relation_id = tr.id "
+          "LEFT JOIN tmp_relations xr ON rm.member_id = xr.id "
         "WHERE rm.member_type='Relation' "
-          "AND rm.member_id NOT IN (SELECT id FROM tmp_relations)");
+          "AND xr.id IS NULL");
 
   // select ways which use nodes already in the working set
   m_connection.prepare("ways_from_nodes",
     "INSERT INTO tmp_ways "
-      "SELECT DISTINCT wn.way_id "
+      "SELECT DISTINCT wn.way_id AS id "
         "FROM current_way_nodes wn "
           "JOIN tmp_nodes tn ON wn.node_id = tn.id "
-            "AND wn.way_id NOT IN (SELECT id FROM tmp_ways)");
+          "LEFT JOIN tmp_ways tw ON wn.way_id = tw.id "
+        "WHERE tw.id IS NULL");
   // select nodes used by ways already in the working set
   m_connection.prepare("nodes_from_way_nodes",
     "INSERT INTO tmp_nodes "
-    "SELECT DISTINCT wn.node_id AS id "
-    "FROM current_way_nodes wn "
-    "WHERE wn.way_id IN (SELECT id FROM tmp_ways) "
-    "AND wn.node_id NOT IN (SELECT id FROM tmp_nodes)");
+      "SELECT DISTINCT wn.node_id AS id "
+        "FROM tmp_ways tw "
+          "JOIN current_way_nodes wn ON tw.id = wn.way_id "
+          "LEFT JOIN tmp_nodes tn ON wn.node_id = tn.id "
+        "WHERE tn.id IS NULL");
 
   // selecting relations which have members which are already in
   // the working set.
   m_connection.prepare("relations_from_nodes",
     "INSERT INTO tmp_relations "
       "SELECT DISTINCT rm.relation_id "
-        "FROM current_relation_members rm "
-        "WHERE rm.member_type='Node' "
-          "AND rm.member_id IN (SELECT id FROM tmp_nodes) "
-          "AND rm.relation_id NOT IN (SELECT id FROM tmp_relations)");
+        "FROM tmp_nodes tn "
+          "JOIN current_relation_members rm "
+            "ON (tn.id = rm.member_id AND rm.member_type='Node') "
+          "LEFT JOIN tmp_relations tr ON rm.relation_id = tr.id "
+        "WHERE tr.id IS NULL");
   m_connection.prepare("relations_from_ways",
     "INSERT INTO tmp_relations "
-      "SELECT DISTINCT rm.relation_id "
-        "FROM current_relation_members rm "
-        "WHERE rm.member_type='Way' "
-          "AND rm.member_id IN (SELECT id FROM tmp_ways) "
-          "AND rm.relation_id NOT IN (SELECT id FROM tmp_relations)");
+      "SELECT DISTINCT rm.relation_id AS id "
+        "FROM tmp_ways tw "
+          "JOIN current_relation_members rm "
+            "ON (tw.id = rm.member_id AND rm.member_type='Way') "
+          "LEFT JOIN tmp_relations tr ON rm.relation_id = tr.id "
+        "WHERE tr.id IS NULL");
   m_connection.prepare("relations_from_relations",
     "INSERT INTO tmp_relations "
       "SELECT DISTINCT rm.relation_id "
-        "FROM current_relation_members rm "
-        "WHERE rm.member_type='Relation' "
-          "AND rm.member_id IN (SELECT id FROM tmp_relations) "
-          "AND rm.relation_id NOT IN (SELECT id FROM tmp_relations)");
+        "FROM tmp_relations tr "
+          "JOIN current_relation_members rm "
+            "ON (tr.id = rm.member_id AND rm.member_type='Relation') "
+          "LEFT JOIN tmp_relations xr ON rm.relation_id = xr.id "
+        "WHERE xr.id IS NULL");
 }
 
 writeable_pgsql_selection::factory::~factory() {
