@@ -459,10 +459,11 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
     ("bigint[]");
   m_connection.prepare("add_relations_list",
     "INSERT INTO tmp_relations "
-      "SELECT id "
-        "FROM current_relations "
-        "WHERE id = ANY($1) "
-          "AND id NOT IN (SELECT id FROM tmp_relations)")
+      "SELECT r.id AS id "
+        "FROM current_relations r "
+          "LEFT JOIN tmp_relations tr ON r.id = tr.id "
+        "WHERE r.id = ANY($1) "
+          "AND tr.id IS NULL")
     ("bigint[]");
 
   // queries for filling elements which are used as members in relations
