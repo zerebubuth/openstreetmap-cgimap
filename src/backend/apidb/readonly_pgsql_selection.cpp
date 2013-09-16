@@ -42,10 +42,8 @@ std::string connect_db_str(const po::variables_map &options) {
 }
 
 inline data_selection::visibility_t
-check_table_visibility(pqxx::work &w, osm_id_t id, const char *table) {
-  stringstream query;
-  query << "select visible from current_" << table << "s where id = " << id;
-  pqxx::result res = w.exec(query);
+check_table_visibility(pqxx::work &w, osm_id_t id, const std::string &prepared_name) {
+  pqxx::result res = w.prepared(prepared_name)(id).exec();
   
   if (res.size() > 0) {
     if (res[0][0].as<bool>()) {
@@ -178,7 +176,7 @@ readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
         extract_elem(*itr, elem, cc);
         lon = double((*itr)["longitude"].as<int64_t>()) / (SCALE);
         lat = double((*itr)["latitude"].as<int64_t>()) / (SCALE);
-        extract_tags(w.exec("select k, v from current_node_tags where node_id=" + pqxx::to_string(elem.id)), tags);
+        extract_tags(w.prepared("extract_node_tags")(elem.id).exec(), tags);
         formatter.write_node(elem, lon, lat, tags);
       }
       
@@ -220,9 +218,8 @@ readonly_pgsql_selection::write_ways(output_formatter &formatter) {
       for (pqxx::result::const_iterator itr = ways.begin(); 
            itr != ways.end(); ++itr) {
         extract_elem(*itr, elem, cc);
-        extract_nodes(w.exec("select node_id from current_way_nodes where way_id=" + 
-                             pqxx::to_string(elem.id) + " order by sequence_id asc"), nodes);
-        extract_tags(w.exec("select k, v from current_way_tags where way_id=" + pqxx::to_string(elem.id)), tags);
+        extract_nodes(w.prepared("extract_way_nds")(elem.id).exec(), nodes);
+        extract_tags(w.prepared("extract_way_tags")(elem.id).exec(), tags);
         formatter.write_way(elem, nodes, tags);
       }
       
@@ -261,10 +258,8 @@ readonly_pgsql_selection::write_relations(output_formatter &formatter) {
       for (pqxx::result::const_iterator itr = relations.begin(); 
            itr != relations.end(); ++itr) {
         extract_elem(*itr, elem, cc);
-        extract_members(w.exec("select member_type, member_id, member_role from "
-                               "current_relation_members where relation_id=" + 
-                               pqxx::to_string(elem.id) + " order by sequence_id asc"), members);
-        extract_tags(w.exec("select k, v from current_relation_tags where relation_id=" + pqxx::to_string(elem.id)), tags);
+        extract_members(w.prepared("extract_relation_members")(elem.id).exec(), members);
+        extract_tags(w.prepared("extract_relation_tags")(elem.id).exec(), tags);
         formatter.write_relation(elem, members, tags);
       }
       
@@ -294,17 +289,17 @@ readonly_pgsql_selection::num_relations() {
 
 data_selection::visibility_t 
 readonly_pgsql_selection::check_node_visibility(osm_id_t id) {
-  return check_table_visibility(w, id, "node");
+  return check_table_visibility(w, id, "visible_node");
 }
 
 data_selection::visibility_t 
 readonly_pgsql_selection::check_way_visibility(osm_id_t id) {
-  return check_table_visibility(w, id, "way");
+  return check_table_visibility(w, id, "visible_way");
 }
 
 data_selection::visibility_t 
 readonly_pgsql_selection::check_relation_visibility(osm_id_t id) {
-  return check_table_visibility(w, id, "relation");
+  return check_table_visibility(w, id, "visible_relation");
 }
 
 int
@@ -524,6 +519,38 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
   // ignore notice messages
   m_connection.set_noticer(std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
   m_cache_connection.set_noticer(std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
+
+  logger::message("Preparing prepared statements.");
+
+  // selecting node, way and relation visibility information
+  m_connection.prepare("visible_node",
+    "SELECT visible FROM current_nodes WHERE id = $1")("bigint");
+  m_connection.prepare("visible_way",
+    "SELECT visible FROM current_ways WHERE id = $1")("bigint");
+  m_connection.prepare("visible_relation",
+    "SELECT visible FROM current_relations WHERE id = $1")("bigint");
+
+  // extraction functions for child information
+  m_connection.prepare("extract_way_nds",
+    "SELECT node_id "
+      "FROM current_way_nodes "
+      "WHERE way_id=$1 "
+      "ORDER BY sequence_id ASC")
+    ("bigint");
+  m_connection.prepare("extract_relation_members",
+    "SELECT member_type, member_id, member_role "
+      "FROM current_relation_members "
+      "WHERE relation_id=$1 "
+      "ORDER BY sequence_id ASC")
+    ("bigint");
+
+  // extraction functions for tags
+  m_connection.prepare("extract_node_tags",
+    "SELECT k, v FROM current_node_tags WHERE node_id=$1")("bigint");
+  m_connection.prepare("extract_way_tags",
+    "SELECT k, v FROM current_way_tags WHERE way_id=$1")("bigint");
+  m_connection.prepare("extract_relation_tags",
+    "SELECT k, v FROM current_relation_tags WHERE relation_id=$1")("bigint");
 }
 
 readonly_pgsql_selection::factory::~factory() {
