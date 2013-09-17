@@ -437,6 +437,8 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
         "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp "
       "FROM current_relations r "
         "JOIN tmp_relations tr ON tr.id=r.id");
+
+  // extraction functions for child information
   m_connection.prepare("extract_way_nds",
     "SELECT node_id "
       "FROM current_way_nodes "
@@ -449,6 +451,8 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       "WHERE relation_id=$1 "
       "ORDER BY sequence_id ASC")
     ("bigint");
+
+  // extraction functions for tags
   m_connection.prepare("extract_node_tags",
     "SELECT k, v FROM current_node_tags WHERE node_id=$1")("bigint");
   m_connection.prepare("extract_way_tags",
