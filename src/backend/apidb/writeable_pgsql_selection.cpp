@@ -303,10 +303,15 @@ writeable_pgsql_selection::select_nodes_from_bbox(const bbox &bounds, int max_no
   logger::message("Filling tmp_nodes from bbox");
   // optimise for the case where this is the first query run.
   // apparently it's significantly faster without the check.
-  const std::string statement = m_tables_empty ? "visible_node_in_bbox_unchecked" : "visible_node_in_bbox";
+  if (!m_tables_empty) {
+    throw std::runtime_error("Filling tmp_nodes, but some content already present. "
+                             "This violates a design assumption, and is a bug. "
+                             "Please report this to "
+                             "https://github.com/zerebubuth/openstreetmap-cgimap/issues");
+  }
   m_tables_empty = false;
 
-  return w.prepared(statement)
+  return w.prepared("visible_node_in_bbox")
     (tiles)
     (int(bounds.minlat * SCALE))(int(bounds.maxlat * SCALE))
     (int(bounds.minlon * SCALE))(int(bounds.maxlon * SCALE))
@@ -375,19 +380,13 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
   logger::message("Preparing prepared statements.");
 
   // select nodes with bbox
-  // version with exclusion for existing IDs in tmp table
-  m_connection.prepare("visible_node_in_bbox",
-    "INSERT INTO tmp_nodes "
-      "SELECT id "
-        "FROM current_nodes WHERE ("
-          "tile = ANY($1) AND "
-          "latitude BETWEEN $2 AND $3 AND "
-          "longitude BETWEEN $4 AND $5"
-        ") AND (visible = true) AND (id NOT IN (SELECT id FROM tmp_nodes)) "
-      "LIMIT $6")
-    ("bigint[]")("integer")("integer")("integer")("integer")("integer");
   // version which ignores any existing tmp_nodes IDs
-  m_connection.prepare("visible_node_in_bbox_unchecked",
+  //
+  // note that we make the assumption that when this is executed
+  // there are no existing nodes in the tmp_nodes table. there is
+  // a check to ensure this assumption is not violated
+  // (m_tables_empty).
+  m_connection.prepare("visible_node_in_bbox",
     "INSERT INTO tmp_nodes "
       "SELECT id "
         "FROM current_nodes WHERE ("
