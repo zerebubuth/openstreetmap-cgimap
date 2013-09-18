@@ -154,7 +154,7 @@ writeable_pgsql_selection::writeable_pgsql_selection(pqxx::connection &conn, cac
   w.exec("CREATE TEMPORARY TABLE tmp_nodes (id bigint PRIMARY KEY)");
   w.exec("CREATE TEMPORARY TABLE tmp_ways (id bigint PRIMARY KEY)");
   w.exec("CREATE TEMPORARY TABLE tmp_relations (id bigint PRIMARY KEY)");
-  m_first_query = true;
+  m_tables_empty = true;
 }
 
 writeable_pgsql_selection::~writeable_pgsql_selection() {
@@ -225,7 +225,7 @@ writeable_pgsql_selection::write_relations(output_formatter &formatter) {
 
 int 
 writeable_pgsql_selection::num_nodes() {
-  if (m_first_query) {
+  if (m_tables_empty) {
     return 0;
   } else {
     pqxx::result res = w.prepared("count_nodes").exec();
@@ -236,7 +236,7 @@ writeable_pgsql_selection::num_nodes() {
 
 int 
 writeable_pgsql_selection::num_ways() {
-  if (m_first_query) {
+  if (m_tables_empty) {
     return 0;
   } else {
     pqxx::result res = w.prepared("count_ways").exec();
@@ -247,7 +247,7 @@ writeable_pgsql_selection::num_ways() {
 
 int 
 writeable_pgsql_selection::num_relations() {
-  if (m_first_query) {
+  if (m_tables_empty) {
     return 0;
   } else {
     pqxx::result res = w.prepared("count_relations").exec();
@@ -273,19 +273,19 @@ writeable_pgsql_selection::check_relation_visibility(osm_id_t id) {
 
 int
 writeable_pgsql_selection::select_nodes(const std::list<osm_id_t> &ids) {
-  m_first_query = false;
+  m_tables_empty = false;
   return w.prepared("add_nodes_list")(ids).exec().affected_rows();
 }
 
 int
 writeable_pgsql_selection::select_ways(const std::list<osm_id_t> &ids) {
-  m_first_query = false;
+  m_tables_empty = false;
   return w.prepared("add_ways_list")(ids).exec().affected_rows();
 }
 
 int
 writeable_pgsql_selection::select_relations(const std::list<osm_id_t> &ids) {
-  m_first_query = false;
+  m_tables_empty = false;
   return w.prepared("add_relations_list")(ids).exec().affected_rows();
 }
 
@@ -303,8 +303,8 @@ writeable_pgsql_selection::select_nodes_from_bbox(const bbox &bounds, int max_no
   logger::message("Filling tmp_nodes from bbox");
   // optimise for the case where this is the first query run.
   // apparently it's significantly faster without the check.
-  const std::string statement = m_first_query ? "visible_node_in_bbox_unchecked" : "visible_node_in_bbox";
-  m_first_query = false;
+  const std::string statement = m_tables_empty ? "visible_node_in_bbox_unchecked" : "visible_node_in_bbox";
+  m_tables_empty = false;
 
   return w.prepared(statement)
     (tiles)
