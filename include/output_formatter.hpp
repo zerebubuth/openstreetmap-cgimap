@@ -70,7 +70,7 @@ struct output_formatter {
   // start a type of element. this is called once for nodes, ways or 
   // relations. between the start and end called for a particular element
   // type only write_* functions for that type will be called.
-  virtual void start_element_type(element_type type, size_t num_elements) = 0; 
+  virtual void start_element_type(element_type type) = 0; 
 
   // end a type of element. this is called once for nodes, ways or relations 
   virtual void end_element_type(element_type type) = 0; 

@@ -164,7 +164,7 @@ snapshot_selection::write_nodes(output_formatter &formatter) {
   element_info elem;
   tags_t tags;
 
-  formatter.start_element_type(element_type_node, num_nodes());
+  formatter.start_element_type(element_type_node);
   pqxx::result nodes = w.prepared("extract_nodes").exec();
   for (pqxx::result::const_iterator itr = nodes.begin(); 
        itr != nodes.end(); ++itr) {
@@ -189,7 +189,7 @@ snapshot_selection::write_ways(output_formatter &formatter) {
   nodes_t nodes;
   tags_t tags;
 
-  formatter.start_element_type(element_type_way, num_ways());
+  formatter.start_element_type(element_type_way);
   pqxx::result ways = w.prepared("extract_ways").exec();
   for (pqxx::result::const_iterator itr = ways.begin();
        itr != ways.end(); ++itr) {
@@ -208,7 +208,7 @@ snapshot_selection::write_relations(output_formatter &formatter) {
   members_t members;
   tags_t tags;
 
-  formatter.start_element_type(element_type_relation, num_relations());
+  formatter.start_element_type(element_type_relation);
   pqxx::result relations = w.prepared("extract_relations").exec();
   for (pqxx::result::const_iterator itr = relations.begin();
        itr != relations.end(); ++itr) {
@@ -218,27 +218,6 @@ snapshot_selection::write_relations(output_formatter &formatter) {
      formatter.write_relation(elem, members, tags);
   }
   formatter.end_element_type(element_type_relation);
-}
-
-int 
-snapshot_selection::num_nodes() {
-  pqxx::result res = w.prepared("count_nodes").exec();
-  // count should always return a single row, right?
-  return res[0][0].as<int>();
-}
-
-int 
-snapshot_selection::num_ways() {
-  pqxx::result res = w.prepared("count_ways").exec();
-  // count should always return a single row, right?
-  return res[0][0].as<int>();
-}
-
-int 
-snapshot_selection::num_relations() {
-  pqxx::result res = w.prepared("count_relations").exec();
-  // count should always return a single row, right?
-  return res[0][0].as<int>();
 }
 
 data_selection::visibility_t 
@@ -387,11 +366,6 @@ snapshot_selection::factory::factory(const po::variables_map &opts)
       "FROM tmp_relations "
       "WHERE id=$1")
       ("bigint");
-
-   // counting things which are in the working set
-  m_connection.prepare("count_nodes", "SELECT COUNT(*) FROM tmp_nodes");
-  m_connection.prepare("count_ways", "SELECT COUNT(*) FROM tmp_ways");
-  m_connection.prepare("count_relations", "SELECT COUNT(*) FROM tmp_relations");
 
   // map? call geometry stuff
   m_connection.prepare("nodes_from_bbox",

@@ -19,9 +19,6 @@ public:
 	 void write_ways(output_formatter &formatter);
 	 void write_relations(output_formatter &formatter);
 
-	 int num_nodes();
-	 int num_ways();
-	 int num_relations();
 	 visibility_t check_node_visibility(osm_id_t id);
 	 visibility_t check_way_visibility(osm_id_t id);
 	 visibility_t check_relation_visibility(osm_id_t id);
