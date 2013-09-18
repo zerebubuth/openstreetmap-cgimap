@@ -220,27 +220,6 @@ snapshot_selection::write_relations(output_formatter &formatter) {
   formatter.end_element_type(element_type_relation);
 }
 
-int 
-snapshot_selection::num_nodes() {
-  pqxx::result res = w.prepared("count_nodes").exec();
-  // count should always return a single row, right?
-  return res[0][0].as<int>();
-}
-
-int 
-snapshot_selection::num_ways() {
-  pqxx::result res = w.prepared("count_ways").exec();
-  // count should always return a single row, right?
-  return res[0][0].as<int>();
-}
-
-int 
-snapshot_selection::num_relations() {
-  pqxx::result res = w.prepared("count_relations").exec();
-  // count should always return a single row, right?
-  return res[0][0].as<int>();
-}
-
 data_selection::visibility_t 
 snapshot_selection::check_node_visibility(osm_id_t id) {
   return data_selection::exists;
@@ -387,11 +366,6 @@ snapshot_selection::factory::factory(const po::variables_map &opts)
       "FROM tmp_relations "
       "WHERE id=$1")
       ("bigint");
-
-   // counting things which are in the working set
-  m_connection.prepare("count_nodes", "SELECT COUNT(*) FROM tmp_nodes");
-  m_connection.prepare("count_ways", "SELECT COUNT(*) FROM tmp_ways");
-  m_connection.prepare("count_relations", "SELECT COUNT(*) FROM tmp_relations");
 
   // map? call geometry stuff
   m_connection.prepare("nodes_from_bbox",

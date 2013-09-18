@@ -272,21 +272,6 @@ readonly_pgsql_selection::write_relations(output_formatter &formatter) {
   formatter.end_element_type(element_type_relation);
 }
 
-int 
-readonly_pgsql_selection::num_nodes() {
-  return sel_nodes.size();
-}
-
-int 
-readonly_pgsql_selection::num_ways() {
-  return sel_ways.size();
-}
-
-int 
-readonly_pgsql_selection::num_relations() {
-  return sel_relations.size();
-}
-
 data_selection::visibility_t 
 readonly_pgsql_selection::check_node_visibility(osm_id_t id) {
   return check_table_visibility(w, id, "visible_node");

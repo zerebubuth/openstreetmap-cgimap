@@ -223,39 +223,6 @@ writeable_pgsql_selection::write_relations(output_formatter &formatter) {
   formatter.end_element_type(element_type_relation);
 }
 
-int 
-writeable_pgsql_selection::num_nodes() {
-  if (m_tables_empty) {
-    return 0;
-  } else {
-    pqxx::result res = w.prepared("count_nodes").exec();
-    // count should always return a single row, right?
-    return res[0][0].as<int>();
-  }
-}
-
-int 
-writeable_pgsql_selection::num_ways() {
-  if (m_tables_empty) {
-    return 0;
-  } else {
-    pqxx::result res = w.prepared("count_ways").exec();
-    // count should always return a single row, right?
-    return res[0][0].as<int>();
-  }
-}
-
-int 
-writeable_pgsql_selection::num_relations() {
-  if (m_tables_empty) {
-    return 0;
-  } else {
-    pqxx::result res = w.prepared("count_relations").exec();
-    // count should always return a single row, right?
-    return res[0][0].as<int>();
-  }
-}
-
 data_selection::visibility_t 
 writeable_pgsql_selection::check_node_visibility(osm_id_t id) {
   return check_table_visibility(w, id, "visible_node");
@@ -445,14 +412,6 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
     "SELECT k, v FROM current_way_tags WHERE way_id=$1")("bigint");
   m_connection.prepare("extract_relation_tags",
     "SELECT k, v FROM current_relation_tags WHERE relation_id=$1")("bigint");
-
-  // counting things which are in the working set
-  m_connection.prepare("count_nodes",
-    "SELECT COUNT(*) FROM tmp_nodes");
-  m_connection.prepare("count_ways",
-    "SELECT COUNT(*) FROM tmp_ways");
-  m_connection.prepare("count_relations",
-    "SELECT COUNT(*) FROM tmp_relations");
 
   // selecting a set of nodes as a list
   m_connection.prepare("add_nodes_list",
