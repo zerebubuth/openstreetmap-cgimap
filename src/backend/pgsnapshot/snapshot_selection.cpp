@@ -164,7 +164,7 @@ snapshot_selection::write_nodes(output_formatter &formatter) {
   element_info elem;
   tags_t tags;
 
-  formatter.start_element_type(element_type_node, num_nodes());
+  formatter.start_element_type(element_type_node);
   pqxx::result nodes = w.prepared("extract_nodes").exec();
   for (pqxx::result::const_iterator itr = nodes.begin(); 
        itr != nodes.end(); ++itr) {
@@ -189,7 +189,7 @@ snapshot_selection::write_ways(output_formatter &formatter) {
   nodes_t nodes;
   tags_t tags;
 
-  formatter.start_element_type(element_type_way, num_ways());
+  formatter.start_element_type(element_type_way);
   pqxx::result ways = w.prepared("extract_ways").exec();
   for (pqxx::result::const_iterator itr = ways.begin();
        itr != ways.end(); ++itr) {
@@ -208,7 +208,7 @@ snapshot_selection::write_relations(output_formatter &formatter) {
   members_t members;
   tags_t tags;
 
-  formatter.start_element_type(element_type_relation, num_relations());
+  formatter.start_element_type(element_type_relation);
   pqxx::result relations = w.prepared("extract_relations").exec();
   for (pqxx::result::const_iterator itr = relations.begin();
        itr != relations.end(); ++itr) {

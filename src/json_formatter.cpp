@@ -75,7 +75,7 @@ json_formatter::end_document() {
 }
 
 void 
-json_formatter::start_element_type(element_type type, size_t num_elements) {
+json_formatter::start_element_type(element_type type) {
   if (type == element_type_node) {
     writer->object_key("nodes");
   } else if (type == element_type_way) {
