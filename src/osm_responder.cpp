@@ -29,10 +29,6 @@ osm_responder::write(shared_ptr<output_formatter> formatter, const std::string &
       formatter->write_bounds(bounds.get());
     }
 
-    int num_nodes = sel.num_nodes();
-    int num_ways = sel.num_ways();
-    int num_relations = sel.num_relations();
-
     sel.write_nodes(*formatter);
     sel.write_ways(*formatter);
     sel.write_relations(*formatter);
