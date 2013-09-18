@@ -93,7 +93,9 @@ test_request("GET", "/api/0.6/nodes?nodes=", "HTTP_ACCEPT" => "text/xml") do |he
   assert(headers['Status'], "400 Bad Request", "Response status code.")
 end
 
-# nodes call returns bad request if the list of nodes isn't numeric
+# nodes call returns not found if the list of nodes isn't numeric
+# note that this doesn't really make sense without understanding that
+# "some_string".to_i = 0 in ruby, and all element IDs are > 0.
 test_request('GET', '/api/0.6/nodes?nodes=1,two,3', 'HTTP_ACCEPT' => 'text/xml') do |headers, data|
-  assert(headers['Status'], '400 Bad Request', 'Response status code.')
+  assert(headers['Status'], '404 Not Found', 'Response status code.')
 end

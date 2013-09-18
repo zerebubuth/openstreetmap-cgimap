@@ -78,7 +78,9 @@ test_request("GET", "/api/0.6/ways?ways=", "HTTP_ACCEPT" => "text/xml") do |head
   assert(headers['Status'], "400 Bad Request", "Response status code.")
 end
 
-# ways call returns bad request if the list of ways isn't numeric
-test_request("GET", "/api/0.6/ways?ways=1,two,3", "HTTP_ACCEPT" => "text/xml") do |headers, data|
-  assert(headers['Status'], "400 Bad Request", "Response status code.")  
+# ways call returns not found if the list of ways isn't numeric
+# note that this doesn't really make sense without understanding that
+# "some_string".to_i = 0 in ruby, and all element IDs are > 0.
+test_request('GET', '/api/0.6/ways?ways=1,two,3', 'HTTP_ACCEPT' => 'text/xml') do |headers, data|
+  assert(headers['Status'], '404 Not Found', 'Response status code.')
 end
