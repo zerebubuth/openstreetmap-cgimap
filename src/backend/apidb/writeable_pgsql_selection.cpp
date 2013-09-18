@@ -318,54 +318,44 @@ writeable_pgsql_selection::select_nodes_from_relations() {
   logger::message("Filling tmp_nodes (from relations)");
 
   w.prepared("nodes_from_relations").exec();
-  m_first_query = false;
 }
 
 void 
 writeable_pgsql_selection::select_ways_from_nodes() {
   logger::message("Filling tmp_ways (from nodes)");
-
   w.prepared("ways_from_nodes").exec();
-  m_first_query = false;
 }
 
 void 
 writeable_pgsql_selection::select_ways_from_relations() {
   logger::message("Filling tmp_ways (from relations)");
   w.prepared("ways_from_relations").exec();
-  m_first_query = false;
 }
 
 void 
 writeable_pgsql_selection::select_relations_from_ways() {
   logger::message("Filling tmp_relations (from ways)");
-
   w.prepared("relations_from_ways").exec();
-  m_first_query = false;
 }
 
 void 
 writeable_pgsql_selection::select_nodes_from_way_nodes() {
   w.prepared("nodes_from_way_nodes").exec();
-  m_first_query = false;
 }
 
 void 
 writeable_pgsql_selection::select_relations_from_nodes() {
   w.prepared("relations_from_nodes").exec();
-  m_first_query = false;
 }
 
 void 
 writeable_pgsql_selection::select_relations_from_relations() {
   w.prepared("relations_from_relations").exec();
-  m_first_query = false;
 }
 
 void 
 writeable_pgsql_selection::select_relations_members_of_relations() {
   w.prepared("relation_members_of_relations").exec();
-  m_first_query = false;
 }
 
 writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
