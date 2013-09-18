@@ -68,7 +68,7 @@ xml_formatter::write_bounds(const bbox &bounds) {
 }
 
 void 
-xml_formatter::start_element_type(element_type type, size_t num_elements) {
+xml_formatter::start_element_type(element_type type) {
   // xml documents surround each element with its type, so there's no
   // need to output any information here.
 }

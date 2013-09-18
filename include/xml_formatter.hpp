@@ -27,7 +27,7 @@ public:
   void start_document(const std::string &generator);
   void end_document();
   void write_bounds(const bbox &bounds);
-  void start_element_type(element_type type, size_t num_elements); 
+  void start_element_type(element_type type); 
   void end_element_type(element_type type); 
   void error(const std::exception &e);
 

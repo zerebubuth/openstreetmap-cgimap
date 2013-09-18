@@ -35,15 +35,6 @@ public:
 
 	 /******************* information functions *******************/
 
-	 /// the number of currently selected nodes
-	 virtual int num_nodes() = 0;
-
-	 /// the number of currently selected ways
-	 virtual int num_ways() = 0;
-
-	 /// the number of currently selected relations
-	 virtual int num_relations() = 0;
-
 	 // check if the node is visible, deleted or has never existed
 	 virtual visibility_t check_node_visibility(osm_id_t id) = 0;
 
