@@ -69,7 +69,7 @@ private:
 
   // true if a query hasn't been run yet, i.e: it's possible to
   // assume that all the temporary tables are empty.
-  bool m_first_query;
+  bool m_tables_empty;
 };
 
 #endif /* WRITEABLE_PGSQL_SELECTION_HPP */
