@@ -258,19 +258,16 @@ writeable_pgsql_selection::num_relations() {
 
 data_selection::visibility_t 
 writeable_pgsql_selection::check_node_visibility(osm_id_t id) {
-  m_first_query = false;
   return check_table_visibility(w, id, "visible_node");
 }
 
 data_selection::visibility_t 
 writeable_pgsql_selection::check_way_visibility(osm_id_t id) {
-  m_first_query = false;
   return check_table_visibility(w, id, "visible_way");
 }
 
 data_selection::visibility_t 
 writeable_pgsql_selection::check_relation_visibility(osm_id_t id) {
-  m_first_query = false;
   return check_table_visibility(w, id, "visible_relation");
 }
 
