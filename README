@@ -132,10 +132,9 @@ Acknowledgements
 
 CGImap contains code from and is partly based on the following:
 
-* modosmapi (http://code.google.com/p/modosmapi/) by
+* [modosmapi](http://code.google.com/p/modosmapi/) by
   d40cht and japplebyalis.
-* quad_tile.c
-  (http://svn.openstreetmap.org/sites/rails_port/db/functions/maptile.c)
+* [quad_tile.c](https://github.com/openstreetmap/openstreetmap-website/blob/master/db/functions/quadtile.c)
   by TomH.
-* GNU CGICC (http://www.gnu.org/software/cgicc/)
+* [GNU CGICC](http://www.gnu.org/software/cgicc/)
   by Stephen F. Booth and Sebastien Diaz.
