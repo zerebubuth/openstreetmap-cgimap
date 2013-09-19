@@ -81,15 +81,19 @@ check_table_visibility(pqxx::work &w, osm_id_t id, const std::string &prepared_n
 }
 
 inline int
-insert_results_of(pqxx::work &w, std::stringstream &query, set<osm_id_t> &elems) {
-  pqxx::result res = w.exec(query);
-  
+insert_results(const pqxx::result &res, set<osm_id_t> &elems) {
   for (pqxx::result::const_iterator itr = res.begin(); 
        itr != res.end(); ++itr) {
       const osm_id_t id = (*itr)["id"].as<osm_id_t>();
       elems.insert(id);
   }
   return res.affected_rows();
+}
+
+/* Shim for functions not yet converted to prepared statements */
+inline int
+insert_results_of(pqxx::work &w, std::stringstream &query, set<osm_id_t> &elems) {
+  return insert_results(w.exec(query), elems);
 }
 
 void extract_elem(const pqxx::result::tuple &row, element_info &elem, cache<osm_id_t, changeset> &changeset_cache) {
