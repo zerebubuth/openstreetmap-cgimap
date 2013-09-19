@@ -318,14 +318,7 @@ readonly_pgsql_selection::check_relation_visibility(osm_id_t id) {
 int
 readonly_pgsql_selection::select_nodes(const std::list<osm_id_t> &ids) {
   if (!ids.empty()) {
-    stringstream query;
-    list<osm_id_t>::const_iterator it;
-    
-    query << "select id from current_nodes where id IN (";
-    std::copy(ids.begin(), ids.end(), infix_ostream_iterator<osm_id_t>(query, ","));
-    query << ")";
-    
-    return insert_results_of(w, query, sel_nodes);
+    return insert_results(w.prepared("select_nodes")(ids).exec(), sel_nodes);
   } else {
     return 0;
   }
@@ -334,15 +327,7 @@ readonly_pgsql_selection::select_nodes(const std::list<osm_id_t> &ids) {
 int
 readonly_pgsql_selection::select_ways(const std::list<osm_id_t> &ids) {
   if (!ids.empty()) {
-    stringstream query;
-    list<osm_id_t>::const_iterator it;
-    
-    query << "select id from current_ways where id IN (";
-    std::copy(ids.begin(), ids.end(), infix_ostream_iterator<osm_id_t>(query, ","));
-    query << ")";
-    logger::message(query.str());
-    
-    return insert_results_of(w, query, sel_ways);
+    return insert_results(w.prepared("select_ways")(ids).exec(), sel_ways);
   } else {
     return 0;
   }
@@ -351,14 +336,7 @@ readonly_pgsql_selection::select_ways(const std::list<osm_id_t> &ids) {
 int
 readonly_pgsql_selection::select_relations(const std::list<osm_id_t> &ids) {
   if (!ids.empty()) {
-    stringstream query;
-    list<osm_id_t>::const_iterator it;
-    
-    query << "select id from current_relations where id IN (";
-    std::copy(ids.begin(), ids.end(), infix_ostream_iterator<osm_id_t>(query, ","));
-    query << ")";
-    
-    return insert_results_of(w, query, sel_relations);
+    return insert_results(w.prepared("select_relations")(ids).exec(), sel_relations);
   } else {
     return 0;
   }
@@ -564,6 +542,23 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
     "SELECT k, v FROM current_way_tags WHERE way_id=$1")("bigint");
   m_connection.prepare("extract_relation_tags",
     "SELECT k, v FROM current_relation_tags WHERE relation_id=$1")("bigint");
+
+  // selecting a set of objects as a list
+  m_connection.prepare("select_nodes",
+    "SELECT id "
+      "FROM current_nodes "
+      "WHERE id = ANY($1)")
+    ("bigint[]");
+  m_connection.prepare("select_ways",
+    "SELECT id "
+      "FROM current_ways "
+      "WHERE id = ANY($1)")
+    ("bigint[]");
+  m_connection.prepare("select_relations",
+    "SELECT id "
+      "FROM current_relations "
+      "WHERE id = ANY($1)")
+    ("bigint[]");
 }
 
 readonly_pgsql_selection::factory::~factory() {
