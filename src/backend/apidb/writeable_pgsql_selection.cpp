@@ -356,12 +356,12 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
   m_connection.prepare("visible_node_in_bbox",
     "INSERT INTO tmp_nodes "
       "SELECT id "
-        "FROM current_nodes WHERE ("
-          "tile = ANY($1) AND "
-          "latitude BETWEEN $2 AND $3 AND "
-          "longitude BETWEEN $4 AND $5"
-        ") AND (visible = true) "
-      "LIMIT $6")
+        "FROM current_nodes "
+        "WHERE tile = ANY($1) "
+          "AND latitude BETWEEN $2 AND $3 "
+          "AND longitude BETWEEN $4 AND $5 "
+          "AND visible = true "
+        "LIMIT $6")
     ("bigint[]")("integer")("integer")("integer")("integer")("integer");
 
   // selecting node, way and relation visibility information
