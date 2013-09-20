@@ -42,6 +42,27 @@ template<> struct string_traits<list<osm_id_t> >
     return ostr.str();
   }
 };
+template<> struct string_traits<set<osm_id_t> >
+{
+  static const char *name() { return "set<osm_id_t>"; }
+  static bool has_null() { return false; }
+  static bool is_null(const set<osm_id_t> &) { return false; }
+  static stringstream null()
+  {
+    internal::throw_null_conversion(name());
+    // No, dear compiler, we don't need a return here.
+    throw 0;
+  }
+  static void from_string(const char Str[], set<osm_id_t> &Obj) {
+  }
+  static std::string to_string(const set<osm_id_t> &ids) {
+    stringstream ostr;
+    ostr << "{";
+    std::copy(ids.begin(), ids.end(), infix_ostream_iterator<osm_id_t>(ostr, ","));
+    ostr << "}";
+    return ostr.str();
+  }
+};
 }
 
 namespace {
