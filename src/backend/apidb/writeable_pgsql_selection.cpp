@@ -27,7 +27,7 @@ template<> struct string_traits<list<osm_id_t> >
   static stringstream null()
   {
     internal::throw_null_conversion(name());
-    // No, dear compiler, we don't need a return here.                                                                                                
+    // No, dear compiler, we don't need a return here.
     throw 0;
   }
   static void from_string(const char Str[], list<osm_id_t> &Obj) {
