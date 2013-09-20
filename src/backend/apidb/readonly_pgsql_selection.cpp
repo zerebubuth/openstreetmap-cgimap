@@ -373,43 +373,12 @@ readonly_pgsql_selection::select_nodes_from_bbox(const bbox &bounds, int max_nod
   // making it do seq scans all the time on smaug...
   w.exec("set enable_mergejoin=false");
   w.exec("set enable_hashjoin=false");
-  
-  stringstream query;
-  query << "select id from current_nodes where ((";
-  unsigned int first_id = 0, last_id = 0;
-  for (std::list<osm_id_t>::const_iterator itr = tiles.begin();
-       itr != tiles.end(); ++itr) {
-    if (first_id == 0) {
-      last_id = first_id = *itr;
-    } else if (*itr == last_id + 1) {
-      ++last_id;
-    } else {
-      if (last_id == first_id) {
-        query << "tile = " << last_id << " or ";
-      } else {
-        query << "tile between " << first_id 
-              << " and " << last_id << " or ";
-      }
-      last_id = first_id = *itr;
-    }
-  }
-  if (last_id == first_id) {
-    query << "tile = " << last_id << ") ";
-  } else {
-    query << "tile between " << first_id 
-          << " and " << last_id << ") ";
-  }
-  query << "and latitude between " << int(bounds.minlat * SCALE) 
-        << " and " << int(bounds.maxlat * SCALE)
-        << " and longitude between " << int(bounds.minlon * SCALE) 
-        << " and " << int(bounds.maxlon * SCALE)
-        << ") and (visible = true)"
-        << " limit " << (max_nodes + 1); // limit here as a quick hack to reduce load...
-  
-  logger::message("Filling sel_nodes from bbox");
-  logger::message(query.str());
-  
-  return insert_results_of(w, query, sel_nodes);
+
+  return insert_results(w.prepared("visible_node_in_bbox")
+    (tiles)
+    (int(bounds.minlat * SCALE))(int(bounds.maxlat * SCALE))
+    (int(bounds.minlon * SCALE))(int(bounds.maxlon * SCALE))
+    (max_nodes + 1).exec(), sel_nodes);
 }
 
 void 
@@ -491,6 +460,17 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
   m_cache_connection.set_noticer(std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
 
   logger::message("Preparing prepared statements.");
+
+  // select nodes with bbox
+  m_connection.prepare("visible_node_in_bbox",
+    "SELECT id "
+      "FROM current_nodes "
+      "WHERE tile = ANY($1) "
+        "AND latitude BETWEEN $2 AND $3 "
+        "AND longitude BETWEEN $4 AND $5 "
+        "AND visible = true "
+      "LIMIT $6")
+    ("bigint[]")("integer")("integer")("integer")("integer")("integer");
 
   // selecting node, way and relation visibility information
   m_connection.prepare("visible_node",
