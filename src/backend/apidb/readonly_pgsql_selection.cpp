@@ -417,13 +417,7 @@ readonly_pgsql_selection::select_nodes_from_relations() {
   logger::message("Filling sel_nodes (from relations)");
   
   if (!sel_relations.empty()) {
-    stringstream query;
-    query << "select distinct rm.member_id as id from "
-      "current_relation_members rm where rm.member_type='Node'"
-      "and rm.relation_id in (";
-    std::copy(sel_relations.begin(), sel_relations.end(), infix_ostream_iterator<osm_id_t>(query, ","));
-    query << ")";
-    insert_results_of(w, query, sel_nodes);
+    insert_results(w.prepared("nodes_from_relations")(sel_relations).exec(), sel_nodes);
   }
 }
 
@@ -432,27 +426,16 @@ readonly_pgsql_selection::select_ways_from_nodes() {
   logger::message("Filling sel_ways (from nodes)");
   
   if (!sel_nodes.empty()) {
-    stringstream query;
-    query << "select distinct wn.way_id as id from current_way_nodes wn "
-      "where wn.node_id in (";
-    std::copy(sel_nodes.begin(), sel_nodes.end(), infix_ostream_iterator<osm_id_t>(query, ","));	
-    query << ")";
-    insert_results_of(w, query, sel_ways);
+    insert_results(w.prepared("ways_from_nodes")(sel_nodes).exec(), sel_ways);
   }
 }
 
 void 
 readonly_pgsql_selection::select_ways_from_relations() {
   logger::message("Filling sel_ways (from relations)");
-  
+
   if (!sel_relations.empty()) {
-    stringstream query;
-    query << "select distinct rm.member_id as id from "
-      "current_relation_members rm where rm.member_type='Way' "
-      "and rm.relation_id in (";
-    std::copy(sel_relations.begin(), sel_relations.end(), infix_ostream_iterator<osm_id_t>(query, ","));
-    query << ")";
-    insert_results_of(w, query, sel_ways);
+    insert_results(w.prepared("ways_from_relations")(sel_relations).exec(), sel_ways);
   }
 }
 
@@ -461,60 +444,35 @@ readonly_pgsql_selection::select_relations_from_ways() {
   logger::message("Filling sel_relations (from ways)");
   
   if (!sel_ways.empty()) {
-    stringstream query;
-    query << "select distinct relation_id as id from current_relation_members rm where rm.member_type='Way' "
-      "and rm.member_id in (";
-    std::copy(sel_ways.begin(), sel_ways.end(), infix_ostream_iterator<osm_id_t>(query, ","));
-    query << ")";
-    insert_results_of(w, query, sel_relations);
+    insert_results(w.prepared("relation_parents_of_ways")(sel_ways).exec(), sel_relations);
   }
 }
 
 void 
 readonly_pgsql_selection::select_nodes_from_way_nodes() {
   if (!sel_ways.empty()) {
-    stringstream query;
-    query << "select distinct wn.node_id as id from current_way_nodes wn "
-      "where wn.way_id in ("; 
-    std::copy(sel_ways.begin(), sel_ways.end(), infix_ostream_iterator<osm_id_t>(query, ","));
-    query << ")";
-    insert_results_of(w, query, sel_nodes);
+    insert_results(w.prepared("nodes_from_ways")(sel_ways).exec(), sel_nodes);
   }
 }
 
 void 
 readonly_pgsql_selection::select_relations_from_nodes() {
   if (!sel_nodes.empty()) {
-    stringstream query;
-    query << "select distinct rm.relation_id as id from current_relation_members rm "
-      "where rm.member_type='Node' and rm.member_id in (";
-    std::copy(sel_nodes.begin(), sel_nodes.end(), infix_ostream_iterator<osm_id_t>(query, ","));
-    query << ")";
-    insert_results_of(w, query, sel_relations);
+    insert_results(w.prepared("relation_parents_of_nodes")(sel_nodes).exec(), sel_relations);
   }
 }
 
 void 
 readonly_pgsql_selection::select_relations_from_relations() {
   if (!sel_relations.empty()) {
-    stringstream query;
-    query << "select distinct relation_id as id from current_relation_members rm "
-      "where rm.member_type='Relation' and rm.member_id in (";
-    std::copy(sel_relations.begin(), sel_relations.end(), infix_ostream_iterator<osm_id_t>(query, ","));
-    query << ")";
-    insert_results_of(w, query, sel_relations);
+    insert_results(w.prepared("relation_parents_of_relations")(sel_relations).exec(), sel_relations);
   }
 }
 
 void 
 readonly_pgsql_selection::select_relations_members_of_relations() {
   if (!sel_relations.empty()) {
-    stringstream query;
-    query << "select distinct rm.member_id as id from current_relation_members rm "
-      "where rm.member_type='Relation' and rm.relation_id in (";
-    std::copy(sel_relations.begin(), sel_relations.end(), infix_ostream_iterator<osm_id_t>(query, ","));
-    query << ")";
-    insert_results_of(w, query, sel_relations);
+    insert_results(w.prepared("relation_members_of_relations")(sel_relations).exec(), sel_relations);
   }
 }
 
@@ -579,6 +537,59 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
     "SELECT id "
       "FROM current_relations "
       "WHERE id = ANY($1)")
+    ("bigint[]");
+
+  // select ways used by nodes
+  m_connection.prepare("ways_from_nodes",
+    "SELECT DISTINCT wn.way_id AS id "
+      "FROM current_way_nodes wn "
+      "WHERE wn.node_id = ANY($1)")
+    ("bigint[]");
+  // select nodes used by ways
+  m_connection.prepare("nodes_from_ways",
+    "SELECT DISTINCT wn.node_id AS id "
+      "FROM current_way_nodes wn "
+      "WHERE wn.way_id = ANY($1)")
+    ("bigint[]");
+
+  // Queries for getting relation parents of objects
+  m_connection.prepare("relation_parents_of_nodes",
+    "SELECT DISTINCT rm.relation_id AS id "
+      "FROM current_relation_members rm "
+      "WHERE rm.member_type = 'Node' "
+        "AND rm.member_id = ANY($1)")
+    ("bigint[]");
+  m_connection.prepare("relation_parents_of_ways",
+    "SELECT DISTINCT rm.relation_id AS id "
+      "FROM current_relation_members rm "
+      "WHERE rm.member_type = 'Way' "
+        "AND rm.member_id = ANY($1)")
+    ("bigint[]");
+  m_connection.prepare("relation_parents_of_relations",
+    "SELECT DISTINCT rm.relation_id AS id "
+      "FROM current_relation_members rm "
+      "WHERE rm.member_type = 'Relation' "
+        "AND rm.member_id = ANY($1)")
+    ("bigint[]");
+
+  // queries for filling elements which are used as members in relations
+  m_connection.prepare("nodes_from_relations",
+    "SELECT DISTINCT rm.member_id AS id "
+      "FROM current_relation_members rm "
+      "WHERE rm.member_type = 'Node' "
+        "AND rm.relation_id = ANY($1)")
+    ("bigint[]");
+  m_connection.prepare("ways_from_relations",
+    "SELECT DISTINCT rm.member_id AS id "
+      "FROM current_relation_members rm "
+      "WHERE rm.member_type = 'Way' "
+        "AND rm.relation_id = ANY($1)")
+    ("bigint[]");
+  m_connection.prepare("relation_members_of_relations",
+    "SELECT DISTINCT rm.member_id AS id "
+      "FROM current_relation_members rm "
+      "WHERE rm.member_type = 'Relation' "
+        "AND rm.relation_id = ANY($1)")
     ("bigint[]");
 }
 
