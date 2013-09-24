@@ -4,15 +4,22 @@ CGImap
 Overview
 --------
 
-CGImap is a C++ implementation of the OpenStreetMap "map" call as an
-FCGI process. The rails implementation of the "map" call has a few
-problems with memory - it uses a lot of it and there is a leak which
-makes it annoying to use in long-running environments, like the main
-OSM server.
+CGImap is a C++ implementation of some parts of the OpenStreetMap 
+API as an FCGI process. The rails implementation of the "map" call 
+had a few problems with memory - it uses a lot of it and there is 
+a leak which makes it annoying to use in long-running environments, 
+like the main OSM server.
 
 CGImap attempts to address these memory problems and makes it easier
 to optimise the queries, something which is also a bit of a pain to do
 in Rails.
+
+Currently, CGImap implements:
+
+* the "map" API call,
+* single node, way and relation fetches,
+* multiple node, way and relation fetches and
+* the "full" way and relation calls.
 
 Requirements
 ------------
