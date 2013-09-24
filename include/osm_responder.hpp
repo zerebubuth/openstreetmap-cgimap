@@ -7,6 +7,7 @@
 
 #include <boost/optional.hpp>
 #include <boost/shared_ptr.hpp>
+#include <sstream>
 
 /**
  * utility class - use this as a base class when the derived class is going to
@@ -33,6 +34,9 @@ public:
 	 // formatter.
   void write(boost::shared_ptr<output_formatter> f, const std::string &generator);
 
+  // quick hack to add headers to the response
+  std::string extra_response_headers() const;
+
 protected:
 	 // current selection of elements to be written out
 	 data_selection &sel;
@@ -40,6 +44,12 @@ protected:
 	 // optional bounds element - this is only for information and has no effect on 
    // behaviour other than whether the bounds element gets written.
 	 boost::optional<bbox> bounds;
+
+  // quick hack to provide extra response headers like Content-Disposition.
+  std::ostringstream extra_headers;
+
+  // adds an extra response header.
+  void add_response_header(const std::string &);
 };
 
 #endif /* OSM_RESPONDER_HPP */

@@ -33,6 +33,7 @@ end
 test_request('GET', '/api/0.6/map?bbox=-0.01,-0.01,-0.0005,-0.0005') do |headers, data|
   assert(headers["Status"], "200 OK", "Response status code.")
   assert(headers["Content-Type"], "text/xml; charset=utf-8", "Response content type.")
+  assert(headers["Content-Disposition"], "attachment; filename=\"map.osm\"", "Response content disposition.")
 
   doc = XML::Parser.string(data).parse
   assert(doc.root.name, "osm", "Document root element.")

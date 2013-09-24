@@ -12,6 +12,7 @@ load_osm_file("#{File.dirname(__FILE__)}/test_way.osm", conn)
 test_request("GET", "/api/0.6/way/1", "HTTP_ACCEPT" => "text/xml") do |headers, data|
   assert(headers["Status"], "200 OK", "Response status code.")
   assert(headers["Content-Type"], "text/xml; charset=utf-8", "Response content type.")
+  assert(headers.has_key?("Content-Disposition"), false, "Response content disposition header.")
 
   doc = XML::Parser.string(data).parse
   assert(doc.root.name, "osm", "Document root element.")
@@ -58,6 +59,7 @@ end
 test_request("GET", "/api/0.6/ways?ways=1,2", "HTTP_ACCEPT" => "text/xml") do |headers, data|
   assert(headers["Status"], "200 OK", "Response status code.")
   assert(headers["Content-Type"], "text/xml; charset=utf-8", "Response content type.")
+  assert(headers.has_key?("Content-Disposition"), false, "Response content disposition header.")
 
   doc = XML::Parser.string(data).parse
   assert(doc.root.name, "osm", "Document root element.")

@@ -35,6 +35,10 @@ map_responder::map_responder(mime::type mt, bbox b, data_selection &x)
     sel.select_relations_from_nodes();
     sel.select_relations_from_relations();
   }
+
+  // map calls typically have a Content-Disposition header saying that
+  // what's coming back is an attachment.
+  add_response_header("Content-Disposition: attachment; filename=\"map.osm\"");
 }
 
 map_responder::~map_responder() {
