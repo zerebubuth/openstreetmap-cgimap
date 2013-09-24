@@ -14,6 +14,7 @@ load_osm_file("#{File.dirname(__FILE__)}/test_relation.osm", conn)
 test_request("GET", "/api/0.6/relation/1/full", "HTTP_ACCEPT" => "text/xml") do |headers, data|
   assert(headers["Status"], "200 OK", "Response status code.")
   assert(headers["Content-Type"], "text/xml; charset=utf-8", "Response content type.")
+  assert(headers.has_key?("Content-Disposition"), false, "Response content disposition header.")
 
   doc = XML::Parser.string(data).parse
   assert(doc.root.name, "osm", "Document root element.")

@@ -25,6 +25,9 @@ public:
 	 virtual std::list<mime::type> types_available() const = 0;
 	 bool is_available(mime::type) const;
 
+  // quick hack to get "extra" response headers.
+  virtual std::string extra_response_headers() const;
+
 private:
 	 mime::type mime_type;
 };

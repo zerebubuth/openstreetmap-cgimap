@@ -254,12 +254,13 @@ process_get_request(FCGX_Request &request, routes &route,
   FCGX_FPrintF(request.out,
 	       "Status: 200 OK\r\n"
 	       "Content-Type: %s; charset=utf-8\r\n"
-	       "Content-Disposition: attachment; filename=\"map.osm\"\r\n"
+               "%s"
 	       "Content-Encoding: %s\r\n"
 	       "Cache-Control: no-cache\r\n"
 	       "%s"
 	       "\r\n", 
                mime::to_string(o_formatter->mime_type()).c_str(),
+               responder->extra_response_headers().c_str(),
                encoding->name().c_str(), cors_headers.c_str());
   
   try {
@@ -322,11 +323,13 @@ process_head_request(FCGX_Request &request, routes &route,
   FCGX_FPrintF(request.out,
 	       "Status: 200 OK\r\n"
 	       "Content-Type: text/xml; charset=utf-8\r\n"
-	       "Content-Disposition: attachment; filename=\"map.osm\"\r\n"
+               "%s"
 	       "Content-Encoding: %s\r\n"
 	       "Cache-Control: no-cache\r\n"
 	       "%s"
-	       "\r\n", encoding->name().c_str(), cors_headers.c_str());
+	       "\r\n", 
+               responder->extra_response_headers().c_str(),
+               encoding->name().c_str(), cors_headers.c_str());
 
   return boost::make_tuple(request_name, 0);
 }

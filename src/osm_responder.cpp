@@ -39,3 +39,12 @@ osm_responder::write(shared_ptr<output_formatter> formatter, const std::string &
 
   formatter->end_document();
 }
+
+void osm_responder::add_response_header(const std::string &line) {
+  extra_headers << line << "\r\n";
+}
+
+std::string osm_responder::extra_response_headers() const {
+  return extra_headers.str();
+}
+
