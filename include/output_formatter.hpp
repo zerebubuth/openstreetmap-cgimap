@@ -3,6 +3,7 @@
 
 #include "bbox.hpp"
 #include "types.hpp"
+#include "mime_types.hpp"
 #include <list>
 #include <stdexcept>
 #include <boost/optional.hpp>
@@ -45,9 +46,14 @@ typedef std::list<std::pair<std::string, std::string> > tags_t;
 struct output_formatter {
   virtual ~output_formatter();
 
+  // returns the mime type of the content that this formatter will 
+  // produce.
+  virtual mime::type mime_type() const = 0;
+
   // called once to start the document - this will be the first call
-  // to this object after construction.
-  virtual void start_document() = 0;
+  // to this object after construction. the string passed will be
+  // used as the "generator" header attribute.
+  virtual void start_document(const std::string &generator) = 0;
 
   // called once to end the document - there will be no calls after this
   // one. this will be called, even if an error has occurred.
@@ -64,7 +70,7 @@ struct output_formatter {
   // start a type of element. this is called once for nodes, ways or 
   // relations. between the start and end called for a particular element
   // type only write_* functions for that type will be called.
-  virtual void start_element_type(element_type type, size_t num_elements) = 0; 
+  virtual void start_element_type(element_type type) = 0; 
 
   // end a type of element. this is called once for nodes, ways or relations 
   virtual void end_element_type(element_type type) = 0; 

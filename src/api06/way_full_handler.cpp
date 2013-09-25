@@ -10,14 +10,16 @@ using std::list;
 namespace api06 {
 
 way_full_responder::way_full_responder(mime::type mt_, osm_id_t id_, data_selection &w_) 
-	: osm_responder(mt_, w_), id(id_) {
-	list<osm_id_t> ids;
+  : osm_responder(mt_, w_), id(id_) {
+  list<osm_id_t> ids;
+  ids.push_back(id);
 
-  check_visibility();
+  if (sel.select_ways(ids) == 0) {
+    throw http::not_found("");
+  } else {
+    check_visibility();
+  }
 
-	ids.push_back(id);
-
-	sel.select_ways(ids);
   sel.select_nodes_from_way_nodes();
 }
 

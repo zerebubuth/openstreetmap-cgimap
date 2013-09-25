@@ -195,50 +195,56 @@ acceptable_types header_mime_type(request &req) {
 }
 }
 
+mime::type choose_best_mime_type(request &req, 
+                                 responder_ptr_t hptr) {
+  // figure out what, if any, the Accept-able resource mime types are
+  acceptable_types types = header_mime_type(req);
+  const list<mime::type> types_available = hptr->types_available();
+  
+  mime::type best_type = hptr->resource_type();
+  // check if the handler is capable of supporting an acceptable set of mime types.
+  if (best_type != mime::unspecified_type) {
+    // check that this doesn't conflict with anything in the Accept header.
+    if (!hptr->is_available(best_type) || !types.is_acceptable(best_type)) {
+      throw http::not_acceptable(get_request_path(req)); // TODO , types_available);
+    }
+  } else {
+    best_type = types.most_acceptable_of(types_available);
+    // if none were acceptable then...
+    if (best_type == mime::unspecified_type) {
+      throw http::not_acceptable(get_request_path(req)); // TODO , types_available);
+    } else if (best_type == mime::any_type) {
+      // choose the first of the available types if nothing is preferred.
+      best_type = *(hptr->types_available().begin());
+    }
+    // otherwise we've chosen the most acceptable and available type...
+  }
+
+  return best_type;
+}
+
 shared_ptr<output_formatter>
 choose_formatter(request &req, 
-								 responder_ptr_t hptr, 
-								 shared_ptr<output_buffer> out) {
-	// figure out what, if any, the Accept-able resource mime types are
-	acceptable_types types = header_mime_type(req);
-	const list<mime::type> types_available = hptr->types_available();
-		
-	mime::type best_type = hptr->resource_type();
-	// check if the handler is capable of supporting an acceptable set of mime types.
-	if (best_type != mime::unspecified_type) {
-		// check that this doesn't conflict with anything in the Accept header.
-		if (!hptr->is_available(best_type) || !types.is_acceptable(best_type)) {
-			throw http::not_acceptable(get_request_path(req)); // TODO , types_available);
-		}
-	} else {
-		best_type = types.most_acceptable_of(types_available);
-		// if none were acceptable then...
-		if (best_type == mime::unspecified_type) {
-			throw http::not_acceptable(get_request_path(req)); // TODO , types_available);
-		} else if (best_type == mime::any_type) {
-			// choose the first of the available types if nothing is preferred.
-			best_type = *(hptr->types_available().begin());
-		}
-		// otherwise we've chosen the most acceptable and available type...
-	}
-	
-	shared_ptr<output_formatter> o_formatter;
-
-	if (best_type == mime::text_xml) {
-	  xml_writer *xwriter = new xml_writer(out, true);
-	  o_formatter = shared_ptr<output_formatter>(new xml_formatter(xwriter));
-
+                 responder_ptr_t hptr, 
+                 shared_ptr<output_buffer> out) {
+  mime::type best_type = choose_best_mime_type(req, hptr);
+  shared_ptr<output_formatter> o_formatter;
+  
+  if (best_type == mime::text_xml) {
+    xml_writer *xwriter = new xml_writer(out, true);
+    o_formatter = shared_ptr<output_formatter>(new xml_formatter(xwriter));
+    
 #ifdef HAVE_YAJL
-	} else if (best_type == mime::text_json) {
-	  json_writer *jwriter = new json_writer(out, true);
-	  o_formatter = shared_ptr<output_formatter>(new json_formatter(jwriter));
+  } else if (best_type == mime::text_json) {
+    json_writer *jwriter = new json_writer(out, true);
+    o_formatter = shared_ptr<output_formatter>(new json_formatter(jwriter));
 #endif
-
-	} else {
-		ostringstream ostr;
-		ostr << "Could not create formatter for MIME type `" << mime::to_string(best_type) << "'.";
-		throw runtime_error(ostr.str());
-	}
-
-	return o_formatter;
+    
+  } else {
+    ostringstream ostr;
+    ostr << "Could not create formatter for MIME type `" << mime::to_string(best_type) << "'.";
+    throw runtime_error(ostr.str());
+  }
+  
+  return o_formatter;
 }

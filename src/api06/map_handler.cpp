@@ -35,6 +35,10 @@ map_responder::map_responder(mime::type mt, bbox b, data_selection &x)
     sel.select_relations_from_nodes();
     sel.select_relations_from_relations();
   }
+
+  // map calls typically have a Content-Disposition header saying that
+  // what's coming back is an attachment.
+  add_response_header("Content-Disposition: attachment; filename=\"map.osm\"");
 }
 
 map_responder::~map_responder() {
@@ -63,11 +67,6 @@ map_handler::responder(data_selection &x) const {
  */
 bbox
 map_handler::validate_request(request &req) {
-  // check that the REQUEST_METHOD is a GET
-  if (fcgi_get_env(req, "REQUEST_METHOD") != "GET") 
-    throw http::method_not_allowed("Only the GET method is supported for "
-				   "map requests.");
-
   string decoded = http::urldecode(get_query_string(req));
   const map<string, string> params = http::parse_params(decoded);
   map<string, string>::const_iterator itr = params.find("bbox");

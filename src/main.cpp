@@ -123,12 +123,25 @@ get_options(int argc, char **argv, po::variables_map &options) {
 }
 
 /**
+ * Return a 405 error.
+ */
+void
+process_not_allowed(request &req) {
+  req.put(
+    "Status: 405 Method Not Allowed\r\n"
+    "Allow: GET, HEAD, OPTIONS\r\n"
+    "Content-Type: text/html\r\n"
+    "Content-Length: 0\r\n"
+    "Cache-Control: no-cache\r\n\r\n");
+}
+
+/**
  * process a GET request.
  */
 boost::tuple<string, size_t>
 process_get_request(request &req, routes &route, 
                     boost::shared_ptr<data_selection::factory> factory,
-		    const string &ip) {
+		    const string &ip, const string &generator) {
   // figure how to handle the request
   handler_ptr_t handler = route(req);
   
@@ -146,8 +159,7 @@ process_get_request(request &req, routes &route,
   shared_ptr<http::encoding> encoding = get_encoding(req);
   
   // create the XML writer with the FCGI streams as output
-  shared_ptr<output_buffer> out = req.get_buffer();
-  out = encoding->buffer(out);
+  shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
   
   // create the correct mime type output formatter.
   shared_ptr<output_formatter> o_formatter = choose_formatter(req, responder, out);
@@ -160,18 +172,18 @@ process_get_request(request &req, routes &route,
   {
     ostringstream ostr;
     ostr << "Status: 200 OK\r\n"
-            "Content-Type: text/xml; charset=utf-8\r\n"
-            "Content-Disposition: attachment; filename=\"map.osm\"\r\n"
-            "Content-Encoding: " << encoding->name() << "\r\n"
-            "Cache-Control: private, max-age=0, must-revalidate\r\n"
-            << cors_headers
-            << "\r\n";
+         << "Content-Type: " << mime::to_string(o_formatter->mime_type()) << "; charset=utf-8\r\n"
+         << responder->extra_response_headers()
+         << "Content-Encoding: " << encoding->name() << "\r\n"
+         << "Cache-Control: private, max-age=0, must-revalidate\r\n"
+         << cors_headers
+         << "\r\n";
     req.put(ostr.str());
   }
   
   try {
     // call to write the response
-    responder->write(o_formatter);
+    responder->write(o_formatter, generator);
     
     // make sure all bytes have been written. note that the writer can
     // throw an exception here, leaving the xml document in a 
@@ -194,6 +206,55 @@ process_get_request(request &req, routes &route,
 }
 
 /**
+ * process a HEAD request.
+ */
+boost::tuple<string, size_t>
+process_head_request(request &req, routes &route,
+                     boost::shared_ptr<data_selection::factory> factory,
+                     const string &ip) {
+  // figure how to handle the request
+  handler_ptr_t handler = route(req);
+
+  // request start logging
+  string request_name = handler->log_name();
+  logger::message(format("Started HEAD request for %1% from %2%") % request_name % ip);
+
+  // We don't actually use the resulting data from the DB request,
+  // but it might throw an error which results in a 404 or 410 response
+
+  // The 404 and 410 responses have an empty message-body so we're safe using them unmodified
+
+  // separate transaction for the request
+  shared_ptr<data_selection> selection = factory->make_selection();
+
+  // constructor of responder handles dynamic validation (i.e: with db access).
+  responder_ptr_t responder = handler->responder(*selection);
+
+  // get encoding to use
+  shared_ptr<http::encoding> encoding = get_encoding(req);
+
+  // figure out best mime type
+  mime::type best_mime_type = choose_best_mime_type(req, responder);
+
+  // get any CORS headers to return
+  string cors_headers = req.cors_headers();
+
+  // TODO: use handler/responder to setup response headers.
+  // write the response header
+  std::ostringstream response;
+  response << "Status: 200 OK\r\n"
+	   << "Content-Type: " << mime::to_string(best_mime_type) << "; charset=utf-8\r\n"
+           << responder->extra_response_headers()
+           << "Content-Encoding: " << encoding->name() << "\r\n"
+           << "Cache-Control: no-cache\r\n"
+           << cors_headers
+           << "\r\n";
+  req.put(response.str());
+
+  return boost::make_tuple(request_name, 0);
+}
+
+/**
  * process an OPTIONS request.
  */
 boost::tuple<string, size_t>
@@ -202,7 +263,7 @@ process_options_request(request &req) {
   const char *origin = req.get_param("HTTP_ORIGIN");
   const char *method = req.get_param("HTTP_ACCESS_CONTROL_REQUEST_METHOD");
 
-  if (origin && strcasecmp(method, "GET") == 0) {
+  if (origin && (strcasecmp(method, "GET") == 0 || strcasecmp(method, "HEAD") == 0)) {
     // get the CORS headers to return
     string cors_headers = get_cors_headers(req);
 
@@ -214,11 +275,24 @@ process_options_request(request &req) {
     req.put("\r\n\r\n");
 
   } else {
-    throw http::method_not_allowed("Only the GET method is supported for "
-                                   "map requests.");
+    process_not_allowed(req);
   }
-
   return boost::make_tuple(request_name, 0);
+}
+
+/**
+ * make a string to be used as the generator header
+ * attribute of output files. includes some instance
+ * identifying information.
+ */
+string get_generator_string() {
+  char hostname[HOST_NAME_MAX];
+  if (gethostname(hostname, sizeof hostname) != 0) {
+    throw std::runtime_error("gethostname returned error.");
+  }
+  
+  return (boost::format(PACKAGE_STRING " (%1% %2%)") 
+          % getpid() % hostname).str();
 }
 
 /**
@@ -227,6 +301,8 @@ process_options_request(request &req) {
  */
 static void
 process_requests(int socket, const po::variables_map &options) {
+  // generator string - identifies the cgimap instance.
+  string generator = get_generator_string();
   // open any log file
   if (options.count("logfile")) {
     logger::initialise(options["logfile"].as<string>());
@@ -282,14 +358,16 @@ process_requests(int socket, const po::variables_map &options) {
       
       // process request
       if (method == "GET") {
-        boost::tie(request_name, bytes_written) = process_get_request(*req, route, factory, ip);
+        boost::tie(request_name, bytes_written) = process_get_request(*req, route, factory, ip, generator);
         
+      } else if (method == "HEAD") {
+        boost::tie(request_name, bytes_written) = process_head_request(*req, route, factory, ip);
+
       } else if (method == "OPTIONS") {
         boost::tie(request_name, bytes_written) = process_options_request(*req);
         
       } else {
-        throw http::method_not_allowed("Only the GET method is supported for "
-                                       "map requests.");
+        process_not_allowed(*req);
       }
       
       // update the rate limiter, if anything was written
@@ -305,7 +383,7 @@ process_requests(int socket, const po::variables_map &options) {
       
     } catch (const http::exception &e) {
       // errors here occur before we've started writing the response
-      // so we can send something helpful back to the client.
+      // so we\ can send something helpful back to the client.
       respond_error(e, *req);
       
     } catch (const std::exception &e) {
@@ -405,7 +483,16 @@ main(int argc, char **argv) {
 
     // are we supposed to run as a daemon?
     if (options.count("daemon")) {
-      size_t instances = options["instances"].as<size_t>();
+      size_t instances = 0;
+      {
+        int opt_instances = options["instances"].as<int>();
+        if (opt_instances > 0) {
+           instances = opt_instances;
+        } else {
+           throw std::runtime_error("Number of instances must be strictly positive.");
+        }
+      }
+      
       bool children_terminated = false;
       std::set<pid_t> children;
 
@@ -423,7 +510,7 @@ main(int argc, char **argv) {
 	pid_t pid;
 
 	// start more children if we don't have enough
-	while (!terminate_requested && children.size() < instances) {
+	while (!terminate_requested && (children.size() < instances)) {
 	  if ((pid = fork()) < 0)
 	  {
 	    throw runtime_error("fork failed.");

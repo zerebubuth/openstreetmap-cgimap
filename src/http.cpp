@@ -97,9 +97,6 @@ namespace http {
 not_found::not_found(const string &uri)
 	: exception(404, "Not Found", uri) {}
 
-  method_not_allowed::method_not_allowed(const string &message)
-    : exception(405, "Method Not Allowed", message) {}  
-    
   not_acceptable::not_acceptable(const string &message)
     : exception(406, "Not Acceptable", message) {}  
 

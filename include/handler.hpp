@@ -18,12 +18,15 @@ class responder {
 public:
 	 responder(mime::type);
   virtual ~responder();
-  virtual void write(boost::shared_ptr<output_formatter> f) = 0;
+  virtual void write(boost::shared_ptr<output_formatter> f, const std::string &generator) = 0;
 
 	 mime::type resource_type() const;
 
 	 virtual std::list<mime::type> types_available() const = 0;
 	 bool is_available(mime::type) const;
+
+  // quick hack to get "extra" response headers.
+  virtual std::string extra_response_headers() const;
 
 private:
 	 mime::type mime_type;

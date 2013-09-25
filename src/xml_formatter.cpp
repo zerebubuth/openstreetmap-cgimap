@@ -35,11 +35,15 @@ xml_formatter::xml_formatter(xml_writer *w)
 xml_formatter::~xml_formatter() {
 }
 
+mime::type xml_formatter::mime_type() const {
+   return mime::text_xml;
+}
+
 void
-xml_formatter::start_document() {
+xml_formatter::start_document(const std::string &generator) {
   writer->start("osm");
   writer->attribute("version", string("0.6"));
-  writer->attribute("generator", string(PACKAGE_STRING));
+  writer->attribute("generator", generator);
 
   writer->attribute("copyright", string("OpenStreetMap and contributors"));
   writer->attribute("attribution", string("http://www.openstreetmap.org/copyright"));
@@ -64,7 +68,7 @@ xml_formatter::write_bounds(const bbox &bounds) {
 }
 
 void 
-xml_formatter::start_element_type(element_type type, size_t num_elements) {
+xml_formatter::start_element_type(element_type type) {
   // xml documents surround each element with its type, so there's no
   // need to output any information here.
 }

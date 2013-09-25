@@ -1,5 +1,6 @@
 #include "backend/apidb/quad_tile.hpp"
 #include <cmath>
+#include <set>
 
 using std::set;
 
@@ -26,7 +27,7 @@ inline unsigned int lat2y(double lat) {
   return round((lat + 90.0) * 65535.0 / 180.0);
 }
 
-set<unsigned int> 
+std::list<osm_id_t>
 tiles_for_area(double minlat, double minlon, 
 	       double maxlat, double maxlon) {
   const unsigned int minx = lon2x(minlon);
@@ -41,5 +42,5 @@ tiles_for_area(double minlat, double minlon,
     }
   }
   
-  return tiles;
+  return std::list<osm_id_t>(tiles.begin(), tiles.end());
 }

@@ -10,15 +10,6 @@ ___map_LDADD=libcgimap_fcgi.a libcgimap_core.a @LIBPQXX_LIBS@ @FCGI_LIBS@ @YAJL_
 ___map_SOURCES=\
 	main.cpp
 
-if ENABLE_APIDB
-___map_SOURCES+=\
-	backend/apidb/apidb.cpp \
-	backend/apidb/writeable_pgsql_selection.cpp \
-	backend/apidb/readonly_pgsql_selection.cpp \
-	backend/apidb/changeset.cpp \
-	backend/apidb/quad_tile.cpp
-endif
-
 libcgimap_fcgi_a_SOURCES=\
 	fcgi_helpers.cpp \
 	fcgi_request.cpp
@@ -46,17 +37,32 @@ libcgimap_core_a_SOURCES=\
 libcgimap_core_a_SOURCES+=\
 	api06/map_handler.cpp
 
-if ENABLE_EXPERIMENTAL
+if ENABLE_APIDB
+___map_SOURCES+=\
+	backend/apidb/apidb.cpp \
+	backend/apidb/writeable_pgsql_selection.cpp \
+	backend/apidb/readonly_pgsql_selection.cpp \
+	backend/apidb/changeset.cpp \
+	backend/apidb/quad_tile.cpp
+endif
+
+if ENABLE_PGSNAPSHOT
+___map_SOURCES+=\
+	backend/pgsnapshot/pgsnapshot.cpp \
+	backend/pgsnapshot/snapshot_selection.cpp
+endif
+
 libcgimap_core_a_SOURCES+=\
+	api06/handler_utils.cpp \
+	api06/map_handler.cpp \
 	api06/node_handler.cpp \
 	api06/nodes_handler.cpp \
-	api06/relation_full_handler.cpp \
 	api06/relation_handler.cpp \
 	api06/relations_handler.cpp \
-	api06/way_full_handler.cpp \
 	api06/way_handler.cpp \
-	api06/ways_handler.cpp
-endif
+	api06/ways_handler.cpp \
+	api06/relation_full_handler.cpp \
+	api06/way_full_handler.cpp
 
 if ENABLE_API07
 libcgimap_core_a_SOURCES+=api07/map_handler.cpp

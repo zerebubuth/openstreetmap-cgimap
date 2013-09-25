@@ -1,7 +1,7 @@
 AC_INIT([CGImap], 
-        [0.2.0], 
+        [0.3.0], 
 	[https://github.com/zerebubuth/openstreetmap-cgimap/issues], 
-	[cgimap-0.2.0], 
+	[cgimap-0.3.0], 
 	[https://github.com/zerebubuth/openstreetmap-cgimap])
 AM_INIT_AUTOMAKE([subdir-objects parallel-tests])
 AM_SILENT_RULES([yes])
@@ -56,17 +56,6 @@ FCGI_CFLAGS="-I${FCGI_PREFIX}/include"
 AC_SUBST(FCGI_LIBS)
 AC_SUBST(FCGI_CFLAGS)
 
-AC_MSG_CHECKING([whether to enable experimental other API 0.6 calls])
-AC_ARG_ENABLE([experimental],
-	[AS_HELP_STRING([--enable-experimental],
-		[Enable experimental other API 0.6 calls])],
-	[enable_experimental="yes"],
-	[enable_experimental="no"])
-AC_MSG_RESULT($enable_experimental)
-AS_IF([test "x$enable_experimental" == xyes],
-	    [AC_DEFINE([ENABLE_EXPERIMENTAL], [1], [Define for experimental other API 0.6 calls.])])
-AM_CONDITIONAL([ENABLE_EXPERIMENTAL], [test "x$enable_experimental" == xyes])
-
 AC_MSG_CHECKING(whether to enable JSON output using YAJL)
 AC_ARG_ENABLE(yajl,
     [AS_HELP_STRING([--enable-yajl], [Enable JSON output with the YAJL library. API 0.7 only.])],
@@ -115,6 +104,19 @@ AS_IF([test "x$enable_apidb" == xyes],
       [AC_DEFINE([ENABLE_APIDB], [1], [Define for APIDB backend support.])])
 AM_CONDITIONAL([ENABLE_APIDB], [test "x$enable_apidb" == xyes])
 
+AC_MSG_CHECKING([whether to enable PGSNAPSHOT backend])
+AC_ARG_ENABLE([pgsnapshot],
+	[AS_HELP_STRING([--enable-pgsnapshot],
+		[Enable pgsnapshot backend (default: enabled)])],
+	[case "${enableval}" in
+	  yes | no ) enable_pgsnapshot="${enableval}" ;;
+	  * ) AC_MSG_ERROR(value for --enable-pgsnapshot should be yes or no) ;;
+	 esac],
+	[enable_pgsnapshot="yes"])
+AC_MSG_RESULT($enable_pgsnapshot)
+AS_IF([test "x$enable_pgsnapshot" == xyes],
+      [AC_DEFINE([ENABLE_PGSNAPSHOT], [1], [Define for PGSNAPSHOT backend support.])])
+AM_CONDITIONAL([ENABLE_PGSNAPSHOT], [test "x$enable_pgsnapshot" == xyes])
 AC_CONFIG_FILES([
 	Makefile
 	src/Makefile])

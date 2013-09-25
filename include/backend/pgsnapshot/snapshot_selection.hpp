@@ -1,22 +1,19 @@
-#ifndef WRITEABLE_PGSQL_SELECTION_HPP
-#define WRITEABLE_PGSQL_SELECTION_HPP
+#ifndef PGSNAPSHOT_SELECTION_HPP
+#define PGSNAPSHOT_SELECTION_HPP
 
 #include "data_selection.hpp"
-#include "backend/apidb/changeset.hpp"
-#include "backend/apidb/cache.hpp"
 #include <pqxx/pqxx>
 #include <boost/program_options.hpp>
 
 /**
  * a selection which operates against a writeable (i.e: non read-only
- * slave) PostgreSQL database, such as the rails_port database or
- * an osmosis imported database.
+ * slave) pgsnapshot PostgreSQL database, imported with osmosis
  */
-class writeable_pgsql_selection
+class snapshot_selection
 	: public data_selection {
 public:
-	 writeable_pgsql_selection(pqxx::connection &conn, cache<osm_id_t, changeset> &changeset_cache);
-	 ~writeable_pgsql_selection();
+	 snapshot_selection(pqxx::connection &conn);
+	 ~snapshot_selection();
 
 	 void write_nodes(output_formatter &formatter);
 	 void write_ways(output_formatter &formatter);
@@ -36,6 +33,7 @@ public:
 	 void select_relations_from_ways();
 	 void select_nodes_from_way_nodes();
 	 void select_relations_from_nodes();
+	 void select_relations_from_way_nodes();
 	 void select_relations_from_relations();
   void select_relations_members_of_relations();
 
@@ -46,14 +44,12 @@ public:
    class factory
       : public data_selection::factory {
    public:
-     factory(const boost::program_options::variables_map &);
-     virtual ~factory();
-     virtual boost::shared_ptr<data_selection> make_selection();
+      factory(const boost::program_options::variables_map &);
+      virtual ~factory();
+      virtual boost::shared_ptr<data_selection> make_selection();
 
    private:
-     pqxx::connection m_connection, m_cache_connection;
-     pqxx::nontransaction m_cache_tx;
-     cache<osm_id_t, changeset> m_cache;
+      pqxx::connection m_connection;
    };
 
 private:
@@ -61,12 +57,6 @@ private:
    // the transaction in which the selection takes place. although 
    // this *is* read-only, it may create temporary tables.
    pqxx::work w;
-   
-  cache<osm_id_t, changeset> cc;
-
-  // true if a query hasn't been run yet, i.e: it's possible to
-  // assume that all the temporary tables are empty.
-  bool m_tables_empty;
 };
 
-#endif /* WRITEABLE_PGSQL_SELECTION_HPP */
+#endif /* PGSNAPSHOT_SELECTION_HPP */

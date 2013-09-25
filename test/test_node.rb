@@ -12,6 +12,7 @@ load_osm_file("#{File.dirname(__FILE__)}/test_node.osm", conn)
 test_request("GET", "/api/0.6/node/1", "HTTP_ACCEPT" => "text/xml") do |headers, data|
   assert(headers["Status"], "200 OK", "Response status code.")
   assert(headers["Content-Type"], "text/xml; charset=utf-8", "Response content type.")
+  assert(headers.has_key?("Content-Disposition"), false, "Response content disposition header.")
 
   doc = XML::Parser.string(data).parse
   assert(doc.root.name, "osm", "Document root element.")
@@ -73,6 +74,7 @@ end
 test_request("GET", "/api/0.6/nodes?nodes=1,2,3", "HTTP_ACCEPT" => "text/xml") do |headers, data|
   assert(headers["Status"], "200 OK", "Response status code.")
   assert(headers["Content-Type"], "text/xml; charset=utf-8", "Response content type.")
+  assert(headers.has_key?("Content-Disposition"), false, "Response content disposition header.")
 
   doc = XML::Parser.string(data).parse
   assert(doc.root.name, "osm", "Document root element.")
@@ -93,7 +95,9 @@ test_request("GET", "/api/0.6/nodes?nodes=", "HTTP_ACCEPT" => "text/xml") do |he
   assert(headers['Status'], "400 Bad Request", "Response status code.")
 end
 
-# nodes call returns bad request if the list of nodes isn't numeric
+# nodes call returns not found if the list of nodes isn't numeric
+# note that this doesn't really make sense without understanding that
+# "some_string".to_i = 0 in ruby, and all element IDs are > 0.
 test_request('GET', '/api/0.6/nodes?nodes=1,two,3', 'HTTP_ACCEPT' => 'text/xml') do |headers, data|
-  assert(headers['Status'], '400 Bad Request', 'Response status code.')
+  assert(headers['Status'], '404 Not Found', 'Response status code.')
 end

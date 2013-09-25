@@ -7,6 +7,41 @@
 
 using std::runtime_error;
 
+namespace {
+struct fcgi_buffer 
+  : public output_buffer {
+  
+  explicit fcgi_buffer(FCGX_Request req)
+  : m_req(req), m_written(0) {
+  }
+
+  virtual ~fcgi_buffer() {
+  }
+
+  int write(const char *buffer, int len) {
+    int bytes = FCGX_PutStr(buffer, len, m_req.out);
+    if (bytes >= 0) { m_written += bytes; }
+    return bytes;
+  }
+
+  int written() {
+    return m_written;
+  }
+
+  int close() {
+    return FCGX_FClose(m_req.out);
+  }
+
+  void flush() {
+    FCGX_FFlush(m_req.out);
+  }
+
+private:
+  FCGX_Request m_req;
+  int m_written;
+};
+}
+
 struct fcgi_request::pimpl {
   FCGX_Request req;
 };
@@ -39,9 +74,11 @@ int fcgi_request::put(const std::string &str) {
 }
 
 boost::shared_ptr<output_buffer> fcgi_request::get_buffer() {
+  return boost::shared_ptr<output_buffer>(new fcgi_buffer(m_impl->req));
 }
 
 std::string fcgi_request::cors_headers() {
+  return std::string();
 }
 
 void fcgi_request::flush() {
