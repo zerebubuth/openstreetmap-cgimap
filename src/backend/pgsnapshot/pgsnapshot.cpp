@@ -40,6 +40,8 @@ namespace {
     string m_name;
     po::options_description m_options;
   };
+}
 
-  bool registered = register_backend(boost::make_shared<pgsnapshot_backend>());
+boost::shared_ptr<backend> make_pgsnapshot_backend() {
+  return boost::make_shared<pgsnapshot_backend>();
 }

@@ -21,8 +21,6 @@ struct backend {
   virtual boost::shared_ptr<data_selection::factory> create(const boost::program_options::variables_map &) = 0;
 };
 
-// call this function statically to register a backend with the singleton
-bool register_backend(boost::shared_ptr<backend>);
 // figures out which backend should be selected and adds its options to the
 // options description.
 void setup_backend_options(int argc, char *argv[], boost::program_options::options_description &);
@@ -30,5 +28,14 @@ void setup_backend_options(int argc, char *argv[], boost::program_options::optio
 void output_backend_options(std::ostream &);
 // singleton call to create a backend from a given set of options.
 boost::shared_ptr<data_selection::factory> create_backend(const boost::program_options::variables_map &);
+
+// this function is mainly for testing purposes - it adds a
+// backend to the registry and enables its options and use
+// from the rest of the code.
+//
+// note that in normal use the backends which are enabled at
+// configure time are already included and do not need to be
+// registered.
+bool register_backend(boost::shared_ptr<backend>);
 
 #endif /* BACKEND_HPP */

@@ -56,5 +56,8 @@ namespace {
     po::options_description m_options;
   };
 
-  bool registered = register_backend(boost::make_shared<apidb_backend>());
+}
+
+boost::shared_ptr<backend> make_apidb_backend() {
+  return boost::make_shared<apidb_backend>();
 }

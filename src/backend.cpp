@@ -1,8 +1,16 @@
 #include "backend.hpp"
+#include "config.h"
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <stdexcept>
+
+#ifdef ENABLE_APIDB
+#include "backend/apidb/apidb.hpp"
+#endif
+#ifdef ENABLE_PGSNAPSHOT
+#include "backend/pgsnapshot/pgsnapshot.hpp"
+#endif
 
 namespace po = boost::program_options;
 using boost::shared_ptr;
@@ -28,6 +36,8 @@ po::variables_map first_pass_argments(int argc, char *argv[], const po::options_
 }
 
 struct registry {
+  registry();
+
   bool add(shared_ptr<backend> ptr);
   void setup_options(int argc, char *argv[], po::options_description &desc);
   void output_options(std::ostream &out);
@@ -38,6 +48,15 @@ private:
   backend_map_t backends;
   shared_ptr<backend> default_backend;
 };
+
+registry::registry() {
+#if ENABLE_APIDB
+  add(make_apidb_backend());
+#endif
+#if ENABLE_PGSNAPSHOT
+  add(make_pgsnapshot_backend());
+#endif
+}
 
 bool registry::add(shared_ptr<backend> ptr) {
   if (default_backend) {
