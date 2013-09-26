@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<osm version="0.6" generator="by hand">
+  <node id="1" version="1" changeset="1" lat="0.0" lon="0.0" user="foo" uid="1" visible="true" timestamp="2012-09-25T00:00:00Z"/>
+  <node id="2" version="8" changeset="3" lat="1.0" lon="1.0" user="foo" uid="1" visible="true" timestamp="2012-10-01T00:00:00Z">
+    <tag k="foo" v="bar1"/>
+    <tag k="bar" v="bar2"/>
+    <tag k="baz" v="bar3"/>
+  </node>
+  <node id="3" version="2" changeset="3" lat="0.0" lon="0.0" user="foo" uid="1" visible="true" timestamp="2012-09-25T00:01:00Z"/>
+   <node id="4" version="2" changeset="3" lat="0.0" lon="0.0" user="foo" uid="1" visible="false" timestamp="2012-09-25T00:01:00Z"/>
+
+  <way id="1" version="1" changeset="1" user="foo" uid="1" visible="true" timestamp="2012-12-01T00:00:00Z">
+    <nd ref="1"/>
+    <nd ref="2"/>
+    <nd ref="3"/>
+    <nd ref="1"/>
+    <tag k="highway" v="motorway"/>
+    <tag k="name" v="Foo"/>
+  </way>
+
+  <way id="2" version="2" changeset="3" user="foo" uid="1" visible="false" timestamp="2012-12-01T00:00:00Z"/>
+</osm>
