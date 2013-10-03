@@ -52,6 +52,11 @@ ___map_SOURCES+=\
 	api06/relation_full_handler.cpp \
 	api06/way_full_handler.cpp
 
+if ENABLE_EXPERIMENTAL
+___map_SOURCES+=\
+	api06/node_ways_handler.cpp
+endif
+
 if ENABLE_API07
 ___map_SOURCES+=api07/map_handler.cpp
 endif
