@@ -25,7 +25,7 @@ node_ways_responder::node_ways_responder(mime::type mt, osm_id_t id_, data_selec
 node_ways_responder::~node_ways_responder() {
 }
 
-node_ways_handler::node_ways_handler(FCGX_Request &request, osm_id_t id_) 
+node_ways_handler::node_ways_handler(request &req, osm_id_t id_) 
 	: id(id_) {
 }
 
