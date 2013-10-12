@@ -18,6 +18,9 @@ noinst_LIBRARIES+=libcgimap_pgsnapshot.a
 ___map_LDADD+=libcgimap_pgsnapshot.a
 endif
 
+noinst_LIBRARIES+=libcgimap_staticxml.a
+___map_LDADD+=libcgimap_staticxml.a
+
 ___map_LDADD+=libcgimap_core.a @LIBPQXX_LIBS@ @FCGI_LIBS@ @YAJL_LIBS@ @LIBXML_LIBS@ @LIBMEMCACHED_LIBS@ @BOOST_REGEX_LIB@ @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_DATE_TIME_LIB@ @BOOST_SYSTEM_LIB@
 
 ################################################################################
@@ -89,3 +92,5 @@ libcgimap_pgsnapshot_a_SOURCES=\
 	backend/pgsnapshot/snapshot_selection.cpp
 endif
 
+libcgimap_staticxml_a_SOURCES=\
+	backend/staticxml/staticxml.cpp

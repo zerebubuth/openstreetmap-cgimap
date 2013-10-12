@@ -11,6 +11,7 @@
 #ifdef ENABLE_PGSNAPSHOT
 #include "backend/pgsnapshot/pgsnapshot.hpp"
 #endif
+#include "backend/staticxml/staticxml.hpp"
 
 namespace po = boost::program_options;
 using boost::shared_ptr;
@@ -56,6 +57,7 @@ registry::registry() {
 #if ENABLE_PGSNAPSHOT
   add(make_pgsnapshot_backend());
 #endif
+  add(make_staticxml_backend());
 }
 
 bool registry::add(shared_ptr<backend> ptr) {
