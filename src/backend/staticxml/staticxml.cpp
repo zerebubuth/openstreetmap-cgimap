@@ -18,6 +18,23 @@ using std::string;
 
 namespace {
 
+// needed to get boost::lexical_cast<bool>(string) to work.
+// see: http://stackoverflow.com/questions/4452136/how-do-i-use-boostlexical-cast-and-stdboolalpha-i-e-boostlexical-cast-b
+struct bool_alpha {
+  bool data;
+  bool_alpha() {}
+  bool_alpha(bool data) : data(data) {}
+  operator bool() const { return data; }
+  friend std::ostream &operator<<(std::ostream &out, bool_alpha b) {
+    out << std::boolalpha << b.data;
+    return out;
+  }
+  friend std::istream &operator>>(std::istream &in, bool_alpha &b) {
+    in >> std::boolalpha >> b.data;
+    return in;
+  }
+};
+
 struct node {
   element_info m_info;
   double m_lon, m_lat;
@@ -43,47 +60,48 @@ struct database {
 };
 
 template <typename T>
-T get_attribute(const char *name, size_t len, int num_attributes, const xmlChar **attributes) {
-  for (int i = 0; i < num_attributes; i += 2) {
-    if (strncmp(((const char *)attributes[i]), name, len) == 0) {
-      return boost::lexical_cast<T>((const char *)attributes[i+1]);
+T get_attribute(const char *name, size_t len, const xmlChar **attributes) {
+  while (*attributes != NULL) {
+    if (strncmp(((const char *)(*attributes++)), name, len) == 0) {
+      return boost::lexical_cast<T>((const char *)(*attributes));
     }
+    ++attributes;
   }
   throw std::runtime_error((boost::format("Unable to find attribute %1%.") % name).str());
 }
 
 template <typename T>
-boost::optional<T> opt_attribute(const char *name, size_t len, int num_attributes, const xmlChar **attributes) {
-  for (int i = 0; i < num_attributes; i += 2) {
-    if (strncmp(((const char *)attributes[i]), name, len) == 0) {
-      return boost::lexical_cast<T>((const char *)attributes[i+1]);
+boost::optional<T> opt_attribute(const char *name, size_t len, const xmlChar **attributes) {
+  while (*attributes != NULL) {
+    if (strncmp(((const char *)(*attributes++)), name, len) == 0) {
+      return boost::lexical_cast<T>((const char *)(*attributes));
     }
+    ++attributes;
   }
   return boost::none;
 }
 
-void parse_info(element_info &info, int num_attributes, const xmlChar **attributes) {
-  info.id = get_attribute<osm_id_t>("id", 2, num_attributes, attributes);
-  info.version = get_attribute<osm_id_t>("version", 8, num_attributes, attributes);
-  info.changeset = get_attribute<osm_id_t>("changeset", 2, num_attributes, attributes);
-  info.timestamp = get_attribute<std::string>("timestamp", 10, num_attributes, attributes);
-  info.uid = opt_attribute<osm_id_t>("uid", 4, num_attributes, attributes);
-  info.display_name = opt_attribute<std::string>("user", 5, num_attributes, attributes);
-  info.visible = get_attribute<bool>("visible", 8, num_attributes, attributes);
+void parse_info(element_info &info, const xmlChar **attributes) {
+  info.id = get_attribute<osm_id_t>("id", 2, attributes);
+  info.version = get_attribute<osm_id_t>("version", 8, attributes);
+  info.changeset = get_attribute<osm_id_t>("changeset", 2, attributes);
+  info.timestamp = get_attribute<std::string>("timestamp", 10, attributes);
+  info.uid = opt_attribute<osm_id_t>("uid", 4, attributes);
+  info.display_name = opt_attribute<std::string>("user", 5, attributes);
+  info.visible = get_attribute<bool_alpha>("visible", 8, attributes);
 }
 
 struct xml_parser {
   xml_parser(database *db) : m_db(db) {}
 
-  static void start_element(void * ctx, const xmlChar *name, const xmlChar *, const xmlChar *, int, const xmlChar **,
-                            int num_attributes, int, const xmlChar **attributes) {
+  static void start_element(void * ctx, const xmlChar *name, const xmlChar **attributes) {
     xml_parser *parser = static_cast<xml_parser *>(ctx);
     
     if (strncmp((const char *)name, "node", 5) == 0) {
       node n;
-      parse_info(n.m_info, num_attributes, attributes);
-      n.m_lon = get_attribute<double>("lon", 4, num_attributes, attributes);
-      n.m_lat = get_attribute<double>("lat", 4, num_attributes, attributes);
+      parse_info(n.m_info, attributes);
+      n.m_lon = get_attribute<double>("lon", 4, attributes);
+      n.m_lat = get_attribute<double>("lat", 4, attributes);
       std::pair<std::map<osm_id_t, node>::iterator, bool> status = parser->m_db->m_nodes.insert(std::make_pair(n.m_info.id, n));
       parser->m_cur_node = &(status.first->second);
       parser->m_cur_tags = &(parser->m_cur_node->m_tags);
@@ -92,7 +110,7 @@ struct xml_parser {
 
     } else if (strncmp((const char *)name, "way", 4) == 0) {
       way w;
-      parse_info(w.m_info, num_attributes, attributes);
+      parse_info(w.m_info, attributes);
       std::pair<std::map<osm_id_t, way>::iterator, bool> status = parser->m_db->m_ways.insert(std::make_pair(w.m_info.id, w));
       parser->m_cur_way = &(status.first->second);
       parser->m_cur_tags = &(parser->m_cur_way->m_tags);
@@ -101,7 +119,7 @@ struct xml_parser {
       
     } else if (strncmp((const char *)name, "relation", 9) == 0) {
       relation r;
-      parse_info(r.m_info, num_attributes, attributes);
+      parse_info(r.m_info, attributes);
       std::pair<std::map<osm_id_t, relation>::iterator, bool> status = parser->m_db->m_relations.insert(std::make_pair(r.m_info.id, r));
       parser->m_cur_rel = &(status.first->second);
       parser->m_cur_tags = &(parser->m_cur_rel->m_tags);
@@ -110,29 +128,29 @@ struct xml_parser {
 
     } else if (strncmp((const char *)name, "tag", 4) == 0) {
       if (parser->m_cur_tags != NULL) {
-        std::string k = get_attribute<std::string>("k", 2, num_attributes, attributes);
-        std::string v = get_attribute<std::string>("v", 2, num_attributes, attributes);
+        std::string k = get_attribute<std::string>("k", 2, attributes);
+        std::string v = get_attribute<std::string>("v", 2, attributes);
 
         parser->m_cur_tags->push_back(std::make_pair(k, v));
       }
 
     } else if (strncmp((const char *)name, "nd", 3) == 0) {
       if (parser->m_cur_way != NULL) {
-        parser->m_cur_way->m_nodes.push_back(get_attribute<osm_id_t>("ref", 4, num_attributes, attributes));
+        parser->m_cur_way->m_nodes.push_back(get_attribute<osm_id_t>("ref", 4, attributes));
       }
 
     } else if (strncmp((const char *)name, "member", 7) == 0) {
       if (parser->m_cur_rel != NULL) {
         member_info m;
-        std::string member_type = get_attribute<std::string>("type", 5, num_attributes, attributes);
+        std::string member_type = get_attribute<std::string>("type", 5, attributes);
 
         if (member_type == "node") { m.type = element_type_node; }
         else if (member_type == "way") { m.type = element_type_way; }
         else if (member_type == "relation") { m.type == element_type_relation; }
         else { throw std::runtime_error((boost::format("Unknown member type `%1%'.") % member_type).str()); }
          
-        m.ref = get_attribute<osm_id_t>("ref", 4, num_attributes, attributes);
-        m.role = get_attribute<std::string>("role", 5, num_attributes, attributes);
+        m.ref = get_attribute<osm_id_t>("ref", 4, attributes);
+        m.role = get_attribute<std::string>("role", 5, attributes);
 
         parser->m_cur_rel->m_members.push_back(m);
       }
@@ -164,7 +182,7 @@ boost::shared_ptr<database> parse_xml(const char *filename) {
   memset(&handler, 0, sizeof(handler));
 
   handler.initialized = XML_SAX2_MAGIC;
-  handler.startElementNs = &xml_parser::start_element;
+  handler.startElement = &xml_parser::start_element;
   handler.warning = &xml_parser::warning;
   handler.error = &xml_parser::error;
 
