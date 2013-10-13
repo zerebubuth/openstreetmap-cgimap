@@ -23,6 +23,9 @@ include/*~
 src/*~
 test-suite.log
 test/*.log
+test/*.o
+test/.deps/
+test/test_core
 include/config.h.in
 include/config.h
 include/stamp-h1

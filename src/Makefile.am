@@ -2,30 +2,40 @@ AM_LDFLAGS=@BOOST_LDFLAGS@
 AM_CPPFLAGS=-I../include @FCGI_CFLAGS@ @LIBPQXX_CFLAGS@ @LIBXML_CFLAGS@ @LIBMEMCACHED_CFLAGS@ @BOOST_CPPFLAGS@
 
 bin_PROGRAMS=../map
+check_PROGRAMS=../test/test_core
 
 noinst_LIBRARIES=\
 	libcgimap_core.a \
 	libcgimap_fcgi.a
 ___map_LDADD=libcgimap_fcgi.a
+___test_test_core_LDADD=
 
 if ENABLE_APIDB
 noinst_LIBRARIES+=libcgimap_apidb.a
 ___map_LDADD+=libcgimap_apidb.a
+___test_test_core_LDADD+=libcgimap_apidb.a
 endif
 
 if ENABLE_PGSNAPSHOT
 noinst_LIBRARIES+=libcgimap_pgsnapshot.a
 ___map_LDADD+=libcgimap_pgsnapshot.a
+___test_test_core_LDADD+=libcgimap_pgsnapshot.a
 endif
 
 noinst_LIBRARIES+=libcgimap_staticxml.a
 ___map_LDADD+=libcgimap_staticxml.a
+___test_test_core_LDADD+=libcgimap_staticxml.a
 
 ___map_LDADD+=libcgimap_core.a @LIBPQXX_LIBS@ @FCGI_LIBS@ @YAJL_LIBS@ @LIBXML_LIBS@ @LIBMEMCACHED_LIBS@ @BOOST_REGEX_LIB@ @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_DATE_TIME_LIB@ @BOOST_SYSTEM_LIB@
+___test_test_core_LDADD+=libcgimap_core.a @LIBPQXX_LIBS@ @FCGI_LIBS@ @YAJL_LIBS@ @LIBXML_LIBS@ @LIBMEMCACHED_LIBS@ @BOOST_REGEX_LIB@ @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_DATE_TIME_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@
 
 ################################################################################
 ___map_SOURCES=\
 	main.cpp \
+	backend.cpp
+
+___test_test_core_SOURCES=\
+	../test/test_core.cpp \
 	backend.cpp
 
 libcgimap_fcgi_a_SOURCES=\
