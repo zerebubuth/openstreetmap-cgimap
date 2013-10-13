@@ -29,7 +29,6 @@ ___map_SOURCES=\
 	backend.cpp
 
 libcgimap_fcgi_a_SOURCES=\
-	fcgi_helpers.cpp \
 	fcgi_request.cpp
 
 libcgimap_core_a_SOURCES=\
@@ -43,8 +42,10 @@ libcgimap_core_a_SOURCES=\
 	osm_responder.cpp \
 	output_formatter.cpp \
 	output_writer.cpp \
+	process_request.cpp \
 	rate_limiter.cpp \
 	request.cpp \
+	request_helpers.cpp \
 	router.cpp \
 	routes.cpp \
 	xml_formatter.cpp \

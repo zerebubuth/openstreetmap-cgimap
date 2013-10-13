@@ -26,7 +26,7 @@
 #endif /* ENABLE_API07 */
 
 #include "router.hpp"
-#include "fcgi_helpers.hpp"
+#include "request_helpers.hpp"
 #include "http.hpp"
 #include "mime_types.hpp"
 

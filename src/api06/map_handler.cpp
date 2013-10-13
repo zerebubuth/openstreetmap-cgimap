@@ -1,6 +1,6 @@
 #include "api06/map_handler.hpp"
 #include "http.hpp"
-#include "fcgi_helpers.hpp"
+#include "request_helpers.hpp"
 #include "logger.hpp"
 #include <boost/format.hpp>
 #include <map>

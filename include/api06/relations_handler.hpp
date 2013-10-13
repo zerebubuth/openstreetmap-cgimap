@@ -3,7 +3,7 @@
 
 #include "handler.hpp"
 #include "osm_responder.hpp"
-#include "fcgi_helpers.hpp"
+#include "request_helpers.hpp"
 #include "data_selection.hpp"
 #include "request.hpp"
 #include <string>

@@ -1,7 +1,6 @@
-#include "fcgi_helpers.hpp"
+#include "request_helpers.hpp"
 #include <sstream>
 #include <cstring>
-#include <fcgiapp.h>
 
 using std::string;
 using std::ostringstream;
@@ -18,7 +17,7 @@ fcgi_get_env(request &req, const char* name, const char* default_value) {
       v = default_value;
     } else {
       ostringstream ostr;
-      ostr << "FCGI didn't set the $" << name << " environment variable.";
+      ostr << "request didn't set the $" << name << " environment variable.";
       throw http::server_error(ostr.str());
     }
   }
@@ -39,7 +38,7 @@ get_query_string(request &req) {
     if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
       // fail. something has obviously gone massively wrong.
       ostringstream ostr;
-      ostr << "FCGI didn't set the $QUERY_STRING or $REQUEST_URI "
+      ostr << "request didn't set the $QUERY_STRING or $REQUEST_URI "
 	   << "environment variables.";
       throw http::server_error(ostr.str());
     }
@@ -65,7 +64,7 @@ get_request_path(request &req) {
   
   if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
     ostringstream ostr;
-    ostr << "FCGI didn't set the $REQUEST_URI environment variable.";
+    ostr << "request didn't set the $REQUEST_URI environment variable.";
     throw http::server_error(ostr.str());
   }
   
@@ -115,7 +114,7 @@ get_cors_headers(request &req) {
 
 namespace {
 /**
- * Bindings to allow libxml to write directly to the FCGI
+ * Bindings to allow libxml to write directly to the request
  * library.
  */
 class fcgi_output_buffer
@@ -127,7 +126,7 @@ public:
   }
 
   virtual int close() {
-    // we don't actually close the FCGI output, as that happens
+    // we don't actually close the request output, as that happens
     // automatically on the next call to accept.
     return 0;
   }

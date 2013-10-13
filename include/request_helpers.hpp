@@ -1,5 +1,5 @@
-#ifndef FCGI_HELPERS_HPP
-#define FCGI_HELPERS_HPP
+#ifndef REQUEST_HELPERS_HPP
+#define REQUEST_HELPERS_HPP
 
 #include <string>
 #include <boost/shared_ptr.hpp>
@@ -7,7 +7,7 @@
 #include "http.hpp"
 
 /**
- * Lookup a string from the FCGI environment. Throws 500 error if the
+ * Lookup a string from the request environment. Throws 500 error if the
  * string isn't there and no default value is given.
  */
 std::string
@@ -49,4 +49,4 @@ get_cors_headers(request &req);
 boost::shared_ptr<output_buffer>
 make_output_buffer(request &req);
 
-#endif /* FCGI_HELPERS_HPP */
+#endif /* REQUEST_HELPERS_HPP */
