@@ -1,0 +1,7 @@
+Request-Method: GET
+Request-URI: /api/0.6/map?bbox=179.9,0,180.1,0.1
+---
+Content-Length: 0
+Error: The latitudes must be between -90 and 90, longitudes between -180 and 180 and the minima must be less than the maxima.
+Status: 400 Bad Request
+---
