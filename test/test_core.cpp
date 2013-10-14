@@ -9,12 +9,16 @@
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+
 #include <vector>
 #include <sstream>
 
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 namespace al = boost::algorithm;
+namespace pt = boost::property_tree;
 
 /**
  * Mock output buffer so that we can get back an in-memory result as a string
@@ -117,17 +121,150 @@ void setup_request_headers(test_request &req, std::istream &in) {
 }
 
 /**
+ * check the xml attributes of two elements are the same. this is a
+ * different test method because we don't care about ordering for
+ * attributes, whereas the main method for XML elements does.
+ */
+void check_xmlattr(const pt::ptree &expected, const pt::ptree &actual) {
+  std::set<std::string> exp_keys, act_keys;
+
+  BOOST_FOREACH(const pt::ptree::value_type &val, expected) {
+    exp_keys.insert(val.first);
+  }
+  BOOST_FOREACH(const pt::ptree::value_type &val, actual) {
+    act_keys.insert(val.first);
+  }
+
+  if (exp_keys.size() > act_keys.size()) {
+    BOOST_FOREACH(const std::string &ak, act_keys) {
+      exp_keys.erase(ak);
+    }
+    std::ostringstream out;
+    out << "Missing attributes [";
+    BOOST_FOREACH(const std::string &ek, exp_keys) {
+      out << ek << " ";
+    }
+    out << "]";
+    throw std::runtime_error(out.str());
+  }
+
+  if (act_keys.size() > exp_keys.size()) {
+    BOOST_FOREACH(const std::string &ek, exp_keys) {
+      act_keys.erase(ek);
+    }
+    std::ostringstream out;
+    out << "Missing attributes [";
+    BOOST_FOREACH(const std::string &ak, act_keys) {
+      out << ak << " ";
+    }
+    out << "]";
+    throw std::runtime_error(out.str());
+  }
+
+  BOOST_FOREACH(const std::string &k, exp_keys) {
+    std::string exp_val = expected.get_child(k).data();
+    std::string act_val = actual.get_child(k).data();
+    if ((exp_val != act_val) && (exp_val != "***")) {
+      throw std::runtime_error((boost::format("Attribute `%1%' expected value `%2%', but got `%3%'")
+                                % k % exp_val % act_val).str());
+    }
+  }
+}
+
+/**
+ * recursively check an XML tree for a match. this is a very basic way of
+ * doing it, but seems effective so far. the trees are walked depth-first
+ * and values are compared exactly - except for when the expected value is
+ * '***', which causes it to skip that subtree entirely.
+ */
+void check_recursive_tree(const pt::ptree &expected, const pt::ptree &actual) {
+  pt::ptree::const_iterator exp_itr = expected.begin();
+  pt::ptree::const_iterator act_itr = actual.begin();
+
+  // skip comparison of trees for this wildcard.
+  if (al::trim_copy(expected.data()) == "***") {
+    return;
+  }
+
+  while (true) {
+    if ((exp_itr == expected.end()) && (act_itr == actual.end())) {
+      break;
+    }
+    if (exp_itr == expected.end()) { 
+      std::ostringstream out;
+      out << "Actual result has more entries than expected: [" << act_itr->first;
+      ++act_itr;
+      while (act_itr != actual.end()) {
+        out << ", " << act_itr->first;
+        ++act_itr;
+      }
+      out << "] are extra";
+      throw std::runtime_error(out.str()); 
+    }
+    if (act_itr == actual.end()) {
+      std::ostringstream out;
+      out << "Actual result has fewer entries than expected: [" << exp_itr->first;
+      ++exp_itr;
+      while (exp_itr != expected.end()) {
+        out << ", " << exp_itr->first;
+        ++exp_itr;
+      }
+      out << "] are absent";
+      throw std::runtime_error(out.str());
+    }
+    if (exp_itr->first != act_itr->first) {
+      throw std::runtime_error((boost::format("Expected %1%, but got %2%") % exp_itr->first % act_itr->first).str());
+    }
+    try {
+      if (exp_itr->first == "<xmlattr>") {
+        check_xmlattr(exp_itr->second, act_itr->second);
+      } else {
+        check_recursive_tree(exp_itr->second, act_itr->second);
+      }
+    } catch (const std::exception &ex) {
+      throw std::runtime_error((boost::format("%1%, in <%2%> element") % ex.what() % exp_itr->first).str());
+    }
+    ++exp_itr;
+    ++act_itr;
+  }
+}
+
+/**
+ * check that the content body of the expected, from the test case, and
+ * actual, from the response, is the same.
+ */
+void check_content_body_xml(std::istream &expected, std::istream &actual) {
+  pt::ptree exp_tree, act_tree;
+  
+  try {
+    pt::read_xml(expected, exp_tree);
+  } catch (const std::exception &ex) {
+    throw std::runtime_error((boost::format("%1%, while reading expected XML.")
+                              % ex.what()).str());
+  }
+
+  try {
+    pt::read_xml(actual, act_tree);
+  } catch (const std::exception &ex) {
+    throw std::runtime_error((boost::format("%1%, while reading actual XML.")
+                              % ex.what()).str());
+  }
+
+  // and check the results for equality
+  check_recursive_tree(exp_tree, act_tree);
+}
+
+/**
  * Check the response from cgimap against the expected test result
  * from the test file.
  */
 void check_response(std::istream &expected, std::istream &actual) {
   typedef std::map<std::string, std::string> dict;
+
+  // check that, for some headers that we get, they are the same
+  // as we expect.
   const dict expected_headers = read_headers(expected, "---");
   const dict actual_headers = read_headers(actual, "");
-
-  BOOST_FOREACH(const dict::value_type &val, actual_headers) {
-    std::cerr << val.first << ": " << val.second << std::endl;
-  }
 
   BOOST_FOREACH(const dict::value_type &val, expected_headers) {
     dict::const_iterator itr = actual_headers.find(val.first);
@@ -140,6 +277,19 @@ void check_response(std::istream &expected, std::istream &actual) {
         throw std::runtime_error((boost::format("Header key `%1%'; expected `%2%' but got `%3%'.")
                                   % val.first % val.second % itr->second).str());
       }
+    }
+  }
+
+  // now check the body, if there is one. we judge this by whether we expect a
+  // Content-Type header.
+  if (expected_headers.count("Content-Type") > 0) {
+    const std::string content_type = expected_headers.find("Content-Type")->second;
+    if (content_type.substr(0, 8) == "text/xml") {
+      check_content_body_xml(expected, actual);
+      
+    } else {
+      throw std::runtime_error((boost::format("Cannot yet handle tests with Content-Type: %1%.")
+                                % content_type).str());
     }
   }
 }

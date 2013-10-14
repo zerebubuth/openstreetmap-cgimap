@@ -5,3 +5,6 @@ Content-Type: text/xml; charset=utf-8
 Content-Disposition: attachment; filename="map.osm"
 Status: 200 OK
 ---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <bounds maxlat="-0.0005000" maxlon="-0.0005000" minlat="-0.0100000" minlon="-0.0100000"/>
+</osm>
