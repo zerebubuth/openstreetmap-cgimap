@@ -101,3 +101,28 @@ end
 test_request('GET', '/api/0.6/nodes?nodes=1,two,3', 'HTTP_ACCEPT' => 'text/xml') do |headers, data|
   assert(headers['Status'], '404 Not Found', 'Response status code.')
 end
+
+# check it still works with nodes with IDs > 2^31
+['8589934592', '9223372036854775807'].each do |node_id|
+  test_request('GET', '/api/0.6/node/' + node_id, 'HTTP_ACCEPT' => 'text/xml') do |headers, data|
+    assert(headers['Status'], '200 OK', 'Response status code.')
+    assert(headers["Content-Type"], "text/xml; charset=utf-8", "Response content type.")
+    
+    doc = XML::Parser.string(data).parse
+    assert(doc.root.name, "osm", "Document root element.")
+    children = doc.root.children.select {|n| n.element?}
+    assert(children.size, 1, "Number of children of the <osm> element.")
+    node = children[0]
+    assert(node.name, "node", "Name of <osm> child.")
+    assert(node["id"], node_id, "ID of node")
+    assert(node["lat"], "3.0000000", "Latitude attribute")
+    assert(node["lon"], "3.0000000", "Longitude attribute")
+    assert(node["user"], "user_4", "User name")
+    assert(node["uid"], "4", "User ID")
+    assert(node["visible"], "true", "Visibility attribute")
+    assert(node["version"].to_i, 1, "Version attribute")
+    assert(node["changeset"].to_i, 4, "Changeset ID")
+    assert(node["timestamp"], "2013-10-20T00:00:00Z", "Timestamp")
+    assert(node.children.length, 0, "Number of tags.")
+  end
+end

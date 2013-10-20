@@ -73,3 +73,26 @@ end
 test_request('GET', '/api/0.6/relations?relations=1,two,3', 'HTTP_ACCEPT' => 'text/xml') do |headers, data|
   assert(headers['Status'], '404 Not Found', 'Response status code.')
 end
+
+# check it still works with relations with IDs > 2^31
+['8589934592', '9223372036854775807'].each do |relation_id|
+  test_request('GET', '/api/0.6/relation/' + relation_id, 'HTTP_ACCEPT' => 'text/xml') do |headers, data|
+    assert(headers['Status'], '200 OK', 'Response status code.')
+    assert(headers["Content-Type"], "text/xml; charset=utf-8", "Response content type.")
+    
+    doc = XML::Parser.string(data).parse
+    assert(doc.root.name, "osm", "Document root element.")
+    children = doc.root.children.select {|n| n.element?}
+    assert(children.size, 1, "Number of children of the <osm> element.")
+    relation = children[0]
+    assert(relation.name, "relation", "Name of <osm> child.")
+    assert(relation["id"], relation_id, "ID of relation")
+    assert(relation["user"], "user_4", "User name")
+    assert(relation["uid"], "4", "User ID")
+    assert(relation["visible"], "true", "Visibility attribute")
+    assert(relation["version"].to_i, 1, "Version attribute")
+    assert(relation["changeset"].to_i, 4, "Changeset ID")
+    assert(relation["timestamp"], "2013-10-20T00:00:00Z", "Timestamp")
+    assert(relation.children.length, 0, "Number of tags and members.")
+  end
+end
