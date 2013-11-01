@@ -95,10 +95,10 @@ daemon is supplied in `scripts/cgibin.conf`. To use this on a Ubuntu-based
 system you need to copy the cofiguration to where Apache will read it and
 create an api directory:
 
-	sudo cp scripts/cgimap.conf /etc/apache2/sites-available/cgimap
+    sudo cp scripts/cgimap.conf /etc/apache2/sites-available/cgimap
     sudo chmod 644 /etc/apache2/sites-available/cgimap
     sudo chown root:root /etc/apache2/sites-available/cgimap
-	sudo mkdir /var/www/api
+    sudo mkdir /var/www/api
     sudo a2ensite cgimap
     sudo service apache2 restart
 
