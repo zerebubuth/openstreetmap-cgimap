@@ -1,0 +1,5 @@
+Request-Method: GET
+Request-URI: /api/0.6/node/3
+---
+Status: 410 Gone
+---

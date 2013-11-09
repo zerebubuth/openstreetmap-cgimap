@@ -1,0 +1,14 @@
+Request-Method: GET
+Request-URI: /api/0.6/node/2
+---
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition: 
+Status: 200 OK
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <node id="2" lon="1.0000000" lat="1.0000000" user="foo" uid="1" visible="true" version="8" changeset="3" timestamp="2012-10-01T00:00:00Z">
+    <tag k="foo" v="bar1"/>
+    <tag k="bar" v="bar2"/>
+    <tag k="baz" v="bar3"/>
+  </node>
+</osm>

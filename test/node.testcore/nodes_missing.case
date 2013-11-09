@@ -1,0 +1,6 @@
+# however, the whole thing returns 404 if just one of the nodes can't be found
+Request-Method: GET
+Request-URI: /api/0.6/nodes?nodes=1,2,3,4
+---
+Status: 404 Not Found
+---

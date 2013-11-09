@@ -1,0 +1,5 @@
+Request-Method: GET
+Request-URI: /api/0.6/node/five
+---
+Status: 404 Not Found
+---
