@@ -81,6 +81,14 @@ std::map<std::string, std::string> read_headers(std::istream &in, const std::str
   while (true) {
     std::string line;
     std::getline(in, line);
+
+    // allow comments in lines which begin immediately with #. this shouldn't
+    // conflict with any headers, as although http headers technically can start
+    // with #, i'm pretty sure we're not using any which do.
+    if ((line.size() > 0) && (line[0] == '#')) {
+      continue;
+    }
+
     al::erase_all(line, "\r");
     if (!in.good()) { throw std::runtime_error("Test file ends before separator."); }
     if (line == separator) { break; }
