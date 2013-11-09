@@ -1,0 +1,10 @@
+Request-Method: GET
+Request-URI: /api/0.6/node/9223372036854775807
+---
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition: 
+Status: 200 OK
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <node id="9223372036854775807" lon="3.0000000" lat="3.0000000" user="user_4" uid="4" visible="true" version="1" changeset="4" timestamp="2013-10-20T00:00:00Z"/>
+</osm>
