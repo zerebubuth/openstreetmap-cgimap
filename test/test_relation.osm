@@ -40,4 +40,7 @@
   <relation id="8" version="1" changeset="1" user="foo" uid="1" visible="true" timestamp="2013-01-13T00:00:00Z">
     <member type="relation" ref="7" role=""/>
   </relation>
+
+  <relation id="8589934592" visible="true" version="1" changeset="4" timestamp="2013-10-20T00:00:00Z" user="user_4" uid="4"/>
+  <relation id="9223372036854775807" visible="true" version="1" changeset="4" timestamp="2013-10-20T00:00:00Z" user="user_4" uid="4"/>
 </osm>

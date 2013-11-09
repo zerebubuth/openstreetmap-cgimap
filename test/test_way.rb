@@ -86,3 +86,26 @@ end
 test_request('GET', '/api/0.6/ways?ways=1,two,3', 'HTTP_ACCEPT' => 'text/xml') do |headers, data|
   assert(headers['Status'], '404 Not Found', 'Response status code.')
 end
+
+# check it still works with ways with IDs > 2^31
+['8589934592', '9223372036854775807'].each do |way_id|
+  test_request('GET', '/api/0.6/way/' + way_id, 'HTTP_ACCEPT' => 'text/xml') do |headers, data|
+    assert(headers['Status'], '200 OK', 'Response status code.')
+    assert(headers["Content-Type"], "text/xml; charset=utf-8", "Response content type.")
+    
+    doc = XML::Parser.string(data).parse
+    assert(doc.root.name, "osm", "Document root element.")
+    children = doc.root.children.select {|n| n.element?}
+    assert(children.size, 1, "Number of children of the <osm> element.")
+    way = children[0]
+    assert(way.name, "way", "Name of <osm> child.")
+    assert(way["id"], way_id, "ID of way")
+    assert(way["user"], "user_4", "User name")
+    assert(way["uid"], "4", "User ID")
+    assert(way["visible"], "true", "Visibility attribute")
+    assert(way["version"].to_i, 1, "Version attribute")
+    assert(way["changeset"].to_i, 4, "Changeset ID")
+    assert(way["timestamp"], "2013-10-20T00:00:00Z", "Timestamp")
+    assert(way.children.length, 0, "Number of tags and way nodes.")
+  end
+end

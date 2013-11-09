@@ -1,6 +1,8 @@
 #ifndef ROUTER_HPP
 #define ROUTER_HPP
 
+#include "types.hpp"
+
 #include <string>
 #include <list>
 #include <stdexcept>
@@ -54,7 +56,7 @@ struct error : public std::runtime_error {
  * returns the full type indicated by match_type.
  */
 struct match_string;
-struct match_int;
+struct match_osm_id;
 struct match_begin;
 struct match_name;
 template <typename LeftType, typename RightType> struct match_and;
@@ -72,8 +74,8 @@ struct ops {
   match_and<Self, match_string> operator/(const match_string &rhs) const {
     return match_and<Self, match_string>(*static_cast<const Self *>(this), rhs);
   }
-  match_and<Self, match_int> operator/(const match_int &rhs) const {
-    return match_and<Self, match_int>(*static_cast<const Self *>(this), rhs);
+  match_and<Self, match_osm_id> operator/(const match_osm_id &rhs) const {
+    return match_and<Self, match_osm_id>(*static_cast<const Self *>(this), rhs);
   }
   match_and<Self, match_name> operator/(const match_name &rhs) const {
     return match_and<Self, match_name>(*static_cast<const Self *>(this), rhs);
@@ -118,11 +120,11 @@ private:
 };
 
 /**
- * match an integer, returning it in the match tuple.
+ * match an OSM ID, returning it in the match tuple.
  */
-struct match_int : public ops<match_int> {
-  typedef list<int> match_type;
-  match_int();
+struct match_osm_id : public ops<match_osm_id> {
+  typedef list<osm_id_t> match_type;
+  match_osm_id();
   match_type match(part_iterator &begin, const part_iterator &end) const;
 };
 
@@ -148,7 +150,7 @@ struct match_begin : public ops<match_begin> {
 
 // match items, given nicer names so that expressions are easier to read.
 static const match_begin root_;
-static const match_int int_;
+static const match_osm_id osm_id_;
 static const match_name name_;
 }
 
