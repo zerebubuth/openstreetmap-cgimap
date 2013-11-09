@@ -146,7 +146,7 @@ struct xml_parser {
 
         if (member_type == "node") { m.type = element_type_node; }
         else if (member_type == "way") { m.type = element_type_way; }
-        else if (member_type == "relation") { m.type == element_type_relation; }
+        else if (member_type == "relation") { m.type = element_type_relation; }
         else { throw std::runtime_error((boost::format("Unknown member type `%1%'.") % member_type).str()); }
          
         m.ref = get_attribute<osm_id_t>("ref", 4, attributes);
