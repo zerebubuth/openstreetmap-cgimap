@@ -1,0 +1,15 @@
+# grabs a single node, which has been created by an anonymous user.
+# note that external (non-OSM) databases don't have anonymous user
+# information exported (because it's anonymous) and so generally
+# use a negative number or zero to indicate an anonymous user.
+Request-Method: GET
+Request-URI: /api/0.6/map?bbox=-0.0005,-0.0005,0.0005,0.0005
+---
+Content-Type: text/xml; charset=utf-8
+Content-Disposition: attachment; filename="map.osm"
+Status: 200 OK
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <bounds maxlat="0.0005000" maxlon="0.0005000" minlat="-0.0005000" minlon="-0.0005000"/>
+  <node id="1" lon="0.0000000" lat="0.0000000" visible="true" version="1" changeset="1" timestamp="2013-02-16T19:02:00Z"/>
+</osm>

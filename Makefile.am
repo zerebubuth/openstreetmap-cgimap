@@ -1,8 +1,7 @@
 SUBDIRS=src
 
-TESTS = test/map.testcore test/node.testcore
+TESTS = test/map.testcore test/node.testcore test/anon.testcore
 if ENABLE_APIDB
-TESTS += test/test_anon.rb
 TESTS += test/test_way.rb test/test_relation.rb
 TESTS += test/test_way_full.rb test/test_relation_full.rb
 if ENABLE_EXPERIMENTAL
