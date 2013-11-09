@@ -1,0 +1,14 @@
+Request-Method: GET
+Request-URI: /api/0.6/map?bbox=-0.0005,-0.0005,0.0015,0.0015
+---
+Content-Type: text/xml; charset=utf-8
+Content-Disposition: attachment; filename="map.osm"
+Status: 200 OK
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <bounds maxlat="0.0015000" maxlon="0.0015000" minlat="-0.0005000" minlon="-0.0005000"/>
+  <node id="1" version="1" visible="true" changeset="1" uid="1" user="user_1" timestamp="2013-02-16T19:02:00Z" lat="0.0000000" lon="0.0000000"/>
+  <node id="2" version="1" visible="true" changeset="2" uid="2" user="user_2" timestamp="2013-02-16T19:02:00Z" lat="0.0010000" lon="0.0000000"/>
+  <node id="302" version="1" visible="true" changeset="11" uid="11" user="user_11" timestamp="2013-02-16T19:02:00Z" lat="0.0000000" lon="0.0010000"/>
+  <node id="303" version="1" visible="true" changeset="12" uid="12" user="user_12" timestamp="2013-02-16T19:02:00Z" lat="0.0010000" lon="0.0010000"/>
+</osm>

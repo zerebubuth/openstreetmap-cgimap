@@ -1,0 +1,5 @@
+Request-Method: GET
+Request-URI: /api/0.6/map?bbox=-0.0005,-0.0005,0.3005,0.3005
+---
+Status: 400 Bad Request
+---
