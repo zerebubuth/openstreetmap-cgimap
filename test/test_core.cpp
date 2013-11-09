@@ -267,15 +267,23 @@ void check_response(std::istream &expected, std::istream &actual) {
   const dict actual_headers = read_headers(actual, "");
 
   BOOST_FOREACH(const dict::value_type &val, expected_headers) {
-    dict::const_iterator itr = actual_headers.find(val.first);
-    if (itr == actual_headers.end()) {
-      throw std::runtime_error((boost::format("Expected header `%1%: %2%', but didn't find it in actual response.")
-                                % val.first % val.second).str());
-    }
-    if (!val.second.empty()) {
-      if (val.second != itr->second) {
-        throw std::runtime_error((boost::format("Header key `%1%'; expected `%2%' but got `%3%'.")
-                                  % val.first % val.second % itr->second).str());
+    if ((val.first.size() > 0) && (val.first[0] == '!')) {
+      dict::const_iterator itr = actual_headers.find(val.first.substr(1));
+      if (itr != actual_headers.end()) {
+        throw std::runtime_error((boost::format("Expected not to find header `%1%', but it is present.")
+                                  % itr->first).str());
+      }
+    } else {
+      dict::const_iterator itr = actual_headers.find(val.first);
+      if (itr == actual_headers.end()) {
+        throw std::runtime_error((boost::format("Expected header `%1%: %2%', but didn't find it in actual response.")
+                                  % val.first % val.second).str());
+      }
+      if (!val.second.empty()) {
+        if (val.second != itr->second) {
+          throw std::runtime_error((boost::format("Header key `%1%'; expected `%2%' but got `%3%'.")
+                                    % val.first % val.second % itr->second).str());
+        }
       }
     }
   }
