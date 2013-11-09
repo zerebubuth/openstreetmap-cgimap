@@ -318,7 +318,7 @@ struct static_data_selection : public data_selection {
         m_nodes.insert(n.m_info.id);
         ++selected;
 
-        if (selected >= max_nodes) {
+        if (selected > max_nodes) {
           break;
         }
       }
