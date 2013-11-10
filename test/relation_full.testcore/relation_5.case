@@ -1,0 +1,13 @@
+# relation 5 contains itself, but shouldn't be recursed upon
+Request-Method: GET
+Request-URI: /api/0.6/relation/5/full
+---
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition: 
+Status: 200 OK
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <relation id="5" version="1" changeset="1" user="foo" uid="1" visible="true" timestamp="2013-01-13T00:00:00Z">
+    <member type="relation" ref="5" role=""/>
+  </relation>
+</osm>

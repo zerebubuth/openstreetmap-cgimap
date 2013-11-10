@@ -1,0 +1,17 @@
+# relation 7 contains relation 8 (which contains relation 7 (which ... and so
+# on)) but this mutual recursion shouldn't cause us a problem.
+Request-Method: GET
+Request-URI: /api/0.6/relation/7/full
+---
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition: 
+Status: 200 OK
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <relation id="7" version="1" changeset="1" user="foo" uid="1" visible="true" timestamp="2013-01-13T00:00:00Z">
+    <member type="relation" ref="8" role=""/>
+  </relation>
+  <relation id="8" version="1" changeset="1" user="foo" uid="1" visible="true" timestamp="2013-01-13T00:00:00Z">
+    <member type="relation" ref="7" role=""/>
+  </relation>
+</osm>

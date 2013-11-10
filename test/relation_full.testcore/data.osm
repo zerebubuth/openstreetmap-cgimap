@@ -1,0 +1,46 @@
+<?xml version="1.0" ?>
+<osm version="0.6" generator="by hand">
+  <node id="1" version="1" changeset="1" lat="0.0" lon="0.0" user="foo" uid="1" visible="true" timestamp="2012-09-25T00:00:00Z"/>
+  <node id="2" version="8" changeset="3" lat="1.0" lon="1.0" user="foo" uid="1" visible="true" timestamp="2012-10-01T00:00:00Z"/>
+  <node id="3" version="1" changeset="1" lat="1.0" lon="0.0" user="foo" uid="1" visible="true" timestamp="2013-01-13T00:00:00Z"/>
+
+  <way id="1" version="1" changeset="1" user="foo" uid="1" visible="true" timestamp="2012-12-01T00:00:00Z">
+    <nd ref="1"/>
+    <nd ref="2"/>
+  </way>
+
+  <relation id="1" version="1" changeset="1" user="foo" uid="1" visible="true" timestamp="2012-12-01T00:00:00Z">
+    <member type="node" ref="2" role="stop"/>
+    <member type="way" ref="1" role="forward"/>
+    <tag k="type" v="route"/>
+    <tag k="ref" v="W8"/>
+  </relation>
+
+  <relation id="2" version="2" changeset="3" user="foo" uid="1" visible="false" timestamp="2013-01-12T00:00:00Z"/>
+
+  <!-- contains another relation -->
+  <relation id="4" version="1" changeset="1" user="foo" uid="1" visible="true" timestamp="2013-01-13T00:00:00Z">
+    <member type="relation" ref="1" role=""/>
+  </relation>
+
+  <!-- self-referential relation -->
+  <relation id="5" version="1" changeset="1" user="foo" uid="1" visible="true" timestamp="2013-01-13T00:00:00Z">
+    <member type="relation" ref="5" role=""/>
+  </relation>
+
+  <!-- contains just a way, and its nodes should be included in /full -->
+  <relation id="6" version="1" changeset="1" user="foo" uid="1" visible="true" timestamp="2013-01-13T00:00:00Z">
+    <member type="way" ref="1" role=""/>
+  </relation>
+
+  <!-- mutually referential pair of relations -->
+  <relation id="7" version="1" changeset="1" user="foo" uid="1" visible="true" timestamp="2013-01-13T00:00:00Z">
+    <member type="relation" ref="8" role=""/>
+  </relation>
+  <relation id="8" version="1" changeset="1" user="foo" uid="1" visible="true" timestamp="2013-01-13T00:00:00Z">
+    <member type="relation" ref="7" role=""/>
+  </relation>
+
+  <relation id="8589934592" visible="true" version="1" changeset="4" timestamp="2013-10-20T00:00:00Z" user="user_4" uid="4"/>
+  <relation id="9223372036854775807" visible="true" version="1" changeset="4" timestamp="2013-10-20T00:00:00Z" user="user_4" uid="4"/>
+</osm>
