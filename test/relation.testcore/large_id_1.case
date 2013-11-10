@@ -1,0 +1,10 @@
+Request-Method: GET
+Request-URI: /api/0.6/relation/8589934592
+---
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition: 
+Status: 200 OK
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <relation id="8589934592" visible="true" version="1" changeset="4" timestamp="2013-10-20T00:00:00Z" user="user_4" uid="4"/>
+</osm>

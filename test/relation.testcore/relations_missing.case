@@ -1,0 +1,6 @@
+# however, the whole thing returns 404 if just one of the relations can't be found
+Request-Method: GET
+Request-URI: /api/0.6/relations?relations=1,2,3
+---
+Status: 404 Not Found
+---

@@ -1,0 +1,6 @@
+# relations call returns bad request if the list of relations is empty
+Request-Method: GET
+Request-URI: /api/0.6/relations?relations=
+---
+Status: 400 Bad Request
+---

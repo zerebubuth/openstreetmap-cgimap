@@ -1,0 +1,17 @@
+# relations call returns all relations, even deleted ones, in the request
+Request-Method: GET
+Request-URI: /api/0.6/relations?relations=1,2
+---
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition: 
+Status: 200 OK
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <relation id="1" version="1" changeset="1" user="foo" uid="1" visible="true" timestamp="2012-12-01T00:00:00Z">
+    <member type="node" ref="2" role="stop"/>
+    <member type="way" ref="1" role="forward"/>
+    <tag k="type" v="route"/>
+    <tag k="ref" v="W8"/>
+  </relation>
+  <relation id="2" version="2" changeset="3" user="foo" uid="1" visible="false" timestamp="2013-01-12T00:00:00Z"/>
+</osm>
