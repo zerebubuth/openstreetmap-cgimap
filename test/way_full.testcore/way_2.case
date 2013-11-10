@@ -1,0 +1,5 @@
+Request-Method: GET
+Request-URI: /api/0.6/way/2/full
+---
+Status: 410 Gone
+---
