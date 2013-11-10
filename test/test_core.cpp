@@ -11,6 +11,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 #include <vector>
 #include <sstream>
@@ -263,6 +264,109 @@ void check_content_body_xml(std::istream &expected, std::istream &actual) {
 }
 
 /**
+ * recursively check a JSON tree for a match. this is a very basic way of
+ * doing it, but seems effective so far. the trees are walked depth-first
+ * and values are compared exactly - except for when the expected value is
+ * '***', which causes it to skip that subtree entirely.
+ */
+void check_recursive_tree_json(const pt::ptree &expected, const pt::ptree &actual) {
+  pt::ptree::const_iterator exp_itr = expected.begin();
+  pt::ptree::const_iterator act_itr = actual.begin();
+
+  // skip comparison of trees for this wildcard.
+  if (al::trim_copy(expected.data()) == "***") {
+    std::cout << "wildcard\n";
+    return;
+  }
+
+  // check the actual data value
+  if (expected.data() != actual.data()) {
+    throw std::runtime_error((boost::format("Expected '%1%', but got '%2%'") % expected.data() % actual.data()).str());
+  }
+  std::cout << "attr match: " << expected.data() << "\n";
+
+  while (true) {
+    if ((exp_itr == expected.end()) && (act_itr == actual.end())) {
+      break;
+    }
+    if (exp_itr == expected.end()) { 
+      std::ostringstream out;
+      out << "Actual result has more entries than expected: [" << act_itr->first;
+      ++act_itr;
+      while (act_itr != actual.end()) {
+        out << ", " << act_itr->first;
+        ++act_itr;
+      }
+      out << "] are extra";
+      throw std::runtime_error(out.str()); 
+    }
+    if (act_itr == actual.end()) {
+      std::ostringstream out;
+      out << "Actual result has fewer entries than expected: [" << exp_itr->first;
+      ++exp_itr;
+      while (exp_itr != expected.end()) {
+        out << ", " << exp_itr->first;
+        ++exp_itr;
+      }
+      out << "] are absent";
+      throw std::runtime_error(out.str());
+    }
+    if (exp_itr->first != act_itr->first) {
+      throw std::runtime_error((boost::format("Expected %1%, but got %2%") % exp_itr->first % act_itr->first).str());
+    }
+    try {
+      std::cout << "recursing on item " << exp_itr->first << "\n";
+      check_recursive_tree_json(exp_itr->second, act_itr->second);
+    } catch (const std::exception &ex) {
+      throw std::runtime_error((boost::format("%1%, in \"%2%\" object") % ex.what() % exp_itr->first).str());
+    }
+    ++exp_itr;
+    ++act_itr;
+  }
+  std::cout << "return\n";
+}
+
+/**
+ * check that the content body of the expected, from the test case, and
+ * actual, from the response, is the same.
+ */
+void check_content_body_json(std::istream &expected, std::istream &actual) {
+  pt::ptree exp_tree, act_tree;
+  
+  try {
+    pt::read_json(expected, exp_tree);
+  } catch (const std::exception &ex) {
+    throw std::runtime_error((boost::format("%1%, while reading expected JSON.")
+                              % ex.what()).str());
+  }
+
+  try {
+    pt::read_json(actual, act_tree);
+  } catch (const std::exception &ex) {
+    throw std::runtime_error((boost::format("%1%, while reading actual JSON.")
+                              % ex.what()).str());
+  }
+
+  expected.seekg(0);
+  std::cout << "=== expected ===\n";
+  do {
+    std::string line;
+    std::getline(expected, line);
+    std::cout << line << "\n";
+  } while (expected.good());
+  actual.seekg(0);
+  std::cout << "=== actual ===\n";
+  do {
+    std::string line;
+    std::getline(actual, line);
+    std::cout << line << "\n";
+  } while (actual.good());
+
+  // and check the results for equality
+  check_recursive_tree_json(exp_tree, act_tree);
+}
+
+/**
  * Check the response from cgimap against the expected test result
  * from the test file.
  */
@@ -303,6 +407,9 @@ void check_response(std::istream &expected, std::istream &actual) {
     if (content_type.substr(0, 8) == "text/xml") {
       check_content_body_xml(expected, actual);
       
+    } else if (content_type.substr(0, 9) == "text/json") {
+      check_content_body_json(expected, actual);
+
     } else {
       throw std::runtime_error((boost::format("Cannot yet handle tests with Content-Type: %1%.")
                                 % content_type).str());
