@@ -1,16 +1,12 @@
 SUBDIRS=src
 
-TESTS = test/map.testcore test/node.testcore test/anon.testcore
-if ENABLE_APIDB
-TESTS += test/test_way.rb test/test_relation.rb
-TESTS += test/test_way_full.rb test/test_relation_full.rb
+TESTS = test/map.testcore test/node.testcore test/anon.testcore test/way.testcore test/relation.testcore
+TESTS += test/empty.testcore test/way_full.testcore test/relation_full.testcore
 if ENABLE_EXPERIMENTAL
-TESTS += test/test_node_ways.rb
+TESTS += test/node_ways.testcore
 endif
-#if HAVE_YAJL
-#TESTS += test/test_json.rb
-#endif
+if HAVE_YAJL
+TESTS += test/json.testcore
 endif
-TEST_EXTENSIONS = .rb .testcore
-RB_LOG_COMPILER = test/test.sh
+TEST_EXTENSIONS = .testcore
 TESTCORE_LOG_COMPILER = test/test_core
