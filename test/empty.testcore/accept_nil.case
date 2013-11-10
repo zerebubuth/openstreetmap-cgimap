@@ -1,0 +1,10 @@
+Request-Method: GET
+Request-URI: /api/0.6/map?bbox=0,0,0,0
+---
+Content-Type: text/xml; charset=utf-8
+Content-Disposition: attachment; filename="map.osm"
+Status: 200 OK
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <bounds maxlat="0.0000000" maxlon="0.0000000" minlat="0.0000000" minlon="0.0000000"/>
+</osm>
