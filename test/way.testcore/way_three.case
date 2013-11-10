@@ -1,0 +1,6 @@
+# returns not found if the way ID is non-numeric
+Request-Method: GET
+Request-URI: /api/0.6/way/three
+---
+Status: 404 Not Found
+---

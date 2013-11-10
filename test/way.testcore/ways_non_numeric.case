@@ -1,0 +1,8 @@
+# ways call returns not found if the list of ways isn't numeric
+# note that this doesn't really make sense without understanding that
+# "some_string".to_i = 0 in ruby, and all element IDs are > 0.
+Request-Method: GET
+Request-URI: /api/0.6/ways?ways=1,two,3
+---
+Status: 404 Not Found
+---

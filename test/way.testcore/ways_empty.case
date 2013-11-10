@@ -1,0 +1,6 @@
+# ways call returns bad request if the list of ways is empty
+Request-Method: GET
+Request-URI: /api/0.6/ways?ways=
+---
+Status: 400 Bad Request
+---
