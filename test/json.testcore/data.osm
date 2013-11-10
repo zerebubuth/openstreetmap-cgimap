@@ -1,0 +1,11 @@
+<osm version="0.6" generator="by hand">
+  <node id="1" version="1" changeset="1" lat="0.0" lon="0.0" user="foo" uid="1" visible="true" timestamp="2012-09-25T00:00:00Z"/>
+  <node id="2" version="8" changeset="3" lat="1.0" lon="1.0" user="foo" uid="1" visible="true" timestamp="2012-10-01T00:00:00Z">
+    <tag k="foo" v="bar1"/>
+    <tag k="bar" v="bar2"/>
+    <tag k="baz" v="bar3"/>
+  </node>
+  <node id="3" version="2" changeset="3" lat="0.0" lon="0.0" user="foo" uid="1" visible="false" timestamp="2012-09-25T00:01:00Z"/>
+  <node id="8589934592" visible="true" version="1" changeset="4" timestamp="2013-10-20T00:00:00Z" user="user_4" uid="4" lat="3" lon="3"/>
+  <node id="9223372036854775807" visible="true" version="1" changeset="4" timestamp="2013-10-20T00:00:00Z" user="user_4" uid="4" lat="3" lon="3"/>
+</osm>

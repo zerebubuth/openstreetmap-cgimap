@@ -1,0 +1,29 @@
+Request-Method: GET
+Request-URI: /api/0.6/node/1
+HTTP-Accept: text/json
+---
+Content-Type: text/json; charset=utf-8
+!Content-Disposition: 
+Status: 200 OK
+---
+{ "version": "0.6",
+  "generator": "***",
+  "copyright": "***",
+  "attribution": "***",
+  "license": "***",
+  "nodes": [
+      { "id": 1,
+	"visible": true,
+	"version": 1,
+	"changeset": 1,
+	"timestamp": "2012-09-25T00:00:00Z",
+	"user": "foo",
+	"uid": 1,
+	"lat": 0.0000000,
+	"lon": 0.0000000,
+	"tags": {}
+      }
+  ],
+  "ways": [],
+  "relations": []
+}
