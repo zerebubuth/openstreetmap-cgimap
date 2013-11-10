@@ -2,7 +2,7 @@
 # just "*", but there you go.
 Request-Method: GET
 Request-URI: /api/0.6/map?bbox=0,0,0,0
-Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2
+HTTP-Accept: text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2
 ---
 Content-Type: text/xml; charset=utf-8
 Content-Disposition: attachment; filename="map.osm"
