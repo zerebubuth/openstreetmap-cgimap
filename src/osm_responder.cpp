@@ -23,21 +23,35 @@ osm_responder::types_available() const {
 
 void
 osm_responder::write(shared_ptr<output_formatter> formatter, const std::string &generator) {
+  // TODO: is it possible that formatter can be null?
+  output_formatter &fmt = *formatter;
+
   try {
-    formatter->start_document(generator);
+    fmt.start_document(generator);
     if (bounds) {
-      formatter->write_bounds(bounds.get());
+      fmt.write_bounds(bounds.get());
     }
 
-    sel.write_nodes(*formatter);
-    sel.write_ways(*formatter);
-    sel.write_relations(*formatter);
+    // write all selected nodes
+    fmt.start_element_type(element_type_node);
+    sel.write_nodes(fmt);
+    fmt.end_element_type(element_type_node);
+
+    // all selected ways
+    fmt.start_element_type(element_type_way);
+    sel.write_ways(fmt);
+    fmt.end_element_type(element_type_way);
+
+    // all selected relations
+    fmt.start_element_type(element_type_relation);
+    sel.write_relations(fmt);
+    fmt.end_element_type(element_type_relation);
   
   } catch (const std::exception &e) {
-    formatter->error(e);
+    fmt.error(e);
   }
 
-  formatter->end_document();
+  fmt.end_document();
 }
 
 void osm_responder::add_response_header(const std::string &line) {

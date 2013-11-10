@@ -204,7 +204,6 @@ readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
   double lon, lat;
   tags_t tags;
   
-  formatter.start_element_type(element_type_node);
   // fetch in chunks...
   set<osm_id_t>::iterator prev_itr = sel_nodes.begin();
   size_t chunk_i = 0;
@@ -235,7 +234,6 @@ readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
     
     if (at_end) break;
   }
-  formatter.end_element_type(element_type_node);
 }
 
 void 
@@ -248,7 +246,6 @@ readonly_pgsql_selection::write_ways(output_formatter &formatter) {
   nodes_t nodes;
   tags_t tags;
   
-  formatter.start_element_type(element_type_way);
   // fetch in chunks...
   set<osm_id_t>::iterator prev_itr = sel_ways.begin();
   size_t chunk_i = 0;
@@ -278,7 +275,6 @@ readonly_pgsql_selection::write_ways(output_formatter &formatter) {
     
     if (at_end) break;
   }
-  formatter.end_element_type(element_type_way);
 }
 
 void 
@@ -288,7 +284,6 @@ readonly_pgsql_selection::write_relations(output_formatter &formatter) {
   members_t members;
   tags_t tags;
   
-  formatter.start_element_type(element_type_relation);
   // fetch in chunks...
   set<osm_id_t>::iterator prev_itr = sel_relations.begin();
   size_t chunk_i = 0;
@@ -318,7 +313,6 @@ readonly_pgsql_selection::write_relations(output_formatter &formatter) {
     
     if (at_end) break;
   }
-  formatter.end_element_type(element_type_relation);
 }
 
 data_selection::visibility_t 

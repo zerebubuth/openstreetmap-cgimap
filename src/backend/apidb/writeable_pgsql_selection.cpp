@@ -169,7 +169,6 @@ writeable_pgsql_selection::write_nodes(output_formatter &formatter) {
   double lon, lat;
   tags_t tags;
 
-  formatter.start_element_type(element_type_node);
   pqxx::result nodes = w.prepared("extract_nodes").exec();
   for (pqxx::result::const_iterator itr = nodes.begin(); 
        itr != nodes.end(); ++itr) {
@@ -179,7 +178,6 @@ writeable_pgsql_selection::write_nodes(output_formatter &formatter) {
     extract_tags(w.prepared("extract_node_tags")(elem.id).exec(), tags);
     formatter.write_node(elem, lon, lat, tags);
   }
-  formatter.end_element_type(element_type_node);
 }
 
 void 
@@ -192,7 +190,6 @@ writeable_pgsql_selection::write_ways(output_formatter &formatter) {
   nodes_t nodes;
   tags_t tags;
 
-  formatter.start_element_type(element_type_way);
   pqxx::result ways = w.prepared("extract_ways").exec();
   for (pqxx::result::const_iterator itr = ways.begin(); 
        itr != ways.end(); ++itr) {
@@ -201,7 +198,6 @@ writeable_pgsql_selection::write_ways(output_formatter &formatter) {
     extract_tags(w.prepared("extract_way_tags")(elem.id).exec(), tags);
     formatter.write_way(elem, nodes, tags);
   }
-  formatter.end_element_type(element_type_way);
 }
 
 void 
@@ -211,7 +207,6 @@ writeable_pgsql_selection::write_relations(output_formatter &formatter) {
   members_t members;
   tags_t tags;
 
-  formatter.start_element_type(element_type_relation);
   pqxx::result relations = w.prepared("extract_relations").exec();
   for (pqxx::result::const_iterator itr = relations.begin(); 
        itr != relations.end(); ++itr) {
@@ -220,7 +215,6 @@ writeable_pgsql_selection::write_relations(output_formatter &formatter) {
     extract_tags(w.prepared("extract_relation_tags")(elem.id).exec(), tags);
     formatter.write_relation(elem, members, tags);
   }
-  formatter.end_element_type(element_type_relation);
 }
 
 data_selection::visibility_t 
