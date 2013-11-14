@@ -163,7 +163,7 @@ process_requests(int socket, const po::variables_map &options) {
  * SIGTERM handler.
  */
 static void
-terminate(int signum) {
+terminate(int) {
   // termination has been requested
   terminate_requested = true;
 }
@@ -172,7 +172,7 @@ terminate(int signum) {
  * SIGHUP handler.
  */
 static void
-reload(int signum) {
+reload(int) {
   // reload has been requested
   reload_requested = true;
 }

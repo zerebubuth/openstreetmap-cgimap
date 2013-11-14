@@ -31,17 +31,20 @@ relation_full_responder::~relation_full_responder() {
 
 void
 relation_full_responder::check_visibility() {
-	switch (sel.check_relation_visibility(id)) {
-
-	case data_selection::non_exist:
-		throw http::not_found(""); // TODO: fix error message / throw structure to emit better error message
-	
-	case data_selection::deleted:
-		throw http::gone(); // TODO: fix error message / throw structure to emit better error message
-	}
+  switch (sel.check_relation_visibility(id)) {
+    
+  case data_selection::non_exist:
+    throw http::not_found(""); // TODO: fix error message / throw structure to emit better error message
+    
+  case data_selection::deleted:
+    throw http::gone(); // TODO: fix error message / throw structure to emit better error message
+    
+  default:
+    break;
+  }
 }
 
-relation_full_handler::relation_full_handler(request &req, osm_id_t id_)
+relation_full_handler::relation_full_handler(request &, osm_id_t id_)
   : id(id_) {
   logger::message((boost::format("starting relation/full handler with id = %1%") % id).str());
 }

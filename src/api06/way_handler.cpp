@@ -24,7 +24,7 @@ way_responder::way_responder(mime::type mt, osm_id_t id_, data_selection &w_)
 way_responder::~way_responder() {
 }
 
-way_handler::way_handler(request &req, osm_id_t id_) 
+way_handler::way_handler(request &, osm_id_t id_) 
 	: id(id_) {
 }
 

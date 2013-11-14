@@ -24,7 +24,7 @@ relation_responder::relation_responder(mime::type mt, osm_id_t id_, data_selecti
 relation_responder::~relation_responder() {
 }
 
-relation_handler::relation_handler(request &req, osm_id_t id_) 
+relation_handler::relation_handler(request &, osm_id_t id_) 
 	: id(id_) {
 }
 

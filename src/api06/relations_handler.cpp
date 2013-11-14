@@ -14,7 +14,8 @@ namespace api06 {
 
 relations_responder::relations_responder(mime::type mt, list<osm_id_t> ids_, data_selection &s_)
   : osm_responder(mt, s_), ids(ids_) {
-  if ( sel.select_relations(ids_) != ids.size()) {
+  size_t num_selected = sel.select_relations(ids_);
+  if (num_selected != ids.size()) {
     throw http::not_found("One or more of the relations were not found.");		
   }
 }

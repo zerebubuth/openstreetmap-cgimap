@@ -10,16 +10,18 @@ using std::transform;
 namespace {
 
 const std::string &element_type_name(element_type elt) {
-   static std::string name_node("node"), name_way("way"), name_relation("relation");
-
-   switch (elt) {
-   case element_type_node:
-      return name_node;
-   case element_type_way:
-      return name_way;
-   case element_type_relation:
-      return name_relation;
-   }
+  static std::string name_node("node"), name_way("way"), name_relation("relation");
+  
+  switch (elt) {
+  case element_type_node:
+    return name_node;
+  case element_type_way:
+    return name_way;
+  case element_type_relation:
+    return name_relation;
+  default:
+    throw std::runtime_error("Unknown element type in element_type_name().");
+  }
 }
 
 } // anonymous namespace
@@ -87,7 +89,7 @@ json_formatter::start_element_type(element_type type) {
 }
 
 void 
-json_formatter::end_element_type(element_type type) {
+json_formatter::end_element_type(element_type) {
   writer->end_array();
 }
 

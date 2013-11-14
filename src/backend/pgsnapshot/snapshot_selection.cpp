@@ -30,7 +30,7 @@ namespace pqxx {
       // No, dear compiler, we don't need a return here.
       throw 0;
     }
-    static void from_string(const char Str[], list<osm_id_t> &Obj) {
+    static void from_string(const char[], list<osm_id_t> &) {
     }
     static std::string to_string(const list<osm_id_t> &ids) {
       stringstream ostr;
@@ -215,17 +215,17 @@ snapshot_selection::write_relations(output_formatter &formatter) {
 }
 
 data_selection::visibility_t 
-snapshot_selection::check_node_visibility(osm_id_t id) {
+snapshot_selection::check_node_visibility(osm_id_t) {
   return data_selection::exists;
 }
 
 data_selection::visibility_t 
-snapshot_selection::check_way_visibility(osm_id_t id) {
+snapshot_selection::check_way_visibility(osm_id_t) {
   return data_selection::exists;
 }
 
 data_selection::visibility_t 
-snapshot_selection::check_relation_visibility(osm_id_t id) {
+snapshot_selection::check_relation_visibility(osm_id_t) {
   return data_selection::exists;
 }
 

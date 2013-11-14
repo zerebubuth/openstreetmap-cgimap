@@ -157,11 +157,11 @@ struct xml_parser {
     }
   }
 
-  static void warning(void *ctx, const char *fmt, ...) {
+  static void warning(void *, const char *, ...) {
     // TODO
   }
 
-  static void error(void *ctx, const char *fmt, ...) {
+  static void error(void *, const char *fmt, ...) {
     char buffer[1024];
     va_list arg_ptr;
     va_start(arg_ptr, fmt);

@@ -28,17 +28,20 @@ way_full_responder::~way_full_responder() {
 
 void
 way_full_responder::check_visibility() {
-	switch (sel.check_way_visibility(id)) {
+  switch (sel.check_way_visibility(id)) {
+    
+  case data_selection::non_exist:
+    throw http::not_found(""); // TODO: fix error message / throw structure to emit better error message
+    
+  case data_selection::deleted:
+    throw http::gone(); // TODO: fix error message / throw structure to emit better error message
 
-	case data_selection::non_exist:
-		throw http::not_found(""); // TODO: fix error message / throw structure to emit better error message
-	
-	case data_selection::deleted:
-		throw http::gone(); // TODO: fix error message / throw structure to emit better error message
-	}
+  default:
+    break;
+  }
 }
 
-way_full_handler::way_full_handler(request &req, osm_id_t id_)
+way_full_handler::way_full_handler(request &, osm_id_t id_)
   : id(id_) {
   logger::message((boost::format("starting way/full handler with id = %1%") % id).str());
 }

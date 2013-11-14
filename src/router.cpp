@@ -67,7 +67,7 @@ match_begin::match_begin() {
 }
 
 match_begin::match_type
-match_begin::match(part_iterator &begin, const part_iterator &end) const {
+match_begin::match(part_iterator &, const part_iterator &) const {
   return match_type();
 }
 

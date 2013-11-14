@@ -25,7 +25,7 @@ static void wrap_write(void *context, const char *str, unsigned int len) {
 
   int wrote_len = out->write(str, len);
 
-  if (wrote_len != len) {
+  if (wrote_len != int(len)) {
     throw output_writer::write_error("Output buffer wrote a different amount than was expected.");
   }
 }

@@ -14,8 +14,8 @@ namespace api06 {
 
 ways_responder::ways_responder(mime::type mt, list<osm_id_t> ids_, data_selection &w_)
   : osm_responder(mt, w_), ids(ids_) {
-
-  if ( sel.select_ways(ids_) != ids.size()) {
+  size_t num_selected = sel.select_ways(ids_);
+  if (num_selected != ids.size()) {
     throw http::not_found("One or more of the ways were not found.");
   }
 }

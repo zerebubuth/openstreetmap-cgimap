@@ -32,7 +32,7 @@ template<> struct string_traits<list<osm_id_t> >
     // No, dear compiler, we don't need a return here.
     throw 0;
   }
-  static void from_string(const char Str[], list<osm_id_t> &Obj) {
+  static void from_string(const char[], list<osm_id_t> &) {
   }
   static std::string to_string(const list<osm_id_t> &ids) {
     stringstream ostr;
@@ -53,7 +53,7 @@ template<> struct string_traits<set<osm_id_t> >
     // No, dear compiler, we don't need a return here.
     throw 0;
   }
-  static void from_string(const char Str[], set<osm_id_t> &Obj) {
+  static void from_string(const char[], set<osm_id_t> &) {
   }
   static std::string to_string(const set<osm_id_t> &ids) {
     stringstream ostr;

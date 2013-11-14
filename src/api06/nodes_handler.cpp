@@ -13,11 +13,12 @@ using std::string;
 namespace api06 {
 
 nodes_responder::nodes_responder(mime::type mt, list<osm_id_t> ids_, data_selection &w_)
-	: osm_responder(mt, w_), ids(ids_) {
-
-	if (sel.select_nodes(ids_) != ids.size()) {
-		throw http::not_found("One or more of the nodes were not found.");			
-	}
+  : osm_responder(mt, w_), ids(ids_) {
+  
+  size_t num_selected = sel.select_nodes(ids_);
+  if (num_selected != ids.size()) {
+    throw http::not_found("One or more of the nodes were not found.");			
+  }
 }
 
 nodes_responder::~nodes_responder() {
