@@ -26,6 +26,7 @@ test/*.log
 test/*.o
 test/.deps/
 test/test_core
+test/test_apidb_backend
 include/config.h.in
 include/config.h
 include/stamp-h1

@@ -8,5 +8,8 @@ endif
 if HAVE_YAJL
 TESTS += test/json.testcore
 endif
+if ENABLE_APIDB
+TESTS += test/test_apidb_backend
+endif
 TEST_EXTENSIONS = .testcore
 TESTCORE_LOG_COMPILER = test/test_core

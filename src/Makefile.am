@@ -12,22 +12,33 @@ ___test_test_core_LDADD=
 
 if ENABLE_APIDB
 noinst_LIBRARIES+=libcgimap_apidb.a
+check_PROGRAMS+=../test/test_apidb_backend
 ___map_LDADD+=libcgimap_apidb.a
 ___test_test_core_LDADD+=libcgimap_apidb.a
+___test_test_apidb_backend_LDADD=libcgimap_apidb.a
 endif
 
 if ENABLE_PGSNAPSHOT
 noinst_LIBRARIES+=libcgimap_pgsnapshot.a
 ___map_LDADD+=libcgimap_pgsnapshot.a
 ___test_test_core_LDADD+=libcgimap_pgsnapshot.a
+if ENABLE_APIDB
+___test_test_apidb_backend_LDADD+=libcgimap_pgsnapshot.a
+endif
 endif
 
 noinst_LIBRARIES+=libcgimap_staticxml.a
 ___map_LDADD+=libcgimap_staticxml.a
 ___test_test_core_LDADD+=libcgimap_staticxml.a
+if ENABLE_APIDB
+___test_test_apidb_backend_LDADD+=libcgimap_staticxml.a
+endif
 
 ___map_LDADD+=libcgimap_core.a @LIBPQXX_LIBS@ @FCGI_LIBS@ @YAJL_LIBS@ @LIBXML_LIBS@ @LIBMEMCACHED_LIBS@ @BOOST_REGEX_LIB@ @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_DATE_TIME_LIB@ @BOOST_SYSTEM_LIB@
 ___test_test_core_LDADD+=libcgimap_core.a @LIBPQXX_LIBS@ @FCGI_LIBS@ @YAJL_LIBS@ @LIBXML_LIBS@ @LIBMEMCACHED_LIBS@ @BOOST_REGEX_LIB@ @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_DATE_TIME_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@
+if ENABLE_APIDB
+___test_test_apidb_backend_LDADD+=libcgimap_core.a @LIBPQXX_LIBS@ @FCGI_LIBS@ @YAJL_LIBS@ @LIBXML_LIBS@ @LIBMEMCACHED_LIBS@ @BOOST_REGEX_LIB@ @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_DATE_TIME_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@
+endif
 
 ################################################################################
 ___map_SOURCES=\
@@ -37,6 +48,12 @@ ___map_SOURCES=\
 ___test_test_core_SOURCES=\
 	../test/test_core.cpp \
 	backend.cpp
+
+if ENABLE_APIDB
+___test_test_apidb_backend_SOURCES=\
+	../test/test_apidb_backend.cpp \
+	backend.cpp
+endif
 
 libcgimap_fcgi_a_SOURCES=\
 	fcgi_request.cpp
