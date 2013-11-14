@@ -46,13 +46,16 @@ public:
 
 	 /******************* manipulation functions ******************/
 
-	 /// select the nodes in the list
+	 /// select the nodes in the list, returning the number of nodes
+	 /// which are selected now which weren't selected before.
 	 virtual int select_nodes(const std::list<osm_id_t> &) = 0;
 
-	 /// select the ways in the list
+	 /// select the ways in the list, returning the number of ways
+	 /// which are selected now which weren't selected before.
 	 virtual int select_ways(const std::list<osm_id_t> &) = 0;
 
-	 /// select the relations in the list
+	 /// select the relations in the list, returning the number of
+	 /// relations which are selected now which weren't selected before.
 	 virtual int select_relations(const std::list<osm_id_t> &) = 0;
 
    /// given a bounding box, select nodes within that bbox up to a limit of max_nodes

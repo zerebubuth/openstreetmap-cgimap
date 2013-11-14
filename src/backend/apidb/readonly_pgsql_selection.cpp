@@ -103,12 +103,19 @@ check_table_visibility(pqxx::work &w, osm_id_t id, const std::string &prepared_n
 
 inline int
 insert_results(const pqxx::result &res, set<osm_id_t> &elems) {
+  int num_inserted = 0;
+
   for (pqxx::result::const_iterator itr = res.begin(); 
        itr != res.end(); ++itr) {
       const osm_id_t id = (*itr)["id"].as<osm_id_t>();
-      elems.insert(id);
+
+      // note: only count the *new* rows inserted.
+      if (elems.insert(id).second) {
+        ++num_inserted;
+      }
   }
-  return res.affected_rows();
+
+  return num_inserted;
 }
 
 /* Shim for functions not yet converted to prepared statements */
