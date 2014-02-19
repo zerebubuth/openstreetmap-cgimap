@@ -65,8 +65,16 @@ namespace {
     elem.version = row["version"].as<int>();
     elem.timestamp = row["timestamp"].c_str();
     elem.changeset = row["changeset_id"].as<osm_id_t>();
-    if (!row["uid"].is_null()) elem.uid = row["uid"].as<osm_id_t>();
-    if (!row["display_name"].is_null()) elem.display_name = row["display_name"].c_str();
+    if (!row["uid"].is_null()) {
+      elem.uid = row["uid"].as<osm_id_t>();
+    } else {
+      elem.uid = boost::none;
+    }
+    if (!row["display_name"].is_null()) {
+      elem.display_name = row["display_name"].c_str();
+    } else {
+      elem.display_name = boost::none;
+    }
     elem.visible = true;
   }
 
