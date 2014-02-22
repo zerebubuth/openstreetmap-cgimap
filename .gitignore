@@ -22,7 +22,10 @@ src/*.o
 include/*~
 src/*~
 test-suite.log
+test-driver
 test/*.log
+test/*.trs
+test/.deps/
 include/config.h.in
 include/config.h
 include/stamp-h1
