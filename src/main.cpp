@@ -97,7 +97,7 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
     ("memcache", po::value<string>(), "memcache server specification")
     ("ratelimit", po::value<int>(), "average number of bytes/s to allow each client")
     ("maxdebt", po::value<int>(), "maximum debt (in Mb) to allow each client before rate limiting")
-    ("port", po::value<int>(), "FCGI port number to listen on")
+    ("socket", po::value<string>(), "FCGI port number (e.g. :8000) or UNIX socket to listen on")
     ;
   // clang-format on
 
@@ -114,8 +114,8 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
     exit(1);
   }
 
-  if (options.count("daemon") != 0 && options.count("port") == 0) {
-    throw runtime_error("an FCGI port number is required in daemon mode");
+  if (options.count("daemon") != 0 && options.count("socket") == 0) {
+    throw runtime_error("an FCGI port number or UNIX socket is required in daemon mode");
   }
 }
 
@@ -246,12 +246,8 @@ int main(int argc, char **argv) {
     get_options(argc, argv, options);
 
     // get the socket to use
-    if (options.count("port")) {
-      ostringstream path;
-
-      path << ":" << options["port"].as<int>();
-
-      if ((socket = fcgi_request::open_socket(path.str(), 5)) < 0) {
+    if (options.count("socket")) {
+      if ((socket = fcgi_request::open_socket(options["socket"].as<string>(), 5)) < 0) {
         throw runtime_error("Couldn't open FCGX socket.");
       }
     } else {

@@ -86,8 +86,8 @@ int fcgi_request::accept_r() {
       std::ostringstream out;
 
       if (errno == ENOTSOCK) {
-        out << "FCGI port not set properly, please use the --port option "
-            << "(caused by ENOTSOCK).";
+        out << "FCGI port or UNIX socket not set properly, please use the "
+            << "--socket option (caused by ENOTSOCK).";
 
       } else {
         out << "error accepting request: ";

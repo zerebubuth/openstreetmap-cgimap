@@ -71,7 +71,7 @@ A sample lighttd.conf file is provided, which can be used to test. To test
 CGImap with lighttpd use the supplied config file with lighttpd and run cgimap
 on the command line with a command like
 
-    ./map --port 54321 --backend apidb --dbname openstreetmap
+    ./map --socket :54321 --backend apidb --dbname openstreetmap
 
 You can then access the running instance at `http://localhost:31337/api/0.6/map?bbox=...`
 
