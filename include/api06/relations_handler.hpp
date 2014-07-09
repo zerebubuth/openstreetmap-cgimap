@@ -14,7 +14,7 @@ namespace api06 {
 class relations_responder
 	: public osm_responder {
 public:
-	 relations_responder(mime::type, std::list<osm_id_t>, data_selection &);
+	 relations_responder(mime::type, std::list<osm_id_t>, factory_ptr &);
 	 ~relations_responder();
 
 private:
@@ -28,7 +28,7 @@ public:
 	 ~relations_handler();
 
 	 std::string log_name() const;
-	 responder_ptr_t responder(data_selection &x) const;
+	 responder_ptr_t responder(factory_ptr &x) const;
 
 private:
 	 std::list<osm_id_t> ids;

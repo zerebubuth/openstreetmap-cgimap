@@ -9,21 +9,21 @@ using std::list;
 
 namespace api06 {
 
-relation_full_responder::relation_full_responder(mime::type mt_, osm_id_t id_, data_selection &w_) 
+relation_full_responder::relation_full_responder(mime::type mt_, osm_id_t id_, factory_ptr &w_) 
   : osm_responder(mt_, w_), id(id_) {
   list<osm_id_t> ids;
   ids.push_back(id);
 
-  if (sel.select_relations(ids) == 0) {
+  if (sel->select_relations(ids) == 0) {
     throw http::not_found("");
   } else {
     check_visibility();
   }
 
-  sel.select_nodes_from_relations();
-  sel.select_ways_from_relations();
-  sel.select_nodes_from_way_nodes();
-  sel.select_relations_members_of_relations();
+  sel->select_nodes_from_relations();
+  sel->select_ways_from_relations();
+  sel->select_nodes_from_way_nodes();
+  sel->select_relations_members_of_relations();
 }
 
 relation_full_responder::~relation_full_responder() {
@@ -31,7 +31,7 @@ relation_full_responder::~relation_full_responder() {
 
 void
 relation_full_responder::check_visibility() {
-  switch (sel.check_relation_visibility(id)) {
+  switch (sel->check_relation_visibility(id)) {
     
   case data_selection::non_exist:
     throw http::not_found(""); // TODO: fix error message / throw structure to emit better error message
@@ -58,7 +58,7 @@ relation_full_handler::log_name() const {
 }
 
 responder_ptr_t 
-relation_full_handler::responder(data_selection &x) const {
+relation_full_handler::responder(factory_ptr &x) const {
   return responder_ptr_t(new relation_full_responder(mime_type, id, x));
 }
 

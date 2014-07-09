@@ -15,11 +15,11 @@ using std::map;
 
 namespace api07 {
 
-map_responder::map_responder(mime::type mt, bbox b, data_selection &x)
+map_responder::map_responder(mime::type mt, bbox b, factory_ptr &x)
   : osm_responder(mt, x, boost::optional<bbox>(b)) {
   // create temporary tables of nodes, ways and relations which
   // are in or used by elements in the bbox
-  int num_nodes = sel.select_nodes_from_bbox(b, MAX_NODES);
+  int num_nodes = sel->select_nodes_from_bbox(b, MAX_NODES);
 
   // TODO: make configurable parameter?
   if (num_nodes > MAX_NODES) {
@@ -29,11 +29,11 @@ map_responder::map_responder(mime::type mt, bbox b, data_selection &x)
   }
   // Short-circuit empty areas
   if (num_nodes > 0) {
-    sel.select_ways_from_nodes();
-    sel.select_nodes_from_way_nodes();
-    sel.select_relations_from_ways();
-    sel.select_relations_from_nodes();
-    sel.select_relations_from_relations();
+    sel->select_ways_from_nodes();
+    sel->select_nodes_from_way_nodes();
+    sel->select_relations_from_ways();
+    sel->select_relations_from_nodes();
+    sel->select_relations_from_relations();
   }
 }
 
@@ -41,7 +41,7 @@ map_responder::~map_responder() {
 }
 
 map_handler::map_handler(request &req) 
-  : bounds(validate_request(request)) {
+  : bounds(validate_request(req)) {
 }
 
 map_handler::map_handler(request &req, int) {
@@ -56,7 +56,7 @@ map_handler::log_name() const {
 }
 
 responder_ptr_t
-map_handler::responder(data_selection &x) const {
+map_handler::responder(factory_ptr &x) const {
   return responder_ptr_t(new map_responder(mime_type, bounds, x));
 }
 

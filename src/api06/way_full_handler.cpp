@@ -9,18 +9,18 @@ using std::list;
 
 namespace api06 {
 
-way_full_responder::way_full_responder(mime::type mt_, osm_id_t id_, data_selection &w_) 
+way_full_responder::way_full_responder(mime::type mt_, osm_id_t id_, factory_ptr &w_) 
   : osm_responder(mt_, w_), id(id_) {
   list<osm_id_t> ids;
   ids.push_back(id);
 
-  if (sel.select_ways(ids) == 0) {
+  if (sel->select_ways(ids) == 0) {
     throw http::not_found("");
   } else {
     check_visibility();
   }
 
-  sel.select_nodes_from_way_nodes();
+  sel->select_nodes_from_way_nodes();
 }
 
 way_full_responder::~way_full_responder() {
@@ -28,7 +28,7 @@ way_full_responder::~way_full_responder() {
 
 void
 way_full_responder::check_visibility() {
-  switch (sel.check_way_visibility(id)) {
+  switch (sel->check_way_visibility(id)) {
     
   case data_selection::non_exist:
     throw http::not_found(""); // TODO: fix error message / throw structure to emit better error message
@@ -55,7 +55,7 @@ way_full_handler::log_name() const {
 }
 
 responder_ptr_t 
-way_full_handler::responder(data_selection &x) const {
+way_full_handler::responder(factory_ptr &x) const {
   return responder_ptr_t(new way_full_responder(mime_type, id, x));
 }
 

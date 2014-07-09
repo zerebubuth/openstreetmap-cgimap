@@ -11,7 +11,7 @@ namespace api06 {
 class way_full_responder
   : public osm_responder {
 public:
-  way_full_responder(mime::type, osm_id_t, data_selection &);
+  way_full_responder(mime::type, osm_id_t, factory_ptr &);
   ~way_full_responder();
 
 private:
@@ -27,7 +27,7 @@ public:
   ~way_full_handler();
   
   std::string log_name() const;
-  responder_ptr_t responder(data_selection &x) const;
+  responder_ptr_t responder(factory_ptr &x) const;
   
 private:
   osm_id_t id;

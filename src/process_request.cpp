@@ -87,11 +87,8 @@ process_get_request(request &req, routes &route,
   string request_name = handler->log_name();
   logger::message(format("Started request for %1% from %2%") % request_name % ip);
   
-  // separate transaction for the request
-  shared_ptr<data_selection> selection = factory->make_selection();
-  
   // constructor of responder handles dynamic validation (i.e: with db access).
-  responder_ptr_t responder = handler->responder(*selection);
+  responder_ptr_t responder = handler->responder(factory);
   
   // get encoding to use
   shared_ptr<http::encoding> encoding = get_encoding(req);
@@ -162,11 +159,8 @@ process_head_request(request &req, routes &route,
 
   // The 404 and 410 responses have an empty message-body so we're safe using them unmodified
 
-  // separate transaction for the request
-  shared_ptr<data_selection> selection = factory->make_selection();
-
   // constructor of responder handles dynamic validation (i.e: with db access).
-  responder_ptr_t responder = handler->responder(*selection);
+  responder_ptr_t responder = handler->responder(factory);
 
   // get encoding to use
   shared_ptr<http::encoding> encoding = get_encoding(req);

@@ -8,12 +8,12 @@ using std::list;
 
 namespace api06 {
 
-node_responder::node_responder(mime::type mt, osm_id_t id_, data_selection &w_)
+node_responder::node_responder(mime::type mt, osm_id_t id_, factory_ptr &w_)
   : osm_responder(mt, w_), id(id_) {
   list<osm_id_t> ids;
   ids.push_back(id);
 
-  if (sel.select_nodes(ids) == 0) {
+  if (sel->select_nodes(ids) == 0) {
     throw http::not_found("");
   }
   else {
@@ -37,13 +37,13 @@ node_handler::log_name() const {
 }
 
 responder_ptr_t 
-node_handler::responder(data_selection &x) const {
-	return responder_ptr_t(new node_responder(mime_type, id, x));
+node_handler::responder(factory_ptr &w) const {
+	return responder_ptr_t(new node_responder(mime_type, id, w));
 }
 
 void
 node_responder::check_visibility() {
-  if (sel.check_node_visibility(id) == data_selection::deleted) {
+  if (sel->check_node_visibility(id) == data_selection::deleted) {
     throw http::gone(); // TODO: fix error message / throw structure to emit better error message
   }
 }

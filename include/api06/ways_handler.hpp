@@ -13,7 +13,7 @@ namespace api06 {
 class ways_responder
 	: public osm_responder {
 public:
-	 ways_responder(mime::type, std::list<osm_id_t>, data_selection &);
+	 ways_responder(mime::type, std::list<osm_id_t>, factory_ptr &);
 	 ~ways_responder();
 
 private:
@@ -27,7 +27,7 @@ public:
 	 ~ways_handler();
 
 	 std::string log_name() const;
-	 responder_ptr_t responder(data_selection &x) const;
+	 responder_ptr_t responder(factory_ptr &x) const;
 
 private:
 	 std::list<osm_id_t> ids;

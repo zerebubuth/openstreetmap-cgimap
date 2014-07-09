@@ -100,4 +100,6 @@ public:
    };
 };
 
+typedef boost::shared_ptr<data_selection::factory> factory_ptr;
+
 #endif /* DATA_SELECTION_HPP */

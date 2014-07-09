@@ -12,9 +12,9 @@ using std::string;
 
 namespace api06 {
 
-relations_responder::relations_responder(mime::type mt, list<osm_id_t> ids_, data_selection &s_)
+relations_responder::relations_responder(mime::type mt, list<osm_id_t> ids_, factory_ptr &s_)
   : osm_responder(mt, s_), ids(ids_) {
-  size_t num_selected = sel.select_relations(ids_);
+  size_t num_selected = sel->select_relations(ids_);
   if (num_selected != ids.size()) {
     throw http::not_found("One or more of the relations were not found.");		
   }
@@ -39,7 +39,7 @@ relations_handler::log_name() const {
 }
 
 responder_ptr_t 
-relations_handler::responder(data_selection &x) const {
+relations_handler::responder(factory_ptr &x) const {
 	return responder_ptr_t(new relations_responder(mime_type, ids, x));
 }
 

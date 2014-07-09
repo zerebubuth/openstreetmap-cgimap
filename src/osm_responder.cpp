@@ -4,8 +4,8 @@
 using std::list;
 using boost::shared_ptr;
 
-osm_responder::osm_responder(mime::type mt, data_selection &s, boost::optional<bbox> b) 
-  : responder(mt), sel(s), bounds(b) {
+osm_responder::osm_responder(mime::type mt, factory_ptr &f, boost::optional<bbox> b) 
+   : responder(mt), sel(f->make_selection()), bounds(b) {
 }
 
 osm_responder::~osm_responder() {
@@ -34,17 +34,17 @@ osm_responder::write(shared_ptr<output_formatter> formatter, const std::string &
 
     // write all selected nodes
     fmt.start_element_type(element_type_node);
-    sel.write_nodes(fmt);
+    sel->write_nodes(fmt);
     fmt.end_element_type(element_type_node);
 
     // all selected ways
     fmt.start_element_type(element_type_way);
-    sel.write_ways(fmt);
+    sel->write_ways(fmt);
     fmt.end_element_type(element_type_way);
 
     // all selected relations
     fmt.start_element_type(element_type_relation);
-    sel.write_relations(fmt);
+    sel->write_relations(fmt);
     fmt.end_element_type(element_type_relation);
   
   } catch (const std::exception &e) {

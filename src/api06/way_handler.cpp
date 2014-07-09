@@ -8,12 +8,12 @@ using std::list;
 
 namespace api06 {
 
-way_responder::way_responder(mime::type mt, osm_id_t id_, data_selection &w_)
+way_responder::way_responder(mime::type mt, osm_id_t id_, factory_ptr &w_)
   : osm_responder(mt, w_), id(id_) {
   list<osm_id_t> ids;
   ids.push_back(id);
 
-  if (sel.select_ways(ids) == 0) {
+  if (sel->select_ways(ids) == 0) {
     throw http::not_found("");
   }
   else {
@@ -37,13 +37,13 @@ way_handler::log_name() const {
 }
 
 responder_ptr_t 
-way_handler::responder(data_selection &x) const {
+way_handler::responder(factory_ptr &x) const {
 	return responder_ptr_t(new way_responder(mime_type, id, x));
 }
 
 void
 way_responder::check_visibility() {
-  if (sel.check_way_visibility(id) == data_selection::deleted) {
+  if (sel->check_way_visibility(id) == data_selection::deleted) {
     throw http::gone(); // TODO: fix error message / throw structure to emit better error message
   }
 }

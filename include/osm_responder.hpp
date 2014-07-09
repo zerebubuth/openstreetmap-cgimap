@@ -22,7 +22,7 @@ class osm_responder : public responder {
 public:
 	 // construct, passing the mime type down to the responder. the current transaction 
    // optional bounds are stored at this level, but available to derived classes.
-	 osm_responder(mime::type, data_selection &, boost::optional<bbox> bounds = boost::optional<bbox>());
+	 osm_responder(mime::type, factory_ptr &, boost::optional<bbox> bounds = boost::optional<bbox>());
 
 	 virtual ~osm_responder();
 
@@ -39,7 +39,7 @@ public:
 
 protected:
 	 // current selection of elements to be written out
-	 data_selection &sel;
+   boost::shared_ptr<data_selection> sel;
 
 	 // optional bounds element - this is only for information and has no effect on 
    // behaviour other than whether the bounds element gets written.
