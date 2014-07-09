@@ -2,7 +2,7 @@
 #define API06_RELATIONS_HANDLER_HPP
 
 #include "handler.hpp"
-#include "osm_responder.hpp"
+#include "osm_current_responder.hpp"
 #include "request_helpers.hpp"
 #include "data_selection.hpp"
 #include "request.hpp"
@@ -12,7 +12,7 @@
 namespace api06 {
 
 class relations_responder
-	: public osm_responder {
+	: public osm_current_responder {
 public:
 	 relations_responder(mime::type, std::list<osm_id_t>, factory_ptr &);
 	 ~relations_responder();

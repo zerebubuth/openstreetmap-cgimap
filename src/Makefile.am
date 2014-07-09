@@ -1,3 +1,4 @@
+
 AM_LDFLAGS=@BOOST_LDFLAGS@
 AM_CPPFLAGS=-I../include @FCGI_CFLAGS@ @LIBPQXX_CFLAGS@ @LIBXML_CFLAGS@ @LIBMEMCACHED_CFLAGS@ @BOOST_CPPFLAGS@
 
@@ -67,6 +68,7 @@ libcgimap_core_a_SOURCES=\
 	logger.cpp \
 	mime_types.cpp \
 	osm_responder.cpp \
+	osm_current_responder.cpp \
 	output_formatter.cpp \
 	output_writer.cpp \
 	process_request.cpp \

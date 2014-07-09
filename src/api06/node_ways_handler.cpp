@@ -9,7 +9,7 @@ using std::list;
 namespace api06 {
 
 node_ways_responder::node_ways_responder(mime::type mt, osm_id_t id_, factory_ptr &w_)
-  : osm_responder(mt, w_), id(id_) {
+  : osm_current_responder(mt, w_), id(id_) {
   list<osm_id_t> ids;
   ids.push_back(id);
 

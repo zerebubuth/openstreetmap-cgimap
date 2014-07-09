@@ -2,14 +2,14 @@
 #define API06_WAY_HANDLER_HPP
 
 #include "handler.hpp"
-#include "osm_responder.hpp"
+#include "osm_current_responder.hpp"
 #include "request.hpp"
 #include <string>
 
 namespace api06 {
 
 class way_responder
-	: public osm_responder {
+	: public osm_current_responder {
 public:
 	 way_responder(mime::type, osm_id_t, factory_ptr &);
 	 ~way_responder();

@@ -4,7 +4,7 @@
 #include "bbox.hpp"
 #include "output_formatter.hpp"
 #include "handler.hpp"
-#include "osm_responder.hpp"
+#include "osm_current_responder.hpp"
 #include "config.h"
 #include "request.hpp"
 #include <string>
@@ -16,7 +16,7 @@
 namespace api07 {
 
 class map_responder
-  : public osm_responder {
+  : public osm_current_responder {
 public:
 	 map_responder(mime::type, bbox, factory_ptr &);
   ~map_responder();

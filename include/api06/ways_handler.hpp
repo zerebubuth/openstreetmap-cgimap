@@ -2,7 +2,7 @@
 #define API06_WAYS_HANDLER_HPP
 
 #include "handler.hpp"
-#include "osm_responder.hpp"
+#include "osm_current_responder.hpp"
 #include "request_helpers.hpp"
 #include "request.hpp"
 #include <string>
@@ -11,7 +11,7 @@
 namespace api06 {
 
 class ways_responder
-	: public osm_responder {
+	: public osm_current_responder {
 public:
 	 ways_responder(mime::type, std::list<osm_id_t>, factory_ptr &);
 	 ~ways_responder();
