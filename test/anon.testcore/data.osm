@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <osm version="0.6" generator="by hand">
   <node id="1" version="1" visible="true" changeset="1" timestamp="2013-02-16T19:02:00Z" lat="0.0" lon="0.0"/>
+  <node id="2" version="1" visible="true" changeset="2" uid="2" user="foo" timestamp="2014-02-19T03:51:00Z" lat="1.0" lon="1.0"/>
+  <node id="3" version="1" visible="true" changeset="1" timestamp="2014-02-19T03:51:00Z" lat="1.0" lon="1.0"/>
 </osm>

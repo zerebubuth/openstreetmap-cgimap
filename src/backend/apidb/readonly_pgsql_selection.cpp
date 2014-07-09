@@ -134,6 +134,9 @@ void extract_elem(const pqxx::result::tuple &row, element_info &elem, cache<osm_
   if (cs->data_public) {
     elem.uid = cs->user_id;
     elem.display_name = cs->display_name;
+  } else {
+    elem.uid = boost::none;
+    elem.display_name = boost::none;
   }
 }
 

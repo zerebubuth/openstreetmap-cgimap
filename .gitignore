@@ -14,6 +14,7 @@ depcomp
 install-sh
 map
 missing
+compile
 src/.deps/
 src/Makefile
 src/Makefile.in
@@ -22,11 +23,13 @@ src/*.o
 include/*~
 src/*~
 test-suite.log
+test-driver
 test/*.log
 test/*.o
 test/.deps/
 test/test_core
 test/test_apidb_backend
+test/*.trs
 include/config.h.in
 include/config.h
 include/stamp-h1

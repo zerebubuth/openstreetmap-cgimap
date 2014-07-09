@@ -34,11 +34,13 @@ respond_error(const http::exception &e, request &r) {
   logger::message(format("Returning with http error %1% with reason %2%") % e.code() %e.what());
 
   const char *error_format = r.get_param("HTTP_X_ERROR_FORMAT");
+  string cors_headers = get_cors_headers(r);
 
   ostringstream ostr;
   if (error_format && al::iequals(error_format, "xml")) {
     ostr << "Status: 200 OK\r\n"
          << "Content-Type: text/xml; charset=utf-8\r\n"
+         << cors_headers
          << "\r\n"
          << "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\r\n"
          << "<osmError>\r\n"
@@ -51,6 +53,7 @@ respond_error(const http::exception &e, request &r) {
          << "Content-Length: 0\r\n"
          << "Error: " << e.what() << "\r\n"
          << "Cache-Control: no-cache\r\n"
+         << cors_headers
          << "\r\n";
   }
 
