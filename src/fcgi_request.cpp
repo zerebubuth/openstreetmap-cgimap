@@ -55,6 +55,7 @@ fcgi_request::fcgi_request(int socket)
   if (FCGX_InitRequest(&m_impl->req, socket, FCGI_FAIL_ACCEPT_ON_INTR) != 0) {
     throw runtime_error("Couldn't initialise FCGX request structure.");
   }
+  m_buffer = boost::shared_ptr<output_buffer>(new fcgi_buffer(m_impl->req));
 }
 
 fcgi_request::~fcgi_request() {
@@ -65,24 +66,12 @@ const char *fcgi_request::get_param(const char *key) {
   return FCGX_GetParam(key, m_impl->req.envp);
 }
 
-int fcgi_request::put(const char *buf, int len) {
-  return FCGX_PutStr(buf, len, m_impl->req.out);
-}
-
-int fcgi_request::put(const std::string &str) {
-  return FCGX_PutStr(str.c_str(), str.size(), m_impl->req.out);
-}
-
 boost::shared_ptr<output_buffer> fcgi_request::get_buffer() {
-  return boost::shared_ptr<output_buffer>(new fcgi_buffer(m_impl->req));
+  return m_buffer;
 }
 
 std::string fcgi_request::cors_headers() {
   return std::string();
-}
-
-void fcgi_request::flush() {
-  FCGX_FFlush(m_impl->req.out);
 }
 
 void fcgi_request::finish() {

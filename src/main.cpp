@@ -130,7 +130,7 @@ process_requests(int socket, const po::variables_map &options) {
   routes route;
 
   // create the request object (persists over several calls)
-  boost::scoped_ptr<request> req(new fcgi_request(socket));
+  fcgi_request req(socket);
 
   // create a factory for data selections - the mechanism for actually
   // getting at data.
@@ -150,13 +150,13 @@ process_requests(int socket, const po::variables_map &options) {
     }
 
     // get the next request
-    req->accept_r();
+    req.accept_r();
 
-    process_request(*req, limiter, generator, route, factory);
+    process_request(req, limiter, generator, route, factory);
   }
 
   // finish up
-  req->finish();
+  req.finish();
 }
 
 /**
