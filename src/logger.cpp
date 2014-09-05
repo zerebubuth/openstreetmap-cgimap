@@ -2,7 +2,7 @@
 #include <boost/date_time.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "logger.hpp"
+#include "cgimap/logger.hpp"
 
 using std::string;
 using std::ostream;

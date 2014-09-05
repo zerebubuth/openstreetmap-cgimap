@@ -1,5 +1,5 @@
-#include "xml_formatter.hpp"
-#include "config.h"
+#include "cgimap/xml_formatter.hpp"
+#include "cgimap/config.hpp"
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <stdexcept>

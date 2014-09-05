@@ -9,7 +9,7 @@
 #include <sys/time.h>
 #include <stdio.h>
 
-#include "backend/apidb/apidb.hpp"
+#include "cgimap/backend/apidb/apidb.hpp"
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;

@@ -1,6 +1,6 @@
-#include "backend/staticxml/staticxml.hpp"
-#include "backend.hpp"
-#include "output_formatter.hpp"
+#include "cgimap/backend/staticxml/staticxml.hpp"
+#include "cgimap/backend.hpp"
+#include "cgimap/output_formatter.hpp"
 
 #include <libxml/parser.h>
 

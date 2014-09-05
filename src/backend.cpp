@@ -1,17 +1,17 @@
-#include "backend.hpp"
-#include "config.h"
+#include "cgimap/backend.hpp"
+#include "cgimap/config.hpp"
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <stdexcept>
 
 #ifdef ENABLE_APIDB
-#include "backend/apidb/apidb.hpp"
+#include "cgimap/backend/apidb/apidb.hpp"
 #endif
 #ifdef ENABLE_PGSNAPSHOT
-#include "backend/pgsnapshot/pgsnapshot.hpp"
+#include "cgimap/backend/pgsnapshot/pgsnapshot.hpp"
 #endif
-#include "backend/staticxml/staticxml.hpp"
+#include "cgimap/backend/staticxml/staticxml.hpp"
 
 namespace po = boost::program_options;
 using boost::shared_ptr;

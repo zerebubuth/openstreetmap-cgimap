@@ -1,7 +1,7 @@
-#include "api07/map_handler.hpp"
-#include "http.hpp"
-#include "request_helpers.hpp"
-#include "logger.hpp"
+#include "cgimap/api07/map_handler.hpp"
+#include "cgimap/http.hpp"
+#include "cgimap/request_helpers.hpp"
+#include "cgimap/logger.hpp"
 #include <boost/format.hpp>
 #include <map>
 

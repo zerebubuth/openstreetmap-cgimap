@@ -1,4 +1,4 @@
-#include "fcgi_request.hpp"
+#include "cgimap/fcgi_request.hpp"
 #include <stdexcept>
 #include <sstream>
 #include <fcgiapp.h>

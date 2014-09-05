@@ -1,7 +1,7 @@
-#include "api06/handler_utils.hpp"
+#include "cgimap/api06/handler_utils.hpp"
 
-#include "http.hpp"
-#include "request_helpers.hpp"
+#include "cgimap/http.hpp"
+#include "cgimap/request_helpers.hpp"
 #include <map>
 #include <vector>
 #include <boost/algorithm/string.hpp>

@@ -1,5 +1,5 @@
-#include "backend/pgsnapshot/snapshot_selection.hpp"
-#include "backend.hpp"
+#include "cgimap/backend/pgsnapshot/snapshot_selection.hpp"
+#include "cgimap/backend.hpp"
 
 #include <boost/make_shared.hpp>
 #include <sstream>

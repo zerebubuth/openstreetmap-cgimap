@@ -1,4 +1,4 @@
-#include "handler.hpp"
+#include "cgimap/handler.hpp"
 
 responder::responder(mime::type mt)
 	: mime_type(mt) {

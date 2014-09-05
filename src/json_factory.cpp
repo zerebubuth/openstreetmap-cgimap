@@ -1,4 +1,4 @@
-#include "json_factory.hpp"
+#include "cgimap/json_factory.hpp"
 
 json_factory::json_factory() {
 }

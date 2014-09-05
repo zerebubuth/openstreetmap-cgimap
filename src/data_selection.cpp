@@ -1,4 +1,4 @@
-#include "data_selection.hpp"
+#include "cgimap/data_selection.hpp"
 
 data_selection::~data_selection() {
 }

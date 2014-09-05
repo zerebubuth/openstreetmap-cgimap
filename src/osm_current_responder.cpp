@@ -1,5 +1,5 @@
-#include "config.h"
-#include "osm_current_responder.hpp"
+#include "cgimap/config.hpp"
+#include "cgimap/osm_current_responder.hpp"
 
 using std::list;
 using boost::shared_ptr;

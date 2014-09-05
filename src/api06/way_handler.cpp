@@ -1,5 +1,5 @@
-#include "api06/way_handler.hpp"
-#include "http.hpp"
+#include "cgimap/api06/way_handler.hpp"
+#include "cgimap/http.hpp"
 
 #include <sstream>
 

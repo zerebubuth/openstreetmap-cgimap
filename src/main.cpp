@@ -24,20 +24,20 @@
 #include <signal.h>
 #include <sys/wait.h>
 
-#include "bbox.hpp"
-#include "http.hpp"
-#include "logger.hpp"
-#include "output_formatter.hpp"
-#include "output_writer.hpp"
-#include "handler.hpp"
-#include "routes.hpp"
-#include "request_helpers.hpp"
-#include "rate_limiter.hpp"
-#include "choose_formatter.hpp"
-#include "backend.hpp"
-#include "fcgi_request.hpp"
-#include "process_request.hpp"
-#include "config.h"
+#include "cgimap/bbox.hpp"
+#include "cgimap/http.hpp"
+#include "cgimap/logger.hpp"
+#include "cgimap/output_formatter.hpp"
+#include "cgimap/output_writer.hpp"
+#include "cgimap/handler.hpp"
+#include "cgimap/routes.hpp"
+#include "cgimap/request_helpers.hpp"
+#include "cgimap/rate_limiter.hpp"
+#include "cgimap/choose_formatter.hpp"
+#include "cgimap/backend.hpp"
+#include "cgimap/fcgi_request.hpp"
+#include "cgimap/process_request.hpp"
+#include "cgimap/config.hpp"
 
 using std::runtime_error;
 using std::vector;

@@ -1,8 +1,8 @@
-#include "backend/apidb/writeable_pgsql_selection.hpp"
-#include "backend/apidb/apidb.hpp"
-#include "logger.hpp"
-#include "backend/apidb/quad_tile.hpp"
-#include "infix_ostream_iterator.hpp"
+#include "cgimap/backend/apidb/writeable_pgsql_selection.hpp"
+#include "cgimap/backend/apidb/apidb.hpp"
+#include "cgimap/logger.hpp"
+#include "cgimap/backend/apidb/quad_tile.hpp"
+#include "cgimap/infix_ostream_iterator.hpp"
 
 #include <set>
 #include <sstream>

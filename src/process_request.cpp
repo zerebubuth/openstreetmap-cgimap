@@ -1,10 +1,10 @@
-#include "process_request.hpp"
-#include "http.hpp"
-#include "logger.hpp"
-#include "request_helpers.hpp"
-#include "choose_formatter.hpp"
-#include "output_formatter.hpp"
-#include "output_writer.hpp"
+#include "cgimap/process_request.hpp"
+#include "cgimap/http.hpp"
+#include "cgimap/logger.hpp"
+#include "cgimap/request_helpers.hpp"
+#include "cgimap/choose_formatter.hpp"
+#include "cgimap/output_formatter.hpp"
+#include "cgimap/output_writer.hpp"
 
 #include <sstream>
 

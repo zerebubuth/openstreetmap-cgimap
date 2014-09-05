@@ -1,7 +1,7 @@
-#include "backend/apidb/apidb.hpp"
-#include "backend/apidb/writeable_pgsql_selection.hpp"
-#include "backend/apidb/readonly_pgsql_selection.hpp"
-#include "backend.hpp"
+#include "cgimap/backend/apidb/apidb.hpp"
+#include "cgimap/backend/apidb/writeable_pgsql_selection.hpp"
+#include "cgimap/backend/apidb/readonly_pgsql_selection.hpp"
+#include "cgimap/backend.hpp"
 
 #include <boost/make_shared.hpp>
 #include <sstream>

@@ -1,7 +1,7 @@
 #include <vector>
 #include <libmemcached/memcached.h>
 
-#include "rate_limiter.hpp"
+#include "cgimap/rate_limiter.hpp"
 
 struct rate_limiter::state {
   time_t last_update;

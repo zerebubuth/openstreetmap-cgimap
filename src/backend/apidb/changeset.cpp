@@ -1,6 +1,6 @@
-#include "backend/apidb/changeset.hpp"
-#include "logger.hpp"
-#include "http.hpp"
+#include "cgimap/backend/apidb/changeset.hpp"
+#include "cgimap/logger.hpp"
+#include "cgimap/http.hpp"
 #include <boost/format.hpp>
 
 using std::string;

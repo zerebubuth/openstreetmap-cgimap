@@ -1,6 +1,6 @@
-#include "api06/relation_full_handler.hpp"
-#include "http.hpp"
-#include "logger.hpp"
+#include "cgimap/api06/relation_full_handler.hpp"
+#include "cgimap/http.hpp"
+#include "cgimap/logger.hpp"
 #include <sstream>
 #include <boost/format.hpp>
 

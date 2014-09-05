@@ -1,5 +1,5 @@
-#include "config.h"
-#include "http.hpp"
+#include "cgimap/config.hpp"
+#include "cgimap/http.hpp"
 #include <vector>
 #include <boost/foreach.hpp>
 #include <boost/algorithm/string.hpp>

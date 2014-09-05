@@ -1,7 +1,7 @@
 #include <boost/shared_ptr.hpp>
 
-#include "json_formatter.hpp"
-#include "config.h"
+#include "cgimap/json_formatter.hpp"
+#include "cgimap/config.hpp"
 
 using boost::shared_ptr;
 using std::string;

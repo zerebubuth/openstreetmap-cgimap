@@ -1,8 +1,8 @@
-#include "api06/nodes_handler.hpp"
-#include "api06/handler_utils.hpp"
-#include "http.hpp"
-#include "logger.hpp"
-#include "infix_ostream_iterator.hpp"
+#include "cgimap/api06/nodes_handler.hpp"
+#include "cgimap/api06/handler_utils.hpp"
+#include "cgimap/http.hpp"
+#include "cgimap/logger.hpp"
+#include "cgimap/infix_ostream_iterator.hpp"
 
 #include <sstream>
 

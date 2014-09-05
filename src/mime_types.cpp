@@ -1,5 +1,5 @@
-#include "config.h"
-#include "mime_types.hpp"
+#include "cgimap/config.hpp"
+#include "cgimap/mime_types.hpp"
 #include <stdexcept>
 
 using std::string;

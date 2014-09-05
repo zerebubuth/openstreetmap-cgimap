@@ -1,34 +1,34 @@
-#include "config.h"
-#include "routes.hpp"
-#include "handler.hpp"
+#include "cgimap/config.hpp"
+#include "cgimap/routes.hpp"
+#include "cgimap/handler.hpp"
 
 /*** API 0.6 ***/
-#include "api06/map_handler.hpp"
+#include "cgimap/api06/map_handler.hpp"
 
-#include "api06/node_handler.hpp"
-#include "api06/nodes_handler.hpp"
+#include "cgimap/api06/node_handler.hpp"
+#include "cgimap/api06/nodes_handler.hpp"
 
-#include "api06/way_handler.hpp"
-#include "api06/way_full_handler.hpp"
-#include "api06/ways_handler.hpp"
+#include "cgimap/api06/way_handler.hpp"
+#include "cgimap/api06/way_full_handler.hpp"
+#include "cgimap/api06/ways_handler.hpp"
 
-#include "api06/relation_handler.hpp"
-#include "api06/relation_full_handler.hpp"
-#include "api06/relations_handler.hpp"
+#include "cgimap/api06/relation_handler.hpp"
+#include "cgimap/api06/relation_full_handler.hpp"
+#include "cgimap/api06/relations_handler.hpp"
 
 #ifdef ENABLE_EXPERIMENTAL
-#include "api06/node_ways_handler.hpp"
+#include "cgimap/api06/node_ways_handler.hpp"
 #endif /* ENABLE_EXPERIMENTAL */
 
 #ifdef ENABLE_API07
 /*** API 0.7 ***/
-#include "api07/map_handler.hpp"
+#include "cgimap/api07/map_handler.hpp"
 #endif /* ENABLE_API07 */
 
-#include "router.hpp"
-#include "request_helpers.hpp"
-#include "http.hpp"
-#include "mime_types.hpp"
+#include "cgimap/router.hpp"
+#include "cgimap/request_helpers.hpp"
+#include "cgimap/http.hpp"
+#include "cgimap/mime_types.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/optional.hpp>

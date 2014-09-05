@@ -1,5 +1,5 @@
-#include "api06/node_handler.hpp"
-#include "http.hpp"
+#include "cgimap/api06/node_handler.hpp"
+#include "cgimap/http.hpp"
 
 #include <sstream>
 

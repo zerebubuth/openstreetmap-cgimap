@@ -1,4 +1,4 @@
-#include "bbox.hpp"
+#include "cgimap/bbox.hpp"
 #include <cmath>
 #include <vector>
 #include <boost/algorithm/string.hpp>

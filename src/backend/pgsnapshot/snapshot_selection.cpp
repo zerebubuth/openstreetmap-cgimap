@@ -1,6 +1,6 @@
-#include "backend/pgsnapshot/snapshot_selection.hpp"
-#include "logger.hpp"
-#include "infix_ostream_iterator.hpp"
+#include "cgimap/backend/pgsnapshot/snapshot_selection.hpp"
+#include "cgimap/logger.hpp"
+#include "cgimap/infix_ostream_iterator.hpp"
 
 #include <set>
 #include <sstream>

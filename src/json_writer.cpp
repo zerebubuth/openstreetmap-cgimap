@@ -2,11 +2,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "json_writer.hpp"
-#include "config.h"
+#include "cgimap/json_writer.hpp"
+#include "cgimap/config.hpp"
 
 struct json_writer::pimpl_ {
-  // not sure whether the config has to live as long as the generator itself, so
+  // not sure whether the config.hppas to live as long as the generator itself, so
   // seems best to be on the safe side.
   yajl_gen gen;
 

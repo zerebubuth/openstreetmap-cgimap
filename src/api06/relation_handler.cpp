@@ -1,5 +1,5 @@
-#include "api06/relation_handler.hpp"
-#include "http.hpp"
+#include "cgimap/api06/relation_handler.hpp"
+#include "cgimap/http.hpp"
 
 #include <sstream>
 

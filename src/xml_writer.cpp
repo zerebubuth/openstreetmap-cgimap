@@ -2,7 +2,7 @@
 #include <libxml/xmlwriter.h>
 #include <stdexcept>
 #include <iostream>
-#include "xml_writer.hpp"
+#include "cgimap/xml_writer.hpp"
 
 struct xml_writer::pimpl_ {
   xmlTextWriterPtr writer;

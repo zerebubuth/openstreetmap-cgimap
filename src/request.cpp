@@ -1,4 +1,4 @@
-#include "request.hpp"
+#include "cgimap/request.hpp"
 
 request::~request() {
 }

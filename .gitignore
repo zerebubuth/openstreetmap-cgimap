@@ -34,9 +34,9 @@ test/.libs/
 test/test_core
 test/test_apidb_backend
 test/*.trs
-include/config.h.in
-include/config.h
-include/stamp-h1
+include/cgimap/config.hpp.in
+include/cgimap/config.hpp
+include/cgimap/stamp-h1
 src/lib*.a
 aclocal/libtool.m4
 aclocal/ltoptions.m4

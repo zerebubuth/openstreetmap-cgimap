@@ -1,6 +1,6 @@
-#include "process_request.hpp"
-#include "backend/staticxml/staticxml.hpp"
-#include "config.h"
+#include "cgimap/process_request.hpp"
+#include "cgimap/backend/staticxml/staticxml.hpp"
+#include "cgimap/config.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
