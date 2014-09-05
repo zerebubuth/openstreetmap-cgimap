@@ -19,6 +19,9 @@ src/.deps/
 src/Makefile
 src/Makefile.in
 src/*.o
+src/**/*.lo
+src/*.la
+src/.libs/
 *~
 include/*~
 src/*~
@@ -27,6 +30,7 @@ test-driver
 test/*.log
 test/*.o
 test/.deps/
+test/.libs/
 test/test_core
 test/test_apidb_backend
 test/*.trs
@@ -34,3 +38,10 @@ include/config.h.in
 include/config.h
 include/stamp-h1
 src/lib*.a
+aclocal/libtool.m4
+aclocal/ltoptions.m4
+aclocal/ltsugar.m4
+aclocal/ltversion.m4
+aclocal/lt~obsolete.m4
+libtool
+ltmain.sh

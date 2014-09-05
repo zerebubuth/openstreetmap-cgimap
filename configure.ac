@@ -4,13 +4,16 @@ AC_INIT([CGImap],
 	[cgimap-0.3.3], 
 	[https://github.com/zerebubuth/openstreetmap-cgimap])
 AM_INIT_AUTOMAKE([subdir-objects parallel-tests])
+LT_INIT
+AC_SUBST([LIBTOOL_DEPS])
+
 AM_SILENT_RULES([yes])
 AC_CONFIG_HEADERS([include/config.h])
+AC_CONFIG_MACRO_DIR([aclocal])
 
 AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
-AC_PROG_RANLIB
 
 AC_HEADER_STDC
 AC_LANG_CPLUSPLUS
