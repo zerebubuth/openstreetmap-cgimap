@@ -8,6 +8,7 @@ libtool: $(LIBTOOL_DEPS)
 cgimap_includedir=$(includedir)/cgimap
 cgimap_include_HEADERS = \
 	include/cgimap/backend.hpp \
+	include/cgimap/config.hpp \
 	include/cgimap/data_selection.hpp \
 	include/cgimap/handler.hpp \
 	include/cgimap/http.hpp \
