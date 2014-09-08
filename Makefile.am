@@ -7,12 +7,16 @@ libtool: $(LIBTOOL_DEPS)
 
 cgimap_includedir=$(includedir)/cgimap
 cgimap_include_HEADERS = \
+	include/cgimap/bbox.hpp \
 	include/cgimap/backend.hpp \
 	include/cgimap/config.hpp \
 	include/cgimap/data_selection.hpp \
 	include/cgimap/handler.hpp \
 	include/cgimap/http.hpp \
 	include/cgimap/logger.hpp \
+	include/cgimap/mime_types.hpp \
+	include/cgimap/output_buffer.hpp \
+	include/cgimap/output_formatter.hpp \
 	include/cgimap/process_request.hpp \
 	include/cgimap/rate_limiter.hpp \
 	include/cgimap/request_helpers.hpp \
