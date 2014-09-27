@@ -34,13 +34,13 @@ respond_error(const http::exception &e, request &r) {
   logger::message(format("Returning with http error %1% with reason %2%") % e.code() %e.what());
 
   const char *error_format = r.get_param("HTTP_X_ERROR_FORMAT");
-  string cors_headers = get_cors_headers(r);
+  string extra_headers = get_extra_headers(r);
 
   ostringstream ostr;
   if (error_format && al::iequals(error_format, "xml")) {
     ostr << "Status: 200 OK\r\n"
          << "Content-Type: text/xml; charset=utf-8\r\n"
-         << cors_headers
+         << extra_headers
          << "\r\n"
          << "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\r\n"
          << "<osmError>\r\n"
@@ -53,7 +53,7 @@ respond_error(const http::exception &e, request &r) {
          << "Content-Length: 0\r\n"
          << "Error: " << e.what() << "\r\n"
          << "Cache-Control: no-cache\r\n"
-         << cors_headers
+         << extra_headers
          << "\r\n";
   }
 
@@ -65,7 +65,7 @@ respond_error(const http::exception &e, request &r) {
  */
 void
 process_not_allowed(request &req) {
-  string cors_headers = get_cors_headers(req);
+  string extra_headers = get_extra_headers(req);
 
   req.put(
     "Status: 405 Method Not Allowed\r\n"
@@ -73,7 +73,7 @@ process_not_allowed(request &req) {
     "Content-Type: text/html\r\n"
     "Content-Length: 0\r\n"
     "Cache-Control: no-cache\r\n");
-  req.put(cors_headers);
+  req.put(extra_headers);
   req.put("\r\n");
 }
 
@@ -103,8 +103,8 @@ process_get_request(request &req, routes &route,
   // create the correct mime type output formatter.
   shared_ptr<output_formatter> o_formatter = choose_formatter(req, responder, out);
   
-  // get any CORS headers to return
-  string cors_headers = get_cors_headers(req);
+  // get any extra headers to return
+  string extra_headers = get_extra_headers(req);
   
   // TODO: use handler/responder to setup response headers.
   // write the response header
@@ -115,7 +115,7 @@ process_get_request(request &req, routes &route,
          << responder->extra_response_headers()
          << "Content-Encoding: " << encoding->name() << "\r\n"
          << "Cache-Control: private, max-age=0, must-revalidate\r\n"
-         << cors_headers
+         << extra_headers
          << "\r\n";
     req.put(ostr.str());
   }
@@ -172,8 +172,8 @@ process_head_request(request &req, routes &route,
   // figure out best mime type
   mime::type best_mime_type = choose_best_mime_type(req, responder);
 
-  // get any CORS headers to return
-  string cors_headers = get_cors_headers(req);
+  // get any extra headers to return
+  string extra_headers = get_extra_headers(req);
 
   // TODO: use handler/responder to setup response headers.
   // write the response header
@@ -183,7 +183,7 @@ process_head_request(request &req, routes &route,
            << responder->extra_response_headers()
            << "Content-Encoding: " << encoding->name() << "\r\n"
            << "Cache-Control: no-cache\r\n"
-           << cors_headers
+           << extra_headers
            << "\r\n";
   req.put(response.str());
 
@@ -200,14 +200,14 @@ process_options_request(request &req) {
   const char *method = req.get_param("HTTP_ACCESS_CONTROL_REQUEST_METHOD");
 
   if (origin && (strcasecmp(method, "GET") == 0 || strcasecmp(method, "HEAD") == 0)) {
-    // get the CORS headers to return
-    string cors_headers = get_cors_headers(req);
+    // get the extra headers to return
+    string extra_headers = get_extra_headers(req);
 
     // write the response
     req.put(
       "Status: 200 OK\r\n"
       "Content-Type: text/plain\r\n");
-    req.put(cors_headers);
+    req.put(extra_headers);
     req.put("\r\n\r\n");
 
   } else {

@@ -9,6 +9,7 @@ struct fcgi_request : public request {
   virtual ~fcgi_request();
   const char *get_param(const char *key);
   boost::shared_ptr<output_buffer> get_buffer();
+  std::string extra_headers() const;
   int accept_r();
   void finish();
   static int open_socket(const std::string &, int);

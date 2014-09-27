@@ -95,12 +95,15 @@ get_encoding(request &req) {
 }
 
 /**
- * get CORS access control headers to include in response.
+ * get extra headers to include in response.
+ * this includes CORS access control headers.
  */
 string
-get_cors_headers(request &req) {
+get_extra_headers(request &req) {
   const char *origin = req.get_param("HTTP_ORIGIN");
   ostringstream headers;
+
+  headers << req.extra_headers();
 
   if (origin) {
      headers << "Access-Control-Allow-Credentials: true\r\n";

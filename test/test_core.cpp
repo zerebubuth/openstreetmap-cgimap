@@ -60,7 +60,7 @@ struct test_request : public request {
   virtual boost::shared_ptr<output_buffer> get_buffer() {
     return boost::shared_ptr<output_buffer>(new test_output_buffer(m_output));
   }
-  virtual std::string cors_headers() { return ""; }
+  virtual std::string extra_headers() const { return std::string(); }
   virtual void flush() {}
   virtual int accept_r() { return 0; }
   virtual void finish() {}

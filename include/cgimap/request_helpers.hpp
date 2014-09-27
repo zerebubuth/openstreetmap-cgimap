@@ -37,10 +37,11 @@ boost::shared_ptr<http::encoding>
 get_encoding(request &req);
 
 /**
- * get CORS access control headers to include in response.
+ * get extra headers to include in response.
+ * this includes CORS access control headers.
  */
 std::string 
-get_cors_headers(request &req);
+get_extra_headers(request &req);
 
 /**
  * return shared pointer to a buffer object which can be

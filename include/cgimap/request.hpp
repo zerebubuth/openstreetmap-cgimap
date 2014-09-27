@@ -10,6 +10,7 @@ struct request {
   virtual const char *get_param(const char *key) = 0;
   virtual boost::shared_ptr<output_buffer> get_buffer() = 0;
   virtual void finish() = 0;
+  virtual std::string extra_headers() const = 0;
 
   int put(const char *, int);
   int put(const std::string &);

@@ -70,6 +70,10 @@ boost::shared_ptr<output_buffer> fcgi_request::get_buffer() {
   return m_buffer;
 }
 
+std::string fcgi_request::extra_headers() const {
+   return std::string();
+}
+
 void fcgi_request::finish() {
   FCGX_Finish_r(&m_impl->req);
 }
