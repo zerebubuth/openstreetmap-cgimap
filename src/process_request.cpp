@@ -65,12 +65,16 @@ respond_error(const http::exception &e, request &r) {
  */
 void
 process_not_allowed(request &req) {
+  string cors_headers = get_cors_headers(req);
+
   req.put(
     "Status: 405 Method Not Allowed\r\n"
     "Allow: GET, HEAD, OPTIONS\r\n"
     "Content-Type: text/html\r\n"
     "Content-Length: 0\r\n"
-    "Cache-Control: no-cache\r\n\r\n");
+    "Cache-Control: no-cache\r\n");
+  req.put(cors_headers);
+  req.put("\r\n");
 }
 
 /**
@@ -100,7 +104,7 @@ process_get_request(request &req, routes &route,
   shared_ptr<output_formatter> o_formatter = choose_formatter(req, responder, out);
   
   // get any CORS headers to return
-  string cors_headers = req.cors_headers();
+  string cors_headers = get_cors_headers(req);
   
   // TODO: use handler/responder to setup response headers.
   // write the response header
@@ -169,7 +173,7 @@ process_head_request(request &req, routes &route,
   mime::type best_mime_type = choose_best_mime_type(req, responder);
 
   // get any CORS headers to return
-  string cors_headers = req.cors_headers();
+  string cors_headers = get_cors_headers(req);
 
   // TODO: use handler/responder to setup response headers.
   // write the response header
