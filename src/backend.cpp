@@ -5,14 +5,6 @@
 #include <boost/foreach.hpp>
 #include <stdexcept>
 
-#ifdef ENABLE_APIDB
-#include "cgimap/backend/apidb/apidb.hpp"
-#endif
-#ifdef ENABLE_PGSNAPSHOT
-#include "cgimap/backend/pgsnapshot/pgsnapshot.hpp"
-#endif
-#include "cgimap/backend/staticxml/staticxml.hpp"
-
 namespace po = boost::program_options;
 using boost::shared_ptr;
 
@@ -51,13 +43,6 @@ private:
 };
 
 registry::registry() {
-#if ENABLE_APIDB
-  add(make_apidb_backend());
-#endif
-#if ENABLE_PGSNAPSHOT
-  add(make_pgsnapshot_backend());
-#endif
-  add(make_staticxml_backend());
 }
 
 bool registry::add(shared_ptr<backend> ptr) {
@@ -135,7 +120,8 @@ shared_ptr<data_selection::factory> registry::create(const po::variables_map &op
 
 registry *registry_ptr = NULL;
 boost::mutex registry_mut;
-}
+
+} // anonymous namespace
 
 backend::~backend() {
 }

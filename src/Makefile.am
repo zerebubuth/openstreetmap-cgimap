@@ -43,17 +43,14 @@ endif
 
 ################################################################################
 ___map_SOURCES=\
-	main.cpp \
-	backend.cpp
+	main.cpp
 
 ___test_test_core_SOURCES=\
-	../test/test_core.cpp \
-	backend.cpp
+	../test/test_core.cpp
 
 if ENABLE_APIDB
 ___test_test_apidb_backend_SOURCES=\
-	../test/test_apidb_backend.cpp \
-	backend.cpp
+	../test/test_apidb_backend.cpp
 endif
 
 libcgimap_fcgi_la_SOURCES=\
@@ -61,6 +58,7 @@ libcgimap_fcgi_la_SOURCES=\
 libcgimap_fcgi_la_LIBADD=@FCGI_LIBS@
 
 libcgimap_core_la_SOURCES=\
+	backend.cpp \
 	bbox.cpp \
 	choose_formatter.cpp \
 	data_selection.cpp \

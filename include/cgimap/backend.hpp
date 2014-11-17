@@ -29,13 +29,8 @@ void output_backend_options(std::ostream &);
 // singleton call to create a backend from a given set of options.
 boost::shared_ptr<data_selection::factory> create_backend(const boost::program_options::variables_map &);
 
-// this function is mainly for testing purposes - it adds a
-// backend to the registry and enables its options and use
-// from the rest of the code.
-//
-// note that in normal use the backends which are enabled at
-// configure time are already included and do not need to be
-// registered.
+// this function registers a backend for use when creating backends
+// from user-provided options.
 bool register_backend(boost::shared_ptr<backend>);
 
 #endif /* BACKEND_HPP */
