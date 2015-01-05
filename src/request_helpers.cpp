@@ -32,7 +32,7 @@ get_query_string(request &req) {
   
   // if that isn't present, then this may be being invoked as part of a
   // 404 handler, so look at the request uri instead.
-  if ((query_string == NULL) || (strlen(query_string) == 0)) {
+  if (query_string == NULL) {
     const char *request_uri = req.get_param("REQUEST_URI");
 
     if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
@@ -63,8 +63,14 @@ get_request_path(request &req) {
   const char *request_uri = req.get_param("REQUEST_URI");
   
   if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
+    // fall back to PATH_INFO if REQUEST_URI isn't available.
+    // the former is set by fcgi, the latter by Rack.
+    request_uri = req.get_param("PATH_INFO");
+  }
+
+  if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
     ostringstream ostr;
-    ostr << "request didn't set the $REQUEST_URI environment variable.";
+    ostr << "request didn't set either the $REQUEST_URI or $PATH_INFO environment variables.";
     throw http::server_error(ostr.str());
   }
   
