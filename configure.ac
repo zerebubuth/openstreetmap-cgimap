@@ -39,6 +39,18 @@ AX_BOOST_SYSTEM
 AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_DATE_TIME
 
+# the boost libraries are required, not optional, but the
+# AX_BOOST_* checks only error if the headers aren't
+# available?
+AS_IF([test "x$BOOST_REGEX_LIB" == "x"],
+      [AC_MSG_ERROR([Boost::Regex library not detected, please install libboost-regex-dev.])],)
+AS_IF([test "x$BOOST_SYSTEM_LIB" == "x"],
+      [AC_MSG_ERROR([Boost::System library not detected, please install libboost-system-dev.])],)
+AS_IF([test "x$BOOST_PROGRAM_OPTIONS_LIB" == "x"],
+      [AC_MSG_ERROR([Boost::ProgramOptions library not detected, please install libboost-program-options-dev.])],)
+AS_IF([test "x$BOOST_DATE_TIME_LIB" == "x"],
+      [AC_MSG_ERROR([Boost::DateTime library not detected, please install libboost-date-time-dev.])],)
+
 AX_CHECK_ZLIB
 
 AC_ARG_WITH(fcgi,
