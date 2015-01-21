@@ -130,7 +130,7 @@ test_request('GET', '/api/0.6/map?bbox=0.2995,-0.0005,0.3005,0.3005') do |header
   assert(node.name, 'way', "Name of way element.")
   nds = node.children.select {|n| n.element?}.map {|n| n['ref'].to_i}
   assert(nds.size, node_nums.size, 'Number of nds and nodes.')
-  assert(nds, node_nums, 'Way nodes and node elements.')
+  assert(nds.sort, node_nums.sort, 'Way nodes and node elements.')
 end
 
 # tests grabbing a small area with a node which is used in a way, which itself is 
@@ -163,7 +163,7 @@ test_request('GET', '/api/0.6/map?bbox=0.1995,-0.0005,0.2005,0.3005') do |header
   assert(node.name, 'way', "Name of way element.")
   nds = node.children.select {|n| n.element?}.map {|n| n['ref'].to_i}
   assert(nds.size, node_nums.size, 'Number of nds and nodes.')
-  assert(nds, node_nums, 'Way nodes and node elements.')
+  assert(nds.sort, node_nums.sort, 'Way nodes and node elements.')
 
   # further, there should be 2 relations
   assert(children[303].name, 'relation', 'Name of relation element.')
