@@ -30,3 +30,4 @@ test/.deps/
 include/config.h.in
 include/config.h
 include/stamp-h1
+.vagrant/
