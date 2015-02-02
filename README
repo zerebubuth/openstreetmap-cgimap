@@ -27,23 +27,23 @@ Requirements
 CGImap depends on the following libraries. Versions used during
 development are in brackets. Other versions may work, but YMMV.
 
-* libxml2  (2.7.8.dfsg-5.1ubuntu4.4)
-* libpqxx3 (3.1-1)
-* libfcgi  (2.4.0-8.1)
-* libboost (1.48.0.2)
+* libxml2  (2.9.1+dfsg1-3ubuntu4.4)
+* libpqxx3 (3.1.1-0ubuntu4)
+* libfcgi  (2.4.0-8.1ubuntu5)
+* libboost (1.54.0-4ubuntu3.1)
 
 If you're running a Debian or Ubuntu system these can be installed
 using the following command:
 
     sudo apt-get install libxml2-dev libpqxx3-dev libfcgi-dev \
       libboost-dev libboost-regex-dev libboost-program-options-dev \
-      libboost-date-time-dev libmemcached-dev
+      libboost-date-time-dev libboost-system-dev libmemcached-dev
 
 The build system used is GNU Make, using pkg-config to provide some of
 the flags.
 
 Note that the full set of packages needed from a fresh install (tested
-with Ubuntu 13.04) - you may already have many or all of these - is:
+with Ubuntu 14.04.1) - you may already have many or all of these - is:
 
     sudo apt-get install git build-essential automake autoconf
 
@@ -126,13 +126,12 @@ Testing
 To run the test suite using `make check` you will need additional 
 packages installed:
 
-    sudo apt-get install postgresql postgresql-contrib ruby libxml-ruby \
-      ruby-pg
+    sudo apt-get install postgresql postgresql-contrib postgis \
+      ruby libxml-ruby ruby-pg
 
 And you will need to be able to create databases as your user:
 
-    sudo -u postgres createuser $USER
-    (say yes to superuser)
+    sudo -u postgres createuser -s $USER
 
 Formatting
 ----------

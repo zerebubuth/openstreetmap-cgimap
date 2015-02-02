@@ -10,6 +10,7 @@ config.status
 config.guess
 config.sub
 configure
+compile
 depcomp
 install-sh
 map
@@ -45,3 +46,4 @@ aclocal/ltversion.m4
 aclocal/lt~obsolete.m4
 libtool
 ltmain.sh
+.vagrant/
