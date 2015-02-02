@@ -10,15 +10,13 @@
 
 namespace api06 {
 
-class map_responder
-  : public osm_current_responder {
+class map_responder : public osm_current_responder {
 public:
-	 map_responder(mime::type, bbox, factory_ptr &);
+  map_responder(mime::type, bbox, factory_ptr &);
   ~map_responder();
 };
 
-class map_handler 
-  : public handler {
+class map_handler : public handler {
 public:
   map_handler(request &req);
   ~map_handler();

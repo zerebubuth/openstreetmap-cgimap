@@ -40,10 +40,9 @@ DEALINGS IN THE SOFTWARE.
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 
-template <class Key, class Object>
-class cache {
+template <class Key, class Object> class cache {
 public:
-  typedef std::pair< ::boost::shared_ptr<Object const>, Key const*> value_type;
+  typedef std::pair< ::boost::shared_ptr<Object const>, Key const *> value_type;
   typedef std::list<value_type> list_type;
   typedef typename list_type::iterator list_iterator;
   typedef std::map<Key, list_iterator> map_type;
@@ -52,13 +51,13 @@ public:
   typedef boost::function<Object *(Key)> function_type;
 
   cache(function_type f, size_type m);
-  
-  boost::shared_ptr<Object const> get(const Key& k);
-  
+
+  boost::shared_ptr<Object const> get(const Key &k);
+
 private:
   struct data {
-    list_type   cont;
-    map_type    index;
+    list_type cont;
+    map_type index;
   };
 
   // functor to get a value which isn't in the cache.
@@ -73,27 +72,25 @@ private:
 };
 
 template <class Key, class Object>
-cache<Key, Object>::cache(function_type f, size_type m) 
-  : fetch(f), max_cache_size(m) {
-}
+cache<Key, Object>::cache(function_type f, size_type m)
+    : fetch(f), max_cache_size(m) {}
 
 template <class Key, class Object>
-boost::shared_ptr<Object const> 
-cache<Key, Object>::get(const Key& k) {
+boost::shared_ptr<Object const> cache<Key, Object>::get(const Key &k) {
   typedef typename cache<Key, Object>::data object_data;
   typedef typename map_type::size_type map_size_type;
   static object_data s_data;
-  
+
   //
   // see if the object is already in the cache:
   //
   map_iterator mpos = s_data.index.find(k);
-  if(mpos != s_data.index.end()) {
+  if (mpos != s_data.index.end()) {
     //
-    // Eureka! 
+    // Eureka!
     // We have a cached item, bump it up the list and return it:
     //
-    if(--(s_data.cont.end()) != mpos->second) {
+    if (--(s_data.cont.end()) != mpos->second) {
       // splice out the item we want to move:
       list_type temp;
       temp.splice(temp.end(), s_data.cont, mpos->second);
@@ -122,7 +119,7 @@ cache<Key, Object>::get(const Key& k) {
   BOOST_ASSERT(s_data.index[k]->first.get() == result.get());
   BOOST_ASSERT(&(s_data.index.find(k)->first) == s_data.cont.back().second);
   BOOST_ASSERT(s_data.index.find(k)->first == k);
-  if(s > max_cache_size) {
+  if (s > max_cache_size) {
     //
     // We have too many items in the list, so we need to start
     // popping them off the back of the list, but only if they're
@@ -130,19 +127,19 @@ cache<Key, Object>::get(const Key& k) {
     //
     list_iterator pos = s_data.cont.begin();
     list_iterator last = s_data.cont.end();
-    while((pos != last) && (s > max_cache_size)) {
-      if(pos->first.unique()) {
-	list_iterator condemmed(pos);
-	++pos;
-	// now remove the items from our containers, 
-	// then order has to be as follows:
-	BOOST_ASSERT(s_data.index.find(*(condemmed->second)) != s_data.index.end());
-	s_data.index.erase(*(condemmed->second));
-	s_data.cont.erase(condemmed); 
-	--s;
-      }
-      else
-	--pos;
+    while ((pos != last) && (s > max_cache_size)) {
+      if (pos->first.unique()) {
+        list_iterator condemmed(pos);
+        ++pos;
+        // now remove the items from our containers,
+        // then order has to be as follows:
+        BOOST_ASSERT(s_data.index.find(*(condemmed->second)) !=
+                     s_data.index.end());
+        s_data.index.erase(*(condemmed->second));
+        s_data.cont.erase(condemmed);
+        --s;
+      } else
+        --pos;
     }
     BOOST_ASSERT(s_data.index[k]->first.get() == result.get());
     BOOST_ASSERT(&(s_data.index.find(k)->first) == s_data.cont.back().second);
@@ -152,4 +149,3 @@ cache<Key, Object>::get(const Key& k) {
 }
 
 #endif /* CACHE_HPP */
-

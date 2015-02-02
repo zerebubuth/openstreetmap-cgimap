@@ -15,16 +15,12 @@
 /**
  * Compresses an output stream.
  */
-class zlib_output_buffer
-  : public output_buffer {
+class zlib_output_buffer : public output_buffer {
 public:
   /**
    * Output mode.
    */
-  enum mode {
-     zlib,
-     gzip
-  };
+  enum mode { zlib, gzip };
 
   /**
    * Methods.
@@ -41,7 +37,7 @@ private:
   void flush_output(void);
 
   boost::shared_ptr<output_buffer> out;
-  // keep track of bytes written because the z_stream struct doesn't seem to 
+  // keep track of bytes written because the z_stream struct doesn't seem to
   // update unless its flushed.
   size_t bytes_in;
   z_stream stream;

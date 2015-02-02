@@ -6,7 +6,7 @@
 
 zlib_output_buffer::zlib_output_buffer(boost::shared_ptr<output_buffer> o,
                                        zlib_output_buffer::mode m)
-  : out(o), bytes_in(0) {
+    : out(o), bytes_in(0) {
   int windowBits;
 
   switch (m) {
@@ -24,8 +24,8 @@ zlib_output_buffer::zlib_output_buffer(boost::shared_ptr<output_buffer> o,
   stream.zfree = Z_NULL;
   stream.opaque = Z_NULL;
 
-  if (deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, windowBits,
-                   8, Z_DEFAULT_STRATEGY) != Z_OK) {
+  if (deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, windowBits, 8,
+                   Z_DEFAULT_STRATEGY) != Z_OK) {
     throw output_writer::write_error("deflateInit2 failed");
   }
 
@@ -36,23 +36,17 @@ zlib_output_buffer::zlib_output_buffer(boost::shared_ptr<output_buffer> o,
 }
 
 zlib_output_buffer::zlib_output_buffer(const zlib_output_buffer &old)
-  : out(old.out), stream(old.stream)
-{
+    : out(old.out), stream(old.stream) {
   std::copy(old.outbuf, (const char *)old.stream.next_out, outbuf);
   stream.next_out = (Bytef *)outbuf + (sizeof(outbuf) - stream.avail_out);
 }
 
-zlib_output_buffer::~zlib_output_buffer(void)
-{
-}
+zlib_output_buffer::~zlib_output_buffer(void) {}
 
-int
-zlib_output_buffer::write(const char *buffer, int len)
-{
+int zlib_output_buffer::write(const char *buffer, int len) {
   assert(stream.avail_in == 0);
 
-  if (len > 0)
-  {
+  if (len > 0) {
     int status;
 
     stream.next_in = (Bytef *)buffer;
@@ -78,23 +72,19 @@ zlib_output_buffer::write(const char *buffer, int len)
   return len;
 }
 
-int
-zlib_output_buffer::close(void)
-{
+int zlib_output_buffer::close(void) {
   int status;
 
   assert(stream.avail_in == 0);
 
-  for (status = deflate(&stream, Z_FINISH);
-       status == Z_OK;
+  for (status = deflate(&stream, Z_FINISH); status == Z_OK;
        status = deflate(&stream, Z_FINISH)) {
     flush_output();
   }
 
   if (status == Z_STREAM_END) {
     out->write(outbuf, sizeof(outbuf) - stream.avail_out);
-  }
-  else {
+  } else {
     throw output_writer::write_error("deflate failed");
   }
 
@@ -105,22 +95,13 @@ zlib_output_buffer::close(void)
   return out->close();
 }
 
-int
-zlib_output_buffer::written(void)
-{
-   return bytes_in;
-}
+int zlib_output_buffer::written(void) { return bytes_in; }
 
-void
-zlib_output_buffer::flush_output(void)
-{
+void zlib_output_buffer::flush_output(void) {
   out->write(outbuf, sizeof(outbuf) - stream.avail_out);
 
   stream.next_out = (Bytef *)outbuf;
   stream.avail_out = sizeof(outbuf);
 }
 
-void
-zlib_output_buffer::flush() { 
-  flush_output(); 
-}
+void zlib_output_buffer::flush() { flush_output(); }

@@ -9,8 +9,7 @@
 struct bbox {
   double minlat, minlon, maxlat, maxlon;
 
-  bbox(double minlat_, double minlon_, 
-       double maxlat_, double maxlon_);
+  bbox(double minlat_, double minlon_, double maxlat_, double maxlon_);
 
   bbox();
 
@@ -39,6 +38,5 @@ struct bbox {
    */
   double area() const;
 };
-
 
 #endif /* BBOX_HPP */

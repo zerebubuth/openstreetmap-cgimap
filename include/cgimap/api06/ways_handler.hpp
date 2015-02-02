@@ -10,29 +10,27 @@
 
 namespace api06 {
 
-class ways_responder
-	: public osm_current_responder {
+class ways_responder : public osm_current_responder {
 public:
-	 ways_responder(mime::type, std::list<osm_id_t>, factory_ptr &);
-	 ~ways_responder();
+  ways_responder(mime::type, std::list<osm_id_t>, factory_ptr &);
+  ~ways_responder();
 
 private:
-	 std::list<osm_id_t> ids;
+  std::list<osm_id_t> ids;
 };
 
-class ways_handler 
-	: public handler {
+class ways_handler : public handler {
 public:
-	 ways_handler(request &req);
-	 ~ways_handler();
+  ways_handler(request &req);
+  ~ways_handler();
 
-	 std::string log_name() const;
-	 responder_ptr_t responder(factory_ptr &x) const;
+  std::string log_name() const;
+  responder_ptr_t responder(factory_ptr &x) const;
 
 private:
-	 std::list<osm_id_t> ids;
+  std::list<osm_id_t> ids;
 
-	 static std::list<osm_id_t> validate_request(request &req);
+  static std::list<osm_id_t> validate_request(request &req);
 };
 
 } // namespace api06

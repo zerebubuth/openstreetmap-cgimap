@@ -4,15 +4,14 @@
 using std::list;
 using boost::shared_ptr;
 
-osm_current_responder::osm_current_responder(mime::type mt, factory_ptr &f, boost::optional<bbox> b) 
-   : osm_responder(mt, b), sel(f->make_selection()) {
-}
+osm_current_responder::osm_current_responder(mime::type mt, factory_ptr &f,
+                                             boost::optional<bbox> b)
+    : osm_responder(mt, b), sel(f->make_selection()) {}
 
-osm_current_responder::~osm_current_responder() {
-}
+osm_current_responder::~osm_current_responder() {}
 
-void
-osm_current_responder::write(shared_ptr<output_formatter> formatter, const std::string &generator) {
+void osm_current_responder::write(shared_ptr<output_formatter> formatter,
+                                  const std::string &generator) {
   // TODO: is it possible that formatter can be null?
   output_formatter &fmt = *formatter;
 
@@ -36,7 +35,7 @@ osm_current_responder::write(shared_ptr<output_formatter> formatter, const std::
     fmt.start_element_type(element_type_relation);
     sel->write_relations(fmt);
     fmt.end_element_type(element_type_relation);
-  
+
   } catch (const std::exception &e) {
     fmt.error(e);
   }

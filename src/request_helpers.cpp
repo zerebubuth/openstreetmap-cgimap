@@ -5,10 +5,9 @@
 using std::string;
 using std::ostringstream;
 
-string
-fcgi_get_env(request &req, const char* name, const char* default_value) {
+string fcgi_get_env(request &req, const char *name, const char *default_value) {
   assert(name);
-  const char* v = req.get_param(name);
+  const char *v = req.get_param(name);
 
   // since the map script is so simple i'm just going to assume that
   // any time we fail to get an environment variable is a fatal error.
@@ -25,11 +24,10 @@ fcgi_get_env(request &req, const char* name, const char* default_value) {
   return string(v);
 }
 
-string
-get_query_string(request &req) {
+string get_query_string(request &req) {
   // try the query string that's supposed to be present first
   const char *query_string = req.get_param("QUERY_STRING");
-  
+
   // if that isn't present, then this may be being invoked as part of a
   // 404 handler, so look at the request uri instead.
   if (query_string == NULL) {
@@ -39,7 +37,7 @@ get_query_string(request &req) {
       // fail. something has obviously gone massively wrong.
       ostringstream ostr;
       ostr << "request didn't set the $QUERY_STRING or $REQUEST_URI "
-	   << "environment variables.";
+           << "environment variables.";
       throw http::server_error(ostr.str());
     }
 
@@ -58,10 +56,9 @@ get_query_string(request &req) {
   }
 }
 
-std::string
-get_request_path(request &req) {
+std::string get_request_path(request &req) {
   const char *request_uri = req.get_param("REQUEST_URI");
-  
+
   if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
     // fall back to PATH_INFO if REQUEST_URI isn't available.
     // the former is set by fcgi, the latter by Rack.
@@ -70,10 +67,11 @@ get_request_path(request &req) {
 
   if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
     ostringstream ostr;
-    ostr << "request didn't set either the $REQUEST_URI or $PATH_INFO environment variables.";
+    ostr << "request didn't set either the $REQUEST_URI or $PATH_INFO "
+            "environment variables.";
     throw http::server_error(ostr.str());
   }
-  
+
   const char *request_uri_end = request_uri + strlen(request_uri);
   // i think the only valid position for the '?' char is at the beginning
   // of the query string.
@@ -88,15 +86,13 @@ get_request_path(request &req) {
 /**
  * get encoding to use for response.
  */
-boost::shared_ptr<http::encoding>
-get_encoding(request &req) {
+boost::shared_ptr<http::encoding> get_encoding(request &req) {
   const char *accept_encoding = req.get_param("HTTP_ACCEPT_ENCODING");
 
   if (accept_encoding) {
-     return http::choose_encoding(string(accept_encoding));
-  }
-  else {
-      return boost::shared_ptr<http::identity>(new http::identity());
+    return http::choose_encoding(string(accept_encoding));
+  } else {
+    return boost::shared_ptr<http::identity>(new http::identity());
   }
 }
 
@@ -104,18 +100,17 @@ get_encoding(request &req) {
  * get extra headers to include in response.
  * this includes CORS access control headers.
  */
-string
-get_extra_headers(request &req) {
+string get_extra_headers(request &req) {
   const char *origin = req.get_param("HTTP_ORIGIN");
   ostringstream headers;
 
   headers << req.extra_headers();
 
   if (origin) {
-     headers << "Access-Control-Allow-Credentials: true\r\n";
-     headers << "Access-Control-Allow-Methods: GET\r\n";
-     headers << "Access-Control-Allow-Origin: " << origin << "\r\n";
-     headers << "Access-Control-Max-Age: 1728000\r\n";
+    headers << "Access-Control-Allow-Credentials: true\r\n";
+    headers << "Access-Control-Allow-Methods: GET\r\n";
+    headers << "Access-Control-Allow-Origin: " << origin << "\r\n";
+    headers << "Access-Control-Max-Age: 1728000\r\n";
   }
 
   return headers.str();
@@ -126,8 +121,7 @@ namespace {
  * Bindings to allow libxml to write directly to the request
  * library.
  */
-class fcgi_output_buffer
-  : public output_buffer {
+class fcgi_output_buffer : public output_buffer {
 public:
   virtual int write(const char *buffer, int len) {
     w += len;
@@ -140,22 +134,17 @@ public:
     return 0;
   }
 
-  virtual int written() {
-    return w;
-  }
+  virtual int written() { return w; }
 
   virtual void flush() {
-    // there's a note that says this causes too many writes and decreases 
+    // there's a note that says this causes too many writes and decreases
     // efficiency, but we're only calling it once...
     r.flush();
   }
 
-  virtual ~fcgi_output_buffer() {
-  }
+  virtual ~fcgi_output_buffer() {}
 
-  fcgi_output_buffer(request &req) 
-    : r(req), w(0) {
-  }
+  fcgi_output_buffer(request &req) : r(req), w(0) {}
 
 private:
   request &r;
@@ -164,7 +153,6 @@ private:
 
 } // anonymous namespace
 
-boost::shared_ptr<output_buffer>
-make_output_buffer(request &req) {
-    return boost::shared_ptr<output_buffer>(new fcgi_output_buffer(req));
+boost::shared_ptr<output_buffer> make_output_buffer(request &req) {
+  return boost::shared_ptr<output_buffer>(new fcgi_output_buffer(req));
 }

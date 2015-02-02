@@ -9,8 +9,9 @@ using std::list;
 
 namespace api06 {
 
-way_full_responder::way_full_responder(mime::type mt_, osm_id_t id_, factory_ptr &w_) 
-  : osm_current_responder(mt_, w_), id(id_) {
+way_full_responder::way_full_responder(mime::type mt_, osm_id_t id_,
+                                       factory_ptr &w_)
+    : osm_current_responder(mt_, w_), id(id_) {
   list<osm_id_t> ids;
   ids.push_back(id);
 
@@ -23,41 +24,35 @@ way_full_responder::way_full_responder(mime::type mt_, osm_id_t id_, factory_ptr
   sel->select_nodes_from_way_nodes();
 }
 
-way_full_responder::~way_full_responder() {
-}
+way_full_responder::~way_full_responder() {}
 
-void
-way_full_responder::check_visibility() {
+void way_full_responder::check_visibility() {
   switch (sel->check_way_visibility(id)) {
-    
+
   case data_selection::non_exist:
-    throw http::not_found(""); // TODO: fix error message / throw structure to emit better error message
-    
+    // TODO: fix error message / throw structure to emit better error message
+    throw http::not_found("");
+
   case data_selection::deleted:
-    throw http::gone(); // TODO: fix error message / throw structure to emit better error message
+    // TODO: fix error message / throw structure to emit better error message
+    throw http::gone();
 
   default:
     break;
   }
 }
 
-way_full_handler::way_full_handler(request &, osm_id_t id_)
-  : id(id_) {
-  logger::message((boost::format("starting way/full handler with id = %1%") % id).str());
+way_full_handler::way_full_handler(request &, osm_id_t id_) : id(id_) {
+  logger::message(
+      (boost::format("starting way/full handler with id = %1%") % id).str());
 }
 
-way_full_handler::~way_full_handler() {
-}
+way_full_handler::~way_full_handler() {}
 
-std::string 
-way_full_handler::log_name() const {
-  return "way/full";
-}
+std::string way_full_handler::log_name() const { return "way/full"; }
 
-responder_ptr_t 
-way_full_handler::responder(factory_ptr &x) const {
+responder_ptr_t way_full_handler::responder(factory_ptr &x) const {
   return responder_ptr_t(new way_full_responder(mime_type, id, x));
 }
 
 } // namespace api06
-

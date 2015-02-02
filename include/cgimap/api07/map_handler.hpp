@@ -15,26 +15,24 @@
 
 namespace api07 {
 
-class map_responder
-  : public osm_current_responder {
+class map_responder : public osm_current_responder {
 public:
-	 map_responder(mime::type, bbox, factory_ptr &);
+  map_responder(mime::type, bbox, factory_ptr &);
   ~map_responder();
 };
 
-class map_handler 
-  : public handler {
+class map_handler : public handler {
 public:
-	 explicit map_handler(request &req);
-	 map_handler(request &req, int tile_id);
-	 ~map_handler();
-	 std::string log_name() const;
-	 responder_ptr_t responder(factory_ptr &x) const;
-	 
+  explicit map_handler(request &req);
+  map_handler(request &req, int tile_id);
+  ~map_handler();
+  std::string log_name() const;
+  responder_ptr_t responder(factory_ptr &x) const;
+
 private:
-	 bbox bounds;
-	 
-	 static bbox validate_request(request &req);
+  bbox bounds;
+
+  static bbox validate_request(request &req);
 };
 
 } // namespace api07

@@ -8,8 +8,8 @@ struct xml_writer::pimpl_ {
   xmlTextWriterPtr writer;
 };
 
-xml_writer::xml_writer(const std::string &file_name, bool indent) 
-  : pimpl(new pimpl_()) {
+xml_writer::xml_writer(const std::string &file_name, bool indent)
+    : pimpl(new pimpl_()) {
   // allocate the text writer "object"
   pimpl->writer = xmlNewTextWriterFilename(file_name.c_str(), 0);
 
@@ -42,10 +42,10 @@ static int wrap_close(void *context) {
 }
 
 // create a new XML writer using writer callback functions
-xml_writer::xml_writer(boost::shared_ptr<output_buffer> &out, bool indent) 
-  : pimpl(new pimpl_()) {
+xml_writer::xml_writer(boost::shared_ptr<output_buffer> &out, bool indent)
+    : pimpl(new pimpl_()) {
   xmlOutputBufferPtr output_buffer =
-    xmlOutputBufferCreateIO(wrap_write, wrap_close, out.get(), NULL);
+      xmlOutputBufferCreateIO(wrap_write, wrap_close, out.get(), NULL);
 
   // allocate a writer using the output buffer object
   pimpl->writer = xmlNewTextWriter(output_buffer);
@@ -61,8 +61,7 @@ xml_writer::xml_writer(boost::shared_ptr<output_buffer> &out, bool indent)
   init(indent);
 }
 
-void
-xml_writer::init(bool indent) {
+void xml_writer::init(bool indent) {
   // maybe enable indenting
   if (indent) {
     xmlTextWriterSetIndent(pimpl->writer, 1);
@@ -92,110 +91,90 @@ xml_writer::~xml_writer() throw() {
   delete pimpl;
 }
 
-void 
-xml_writer::start(const std::string &name) {
+void xml_writer::start(const std::string &name) {
   if (xmlTextWriterStartElement(pimpl->writer, BAD_CAST name.c_str()) < 0) {
     throw write_error("cannot start element.");
   }
 }
 
-void 
-xml_writer::attribute(const std::string &name, 
-		      const std::string &value) {
-  int rc = xmlTextWriterWriteAttribute(pimpl->writer, 
-				       BAD_CAST name.c_str(),
-				       BAD_CAST value.c_str());
+void xml_writer::attribute(const std::string &name, const std::string &value) {
+  int rc = xmlTextWriterWriteAttribute(pimpl->writer, BAD_CAST name.c_str(),
+                                       BAD_CAST value.c_str());
   if (rc < 0) {
     throw write_error("cannot write attribute.");
   }
 }
 
-void
-xml_writer::attribute(const std::string &name, 
-		      const char *value) {
+void xml_writer::attribute(const std::string &name, const char *value) {
   const char *c_str = (value == NULL) ? "" : value;
-  int rc = xmlTextWriterWriteAttribute(pimpl->writer, 
-				       BAD_CAST name.c_str(),
-				       BAD_CAST c_str);
+  int rc = xmlTextWriterWriteAttribute(pimpl->writer, BAD_CAST name.c_str(),
+                                       BAD_CAST c_str);
   if (rc < 0) {
     throw write_error("cannot write attribute.");
   }
 }
 
-void 
-xml_writer::attribute(const std::string &name, double value) {
-  int rc = xmlTextWriterWriteFormatAttribute(pimpl->writer, 
-					     BAD_CAST name.c_str(),
-					     "%.7f", value);
+void xml_writer::attribute(const std::string &name, double value) {
+  int rc = xmlTextWriterWriteFormatAttribute(
+      pimpl->writer, BAD_CAST name.c_str(), "%.7f", value);
   if (rc < 0) {
     throw write_error("cannot write double-precision attribute.");
   }
-}  
+}
 
-void 
-xml_writer::attribute(const std::string &name, unsigned long int value) {
-  int rc = xmlTextWriterWriteFormatAttribute(pimpl->writer, 
-					     BAD_CAST name.c_str(),
-					     "%ld", value);
+void xml_writer::attribute(const std::string &name, unsigned long int value) {
+  int rc = xmlTextWriterWriteFormatAttribute(
+      pimpl->writer, BAD_CAST name.c_str(), "%ld", value);
   if (rc < 0) {
     throw write_error("cannot write osm_id_t attribute.");
   }
-}  
+}
 
-void 
-xml_writer::attribute(const std::string &name, unsigned long long int value) {
-  int rc = xmlTextWriterWriteFormatAttribute(pimpl->writer, 
-					     BAD_CAST name.c_str(),
-					     "%lld", value);
+void xml_writer::attribute(const std::string &name,
+                           unsigned long long int value) {
+  int rc = xmlTextWriterWriteFormatAttribute(
+      pimpl->writer, BAD_CAST name.c_str(), "%lld", value);
   if (rc < 0) {
     throw write_error("cannot write long long int attribute.");
   }
-}  
+}
 
-void 
-xml_writer::attribute(const std::string &name, int value) {
-  int rc = xmlTextWriterWriteFormatAttribute(pimpl->writer, 
-					     BAD_CAST name.c_str(),
-					     "%d", value);
+void xml_writer::attribute(const std::string &name, int value) {
+  int rc = xmlTextWriterWriteFormatAttribute(
+      pimpl->writer, BAD_CAST name.c_str(), "%d", value);
   if (rc < 0) {
     throw write_error("cannot write integer attribute.");
   }
 }
 
-void 
-xml_writer::attribute(const std::string &name, bool value) {
+void xml_writer::attribute(const std::string &name, bool value) {
   const char *str = value ? "true" : "false";
-  int rc = xmlTextWriterWriteAttribute(pimpl->writer, 
-				       BAD_CAST name.c_str(),
-				       BAD_CAST str);
+  int rc = xmlTextWriterWriteAttribute(pimpl->writer, BAD_CAST name.c_str(),
+                                       BAD_CAST str);
   if (rc < 0) {
     throw write_error("cannot write boolean attribute.");
   }
 }
 
-void 
-xml_writer::text(const std::string &t) {
+void xml_writer::text(const std::string &t) {
   if (xmlTextWriterWriteString(pimpl->writer, BAD_CAST t.c_str()) < 0) {
     throw write_error("cannot write text string.");
   }
 }
-  
-void 
-xml_writer::end() {
+
+void xml_writer::end() {
   if (xmlTextWriterEndElement(pimpl->writer) < 0) {
     throw write_error("cannot end element.");
   }
 }
 
-void 
-xml_writer::flush() {
+void xml_writer::flush() {
   if (xmlTextWriterFlush(pimpl->writer) < 0) {
     throw write_error("cannot flush output stream");
   }
 }
 
-void
-xml_writer::error(const std::string &s) {
+void xml_writer::error(const std::string &s) {
   start("error");
   text(s);
   end();
@@ -204,6 +183,5 @@ xml_writer::error(const std::string &s) {
 // TODO: move this to its own file
 output_buffer::~output_buffer() {}
 
-xml_writer::write_error::write_error(const char *message) 
-  : std::runtime_error(message) {
-}
+xml_writer::write_error::write_error(const char *message)
+    : std::runtime_error(message) {}

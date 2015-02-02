@@ -10,20 +10,24 @@ using boost::shared_ptr;
 
 namespace {
 
-po::variables_map first_pass_argments(int argc, char *argv[], const po::options_description &desc) {
-  // copy args because boost::program_options seems to destructively consume them
+po::variables_map first_pass_argments(int argc, char *argv[],
+                                      const po::options_description &desc) {
+  // copy args because boost::program_options seems to destructively consume
+  // them
   std::vector<std::string> args;
   for (int i = 1; i < argc; ++i) {
     args.push_back(argv[i]);
   }
-  
+
   po::variables_map vm;
   // we parse the command line arguments allowing unregistered values so that
   // we can get at the --backend and --help values in order to determine which
   // backend's options should be added to the description for the proper
   // parsing phase. bit of a hack, but couldn't figure out a better way to do
   // it.
-  po::store(po::command_line_parser(args).options(desc).allow_unregistered().run(), vm);
+  po::store(
+      po::command_line_parser(args).options(desc).allow_unregistered().run(),
+      vm);
   po::notify(vm);
   return vm;
 }
@@ -42,8 +46,7 @@ private:
   shared_ptr<backend> default_backend;
 };
 
-registry::registry() {
-}
+registry::registry() {}
 
 bool registry::add(shared_ptr<backend> ptr) {
   if (default_backend) {
@@ -59,9 +62,11 @@ bool registry::add(shared_ptr<backend> ptr) {
   return true;
 }
 
-void registry::setup_options(int argc, char *argv[], po::options_description &desc) {
+void registry::setup_options(int argc, char *argv[],
+                             po::options_description &desc) {
   if (backends.empty() || !default_backend) {
-    throw std::runtime_error("No backends available - this is most likely a compile-time configuration error.");
+    throw std::runtime_error("No backends available - this is most likely a "
+                             "compile-time configuration error.");
   }
 
   std::ostringstream all_backends;
@@ -75,21 +80,24 @@ void registry::setup_options(int argc, char *argv[], po::options_description &de
     all_backends << val.second->name();
   }
 
-  std::string description = (boost::format("backend to use, available options are: %1%") % all_backends.str()).str();
-  desc.add_options()
-    ("backend", po::value<std::string>()->default_value(default_backend->name()), description.c_str())
-    ;
+  std::string description =
+      (boost::format("backend to use, available options are: %1%") %
+       all_backends.str()).str();
+  desc.add_options()("backend", po::value<std::string>()->default_value(
+                                    default_backend->name()),
+                     description.c_str());
 
   po::variables_map vm = first_pass_argments(argc, argv, desc);
 
-  // little hack - we want to print *all* the backends when --help is passed, so we
-  // don't add one here when it's present. it's a nasty way to do it, but i can't 
-  // think of a better one right now...
+  // little hack - we want to print *all* the backends when --help is passed, so
+  // we don't add one here when it's present. it's a nasty way to do it, but i
+  // can't think of a better one right now...
   if (!vm.count("help")) {
     shared_ptr<backend> ptr = default_backend;
 
     if (vm.count("backend")) {
-      backend_map_t::iterator itr = backends.find(vm["backend"].as<std::string>());
+      backend_map_t::iterator itr =
+          backends.find(vm["backend"].as<std::string>());
       if (itr != backends.end()) {
         ptr = itr->second;
       }
@@ -105,11 +113,13 @@ void registry::output_options(std::ostream &out) {
   }
 }
 
-shared_ptr<data_selection::factory> registry::create(const po::variables_map &options) {
+shared_ptr<data_selection::factory>
+registry::create(const po::variables_map &options) {
   shared_ptr<backend> ptr = default_backend;
 
   if (options.count("backend")) {
-    backend_map_t::iterator itr = backends.find(options["backend"].as<std::string>());
+    backend_map_t::iterator itr =
+        backends.find(options["backend"].as<std::string>());
     if (itr != backends.end()) {
       ptr = itr->second;
     }
@@ -123,8 +133,7 @@ boost::mutex registry_mut;
 
 } // anonymous namespace
 
-backend::~backend() {
-}
+backend::~backend() {}
 
 bool register_backend(shared_ptr<backend> ptr) {
   boost::unique_lock<boost::mutex> lock(registry_mut);
@@ -135,7 +144,8 @@ bool register_backend(shared_ptr<backend> ptr) {
   return registry_ptr->add(ptr);
 }
 
-void setup_backend_options(int argc, char *argv[], po::options_description &desc) {
+void setup_backend_options(int argc, char *argv[],
+                           po::options_description &desc) {
   boost::unique_lock<boost::mutex> lock(registry_mut);
   if (registry_ptr == NULL) {
     registry_ptr = new registry;
@@ -153,7 +163,8 @@ void output_backend_options(std::ostream &out) {
   registry_ptr->output_options(out);
 }
 
-shared_ptr<data_selection::factory> create_backend(const po::variables_map &options) {
+shared_ptr<data_selection::factory>
+create_backend(const po::variables_map &options) {
   boost::unique_lock<boost::mutex> lock(registry_mut);
   if (registry_ptr == NULL) {
     registry_ptr = new registry;

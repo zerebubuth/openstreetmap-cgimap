@@ -52,6 +52,7 @@ public:
   bool is_acceptable(mime::type) const;
   // note: returns mime::unspecified_type if none were acceptable
   mime::type most_acceptable_of(const list<mime::type> &available) const;
+
 private:
   map<mime::type, float> mapping;
 };
@@ -61,13 +62,15 @@ struct media_range {
   string mime_type;
   param_t params;
 };
-
 }
 
-BOOST_FUSION_ADAPT_STRUCT(media_range, 
-			  (string, mime_type)
-			  (media_range::param_t, params)
-			  )
+// clang-format off
+BOOST_FUSION_ADAPT_STRUCT(
+  media_range,
+  (string, mime_type)
+  (media_range::param_t, params)
+  )
+// clang-format on
 
 namespace {
 
@@ -75,7 +78,8 @@ namespace qi = boost::spirit::qi;
 namespace ascii = boost::spirit::ascii;
 
 template <typename iterator>
-struct http_accept_grammar : qi::grammar<iterator, vector<media_range>(), ascii::blank_type> {
+struct http_accept_grammar
+    : qi::grammar<iterator, vector<media_range>(), ascii::blank_type> {
   http_accept_grammar() : http_accept_grammar::base_type(start) {
     using qi::lit;
     using qi::char_;
@@ -86,16 +90,19 @@ struct http_accept_grammar : qi::grammar<iterator, vector<media_range>(), ascii:
     using qi::raw;
 
     // RFC2616 definition of a token
-    token %= +(char_(33, 126) - 
-	       (char_("(") | char_(")") | char_("<") | char_(">") | char_("@") | char_(",") | 
-		char_(";") | char_(":") | char_("\\") | char_("\"") | char_("/") | char_("[") | 
-		char_("]") | char_("?") | char_("=") | char_("{") | char_("}")));
+    token %= +(char_(33, 126) -
+               (char_("(") | char_(")") | char_("<") | char_(">") | char_("@") |
+                char_(",") | char_(";") | char_(":") | char_("\\") |
+                char_("\"") | char_("/") | char_("[") | char_("]") |
+                char_("?") | char_("=") | char_("{") | char_("}")));
     // RFC2616 definition of a quoted string
-    quoted_string %= lit("\"") >> *((char_(32,126) - char_("\"")) | (lit("\\") >> char_)) >> lit("\"");
-    
+    quoted_string %= lit("\"") >>
+                     *((char_(32, 126) - char_("\"")) | (lit("\\") >> char_)) >>
+                     lit("\"");
+
     // the string here can be either a token/token pair (where token can include
-    // '*') or a single '*' character. 
-    // TODO: this will accept '*/something', but that is an invalid mime type 
+    // '*') or a single '*' character.
+    // TODO: this will accept '*/something', but that is an invalid mime type
     // and should be rejected.
     mime_type %= raw[(token >> lit("/") >> token) | lit("*")];
     param %= token >> '=' >> (token | quoted_string);
@@ -133,29 +140,30 @@ acceptable_types::acceptable_types(const std::string &accept_header) {
       // figure out the mime::type from the string.
       mime::type mime_type = mime::parse_from(range.mime_type);
       if (mime_type == mime::unspecified_type) {
-	// if it's unknown then skip this type...
-	continue;
+        // if it's unknown then skip this type...
+        continue;
       }
 
       // figure out the quality
       media_range::param_t::iterator q_itr = range.params.find("q");
       // default quality parameter is 1
-      float quality = 1.0; 
+      float quality = 1.0;
       if (q_itr != range.params.end()) {
-	quality = lexical_cast<float>(q_itr->second);
+        quality = lexical_cast<float>(q_itr->second);
       }
 
       mapping.insert(make_pair(mime_type, quality));
     }
 
   } else {
-    logger::message(format("Failed to parse accept header '%1%'") % accept_header);
+    logger::message(format("Failed to parse accept header '%1%'") %
+                    accept_header);
     throw http::bad_request("Accept header could not be parsed.");
   }
 }
 
 bool acceptable_types::is_acceptable(mime::type mt) const {
-	return mapping.find(mt) != mapping.end();
+  return mapping.find(mt) != mapping.end();
 }
 
 mime::type
@@ -185,8 +193,8 @@ acceptable_types::most_acceptable_of(const list<mime::type> &available) const {
 }
 
 /**
- * figures out the preferred mime type(s) from the Accept headers, mapped to their
- * relative acceptability.
+ * figures out the preferred mime type(s) from the Accept headers, mapped to
+ * their relative acceptability.
  */
 acceptable_types header_mime_type(request &req) {
   // need to look at HTTP_ACCEPT request environment
@@ -195,24 +203,26 @@ acceptable_types header_mime_type(request &req) {
 }
 }
 
-mime::type choose_best_mime_type(request &req, 
-                                 responder_ptr_t hptr) {
+mime::type choose_best_mime_type(request &req, responder_ptr_t hptr) {
   // figure out what, if any, the Accept-able resource mime types are
   acceptable_types types = header_mime_type(req);
   const list<mime::type> types_available = hptr->types_available();
-  
+
   mime::type best_type = hptr->resource_type();
-  // check if the handler is capable of supporting an acceptable set of mime types.
+  // check if the handler is capable of supporting an acceptable set of mime
+  // types.
   if (best_type != mime::unspecified_type) {
     // check that this doesn't conflict with anything in the Accept header.
     if (!hptr->is_available(best_type) || !types.is_acceptable(best_type)) {
-      throw http::not_acceptable(get_request_path(req)); // TODO , types_available);
+      // TODO: include types_available in response.
+      throw http::not_acceptable(get_request_path(req));
     }
   } else {
     best_type = types.most_acceptable_of(types_available);
     // if none were acceptable then...
     if (best_type == mime::unspecified_type) {
-      throw http::not_acceptable(get_request_path(req)); // TODO , types_available);
+      // TODO: include types_available in response.
+      throw http::not_acceptable(get_request_path(req));
     } else if (best_type == mime::any_type) {
       // choose the first of the available types if nothing is preferred.
       best_type = *(hptr->types_available().begin());
@@ -223,28 +233,28 @@ mime::type choose_best_mime_type(request &req,
   return best_type;
 }
 
-shared_ptr<output_formatter>
-choose_formatter(request &req, 
-                 responder_ptr_t hptr, 
-                 shared_ptr<output_buffer> out) {
+shared_ptr<output_formatter> choose_formatter(request &req,
+                                              responder_ptr_t hptr,
+                                              shared_ptr<output_buffer> out) {
   mime::type best_type = choose_best_mime_type(req, hptr);
   shared_ptr<output_formatter> o_formatter;
-  
+
   if (best_type == mime::text_xml) {
     xml_writer *xwriter = new xml_writer(out, true);
     o_formatter = shared_ptr<output_formatter>(new xml_formatter(xwriter));
-    
+
 #ifdef HAVE_YAJL
   } else if (best_type == mime::text_json) {
     json_writer *jwriter = new json_writer(out, true);
     o_formatter = shared_ptr<output_formatter>(new json_formatter(jwriter));
 #endif
-    
+
   } else {
     ostringstream ostr;
-    ostr << "Could not create formatter for MIME type `" << mime::to_string(best_type) << "'.";
+    ostr << "Could not create formatter for MIME type `"
+         << mime::to_string(best_type) << "'.";
     throw runtime_error(ostr.str());
   }
-  
+
   return o_formatter;
 }

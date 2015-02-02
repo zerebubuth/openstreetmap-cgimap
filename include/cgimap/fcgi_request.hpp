@@ -13,6 +13,7 @@ struct fcgi_request : public request {
   int accept_r();
   void finish();
   static int open_socket(const std::string &, int);
+
 private:
   struct pimpl;
   boost::scoped_ptr<pimpl> m_impl;

@@ -19,153 +19,150 @@ using std::stringstream;
 using std::list;
 
 namespace pqxx {
-  template<> struct string_traits<list<osm_id_t> >
-  {
-    static const char *name() { return "list<osm_id_t>"; }
-    static bool has_null() { return false; }
-    static bool is_null(const list<osm_id_t> &) { return false; }
-    static stringstream null()
-    {
-      internal::throw_null_conversion(name());
-      // No, dear compiler, we don't need a return here.
-      throw 0;
-    }
-    static void from_string(const char[], list<osm_id_t> &) {
-    }
-    static std::string to_string(const list<osm_id_t> &ids) {
-      stringstream ostr;
-      ostr << "{";
-      std::copy(ids.begin(), ids.end(), infix_ostream_iterator<osm_id_t>(ostr, ","));
-      ostr << "}";
-      return ostr.str();
-    }
-  };
+template <> struct string_traits<list<osm_id_t> > {
+  static const char *name() { return "list<osm_id_t>"; }
+  static bool has_null() { return false; }
+  static bool is_null(const list<osm_id_t> &) { return false; }
+  static stringstream null() {
+    internal::throw_null_conversion(name());
+    // No, dear compiler, we don't need a return here.
+    throw 0;
+  }
+  static void from_string(const char[], list<osm_id_t> &) {}
+  static std::string to_string(const list<osm_id_t> &ids) {
+    stringstream ostr;
+    ostr << "{";
+    std::copy(ids.begin(), ids.end(),
+              infix_ostream_iterator<osm_id_t>(ostr, ","));
+    ostr << "}";
+    return ostr.str();
+  }
+};
 }
 
 namespace {
-  std::string connect_db_str(const po::variables_map &options) {
-    // build the connection string.
-    std::ostringstream ostr;
-    ostr << "dbname=" << options["dbname"].as<std::string>();
-    if (options.count("host")) {
-      ostr << " host=" << options["host"].as<std::string>();
-    }
-    if (options.count("username")) {
-      ostr << " user=" << options["username"].as<std::string>();
-    }
-    if (options.count("password")) {
-      ostr << " password=" << options["password"].as<std::string>();
-    }
-
-    return ostr.str();
+std::string connect_db_str(const po::variables_map &options) {
+  // build the connection string.
+  std::ostringstream ostr;
+  ostr << "dbname=" << options["dbname"].as<std::string>();
+  if (options.count("host")) {
+    ostr << " host=" << options["host"].as<std::string>();
+  }
+  if (options.count("username")) {
+    ostr << " user=" << options["username"].as<std::string>();
+  }
+  if (options.count("password")) {
+    ostr << " password=" << options["password"].as<std::string>();
   }
 
-  void extract_elem(const pqxx::result::tuple &row, element_info &elem) {
-    elem.id = row["id"].as<osm_id_t>();
-    elem.version = row["version"].as<int>();
-    elem.timestamp = row["timestamp"].c_str();
-    elem.changeset = row["changeset_id"].as<osm_id_t>();
-    if (!row["uid"].is_null()) {
-      elem.uid = row["uid"].as<osm_id_t>();
-    } else {
-      elem.uid = boost::none;
-    }
-    if (!row["display_name"].is_null()) {
-      elem.display_name = row["display_name"].c_str();
-    } else {
-      elem.display_name = boost::none;
-    }
-    elem.visible = true;
+  return ostr.str();
+}
+
+void extract_elem(const pqxx::result::tuple &row, element_info &elem) {
+  elem.id = row["id"].as<osm_id_t>();
+  elem.version = row["version"].as<int>();
+  elem.timestamp = row["timestamp"].c_str();
+  elem.changeset = row["changeset_id"].as<osm_id_t>();
+  if (!row["uid"].is_null()) {
+    elem.uid = row["uid"].as<osm_id_t>();
+  } else {
+    elem.uid = boost::none;
+  }
+  if (!row["display_name"].is_null()) {
+    elem.display_name = row["display_name"].c_str();
+  } else {
+    elem.display_name = boost::none;
+  }
+  elem.visible = true;
+}
+
+void extract_tags(const pqxx::result &res, tags_t &tags) {
+  tags.clear();
+  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
+       ++itr) {
+    tags.push_back(std::make_pair(std::string((*itr)["k"].c_str()),
+                                  std::string((*itr)["v"].c_str())));
+  }
+}
+
+void extract_nodes(const pqxx::result &res, nodes_t &nodes) {
+  nodes.clear();
+  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
+       ++itr) {
+    nodes.push_back((*itr)[0].as<osm_id_t>());
+  }
+}
+
+element_type type_from_name(const char *name) {
+  element_type type;
+
+  switch (name[0]) {
+  case 'N':
+  case 'n':
+    type = element_type_node;
+    break;
+
+  case 'W':
+  case 'w':
+    type = element_type_way;
+    break;
+
+  case 'R':
+  case 'r':
+    type = element_type_relation;
+    break;
   }
 
-  void extract_tags(const pqxx::result &res, tags_t &tags) {
-    tags.clear();
-    for (pqxx::result::const_iterator itr = res.begin();
-         itr != res.end(); ++itr) {
-      tags.push_back(std::make_pair(std::string((*itr)["k"].c_str()),
-                                    std::string((*itr)["v"].c_str())));
-    }
+  return type;
+}
+
+void extract_members(const pqxx::result &res, members_t &members) {
+  member_info member;
+  members.clear();
+  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
+       ++itr) {
+    member.type = type_from_name((*itr)["member_type"].c_str());
+    member.ref = (*itr)["member_id"].as<osm_id_t>();
+    member.role = (*itr)["member_role"].c_str();
+    members.push_back(member);
   }
-
-  void extract_nodes(const pqxx::result &res, nodes_t &nodes) {
-    nodes.clear();
-    for (pqxx::result::const_iterator itr = res.begin();
-         itr != res.end(); ++itr) {
-      nodes.push_back((*itr)[0].as<osm_id_t>());
-    }
-  }
-
-  element_type type_from_name(const char *name) {
-    element_type type;
-
-    switch (name[0]) {
-    case 'N':
-    case 'n':
-      type = element_type_node;
-      break;
-
-    case 'W':
-    case 'w':
-      type = element_type_way;
-      break;
-
-    case 'R':
-    case 'r':
-      type = element_type_relation;
-      break;
-    }
-
-    return type;
-  }
-
-  void extract_members(const pqxx::result &res, members_t &members) {
-     member_info member;
-     members.clear();
-     for (pqxx::result::const_iterator itr = res.begin();
-          itr != res.end(); ++itr) {
-        member.type = type_from_name((*itr)["member_type"].c_str());
-        member.ref = (*itr)["member_id"].as<osm_id_t>();
-        member.role = (*itr)["member_role"].c_str();
-        members.push_back(member);
-     }
-  }
+}
 
 } // anonymous namespace
 
-snapshot_selection::snapshot_selection(pqxx::connection &conn)
-  : w(conn) {
+snapshot_selection::snapshot_selection(pqxx::connection &conn) : w(conn) {
   w.exec("CREATE TEMPORARY TABLE tmp_nodes ("
-    "id bigint NOT NULL PRIMARY KEY,"
-    "version integer NOT NULL,"
-    "user_id integer NOT NULL,"
-    "tstamp timestamp without time zone NOT NULL,"
-    "changeset_id bigint NOT NULL,"
-    "tags hstore,"
-    "lon integer NOT NULL," // 2x4 byte integers to save sending around 30 bytes of geometry
-    "lat integer NOT NULL)");
+         "id bigint NOT NULL PRIMARY KEY,"
+         "version integer NOT NULL,"
+         "user_id integer NOT NULL,"
+         "tstamp timestamp without time zone NOT NULL,"
+         "changeset_id bigint NOT NULL,"
+         "tags hstore,"
+         "lon integer NOT NULL," // 2x4 byte integers to save sending around 30
+                                 // bytes of geometry
+         "lat integer NOT NULL)");
 
   w.exec("CREATE TEMPORARY TABLE tmp_ways ( "
-    "id bigint NOT NULL PRIMARY KEY, "
-    "version integer NOT NULL, "
-    "user_id integer NOT NULL, "
-    "tstamp timestamp without time zone NOT NULL, "
-    "changeset_id bigint NOT NULL, "
-    "tags hstore, "
-    "nodes bigint[])"); // pgsnapshot could include a bbox or linestring column, but not needed here
+         "id bigint NOT NULL PRIMARY KEY, "
+         "version integer NOT NULL, "
+         "user_id integer NOT NULL, "
+         "tstamp timestamp without time zone NOT NULL, "
+         "changeset_id bigint NOT NULL, "
+         "tags hstore, "
+         "nodes bigint[])"); // pgsnapshot could include a bbox or linestring
+                             // column, but not needed here
   w.exec("CREATE TEMPORARY TABLE tmp_relations ( "
-    "id bigint NOT NULL PRIMARY KEY, "
-    "version integer NOT NULL, "
-    "user_id integer NOT NULL, "
-    "tstamp timestamp without time zone NOT NULL, "
-    "changeset_id bigint NOT NULL, "
-    "tags hstore)");
+         "id bigint NOT NULL PRIMARY KEY, "
+         "version integer NOT NULL, "
+         "user_id integer NOT NULL, "
+         "tstamp timestamp without time zone NOT NULL, "
+         "changeset_id bigint NOT NULL, "
+         "tags hstore)");
 }
 
-snapshot_selection::~snapshot_selection() {
-}
+snapshot_selection::~snapshot_selection() {}
 
-void 
-snapshot_selection::write_nodes(output_formatter &formatter) {
+void snapshot_selection::write_nodes(output_formatter &formatter) {
   // get all nodes - they already contain their own tags, so
   // we don't need to do anything else.
   logger::message("Fetching nodes");
@@ -173,20 +170,20 @@ snapshot_selection::write_nodes(output_formatter &formatter) {
   tags_t tags;
 
   pqxx::result nodes = w.prepared("extract_nodes").exec();
-  for (pqxx::result::const_iterator itr = nodes.begin(); 
-       itr != nodes.end(); ++itr) {
+  for (pqxx::result::const_iterator itr = nodes.begin(); itr != nodes.end();
+       ++itr) {
     extract_elem(*itr, elem);
     if (itr["untagged"].as<bool>()) {
       tags.clear();
     } else {
       extract_tags(w.prepared("extract_node_tags")(elem.id).exec(), tags);
     }
-    formatter.write_node(elem, (*itr)["lon"].as<double>(), (*itr)["lat"].as<double>(), tags);
+    formatter.write_node(elem, (*itr)["lon"].as<double>(),
+                         (*itr)["lat"].as<double>(), tags);
   }
 }
 
-void 
-snapshot_selection::write_ways(output_formatter &formatter) {
+void snapshot_selection::write_ways(output_formatter &formatter) {
   // grab the ways, way nodes and tags
   // way nodes and tags are on a separate connections so that the
   // entire result set can be streamed from a single query.
@@ -196,8 +193,8 @@ snapshot_selection::write_ways(output_formatter &formatter) {
   tags_t tags;
 
   pqxx::result ways = w.prepared("extract_ways").exec();
-  for (pqxx::result::const_iterator itr = ways.begin();
-       itr != ways.end(); ++itr) {
+  for (pqxx::result::const_iterator itr = ways.begin(); itr != ways.end();
+       ++itr) {
     extract_elem(*itr, elem);
     extract_nodes(w.prepared("extract_way_nds")(elem.id).exec(), nodes);
     extract_tags(w.prepared("extract_way_tags")(elem.id).exec(), tags);
@@ -205,8 +202,7 @@ snapshot_selection::write_ways(output_formatter &formatter) {
   }
 }
 
-void 
-snapshot_selection::write_relations(output_formatter &formatter) {
+void snapshot_selection::write_relations(output_formatter &formatter) {
   logger::message("Fetching relations");
   element_info elem;
   members_t members;
@@ -215,109 +211,104 @@ snapshot_selection::write_relations(output_formatter &formatter) {
   pqxx::result relations = w.prepared("extract_relations").exec();
   for (pqxx::result::const_iterator itr = relations.begin();
        itr != relations.end(); ++itr) {
-     extract_elem(*itr, elem);
-     extract_members(w.prepared("extract_relation_members")(elem.id).exec(), members);
-     extract_tags(w.prepared("extract_relation_tags")(elem.id).exec(), tags);
-     formatter.write_relation(elem, members, tags);
+    extract_elem(*itr, elem);
+    extract_members(w.prepared("extract_relation_members")(elem.id).exec(),
+                    members);
+    extract_tags(w.prepared("extract_relation_tags")(elem.id).exec(), tags);
+    formatter.write_relation(elem, members, tags);
   }
 }
 
-data_selection::visibility_t 
-snapshot_selection::check_node_visibility(osm_id_t) {
+data_selection::visibility_t
+    snapshot_selection::check_node_visibility(osm_id_t) {
   return data_selection::exists;
 }
 
-data_selection::visibility_t 
-snapshot_selection::check_way_visibility(osm_id_t) {
+data_selection::visibility_t
+    snapshot_selection::check_way_visibility(osm_id_t) {
   return data_selection::exists;
 }
 
-data_selection::visibility_t 
-snapshot_selection::check_relation_visibility(osm_id_t) {
+data_selection::visibility_t
+    snapshot_selection::check_relation_visibility(osm_id_t) {
   return data_selection::exists;
 }
 
-int
-snapshot_selection::select_nodes(const std::list<osm_id_t> &ids) {
+int snapshot_selection::select_nodes(const std::list<osm_id_t> &ids) {
   return w.prepared("add_nodes_list")(ids).exec().affected_rows();
 }
 
-int
-snapshot_selection::select_ways(const std::list<osm_id_t> &ids) {
+int snapshot_selection::select_ways(const std::list<osm_id_t> &ids) {
   return w.prepared("add_ways_list")(ids).exec().affected_rows();
 }
 
-int
-snapshot_selection::select_relations(const std::list<osm_id_t> &ids) {
+int snapshot_selection::select_relations(const std::list<osm_id_t> &ids) {
   return w.prepared("add_relations_list")(ids).exec().affected_rows();
 }
 
-int
-snapshot_selection::select_nodes_from_bbox(const bbox &bounds, int max_nodes) {
-  return w.prepared("nodes_from_bbox")(bounds.minlon)(bounds.minlat)(bounds.maxlon)(bounds.maxlat)(max_nodes + 1).exec().affected_rows();
+int snapshot_selection::select_nodes_from_bbox(const bbox &bounds,
+                                               int max_nodes) {
+  return w.prepared("nodes_from_bbox")(bounds.minlon)(bounds.minlat)(
+               bounds.maxlon)(bounds.maxlat)(max_nodes + 1)
+      .exec()
+      .affected_rows();
 }
 
-void 
-snapshot_selection::select_nodes_from_relations() {
+void snapshot_selection::select_nodes_from_relations() {
   logger::message("Filling tmp_nodes (from relations)");
 
   w.prepared("nodes_from_relations").exec();
 }
 
-void 
-snapshot_selection::select_ways_from_nodes() {
+void snapshot_selection::select_ways_from_nodes() {
   logger::message("Filling tmp_ways (from nodes)");
 
   w.prepared("ways_from_nodes").exec();
 }
 
-void 
-snapshot_selection::select_ways_from_relations() {
+void snapshot_selection::select_ways_from_relations() {
   logger::message("Filling tmp_ways (from relations)");
   w.prepared("ways_from_relations").exec();
 }
 
-void 
-snapshot_selection::select_relations_from_ways() {
+void snapshot_selection::select_relations_from_ways() {
   logger::message("Filling tmp_relations (from ways)");
 
   w.prepared("relations_from_ways").exec();
 }
 
-void 
-snapshot_selection::select_nodes_from_way_nodes() {
+void snapshot_selection::select_nodes_from_way_nodes() {
   w.prepared("nodes_from_way_nodes").exec();
 }
 
-void 
-snapshot_selection::select_relations_from_nodes() {
+void snapshot_selection::select_relations_from_nodes() {
   w.prepared("relations_from_nodes").exec();
 }
 
-void 
-snapshot_selection::select_relations_from_way_nodes() {
+void snapshot_selection::select_relations_from_way_nodes() {
   w.prepared("relations_from_way_nodes").exec();
 }
 
-void 
-snapshot_selection::select_relations_from_relations() {
+void snapshot_selection::select_relations_from_relations() {
   w.prepared("relations_from_relations").exec();
 }
 
-void 
-snapshot_selection::select_relations_members_of_relations() {
+void snapshot_selection::select_relations_members_of_relations() {
   w.prepared("relation_members_of_relations").exec();
 }
 
 snapshot_selection::factory::factory(const po::variables_map &opts)
-  : m_connection(connect_db_str(opts)) {
+    : m_connection(connect_db_str(opts)) {
 
   // set the connections to use the appropriate charset.
   m_connection.set_client_encoding(opts["charset"].as<std::string>());
 
   // ignore notice messages
-  m_connection.set_noticer(std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
+  m_connection.set_noticer(
+      std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
   logger::message("Preparing prepared statements.");
+
+  // clang-format off
 
   // extraction functions for getting the data back out when the
   // selection set has been built up.
@@ -472,11 +463,13 @@ snapshot_selection::factory::factory(const po::variables_map &opts)
           "LEFT JOIN tmp_relations trn ON (rm.relation_id = trn.id) "
           "JOIN relations r ON (rm.relation_id = r.id) "
         "WHERE trn.id IS NULL");
+
+  // clang-format on
 }
 
-snapshot_selection::factory::~factory() {
-}
+snapshot_selection::factory::~factory() {}
 
-boost::shared_ptr<data_selection> snapshot_selection::factory::make_selection() {
+boost::shared_ptr<data_selection>
+snapshot_selection::factory::make_selection() {
   return boost::make_shared<snapshot_selection>(boost::ref(m_connection));
 }

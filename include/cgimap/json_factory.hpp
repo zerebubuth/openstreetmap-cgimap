@@ -8,12 +8,12 @@
 /**
  * factory for JSON writers and parsers.
  */
-class json_factory 
-  : public output_factory {
+class json_factory : public output_factory {
 public:
   json_factory();
   ~json_factory();
-  json_writer &create_writer(boost::shared_ptr<output_buffer> &out, bool indent = true);
+  json_writer &create_writer(boost::shared_ptr<output_buffer> &out,
+                             bool indent = true);
   json_formatter &create_formatter(cache<osm_id_t, changeset> &changeset_cache);
 
 private:

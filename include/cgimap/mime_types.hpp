@@ -9,17 +9,16 @@
  */
 namespace mime {
 enum type {
-	unspecified_type, // a "null" type, used to indicate no choice.
-	text_xml,
+  unspecified_type, // a "null" type, used to indicate no choice.
+  text_xml,
 #ifdef HAVE_YAJL
-	text_json,
+  text_json,
 #endif
-	any_type // the "*/*" type used to mean that anything is acceptable.
+  any_type // the "*/*" type used to mean that anything is acceptable.
 };
 
 std::string to_string(type);
 type parse_from(const std::string &);
-
 }
 
 #endif /* MIME_TYPES_HPP */

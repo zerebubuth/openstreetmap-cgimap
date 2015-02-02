@@ -9,8 +9,8 @@ using std::set;
  */
 inline unsigned int xy2tile(unsigned int x, unsigned int y) {
   unsigned int tile = 0;
-  int          i;
-  
+  int i;
+
   for (i = 15; i >= 0; --i) {
     tile = (tile << 1) | ((x >> i) & 1);
     tile = (tile << 1) | ((y >> i) & 1);
@@ -27,9 +27,8 @@ inline unsigned int lat2y(double lat) {
   return round((lat + 90.0) * 65535.0 / 180.0);
 }
 
-std::list<osm_id_t>
-tiles_for_area(double minlat, double minlon, 
-	       double maxlat, double maxlon) {
+std::list<osm_id_t> tiles_for_area(double minlat, double minlon, double maxlat,
+                                   double maxlon) {
   const unsigned int minx = lon2x(minlon);
   const unsigned int maxx = lon2x(maxlon);
   const unsigned int miny = lat2y(minlat);
@@ -41,6 +40,6 @@ tiles_for_area(double minlat, double minlon,
       tiles.insert(xy2tile(x, y));
     }
   }
-  
+
   return std::list<osm_id_t>(tiles.begin(), tiles.end());
 }

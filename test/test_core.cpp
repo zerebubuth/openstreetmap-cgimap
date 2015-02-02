@@ -28,10 +28,15 @@ namespace pt = boost::property_tree;
 struct test_output_buffer : public output_buffer {
   explicit test_output_buffer(std::ostream &out) : m_out(out), m_written(0) {}
   virtual ~test_output_buffer() {}
-  virtual int write(const char *buffer, int len) { m_out.write(buffer, len); m_written += len; return len; }
+  virtual int write(const char *buffer, int len) {
+    m_out.write(buffer, len);
+    m_written += len;
+    return len;
+  }
   virtual int written() { return m_written; }
   virtual int close() { return 0; }
   virtual void flush() {}
+
 private:
   std::ostream &m_out;
   int m_written;
@@ -55,8 +60,14 @@ struct test_request : public request {
       return NULL;
     }
   }
-  virtual int put(const char *data, int len) { m_output.write(data, len); return len; }
-  virtual int put(const std::string &s) { m_output.write(s.c_str(), s.size()); return s.size(); }
+  virtual int put(const char *data, int len) {
+    m_output.write(data, len);
+    return len;
+  }
+  virtual int put(const std::string &s) {
+    m_output.write(s.c_str(), s.size());
+    return s.size();
+  }
   virtual boost::shared_ptr<output_buffer> get_buffer() {
     return boost::shared_ptr<output_buffer>(new test_output_buffer(m_output));
   }
@@ -76,7 +87,8 @@ private:
   std::map<std::string, std::string> m_params;
 };
 
-std::map<std::string, std::string> read_headers(std::istream &in, const std::string &separator) {
+std::map<std::string, std::string> read_headers(std::istream &in,
+                                                const std::string &separator) {
   std::map<std::string, std::string> headers;
 
   while (true) {
@@ -91,15 +103,23 @@ std::map<std::string, std::string> read_headers(std::istream &in, const std::str
     }
 
     al::erase_all(line, "\r");
-    if (!in.good()) { throw std::runtime_error("Test file ends before separator."); }
-    if (line == separator) { break; }
+    if (!in.good()) {
+      throw std::runtime_error("Test file ends before separator.");
+    }
+    if (line == separator) {
+      break;
+    }
 
-    boost::iterator_range<std::string::iterator> result = al::find_first(line, ":");
-    if (!result) { throw std::runtime_error("Test file header doesn't match expected format."); }
+    boost::iterator_range<std::string::iterator> result =
+        al::find_first(line, ":");
+    if (!result) {
+      throw std::runtime_error(
+          "Test file header doesn't match expected format.");
+    }
 
     std::string key(line.begin(), result.begin());
     std::string val(result.end(), line.end());
-    
+
     al::trim(key);
     al::trim(val);
 
@@ -118,7 +138,7 @@ void setup_request_headers(test_request &req, std::istream &in) {
 
   BOOST_FOREACH(const dict::value_type &val, headers) {
     std::string key(val.first);
-    
+
     al::to_upper(key);
     al::replace_all(key, "-", "_");
 
@@ -145,27 +165,19 @@ void check_xmlattr(const pt::ptree &expected, const pt::ptree &actual) {
   }
 
   if (exp_keys.size() > act_keys.size()) {
-    BOOST_FOREACH(const std::string &ak, act_keys) {
-      exp_keys.erase(ak);
-    }
+    BOOST_FOREACH(const std::string &ak, act_keys) { exp_keys.erase(ak); }
     std::ostringstream out;
     out << "Missing attributes [";
-    BOOST_FOREACH(const std::string &ek, exp_keys) {
-      out << ek << " ";
-    }
+    BOOST_FOREACH(const std::string &ek, exp_keys) { out << ek << " "; }
     out << "]";
     throw std::runtime_error(out.str());
   }
 
   if (act_keys.size() > exp_keys.size()) {
-    BOOST_FOREACH(const std::string &ek, exp_keys) {
-      act_keys.erase(ek);
-    }
+    BOOST_FOREACH(const std::string &ek, exp_keys) { act_keys.erase(ek); }
     std::ostringstream out;
     out << "Missing attributes [";
-    BOOST_FOREACH(const std::string &ak, act_keys) {
-      out << ak << " ";
-    }
+    BOOST_FOREACH(const std::string &ak, act_keys) { out << ak << " "; }
     out << "]";
     throw std::runtime_error(out.str());
   }
@@ -174,8 +186,10 @@ void check_xmlattr(const pt::ptree &expected, const pt::ptree &actual) {
     std::string exp_val = expected.get_child(k).data();
     std::string act_val = actual.get_child(k).data();
     if ((exp_val != act_val) && (exp_val != "***")) {
-      throw std::runtime_error((boost::format("Attribute `%1%' expected value `%2%', but got `%3%'")
-                                % k % exp_val % act_val).str());
+      throw std::runtime_error(
+          (boost::format(
+               "Attribute `%1%' expected value `%2%', but got `%3%'") %
+           k % exp_val % act_val).str());
     }
   }
 }
@@ -199,20 +213,22 @@ void check_recursive_tree(const pt::ptree &expected, const pt::ptree &actual) {
     if ((exp_itr == expected.end()) && (act_itr == actual.end())) {
       break;
     }
-    if (exp_itr == expected.end()) { 
+    if (exp_itr == expected.end()) {
       std::ostringstream out;
-      out << "Actual result has more entries than expected: [" << act_itr->first;
+      out << "Actual result has more entries than expected: ["
+          << act_itr->first;
       ++act_itr;
       while (act_itr != actual.end()) {
         out << ", " << act_itr->first;
         ++act_itr;
       }
       out << "] are extra";
-      throw std::runtime_error(out.str()); 
+      throw std::runtime_error(out.str());
     }
     if (act_itr == actual.end()) {
       std::ostringstream out;
-      out << "Actual result has fewer entries than expected: [" << exp_itr->first;
+      out << "Actual result has fewer entries than expected: ["
+          << exp_itr->first;
       ++exp_itr;
       while (exp_itr != expected.end()) {
         out << ", " << exp_itr->first;
@@ -222,7 +238,8 @@ void check_recursive_tree(const pt::ptree &expected, const pt::ptree &actual) {
       throw std::runtime_error(out.str());
     }
     if (exp_itr->first != act_itr->first) {
-      throw std::runtime_error((boost::format("Expected %1%, but got %2%") % exp_itr->first % act_itr->first).str());
+      throw std::runtime_error((boost::format("Expected %1%, but got %2%") %
+                                exp_itr->first % act_itr->first).str());
     }
     try {
       if (exp_itr->first == "<xmlattr>") {
@@ -231,7 +248,8 @@ void check_recursive_tree(const pt::ptree &expected, const pt::ptree &actual) {
         check_recursive_tree(exp_itr->second, act_itr->second);
       }
     } catch (const std::exception &ex) {
-      throw std::runtime_error((boost::format("%1%, in <%2%> element") % ex.what() % exp_itr->first).str());
+      throw std::runtime_error((boost::format("%1%, in <%2%> element") %
+                                ex.what() % exp_itr->first).str());
     }
     ++exp_itr;
     ++act_itr;
@@ -244,19 +262,19 @@ void check_recursive_tree(const pt::ptree &expected, const pt::ptree &actual) {
  */
 void check_content_body_xml(std::istream &expected, std::istream &actual) {
   pt::ptree exp_tree, act_tree;
-  
+
   try {
     pt::read_xml(expected, exp_tree);
   } catch (const std::exception &ex) {
-    throw std::runtime_error((boost::format("%1%, while reading expected XML.")
-                              % ex.what()).str());
+    throw std::runtime_error(
+        (boost::format("%1%, while reading expected XML.") % ex.what()).str());
   }
 
   try {
     pt::read_xml(actual, act_tree);
   } catch (const std::exception &ex) {
-    throw std::runtime_error((boost::format("%1%, while reading actual XML.")
-                              % ex.what()).str());
+    throw std::runtime_error(
+        (boost::format("%1%, while reading actual XML.") % ex.what()).str());
   }
 
   // and check the results for equality
@@ -269,7 +287,8 @@ void check_content_body_xml(std::istream &expected, std::istream &actual) {
  * and values are compared exactly - except for when the expected value is
  * '***', which causes it to skip that subtree entirely.
  */
-void check_recursive_tree_json(const pt::ptree &expected, const pt::ptree &actual) {
+void check_recursive_tree_json(const pt::ptree &expected,
+                               const pt::ptree &actual) {
   pt::ptree::const_iterator exp_itr = expected.begin();
   pt::ptree::const_iterator act_itr = actual.begin();
 
@@ -281,7 +300,8 @@ void check_recursive_tree_json(const pt::ptree &expected, const pt::ptree &actua
 
   // check the actual data value
   if (expected.data() != actual.data()) {
-    throw std::runtime_error((boost::format("Expected '%1%', but got '%2%'") % expected.data() % actual.data()).str());
+    throw std::runtime_error((boost::format("Expected '%1%', but got '%2%'") %
+                              expected.data() % actual.data()).str());
   }
   std::cout << "attr match: " << expected.data() << "\n";
 
@@ -289,20 +309,22 @@ void check_recursive_tree_json(const pt::ptree &expected, const pt::ptree &actua
     if ((exp_itr == expected.end()) && (act_itr == actual.end())) {
       break;
     }
-    if (exp_itr == expected.end()) { 
+    if (exp_itr == expected.end()) {
       std::ostringstream out;
-      out << "Actual result has more entries than expected: [" << act_itr->first;
+      out << "Actual result has more entries than expected: ["
+          << act_itr->first;
       ++act_itr;
       while (act_itr != actual.end()) {
         out << ", " << act_itr->first;
         ++act_itr;
       }
       out << "] are extra";
-      throw std::runtime_error(out.str()); 
+      throw std::runtime_error(out.str());
     }
     if (act_itr == actual.end()) {
       std::ostringstream out;
-      out << "Actual result has fewer entries than expected: [" << exp_itr->first;
+      out << "Actual result has fewer entries than expected: ["
+          << exp_itr->first;
       ++exp_itr;
       while (exp_itr != expected.end()) {
         out << ", " << exp_itr->first;
@@ -312,13 +334,15 @@ void check_recursive_tree_json(const pt::ptree &expected, const pt::ptree &actua
       throw std::runtime_error(out.str());
     }
     if (exp_itr->first != act_itr->first) {
-      throw std::runtime_error((boost::format("Expected %1%, but got %2%") % exp_itr->first % act_itr->first).str());
+      throw std::runtime_error((boost::format("Expected %1%, but got %2%") %
+                                exp_itr->first % act_itr->first).str());
     }
     try {
       std::cout << "recursing on item " << exp_itr->first << "\n";
       check_recursive_tree_json(exp_itr->second, act_itr->second);
     } catch (const std::exception &ex) {
-      throw std::runtime_error((boost::format("%1%, in \"%2%\" object") % ex.what() % exp_itr->first).str());
+      throw std::runtime_error((boost::format("%1%, in \"%2%\" object") %
+                                ex.what() % exp_itr->first).str());
     }
     ++exp_itr;
     ++act_itr;
@@ -332,19 +356,19 @@ void check_recursive_tree_json(const pt::ptree &expected, const pt::ptree &actua
  */
 void check_content_body_json(std::istream &expected, std::istream &actual) {
   pt::ptree exp_tree, act_tree;
-  
+
   try {
     pt::read_json(expected, exp_tree);
   } catch (const std::exception &ex) {
-    throw std::runtime_error((boost::format("%1%, while reading expected JSON.")
-                              % ex.what()).str());
+    throw std::runtime_error(
+        (boost::format("%1%, while reading expected JSON.") % ex.what()).str());
   }
 
   try {
     pt::read_json(actual, act_tree);
   } catch (const std::exception &ex) {
-    throw std::runtime_error((boost::format("%1%, while reading actual JSON.")
-                              % ex.what()).str());
+    throw std::runtime_error(
+        (boost::format("%1%, while reading actual JSON.") % ex.what()).str());
   }
 
   expected.seekg(0);
@@ -382,19 +406,25 @@ void check_response(std::istream &expected, std::istream &actual) {
     if ((val.first.size() > 0) && (val.first[0] == '!')) {
       dict::const_iterator itr = actual_headers.find(val.first.substr(1));
       if (itr != actual_headers.end()) {
-        throw std::runtime_error((boost::format("Expected not to find header `%1%', but it is present.")
-                                  % itr->first).str());
+        throw std::runtime_error(
+            (boost::format(
+                 "Expected not to find header `%1%', but it is present.") %
+             itr->first).str());
       }
     } else {
       dict::const_iterator itr = actual_headers.find(val.first);
       if (itr == actual_headers.end()) {
-        throw std::runtime_error((boost::format("Expected header `%1%: %2%', but didn't find it in actual response.")
-                                  % val.first % val.second).str());
+        throw std::runtime_error(
+            (boost::format("Expected header `%1%: %2%', but didn't find it in "
+                           "actual response.") %
+             val.first % val.second).str());
       }
       if (!val.second.empty()) {
         if (val.second != itr->second) {
-          throw std::runtime_error((boost::format("Header key `%1%'; expected `%2%' but got `%3%'.")
-                                    % val.first % val.second % itr->second).str());
+          throw std::runtime_error(
+              (boost::format(
+                   "Header key `%1%'; expected `%2%' but got `%3%'.") %
+               val.first % val.second % itr->second).str());
         }
       }
     }
@@ -403,16 +433,18 @@ void check_response(std::istream &expected, std::istream &actual) {
   // now check the body, if there is one. we judge this by whether we expect a
   // Content-Type header.
   if (expected_headers.count("Content-Type") > 0) {
-    const std::string content_type = expected_headers.find("Content-Type")->second;
+    const std::string content_type =
+        expected_headers.find("Content-Type")->second;
     if (content_type.substr(0, 8) == "text/xml") {
       check_content_body_xml(expected, actual);
-      
+
     } else if (content_type.substr(0, 9) == "text/json") {
       check_content_body_json(expected, actual);
 
     } else {
-      throw std::runtime_error((boost::format("Cannot yet handle tests with Content-Type: %1%.")
-                                % content_type).str());
+      throw std::runtime_error(
+          (boost::format("Cannot yet handle tests with Content-Type: %1%.") %
+           content_type).str());
     }
   }
 }
@@ -424,24 +456,25 @@ void check_response(std::istream &expected, std::istream &actual) {
  *  - executes it through the standard process_request() chain,
  *  - compares the result to what's expected in the test case.
  */
-void run_test(fs::path test_case,
-              rate_limiter &limiter, const std::string &generator, routes &route,
+void run_test(fs::path test_case, rate_limiter &limiter,
+              const std::string &generator, routes &route,
               boost::shared_ptr<data_selection::factory> factory) {
   try {
     test_request req;
-    
+
     // set up request headers from test case
     fs::ifstream in(test_case);
     setup_request_headers(req, in);
-    
+
     // execute the request
     process_request(req, limiter, generator, route, factory);
-    
+
     // compare the result to what we're expecting
     check_response(in, req.buffer());
 
   } catch (const std::exception &ex) {
-    throw std::runtime_error((boost::format("%1%, in %2% test.") % ex.what() % test_case).str());
+    throw std::runtime_error(
+        (boost::format("%1%, in %2% test.") % ex.what() % test_case).str());
   }
 }
 
@@ -457,11 +490,13 @@ int main(int argc, char *argv[]) {
 
   try {
     if (fs::is_directory(test_directory) == false) {
-      std::cerr << "Test directory " << test_directory << " should be a directory, but isn't.";
+      std::cerr << "Test directory " << test_directory
+                << " should be a directory, but isn't.";
       return 99;
     }
     if (fs::is_regular_file(data_file) == false) {
-      std::cerr << "Test directory should contain data file at " << data_file << ", but does not.";
+      std::cerr << "Test directory should contain data file at " << data_file
+                << ", but does not.";
       return 99;
     }
     const fs::directory_iterator end;
@@ -476,7 +511,7 @@ int main(int argc, char *argv[]) {
   } catch (const std::exception &e) {
     std::cerr << "EXCEPTION: " << e.what() << std::endl;
     return 99;
-  
+
   } catch (...) {
     std::cerr << "UNKNOWN EXCEPTION" << std::endl;
     return 99;
@@ -484,22 +519,25 @@ int main(int argc, char *argv[]) {
 
   try {
     po::variables_map vm;
-    vm.insert(std::make_pair(std::string("file"), po::variable_value(data_file.native(), false)));
+    vm.insert(std::make_pair(std::string("file"),
+                             po::variable_value(data_file.native(), false)));
 
     boost::shared_ptr<backend> data_backend = make_staticxml_backend();
-    boost::shared_ptr<data_selection::factory> factory = data_backend->create(vm);
+    boost::shared_ptr<data_selection::factory> factory =
+        data_backend->create(vm);
     rate_limiter limiter(vm);
     routes route;
 
     BOOST_FOREACH(fs::path test_case, test_cases) {
-      std::string generator = (boost::format(PACKAGE_STRING " (test %1%)") % test_case).str();
+      std::string generator =
+          (boost::format(PACKAGE_STRING " (test %1%)") % test_case).str();
       run_test(test_case, limiter, generator, route, factory);
     }
 
   } catch (const std::exception &e) {
     std::cerr << "EXCEPTION: " << e.what() << std::endl;
     return 1;
-  
+
   } catch (...) {
     std::cerr << "UNKNOWN EXCEPTION" << std::endl;
     return 1;

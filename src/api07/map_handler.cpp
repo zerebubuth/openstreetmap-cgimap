@@ -16,16 +16,17 @@ using std::map;
 namespace api07 {
 
 map_responder::map_responder(mime::type mt, bbox b, factory_ptr &x)
-  : osm_current_responder(mt, x, boost::optional<bbox>(b)) {
+    : osm_current_responder(mt, x, boost::optional<bbox>(b)) {
   // create temporary tables of nodes, ways and relations which
   // are in or used by elements in the bbox
   int num_nodes = sel->select_nodes_from_bbox(b, MAX_NODES);
 
   // TODO: make configurable parameter?
   if (num_nodes > MAX_NODES) {
-    throw http::bad_request((format("You requested too many nodes (limit is %1%). "
-				    "Either request a smaller area, or use planet.osm")
-			     % MAX_NODES).str());
+    throw http::bad_request(
+        (format("You requested too many nodes (limit is %1%). "
+                "Either request a smaller area, or use planet.osm") %
+         MAX_NODES).str());
   }
   // Short-circuit empty areas
   if (num_nodes > 0) {
@@ -37,44 +38,36 @@ map_responder::map_responder(mime::type mt, bbox b, factory_ptr &x)
   }
 }
 
-map_responder::~map_responder() {
+map_responder::~map_responder() {}
+
+map_handler::map_handler(request &req) : bounds(validate_request(req)) {}
+
+map_handler::map_handler(request &req, int) {}
+
+map_handler::~map_handler() {}
+
+string map_handler::log_name() const {
+  return (boost::format("map(%1%,%2%,%3%,%4%)") % bounds.minlon %
+          bounds.minlat % bounds.maxlon % bounds.maxlat).str();
 }
 
-map_handler::map_handler(request &req) 
-  : bounds(validate_request(req)) {
-}
-
-map_handler::map_handler(request &req, int) {
-}
-
-map_handler::~map_handler() {
-}
-
-string
-map_handler::log_name() const {
-  return (boost::format("map(%1%,%2%,%3%,%4%)") % bounds.minlon % bounds.minlat % bounds.maxlon % bounds.maxlat).str();
-}
-
-responder_ptr_t
-map_handler::responder(factory_ptr &x) const {
+responder_ptr_t map_handler::responder(factory_ptr &x) const {
   return responder_ptr_t(new map_responder(mime_type, bounds, x));
 }
 
 /**
- * Validates an FCGI request, returning the valid bounding box or 
+ * Validates an FCGI request, returning the valid bounding box or
  * throwing an error if there was no valid bounding box.
  */
-bbox
-map_handler::validate_request(request &req) {
+bbox map_handler::validate_request(request &req) {
   string decoded = http::urldecode(get_query_string(req));
   const map<string, string> params = http::parse_params(decoded);
   map<string, string>::const_iterator itr = params.find("bbox");
 
   bbox bounds;
-  if ((itr == params.end()) ||
-      !bounds.parse(itr->second)) {
+  if ((itr == params.end()) || !bounds.parse(itr->second)) {
     throw http::bad_request("The parameter bbox is required, and must be "
-			    "of the form min_lon,min_lat,max_lon,max_lat.");
+                            "of the form min_lon,min_lat,max_lon,max_lat.");
   }
 
   // clip the bounding box against the world
@@ -84,15 +77,17 @@ map_handler::validate_request(request &req) {
   // limits taken straight from the ruby map implementation.
   if (!bounds.valid()) {
     throw http::bad_request("The latitudes must be between -90 and 90, "
-			    "longitudes between -180 and 180 and the "
-			    "minima must be less than the maxima.");
+                            "longitudes between -180 and 180 and the "
+                            "minima must be less than the maxima.");
   }
 
   // TODO: make configurable parameter?
   if (bounds.area() > MAX_AREA) {
-    throw http::bad_request((boost::format("The maximum bbox size is %1%, and your request "
-					   "was too large. Either request a smaller area, or use planet.osm")
-			     % MAX_AREA).str());
+    throw http::bad_request(
+        (boost::format("The maximum bbox size is %1%, and your request "
+                       "was too large. Either request a smaller area, or use "
+                       "planet.osm") %
+         MAX_AREA).str());
   }
 
   return bounds;

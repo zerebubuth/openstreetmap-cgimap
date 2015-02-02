@@ -10,11 +10,9 @@
 /**
  * Writes UTF-8 output to a file or stdout.
  */
-class xml_writer 
-  : public output_writer {
+class xml_writer : public output_writer {
 public:
- 
-  // create a new XML writer writing to file_name, which can be 
+  // create a new XML writer writing to file_name, which can be
   // "-" for stdout.
   xml_writer(const std::string &file_name, bool indent = false);
 
@@ -42,7 +40,7 @@ public:
 
   // write a child text element
   void text(const std::string &t);
-  
+
   // end the current element
   void end();
 
@@ -52,14 +50,12 @@ public:
   void error(const std::string &);
 
 private:
-
   // shared initialisation code
   void init(bool indent);
 
   // PIMPL ideom
   struct pimpl_;
   pimpl_ *pimpl;
-
 };
 
 #endif /* WRITER_HPP */

@@ -11,8 +11,7 @@
 /**
  * nice(ish) interface to writing a JSON file.
  */
-class json_writer 
-  : public output_writer {
+class json_writer : public output_writer {
 public:
   // create a json writer using a callback object for output
   json_writer(boost::shared_ptr<output_buffer> &out, bool indent = false);

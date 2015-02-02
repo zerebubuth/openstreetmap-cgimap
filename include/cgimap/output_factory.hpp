@@ -11,7 +11,8 @@
  */
 struct output_factory {
   virtual ~output_factory();
-  virtual writer &create_writer(boost::shared_ptr<output_buffer> &out, bool indent = true) = 0;
+  virtual writer &create_writer(boost::shared_ptr<output_buffer> &out,
+                                bool indent = true) = 0;
   virtual output_formatter &create_formatter() = 0;
 };
 

@@ -8,19 +8,16 @@
  */
 namespace logger {
 
-   /**
-    * Initialise logging.
-    */
-   void
-   initialise(const std::string &filename);
+/**
+ * Initialise logging.
+ */
+void initialise(const std::string &filename);
 
-   /**
-    * Log a message.
-    */
-   void
-   message(const std::string &m);
-   void
-   message(const boost::format &m);
+/**
+ * Log a message.
+ */
+void message(const std::string &m);
+void message(const boost::format &m);
 }
 
 #endif /* LOGGER_HPP */

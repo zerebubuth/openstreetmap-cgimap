@@ -2,33 +2,30 @@
 
 namespace match {
 
-error::error() 
-  : std::runtime_error("error!") {
-}
+error::error() : std::runtime_error("error!") {}
 
-match_string::match_string(const std::string &s) : str(s) {
-}
+match_string::match_string(const std::string &s) : str(s) {}
 
-match_string::match_string(const char *s) : str(s) {
-}
+match_string::match_string(const char *s) : str(s) {}
 
-match_string::match_type
-match_string::match(part_iterator &begin, const part_iterator &end) const {
+match_string::match_type match_string::match(part_iterator &begin,
+                                             const part_iterator &end) const {
   bool matches = false;
   if (begin != end) {
     std::string bit = *begin;
     matches = bit == str;
     ++begin;
   }
-  if (!matches) { throw error(); }
+  if (!matches) {
+    throw error();
+  }
   return match_type();
 }
 
-match_osm_id::match_osm_id() {
-}
+match_osm_id::match_osm_id() {}
 
-match_osm_id::match_type
-match_osm_id::match(part_iterator &begin, const part_iterator &end) const {
+match_osm_id::match_type match_osm_id::match(part_iterator &begin,
+                                             const part_iterator &end) const {
   if (begin != end) {
     try {
       std::string bit = *begin;
@@ -47,11 +44,10 @@ match_osm_id::match(part_iterator &begin, const part_iterator &end) const {
   throw error();
 }
 
-match_name::match_name() {
-}
+match_name::match_name() {}
 
-match_name::match_type
-match_name::match(part_iterator &begin, const part_iterator &end) const {
+match_name::match_type match_name::match(part_iterator &begin,
+                                         const part_iterator &end) const {
   if (begin != end) {
     try {
       std::string bit = *begin++;
@@ -63,16 +59,14 @@ match_name::match(part_iterator &begin, const part_iterator &end) const {
   throw error();
 }
 
-match_begin::match_begin() {
-}
+match_begin::match_begin() {}
 
-match_begin::match_type
-match_begin::match(part_iterator &, const part_iterator &) const {
+match_begin::match_type match_begin::match(part_iterator &,
+                                           const part_iterator &) const {
   return match_type();
 }
 
 extern const match_begin root_;
 extern const match_osm_id osm_id_;
 extern const match_name name_;
-
 }

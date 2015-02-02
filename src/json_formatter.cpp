@@ -10,8 +10,9 @@ using std::transform;
 namespace {
 
 const std::string &element_type_name(element_type elt) {
-  static std::string name_node("node"), name_way("way"), name_relation("relation");
-  
+  static std::string name_node("node"), name_way("way"),
+      name_relation("relation");
+
   switch (elt) {
   case element_type_node:
     return name_node;
@@ -26,58 +27,54 @@ const std::string &element_type_name(element_type elt) {
 
 } // anonymous namespace
 
-json_formatter::json_formatter(json_writer *w)
-  : writer(w) {
-}
+json_formatter::json_formatter(json_writer *w) : writer(w) {}
 
-json_formatter::~json_formatter() {
-}
+json_formatter::~json_formatter() {}
 
-mime::type json_formatter::mime_type() const {
-   return mime::text_json;
-}
+mime::type json_formatter::mime_type() const { return mime::text_json; }
 
-void 
-json_formatter::write_tags(const tags_t &tags) {
+void json_formatter::write_tags(const tags_t &tags) {
   writer->object_key("tags");
   writer->start_object();
-  for (tags_t::const_iterator itr = tags.begin();
-       itr != tags.end(); ++itr) {
+  for (tags_t::const_iterator itr = tags.begin(); itr != tags.end(); ++itr) {
     writer->object_key(itr->first);
     writer->entry_string(itr->second);
   }
   writer->end_object();
 }
 
-void 
-json_formatter::start_document(const std::string &generator) {
+void json_formatter::start_document(const std::string &generator) {
   writer->start_object();
 
-  writer->object_key("version");     writer->entry_string("0.6");
-  writer->object_key("generator");   writer->entry_string(generator);
-  writer->object_key("copyright");   writer->entry_string("OpenStreetMap and contributors");
-  writer->object_key("attribution"); writer->entry_string("http://www.openstreetmap.org/copyright");
-  writer->object_key("license");     writer->entry_string("http://opendatacommons.org/licenses/odbl/1-0/");
+  writer->object_key("version");
+  writer->entry_string("0.6");
+  writer->object_key("generator");
+  writer->entry_string(generator);
+  writer->object_key("copyright");
+  writer->entry_string("OpenStreetMap and contributors");
+  writer->object_key("attribution");
+  writer->entry_string("http://www.openstreetmap.org/copyright");
+  writer->object_key("license");
+  writer->entry_string("http://opendatacommons.org/licenses/odbl/1-0/");
 }
 
-void
-json_formatter::write_bounds(const bbox &bounds) {
+void json_formatter::write_bounds(const bbox &bounds) {
   writer->object_key("bounds");
   writer->start_object();
-  writer->object_key("minlat"); writer->entry_double(bounds.minlat);
-  writer->object_key("minlon"); writer->entry_double(bounds.minlon);
-  writer->object_key("maxlat"); writer->entry_double(bounds.maxlat);
-  writer->object_key("maxlon"); writer->entry_double(bounds.maxlon);
+  writer->object_key("minlat");
+  writer->entry_double(bounds.minlat);
+  writer->object_key("minlon");
+  writer->entry_double(bounds.minlon);
+  writer->object_key("maxlat");
+  writer->entry_double(bounds.maxlat);
+  writer->object_key("maxlon");
+  writer->entry_double(bounds.maxlon);
   writer->end_object();
 }
 
-void 
-json_formatter::end_document() {
-  writer->end_object();
-}
+void json_formatter::end_document() { writer->end_object(); }
 
-void 
-json_formatter::start_element_type(element_type type) {
+void json_formatter::start_element_type(element_type type) {
   if (type == element_type_node) {
     writer->object_key("nodes");
   } else if (type == element_type_way) {
@@ -88,55 +85,58 @@ json_formatter::start_element_type(element_type type) {
   writer->start_array();
 }
 
-void 
-json_formatter::end_element_type(element_type) {
-  writer->end_array();
-}
+void json_formatter::end_element_type(element_type) { writer->end_array(); }
 
-void 
-json_formatter::error(const std::exception &e) {
+void json_formatter::error(const std::exception &e) {
   writer->start_object();
   writer->object_key("error");
   writer->entry_string(e.what());
   writer->end_object();
 }
 
-void
-json_formatter::write_common(const element_info &elem) {
-   writer->object_key("id"); writer->entry_int(elem.id);
-   writer->object_key("visible"); writer->entry_bool(elem.visible);
-   writer->object_key("version"); writer->entry_int(elem.version);
-   writer->object_key("changeset"); writer->entry_int(elem.changeset);
-   writer->object_key("timestamp"); writer->entry_string(elem.timestamp);
-   if (elem.display_name && elem.uid) {
-       writer->object_key("user"); writer->entry_string(elem.display_name.get());
-       writer->object_key("uid"); writer->entry_int(elem.uid.get());
-   }
+void json_formatter::write_common(const element_info &elem) {
+  writer->object_key("id");
+  writer->entry_int(elem.id);
+  writer->object_key("visible");
+  writer->entry_bool(elem.visible);
+  writer->object_key("version");
+  writer->entry_int(elem.version);
+  writer->object_key("changeset");
+  writer->entry_int(elem.changeset);
+  writer->object_key("timestamp");
+  writer->entry_string(elem.timestamp);
+  if (elem.display_name && elem.uid) {
+    writer->object_key("user");
+    writer->entry_string(elem.display_name.get());
+    writer->object_key("uid");
+    writer->entry_int(elem.uid.get());
+  }
 }
 
-void 
-json_formatter::write_node(const element_info &elem, double lon, double lat, const tags_t &tags) {
+void json_formatter::write_node(const element_info &elem, double lon,
+                                double lat, const tags_t &tags) {
   writer->start_object();
-  
+
   write_common(elem);
   if (elem.visible) {
-    writer->object_key("lat"); writer->entry_double(lat);
-    writer->object_key("lon"); writer->entry_double(lon);
+    writer->object_key("lat");
+    writer->entry_double(lat);
+    writer->object_key("lon");
+    writer->entry_double(lon);
   }
   write_tags(tags);
 
-  writer->end_object();  
+  writer->end_object();
 }
 
-void 
-json_formatter::write_way(const element_info &elem, const nodes_t &nodes, const tags_t &tags) {
+void json_formatter::write_way(const element_info &elem, const nodes_t &nodes,
+                               const tags_t &tags) {
   writer->start_object();
 
   write_common(elem);
   writer->object_key("nds");
   writer->start_array();
-  for (nodes_t::const_iterator itr = nodes.begin();
-       itr != nodes.end(); ++itr) {
+  for (nodes_t::const_iterator itr = nodes.begin(); itr != nodes.end(); ++itr) {
     writer->entry_int(*itr);
   }
   writer->end_array();
@@ -146,19 +146,23 @@ json_formatter::write_way(const element_info &elem, const nodes_t &nodes, const 
   writer->end_object();
 }
 
-void 
-json_formatter::write_relation(const element_info &elem, const members_t &members, const tags_t &tags) {
+void json_formatter::write_relation(const element_info &elem,
+                                    const members_t &members,
+                                    const tags_t &tags) {
   writer->start_object();
 
   write_common(elem);
-  writer->object_key("members"); 
+  writer->object_key("members");
   writer->start_array();
-  for (members_t::const_iterator itr = members.begin();
-       itr != members.end(); ++itr) {
+  for (members_t::const_iterator itr = members.begin(); itr != members.end();
+       ++itr) {
     writer->start_object();
-    writer->object_key("type"); writer->entry_string(element_type_name(itr->type));
-    writer->object_key("ref"); writer->entry_int(itr->ref);
-    writer->object_key("role"); writer->entry_string(itr->role);
+    writer->object_key("type");
+    writer->entry_string(element_type_name(itr->type));
+    writer->object_key("ref");
+    writer->entry_int(itr->ref);
+    writer->object_key("role");
+    writer->entry_string(itr->role);
     writer->end_object();
   }
   writer->end_array();
@@ -168,13 +172,6 @@ json_formatter::write_relation(const element_info &elem, const members_t &member
   writer->end_object();
 }
 
-void 
-json_formatter::flush() {
-	writer->flush();
-}
+void json_formatter::flush() { writer->flush(); }
 
-void 
-json_formatter::error(const std::string &s) {
-	writer->error(s);
-}
-
+void json_formatter::error(const std::string &s) { writer->error(s); }

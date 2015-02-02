@@ -51,7 +51,7 @@ struct error : public std::runtime_error {
  * to each other.
  *
  * the AST classes all have a type match_type which indicates the tuple
- * they return if they do not throw a match error. also, each have a 
+ * they return if they do not throw a match error. also, each have a
  * match() method which checks whether the AST parses correctly and
  * returns the full type indicated by match_type.
  */
@@ -65,12 +65,11 @@ template <typename LeftType, typename RightType> struct match_and;
  * utility class included to map the necessary operators to form the match
  * expression to the construction of the AST objects. the reason these are
  * explicitly declared, rather than templated, is to allow the compiler to
- * correctly generate implicit constructors. this makes it much more 
+ * correctly generate implicit constructors. this makes it much more
  * readable (e.g: "foo"/"bar" rather than match_string("foo") /
  * match_string("bar")).
  */
-template <typename Self>
-struct ops {
+template <typename Self> struct ops {
   match_and<Self, match_string> operator/(const match_string &rhs) const {
     return match_and<Self, match_string>(*static_cast<const Self *>(this), rhs);
   }
@@ -87,15 +86,16 @@ struct ops {
  */
 template <typename LeftType, typename RightType>
 struct match_and : public ops<match_and<LeftType, RightType> > {
-  typedef typename result_of::as_list<typename result_of::join<typename LeftType::match_type, typename RightType::match_type>::type>::type match_type;
-  match_and(const LeftType &l, const RightType &r) 
-    : lhs(l), rhs(r) {
-  }
+  typedef typename result_of::as_list<typename result_of::join<
+      typename LeftType::match_type,
+      typename RightType::match_type>::type>::type match_type;
+  match_and(const LeftType &l, const RightType &r) : lhs(l), rhs(r) {}
   match_type match(part_iterator &begin, const part_iterator &end) const {
     typename LeftType::match_type lval = lhs.match(begin, end);
     typename RightType::match_type rval = rhs.match(begin, end);
     return as_list(join(lval, rval));
   }
+
 private:
   LeftType lhs;
   RightType rhs;
@@ -108,11 +108,11 @@ struct match_string : public ops<match_string> {
   // doesn't return anything, simply fails if the string doesn't match.
   typedef list<> match_type;
 
-  // implicit constructor intended, so that the use of this class is 
+  // implicit constructor intended, so that the use of this class is
   // hidden and easier / nicer to read.
   match_string(const std::string &s);
   match_string(const char *s);
-  
+
   match_type match(part_iterator &begin, const part_iterator &end) const;
 
 private:
@@ -135,11 +135,11 @@ struct match_name : public ops<match_name> {
   typedef list<std::string> match_type;
   match_name();
   match_type match(part_iterator &begin, const part_iterator &end) const;
-};    
+};
 
 /**
  * null match - it'll match anything. it's only here to anchor the expression
- * with the correct type, allowing us to write the rest of the expression 
+ * with the correct type, allowing us to write the rest of the expression
  * without needing explicit constructors for the string literal matches.
  */
 struct match_begin : public ops<match_begin> {

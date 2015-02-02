@@ -19,23 +19,21 @@ using std::list;
 using boost::shared_ptr;
 
 namespace pqxx {
-template<> struct string_traits<list<osm_id_t> >
-{
+template <> struct string_traits<list<osm_id_t> > {
   static const char *name() { return "list<osm_id_t>"; }
   static bool has_null() { return false; }
   static bool is_null(const list<osm_id_t> &) { return false; }
-  static stringstream null()
-  {
+  static stringstream null() {
     internal::throw_null_conversion(name());
     // No, dear compiler, we don't need a return here.
     throw 0;
   }
-  static void from_string(const char[], list<osm_id_t> &) {
-  }
+  static void from_string(const char[], list<osm_id_t> &) {}
   static std::string to_string(const list<osm_id_t> &ids) {
     stringstream ostr;
     ostr << "{";
-    std::copy(ids.begin(), ids.end(), infix_ostream_iterator<osm_id_t>(ostr, ","));
+    std::copy(ids.begin(), ids.end(),
+              infix_ostream_iterator<osm_id_t>(ostr, ","));
     ostr << "}";
     return ostr.str();
   }
@@ -64,7 +62,8 @@ std::string connect_db_str(const po::variables_map &options) {
 }
 
 inline data_selection::visibility_t
-check_table_visibility(pqxx::work &w, osm_id_t id, const std::string &prepared_name) {
+check_table_visibility(pqxx::work &w, osm_id_t id,
+                       const std::string &prepared_name) {
   pqxx::result res = w.prepared(prepared_name)(id).exec();
 
   if (res.size() > 0) {
@@ -78,7 +77,8 @@ check_table_visibility(pqxx::work &w, osm_id_t id, const std::string &prepared_n
   }
 }
 
-void extract_elem(const pqxx::result::tuple &row, element_info &elem, cache<osm_id_t, changeset> &changeset_cache) {
+void extract_elem(const pqxx::result::tuple &row, element_info &elem,
+                  cache<osm_id_t, changeset> &changeset_cache) {
   elem.id = row["id"].as<osm_id_t>();
   elem.version = row["version"].as<int>();
   elem.timestamp = row["timestamp"].c_str();
@@ -96,8 +96,8 @@ void extract_elem(const pqxx::result::tuple &row, element_info &elem, cache<osm_
 
 void extract_tags(const pqxx::result &res, tags_t &tags) {
   tags.clear();
-  for (pqxx::result::const_iterator itr = res.begin();
-       itr != res.end(); ++itr) {
+  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
+       ++itr) {
     tags.push_back(std::make_pair(std::string((*itr)["k"].c_str()),
                                   std::string((*itr)["v"].c_str())));
   }
@@ -105,8 +105,8 @@ void extract_tags(const pqxx::result &res, tags_t &tags) {
 
 void extract_nodes(const pqxx::result &res, nodes_t &nodes) {
   nodes.clear();
-  for (pqxx::result::const_iterator itr = res.begin();
-       itr != res.end(); ++itr) {
+  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
+       ++itr) {
     nodes.push_back((*itr)[0].as<osm_id_t>());
   }
 }
@@ -132,7 +132,8 @@ element_type type_from_name(const char *name) {
 
   default:
     // in case the name match isn't exhaustive...
-    throw std::runtime_error("Unexpected name not matched to type in type_from_name().");
+    throw std::runtime_error(
+        "Unexpected name not matched to type in type_from_name().");
   }
 
   return type;
@@ -141,8 +142,8 @@ element_type type_from_name(const char *name) {
 void extract_members(const pqxx::result &res, members_t &members) {
   member_info member;
   members.clear();
-  for (pqxx::result::const_iterator itr = res.begin();
-       itr != res.end(); ++itr) {
+  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
+       ++itr) {
     member.type = type_from_name((*itr)["member_type"].c_str());
     member.ref = (*itr)["member_id"].as<osm_id_t>();
     member.role = (*itr)["member_role"].c_str();
@@ -152,19 +153,18 @@ void extract_members(const pqxx::result &res, members_t &members) {
 
 } // anonymous namespace
 
-writeable_pgsql_selection::writeable_pgsql_selection(pqxx::connection &conn, cache<osm_id_t, changeset> &changeset_cache)
-  : w(conn), cc(changeset_cache) {
+writeable_pgsql_selection::writeable_pgsql_selection(
+    pqxx::connection &conn, cache<osm_id_t, changeset> &changeset_cache)
+    : w(conn), cc(changeset_cache) {
   w.exec("CREATE TEMPORARY TABLE tmp_nodes (id bigint PRIMARY KEY)");
   w.exec("CREATE TEMPORARY TABLE tmp_ways (id bigint PRIMARY KEY)");
   w.exec("CREATE TEMPORARY TABLE tmp_relations (id bigint PRIMARY KEY)");
   m_tables_empty = true;
 }
 
-writeable_pgsql_selection::~writeable_pgsql_selection() {
-}
+writeable_pgsql_selection::~writeable_pgsql_selection() {}
 
-void 
-writeable_pgsql_selection::write_nodes(output_formatter &formatter) {
+void writeable_pgsql_selection::write_nodes(output_formatter &formatter) {
   // get all nodes - they already contain their own tags, so
   // we don't need to do anything else.
   logger::message("Fetching nodes");
@@ -173,8 +173,8 @@ writeable_pgsql_selection::write_nodes(output_formatter &formatter) {
   tags_t tags;
 
   pqxx::result nodes = w.prepared("extract_nodes").exec();
-  for (pqxx::result::const_iterator itr = nodes.begin(); 
-       itr != nodes.end(); ++itr) {
+  for (pqxx::result::const_iterator itr = nodes.begin(); itr != nodes.end();
+       ++itr) {
     extract_elem(*itr, elem, cc);
     lon = double((*itr)["longitude"].as<int64_t>()) / (SCALE);
     lat = double((*itr)["latitude"].as<int64_t>()) / (SCALE);
@@ -183,8 +183,7 @@ writeable_pgsql_selection::write_nodes(output_formatter &formatter) {
   }
 }
 
-void 
-writeable_pgsql_selection::write_ways(output_formatter &formatter) {
+void writeable_pgsql_selection::write_ways(output_formatter &formatter) {
   // grab the ways, way nodes and tags
   // way nodes and tags are on a separate connections so that the
   // entire result set can be streamed from a single query.
@@ -194,8 +193,8 @@ writeable_pgsql_selection::write_ways(output_formatter &formatter) {
   tags_t tags;
 
   pqxx::result ways = w.prepared("extract_ways").exec();
-  for (pqxx::result::const_iterator itr = ways.begin(); 
-       itr != ways.end(); ++itr) {
+  for (pqxx::result::const_iterator itr = ways.begin(); itr != ways.end();
+       ++itr) {
     extract_elem(*itr, elem, cc);
     extract_nodes(w.prepared("extract_way_nds")(elem.id).exec(), nodes);
     extract_tags(w.prepared("extract_way_tags")(elem.id).exec(), tags);
@@ -203,63 +202,60 @@ writeable_pgsql_selection::write_ways(output_formatter &formatter) {
   }
 }
 
-void 
-writeable_pgsql_selection::write_relations(output_formatter &formatter) {
+void writeable_pgsql_selection::write_relations(output_formatter &formatter) {
   logger::message("Fetching relations");
   element_info elem;
   members_t members;
   tags_t tags;
 
   pqxx::result relations = w.prepared("extract_relations").exec();
-  for (pqxx::result::const_iterator itr = relations.begin(); 
+  for (pqxx::result::const_iterator itr = relations.begin();
        itr != relations.end(); ++itr) {
     extract_elem(*itr, elem, cc);
-    extract_members(w.prepared("extract_relation_members")(elem.id).exec(), members);
+    extract_members(w.prepared("extract_relation_members")(elem.id).exec(),
+                    members);
     extract_tags(w.prepared("extract_relation_tags")(elem.id).exec(), tags);
     formatter.write_relation(elem, members, tags);
   }
 }
 
-data_selection::visibility_t 
+data_selection::visibility_t
 writeable_pgsql_selection::check_node_visibility(osm_id_t id) {
   return check_table_visibility(w, id, "visible_node");
 }
 
-data_selection::visibility_t 
+data_selection::visibility_t
 writeable_pgsql_selection::check_way_visibility(osm_id_t id) {
   return check_table_visibility(w, id, "visible_way");
 }
 
-data_selection::visibility_t 
+data_selection::visibility_t
 writeable_pgsql_selection::check_relation_visibility(osm_id_t id) {
   return check_table_visibility(w, id, "visible_relation");
 }
 
-int
-writeable_pgsql_selection::select_nodes(const std::list<osm_id_t> &ids) {
+int writeable_pgsql_selection::select_nodes(const std::list<osm_id_t> &ids) {
   m_tables_empty = false;
   return w.prepared("add_nodes_list")(ids).exec().affected_rows();
 }
 
-int
-writeable_pgsql_selection::select_ways(const std::list<osm_id_t> &ids) {
+int writeable_pgsql_selection::select_ways(const std::list<osm_id_t> &ids) {
   m_tables_empty = false;
   return w.prepared("add_ways_list")(ids).exec().affected_rows();
 }
 
-int
-writeable_pgsql_selection::select_relations(const std::list<osm_id_t> &ids) {
+int writeable_pgsql_selection::select_relations(
+    const std::list<osm_id_t> &ids) {
   m_tables_empty = false;
   return w.prepared("add_relations_list")(ids).exec().affected_rows();
 }
 
-int
-writeable_pgsql_selection::select_nodes_from_bbox(const bbox &bounds, int max_nodes) {
-  const list<osm_id_t> tiles =
-    tiles_for_area(bounds.minlat, bounds.minlon, 
-                   bounds.maxlat, bounds.maxlon);
-   
-  // hack around problem with postgres' statistics, which was 
+int writeable_pgsql_selection::select_nodes_from_bbox(const bbox &bounds,
+                                                      int max_nodes) {
+  const list<osm_id_t> tiles = tiles_for_area(bounds.minlat, bounds.minlon,
+                                              bounds.maxlat, bounds.maxlon);
+
+  // hack around problem with postgres' statistics, which was
   // making it do seq scans all the time on smaug...
   w.exec("set enable_mergejoin=false");
   w.exec("set enable_hashjoin=false");
@@ -268,80 +264,78 @@ writeable_pgsql_selection::select_nodes_from_bbox(const bbox &bounds, int max_no
   // optimise for the case where this is the first query run.
   // apparently it's significantly faster without the check.
   if (!m_tables_empty) {
-    throw std::runtime_error("Filling tmp_nodes, but some content already present. "
-                             "This violates a design assumption, and is a bug. "
-                             "Please report this to "
-                             "https://github.com/zerebubuth/openstreetmap-cgimap/issues");
+    throw std::runtime_error(
+        "Filling tmp_nodes, but some content already present. "
+        "This violates a design assumption, and is a bug. "
+        "Please report this to "
+        "https://github.com/zerebubuth/openstreetmap-cgimap/issues");
   }
   m_tables_empty = false;
 
-  return w.prepared("visible_node_in_bbox")
-    (tiles)
-    (int(bounds.minlat * SCALE))(int(bounds.maxlat * SCALE))
-    (int(bounds.minlon * SCALE))(int(bounds.maxlon * SCALE))
-    (max_nodes + 1).exec().affected_rows();
+  return w.prepared("visible_node_in_bbox")(tiles)(int(bounds.minlat * SCALE))(
+               int(bounds.maxlat * SCALE))(int(bounds.minlon * SCALE))(
+               int(bounds.maxlon * SCALE))(max_nodes + 1)
+      .exec()
+      .affected_rows();
 }
 
-void 
-writeable_pgsql_selection::select_nodes_from_relations() {
+void writeable_pgsql_selection::select_nodes_from_relations() {
   logger::message("Filling tmp_nodes (from relations)");
 
   w.prepared("nodes_from_relations").exec();
 }
 
-void 
-writeable_pgsql_selection::select_ways_from_nodes() {
+void writeable_pgsql_selection::select_ways_from_nodes() {
   logger::message("Filling tmp_ways (from nodes)");
   w.prepared("ways_from_nodes").exec();
 }
 
-void 
-writeable_pgsql_selection::select_ways_from_relations() {
+void writeable_pgsql_selection::select_ways_from_relations() {
   logger::message("Filling tmp_ways (from relations)");
   w.prepared("ways_from_relations").exec();
 }
 
-void 
-writeable_pgsql_selection::select_relations_from_ways() {
+void writeable_pgsql_selection::select_relations_from_ways() {
   logger::message("Filling tmp_relations (from ways)");
   w.prepared("relations_from_ways").exec();
 }
 
-void 
-writeable_pgsql_selection::select_nodes_from_way_nodes() {
+void writeable_pgsql_selection::select_nodes_from_way_nodes() {
   w.prepared("nodes_from_way_nodes").exec();
 }
 
-void 
-writeable_pgsql_selection::select_relations_from_nodes() {
+void writeable_pgsql_selection::select_relations_from_nodes() {
   w.prepared("relations_from_nodes").exec();
 }
 
-void 
-writeable_pgsql_selection::select_relations_from_relations() {
+void writeable_pgsql_selection::select_relations_from_relations() {
   w.prepared("relations_from_relations").exec();
 }
 
-void 
-writeable_pgsql_selection::select_relations_members_of_relations() {
+void writeable_pgsql_selection::select_relations_members_of_relations() {
   w.prepared("relation_members_of_relations").exec();
 }
 
 writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
-  : m_connection(connect_db_str(opts)),
-    m_cache_connection(connect_db_str(opts)),
-    m_cache_tx(m_cache_connection, "changeset_cache"),
-    m_cache(boost::bind(fetch_changeset, boost::ref(m_cache_tx), _1), opts["cachesize"].as<size_t>()) {
+    : m_connection(connect_db_str(opts)),
+      m_cache_connection(connect_db_str(opts)),
+      m_cache_tx(m_cache_connection, "changeset_cache"),
+      m_cache(boost::bind(fetch_changeset, boost::ref(m_cache_tx), _1),
+              opts["cachesize"].as<size_t>()) {
 
   // set the connections to use the appropriate charset.
   m_connection.set_client_encoding(opts["charset"].as<std::string>());
   m_cache_connection.set_client_encoding(opts["charset"].as<std::string>());
 
   // ignore notice messages
-  m_connection.set_noticer(std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
-  m_cache_connection.set_noticer(std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
+  m_connection.set_noticer(
+      std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
+  m_cache_connection.set_noticer(
+      std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
 
   logger::message("Preparing prepared statements.");
+
+  // clang-format off
 
   // select nodes with bbox
   // version which ignores any existing tmp_nodes IDs
@@ -505,11 +499,14 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
             "ON (tr.id = rm.member_id AND rm.member_type='Relation') "
           "LEFT JOIN tmp_relations xr ON rm.relation_id = xr.id "
         "WHERE xr.id IS NULL");
+
+  // clang-format on
 }
 
-writeable_pgsql_selection::factory::~factory() {
-}
+writeable_pgsql_selection::factory::~factory() {}
 
-boost::shared_ptr<data_selection> writeable_pgsql_selection::factory::make_selection() {
-  return boost::make_shared<writeable_pgsql_selection>(boost::ref(m_connection),boost::ref(m_cache));
+boost::shared_ptr<data_selection>
+writeable_pgsql_selection::factory::make_selection() {
+  return boost::make_shared<writeable_pgsql_selection>(boost::ref(m_connection),
+                                                       boost::ref(m_cache));
 }

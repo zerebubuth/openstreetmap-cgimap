@@ -16,20 +16,21 @@
  */
 class responder {
 public:
-	 responder(mime::type);
+  responder(mime::type);
   virtual ~responder();
-  virtual void write(boost::shared_ptr<output_formatter> f, const std::string &generator) = 0;
+  virtual void write(boost::shared_ptr<output_formatter> f,
+                     const std::string &generator) = 0;
 
-	 mime::type resource_type() const;
+  mime::type resource_type() const;
 
-	 virtual std::list<mime::type> types_available() const = 0;
-	 bool is_available(mime::type) const;
+  virtual std::list<mime::type> types_available() const = 0;
+  bool is_available(mime::type) const;
 
   // quick hack to get "extra" response headers.
   virtual std::string extra_response_headers() const;
 
 private:
-	 mime::type mime_type;
+  mime::type mime_type;
 };
 
 typedef boost::shared_ptr<responder> responder_ptr_t;
@@ -40,15 +41,15 @@ typedef boost::shared_ptr<responder> responder_ptr_t;
  */
 class handler {
 public:
-	 handler(mime::type default_type = mime::unspecified_type);
+  handler(mime::type default_type = mime::unspecified_type);
   virtual ~handler();
   virtual std::string log_name() const = 0;
-   virtual responder_ptr_t responder(factory_ptr &) const = 0;
+  virtual responder_ptr_t responder(factory_ptr &) const = 0;
 
-	 void set_resource_type(mime::type);
+  void set_resource_type(mime::type);
 
 protected:
-	 mime::type mime_type;
+  mime::type mime_type;
 };
 
 typedef boost::shared_ptr<handler> handler_ptr_t;

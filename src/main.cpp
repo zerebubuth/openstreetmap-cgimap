@@ -76,18 +76,18 @@ static string get_generator_string() {
   if (gethostname(hostname, sizeof hostname) != 0) {
     throw std::runtime_error("gethostname returned error.");
   }
-  
-  return (boost::format(PACKAGE_STRING " (%1% %2%)") 
-          % getpid() % hostname).str();
+
+  return (boost::format(PACKAGE_STRING " (%1% %2%)") % getpid() % hostname)
+      .str();
 }
 
 /**
  * parse the comment line and environment for options.
  */
-static void
-get_options(int argc, char **argv, po::variables_map &options) {
+static void get_options(int argc, char **argv, po::variables_map &options) {
   po::options_description desc(PACKAGE_STRING ": Allowed options");
 
+  // clang-format off
   desc.add_options()
     ("help", "display this help and exit")
     ("daemon", "run as a daemon")
@@ -99,6 +99,7 @@ get_options(int argc, char **argv, po::variables_map &options) {
     ("maxdebt", po::value<int>(), "maximum debt (in Mb) to allow each client before rate limiting")
     ("port", po::value<int>(), "FCGI port number to listen on")
     ;
+  // clang-format on
 
   // add the backend options to the options description
   setup_backend_options(argc, argv, desc);
@@ -122,15 +123,14 @@ get_options(int argc, char **argv, po::variables_map &options) {
  * loop processing fasctgi requests until are asked to stop by
  * somebody sending us a TERM signal.
  */
-static void
-process_requests(int socket, const po::variables_map &options) {
+static void process_requests(int socket, const po::variables_map &options) {
   // generator string - identifies the cgimap instance.
   string generator = get_generator_string();
   // open any log file
   if (options.count("logfile")) {
     logger::initialise(options["logfile"].as<string>());
   }
-  
+
   // create the rate limiter
   rate_limiter limiter(options);
 
@@ -151,7 +151,7 @@ process_requests(int socket, const po::variables_map &options) {
     // process any reload request
     if (reload_requested) {
       if (options.count("logfile")) {
-	logger::initialise(options["logfile"].as<string>());
+        logger::initialise(options["logfile"].as<string>());
       }
 
       reload_requested = false;
@@ -170,8 +170,7 @@ process_requests(int socket, const po::variables_map &options) {
 /**
  * SIGTERM handler.
  */
-static void
-terminate(int) {
+static void terminate(int) {
   // termination has been requested
   terminate_requested = true;
 }
@@ -179,8 +178,7 @@ terminate(int) {
 /**
  * SIGHUP handler.
  */
-static void
-reload(int) {
+static void reload(int) {
   // reload has been requested
   reload_requested = true;
 }
@@ -188,8 +186,7 @@ reload(int) {
 /**
  * make the process into a daemon by detaching from the console.
  */
-static void
-daemonise(void) {
+static void daemonise(void) {
   pid_t pid;
   struct sigaction sa;
 
@@ -237,8 +234,7 @@ void setup_backends() {
   register_backend(make_staticxml_backend());
 }
 
-int
-main(int argc, char **argv) {
+int main(int argc, char **argv) {
   try {
     po::variables_map options;
     int socket;
@@ -256,7 +252,7 @@ main(int argc, char **argv) {
       path << ":" << options["port"].as<int>();
 
       if ((socket = fcgi_request::open_socket(path.str(), 5)) < 0) {
-	throw runtime_error("Couldn't open FCGX socket.");
+        throw runtime_error("Couldn't open FCGX socket.");
       }
     } else {
       socket = 0;
@@ -268,12 +264,13 @@ main(int argc, char **argv) {
       {
         int opt_instances = options["instances"].as<int>();
         if (opt_instances > 0) {
-           instances = opt_instances;
+          instances = opt_instances;
         } else {
-           throw std::runtime_error("Number of instances must be strictly positive.");
+          throw std::runtime_error(
+              "Number of instances must be strictly positive.");
         }
       }
-      
+
       bool children_terminated = false;
       std::set<pid_t> children;
 
@@ -282,66 +279,57 @@ main(int argc, char **argv) {
 
       // record our pid if requested
       if (options.count("pidfile")) {
-	std::ofstream pidfile(options["pidfile"].as<string>().c_str());
-	pidfile << getpid() << std::endl;
+        std::ofstream pidfile(options["pidfile"].as<string>().c_str());
+        pidfile << getpid() << std::endl;
       }
 
       // loop until we have been asked to stop and have no more children
       while (!terminate_requested || children.size() > 0) {
-	pid_t pid;
+        pid_t pid;
 
-	// start more children if we don't have enough
-	while (!terminate_requested && (children.size() < instances)) {
-	  if ((pid = fork()) < 0)
-	  {
-	    throw runtime_error("fork failed.");
-	  }
-	  else if (pid == 0)
-	  {
-	    process_requests(socket, options);
-	    exit(0);
-	  }
+        // start more children if we don't have enough
+        while (!terminate_requested && (children.size() < instances)) {
+          if ((pid = fork()) < 0) {
+            throw runtime_error("fork failed.");
+          } else if (pid == 0) {
+            process_requests(socket, options);
+            exit(0);
+          }
 
-	  children.insert(pid);
-	}
+          children.insert(pid);
+        }
 
-	// wait for a child to exit
-	if ((pid = wait(NULL)) >= 0) {
-	  children.erase(pid);
-	} else if (errno != EINTR) {
-	  throw runtime_error("wait failed.");
-	}
+        // wait for a child to exit
+        if ((pid = wait(NULL)) >= 0) {
+          children.erase(pid);
+        } else if (errno != EINTR) {
+          throw runtime_error("wait failed.");
+        }
 
-	// pass on any termination request to our children
-	if (terminate_requested && !children_terminated) {
-	  BOOST_FOREACH(pid, children) {
-	    kill(pid, SIGTERM);
-	  }
+        // pass on any termination request to our children
+        if (terminate_requested && !children_terminated) {
+          BOOST_FOREACH(pid, children) { kill(pid, SIGTERM); }
 
-	  children_terminated = true;
-	}
+          children_terminated = true;
+        }
 
-	// pass on any reload request to our children
-	if (reload_requested) {
-	  BOOST_FOREACH(pid, children) {
-	    kill(pid, SIGHUP);
-	  }
+        // pass on any reload request to our children
+        if (reload_requested) {
+          BOOST_FOREACH(pid, children) { kill(pid, SIGHUP); }
 
-	  reload_requested = false;
-	}
+          reload_requested = false;
+        }
       }
 
       // remove any pid file
       if (options.count("pidfile")) {
-	remove(options["pidfile"].as<string>().c_str());
+        remove(options["pidfile"].as<string>().c_str());
       }
-    }
-    else
-    {
+    } else {
       // record our pid if requested
       if (options.count("pidfile")) {
-	std::ofstream pidfile(options["pidfile"].as<string>().c_str());
-	pidfile << getpid() << std::endl;
+        std::ofstream pidfile(options["pidfile"].as<string>().c_str());
+        pidfile << getpid() << std::endl;
       }
 
       // do work here
@@ -349,13 +337,13 @@ main(int argc, char **argv) {
 
       // remove any pid file
       if (options.count("pidfile")) {
-	remove(options["pidfile"].as<string>().c_str());
+        remove(options["pidfile"].as<string>().c_str());
       }
     }
   } catch (const pqxx::sql_error &er) {
     // Catch-all for query related postgres exceptions
     std::cerr << "Error: " << er.what() << std::endl
-	      << "Caused by: " << er.query() << std::endl;
+              << "Caused by: " << er.query() << std::endl;
     return 1;
 
   } catch (const pqxx::pqxx_exception &e) {
@@ -367,7 +355,6 @@ main(int argc, char **argv) {
     logger::message(e.what());
     std::cerr << "Exception: " << e.what() << std::endl;
     return 1;
-
   }
 
   return 0;

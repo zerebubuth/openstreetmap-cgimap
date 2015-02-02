@@ -29,9 +29,9 @@ struct element_info {
 };
 
 struct member_info {
-   element_type type;
-   osm_id_t ref;
-   std::string role;
+  element_type type;
+  osm_id_t ref;
+  std::string role;
 };
 
 typedef std::list<osm_id_t> nodes_t;
@@ -46,7 +46,7 @@ typedef std::list<std::pair<std::string, std::string> > tags_t;
 struct output_formatter {
   virtual ~output_formatter();
 
-  // returns the mime type of the content that this formatter will 
+  // returns the mime type of the content that this formatter will
   // produce.
   virtual mime::type mime_type() const = 0;
 
@@ -67,34 +67,31 @@ struct output_formatter {
   // to record the box used by a map call.
   virtual void write_bounds(const bbox &bounds) = 0;
 
-  // start a type of element. this is called once for nodes, ways or 
+  // start a type of element. this is called once for nodes, ways or
   // relations. between the start and end called for a particular element
   // type only write_* functions for that type will be called.
-  virtual void start_element_type(element_type type) = 0; 
+  virtual void start_element_type(element_type type) = 0;
 
-  // end a type of element. this is called once for nodes, ways or relations 
-  virtual void end_element_type(element_type type) = 0; 
+  // end a type of element. this is called once for nodes, ways or relations
+  virtual void end_element_type(element_type type) = 0;
 
-   // output a single node given that node's row and an iterator over its tags
-   virtual void write_node(const element_info &elem,
-                           double lon, double lat, 
-                           const tags_t &tags) = 0;
-
-   // output a single way given a row and iterators for nodes and tags
-   virtual void write_way(const element_info &elem,
-                          const nodes_t &nodes, 
+  // output a single node given that node's row and an iterator over its tags
+  virtual void write_node(const element_info &elem, double lon, double lat,
                           const tags_t &tags) = 0;
-   
-   // output a single relation given a row and iterators over members and tags
-   virtual void write_relation(const element_info &elem,
-                               const members_t &members,
-                               const tags_t &tags) = 0;
 
-	 // flush the current state
-	 virtual void flush() = 0;
-	 
-	 // write an error to the output stream
-	 virtual void error(const std::string &) = 0;
+  // output a single way given a row and iterators for nodes and tags
+  virtual void write_way(const element_info &elem, const nodes_t &nodes,
+                         const tags_t &tags) = 0;
+
+  // output a single relation given a row and iterators over members and tags
+  virtual void write_relation(const element_info &elem,
+                              const members_t &members, const tags_t &tags) = 0;
+
+  // flush the current state
+  virtual void flush() = 0;
+
+  // write an error to the output stream
+  virtual void error(const std::string &) = 0;
 };
 
 #endif /* OUTPUT_FORMATTER_HPP */

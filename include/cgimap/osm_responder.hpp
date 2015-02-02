@@ -20,29 +20,31 @@
  */
 class osm_responder : public responder {
 public:
-   // construct, passing the mime type down to the responder.
-   // optional bounds are stored at this level, but available to derived classes.
-   osm_responder(mime::type, boost::optional<bbox> bounds = boost::optional<bbox>());
-   
-   virtual ~osm_responder();
-   
-   // lists the standard types that OSM format can respond in, currently XML and, if 
-   // the yajl library is provided, JSON.
-   std::list<mime::type> types_available() const;
-   
-   // quick hack to add headers to the response
-   std::string extra_response_headers() const;
-   
+  // construct, passing the mime type down to the responder.
+  // optional bounds are stored at this level, but available to derived classes.
+  osm_responder(mime::type,
+                boost::optional<bbox> bounds = boost::optional<bbox>());
+
+  virtual ~osm_responder();
+
+  // lists the standard types that OSM format can respond in, currently XML and,
+  // if
+  // the yajl library is provided, JSON.
+  std::list<mime::type> types_available() const;
+
+  // quick hack to add headers to the response
+  std::string extra_response_headers() const;
+
 protected:
-   // optional bounds element - this is only for information and has no effect on 
-   // behaviour other than whether the bounds element gets written.
-   boost::optional<bbox> bounds;
-   
-   // quick hack to provide extra response headers like Content-Disposition.
-   std::ostringstream extra_headers;
-   
-   // adds an extra response header.
-   void add_response_header(const std::string &);
+  // optional bounds element - this is only for information and has no effect on
+  // behaviour other than whether the bounds element gets written.
+  boost::optional<bbox> bounds;
+
+  // quick hack to provide extra response headers like Content-Disposition.
+  std::ostringstream extra_headers;
+
+  // adds an extra response header.
+  void add_response_header(const std::string &);
 };
 
 #endif /* OSM_RESPONDER_HPP */

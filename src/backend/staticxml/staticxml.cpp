@@ -19,7 +19,8 @@ using std::string;
 namespace {
 
 // needed to get boost::lexical_cast<bool>(string) to work.
-// see: http://stackoverflow.com/questions/4452136/how-do-i-use-boostlexical-cast-and-stdboolalpha-i-e-boostlexical-cast-b
+// see:
+// http://stackoverflow.com/questions/4452136/how-do-i-use-boostlexical-cast-and-stdboolalpha-i-e-boostlexical-cast-b
 struct bool_alpha {
   bool data;
   bool_alpha() {}
@@ -67,11 +68,13 @@ T get_attribute(const char *name, size_t len, const xmlChar **attributes) {
     }
     ++attributes;
   }
-  throw std::runtime_error((boost::format("Unable to find attribute %1%.") % name).str());
+  throw std::runtime_error(
+      (boost::format("Unable to find attribute %1%.") % name).str());
 }
 
 template <typename T>
-boost::optional<T> opt_attribute(const char *name, size_t len, const xmlChar **attributes) {
+boost::optional<T> opt_attribute(const char *name, size_t len,
+                                 const xmlChar **attributes) {
   while (*attributes != NULL) {
     if (strncmp(((const char *)(*attributes++)), name, len) == 0) {
       return boost::lexical_cast<T>((const char *)(*attributes));
@@ -94,15 +97,17 @@ void parse_info(element_info &info, const xmlChar **attributes) {
 struct xml_parser {
   xml_parser(database *db) : m_db(db) {}
 
-  static void start_element(void * ctx, const xmlChar *name, const xmlChar **attributes) {
+  static void start_element(void *ctx, const xmlChar *name,
+                            const xmlChar **attributes) {
     xml_parser *parser = static_cast<xml_parser *>(ctx);
-    
+
     if (strncmp((const char *)name, "node", 5) == 0) {
       node n;
       parse_info(n.m_info, attributes);
       n.m_lon = get_attribute<double>("lon", 4, attributes);
       n.m_lat = get_attribute<double>("lat", 4, attributes);
-      std::pair<std::map<osm_id_t, node>::iterator, bool> status = parser->m_db->m_nodes.insert(std::make_pair(n.m_info.id, n));
+      std::pair<std::map<osm_id_t, node>::iterator, bool> status =
+          parser->m_db->m_nodes.insert(std::make_pair(n.m_info.id, n));
       parser->m_cur_node = &(status.first->second);
       parser->m_cur_tags = &(parser->m_cur_node->m_tags);
       parser->m_cur_way = NULL;
@@ -111,16 +116,18 @@ struct xml_parser {
     } else if (strncmp((const char *)name, "way", 4) == 0) {
       way w;
       parse_info(w.m_info, attributes);
-      std::pair<std::map<osm_id_t, way>::iterator, bool> status = parser->m_db->m_ways.insert(std::make_pair(w.m_info.id, w));
+      std::pair<std::map<osm_id_t, way>::iterator, bool> status =
+          parser->m_db->m_ways.insert(std::make_pair(w.m_info.id, w));
       parser->m_cur_way = &(status.first->second);
       parser->m_cur_tags = &(parser->m_cur_way->m_tags);
       parser->m_cur_node = NULL;
       parser->m_cur_rel = NULL;
-      
+
     } else if (strncmp((const char *)name, "relation", 9) == 0) {
       relation r;
       parse_info(r.m_info, attributes);
-      std::pair<std::map<osm_id_t, relation>::iterator, bool> status = parser->m_db->m_relations.insert(std::make_pair(r.m_info.id, r));
+      std::pair<std::map<osm_id_t, relation>::iterator, bool> status =
+          parser->m_db->m_relations.insert(std::make_pair(r.m_info.id, r));
       parser->m_cur_rel = &(status.first->second);
       parser->m_cur_tags = &(parser->m_cur_rel->m_tags);
       parser->m_cur_node = NULL;
@@ -136,19 +143,28 @@ struct xml_parser {
 
     } else if (strncmp((const char *)name, "nd", 3) == 0) {
       if (parser->m_cur_way != NULL) {
-        parser->m_cur_way->m_nodes.push_back(get_attribute<osm_id_t>("ref", 4, attributes));
+        parser->m_cur_way->m_nodes.push_back(
+            get_attribute<osm_id_t>("ref", 4, attributes));
       }
 
     } else if (strncmp((const char *)name, "member", 7) == 0) {
       if (parser->m_cur_rel != NULL) {
         member_info m;
-        std::string member_type = get_attribute<std::string>("type", 5, attributes);
+        std::string member_type =
+            get_attribute<std::string>("type", 5, attributes);
 
-        if (member_type == "node") { m.type = element_type_node; }
-        else if (member_type == "way") { m.type = element_type_way; }
-        else if (member_type == "relation") { m.type = element_type_relation; }
-        else { throw std::runtime_error((boost::format("Unknown member type `%1%'.") % member_type).str()); }
-         
+        if (member_type == "node") {
+          m.type = element_type_node;
+        } else if (member_type == "way") {
+          m.type = element_type_way;
+        } else if (member_type == "relation") {
+          m.type = element_type_relation;
+        } else {
+          throw std::runtime_error(
+              (boost::format("Unknown member type `%1%'.") % member_type)
+                  .str());
+        }
+
         m.ref = get_attribute<osm_id_t>("ref", 4, attributes);
         m.role = get_attribute<std::string>("role", 5, attributes);
 
@@ -191,7 +207,8 @@ boost::shared_ptr<database> parse_xml(const char *filename) {
   int status = xmlSAXUserParseFile(&handler, &parser, filename);
   if (status != 0) {
     xmlErrorPtr err = xmlGetLastError();
-    throw std::runtime_error((boost::format("XML ERROR: %1%.") % err->message).str());
+    throw std::runtime_error(
+        (boost::format("XML ERROR: %1%.") % err->message).str());
   }
 
   xmlCleanupParser();
@@ -202,9 +219,9 @@ boost::shared_ptr<database> parse_xml(const char *filename) {
 struct static_data_selection : public data_selection {
   static_data_selection(boost::shared_ptr<database> db) : m_db(db) {}
   virtual ~static_data_selection() {}
-  
+
   virtual void write_nodes(output_formatter &formatter) {
-    BOOST_FOREACH(osm_id_t id, m_nodes) { 
+    BOOST_FOREACH(osm_id_t id, m_nodes) {
       std::map<osm_id_t, node>::iterator itr = m_db->m_nodes.find(id);
       if (itr != m_db->m_nodes.end()) {
         const node &n = itr->second;
@@ -214,7 +231,7 @@ struct static_data_selection : public data_selection {
   }
 
   virtual void write_ways(output_formatter &formatter) {
-    BOOST_FOREACH(osm_id_t id, m_ways) { 
+    BOOST_FOREACH(osm_id_t id, m_ways) {
       std::map<osm_id_t, way>::iterator itr = m_db->m_ways.find(id);
       if (itr != m_db->m_ways.end()) {
         const way &w = itr->second;
@@ -224,7 +241,7 @@ struct static_data_selection : public data_selection {
   }
 
   virtual void write_relations(output_formatter &formatter) {
-    BOOST_FOREACH(osm_id_t id, m_relations) { 
+    BOOST_FOREACH(osm_id_t id, m_relations) {
       std::map<osm_id_t, relation>::iterator itr = m_db->m_relations.find(id);
       if (itr != m_db->m_relations.end()) {
         const relation &r = itr->second;
@@ -232,7 +249,7 @@ struct static_data_selection : public data_selection {
       }
     }
   }
-  
+
   virtual visibility_t check_node_visibility(osm_id_t id) {
     std::map<osm_id_t, node>::iterator itr = m_db->m_nodes.find(id);
     if (itr != m_db->m_nodes.end()) {
@@ -307,7 +324,7 @@ struct static_data_selection : public data_selection {
     }
     return selected;
   }
-  
+
   virtual int select_nodes_from_bbox(const bbox &bounds, int max_nodes) {
     typedef std::pair<osm_id_t, node> value_type;
     int selected = 0;
@@ -406,7 +423,8 @@ struct static_data_selection : public data_selection {
     BOOST_FOREACH(const value_type &val, m_db->m_relations) {
       const relation &r = val.second;
       BOOST_FOREACH(const member_info &m, r.m_members) {
-        if ((m.type == element_type_relation) && (m_relations.count(m.ref) > 0)) {
+        if ((m.type == element_type_relation) &&
+            (m_relations.count(m.ref) > 0)) {
           tmp_relations.insert(r.m_info.id);
           break;
         }
@@ -434,11 +452,9 @@ private:
 };
 
 struct factory : public data_selection::factory {
-  factory(const std::string &file) : m_database(parse_xml(file.c_str())) {
-  }
+  factory(const std::string &file) : m_database(parse_xml(file.c_str())) {}
 
-  virtual ~factory() {
-  }
+  virtual ~factory() {}
 
   virtual boost::shared_ptr<data_selection> make_selection() {
     return boost::make_shared<static_data_selection>(m_database);
@@ -450,22 +466,20 @@ private:
 
 struct staticxml_backend : public backend {
   staticxml_backend()
-    : m_name("staticxml"),
-      m_options("Static XML backend options") {
-    m_options.add_options()
-      ("file", po::value<string>(), "file to load static OSM XML from.")
-      ;
+      : m_name("staticxml"), m_options("Static XML backend options") {
+    m_options.add_options()("file", po::value<string>(),
+                            "file to load static OSM XML from.");
   }
   virtual ~staticxml_backend() {}
-  
+
   const string &name() const { return m_name; }
   const po::options_description &options() const { return m_options; }
-  
+
   shared_ptr<data_selection::factory> create(const po::variables_map &opts) {
     std::string file = opts["file"].as<std::string>();
     return boost::make_shared<factory>(file);
   }
-  
+
 private:
   string m_name;
   po::options_description m_options;

@@ -8,8 +8,7 @@
 /**
  * base class of all writers.
  */
-class output_writer
-  : public boost::noncopyable {
+class output_writer : public boost::noncopyable {
 public:
   virtual ~output_writer() throw();
 
@@ -25,8 +24,7 @@ public:
   /**
    * Thrown when writing fails.
    */
-  class write_error
-    : public std::runtime_error {
+  class write_error : public std::runtime_error {
   public:
     write_error(const char *message);
   };

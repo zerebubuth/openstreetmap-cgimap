@@ -8,8 +8,8 @@
 
 namespace api06 {
 
-std::list<osm_id_t> parse_id_list_params(request &req, const std::string &param_name);
-
+std::list<osm_id_t> parse_id_list_params(request &req,
+                                         const std::string &param_name);
 }
 
 #endif /* API06_HANDLER_UTILS_HPP */
