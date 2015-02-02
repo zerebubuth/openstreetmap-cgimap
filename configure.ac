@@ -136,4 +136,17 @@ AC_CONFIG_FILES([
 	Makefile
 	src/Makefile])
 
+AC_ARG_WITH([clang-format],
+	[AS_HELP_STRING([--with-clang-format@<:@=ARG@:>@],
+	   [Enable re-formatting source code with clang-format. @<:@ARG=no@:>@ ])],
+	[case "${withval}" in
+	  yes ) prog_clang_format="clang-format-3.6" ;;
+	  no ) prog_clang_format="no" ;;
+	  * ) prog_clang_format="${withval}" ;;
+	 esac],
+	[prog_clang_format="no"])
+AS_IF([test "x$prog_clang_format" != "xno"],
+		[AC_CHECK_PROGS([CLANG_FORMAT], "$prog_clang_format", [no])])
+AM_CONDITIONAL([HAVE_CLANG_FORMAT], [test "x$CLANG_FORMAT" != "xno"])
+
 AC_OUTPUT

@@ -37,3 +37,24 @@ TESTS += test/test_apidb_backend
 endif
 TEST_EXTENSIONS = .testcore
 TESTCORE_LOG_COMPILER = test/test_core
+
+if HAVE_CLANG_FORMAT
+.PHONY: clang-format
+clang-format:
+	@echo "Reformatting files..."; \
+	for i in include/api06/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
+	for i in include/cgimap/api06/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
+	for i in include/cgimap/api07/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
+	for i in include/cgimap/backend/apidb/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
+	for i in include/cgimap/backend/pgsnapshot/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
+	for i in include/cgimap/backend/staticxml/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
+	for i in include/cgimap/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
+	for i in include/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
+	for i in src/api06/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
+	for i in src/api07/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
+	for i in src/backend/apidb/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
+	for i in src/backend/pgsnapshot/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
+	for i in src/backend/staticxml/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
+	for i in src/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
+	for i in test/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done;
+endif
