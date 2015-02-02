@@ -134,6 +134,22 @@ And you will need to be able to create databases as your user:
     sudo -u postgres createuser $USER
     (say yes to superuser)
 
+Formatting
+----------
+
+The CGImap code is formatted using
+[clang-format](http://clang.llvm.org/docs/ClangFormat.html) in a style
+which is based on the "LLVM style" which ships with
+`clang-format`. Note that version 3.6 or later is needed to avoid
+introducing problems with formatting try-catch blocks. To enable an
+automatic reformatting option, provide the `--with-clang-format`
+option to `configure` and then reformatting can be done across the
+whole set of source files by running:
+
+    make clang-format
+
+Ideally, this should be done before committing each set of changes.
+
 Acknowledgements
 ----------------
 
