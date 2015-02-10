@@ -18,7 +18,8 @@ void set_default_headers(request &req) {
 }
 } // anonymous namespace
 
-request::request() : m_workflow_status(status_NONE), m_status(500), m_headers() {}
+request::request()
+    : m_workflow_status(status_NONE), m_status(500), m_headers() {}
 
 request::~request() {}
 
@@ -59,8 +60,7 @@ void request::check_workflow(workflow_status this_stage) {
       set_default_headers(*this);
     }
 
-    if ((status_BODY > m_workflow_status) &&
-        (status_BODY <= this_stage)) {
+    if ((status_BODY > m_workflow_status) && (status_BODY <= this_stage)) {
       write_header_info(m_status, m_headers);
     }
 
@@ -71,8 +71,8 @@ void request::check_workflow(workflow_status this_stage) {
     // this, so a workflow violation has occurred.
     throw std::runtime_error((boost::format("Can't move backwards in the "
                                             "request workflow from %1% to "
-                                            "%2%.")
-                              % m_workflow_status % this_stage).str());
+                                            "%2%.") %
+                              m_workflow_status % this_stage).str());
   }
 }
 

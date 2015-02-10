@@ -111,14 +111,29 @@ const char *status_message(int code) {
   const char *msg = http_message_status_500;
 
   switch (code) {
-  case 200: msg = http_message_status_200; break;
-  case 400: msg = http_message_status_400; break;
-  case 404: msg = http_message_status_404; break;
-  case 405: msg = http_message_status_405; break;
-  case 406: msg = http_message_status_406; break;
-  case 410: msg = http_message_status_410; break;
-  case 509: msg = http_message_status_509; break;
-  default: msg = http_message_status_500;
+  case 200:
+    msg = http_message_status_200;
+    break;
+  case 400:
+    msg = http_message_status_400;
+    break;
+  case 404:
+    msg = http_message_status_404;
+    break;
+  case 405:
+    msg = http_message_status_405;
+    break;
+  case 406:
+    msg = http_message_status_406;
+    break;
+  case 410:
+    msg = http_message_status_410;
+    break;
+  case 509:
+    msg = http_message_status_509;
+    break;
+  default:
+    msg = http_message_status_500;
   }
 
   return msg;

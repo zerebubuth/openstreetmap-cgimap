@@ -58,7 +58,8 @@ const char *fcgi_request::get_param(const char *key) {
   return FCGX_GetParam(key, m_impl->req.envp);
 }
 
-void fcgi_request::write_header_info(int status, const request::headers_t &headers) {
+void fcgi_request::write_header_info(int status,
+                                     const request::headers_t &headers) {
   std::ostringstream ostr;
   ostr << "Status: " << status << " " << status_message(status) << "\r\n";
   BOOST_FOREACH(const request::headers_t::value_type &header, headers) {

@@ -97,8 +97,8 @@ process_get_request(request &req, routes &route,
   // TODO: use handler/responder to setup response headers.
   // write the response header
   req.status(200);
-  req.add_header("Content-Type", (boost::format("%1%; charset=utf-8")
-                                  % mime::to_string(best_mime_type)).str());
+  req.add_header("Content-Type", (boost::format("%1%; charset=utf-8") %
+                                  mime::to_string(best_mime_type)).str());
   req.add_header("Content-Encoding", encoding->name());
   req.add_header("Cache-Control", "private, max-age=0, must-revalidate");
 
@@ -107,7 +107,7 @@ process_get_request(request &req, routes &route,
 
   // create the correct mime type output formatter.
   shared_ptr<output_formatter> o_formatter =
-    create_formatter(req, best_mime_type, out);
+      create_formatter(req, best_mime_type, out);
 
   try {
     // call to write the response
@@ -170,8 +170,8 @@ process_head_request(request &req, routes &route,
   // TODO: use handler/responder to setup response headers.
   // write the response header
   req.status(200);
-  req.add_header("Content-Type", (boost::format("%1%; charset=utf-8")
-                                  % mime::to_string(best_mime_type)).str());
+  req.add_header("Content-Type", (boost::format("%1%; charset=utf-8") %
+                                  mime::to_string(best_mime_type)).str());
   req.add_header("Content-Encoding", encoding->name());
   req.add_header("Cache-Control", "no-cache");
 
