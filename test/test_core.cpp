@@ -1,5 +1,7 @@
 #include "cgimap/process_request.hpp"
+#include "cgimap/output_buffer.hpp"
 #include "cgimap/backend/staticxml/staticxml.hpp"
+#include "cgimap/request_helpers.hpp"
 #include "cgimap/config.hpp"
 
 #include <boost/filesystem.hpp>
@@ -60,27 +62,28 @@ struct test_request : public request {
       return NULL;
     }
   }
-  virtual int put(const char *data, int len) {
-    m_output.write(data, len);
-    return len;
-  }
-  virtual int put(const std::string &s) {
-    m_output.write(s.c_str(), s.size());
-    return s.size();
-  }
-  virtual boost::shared_ptr<output_buffer> get_buffer() {
-    return boost::shared_ptr<output_buffer>(new test_output_buffer(m_output));
-  }
-  virtual std::string extra_headers() const { return std::string(); }
-  virtual void flush() {}
-  virtual int accept_r() { return 0; }
-  virtual void finish() {}
+
+  virtual void dispose() {}
 
   /// getters and setters for the input headers and output response
   void set_header(const std::string &k, const std::string &v) {
     m_params.insert(std::make_pair(k, v));
   }
   std::stringstream &buffer() { return m_output; }
+
+protected:
+  virtual void write_header_info(int status, const headers_t &headers) {
+    assert(m_output.tellp() == 0);
+    m_output << "Status: " << status << " " << status_message(status) << "\r\n";
+    BOOST_FOREACH(const request::headers_t::value_type &header, headers) {
+      m_output << header.first << ": " << header.second << "\r\n";
+    }
+    m_output << "\r\n";
+  }
+  virtual boost::shared_ptr<output_buffer> get_buffer_internal() {
+    return boost::shared_ptr<output_buffer>(new test_output_buffer(m_output));
+  }
+  virtual void finish_internal() {}
 
 private:
   std::stringstream m_output;

@@ -16,12 +16,11 @@
 mime::type choose_best_mime_type(request &req, responder_ptr_t hptr);
 
 /**
- * chooses and initialises an output formatter which matches the requirements of
- * the Accept: headers in the request and the constraints of the responder
- * resource that was selected by the path...
+ * creates and initialises an output formatter which matches the MIME type
+ * passed in as an argument.
  */
 boost::shared_ptr<output_formatter>
-choose_formatter(request &req, responder_ptr_t hptr,
+create_formatter(request &req, mime::type best_type,
                  boost::shared_ptr<output_buffer>);
 
 #endif /* CHOOSE_FORMATTER_HPP */

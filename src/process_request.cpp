@@ -34,42 +34,40 @@ void respond_error(const http::exception &e, request &r) {
                   e.code() % e.what());
 
   const char *error_format = r.get_param("HTTP_X_ERROR_FORMAT");
-  string extra_headers = get_extra_headers(r);
 
-  ostringstream ostr;
   if (error_format && al::iequals(error_format, "xml")) {
-    ostr << "Status: 200 OK\r\n"
-         << "Content-Type: text/xml; charset=utf-8\r\n" << extra_headers
-         << "\r\n"
-         << "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\r\n"
+    r.status(200);
+    r.add_header("Content-Type", "text/xml; charset=utf-8");
+
+    ostringstream ostr;
+    ostr << "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\r\n"
          << "<osmError>\r\n"
          << "<status>" << e.code() << " " << e.header() << "</status>\r\n"
          << "<message>" << e.what() << "</message>\r\n"
          << "</osmError>\r\n";
+    r.put(ostr.str());
+
   } else {
-    ostr << "Status: " << e.code() << " " << e.header() << "\r\n"
-         << "Content-Type: text/html\r\n"
-         << "Content-Length: 0\r\n"
-         << "Error: " << e.what() << "\r\n"
-         << "Cache-Control: no-cache\r\n" << extra_headers << "\r\n";
+    r.status(e.code());
+    r.add_header("Content-Type", "text/html");
+    r.add_header("Content-Length", "0");
+    r.add_header("Error", e.what());
+    r.add_header("Cache-Control", "no-cache");
   }
 
-  r.put(ostr.str());
+  r.finish();
 }
 
 /**
  * Return a 405 error.
  */
 void process_not_allowed(request &req) {
-  string extra_headers = get_extra_headers(req);
-
-  req.put("Status: 405 Method Not Allowed\r\n"
-          "Allow: GET, HEAD, OPTIONS\r\n"
-          "Content-Type: text/html\r\n"
-          "Content-Length: 0\r\n"
-          "Cache-Control: no-cache\r\n");
-  req.put(extra_headers);
-  req.put("\r\n");
+  req.status(405);
+  req.add_header("Allow", "GET, HEAD, OPTIONS");
+  req.add_header("Content-Type", "text/html");
+  req.add_header("Content-Length", "0");
+  req.add_header("Cache-Control", "no-cache");
+  req.finish();
 }
 
 /**
@@ -93,32 +91,30 @@ process_get_request(request &req, routes &route,
   // get encoding to use
   shared_ptr<http::encoding> encoding = get_encoding(req);
 
+  // figure out best mime type
+  mime::type best_mime_type = choose_best_mime_type(req, responder);
+
+  // TODO: use handler/responder to setup response headers.
+  // write the response header
+  req.status(200);
+  req.add_header("Content-Type", (boost::format("%1%; charset=utf-8")
+                                  % mime::to_string(best_mime_type)).str());
+  req.add_header("Content-Encoding", encoding->name());
+  req.add_header("Cache-Control", "private, max-age=0, must-revalidate");
+
   // create the XML writer with the FCGI streams as output
   shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
 
   // create the correct mime type output formatter.
   shared_ptr<output_formatter> o_formatter =
-      choose_formatter(req, responder, out);
-
-  // get any extra headers to return
-  string extra_headers = get_extra_headers(req);
-
-  // TODO: use handler/responder to setup response headers.
-  // write the response header
-  {
-    ostringstream ostr;
-    ostr << "Status: 200 OK\r\n"
-         << "Content-Type: " << mime::to_string(o_formatter->mime_type())
-         << "; charset=utf-8\r\n" << responder->extra_response_headers()
-         << "Content-Encoding: " << encoding->name() << "\r\n"
-         << "Cache-Control: private, max-age=0, must-revalidate\r\n"
-         << extra_headers << "\r\n";
-    req.put(ostr.str());
-  }
+    create_formatter(req, best_mime_type, out);
 
   try {
     // call to write the response
     responder->write(o_formatter, generator);
+
+    // ensure the request is finished
+    req.finish();
 
     // make sure all bytes have been written. note that the writer can
     // throw an exception here, leaving the xml document in a
@@ -171,18 +167,16 @@ process_head_request(request &req, routes &route,
   // figure out best mime type
   mime::type best_mime_type = choose_best_mime_type(req, responder);
 
-  // get any extra headers to return
-  string extra_headers = get_extra_headers(req);
-
   // TODO: use handler/responder to setup response headers.
   // write the response header
-  std::ostringstream response;
-  response << "Status: 200 OK\r\n"
-           << "Content-Type: " << mime::to_string(best_mime_type)
-           << "; charset=utf-8\r\n" << responder->extra_response_headers()
-           << "Content-Encoding: " << encoding->name() << "\r\n"
-           << "Cache-Control: no-cache\r\n" << extra_headers << "\r\n";
-  req.put(response.str());
+  req.status(200);
+  req.add_header("Content-Type", (boost::format("%1%; charset=utf-8")
+                                  % mime::to_string(best_mime_type)).str());
+  req.add_header("Content-Encoding", encoding->name());
+  req.add_header("Cache-Control", "no-cache");
+
+  // ensure the request is finished
+  req.finish();
 
   return boost::make_tuple(request_name, 0);
 }
@@ -197,14 +191,13 @@ boost::tuple<string, size_t> process_options_request(request &req) {
 
   if (origin &&
       (strcasecmp(method, "GET") == 0 || strcasecmp(method, "HEAD") == 0)) {
-    // get the extra headers to return
-    string extra_headers = get_extra_headers(req);
 
     // write the response
-    req.put("Status: 200 OK\r\n"
-            "Content-Type: text/plain\r\n");
-    req.put(extra_headers);
-    req.put("\r\n\r\n");
+    req.status(200);
+    req.add_header("Content-Type", "text/plain");
+
+    // ensure the request is finished
+    req.finish();
 
   } else {
     process_not_allowed(req);

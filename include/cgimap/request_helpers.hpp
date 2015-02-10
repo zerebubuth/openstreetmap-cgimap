@@ -34,10 +34,9 @@ std::string get_request_path(request &req);
 boost::shared_ptr<http::encoding> get_encoding(request &req);
 
 /**
- * get extra headers to include in response.
- * this includes CORS access control headers.
+ * return a static string description for an HTTP status code.
  */
-std::string get_extra_headers(request &req);
+const char *status_message(int code);
 
 /**
  * return shared pointer to a buffer object which can be

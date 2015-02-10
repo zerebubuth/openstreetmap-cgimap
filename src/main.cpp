@@ -163,8 +163,8 @@ static void process_requests(int socket, const po::variables_map &options) {
     process_request(req, limiter, generator, route, factory);
   }
 
-  // finish up
-  req.finish();
+  // finish up - dispose of the resources
+  req.dispose();
 }
 
 /**

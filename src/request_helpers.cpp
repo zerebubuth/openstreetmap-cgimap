@@ -96,24 +96,32 @@ boost::shared_ptr<http::encoding> get_encoding(request &req) {
   }
 }
 
-/**
- * get extra headers to include in response.
- * this includes CORS access control headers.
- */
-string get_extra_headers(request &req) {
-  const char *origin = req.get_param("HTTP_ORIGIN");
-  ostringstream headers;
+namespace {
+const char *http_message_status_200 = "OK";
+const char *http_message_status_400 = "Bad Request";
+const char *http_message_status_404 = "Not Found";
+const char *http_message_status_405 = "Method Not Allowed";
+const char *http_message_status_406 = "Not Acceptable";
+const char *http_message_status_410 = "Gone";
+const char *http_message_status_509 = "Bandwidth Limit Exceeded";
+const char *http_message_status_500 = "Internal Server Error";
+} // anonymous namespace
 
-  headers << req.extra_headers();
+const char *status_message(int code) {
+  const char *msg = http_message_status_500;
 
-  if (origin) {
-    headers << "Access-Control-Allow-Credentials: true\r\n";
-    headers << "Access-Control-Allow-Methods: GET\r\n";
-    headers << "Access-Control-Allow-Origin: " << origin << "\r\n";
-    headers << "Access-Control-Max-Age: 1728000\r\n";
+  switch (code) {
+  case 200: msg = http_message_status_200; break;
+  case 400: msg = http_message_status_400; break;
+  case 404: msg = http_message_status_404; break;
+  case 405: msg = http_message_status_405; break;
+  case 406: msg = http_message_status_406; break;
+  case 410: msg = http_message_status_410; break;
+  case 509: msg = http_message_status_509; break;
+  default: msg = http_message_status_500;
   }
 
-  return headers.str();
+  return msg;
 }
 
 namespace {

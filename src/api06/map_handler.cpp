@@ -36,15 +36,15 @@ map_responder::map_responder(mime::type mt, bbox b, factory_ptr &x)
     sel->select_relations_from_nodes();
     sel->select_relations_from_relations();
   }
-
-  // map calls typically have a Content-Disposition header saying that
-  // what's coming back is an attachment.
-  add_response_header("Content-Disposition: attachment; filename=\"map.osm\"");
 }
 
 map_responder::~map_responder() {}
 
-map_handler::map_handler(request &req) : bounds(validate_request(req)) {}
+map_handler::map_handler(request &req) : bounds(validate_request(req)) {
+  // map calls typically have a Content-Disposition header saying that
+  // what's coming back is an attachment.
+  req.add_header("Content-Disposition", "attachment; filename=\"map.osm\"");
+}
 
 map_handler::~map_handler() {}
 

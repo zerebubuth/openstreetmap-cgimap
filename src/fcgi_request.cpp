@@ -1,4 +1,7 @@
 #include "cgimap/fcgi_request.hpp"
+#include "cgimap/output_buffer.hpp"
+#include "cgimap/request_helpers.hpp"
+#include <boost/foreach.hpp>
 #include <stdexcept>
 #include <sstream>
 #include <fcgiapp.h>
@@ -55,11 +58,24 @@ const char *fcgi_request::get_param(const char *key) {
   return FCGX_GetParam(key, m_impl->req.envp);
 }
 
-boost::shared_ptr<output_buffer> fcgi_request::get_buffer() { return m_buffer; }
+void fcgi_request::write_header_info(int status, const request::headers_t &headers) {
+  std::ostringstream ostr;
+  ostr << "Status: " << status << " " << status_message(status) << "\r\n";
+  BOOST_FOREACH(const request::headers_t::value_type &header, headers) {
+    ostr << header.first << ": " << header.second << "\r\n";
+  }
+  ostr << "\r\n";
+  std::string data(ostr.str());
+  m_buffer->write(&data[0], data.size());
+}
 
-std::string fcgi_request::extra_headers() const { return std::string(); }
+boost::shared_ptr<output_buffer> fcgi_request::get_buffer_internal() {
+  return m_buffer;
+}
 
-void fcgi_request::finish() { FCGX_Finish_r(&m_impl->req); }
+void fcgi_request::finish_internal() {}
+
+void fcgi_request::dispose() { FCGX_Finish_r(&m_impl->req); }
 
 int fcgi_request::accept_r() {
   int status = FCGX_Accept_r(&m_impl->req);
@@ -84,6 +100,10 @@ int fcgi_request::accept_r() {
       throw runtime_error(out.str());
     }
   }
+
+  // reset status, as we re-use requests.
+  reset();
+
   return status;
 }
 

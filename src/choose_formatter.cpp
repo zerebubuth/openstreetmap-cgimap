@@ -233,10 +233,9 @@ mime::type choose_best_mime_type(request &req, responder_ptr_t hptr) {
   return best_type;
 }
 
-shared_ptr<output_formatter> choose_formatter(request &req,
-                                              responder_ptr_t hptr,
+shared_ptr<output_formatter> create_formatter(request &req,
+                                              mime::type best_type,
                                               shared_ptr<output_buffer> out) {
-  mime::type best_type = choose_best_mime_type(req, hptr);
   shared_ptr<output_formatter> o_formatter;
 
   if (best_type == mime::text_xml) {
