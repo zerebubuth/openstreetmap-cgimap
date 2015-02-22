@@ -331,7 +331,8 @@ struct static_data_selection : public data_selection {
     BOOST_FOREACH(const value_type &val, m_db->m_nodes) {
       const node &n = val.second;
       if ((n.m_lon >= bounds.minlon) && (n.m_lon <= bounds.maxlon) &&
-          (n.m_lat >= bounds.minlat) && (n.m_lat <= bounds.maxlat)) {
+          (n.m_lat >= bounds.minlat) && (n.m_lat <= bounds.maxlat) &&
+          (n.m_info.visible)) {
         m_nodes.insert(n.m_info.id);
         ++selected;
 
