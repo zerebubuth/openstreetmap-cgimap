@@ -82,6 +82,7 @@ AC_DEFUN([AX_BOOST_SYSTEM],
             BOOSTLIBDIR=`echo $BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`
 
 			LDFLAGS_SAVE=$LDFLAGS
+			ax_lib=""
             if test "x$ax_boost_user_system_lib" = "x"; then
                 for libextension in `ls -r $BOOSTLIBDIR/libboost_system* 2>/dev/null | sed 's,.*/lib,,' | sed 's,\..*,,'` ; do
                      ax_lib=${libextension}

@@ -72,6 +72,7 @@ AC_DEFUN([AX_BOOST_DATE_TIME],
          ax_cv_boost_date_time=yes, ax_cv_boost_date_time=no)
          AC_LANG_POP([C++])
 		])
+		ax_lib=""
 		if test "x$ax_cv_boost_date_time" = "xyes"; then
 			AC_DEFINE(HAVE_BOOST_DATE_TIME,,[define if the Boost::Date_Time library is available])
             BOOSTLIBDIR=`echo $BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`
