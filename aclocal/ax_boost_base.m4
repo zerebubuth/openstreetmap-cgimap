@@ -33,7 +33,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 23
+#serial 25
 
 AC_DEFUN([AX_BOOST_BASE],
 [
@@ -92,8 +92,11 @@ if test "x$want_boost" = "xyes"; then
     libsubdirs="lib"
     ax_arch=`uname -m`
     case $ax_arch in
-      x86_64|ppc64|s390x|sparc64|aarch64)
-        libsubdirs="lib64 lib lib64"
+      x86_64)
+        libsubdirs="lib64 libx32 lib lib64"
+        ;;
+      ppc64|s390x|sparc64|aarch64|ppc64le)
+        libsubdirs="lib64 lib lib64 ppc64le"
         ;;
     esac
 
