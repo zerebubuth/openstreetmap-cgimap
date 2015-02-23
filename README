@@ -45,7 +45,7 @@ the flags.
 Note that the full set of packages needed from a fresh install (tested
 with Ubuntu 14.04.1) - you may already have many or all of these - is:
 
-    sudo apt-get install git build-essential automake autoconf
+    sudo apt-get install git build-essential automake autoconf libtool
 
 To build the system from scratch, first check out the source code (skip
 this step if you've already got the source):
