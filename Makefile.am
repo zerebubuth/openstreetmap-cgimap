@@ -22,7 +22,54 @@ cgimap_include_HEADERS = \
 	include/cgimap/request_helpers.hpp \
 	include/cgimap/request.hpp \
 	include/cgimap/routes.hpp \
-	include/cgimap/types.hpp
+	include/cgimap/types.hpp \
+	include/cgimap/zlib.hpp
+
+cgimap_api06_includedir=$(includedir)/cgimap/api06
+cgimap_api06_include_HEADERS = \
+	include/cgimap/api06/handler_utils.hpp \
+	include/cgimap/api06/map_handler.hpp \
+	include/cgimap/api06/node_handler.hpp \
+	include/cgimap/api06/nodes_handler.hpp \
+	include/cgimap/api06/relation_full_handler.hpp \
+	include/cgimap/api06/relation_handler.hpp \
+	include/cgimap/api06/relations_handler.hpp \
+	include/cgimap/api06/way_full_handler.hpp \
+	include/cgimap/api06/way_handler.hpp \
+	include/cgimap/api06/ways_handler.hpp
+
+if ENABLE_APIDB
+cgimap_apidb_includedir=$(includedir)/cgimap/backend/apidb
+cgimap_apidb_include_HEADERS = \
+	include/cgimap/backend/apidb/apidb.hpp \
+	include/cgimap/backend/apidb/cache.hpp \
+	include/cgimap/backend/apidb/changeset.hpp \
+	include/cgimap/backend/apidb/quad_tile.hpp \
+	include/cgimap/backend/apidb/readonly_pgsql_selection.hpp \
+	include/cgimap/backend/apidb/writeable_pgsql_selection.hpp
+endif
+
+if ENABLE_PGSNAPSHOT
+cgimap_pgsnapshot_includedir=$(includedir)/cgimap/backend/pgsnapshot
+cgimap_pgsnapshot_include_HEADERS = \
+	include/cgimap/backend/pgsnapshot/pgsnapshot.hpp \
+	include/cgimap/backend/pgsnapshot/snapshot_selection.hpp
+endif
+
+cgimap_staticxml_includedir=$(includedir)/cgimap/backend/staticxml
+cgimap_staticxml_include_HEADERS = \
+	include/cgimap/backend/staticxml/staticxml.hpp
+
+if ENABLE_EXPERIMENTAL
+cgimap_api06_include_HEADERS += \
+	include/cgimap/api06/node_ways_handler.hpp
+endif
+
+if ENABLE_API07
+cgimap_api07_includedir=$(includedir)/cgimap/api07
+cgimap_api07_include_HEADERS = \
+	include/cgimap/api07/map_handler.hpp
+endif
 
 TESTS = test/map.testcore test/node.testcore test/anon.testcore test/way.testcore test/relation.testcore
 TESTS += test/empty.testcore test/way_full.testcore test/relation_full.testcore
