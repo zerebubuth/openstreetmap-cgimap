@@ -18,6 +18,13 @@ enum element_type {
 };
 
 struct element_info {
+  element_info();
+  element_info(const element_info &);
+  element_info(osm_id_t id_, osm_id_t version_, osm_id_t changeset_,
+               const std::string &timestamp_,
+               const boost::optional<osm_id_t> &uid_,
+               const boost::optional<std::string> &display_name_,
+               bool visible_);
   // Standard meanings
   osm_id_t id, version, changeset;
   std::string timestamp;
