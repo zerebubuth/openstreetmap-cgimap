@@ -304,11 +304,12 @@ void test_single_nodes(boost::shared_ptr<data_selection> sel) {
   ids.push_back(1);
   ids.push_back(2);
   ids.push_back(3);
-  if (sel->select_nodes(ids) != 3) {
-    throw std::runtime_error("Selecting 3 nodes failed");
+  ids.push_back(4);
+  if (sel->select_nodes(ids) != 4) {
+    throw std::runtime_error("Selecting 4 nodes failed");
   }
   if (sel->select_nodes(ids) != 0) {
-    throw std::runtime_error("Re-selecting 3 nodes failed");
+    throw std::runtime_error("Re-selecting 4 nodes failed");
   }
 
   assert_equal<data_selection::visibility_t>(
@@ -321,12 +322,15 @@ void test_single_nodes(boost::shared_ptr<data_selection> sel) {
     sel->check_node_visibility(3), data_selection::deleted,
     "node 3 visibility");
   assert_equal<data_selection::visibility_t>(
-    sel->check_node_visibility(4), data_selection::non_exist,
+    sel->check_node_visibility(4), data_selection::exists,
     "node 4 visibility");
+  assert_equal<data_selection::visibility_t>(
+    sel->check_node_visibility(5), data_selection::non_exist,
+    "node 5 visibility");
 
   test_formatter f;
   sel->write_nodes(f);
-  assert_equal<size_t>(f.m_nodes.size(), 3, "number of nodes written");
+  assert_equal<size_t>(f.m_nodes.size(), 4, "number of nodes written");
   assert_equal<test_formatter::node_t>(
     test_formatter::node_t(
       element_info(1, 1, 1, "2013-11-14T02:10:00Z", 1, std::string("user_1"), true),
@@ -348,6 +352,13 @@ void test_single_nodes(boost::shared_ptr<data_selection> sel) {
       tags_t()
       ),
     f.m_nodes[2], "third node written");
+  assert_equal<test_formatter::node_t>(
+    test_formatter::node_t(
+      element_info(4, 1, 4, "2015-03-02T19:25:00Z", boost::none, boost::none, true),
+      0.0, 0.0,
+      tags_t()
+      ),
+    f.m_nodes[3], "fourth (anonymous) node written");
 }
 
 } // anonymous namespace
