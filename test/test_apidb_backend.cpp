@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <boost/noncopyable.hpp>
 #include <boost/format.hpp>
+#include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 #include <pqxx/pqxx>
 
@@ -205,6 +206,92 @@ void test_database::fill_fake_data(pqxx::connection &conn) {
   conn.perform(file_read_transactor("test/test_apidb_backend.sql"));
 }
 
+template <typename T>
+void assert_equal(const T& a, const T&b, const std::string &message) {
+  if (a != b) {
+    throw std::runtime_error(
+      (boost::format(
+        "Expecting %1% to be equal, but %2% != %3%")
+       % message % a % b).str());
+  }
+}
+
+struct test_formatter : public output_formatter {
+  struct node_t {
+    node_t(const element_info &elem_, double lon_, double lat_,
+           const tags_t &tags_)
+      : elem(elem_), lon(lon_), lat(lat_), tags(tags_) {}
+
+    element_info elem;
+    double lon, lat;
+    tags_t tags;
+
+    inline bool operator!=(const node_t &other) const {
+      return !operator==(other);
+    }
+
+    bool operator==(const node_t &other) const {
+#define CMP(sym) { if ((sym) != other. sym) { return false; } }
+      CMP(elem.id);
+      CMP(elem.version);
+      CMP(elem.changeset);
+      CMP(elem.timestamp);
+      CMP(elem.uid);
+      CMP(elem.display_name);
+      CMP(elem.visible);
+      CMP(lon);
+      CMP(lat);
+      CMP(tags.size());
+#undef CMP
+      return std::equal(tags.begin(), tags.end(), other.tags.begin());
+    }
+  };
+
+  std::vector<node_t> m_nodes;
+
+  virtual ~test_formatter() {}
+  mime::type mime_type() const { throw std::runtime_error("Unimplemented"); }
+  void start_document(const std::string &generator) {}
+  void end_document() {}
+  void write_bounds(const bbox &bounds) {}
+  void start_element_type(element_type type) {}
+  void end_element_type(element_type type) {}
+  void write_node(const element_info &elem, double lon, double lat,
+                  const tags_t &tags) {
+    m_nodes.push_back(node_t(elem, lon, lat, tags));
+  }
+  void write_way(const element_info &elem, const nodes_t &nodes,
+                 const tags_t &tags) {}
+  void write_relation(const element_info &elem,
+                      const members_t &members, const tags_t &tags) {}
+  void flush() {}
+
+  void error(const std::exception &e) {
+    throw e;
+  }
+  void error(const std::string &str) {
+    throw std::runtime_error(str);
+  }
+};
+
+std::ostream &operator<<(std::ostream &out, const test_formatter::node_t &n) {
+  out << "node(element_info("
+      << "id=" << n.elem.id << ", "
+      << "version=" << n.elem.version << ", "
+      << "changeset=" << n.elem.changeset << ", "
+      << "timestamp=" << n.elem.timestamp << ", "
+      << "uid=" << n.elem.uid << ", "
+      << "display_name=" << n.elem.display_name << ", "
+      << "visible=" << n.elem.visible << "), "
+      << "lon=" << n.lon << ", "
+      << "lat=" << n.lat << ", "
+      << "{";
+  BOOST_FOREACH(const tags_t::value_type &v, n.tags) {
+    out << "\"" << v.first << "\" => \"" << v.second << "\", ";
+  }
+  out << "})";
+}
+
 void test_single_nodes(boost::shared_ptr<data_selection> sel) {
   if (sel->check_node_visibility(1) != data_selection::exists) {
     throw std::runtime_error("Node 1 should be visible, but isn't");
@@ -216,12 +303,51 @@ void test_single_nodes(boost::shared_ptr<data_selection> sel) {
   std::list<osm_id_t> ids;
   ids.push_back(1);
   ids.push_back(2);
-  if (sel->select_nodes(ids) != 2) {
-    throw std::runtime_error("Selecting 2 nodes failed");
+  ids.push_back(3);
+  if (sel->select_nodes(ids) != 3) {
+    throw std::runtime_error("Selecting 3 nodes failed");
   }
   if (sel->select_nodes(ids) != 0) {
-    throw std::runtime_error("Re-selecting 2 nodes failed");
+    throw std::runtime_error("Re-selecting 3 nodes failed");
   }
+
+  assert_equal<data_selection::visibility_t>(
+    sel->check_node_visibility(1), data_selection::exists,
+    "node 1 visibility");
+  assert_equal<data_selection::visibility_t>(
+    sel->check_node_visibility(2), data_selection::exists,
+    "node 2 visibility");
+  assert_equal<data_selection::visibility_t>(
+    sel->check_node_visibility(3), data_selection::deleted,
+    "node 3 visibility");
+  assert_equal<data_selection::visibility_t>(
+    sel->check_node_visibility(4), data_selection::non_exist,
+    "node 4 visibility");
+
+  test_formatter f;
+  sel->write_nodes(f);
+  assert_equal<size_t>(f.m_nodes.size(), 3, "number of nodes written");
+  assert_equal<test_formatter::node_t>(
+    test_formatter::node_t(
+      element_info(1, 1, 1, "2013-11-14T02:10:00Z", 1, std::string("user_1"), true),
+      0.0, 0.0,
+      tags_t()
+      ),
+    f.m_nodes[0], "first node written");
+  assert_equal<test_formatter::node_t>(
+    test_formatter::node_t(
+      element_info(2, 1, 1, "2013-11-14T02:10:01Z", 1, std::string("user_1"), true),
+      0.1, 0.1,
+      tags_t()
+      ),
+    f.m_nodes[1], "second node written");
+  assert_equal<test_formatter::node_t>(
+    test_formatter::node_t(
+      element_info(3, 2, 2, "2015-03-02T18:27:00Z", 1, std::string("user_1"), false),
+      0.0, 0.0,
+      tags_t()
+      ),
+    f.m_nodes[2], "third node written");
 }
 
 } // anonymous namespace

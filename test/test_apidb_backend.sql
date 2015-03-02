@@ -12,5 +12,6 @@ VALUES (1, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'),
 
 -- add some nodes for each of the users
 INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
-VALUES (1,       0,       0, 1, true, '2013-11-14T02:10:00Z', 3221225472, 1),
-       (2, 1000000, 1000000, 1, true, '2013-11-14T02:10:01Z', 3221227032, 1);
+VALUES (1,       0,       0, 1, true,  '2013-11-14T02:10:00Z', 3221225472, 1),
+       (2, 1000000, 1000000, 1, true,  '2013-11-14T02:10:01Z', 3221227032, 1),
+       (3,       0,       0, 2, false, '2015-03-02T18:27:00Z', 3221225472, 2);
