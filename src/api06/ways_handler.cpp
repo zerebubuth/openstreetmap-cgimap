@@ -7,12 +7,12 @@
 #include <sstream>
 
 using std::stringstream;
-using std::list;
+using std::vector;
 using std::string;
 
 namespace api06 {
 
-ways_responder::ways_responder(mime::type mt, list<osm_id_t> ids_,
+ways_responder::ways_responder(mime::type mt, vector<osm_id_t> ids_,
                                factory_ptr &w_)
     : osm_current_responder(mt, w_), ids(ids_) {
   size_t num_selected = sel->select_ways(ids_);
@@ -43,8 +43,8 @@ responder_ptr_t ways_handler::responder(factory_ptr &x) const {
  * Validates an FCGI request, returning the valid list of ids or
  * throwing an error if there was no valid list of way ids.
  */
-list<osm_id_t> ways_handler::validate_request(request &req) {
-  list<osm_id_t> myids = parse_id_list_params(req, "ways");
+vector<osm_id_t> ways_handler::validate_request(request &req) {
+  vector<osm_id_t> myids = parse_id_list_params(req, "ways");
 
   if (myids.size() < 1) {
     throw http::bad_request("The parameter ways is required, and must be "

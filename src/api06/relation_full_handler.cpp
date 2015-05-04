@@ -5,14 +5,14 @@
 #include <boost/format.hpp>
 
 using std::stringstream;
-using std::list;
+using std::vector;
 
 namespace api06 {
 
 relation_full_responder::relation_full_responder(mime::type mt_, osm_id_t id_,
                                                  factory_ptr &w_)
     : osm_current_responder(mt_, w_), id(id_) {
-  list<osm_id_t> ids;
+  vector<osm_id_t> ids;
   ids.push_back(id);
 
   if (sel->select_relations(ids) == 0) {

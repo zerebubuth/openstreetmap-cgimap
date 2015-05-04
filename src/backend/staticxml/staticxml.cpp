@@ -289,7 +289,7 @@ struct static_data_selection : public data_selection {
     }
   }
 
-  virtual int select_nodes(const std::list<osm_id_t> &ids) {
+  virtual int select_nodes(const std::vector<osm_id_t> &ids) {
     int selected = 0;
     BOOST_FOREACH(osm_id_t id, ids) {
       std::map<osm_id_t, node>::iterator itr = m_db->m_nodes.find(id);
@@ -301,7 +301,7 @@ struct static_data_selection : public data_selection {
     return selected;
   }
 
-  virtual int select_ways(const std::list<osm_id_t> &ids) {
+  virtual int select_ways(const std::vector<osm_id_t> &ids) {
     int selected = 0;
     BOOST_FOREACH(osm_id_t id, ids) {
       std::map<osm_id_t, way>::iterator itr = m_db->m_ways.find(id);
@@ -313,7 +313,7 @@ struct static_data_selection : public data_selection {
     return selected;
   }
 
-  virtual int select_relations(const std::list<osm_id_t> &ids) {
+  virtual int select_relations(const std::vector<osm_id_t> &ids) {
     int selected = 0;
     BOOST_FOREACH(osm_id_t id, ids) {
       std::map<osm_id_t, relation>::iterator itr = m_db->m_relations.find(id);

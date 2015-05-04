@@ -12,11 +12,11 @@ namespace api06 {
 
 class nodes_responder : public osm_current_responder {
 public:
-  nodes_responder(mime::type, std::list<osm_id_t>, factory_ptr &);
+  nodes_responder(mime::type, std::vector<osm_id_t>, factory_ptr &);
   ~nodes_responder();
 
 private:
-  std::list<osm_id_t> ids;
+  std::vector<osm_id_t> ids;
 };
 
 class nodes_handler : public handler {
@@ -28,9 +28,9 @@ public:
   responder_ptr_t responder(factory_ptr &x) const;
 
 private:
-  std::list<osm_id_t> ids;
+  std::vector<osm_id_t> ids;
 
-  static std::list<osm_id_t> validate_request(request &req);
+  static std::vector<osm_id_t> validate_request(request &req);
 };
 
 } // namespace api06

@@ -16,20 +16,20 @@
 namespace po = boost::program_options;
 using std::set;
 using std::stringstream;
-using std::list;
+using std::vector;
 
 namespace pqxx {
-template <> struct string_traits<list<osm_id_t> > {
-  static const char *name() { return "list<osm_id_t>"; }
+template <> struct string_traits<vector<osm_id_t> > {
+  static const char *name() { return "vector<osm_id_t>"; }
   static bool has_null() { return false; }
-  static bool is_null(const list<osm_id_t> &) { return false; }
+  static bool is_null(const vector<osm_id_t> &) { return false; }
   static stringstream null() {
     internal::throw_null_conversion(name());
     // No, dear compiler, we don't need a return here.
     throw 0;
   }
-  static void from_string(const char[], list<osm_id_t> &) {}
-  static std::string to_string(const list<osm_id_t> &ids) {
+  static void from_string(const char[], vector<osm_id_t> &) {}
+  static std::string to_string(const vector<osm_id_t> &ids) {
     stringstream ostr;
     ostr << "{";
     std::copy(ids.begin(), ids.end(),
@@ -234,15 +234,15 @@ data_selection::visibility_t
   return data_selection::exists;
 }
 
-int snapshot_selection::select_nodes(const std::list<osm_id_t> &ids) {
+int snapshot_selection::select_nodes(const std::vector<osm_id_t> &ids) {
   return w.prepared("add_nodes_list")(ids).exec().affected_rows();
 }
 
-int snapshot_selection::select_ways(const std::list<osm_id_t> &ids) {
+int snapshot_selection::select_ways(const std::vector<osm_id_t> &ids) {
   return w.prepared("add_ways_list")(ids).exec().affected_rows();
 }
 
-int snapshot_selection::select_relations(const std::list<osm_id_t> &ids) {
+int snapshot_selection::select_relations(const std::vector<osm_id_t> &ids) {
   return w.prepared("add_relations_list")(ids).exec().affected_rows();
 }
 

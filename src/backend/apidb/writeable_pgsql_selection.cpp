@@ -7,6 +7,7 @@
 #include <set>
 #include <sstream>
 #include <list>
+#include <vector>
 #include <boost/make_shared.hpp>
 #include <boost/ref.hpp>
 #include <boost/shared_ptr.hpp>
@@ -16,20 +17,21 @@ namespace po = boost::program_options;
 using std::set;
 using std::stringstream;
 using std::list;
+using std::vector;
 using boost::shared_ptr;
 
 namespace pqxx {
-template <> struct string_traits<list<osm_id_t> > {
-  static const char *name() { return "list<osm_id_t>"; }
+template <> struct string_traits<vector<osm_id_t> > {
+  static const char *name() { return "vector<osm_id_t>"; }
   static bool has_null() { return false; }
-  static bool is_null(const list<osm_id_t> &) { return false; }
+  static bool is_null(const vector<osm_id_t> &) { return false; }
   static stringstream null() {
     internal::throw_null_conversion(name());
     // No, dear compiler, we don't need a return here.
     throw 0;
   }
-  static void from_string(const char[], list<osm_id_t> &) {}
-  static std::string to_string(const list<osm_id_t> &ids) {
+  static void from_string(const char[], vector<osm_id_t> &) {}
+  static std::string to_string(const vector<osm_id_t> &ids) {
     stringstream ostr;
     ostr << "{";
     std::copy(ids.begin(), ids.end(),
@@ -234,26 +236,26 @@ writeable_pgsql_selection::check_relation_visibility(osm_id_t id) {
   return check_table_visibility(w, id, "visible_relation");
 }
 
-int writeable_pgsql_selection::select_nodes(const std::list<osm_id_t> &ids) {
+int writeable_pgsql_selection::select_nodes(const std::vector<osm_id_t> &ids) {
   m_tables_empty = false;
   return w.prepared("add_nodes_list")(ids).exec().affected_rows();
 }
 
-int writeable_pgsql_selection::select_ways(const std::list<osm_id_t> &ids) {
+int writeable_pgsql_selection::select_ways(const std::vector<osm_id_t> &ids) {
   m_tables_empty = false;
   return w.prepared("add_ways_list")(ids).exec().affected_rows();
 }
 
 int writeable_pgsql_selection::select_relations(
-    const std::list<osm_id_t> &ids) {
+    const std::vector<osm_id_t> &ids) {
   m_tables_empty = false;
   return w.prepared("add_relations_list")(ids).exec().affected_rows();
 }
 
 int writeable_pgsql_selection::select_nodes_from_bbox(const bbox &bounds,
                                                       int max_nodes) {
-  const list<osm_id_t> tiles = tiles_for_area(bounds.minlat, bounds.minlon,
-                                              bounds.maxlat, bounds.maxlon);
+  const vector<osm_id_t> tiles = tiles_for_area(bounds.minlat, bounds.minlon,
+                                                bounds.maxlat, bounds.maxlon);
 
   // hack around problem with postgres' statistics, which was
   // making it do seq scans all the time on smaug...

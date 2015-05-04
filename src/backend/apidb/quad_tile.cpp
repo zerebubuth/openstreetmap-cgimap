@@ -27,7 +27,7 @@ inline unsigned int lat2y(double lat) {
   return round((lat + 90.0) * 65535.0 / 180.0);
 }
 
-std::list<osm_id_t> tiles_for_area(double minlat, double minlon, double maxlat,
+std::vector<osm_id_t> tiles_for_area(double minlat, double minlon, double maxlat,
                                    double maxlon) {
   const unsigned int minx = lon2x(minlon);
   const unsigned int maxx = lon2x(maxlon);
@@ -41,5 +41,5 @@ std::list<osm_id_t> tiles_for_area(double minlat, double minlon, double maxlat,
     }
   }
 
-  return std::list<osm_id_t>(tiles.begin(), tiles.end());
+  return std::vector<osm_id_t>(tiles.begin(), tiles.end());
 }

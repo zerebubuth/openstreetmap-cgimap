@@ -7,12 +7,12 @@
 #include <sstream>
 
 using std::stringstream;
-using std::list;
+using std::vector;
 using std::string;
 
 namespace api06 {
 
-nodes_responder::nodes_responder(mime::type mt, list<osm_id_t> ids_,
+nodes_responder::nodes_responder(mime::type mt, vector<osm_id_t> ids_,
                                  factory_ptr &w_)
     : osm_current_responder(mt, w_), ids(ids_) {
 
@@ -44,8 +44,8 @@ responder_ptr_t nodes_handler::responder(factory_ptr &x) const {
  * Validates an FCGI request, returning the valid list of ids or
  * throwing an error if there was no valid list of node ids.
  */
-list<osm_id_t> nodes_handler::validate_request(request &req) {
-  list<osm_id_t> ids = parse_id_list_params(req, "nodes");
+vector<osm_id_t> nodes_handler::validate_request(request &req) {
+  vector<osm_id_t> ids = parse_id_list_params(req, "nodes");
 
   if (ids.size() < 1) {
     throw http::bad_request("The parameter nodes is required, and must be "

@@ -7,12 +7,12 @@
 #include <sstream>
 
 using std::stringstream;
-using std::list;
+using std::vector;
 using std::string;
 
 namespace api06 {
 
-relations_responder::relations_responder(mime::type mt, list<osm_id_t> ids_,
+relations_responder::relations_responder(mime::type mt, vector<osm_id_t> ids_,
                                          factory_ptr &s_)
     : osm_current_responder(mt, s_), ids(ids_) {
   size_t num_selected = sel->select_relations(ids_);
@@ -44,8 +44,8 @@ responder_ptr_t relations_handler::responder(factory_ptr &x) const {
  * Validates an FCGI request, returning the valid list of ids or
  * throwing an error if there was no valid list of node ids.
  */
-list<osm_id_t> relations_handler::validate_request(request &req) {
-  list<osm_id_t> myids = parse_id_list_params(req, "relations");
+vector<osm_id_t> relations_handler::validate_request(request &req) {
+  vector<osm_id_t> myids = parse_id_list_params(req, "relations");
 
   if (myids.size() < 1) {
     throw http::bad_request("The parameter relations is required, and must be "

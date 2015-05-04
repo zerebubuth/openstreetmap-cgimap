@@ -4,7 +4,7 @@
 #include "cgimap/types.hpp"
 #include "cgimap/output_formatter.hpp"
 
-#include <list>
+#include <vector>
 #include <boost/shared_ptr.hpp>
 
 /**
@@ -42,17 +42,17 @@ public:
 
   /******************* manipulation functions ******************/
 
-  /// select the nodes in the list, returning the number of nodes
+  /// select the nodes in the vector, returning the number of nodes
   /// which are selected now which weren't selected before.
-  virtual int select_nodes(const std::list<osm_id_t> &) = 0;
+  virtual int select_nodes(const std::vector<osm_id_t> &) = 0;
 
-  /// select the ways in the list, returning the number of ways
+  /// select the ways in the vector, returning the number of ways
   /// which are selected now which weren't selected before.
-  virtual int select_ways(const std::list<osm_id_t> &) = 0;
+  virtual int select_ways(const std::vector<osm_id_t> &) = 0;
 
-  /// select the relations in the list, returning the number of
+  /// select the relations in the vector, returning the number of
   /// relations which are selected now which weren't selected before.
-  virtual int select_relations(const std::list<osm_id_t> &) = 0;
+  virtual int select_relations(const std::vector<osm_id_t> &) = 0;
 
   /// given a bounding box, select nodes within that bbox up to a limit of
   /// max_nodes
