@@ -1,0 +1,11 @@
+# nodes call returns all nodes, even if some IDs are duplicated - but only returns one copy
+Request-Method: GET
+Request-URI: /api/0.6/nodes?nodes=1,1,1
+---
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition: 
+Status: 200 OK
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <node id="1" version="1" changeset="1" lat="0.0000000" lon="0.0000000" user="foo" uid="1" visible="true" timestamp="2012-09-25T00:00:00Z"/>
+</osm>
