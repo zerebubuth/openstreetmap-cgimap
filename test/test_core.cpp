@@ -475,6 +475,11 @@ void run_test(fs::path test_case, rate_limiter &limiter,
     // compare the result to what we're expecting
     check_response(in, req.buffer());
 
+    // output test case name if verbose output is requested
+    if (getenv("VERBOSE") != NULL) {
+      std::cout << "PASS: " << test_case << "\n";
+    }
+
   } catch (const std::exception &ex) {
     throw std::runtime_error(
         (boost::format("%1%, in %2% test.") % ex.what() % test_case).str());
