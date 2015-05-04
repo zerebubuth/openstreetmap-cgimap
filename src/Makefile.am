@@ -37,6 +37,8 @@ endif
 
 ___map_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @LIBPQXX_LIBS@
 ___test_test_core_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@
+check_PROGRAMS+=../test/test_parse_id_list
+___test_test_parse_id_list_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @LIBPQXX_LIBS@
 if ENABLE_APIDB
 ___test_test_apidb_backend_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @LIBPQXX_LIBS@
 endif
@@ -47,6 +49,9 @@ ___map_SOURCES=\
 
 ___test_test_core_SOURCES=\
 	../test/test_core.cpp
+
+___test_test_parse_id_list_SOURCES=\
+	../test/test_parse_id_list.cpp
 
 if ENABLE_APIDB
 ___test_test_apidb_backend_SOURCES=\
