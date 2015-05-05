@@ -105,6 +105,11 @@ int fcgi_request::accept_r() {
   // reset status, as we re-use requests.
   reset();
 
+  // swap out the output buffer for a new one referencing the new
+  // request.
+  boost::shared_ptr<output_buffer> new_buffer(new fcgi_buffer(m_impl->req));
+  m_buffer.swap(new_buffer);
+
   return status;
 }
 
