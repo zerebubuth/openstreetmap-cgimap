@@ -5,11 +5,14 @@
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  # Every Vagrant virtual environment requires a box to build off of.
+  # leave the below as-is to use Ubuntu 14.04
   config.vm.box = 'ubuntu/trusty64'
-  # config.vm.box_url = "http://domain.com/path/to/above.box"
-
   config.vm.provision 'shell', path: 'scripts/provision.sh'
+
+  # comment out the two lines above and uncomment the two
+  # below to get an F21 box instead.
+  #config.vm.box = 'hansode/fedora-21-server-x86_64'
+  #config.vm.provision 'shell', path: 'scripts/provision_f21.sh'
 
   config.vm.provider 'virtualbox' do |vb|
     vb.customize ['modifyvm', :id, '--memory', '2048']
