@@ -158,9 +158,9 @@ static void process_requests(int socket, const po::variables_map &options) {
     }
 
     // get the next request
-    req.accept_r();
-
-    process_request(req, limiter, generator, route, factory);
+    if (req.accept_r() >= 0) {
+      process_request(req, limiter, generator, route, factory);
+    }
   }
 
   // finish up - dispose of the resources
