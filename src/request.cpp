@@ -57,10 +57,14 @@ void request::check_workflow(workflow_status this_stage) {
   if (m_workflow_status < this_stage) {
     if ((status_HEADERS > m_workflow_status) &&
         (status_HEADERS <= this_stage)) {
+      // must be in HEADERS workflow stage to set headers.
+      m_workflow_status = status_HEADERS;
       set_default_headers(*this);
     }
 
     if ((status_BODY > m_workflow_status) && (status_BODY <= this_stage)) {
+      // must be in BODY workflow stage to write output
+      m_workflow_status = status_BODY;
       write_header_info(m_status, m_headers);
     }
 
