@@ -239,11 +239,11 @@ int main(int argc, char **argv) {
     po::variables_map options;
     int socket;
 
-    // get options
-    get_options(argc, argv, options);
-
     // set up all the backends
     setup_backends();
+
+    // get options
+    get_options(argc, argv, options);
 
     // get the socket to use
     if (options.count("port")) {
