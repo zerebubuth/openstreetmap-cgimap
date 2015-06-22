@@ -318,12 +318,49 @@ void writeable_pgsql_selection::select_relations_members_of_relations() {
   w.prepared("relation_members_of_relations").exec();
 }
 
+namespace {
+/* this exists solely because converting boost::any seems to just
+ * do type equality, with no fall-back to boost::lexical_cast or
+ * convertible types. from the documentation, it looks like it
+ * really ought to work, but several hours of debugging later and
+ * i can't seem to figure out how. instead, it's easily possible
+ * to just try a bunch of conversions and see if any of them
+ * work.
+ */
+size_t get_or_convert_cachesize(const po::variables_map &opts) {
+  const boost::any &val = opts["cachesize"].value();
+
+  {
+    const size_t *v = boost::any_cast<size_t>(&val);
+    if (v) {
+      return *v;
+    }
+  }
+
+  {
+    const int *v = boost::any_cast<int>(&val);
+    if (v) {
+      return *v;
+    }
+  }
+
+  {
+    const std::string *v = boost::any_cast<std::string>(&val);
+    if (v) {
+      return boost::lexical_cast<size_t>(*v);
+    }
+  }
+
+  throw std::runtime_error("Unable to convert cachesize option to size_t.");
+}
+} // anonymous namespace
+
 writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
     : m_connection(connect_db_str(opts)),
       m_cache_connection(connect_db_str(opts)),
       m_cache_tx(m_cache_connection, "changeset_cache"),
       m_cache(boost::bind(fetch_changeset, boost::ref(m_cache_tx), _1),
-              opts["cachesize"].as<size_t>()) {
+              get_or_convert_cachesize(opts)) {
 
   // set the connections to use the appropriate charset.
   m_connection.set_client_encoding(opts["charset"].as<std::string>());
