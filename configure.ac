@@ -47,6 +47,7 @@ AX_BOOST_SYSTEM
 AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_DATE_TIME
 AX_BOOST_FILESYSTEM
+AX_BOOST_LOCALE
 
 # the boost libraries are required, not optional, but the
 # AX_BOOST_* checks only error if the headers aren't
