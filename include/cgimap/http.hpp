@@ -120,6 +120,13 @@ public:
 std::string urldecode(const std::string &s);
 
 /**
+ * Encodes a string to canonical url-encoding.
+ *
+ * This is compatible with the OAuth 1.0a definition of url-encoding.
+ */
+std::string urlencode(const std::string &s);
+
+/**
  * Parses a query string into a key-value map.
  *
  * The string should already have been url-decoded (i.e: no %-encoded
@@ -177,6 +184,7 @@ public:
  */
 boost::shared_ptr<http::encoding>
 choose_encoding(const std::string &accept_encoding);
-}
+
+} // namespace http
 
 #endif /* HTTP_HPP */

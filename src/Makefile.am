@@ -35,12 +35,14 @@ if ENABLE_APIDB
 ___test_test_apidb_backend_LDADD+=libcgimap_staticxml.la
 endif
 
-___map_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @LIBPQXX_LIBS@
-___test_test_core_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@
-check_PROGRAMS+=../test/test_parse_id_list
-___test_test_parse_id_list_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @LIBPQXX_LIBS@
+___map_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@
+___test_test_core_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@
+check_PROGRAMS+=../test/test_parse_id_list ../test/test_oauth ../test/test_http
+___test_test_parse_id_list_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@
+___test_test_oauth_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@
+___test_test_http_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@
 if ENABLE_APIDB
-___test_test_apidb_backend_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @LIBPQXX_LIBS@
+___test_test_apidb_backend_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@
 endif
 
 ################################################################################
@@ -52,6 +54,12 @@ ___test_test_core_SOURCES=\
 
 ___test_test_parse_id_list_SOURCES=\
 	../test/test_parse_id_list.cpp
+
+___test_test_oauth_SOURCES=\
+	../test/test_oauth.cpp
+
+___test_test_http_SOURCES=\
+	../test/test_http.cpp
 
 if ENABLE_APIDB
 ___test_test_apidb_backend_SOURCES=\
@@ -71,6 +79,7 @@ libcgimap_core_la_SOURCES=\
 	http.cpp \
 	logger.cpp \
 	mime_types.cpp \
+	oauth.cpp \
 	osm_responder.cpp \
 	osm_current_responder.cpp \
 	output_formatter.cpp \
@@ -84,7 +93,7 @@ libcgimap_core_la_SOURCES=\
 	xml_formatter.cpp \
 	xml_writer.cpp \
 	zlib.cpp
-libcgimap_core_la_LIBADD=@LIBXML_LIBS@ @YAJL_LIBS@ @LIBMEMCACHED_LIBS@ @BOOST_REGEX_LIB@ @BOOST_DATE_TIME_LIB@ @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@
+libcgimap_core_la_LIBADD=@LIBXML_LIBS@ @YAJL_LIBS@ @LIBMEMCACHED_LIBS@ @BOOST_REGEX_LIB@ @BOOST_DATE_TIME_LIB@ @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@
 
 libcgimap_core_la_SOURCES+=\
 	api06/map_handler.cpp \

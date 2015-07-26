@@ -92,6 +92,31 @@ gone::gone() : exception(410, "Gone", "") {}
 
 string urldecode(const string &s) { return form_urldecode(s); }
 
+string urlencode(const string &s) {
+  static const char hex[] = { '0', '1', '2', '3', '4', '5', '6', '7',
+                              '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+  std::ostringstream ostr;
+
+  BOOST_FOREACH(char c, s) {
+    if (((c >= 'a') && (c <= 'z')) ||
+        ((c >= 'A') && (c <= 'Z')) ||
+        ((c >= '0') && (c <= '9')) ||
+        (c == '-') ||
+        (c == '.') ||
+        (c == '_') ||
+        (c == '~')) {
+      ostr << c;
+
+    } else {
+      unsigned char idx = (unsigned char)(c);
+      ostr << "%" << hex[idx >> 4] << hex[idx & 0xf];
+    }
+  }
+
+  std::string rv(ostr.str());
+  return rv;
+}
+
 map<string, string> parse_params(const string &p) {
   // Split the query string into components
   map<string, string> queryKVPairs;
