@@ -1,5 +1,6 @@
 #include "cgimap/api06/handler_utils.hpp"
 #include <boost/foreach.hpp>
+#include <iostream>
 #include <string>
 #include <map>
 
