@@ -61,20 +61,7 @@ AS_IF([test "x$BOOST_DATE_TIME_LIB" == "x"],
       [AC_MSG_ERROR([Boost::DateTime library not detected, please install libboost-date-time-dev.])],)
 
 AX_CHECK_ZLIB
-
-AC_ARG_WITH(fcgi,
-	[AS_HELP_STRING([--with-fcgi=<path>], [Path containing FCGI library (e.g: /usr).])],
-	[FCGI_PREFIX=$with_fcgi],
-	AC_MSG_ERROR([You must call configure with the --with-fcgi option.
-	This tells configure where to find the FCGI library and headers.
-	e.g. --with-fcgi=/usr/local or --with-fcgi=/usr])
-)
-
-AC_SUBST(FCGI_PREFIX)
-FCGI_LIBS="-L${FCGI_PREFIX}/lib -lfcgi"
-FCGI_CFLAGS="-I${FCGI_PREFIX}/include"
-AC_SUBST(FCGI_LIBS)
-AC_SUBST(FCGI_CFLAGS)
+REQUIRE_FCGI
 
 AC_MSG_CHECKING([whether to enable experimental other API 0.6 calls])
 AC_ARG_ENABLE([experimental],

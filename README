@@ -57,7 +57,7 @@ Then change to the source code directory to configure and build:
 
     cd openstreetmap-cgimap/
     ./autogen.sh
-    ./configure --with-fcgi=/usr
+    ./configure
     make
 
 You should now have a "./map" executable in the current directory.
@@ -65,7 +65,7 @@ You should now have a "./map" executable in the current directory.
 Setup
 -----
 
-A sample lighttpd.conf file is provided, which can be used to test. To test 
+A sample lighttd.conf file is provided, which can be used to test. To test 
 CGImap with lighttpd use the supplied config file with lighttpd and run cgimap
 on the command line with a command like
 
