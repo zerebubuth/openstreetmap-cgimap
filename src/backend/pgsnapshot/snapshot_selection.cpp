@@ -304,14 +304,21 @@ void snapshot_selection::select_relations_members_of_relations() {
 }
 
 snapshot_selection::factory::factory(const po::variables_map &opts)
-    : m_connection(connect_db_str(opts)) {
+    : m_connection(connect_db_str(opts))
+#if PQXX_VERSION_MAJOR >= 4
+    , m_errorhandler(m_connection)
+#endif
+{
 
   // set the connections to use the appropriate charset.
   m_connection.set_client_encoding(opts["charset"].as<std::string>());
 
   // ignore notice messages
+#if PQXX_VERSION_MAJOR < 4
   m_connection.set_noticer(
       std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
+#endif
+
   logger::message("Preparing prepared statements.");
 
   // clang-format off

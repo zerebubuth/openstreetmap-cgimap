@@ -364,6 +364,10 @@ size_t get_or_convert_cachesize(const po::variables_map &opts) {
 writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
     : m_connection(connect_db_str(opts)),
       m_cache_connection(connect_db_str(opts)),
+#if PQXX_VERSION_MAJOR >= 4
+      m_errorhandler(m_connection),
+      m_cache_errorhandler(m_cache_connection),
+#endif
       m_cache_tx(m_cache_connection, "changeset_cache"),
       m_cache(boost::bind(fetch_changeset, boost::ref(m_cache_tx), _1),
               get_or_convert_cachesize(opts)) {
@@ -373,10 +377,12 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
   m_cache_connection.set_client_encoding(opts["charset"].as<std::string>());
 
   // ignore notice messages
+#if PQXX_VERSION_MAJOR < 4
   m_connection.set_noticer(
       std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
   m_cache_connection.set_noticer(
       std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
+#endif
 
   logger::message("Preparing prepared statements.");
 
