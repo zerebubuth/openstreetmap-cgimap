@@ -8,6 +8,12 @@
 #include <boost/make_shared.hpp>
 #include <boost/ref.hpp>
 
+#if PQXX_VERSION_MAJOR >= 4
+#define PREPARE_ARGS(args)
+#else
+#define PREPARE_ARGS(args) args
+#endif
+
 // Unlike apidb, SCALE is purely internal to the SQL in this file and
 // aren't part of the pgsnapshot schema. It saves sending around postgis
 // points, and they need to be converted to lat/lon at some point anyways
@@ -323,7 +329,7 @@ snapshot_selection::factory::factory(const po::variables_map &opts)
   m_connection.prepare("extract_node_tags",
     "SELECT (each(tags)).key AS k, (each(tags)).value AS v "
       "FROM tmp_nodes WHERE id=$1")
-    ("bigint");
+    PREPARE_ARGS(("bigint"));
 
   m_connection.prepare("extract_ways",
     "SELECT w.id, w.version, "
@@ -334,13 +340,13 @@ snapshot_selection::factory::factory(const po::variables_map &opts)
   m_connection.prepare("extract_way_nds",
     "SELECT unnest(nodes) FROM tmp_ways "
       "WHERE id=$1")
-    ("bigint");
+    PREPARE_ARGS(("bigint"));
   m_connection.prepare("extract_way_tags",
     "SELECT (each(tags)).key AS k, "
         "(each(tags)).value AS v "
       "FROM tmp_ways "
       "WHERE id=$1")
-    ("bigint");
+    PREPARE_ARGS(("bigint"));
 
   m_connection.prepare("extract_relations",
     "SELECT r.id, r.version, "
@@ -353,12 +359,12 @@ snapshot_selection::factory::factory(const po::variables_map &opts)
       "FROM relation_members "
       "WHERE relation_id=$1 "
       "ORDER BY sequence_id ASC")
-    ("bigint");
+    PREPARE_ARGS(("bigint"));
   m_connection.prepare("extract_relation_tags",
     "SELECT (each(tags)).key AS k, (each(tags)).value as v "
       "FROM tmp_relations "
       "WHERE id=$1")
-      ("bigint");
+    PREPARE_ARGS(("bigint"));
 
   // map? call geometry stuff
   m_connection.prepare("nodes_from_bbox",
@@ -369,7 +375,7 @@ snapshot_selection::factory::factory(const po::variables_map &opts)
         "WHERE geom && ST_SetSRID(ST_MakeBox2D(ST_Point($1,$2),ST_Point($3,$4)),4326) "
         "AND id NOT IN (SELECT id FROM tmp_nodes) "
         "LIMIT $5")
-    ("double precision")("double precision")("double precision")("double precision")("integer");
+    PREPARE_ARGS(("double precision")("double precision")("double precision")("double precision")("integer"));
 
   // selecting elements from a list
   m_connection.prepare("add_nodes_list",
@@ -378,21 +384,21 @@ snapshot_selection::factory::factory(const po::variables_map &opts)
         "ST_X(geom) * " SCALE ", ST_Y(geom) * " SCALE
         "FROM nodes WHERE id = ANY($1) "
         "AND id NOT IN (SELECT id FROM tmp_nodes)")
-    ("bigint[]");
+    PREPARE_ARGS(("bigint[]"));
   m_connection.prepare("add_ways_list",
     "INSERT INTO tmp_ways "
       "SELECT id,version,user_id,tstamp,changeset_id,tags,nodes "
         "FROM ways "
         "WHERE id = ANY($1) "
           "AND id NOT IN (SELECT id FROM tmp_ways)")
-    ("bigint[]");
+    PREPARE_ARGS(("bigint[]"));
   m_connection.prepare("add_relations_list",
     "INSERT INTO tmp_relations "
       "SELECT id,version,user_id,tstamp,changeset_id,tags "
         "FROM relations "
         "WHERE id = ANY($1) "
           "AND id NOT IN (SELECT id FROM tmp_relations)")
-    ("bigint[]");
+    PREPARE_ARGS(("bigint[]"));
 
   // queries for filling elements which are used as members in relations
   m_connection.prepare("nodes_from_relations",

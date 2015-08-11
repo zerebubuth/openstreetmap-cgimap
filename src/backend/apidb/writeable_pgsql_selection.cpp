@@ -13,6 +13,12 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
 
+#if PQXX_VERSION_MAJOR >= 4
+#define PREPARE_ARGS(args)
+#else
+#define PREPARE_ARGS(args) args
+#endif
+
 namespace po = boost::program_options;
 using std::set;
 using std::stringstream;
@@ -392,15 +398,15 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
           "AND longitude BETWEEN $4 AND $5 "
           "AND visible = true "
         "LIMIT $6")
-    ("bigint[]")("integer")("integer")("integer")("integer")("integer");
+    PREPARE_ARGS(("bigint[]")("integer")("integer")("integer")("integer")("integer"));
 
   // selecting node, way and relation visibility information
   m_connection.prepare("visible_node",
-    "SELECT visible FROM current_nodes WHERE id = $1")("bigint");
+    "SELECT visible FROM current_nodes WHERE id = $1")PREPARE_ARGS(("bigint"));
   m_connection.prepare("visible_way",
-    "SELECT visible FROM current_ways WHERE id = $1")("bigint");
+    "SELECT visible FROM current_ways WHERE id = $1")PREPARE_ARGS(("bigint"));
   m_connection.prepare("visible_relation",
-    "SELECT visible FROM current_relations WHERE id = $1")("bigint");
+    "SELECT visible FROM current_relations WHERE id = $1")PREPARE_ARGS(("bigint"));
 
   // extraction functions for getting the data back out when the
   // selection set has been built up.
@@ -427,21 +433,21 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       "FROM current_way_nodes "
       "WHERE way_id=$1 "
       "ORDER BY sequence_id ASC")
-    ("bigint");
+    PREPARE_ARGS(("bigint"));
   m_connection.prepare("extract_relation_members",
     "SELECT member_type, member_id, member_role "
       "FROM current_relation_members "
       "WHERE relation_id=$1 "
       "ORDER BY sequence_id ASC")
-    ("bigint");
+    PREPARE_ARGS(("bigint"));
 
   // extraction functions for tags
   m_connection.prepare("extract_node_tags",
-    "SELECT k, v FROM current_node_tags WHERE node_id=$1")("bigint");
+    "SELECT k, v FROM current_node_tags WHERE node_id=$1")PREPARE_ARGS(("bigint"));
   m_connection.prepare("extract_way_tags",
-    "SELECT k, v FROM current_way_tags WHERE way_id=$1")("bigint");
+    "SELECT k, v FROM current_way_tags WHERE way_id=$1")PREPARE_ARGS(("bigint"));
   m_connection.prepare("extract_relation_tags",
-    "SELECT k, v FROM current_relation_tags WHERE relation_id=$1")("bigint");
+    "SELECT k, v FROM current_relation_tags WHERE relation_id=$1")PREPARE_ARGS(("bigint"));
 
   // selecting a set of nodes as a list
   m_connection.prepare("add_nodes_list",
@@ -451,7 +457,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
           "LEFT JOIN tmp_nodes tn ON n.id = tn.id "
         "WHERE n.id = ANY($1) "
           "AND tn.id IS NULL")
-    ("bigint[]");
+    PREPARE_ARGS(("bigint[]"));
   m_connection.prepare("add_ways_list",
     "INSERT INTO tmp_ways "
       "SELECT w.id AS id "
@@ -459,7 +465,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
           "LEFT JOIN tmp_ways tw ON w.id = tw.id "
         "WHERE w.id = ANY($1) "
           "AND tw.id IS NULL")
-    ("bigint[]");
+    PREPARE_ARGS(("bigint[]"));
   m_connection.prepare("add_relations_list",
     "INSERT INTO tmp_relations "
       "SELECT r.id AS id "
@@ -467,7 +473,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
           "LEFT JOIN tmp_relations tr ON r.id = tr.id "
         "WHERE r.id = ANY($1) "
           "AND tr.id IS NULL")
-    ("bigint[]");
+    PREPARE_ARGS(("bigint[]"));
 
   // queries for filling elements which are used as members in relations
   m_connection.prepare("nodes_from_relations",
