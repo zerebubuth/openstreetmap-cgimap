@@ -23,10 +23,12 @@ void osm_current_responder::write(shared_ptr<output_formatter> formatter,
       fmt.write_bounds(bounds.get());
     }
 
+#ifdef ENABLE_EXPERIMENTAL
     // write all selected changesets
     fmt.start_element_type(element_type_changeset);
     sel->write_changesets(fmt, now);
     fmt.end_element_type(element_type_changeset);
+#endif /* ENABLE_EXPERIMENTAL */
 
     // write all selected nodes
     fmt.start_element_type(element_type_node);

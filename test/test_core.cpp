@@ -3,6 +3,7 @@
 #include "cgimap/backend/staticxml/staticxml.hpp"
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/config.hpp"
+#include "cgimap/time.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -22,6 +23,7 @@ namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 namespace al = boost::algorithm;
 namespace pt = boost::property_tree;
+namespace bt = boost::posix_time;
 
 /**
  * Mock output buffer so that we can get back an in-memory result as a string
@@ -71,6 +73,9 @@ struct test_request : public request {
   }
   std::stringstream &buffer() { return m_output; }
 
+  bt::ptime get_current_time() const { return m_now; }
+  void set_current_time(const bt::ptime &now) { m_now = now; }
+
 protected:
   virtual void write_header_info(int status, const headers_t &headers) {
     assert(m_output.tellp() == 0);
@@ -88,6 +93,7 @@ protected:
 private:
   std::stringstream m_output;
   std::map<std::string, std::string> m_params;
+  bt::ptime m_now;
 };
 
 std::map<std::string, std::string> read_headers(std::istream &in,
@@ -145,7 +151,12 @@ void setup_request_headers(test_request &req, std::istream &in) {
     al::to_upper(key);
     al::replace_all(key, "-", "_");
 
-    req.set_header(key, val.second);
+    if (key == "DATE") {
+      req.set_current_time(parse_time(val.second));
+
+    } else {
+      req.set_header(key, val.second);
+    }
   }
 
   // always set the remote addr variable
@@ -566,9 +577,6 @@ int main(int argc, char *argv[]) {
     po::variables_map vm;
     vm.insert(std::make_pair(std::string("file"),
                              po::variable_value(data_file.native(), false)));
-    vm.insert(std::make_pair(std::string("time"),
-                             po::variable_value(
-                               boost::posix_time::to_simple_string(now))));
 
     boost::shared_ptr<backend> data_backend = make_staticxml_backend();
     boost::shared_ptr<data_selection::factory> factory =

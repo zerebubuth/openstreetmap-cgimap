@@ -226,6 +226,10 @@ struct xml_parser {
 
         parser->m_cur_rel->m_members.push_back(m);
       }
+    } else if (strncmp((const char *)name, "comment", 8) == 0) {
+      if (parser->m_cur_changeset != NULL) {
+        parser->m_cur_changeset->m_info.comments_count += 1;
+      }
     }
   }
 
@@ -308,12 +312,13 @@ struct static_data_selection : public data_selection {
   }
 
 #ifdef ENABLE_EXPERIMENTAL
-  virtual void write_changesets(output_formatter &formatter) {
+  virtual void write_changesets(output_formatter &formatter,
+                                const pt::ptime &now) {
     BOOST_FOREACH(osm_changeset_id_t id, m_changesets) {
       std::map<osm_changeset_id_t, changeset>::iterator itr = m_db->m_changesets.find(id);
       if (itr != m_db->m_changesets.end()) {
         const changeset &c = itr->second;
-        formatter.write_changeset(c.m_info, c.m_tags);
+        formatter.write_changeset(c.m_info, c.m_tags, now);
       }
     }
   }

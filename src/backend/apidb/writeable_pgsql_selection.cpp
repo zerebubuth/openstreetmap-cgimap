@@ -159,8 +159,7 @@ boost::optional<T> extract_optional(const pqxx::result::field &f) {
 
 void extract_changeset(const pqxx::result::tuple &row,
                        changeset_info &elem,
-                       cache<osm_changeset_id_t, changeset> &changeset_cache,
-                       const pt::ptime &now) {
+                       cache<osm_changeset_id_t, changeset> &changeset_cache) {
   elem.id = row["id"].as<osm_changeset_id_t>();
   elem.created_at = row["created_at"].c_str();
   elem.closed_at = row["closed_at"].c_str();
@@ -188,9 +187,7 @@ void extract_changeset(const pqxx::result::tuple &row,
     elem.bounding_box = boost::none;
   }
 
-  const size_t num_changes = row["num_changes"].as<size_t>();
-  const pt::ptime closed_at_time = pt::time_from_string(elem.closed_at);
-  elem.open = (closed_at_time > now) && (num_changes <= MAX_ELEMENTS);
+  elem.num_changes = row["num_changes"].as<size_t>();
 }
 
 void extract_tags(const pqxx::result &res, tags_t &tags) {
@@ -319,6 +316,7 @@ void writeable_pgsql_selection::write_relations(output_formatter &formatter) {
   }
 }
 
+#ifdef ENABLE_EXPERIMENTAL
 void writeable_pgsql_selection::write_changesets(output_formatter &formatter,
                                                  const pt::ptime &now) {
   changeset_info elem;
@@ -327,11 +325,12 @@ void writeable_pgsql_selection::write_changesets(output_formatter &formatter,
   pqxx::result changesets = w.prepared("extract_changesets").exec();
   for (pqxx::result::const_iterator itr = changesets.begin();
        itr != changesets.end(); ++itr) {
-    extract_changeset(*itr, elem, cc, now);
+    extract_changeset(*itr, elem, cc);
     extract_tags(w.prepared("extract_changeset_tags")(elem.id).exec(), tags);
-    formatter.write_changeset(elem, tags);
+    formatter.write_changeset(elem, tags, now);
   }
 }
+#endif /* ENABLE_EXPERIMENTAL */
 
 data_selection::visibility_t
 writeable_pgsql_selection::check_node_visibility(osm_nwr_id_t id) {

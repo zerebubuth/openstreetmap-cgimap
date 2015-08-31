@@ -38,7 +38,8 @@ public:
                       const tags_t &tags);
 
   void write_changeset(const changeset_info &elem,
-                       const tags_t &tags);
+                       const tags_t &tags,
+                       const boost::posix_time::ptime &now);
 
   void flush();
   void error(const std::string &);

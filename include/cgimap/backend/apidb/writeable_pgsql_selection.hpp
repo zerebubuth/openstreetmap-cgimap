@@ -21,7 +21,9 @@ public:
   void write_nodes(output_formatter &formatter);
   void write_ways(output_formatter &formatter);
   void write_relations(output_formatter &formatter);
+#ifdef ENABLE_EXPERIMENTAL
   void write_changesets(output_formatter &formatter, const boost::posix_time::ptime &now);
+#endif /* ENABLE_EXPERIMENTAL */
 
   visibility_t check_node_visibility(osm_nwr_id_t id);
   visibility_t check_way_visibility(osm_nwr_id_t id);

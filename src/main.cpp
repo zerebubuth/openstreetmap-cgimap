@@ -140,7 +140,7 @@ static void process_requests(int socket, const po::variables_map &options) {
   routes route;
 
   // create the request object (persists over several calls)
-  fcgi_request req(socket);
+  fcgi_request req(socket, pt::ptime());
 
   // create a factory for data selections - the mechanism for actually
   // getting at data.
@@ -163,6 +163,8 @@ static void process_requests(int socket, const po::variables_map &options) {
 
     // get the next request
     if (req.accept_r() >= 0) {
+      pt::ptime now(pt::second_clock::local_time());
+      req.set_current_time(now);
       process_request(req, limiter, generator, route, factory, oauth_store);
     }
   }

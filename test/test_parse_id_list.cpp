@@ -30,6 +30,10 @@ struct test_request : public request {
   }
   std::stringstream &buffer() { assert(false); }
 
+  boost::posix_time::ptime get_current_time() const {
+    return boost::posix_time::ptime();
+  }
+
 protected:
   virtual void write_header_info(int status, const headers_t &headers) {}
   virtual boost::shared_ptr<output_buffer> get_buffer_internal() {

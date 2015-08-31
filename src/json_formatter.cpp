@@ -6,6 +6,7 @@
 using boost::shared_ptr;
 using std::string;
 using std::transform;
+namespace pt = boost::posix_time;
 
 namespace {
 
@@ -177,10 +178,9 @@ void json_formatter::write_relation(const element_info &elem,
   writer->end_object();
 }
 
-void json_formatter::write_changeset(const changeset_info &elem, const tags_t &tags) {
+void json_formatter::write_changeset(const changeset_info &elem, const tags_t &tags,
+                                     const pt::ptime &now) {
   writer->start_object();
-
-
   write_tags(tags);
   writer->end_object();
 }

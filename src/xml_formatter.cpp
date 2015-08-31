@@ -7,6 +7,7 @@
 using std::string;
 using boost::shared_ptr;
 using std::transform;
+namespace pt = boost::posix_time;
 
 namespace {
 
@@ -148,13 +149,14 @@ void xml_formatter::write_relation(const element_info &elem,
   writer->end();
 }
 
-void xml_formatter::write_changeset(const changeset_info &elem, const tags_t &tags) {
+void xml_formatter::write_changeset(const changeset_info &elem, const tags_t &tags,
+                                    const pt::ptime &now) {
   writer->start("changeset");
 
   writer->attribute("id", elem.id);
   writer->attribute("created_at", elem.created_at);
   writer->attribute("closed_at", elem.closed_at);
-  writer->attribute("open", elem.open);
+  writer->attribute("open", elem.is_open_at(now));
 
   if (bool(elem.display_name) && bool(elem.uid)) {
     writer->attribute("user", elem.display_name.get());

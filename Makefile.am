@@ -73,7 +73,7 @@ endif
 
 TESTS = test/map.testcore test/node.testcore test/anon.testcore test/way.testcore test/relation.testcore
 TESTS += test/empty.testcore test/way_full.testcore test/relation_full.testcore
-TESTS += test/test_parse_id_list test/test_oauth test/test_http
+TESTS += test/test_parse_id_list test/test_oauth test/test_http test/test_parse_time
 if ENABLE_EXPERIMENTAL
 TESTS += test/node_ways.testcore test/changesets.testcore
 endif

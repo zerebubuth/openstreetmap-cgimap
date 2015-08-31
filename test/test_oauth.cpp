@@ -53,6 +53,8 @@ struct test_request : public request {
   const char *get_param(const char *key);
   void dispose();
 
+  boost::posix_time::ptime get_current_time() const;
+
 protected:
   void write_header_info(int status, const headers_t &headers);
 
@@ -113,6 +115,10 @@ boost::shared_ptr<output_buffer> test_request::get_buffer_internal() {
 
 void test_request::finish_internal() {
   throw std::runtime_error("test_request::finish_internal unimplemented.");
+}
+
+boost::posix_time::ptime test_request::get_current_time() const {
+  return boost::posix_time::ptime();
 }
 
 } // anonymous namespace
