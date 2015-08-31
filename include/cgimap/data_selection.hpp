@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <boost/shared_ptr.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 /**
  * represents a selected set of data which can be written out to
@@ -28,6 +29,12 @@ public:
 
   /// write the relations to an output formatter
   virtual void write_relations(output_formatter &formatter) = 0;
+
+#ifdef ENABLE_EXPERIMENTAL
+  /// does this data selection support changesets?
+  virtual void write_changesets(output_formatter &formatter,
+                                const boost::posix_time::ptime &now);
+#endif /* ENABLE_EXPERIMENTAL */
 
   /******************* information functions *******************/
 
@@ -81,6 +88,15 @@ public:
 
   /// select relations which are members of selected relations
   virtual void select_relations_members_of_relations() = 0;
+
+#ifdef ENABLE_EXPERIMENTAL
+  /// does this data selection support changesets?
+  virtual bool supports_changesets();
+
+  /// select specified changesets, returning the number of
+  /// changesets selected.
+  virtual int select_changesets(const std::vector<osm_changeset_id_t> &);
+#endif /* ENABLE_EXPERIMENTAL */
 
   /**
    * factory for the creation of data selections. this abstracts away

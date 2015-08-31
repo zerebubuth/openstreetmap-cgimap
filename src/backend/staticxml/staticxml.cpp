@@ -4,6 +4,7 @@
 
 #include <libxml/parser.h>
 
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
@@ -11,10 +12,12 @@
 #include <sstream>
 
 namespace po = boost::program_options;
+namespace pt = boost::posix_time;
 using boost::shared_ptr;
 using std::string;
 
-#define CACHE_SIZE 1000
+#define CACHE_SIZE (1000)
+#define MAX_ELEMENTS (50000)
 
 namespace {
 
@@ -54,7 +57,13 @@ struct relation {
   tags_t m_tags;
 };
 
+struct changeset {
+  changeset_info m_info;
+  tags_t m_tags;
+};
+
 struct database {
+  std::map<osm_changeset_id_t, changeset> m_changesets;
   std::map<osm_nwr_id_t, node> m_nodes;
   std::map<osm_nwr_id_t, way> m_ways;
   std::map<osm_nwr_id_t, relation> m_relations;
@@ -85,17 +94,48 @@ boost::optional<T> opt_attribute(const char *name, size_t len,
 }
 
 void parse_info(element_info &info, const xmlChar **attributes) {
-  info.id = get_attribute<osm_nwr_id_t>("id", 2, attributes);
+  info.id = get_attribute<osm_nwr_id_t>("id", 3, attributes);
   info.version = get_attribute<osm_nwr_id_t>("version", 8, attributes);
-  info.changeset = get_attribute<osm_changeset_id_t>("changeset", 2, attributes);
+  info.changeset = get_attribute<osm_changeset_id_t>("changeset", 10, attributes);
   info.timestamp = get_attribute<std::string>("timestamp", 10, attributes);
   info.uid = opt_attribute<osm_user_id_t>("uid", 4, attributes);
   info.display_name = opt_attribute<std::string>("user", 5, attributes);
   info.visible = get_attribute<bool_alpha>("visible", 8, attributes);
 }
 
+void parse_changeset_info(changeset_info &info, const xmlChar **attributes) {
+  info.id = get_attribute<osm_changeset_id_t>("id", 3, attributes);
+  info.created_at = get_attribute<std::string>("created_at", 11, attributes);
+  info.closed_at = get_attribute<std::string>("closed_at", 10, attributes);
+  info.uid = opt_attribute<osm_user_id_t>("uid", 4, attributes);
+  info.display_name = opt_attribute<std::string>("user", 5, attributes);
+
+  const boost::optional<double>
+    min_lat = opt_attribute<double>("min_lat", 8, attributes),
+    min_lon = opt_attribute<double>("min_lon", 8, attributes),
+    max_lat = opt_attribute<double>("max_lat", 8, attributes),
+    max_lon = opt_attribute<double>("max_lon", 8, attributes);
+
+  if (bool(min_lat) && bool(min_lon) && bool(max_lat) &&
+      bool(max_lon)) {
+    info.bounding_box = bbox(*min_lat, *min_lon, *max_lat, *max_lon);
+  } else {
+    info.bounding_box = boost::none;
+  }
+
+  info.num_changes = get_attribute<size_t>("num_changes", 11, attributes);
+  info.comments_count = 0;
+}
+
 struct xml_parser {
-  xml_parser(database *db) : m_db(db) {}
+  xml_parser(database *db)
+    : m_db(db),
+      m_cur_node(NULL),
+      m_cur_way(NULL),
+      m_cur_rel(NULL),
+      m_cur_tags(NULL),
+      m_cur_changeset(NULL)
+    {}
 
   static void start_element(void *ctx, const xmlChar *name,
                             const xmlChar **attributes) {
@@ -112,6 +152,7 @@ struct xml_parser {
       parser->m_cur_tags = &(parser->m_cur_node->m_tags);
       parser->m_cur_way = NULL;
       parser->m_cur_rel = NULL;
+      parser->m_cur_changeset = NULL;
 
     } else if (strncmp((const char *)name, "way", 4) == 0) {
       way w;
@@ -122,6 +163,7 @@ struct xml_parser {
       parser->m_cur_tags = &(parser->m_cur_way->m_tags);
       parser->m_cur_node = NULL;
       parser->m_cur_rel = NULL;
+      parser->m_cur_changeset = NULL;
 
     } else if (strncmp((const char *)name, "relation", 9) == 0) {
       relation r;
@@ -132,6 +174,20 @@ struct xml_parser {
       parser->m_cur_tags = &(parser->m_cur_rel->m_tags);
       parser->m_cur_node = NULL;
       parser->m_cur_way = NULL;
+      parser->m_cur_changeset = NULL;
+
+    } else if (strncmp((const char *)name, "changeset", 10) == 0) {
+      changeset c;
+
+      parse_changeset_info(c.m_info, attributes);
+      std::pair<std::map<osm_changeset_id_t, changeset>::iterator, bool> status =
+        parser->m_db->m_changesets.insert(std::make_pair(c.m_info.id, c));
+
+      parser->m_cur_changeset = &(status.first->second);
+      parser->m_cur_tags = &(parser->m_cur_changeset->m_tags);
+      parser->m_cur_node = NULL;
+      parser->m_cur_way = NULL;
+      parser->m_cur_rel = NULL;
 
     } else if (strncmp((const char *)name, "tag", 4) == 0) {
       if (parser->m_cur_tags != NULL) {
@@ -191,6 +247,7 @@ struct xml_parser {
   way *m_cur_way;
   relation *m_cur_rel;
   tags_t *m_cur_tags;
+  changeset *m_cur_changeset;
 };
 
 boost::shared_ptr<database> parse_xml(const char *filename) {
@@ -217,7 +274,7 @@ boost::shared_ptr<database> parse_xml(const char *filename) {
 }
 
 struct static_data_selection : public data_selection {
-  static_data_selection(boost::shared_ptr<database> db) : m_db(db) {}
+  explicit static_data_selection(boost::shared_ptr<database> db) : m_db(db) {}
   virtual ~static_data_selection() {}
 
   virtual void write_nodes(output_formatter &formatter) {
@@ -249,6 +306,18 @@ struct static_data_selection : public data_selection {
       }
     }
   }
+
+#ifdef ENABLE_EXPERIMENTAL
+  virtual void write_changesets(output_formatter &formatter) {
+    BOOST_FOREACH(osm_changeset_id_t id, m_changesets) {
+      std::map<osm_changeset_id_t, changeset>::iterator itr = m_db->m_changesets.find(id);
+      if (itr != m_db->m_changesets.end()) {
+        const changeset &c = itr->second;
+        formatter.write_changeset(c.m_info, c.m_tags);
+      }
+    }
+  }
+#endif /* ENABLE_EXPERIMENTAL */
 
   virtual visibility_t check_node_visibility(osm_nwr_id_t id) {
     std::map<osm_nwr_id_t, node>::iterator itr = m_db->m_nodes.find(id);
@@ -447,13 +516,32 @@ struct static_data_selection : public data_selection {
     }
   }
 
+#ifdef ENABLE_EXPERIMENTAL
+  virtual bool supports_changesets() { return true; }
+
+  virtual int select_changesets(const std::vector<osm_changeset_id_t> &ids) {
+    int selected = 0;
+    BOOST_FOREACH(osm_changeset_id_t id, ids) {
+      std::map<osm_changeset_id_t, changeset>::iterator itr = m_db->m_changesets.find(id);
+      if (itr != m_db->m_changesets.end()) {
+        m_changesets.insert(id);
+        ++selected;
+      }
+    }
+    return selected;
+  }
+#endif /* ENABLE_EXPERIMENTAL */
+
+
 private:
   boost::shared_ptr<database> m_db;
+  std::set<osm_changeset_id_t> m_changesets;
   std::set<osm_nwr_id_t> m_nodes, m_ways, m_relations;
 };
 
 struct factory : public data_selection::factory {
-  factory(const std::string &file) : m_database(parse_xml(file.c_str())) {}
+  factory(const std::string &file)
+    : m_database(parse_xml(file.c_str())) {}
 
   virtual ~factory() {}
 
@@ -478,6 +566,9 @@ struct staticxml_backend : public backend {
 
   shared_ptr<data_selection::factory> create(const po::variables_map &opts) {
     std::string file = opts["file"].as<std::string>();
+    // TODO: now should be a variable on the *request* not in the data store.
+    // TODO: the changeset data structure parsed here can/should contain the
+    // number of changes read from the OSM file, not open/closed status.
     return boost::make_shared<factory>(file);
   }
 

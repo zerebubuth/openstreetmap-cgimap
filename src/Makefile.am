@@ -105,7 +105,8 @@ libcgimap_core_la_SOURCES+=\
 	api06/way_handler.cpp \
 	api06/ways_handler.cpp \
 	api06/relation_full_handler.cpp \
-	api06/way_full_handler.cpp
+	api06/way_full_handler.cpp \
+	api06/changeset_handler.cpp
 
 if ENABLE_EXPERIMENTAL
 libcgimap_core_la_SOURCES+=\
@@ -129,7 +130,7 @@ libcgimap_apidb_la_SOURCES=\
 	backend/apidb/changeset.cpp \
 	backend/apidb/quad_tile.cpp \
 	backend/apidb/oauth_store.cpp
-libcgimap_apidb_la_LIBADD=libcgimap_core.la @LIBPQXX_LIBS@
+libcgimap_apidb_la_LIBADD=libcgimap_core.la @BOOST_DATE_TIME_LIB@ @LIBPQXX_LIBS@
 endif
 
 if ENABLE_PGSNAPSHOT

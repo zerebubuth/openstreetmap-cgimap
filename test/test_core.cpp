@@ -566,6 +566,9 @@ int main(int argc, char *argv[]) {
     po::variables_map vm;
     vm.insert(std::make_pair(std::string("file"),
                              po::variable_value(data_file.native(), false)));
+    vm.insert(std::make_pair(std::string("time"),
+                             po::variable_value(
+                               boost::posix_time::to_simple_string(now))));
 
     boost::shared_ptr<backend> data_backend = make_staticxml_backend();
     boost::shared_ptr<data_selection::factory> factory =

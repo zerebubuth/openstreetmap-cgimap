@@ -21,6 +21,7 @@ public:
   void write_nodes(output_formatter &formatter);
   void write_ways(output_formatter &formatter);
   void write_relations(output_formatter &formatter);
+  void write_changesets(output_formatter &formatter, const boost::posix_time::ptime &now);
 
   visibility_t check_node_visibility(osm_nwr_id_t id);
   visibility_t check_way_visibility(osm_nwr_id_t id);
@@ -38,6 +39,11 @@ public:
   void select_relations_from_nodes();
   void select_relations_from_relations();
   void select_relations_members_of_relations();
+
+#ifdef ENABLE_EXPERIMENTAL
+  bool supports_changesets();
+  int select_changesets(const std::vector<osm_changeset_id_t> &);
+#endif /* ENABLE_EXPERIMENTAL */
 
   /**
    * abstracts the creation of transactions for the writeable

@@ -148,6 +148,32 @@ void xml_formatter::write_relation(const element_info &elem,
   writer->end();
 }
 
+void xml_formatter::write_changeset(const changeset_info &elem, const tags_t &tags) {
+  writer->start("changeset");
+
+  writer->attribute("id", elem.id);
+  writer->attribute("created_at", elem.created_at);
+  writer->attribute("closed_at", elem.closed_at);
+  writer->attribute("open", elem.open);
+
+  if (bool(elem.display_name) && bool(elem.uid)) {
+    writer->attribute("user", elem.display_name.get());
+    writer->attribute("uid", elem.uid.get());
+  }
+
+  if (elem.bounding_box) {
+    writer->attribute("min_lat", elem.bounding_box->minlat);
+    writer->attribute("min_lon", elem.bounding_box->minlon);
+    writer->attribute("max_lat", elem.bounding_box->maxlat);
+    writer->attribute("max_lon", elem.bounding_box->maxlon);
+  }
+
+  writer->attribute("comments_count", elem.comments_count);
+
+  write_tags(tags);
+  writer->end();
+}
+
 void xml_formatter::flush() { writer->flush(); }
 
 void xml_formatter::error(const std::string &s) { writer->error(s); }

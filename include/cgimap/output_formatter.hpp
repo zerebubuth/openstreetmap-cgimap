@@ -12,6 +12,7 @@
  * What type of element the formatter is starting to write.
  */
 enum element_type {
+  element_type_changeset,
   element_type_node,
   element_type_way,
   element_type_relation
@@ -35,6 +36,40 @@ struct element_info {
   boost::optional<std::string> display_name;
   // If an object has been deleted
   bool visible;
+};
+
+struct changeset_info {
+  changeset_info();
+  changeset_info(const changeset_info &);
+  changeset_info(osm_changeset_id_t id_,
+                 const std::string &created_at_,
+                 const std::string &closed_at_,
+                 const boost::optional<osm_user_id_t> &uid_,
+                 const boost::optional<std::string> &display_name_,
+                 const boost::optional<bbox> &bounding_box_,
+                 size_t num_changes_,
+                 size_t comments_count_,
+                 bool open_);
+  // standard meaning of ID
+  osm_changeset_id_t id;
+  // changesets are created at a certain time and may be either
+  // closed explicitly with a closing time, or close implicitly
+  // an hour after the last update to the changeset.
+  std::string created_at, closed_at;
+  // anonymous objects don't have UIDs or display names
+  boost::optional<osm_user_id_t> uid;
+  boost::optional<std::string> display_name;
+  // changesets with edits will have a bounding box containing
+  // the extent of all the changes.
+  boost::optional<bbox> bounding_box;
+  // the number of changes (new element versions) associated
+  // with this changeset.
+  size_t num_changes;
+  // if the changeset has a discussion attached, then this will
+  // be the number of comments.
+  size_t comments_count;
+  // is the changeset open (true) or closed (false)
+  bool open;
 };
 
 struct member_info {
@@ -95,6 +130,10 @@ struct output_formatter {
   // output a single relation given a row and iterators over members and tags
   virtual void write_relation(const element_info &elem,
                               const members_t &members, const tags_t &tags) = 0;
+
+  // output a single changeset.
+  virtual void write_changeset(const changeset_info &elem,
+                               const tags_t &tags) = 0;
 
   // flush the current state
   virtual void flush() = 0;

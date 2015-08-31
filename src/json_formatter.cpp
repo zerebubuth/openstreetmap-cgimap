@@ -43,11 +43,14 @@ void json_formatter::write_tags(const tags_t &tags) {
   writer->end_object();
 }
 
+#define WRITE_KV(k,vt,v) \
+  writer->object_key(k); \
+  writer->entry_##vt(v);
+
 void json_formatter::start_document(const std::string &generator) {
   writer->start_object();
 
-  writer->object_key("version");
-  writer->entry_string("0.6");
+  WRITE_KV("version", string, "0.6");
   writer->object_key("generator");
   writer->entry_string(generator);
   writer->object_key("copyright");
@@ -75,7 +78,9 @@ void json_formatter::write_bounds(const bbox &bounds) {
 void json_formatter::end_document() { writer->end_object(); }
 
 void json_formatter::start_element_type(element_type type) {
-  if (type == element_type_node) {
+  if (type == element_type_changeset) {
+    writer->object_key("changesets");
+  } else if (type == element_type_node) {
     writer->object_key("nodes");
   } else if (type == element_type_way) {
     writer->object_key("ways");
@@ -169,6 +174,14 @@ void json_formatter::write_relation(const element_info &elem,
 
   write_tags(tags);
 
+  writer->end_object();
+}
+
+void json_formatter::write_changeset(const changeset_info &elem, const tags_t &tags) {
+  writer->start_object();
+
+
+  write_tags(tags);
   writer->end_object();
 }
 

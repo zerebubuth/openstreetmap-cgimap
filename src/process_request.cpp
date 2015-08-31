@@ -76,7 +76,8 @@ void process_not_allowed(request &req) {
 boost::tuple<string, size_t>
 process_get_request(request &req, routes &route,
                     boost::shared_ptr<data_selection::factory> factory,
-                    const string &ip, const string &generator) {
+                    const string &ip, const string &generator,
+                    const pt::ptime &now) {
   // figure how to handle the request
   handler_ptr_t handler = route(req);
 
@@ -111,7 +112,7 @@ process_get_request(request &req, routes &route,
 
   try {
     // call to write the response
-    responder->write(o_formatter, generator);
+    responder->write(o_formatter, generator, now);
 
     // ensure the request is finished
     req.finish();
@@ -316,7 +317,7 @@ void process_request(request &req, rate_limiter &limiter,
     // process request
     if (method == "GET") {
       boost::tie(request_name, bytes_written) =
-          process_get_request(req, route, factory, ip, generator);
+        process_get_request(req, route, factory, ip, generator, start_time);
 
     } else if (method == "HEAD") {
       boost::tie(request_name, bytes_written) =

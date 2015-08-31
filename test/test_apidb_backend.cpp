@@ -285,6 +285,7 @@ struct test_formatter : public output_formatter {
                  const tags_t &tags) {}
   void write_relation(const element_info &elem,
                       const members_t &members, const tags_t &tags) {}
+  void write_changeset(const changeset_info &elem, const tags_t &tags) {}
   void flush() {}
 
   void error(const std::exception &e) {

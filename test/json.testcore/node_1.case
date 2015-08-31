@@ -11,6 +11,7 @@ Status: 200 OK
   "copyright": "***",
   "attribution": "***",
   "license": "***",
+  "changesets": [],
   "nodes": [
       { "id": 1,
 	"visible": true,
