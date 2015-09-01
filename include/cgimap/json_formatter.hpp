@@ -39,6 +39,8 @@ public:
 
   void write_changeset(const changeset_info &elem,
                        const tags_t &tags,
+                       bool include_comments,
+                       const comments_t &comments,
                        const boost::posix_time::ptime &now);
 
   void flush();

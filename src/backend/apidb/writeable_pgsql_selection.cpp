@@ -251,7 +251,11 @@ void extract_members(const pqxx::result &res, members_t &members) {
 
 writeable_pgsql_selection::writeable_pgsql_selection(
     pqxx::connection &conn, cache<osm_changeset_id_t, changeset> &changeset_cache)
-    : w(conn), cc(changeset_cache) {
+    : w(conn), cc(changeset_cache)
+#ifdef ENABLE_EXPERIMENTAL
+    , include_changeset_discussions(false)
+#endif /* ENABLE_EXPERIMENTAL */
+{
   w.exec("CREATE TEMPORARY TABLE tmp_nodes (id bigint PRIMARY KEY)");
   w.exec("CREATE TEMPORARY TABLE tmp_ways (id bigint PRIMARY KEY)");
   w.exec("CREATE TEMPORARY TABLE tmp_relations (id bigint PRIMARY KEY)");
@@ -321,13 +325,15 @@ void writeable_pgsql_selection::write_changesets(output_formatter &formatter,
                                                  const pt::ptime &now) {
   changeset_info elem;
   tags_t tags;
+  comments_t comments;
 
   pqxx::result changesets = w.prepared("extract_changesets").exec();
   for (pqxx::result::const_iterator itr = changesets.begin();
        itr != changesets.end(); ++itr) {
     extract_changeset(*itr, elem, cc);
     extract_tags(w.prepared("extract_changeset_tags")(elem.id).exec(), tags);
-    formatter.write_changeset(elem, tags, now);
+    // extract_comments(w.prepared("extract_changeset_comments")(elem.id).exec(), comments);
+    formatter.write_changeset(elem, tags, include_changeset_discussions, comments, now);
   }
 }
 #endif /* ENABLE_EXPERIMENTAL */
@@ -436,6 +442,10 @@ bool writeable_pgsql_selection::supports_changesets() {
 
 int writeable_pgsql_selection::select_changesets(const std::vector<osm_changeset_id_t> &ids) {
   return w.prepared("add_changesets_list")(ids).exec().affected_rows();
+}
+
+void writeable_pgsql_selection::select_changeset_discussions() {
+  include_changeset_discussions = true;
 }
 #endif /* ENABLE_EXPERIMENTAL */
 

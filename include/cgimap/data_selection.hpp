@@ -96,6 +96,11 @@ public:
   /// select specified changesets, returning the number of
   /// changesets selected.
   virtual int select_changesets(const std::vector<osm_changeset_id_t> &);
+
+  /// select the changeset discussions as well. this effectively
+  /// just sets a flag - by default, discussions are not included,
+  /// if this is called then discussions will be included.
+  virtual void select_changeset_discussions();
 #endif /* ENABLE_EXPERIMENTAL */
 
   /**

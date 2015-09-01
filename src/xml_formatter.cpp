@@ -149,14 +149,20 @@ void xml_formatter::write_relation(const element_info &elem,
   writer->end();
 }
 
-void xml_formatter::write_changeset(const changeset_info &elem, const tags_t &tags,
+void xml_formatter::write_changeset(const changeset_info &elem,
+                                    const tags_t &tags,
+                                    bool include_comments,
+                                    const comments_t &comments,
                                     const pt::ptime &now) {
   writer->start("changeset");
 
   writer->attribute("id", elem.id);
   writer->attribute("created_at", elem.created_at);
-  writer->attribute("closed_at", elem.closed_at);
-  writer->attribute("open", elem.is_open_at(now));
+  const bool is_open = elem.is_open_at(now);
+  if (!is_open) {
+    writer->attribute("closed_at", elem.closed_at);
+  }
+  writer->attribute("open", is_open);
 
   if (bool(elem.display_name) && bool(elem.uid)) {
     writer->attribute("user", elem.display_name.get());
@@ -173,6 +179,23 @@ void xml_formatter::write_changeset(const changeset_info &elem, const tags_t &ta
   writer->attribute("comments_count", elem.comments_count);
 
   write_tags(tags);
+
+  if (include_comments) {
+    writer->start("discussion");
+    for (comments_t::const_iterator itr = comments.begin();
+         itr != comments.end(); ++itr) {
+      writer->start("comment");
+      writer->attribute("date", itr->created_at);
+      writer->attribute("uid", itr->author_id);
+      writer->attribute("user", itr->author_display_name);
+      writer->start("text");
+      writer->text(itr->body);
+      writer->end();
+      writer->end();
+    }
+    writer->end();
+  }
+
   writer->end();
 }
 

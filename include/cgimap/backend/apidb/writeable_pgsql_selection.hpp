@@ -45,6 +45,7 @@ public:
 #ifdef ENABLE_EXPERIMENTAL
   bool supports_changesets();
   int select_changesets(const std::vector<osm_changeset_id_t> &);
+  void select_changeset_discussions();
 #endif /* ENABLE_EXPERIMENTAL */
 
   /**
@@ -76,6 +77,12 @@ private:
   // true if a query hasn't been run yet, i.e: it's possible to
   // assume that all the temporary tables are empty.
   bool m_tables_empty;
+
+#ifdef ENABLE_EXPERIMENTAL
+  // true if we want to include changeset discussions along with
+  // the changesets themselves. defaults to false.
+  bool include_changeset_discussions;
+#endif /* ENABLE_EXPERIMENTAL */
 };
 
 #endif /* WRITEABLE_PGSQL_SELECTION_HPP */

@@ -13,6 +13,9 @@ bool data_selection::supports_changesets() {
 int data_selection::select_changesets(const std::vector<osm_changeset_id_t> &) {
   return 0;
 }
+
+void data_selection::select_changeset_discussions() {
+}
 #endif /* ENABLE_EXPERIMENTAL */
 
 data_selection::factory::~factory() {}

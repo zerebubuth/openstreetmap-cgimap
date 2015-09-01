@@ -190,7 +190,7 @@ void check_xmlattr(const pt::ptree &expected, const pt::ptree &actual) {
   if (act_keys.size() > exp_keys.size()) {
     BOOST_FOREACH(const std::string &ek, exp_keys) { act_keys.erase(ek); }
     std::ostringstream out;
-    out << "Missing attributes [";
+    out << "Extra attributes [";
     BOOST_FOREACH(const std::string &ak, act_keys) { out << ak << " "; }
     out << "]";
     throw std::runtime_error(out.str());

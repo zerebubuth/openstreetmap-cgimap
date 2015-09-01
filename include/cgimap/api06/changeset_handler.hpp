@@ -10,11 +10,12 @@ namespace api06 {
 
 class changeset_responder : public osm_current_responder {
 public:
-  changeset_responder(mime::type, osm_changeset_id_t, factory_ptr &);
+  changeset_responder(mime::type, osm_changeset_id_t, bool, factory_ptr &);
   ~changeset_responder();
 
 private:
   osm_changeset_id_t id;
+  bool include_discussion;
 };
 
 class changeset_handler : public handler {
@@ -27,6 +28,7 @@ public:
 
 private:
   osm_changeset_id_t id;
+  bool include_discussion;
 };
 
 } // namespace api06

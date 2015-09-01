@@ -178,7 +178,10 @@ void json_formatter::write_relation(const element_info &elem,
   writer->end_object();
 }
 
-void json_formatter::write_changeset(const changeset_info &elem, const tags_t &tags,
+void json_formatter::write_changeset(const changeset_info &elem,
+                                     const tags_t &tags,
+                                     bool include_comments,
+                                     const comments_t &comments,
                                      const pt::ptime &now) {
   writer->start_object();
   write_tags(tags);
