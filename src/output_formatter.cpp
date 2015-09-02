@@ -60,4 +60,11 @@ bool changeset_info::is_open_at(const pt::ptime &now) const {
   return (closed_at_time > now) && (num_changes < MAX_CHANGESET_ELEMENTS);
 }
 
+bool changeset_comment_info::operator==(const changeset_comment_info &other) const {
+  return ((author_id == other.author_id) &&
+          (body == other.body) &&
+          (created_at == other.created_at) &&
+          (author_display_name == other.author_display_name));
+}
+
 output_formatter::~output_formatter() {}

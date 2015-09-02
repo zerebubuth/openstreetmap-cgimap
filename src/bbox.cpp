@@ -17,6 +17,13 @@ bbox::bbox(double minlat_, double minlon_, double maxlat_, double maxlon_)
 
 bbox::bbox() : minlat(0.0), minlon(0.0), maxlat(0.0), maxlon(0.0) {}
 
+bool bbox::operator==(const bbox &other) const {
+  return ((minlat == other.minlat) &&
+          (minlon == other.minlon) &&
+          (maxlat == other.maxlat) &&
+          (maxlon == other.maxlon));
+}
+
 bool bbox::parse(const std::string &s) {
   vector<string> strs;
   al::split(strs, s, al::is_any_of(","));

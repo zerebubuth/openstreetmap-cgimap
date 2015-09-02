@@ -84,6 +84,8 @@ struct changeset_comment_info {
   std::string body;
   std::string created_at;
   std::string author_display_name;
+
+  bool operator==(const changeset_comment_info &) const;
 };
 
 struct member_info {

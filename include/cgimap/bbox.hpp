@@ -13,6 +13,8 @@ struct bbox {
 
   bbox();
 
+  bool operator==(const bbox &) const;
+
   /**
    * Attempt to parse a bounding box from a comma-separated string
    * of coordinates. Returns true if parsing was succesful and the

@@ -67,7 +67,9 @@ ___test_test_parse_time_SOURCES=\
 
 if ENABLE_APIDB
 ___test_test_apidb_backend_SOURCES=\
-	../test/test_apidb_backend.cpp
+	../test/test_apidb_backend.cpp \
+	../test/test_formatter.cpp \
+	../test/test_database.cpp
 endif
 
 libcgimap_fcgi_la_SOURCES=\
