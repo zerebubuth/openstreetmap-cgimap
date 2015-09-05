@@ -5,6 +5,7 @@
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/optional/optional_io.hpp>
 #include <pqxx/pqxx>
 
 #include <sys/time.h>

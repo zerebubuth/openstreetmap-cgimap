@@ -12,6 +12,12 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
 
+#if PQXX_VERSION_MAJOR >= 4
+#define PREPARE_ARGS(args)
+#else
+#define PREPARE_ARGS(args) args
+#endif
+
 namespace po = boost::program_options;
 using std::set;
 using std::stringstream;
@@ -448,6 +454,10 @@ void readonly_pgsql_selection::select_relations_members_of_relations() {
 readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
     : m_connection(connect_db_str(opts)),
       m_cache_connection(connect_db_str(opts)),
+#if PQXX_VERSION_MAJOR >= 4
+      m_errorhandler(m_connection),
+      m_cache_errorhandler(m_cache_connection),
+#endif
       m_cache_tx(m_cache_connection, "changeset_cache"),
       m_cache(boost::bind(fetch_changeset, boost::ref(m_cache_tx), _1),
               opts["cachesize"].as<size_t>()) {
@@ -457,10 +467,12 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
   m_cache_connection.set_client_encoding(opts["charset"].as<std::string>());
 
   // ignore notice messages
+#if PQXX_VERSION_MAJOR < 4
   m_connection.set_noticer(
       std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
   m_cache_connection.set_noticer(
       std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
+#endif
 
   logger::message("Preparing prepared statements.");
 
@@ -475,15 +487,15 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
         "AND longitude BETWEEN $4 AND $5 "
         "AND visible = true "
       "LIMIT $6")
-    ("bigint[]")("integer")("integer")("integer")("integer")("integer");
+    PREPARE_ARGS(("bigint[]")("integer")("integer")("integer")("integer")("integer"));
 
   // selecting node, way and relation visibility information
   m_connection.prepare("visible_node",
-    "SELECT visible FROM current_nodes WHERE id = $1")("bigint");
+    "SELECT visible FROM current_nodes WHERE id = $1")PREPARE_ARGS(("bigint"));
   m_connection.prepare("visible_way",
-    "SELECT visible FROM current_ways WHERE id = $1")("bigint");
+    "SELECT visible FROM current_ways WHERE id = $1")PREPARE_ARGS(("bigint"));
   m_connection.prepare("visible_relation",
-    "SELECT visible FROM current_relations WHERE id = $1")("bigint");
+    "SELECT visible FROM current_relations WHERE id = $1")PREPARE_ARGS(("bigint"));
 
   // extraction functions for child information
   m_connection.prepare("extract_way_nds",
@@ -491,51 +503,51 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
       "FROM current_way_nodes "
       "WHERE way_id=$1 "
       "ORDER BY sequence_id ASC")
-    ("bigint");
+    PREPARE_ARGS(("bigint"));
   m_connection.prepare("extract_relation_members",
     "SELECT member_type, member_id, member_role "
       "FROM current_relation_members "
       "WHERE relation_id=$1 "
       "ORDER BY sequence_id ASC")
-    ("bigint");
+    PREPARE_ARGS(("bigint"));
 
   // extraction functions for tags
   m_connection.prepare("extract_node_tags",
-    "SELECT k, v FROM current_node_tags WHERE node_id=$1")("bigint");
+    "SELECT k, v FROM current_node_tags WHERE node_id=$1")PREPARE_ARGS(("bigint"));
   m_connection.prepare("extract_way_tags",
-    "SELECT k, v FROM current_way_tags WHERE way_id=$1")("bigint");
+    "SELECT k, v FROM current_way_tags WHERE way_id=$1")PREPARE_ARGS(("bigint"));
   m_connection.prepare("extract_relation_tags",
-    "SELECT k, v FROM current_relation_tags WHERE relation_id=$1")("bigint");
+    "SELECT k, v FROM current_relation_tags WHERE relation_id=$1")PREPARE_ARGS(("bigint"));
 
   // selecting a set of objects as a list
   m_connection.prepare("select_nodes",
     "SELECT id "
       "FROM current_nodes "
       "WHERE id = ANY($1)")
-    ("bigint[]");
+    PREPARE_ARGS(("bigint[]"));
   m_connection.prepare("select_ways",
     "SELECT id "
       "FROM current_ways "
       "WHERE id = ANY($1)")
-    ("bigint[]");
+    PREPARE_ARGS(("bigint[]"));
   m_connection.prepare("select_relations",
     "SELECT id "
       "FROM current_relations "
       "WHERE id = ANY($1)")
-    ("bigint[]");
+    PREPARE_ARGS(("bigint[]"));
 
   // select ways used by nodes
   m_connection.prepare("ways_from_nodes",
     "SELECT DISTINCT wn.way_id AS id "
       "FROM current_way_nodes wn "
       "WHERE wn.node_id = ANY($1)")
-    ("bigint[]");
+    PREPARE_ARGS(("bigint[]"));
   // select nodes used by ways
   m_connection.prepare("nodes_from_ways",
     "SELECT DISTINCT wn.node_id AS id "
       "FROM current_way_nodes wn "
       "WHERE wn.way_id = ANY($1)")
-    ("bigint[]");
+    PREPARE_ARGS(("bigint[]"));
 
   // Queries for getting relation parents of objects
   m_connection.prepare("relation_parents_of_nodes",
@@ -543,19 +555,19 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
       "FROM current_relation_members rm "
       "WHERE rm.member_type = 'Node' "
         "AND rm.member_id = ANY($1)")
-    ("bigint[]");
+    PREPARE_ARGS(("bigint[]"));
   m_connection.prepare("relation_parents_of_ways",
     "SELECT DISTINCT rm.relation_id AS id "
       "FROM current_relation_members rm "
       "WHERE rm.member_type = 'Way' "
         "AND rm.member_id = ANY($1)")
-    ("bigint[]");
+    PREPARE_ARGS(("bigint[]"));
   m_connection.prepare("relation_parents_of_relations",
     "SELECT DISTINCT rm.relation_id AS id "
       "FROM current_relation_members rm "
       "WHERE rm.member_type = 'Relation' "
         "AND rm.member_id = ANY($1)")
-    ("bigint[]");
+    PREPARE_ARGS(("bigint[]"));
 
   // queries for filling elements which are used as members in relations
   m_connection.prepare("nodes_from_relations",
@@ -563,19 +575,19 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
       "FROM current_relation_members rm "
       "WHERE rm.member_type = 'Node' "
         "AND rm.relation_id = ANY($1)")
-    ("bigint[]");
+    PREPARE_ARGS(("bigint[]"));
   m_connection.prepare("ways_from_relations",
     "SELECT DISTINCT rm.member_id AS id "
       "FROM current_relation_members rm "
       "WHERE rm.member_type = 'Way' "
         "AND rm.relation_id = ANY($1)")
-    ("bigint[]");
+    PREPARE_ARGS(("bigint[]"));
   m_connection.prepare("relation_members_of_relations",
     "SELECT DISTINCT rm.member_id AS id "
       "FROM current_relation_members rm "
       "WHERE rm.member_type = 'Relation' "
         "AND rm.relation_id = ANY($1)")
-    ("bigint[]");
+    PREPARE_ARGS(("bigint[]"));
 
   // clang-format on
 }
