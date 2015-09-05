@@ -1,6 +1,7 @@
 #include "cgimap/api06/changeset_handler.hpp"
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/http.hpp"
+#include "cgimap/config.hpp"
 
 #include <sstream>
 
@@ -17,8 +18,11 @@ changeset_responder::changeset_responder(mime::type mt, osm_changeset_id_t id_,
   vector<osm_changeset_id_t> ids;
   ids.push_back(id);
 
+#ifdef ENABLE_EXPERIMENTAL
   if (!sel->supports_changesets()) {
+#endif /* ENABLE_EXPERIMENTAL */
     throw http::server_error("Data source does not support changesets.");
+#ifdef ENABLE_EXPERIMENTAL
   }
 
   if (sel->select_changesets(ids) == 0) {
@@ -28,6 +32,7 @@ changeset_responder::changeset_responder(mime::type mt, osm_changeset_id_t id_,
   if (include_discussion) {
     sel->select_changeset_discussions();
   }
+#endif /* ENABLE_EXPERIMENTAL */
 }
 
 changeset_responder::~changeset_responder() {}
