@@ -6,6 +6,7 @@
 #include <boost/regex.hpp>
 #include <iterator> // for distance
 #include <cctype>   // for toupper, isxdigit
+#include <sstream>
 
 namespace al = boost::algorithm;
 using std::string;
