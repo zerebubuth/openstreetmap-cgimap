@@ -1,0 +1,12 @@
+Request-Method: GET
+Request-URI: /api/0.6/changeset/2
+HTTP-X-Error-Format: xml
+Date: 2015-09-05T20:17:10Z
+---
+Status: 200 OK
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition: 
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <changeset id="2" created_at="2015-09-05T20:16:06Z" closed_at="2015-09-05T20:16:06Z" comments_count="0" open="false"/>
+</osm>

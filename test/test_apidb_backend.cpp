@@ -211,8 +211,8 @@ void test_negative_changeset_ids(boost::shared_ptr<data_selection> sel) {
     f.m_nodes[1], "second node written");
 }
 
-void test_changeset(boost::shared_ptr<data_selection> sel) {
 #ifdef ENABLE_EXPERIMENTAL
+void test_changeset(boost::shared_ptr<data_selection> sel) {
   assert_equal<bool>(sel->supports_changesets(), true,
                      "apidb should support changesets.");
 
@@ -245,9 +245,45 @@ void test_changeset(boost::shared_ptr<data_selection> sel) {
       false,
       comments_t(),
       t),
-    "changesets should be equal.");
-#endif /* ENABLE_EXPERIMENTAL */
+    "changesets");
 }
+
+void test_nonpublic_changeset(boost::shared_ptr<data_selection> sel) {
+  assert_equal<bool>(sel->supports_changesets(), true,
+                     "apidb should support changesets.");
+
+  std::vector<osm_changeset_id_t> ids;
+  ids.push_back(4);
+  int num = sel->select_changesets(ids);
+  assert_equal<int>(num, 1, "should have selected one changeset.");
+
+  boost::posix_time::ptime t = parse_time("2015-09-05T20:13:23Z");
+
+  test_formatter f;
+  sel->write_changesets(f, t);
+  assert_equal<size_t>(f.m_changesets.size(), 1,
+                       "should have written one changeset.");
+
+  assert_equal<test_formatter::changeset_t>(
+    f.m_changesets.front(),
+    test_formatter::changeset_t(
+      changeset_info(
+        4, // ID
+        "2013-11-14T02:10:00Z", // created_at
+        "2013-11-14T03:10:00Z", // closed_at
+        boost::none, // uid
+        boost::none, // display_name
+        boost::none, // bounding box
+        1, // num_changes
+        0 // comments_count
+        ),
+      tags_t(),
+      false,
+      comments_t(),
+      t),
+    "changesets");
+}
+#endif /* ENABLE_EXPERIMENTAL */
 
 } // anonymous namespace
 
@@ -274,8 +310,13 @@ int main(int, char **) {
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
         &test_negative_changeset_ids));
 
+#ifdef ENABLE_EXPERIMENTAL
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
               &test_changeset));
+
+    tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
+              &test_nonpublic_changeset));
+#endif /* ENABLE_EXPERIMENTAL */
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;
