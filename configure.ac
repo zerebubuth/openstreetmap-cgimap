@@ -60,6 +60,8 @@ AS_IF([test "x$BOOST_PROGRAM_OPTIONS_LIB" == "x"],
       [AC_MSG_ERROR([Boost::ProgramOptions library not detected, please install libboost-program-options-dev.])],)
 AS_IF([test "x$BOOST_DATE_TIME_LIB" == "x"],
       [AC_MSG_ERROR([Boost::DateTime library not detected, please install libboost-date-time-dev.])],)
+AS_IF([test "x$BOOST_LOCALE_LIB" == "x"],
+		[AC_MSG_ERROR([Boost::Locale library not detected, please install libboost-locale-dev.])],)
 
 AX_CHECK_ZLIB
 REQUIRE_FCGI
