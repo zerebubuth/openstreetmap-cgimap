@@ -614,9 +614,6 @@ struct staticxml_backend : public backend {
 
   shared_ptr<data_selection::factory> create(const po::variables_map &opts) {
     std::string file = opts["file"].as<std::string>();
-    // TODO: now should be a variable on the *request* not in the data store.
-    // TODO: the changeset data structure parsed here can/should contain the
-    // number of changes read from the OSM file, not open/closed status.
     return boost::make_shared<factory>(file);
   }
 
