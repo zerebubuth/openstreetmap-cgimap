@@ -76,7 +76,7 @@ std::string authority(request &req) {
     host.append(port);
   }
 
-  return port;
+  return host;
 }
 
 std::string path(request &req) {
@@ -113,19 +113,57 @@ struct oauth_authorization_grammar
     using qi::char_;
     using qi::lexeme;
 
-    start = lit("OAuth") >> (lexeme[kvpair] % ",");
-    kvpair = escaped >> "=\"" >> escaped >> "\"";
+    start = lit("OAuth") >> (lexeme[kvpair] % char_(','));
+
+    // looks like realm is special, see the OAuth spec for details
+    // http://oauth.net/core/1.0a/#rfc.section.5.4.1
+    kvpair
+      = (ascii::string("realm") >> lit("=\"") > quoted_string > lit("\""))
+      | (key >> lit("=\"") > escaped > lit("\""));
+
+    // definitions from http://oauth.net/core/1.0a/#rfc.section.5.4.1
+    key = +(unreserved | percent_encoded);
     escaped = *(unreserved | percent_encoded);
     unreserved = char_('a', 'z') | char_('A', 'Z') | char_('0', '9') | char_("-") |
       char_(".") | char_("_") | char_("~");
-    percent_encoded = char_("%") >> hexdigit >> hexdigit;
+    percent_encoded = char_("%") > hexdigit > hexdigit;
     hexdigit = char_('0', '9') | char_('A', 'F');
+
+    // these are from RFC2616 section 2.2.
+    quoted_string = *(qdtext | quoted_pair);
+    qdtext = char_(32, 126) - char_('\\') - char_('"');
+    quoted_pair = lit("\\") > char_(0, 127);
+
+    /* uncomment below to get debugging information from the
+     * spirit/qi rules. *
+    start.name("start");
+    kvpair.name("kvpair");
+    key.name("key");
+    escaped.name("escaped");
+    unreserved.name("unreserved");
+    percent_encoded.name("percent_encoded");
+    hexdigit.name("hexdigit");
+    quoted_string.name("quoted_string");
+    qdtext.name("qdtext");
+    quoted_pair.name("quoted_pair");
+
+    using qi::debug;
+    debug(start);
+    debug(kvpair);
+    debug(key);
+    debug(escaped);
+    debug(unreserved);
+    debug(percent_encoded);
+    debug(quoted_string);
+    debug(qdtext);
+    debug(quoted_pair);
+    */
   }
 
   qi::rule<iterator, std::vector<param>(), ascii::blank_type> start;
   qi::rule<iterator, param()> kvpair;
-  qi::rule<iterator, std::string()> escaped, percent_encoded;
-  qi::rule<iterator, char()> unreserved, hexdigit;
+  qi::rule<iterator, std::string()> key, escaped, percent_encoded, quoted_string;
+  qi::rule<iterator, char()> unreserved, hexdigit, qdtext, quoted_pair;
 };
 
 // parses the oauth authorization header and returns true if the
@@ -146,6 +184,43 @@ bool parse_oauth_authorization(const char *auth_header, std::vector<param> &para
   return (success && (itr == end));
 }
 
+std::string request_method(request &req) {
+  const char *method = req.get_param("REQUEST_METHOD");
+  if (method == NULL) {
+    throw http::server_error("Request didn't set $REQUEST_METHOD parameter.");
+  }
+  return std::string(method);
+}
+
+std::string escape(const std::string &str) {
+  static const char *hexdigits = "0123456789ABCDEF";
+
+  std::ostringstream ostr;
+  BOOST_FOREACH(char c, str) {
+    if ((c >= 'a' && c <= 'z') ||
+        (c >= 'A' && c <= 'Z') ||
+        (c >= '0' && c <= '9') ||
+        (c == '-') ||
+        (c == '.') ||
+        (c == '_') ||
+        (c == '~')) {
+      ostr << c;
+
+    } else {
+      unsigned char uc = (unsigned char)c;
+      ostr << "%" << hexdigits[uc >> 4] << hexdigits[uc & 0xf];
+    }
+  }
+
+  return ostr.str();
+}
+
+} // anonymous namespace
+
+namespace oauth {
+
+namespace detail {
+
 boost::optional<std::string> normalise_request_parameters(request &req) {
   typedef std::map<std::string, std::string> map_t;
   std::vector<param> params;
@@ -158,7 +233,7 @@ boost::optional<std::string> normalise_request_parameters(request &req) {
 
     BOOST_FOREACH(param &p, auth_params) {
       std::string k = http::urldecode(p.k);
-      if (k != "realm") {
+      if ((k != "realm") && (k != "oauth_signature")) {
         params.push_back(param());
         params.back().k.swap(k);
         params.back().v = http::urldecode(p.v);
@@ -169,9 +244,11 @@ boost::optional<std::string> normalise_request_parameters(request &req) {
   { // add HTTP GET parameters
     map_t get_params = http::parse_params(get_query_string(req));
     BOOST_FOREACH(const map_t::value_type &kv, get_params) {
-      params.push_back(param());
-      params.back().k = http::urldecode(kv.first);
-      params.back().v = http::urldecode(kv.second);
+      if ((kv.first != "realm") && (kv.first != "oauth_signature")) {
+        params.push_back(param());
+        params.back().k = http::urldecode(kv.first);
+        params.back().v = http::urldecode(kv.second);
+      }
     }
   }
 
@@ -197,26 +274,27 @@ std::string normalise_request_url(request &req) {
   return out.str();
 }
 
-std::string request_method(request &req) {
-  const char *method = req.get_param("REQUEST_METHOD");
-  if (method == NULL) {
-    throw http::server_error("Request didn't set $REQUEST_METHOD parameter.");
-  }
-  return std::string(method);
-}
-
-} // anonymous namespace
-
-std::string signature_base_string(request &req) {
+boost::optional<std::string> signature_base_string(request &req) {
   std::ostringstream out;
 
-  out << upcase(request_method(req)) << "&"
-      << normalise_request_url(req) << "&"
-      << normalise_request_parameters(req);
+  boost::optional<std::string> request_params =
+    normalise_request_parameters(req);
+
+  if (!request_params) {
+    return boost::none;
+  }
+
+  out << escape(upcase(request_method(req))) << "&"
+      << escape(normalise_request_url(req)) << "&"
+      << escape(*request_params);
 
   return out.str();
 }
 
-bool oauth_valid_signature(request &) {
+} // namespace detail
+
+bool is_valid_signature(request &) {
   return false;
 }
+
+} // namespace oauth
