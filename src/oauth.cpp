@@ -192,27 +192,8 @@ std::string request_method(request &req) {
   return std::string(method);
 }
 
-std::string escape(const std::string &str) {
-  static const char *hexdigits = "0123456789ABCDEF";
-
-  std::ostringstream ostr;
-  BOOST_FOREACH(char c, str) {
-    if ((c >= 'a' && c <= 'z') ||
-        (c >= 'A' && c <= 'Z') ||
-        (c >= '0' && c <= '9') ||
-        (c == '-') ||
-        (c == '.') ||
-        (c == '_') ||
-        (c == '~')) {
-      ostr << c;
-
-    } else {
-      unsigned char uc = (unsigned char)c;
-      ostr << "%" << hexdigits[uc >> 4] << hexdigits[uc & 0xf];
-    }
-  }
-
-  return ostr.str();
+std::string urlnormalise(const std::string &str) {
+  return http::urlencode(http::urldecode(str));
 }
 
 } // anonymous namespace
@@ -235,8 +216,8 @@ boost::optional<std::string> normalise_request_parameters(request &req) {
       std::string k = http::urldecode(p.k);
       if ((k != "realm") && (k != "oauth_signature")) {
         params.push_back(param());
-        params.back().k.swap(k);
-        params.back().v = http::urldecode(p.v);
+        params.back().k = urlnormalise(p.k);
+        params.back().v = urlnormalise(p.v);
       }
     }
   }
@@ -246,8 +227,8 @@ boost::optional<std::string> normalise_request_parameters(request &req) {
     BOOST_FOREACH(const map_t::value_type &kv, get_params) {
       if ((kv.first != "realm") && (kv.first != "oauth_signature")) {
         params.push_back(param());
-        params.back().k = http::urldecode(kv.first);
-        params.back().v = http::urldecode(kv.second);
+        params.back().k = urlnormalise(kv.first);
+        params.back().v = urlnormalise(kv.second);
       }
     }
   }
@@ -258,7 +239,7 @@ boost::optional<std::string> normalise_request_parameters(request &req) {
   bool first = true;
   BOOST_FOREACH(const param &p, params) {
     if (first) { first = false; } else { out << "&"; }
-    out << http::urlencode(p.k) << "=" << http::urlencode(p.v);
+    out << p.k << "=" << p.v;
   }
 
   return out.str();
@@ -284,9 +265,9 @@ boost::optional<std::string> signature_base_string(request &req) {
     return boost::none;
   }
 
-  out << escape(upcase(request_method(req))) << "&"
-      << escape(normalise_request_url(req)) << "&"
-      << escape(*request_params);
+  out << http::urlencode(upcase(request_method(req))) << "&"
+      << http::urlencode(normalise_request_url(req)) << "&"
+      << http::urlencode(*request_params);
 
   return out.str();
 }
