@@ -247,6 +247,19 @@ void extract_members(const pqxx::result &res, members_t &members) {
   }
 }
 
+void extract_comments(const pqxx::result &res, comments_t &comments) {
+  changeset_comment_info comment;
+  comments.clear();
+  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
+       ++itr) {
+    comment.author_id = (*itr)["author_id"].as<osm_user_id_t>();
+    comment.author_display_name = (*itr)["display_name"].c_str();
+    comment.body = (*itr)["body"].c_str();
+    comment.created_at = (*itr)["created_at"].c_str();
+    comments.push_back(comment);
+  }
+}
+
 } // anonymous namespace
 
 writeable_pgsql_selection::writeable_pgsql_selection(
@@ -332,7 +345,7 @@ void writeable_pgsql_selection::write_changesets(output_formatter &formatter,
        itr != changesets.end(); ++itr) {
     extract_changeset(*itr, elem, cc);
     extract_tags(w.prepared("extract_changeset_tags")(elem.id).exec(), tags);
-    // extract_comments(w.prepared("extract_changeset_comments")(elem.id).exec(), comments);
+    extract_comments(w.prepared("extract_changeset_comments")(elem.id).exec(), comments);
     formatter.write_changeset(elem, tags, include_changeset_discussions, comments, now);
   }
 }
@@ -578,6 +591,14 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       "FROM current_relation_members "
       "WHERE relation_id=$1 "
       "ORDER BY sequence_id ASC")
+    PREPARE_ARGS(("bigint"));
+  m_connection.prepare("extract_changeset_comments",
+    "SELECT cc.author_id, u.display_name, cc.body, "
+        "to_char(cc.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at "
+      "FROM changeset_comments cc "
+      "JOIN users u ON cc.author_id = u.id "
+      "WHERE cc.changeset_id=$1 AND cc.visible "
+      "ORDER BY cc.created_at ASC")
     PREPARE_ARGS(("bigint"));
 
   // extraction functions for tags

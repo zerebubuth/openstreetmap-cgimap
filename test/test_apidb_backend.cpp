@@ -288,7 +288,7 @@ void test_changeset_with_tags(boost::shared_ptr<data_selection> sel) {
   assert_equal<bool>(sel->supports_changesets(), true,
                      "apidb should support changesets.");
 
-  std::vector<osm_id_t> ids;
+  std::vector<osm_changeset_id_t> ids;
   ids.push_back(2);
   int num = sel->select_changesets(ids);
   assert_equal<int>(num, 1, "should have selected one changeset.");
@@ -313,7 +313,7 @@ void test_changeset_with_tags(boost::shared_ptr<data_selection> sel) {
         1, // uid
         std::string("user_1"), // display_name
         boost::none, // bounding box
-        0, // num_changes
+        1, // num_changes
         0 // comments_count
         ),
       tags,
@@ -321,6 +321,79 @@ void test_changeset_with_tags(boost::shared_ptr<data_selection> sel) {
       comments_t(),
       t),
     "changesets should be equal.");
+}
+
+void check_changeset_with_comments(boost::shared_ptr<data_selection> sel,
+                                   bool include_discussion) {
+  assert_equal<bool>(sel->supports_changesets(), true,
+                     "apidb should support changesets.");
+
+  std::vector<osm_changeset_id_t> ids;
+  ids.push_back(3);
+  int num = sel->select_changesets(ids);
+  assert_equal<int>(num, 1, "should have selected one changeset.");
+
+  if (include_discussion) {
+    sel->select_changeset_discussions();
+  }
+
+  boost::posix_time::ptime t = parse_time("2015-09-05T20:38:00Z");
+
+  test_formatter f;
+  sel->write_changesets(f, t);
+  assert_equal<size_t>(f.m_changesets.size(), 1,
+                       "should have written one changeset.");
+
+  comments_t comments;
+  {
+    changeset_comment_info comment;
+    comment.author_id = 3;
+    comment.body = "a nice comment!";
+    comment.created_at = "2015-09-05T20:37:01Z";
+    comment.author_display_name = "user_3";
+    comments.push_back(comment);
+  }
+  // note that we don't see the non-visible one in the database.
+  assert_equal<test_formatter::changeset_t>(
+    f.m_changesets.front(),
+    test_formatter::changeset_t(
+      changeset_info(
+        3, // ID
+        "2013-11-14T02:10:00Z", // created_at
+        "2013-11-14T03:10:00Z", // closed_at
+        1, // uid
+        std::string("user_1"), // display_name
+        boost::none, // bounding box
+        0, // num_changes
+        0 // comments_count
+        ),
+      tags_t(),
+      include_discussion,
+      comments,
+      t),
+    "changesets should be equal.");
+}
+
+void test_changeset_with_comments_not_including_discussions(boost::shared_ptr<data_selection> sel) {
+  try {
+    check_changeset_with_comments(sel, false);
+
+  } catch (const std::exception &e) {
+    std::ostringstream ostr;
+    ostr << e.what() << ", while include_discussion was false";
+    throw std::runtime_error(ostr.str());
+  }
+}
+
+void test_changeset_with_comments_including_discussions(boost::shared_ptr<data_selection> sel) {
+  try {
+    check_changeset_with_comments(sel, true);
+
+  } catch (const std::exception &e) {
+    std::ostringstream ostr;
+    ostr << e.what() << ", while include_discussion was true";
+    throw std::runtime_error(ostr.str());
+  }
 }
 #endif /* ENABLE_EXPERIMENTAL */
 
@@ -358,6 +431,12 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
               &test_changeset_with_tags));
+
+    tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
+              &test_changeset_with_comments_not_including_discussions));
+
+    tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
+              &test_changeset_with_comments_including_discussions));
 #endif /* ENABLE_EXPERIMENTAL */
 
   } catch (const test_database::setup_error &e) {
