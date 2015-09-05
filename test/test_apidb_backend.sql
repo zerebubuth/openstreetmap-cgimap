@@ -17,6 +17,11 @@ VALUES (-1, -1, '2016-04-16T15:09:00Z', '2016-04-16T15:09:00Z'),
        (3, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'),
        (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z');
 
+-- and some tags on those changesets
+INSERT INTO changeset_tags (changeset_id, k, v)
+VALUES (2, 'test_key', 'test_value'),
+       (2, 'test_key2', 'test_value2');
+
 -- add some nodes for each of the users
 INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
 VALUES (1,       0,       0, 1, true,  '2013-11-14T02:10:00Z', 3221225472, 1),

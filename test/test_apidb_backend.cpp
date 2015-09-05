@@ -283,6 +283,45 @@ void test_nonpublic_changeset(boost::shared_ptr<data_selection> sel) {
       t),
     "changesets");
 }
+
+void test_changeset_with_tags(boost::shared_ptr<data_selection> sel) {
+  assert_equal<bool>(sel->supports_changesets(), true,
+                     "apidb should support changesets.");
+
+  std::vector<osm_id_t> ids;
+  ids.push_back(2);
+  int num = sel->select_changesets(ids);
+  assert_equal<int>(num, 1, "should have selected one changeset.");
+
+  boost::posix_time::ptime t = parse_time("2015-09-05T20:33:00Z");
+
+  test_formatter f;
+  sel->write_changesets(f, t);
+  assert_equal<size_t>(f.m_changesets.size(), 1,
+                       "should have written one changeset.");
+
+  tags_t tags;
+  tags.push_back(std::make_pair("test_key", "test_value"));
+  tags.push_back(std::make_pair("test_key2", "test_value2"));
+  assert_equal<test_formatter::changeset_t>(
+    f.m_changesets.front(),
+    test_formatter::changeset_t(
+      changeset_info(
+        2, // ID
+        "2013-11-14T02:10:00Z", // created_at
+        "2013-11-14T03:10:00Z", // closed_at
+        1, // uid
+        std::string("user_1"), // display_name
+        boost::none, // bounding box
+        0, // num_changes
+        0 // comments_count
+        ),
+      tags,
+      false,
+      comments_t(),
+      t),
+    "changesets should be equal.");
+}
 #endif /* ENABLE_EXPERIMENTAL */
 
 } // anonymous namespace
@@ -316,6 +355,9 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
               &test_nonpublic_changeset));
+
+    tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
+              &test_changeset_with_tags));
 #endif /* ENABLE_EXPERIMENTAL */
 
   } catch (const test_database::setup_error &e) {
