@@ -11,6 +11,7 @@ addons:
       - libboost-program-options-dev
       - libboost-regex-dev
       - libboost-system-dev
+      - libboost-locale-dev
       - libfcgi-dev
       - libmemcached-dev
       - libpqxx3-dev
@@ -20,7 +21,7 @@ before_install:
   - gem install pg libxml-ruby
 script:
   - ./autogen.sh
-  - ./configure --with-fcgi=/usr
+  - ./configure
   - make
   - make check
 after_failure:
