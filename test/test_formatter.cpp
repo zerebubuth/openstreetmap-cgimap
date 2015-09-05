@@ -3,6 +3,7 @@
 
 #include <boost/foreach.hpp>
 #include <boost/optional/optional_io.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 test_formatter::node_t::node_t(const element_info &elem_, double lon_, double lat_,
                                const tags_t &tags_)
@@ -119,10 +120,50 @@ std::ostream &operator<<(std::ostream &out, const test_formatter::node_t &n) {
       << "visible=" << n.elem.visible << "), "
       << "lon=" << n.lon << ", "
       << "lat=" << n.lat << ", "
-      << "{";
+      << "tags{";
   BOOST_FOREACH(const tags_t::value_type &v, n.tags) {
     out << "\"" << v.first << "\" => \"" << v.second << "\", ";
   }
   out << "})";
+
+  return out;
 }
 
+std::ostream &operator<<(std::ostream &out, const bbox &b) {
+  out << "bbox("
+      << b.minlon << ", "
+      << b.minlat << ", "
+      << b.maxlon << ", "
+      << b.maxlat << ")";
+  return out;
+}
+
+std::ostream &operator<<(std::ostream &out, const test_formatter::changeset_t &c) {
+  out << "changeset(changeset_info("
+      << "id=" << c.m_info.id << ", "
+      << "created_at=\"" << c.m_info.created_at << "\", "
+      << "closed_at=\"" << c.m_info.closed_at << "\", "
+      << "uid=" << c.m_info.uid << ", "
+      << "display_name=\"" << c.m_info.display_name << "\", "
+      << "bounding_box=" << c.m_info.bounding_box << ", "
+      << "num_changes=" << c.m_info.num_changes << ", "
+      << "comments_count=" << c.m_info.comments_count << "), "
+      << "tags{";
+  BOOST_FOREACH(const tags_t::value_type &v, c.m_tags) {
+    out << "\"" << v.first << "\" => \"" << v.second << "\", ";
+  }
+  out << "}, "
+      << "include_comments=" << c.m_include_comments << ", "
+      << "comments[";
+  BOOST_FOREACH(const comments_t::value_type &v, c.m_comments) {
+    out << "comment(author_id=" << v.author_id << ", "
+        << "body=\"" << v.body << "\", "
+        << "created_at=\"" << v.created_at << "\", "
+        << "author_display_name=\"" << v.author_display_name << "\"), ";
+  }
+  out << "], "
+      << "time=" << c.m_time
+      << ")";
+
+  return out;
+}

@@ -8,6 +8,8 @@
 #include <sys/time.h>
 #include <stdio.h>
 
+#include "cgimap/config.hpp"
+#include "cgimap/time.hpp"
 #include "test_formatter.hpp"
 #include "test_database.hpp"
 #include "cgimap/oauth.hpp"
@@ -209,6 +211,44 @@ void test_negative_changeset_ids(boost::shared_ptr<data_selection> sel) {
     f.m_nodes[1], "second node written");
 }
 
+void test_changeset(boost::shared_ptr<data_selection> sel) {
+#ifdef ENABLE_EXPERIMENTAL
+  assert_equal<bool>(sel->supports_changesets(), true,
+                     "apidb should support changesets.");
+
+  std::vector<osm_changeset_id_t> ids;
+  ids.push_back(1);
+  int num = sel->select_changesets(ids);
+  assert_equal<int>(num, 1, "should have selected one changeset.");
+
+  boost::posix_time::ptime t = parse_time("2015-09-05T17:15:33Z");
+
+  test_formatter f;
+  sel->write_changesets(f, t);
+  assert_equal<size_t>(f.m_changesets.size(), 1,
+                       "should have written one changeset.");
+
+  assert_equal<test_formatter::changeset_t>(
+    f.m_changesets.front(),
+    test_formatter::changeset_t(
+      changeset_info(
+        1, // ID
+        "2013-11-14T02:10:00Z", // created_at
+        "2013-11-14T03:10:00Z", // closed_at
+        1, // uid
+        std::string("user_1"), // display_name
+        boost::none, // bounding box
+        2, // num_changes
+        0 // comments_count
+        ),
+      tags_t(),
+      false,
+      comments_t(),
+      t),
+    "changesets should be equal.");
+#endif /* ENABLE_EXPERIMENTAL */
+}
+
 } // anonymous namespace
 
 int main(int, char **) {
@@ -233,6 +273,9 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
         &test_negative_changeset_ids));
+
+    tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
+              &test_changeset));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;

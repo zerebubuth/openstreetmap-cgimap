@@ -65,5 +65,6 @@ struct test_formatter : public output_formatter {
 };
 
 std::ostream &operator<<(std::ostream &out, const test_formatter::node_t &n);
+std::ostream &operator<<(std::ostream &out, const test_formatter::changeset_t &n);
 
 #endif /* TEST_TEST_FORMATTER */

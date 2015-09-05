@@ -557,6 +557,14 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
         "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp "
       "FROM current_relations r "
         "JOIN tmp_relations tr ON tr.id=r.id");
+  m_connection.prepare("extract_changesets",
+     "SELECT c.id, "
+       "to_char(c.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at, "
+       "to_char(c.closed_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS closed_at, "
+       "c.min_lat, c.max_lat, c.min_lon, c.max_lon, "
+       "c.num_changes "
+     "FROM changesets c "
+       "JOIN tmp_changesets tc ON tc.id=c.id");
 
   // extraction functions for child information
   m_connection.prepare("extract_way_nds",
@@ -579,6 +587,8 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
     "SELECT k, v FROM current_way_tags WHERE way_id=$1")PREPARE_ARGS(("bigint"));
   m_connection.prepare("extract_relation_tags",
     "SELECT k, v FROM current_relation_tags WHERE relation_id=$1")PREPARE_ARGS(("bigint"));
+  m_connection.prepare("extract_changeset_tags",
+    "SELECT k, v FROM changeset_tags WHERE changeset_id=$1")PREPARE_ARGS(("bigint"));
 
   // selecting a set of nodes as a list
   m_connection.prepare("add_nodes_list",
@@ -607,7 +617,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
     PREPARE_ARGS(("bigint[]"));
   m_connection.prepare("add_changesets_list",
     "INSERT INTO tmp_changesets "
-      "SELECT c.id from changesets "
+      "SELECT c.id from changesets c "
         "WHERE c.id = ANY($1)")
     PREPARE_ARGS(("bigint[]"));
 

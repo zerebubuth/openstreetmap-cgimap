@@ -49,3 +49,10 @@ VALUES
    'Rzcm5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf',
    '2UxsEFziZGv64hdWN3Qa90Vb6v1aovVxaTTQIn1D',
    '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z');
+
+-- update the number of edits
+UPDATE changesets
+  SET num_changes = (
+    SELECT count(*)
+    FROM current_nodes
+    WHERE changeset_id = changesets.id);
