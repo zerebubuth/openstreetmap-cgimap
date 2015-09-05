@@ -197,13 +197,30 @@ void check_xmlattr(const pt::ptree &expected, const pt::ptree &actual) {
   }
 
   BOOST_FOREACH(const std::string &k, exp_keys) {
-    std::string exp_val = expected.get_child(k).data();
-    std::string act_val = actual.get_child(k).data();
-    if ((exp_val != act_val) && (exp_val != "***")) {
-      throw std::runtime_error(
+    boost::optional<const pt::ptree &> exp_child = expected.get_child_optional(k);
+    boost::optional<const pt::ptree &> act_child = actual.get_child_optional(k);
+
+    if (exp_child) {
+      if (act_child) {
+        std::string exp_val = exp_child->data();
+        std::string act_val = act_child->data();
+        if ((exp_val != act_val) && (exp_val != "***")) {
+          throw std::runtime_error(
+            (boost::format(
+              "Attribute `%1%' expected value `%2%', but got `%3%'") %
+             k % exp_val % act_val).str());
+        }
+      } else {
+        throw std::runtime_error(
           (boost::format(
-               "Attribute `%1%' expected value `%2%', but got `%3%'") %
-           k % exp_val % act_val).str());
+            "Expected to find attribute `%1%', but it was missing.") %
+           k).str());
+      }
+    } else if (act_child) {
+      throw std::runtime_error(
+        (boost::format(
+          "Found attribute `%1%', but it was not expected to exist.") %
+           k).str());
     }
   }
 }
