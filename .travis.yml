@@ -11,7 +11,6 @@ addons:
       - libboost-program-options-dev
       - libboost-regex-dev
       - libboost-system-dev
-      - libboost-locale-dev
       - libfcgi-dev
       - libmemcached-dev
       - libpqxx3-dev
