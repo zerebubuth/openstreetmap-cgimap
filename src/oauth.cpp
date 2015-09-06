@@ -1,3 +1,4 @@
+#include "cgimap/config.hpp"
 #include "cgimap/oauth.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/request_helpers.hpp"
@@ -7,13 +8,18 @@
 #include <sstream>
 
 #include <boost/foreach.hpp>
+#ifdef HAVE_BOOST_LOCALE
 #include <boost/locale.hpp>
+#else
+#include <ctype.h> // for toupper / tolower
+#endif /* HAVE_BOOST_LOCALE */
 
 #include <boost/fusion/include/adapt_struct.hpp>
 #include <boost/spirit/include/qi.hpp>
 
 namespace {
 
+#ifdef HAVE_BOOST_LOCALE
 const std::locale ascii_locale = boost::locale::generator()("C.UTF-8");
 
 std::string downcase(const std::string &s) {
@@ -23,6 +29,23 @@ std::string downcase(const std::string &s) {
 std::string upcase(const std::string &s) {
   return boost::locale::to_upper(s, ascii_locale);
 }
+
+#else /* HAVE_BOOST_LOCALE */
+// if we don't have boost::locale available, then instead of trying
+// to interface to ICU directly, just fall back to only supporting
+// ASCII...
+std::string downcase(const std::string &s) {
+  std::string rv(s);
+  std::transform(rv.begin(), rv.end(), rv.begin(), ::tolower);
+  return rv;
+}
+
+std::string upcase(const std::string &s) {
+  std::string rv(s);
+  std::transform(rv.begin(), rv.end(), rv.begin(), ::toupper);
+  return rv;
+}
+#endif /* HAVE_BOOST_LOCALE */
 
 std::string scheme(request &) {
   return "http"; // TODO: support https!
