@@ -145,8 +145,8 @@ struct oauth_authorization_grammar
       | (key >> lit("=\"") > escaped > lit("\""));
 
     // definitions from http://oauth.net/core/1.0a/#rfc.section.5.4.1
-    key = +(unreserved | percent_encoded);
-    escaped = *(unreserved | percent_encoded);
+    key = qi::raw[+(unreserved | percent_encoded)];
+    escaped = qi::raw[*(unreserved | percent_encoded)];
     unreserved = char_('a', 'z') | char_('A', 'Z') | char_('0', '9') | char_("-") |
       char_(".") | char_("_") | char_("~");
     percent_encoded = char_("%") > hexdigit > hexdigit;
@@ -185,8 +185,9 @@ struct oauth_authorization_grammar
 
   qi::rule<iterator, std::vector<param>(), ascii::blank_type> start;
   qi::rule<iterator, param()> kvpair;
-  qi::rule<iterator, std::string()> key, escaped, percent_encoded, quoted_string;
-  qi::rule<iterator, char()> unreserved, hexdigit, qdtext, quoted_pair;
+  qi::rule<iterator, std::string()> key, unreserved, escaped, percent_encoded,
+    quoted_string;
+  qi::rule<iterator, char()> hexdigit, qdtext, quoted_pair;
 };
 
 // parses the oauth authorization header and returns true if the
