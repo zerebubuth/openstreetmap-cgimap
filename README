@@ -50,6 +50,11 @@ with Ubuntu 14.04.1) - you may already have many or all of these - is:
 
     sudo apt-get install git build-essential automake autoconf libtool
 
+If you want to enable the experimental JSON format, then you'll also
+need:
+
+    sudo apt-get install libyajl-dev
+
 To build the system from scratch, first check out the source code (skip
 this step if you've already got the source):
 
