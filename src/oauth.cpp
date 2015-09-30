@@ -47,8 +47,15 @@ std::string upcase(const std::string &s) {
 }
 #endif /* HAVE_BOOST_LOCALE */
 
-std::string scheme(request &) {
-  return "http"; // TODO: support https!
+std::string scheme(request &req) {
+  const char *https = req.get_param("HTTPS");
+
+  if (https == NULL) {
+    return "http";
+
+  } else {
+    return "https";
+  }
 }
 
 std::string authority(request &req) {

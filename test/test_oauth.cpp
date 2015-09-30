@@ -89,6 +89,8 @@ const char *test_request::get_param(const char *key) {
     return authority.c_str();
   } else if (std::strncmp(key, "SERVER_PORT", 12) == 0) {
     return port.c_str();
+  } else if (std::strncmp(key, "HTTPS", 6) == 0) {
+    return (scheme == "https") ? scheme.c_str() : NULL;
   } else {
     return NULL;
   }
@@ -152,6 +154,27 @@ void oauth_check_signature_base_string2() {
     std::string("GET&http%3A%2F%2Fphotos.example.net%3A8001%2FPhotos&oauth_consumer_key%3Ddpf43f3%252B%252Bp%252B%25232l4k3l03%26oauth_nonce%3Dkllo~9940~pd9333jh%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1191242096%26oauth_token%3Dnnch734d%25280%25290sl2jdk%26oauth_version%3D1.0%26photo%2520size%3D300%2525%26title%3DBack%2520of%2520%2524100%2520Dollars%2520Bill"));
 }
 
+void oauth_check_signature_base_string3() {
+  // generated using http://nouncer.com/oauth/signature.html
+  boost::optional<std::string> auth_header = std::string("OAuth realm=\"https://www.example.com/path\", oauth_consumer_key=\"abcdef\", oauth_token=\"bcdefg\", oauth_nonce=\"123456\", oauth_timestamp=\"1443648660\", oauth_signature_method=\"HMAC-SHA1\", oauth_version=\"1.0\", oauth_signature=\"TWS6VYOQSpNZt6%2FTNp%2Bgbgbnfaw%3D\"");
+  test_request req(
+    "POST",
+    "https", "www.example.com", "443", "path", "",
+    auth_header);
+
+  assert_equal<std::string>(
+    oauth::detail::normalise_request_url(req),
+    "https://www.example.com/path");
+
+  assert_equal<boost::optional<std::string> >(
+    oauth::detail::normalise_request_parameters(req),
+    std::string("oauth_consumer_key=abcdef&oauth_nonce=123456&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1443648660&oauth_token=bcdefg&oauth_version=1.0"));
+
+  assert_equal<boost::optional<std::string> >(
+    oauth::detail::signature_base_string(req),
+    std::string("POST&https%3A%2F%2Fwww.example.com%2Fpath&oauth_consumer_key%3Dabcdef%26oauth_nonce%3D123456%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1443648660%26oauth_token%3Dbcdefg%26oauth_version%3D1.0"));
+}
+
 void oauth_check_valid_signature_header() {
   boost::optional<std::string> auth_header = std::string("OAuth realm=\"http://photos.example.net/\", oauth_consumer_key=\"dpf43f3p2l4k3l03\", oauth_token=\"nnch734d00sl2jdk\", oauth_signature_method=\"HMAC-SHA1\", oauth_signature=\"tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D\", oauth_timestamp=\"1191242096\", oauth_nonce=\"kllo9940pd9333jh\", oauth_version=\"1.0\"");
   test_request req(
@@ -185,6 +208,7 @@ int main() {
   try {
     ANNOTATE_EXCEPTION(oauth_check_signature_base_string());
     ANNOTATE_EXCEPTION(oauth_check_signature_base_string2());
+    ANNOTATE_EXCEPTION(oauth_check_signature_base_string3());
     //ANNOTATE_EXCEPTION(oauth_check_valid_signature_header());
     ANNOTATE_EXCEPTION(oauth_check_invalid_signature_header());
     //ANNOTATE_EXCEPTION(oauth_check_valid_signature_params());
