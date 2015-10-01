@@ -234,7 +234,7 @@ namespace oauth {
 namespace detail {
 
 boost::optional<std::string> normalise_request_parameters(request &req) {
-  typedef std::map<std::string, std::string> map_t;
+  typedef std::vector<std::pair<std::string, std::string> > params_t;
   std::vector<param> params;
 
   { // add oauth params, except realm
@@ -254,8 +254,8 @@ boost::optional<std::string> normalise_request_parameters(request &req) {
   }
 
   { // add HTTP GET parameters
-    map_t get_params = http::parse_params(get_query_string(req));
-    BOOST_FOREACH(const map_t::value_type &kv, get_params) {
+    params_t get_params = http::parse_params(get_query_string(req));
+    BOOST_FOREACH(const params_t::value_type &kv, get_params) {
       if ((kv.first != "realm") && (kv.first != "oauth_signature")) {
         params.push_back(param());
         params.back().k = urlnormalise(kv.first);

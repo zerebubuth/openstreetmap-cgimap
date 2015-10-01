@@ -9,6 +9,8 @@ using boost::format;
 using std::string;
 using std::auto_ptr;
 using std::map;
+using std::pair;
+using std::vector;
 
 #define MAX_AREA 0.25
 #define MAX_NODES 50000
@@ -57,14 +59,21 @@ responder_ptr_t map_handler::responder(factory_ptr &x) const {
   return responder_ptr_t(new map_responder(mime_type, bounds, x));
 }
 
+namespace {
+bool is_bbox(const pair<string, string> &p) {
+  return p.first == "bbox";
+}
+} // anonymous namespace
+
 /**
  * Validates an FCGI request, returning the valid bounding box or
  * throwing an error if there was no valid bounding box.
  */
 bbox map_handler::validate_request(request &req) {
   string decoded = http::urldecode(get_query_string(req));
-  const map<string, string> params = http::parse_params(decoded);
-  map<string, string>::const_iterator itr = params.find("bbox");
+  const vector<pair<string, string> > params = http::parse_params(decoded);
+  vector<pair<string, string> >::const_iterator itr =
+    std::find_if(params.begin(), params.end(), is_bbox);
 
   bbox bounds;
   if ((itr == params.end()) || !bounds.parse(itr->second)) {

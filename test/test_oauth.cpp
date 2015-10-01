@@ -175,6 +175,27 @@ void oauth_check_signature_base_string3() {
     std::string("POST&https%3A%2F%2Fwww.example.com%2Fpath&oauth_consumer_key%3Dabcdef%26oauth_nonce%3D123456%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1443648660%26oauth_token%3Dbcdefg%26oauth_version%3D1.0"));
 }
 
+void oauth_check_signature_base_string4() {
+  // generated using http://nouncer.com/oauth/signature.html
+  boost::optional<std::string> auth_header = std::string("OAuth realm=\"http://example.com/request\", oauth_consumer_key=\"9djdj82h48djs9d2\", oauth_token=\"kkk9d7dh3k39sjv7\", oauth_nonce=\"7d8f3e4a\", oauth_timestamp=\"137131201\", oauth_signature_method=\"HMAC-SHA1\", oauth_version=\"1.0\", oauth_signature=\"InXuTE4pXaeiQxfEYTM4Cs8Fuds%3D\"");
+  test_request req(
+    "POST",
+    "http", "example.com", "80", "request", "b5=%3D%253D&a3=a&c%40=&a2=r%20b&c2&a3=2+q",
+    auth_header);
+
+  assert_equal<std::string>(
+    oauth::detail::normalise_request_url(req),
+    "http://example.com/request");
+
+  assert_equal<boost::optional<std::string> >(
+    oauth::detail::normalise_request_parameters(req),
+    std::string("a2=r%20b&a3=2%20q&a3=a&b5=%3D%253D&c%40=&c2=&oauth_consumer_key=9djdj82h48djs9d2&oauth_nonce=7d8f3e4a&oauth_signature_method=HMAC-SHA1&oauth_timestamp=137131201&oauth_token=kkk9d7dh3k39sjv7&oauth_version=1.0"));
+
+  assert_equal<boost::optional<std::string> >(
+    oauth::detail::signature_base_string(req),
+    std::string("POST&http%3A%2F%2Fexample.com%2Frequest&a2%3Dr%2520b%26a3%3D2%2520q%26a3%3Da%26b5%3D%253D%25253D%26c%2540%3D%26c2%3D%26oauth_consumer_key%3D9djdj82h48djs9d2%26oauth_nonce%3D7d8f3e4a%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D137131201%26oauth_token%3Dkkk9d7dh3k39sjv7%26oauth_version%3D1.0"));
+}
+
 void oauth_check_valid_signature_header() {
   boost::optional<std::string> auth_header = std::string("OAuth realm=\"http://photos.example.net/\", oauth_consumer_key=\"dpf43f3p2l4k3l03\", oauth_token=\"nnch734d00sl2jdk\", oauth_signature_method=\"HMAC-SHA1\", oauth_signature=\"tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D\", oauth_timestamp=\"1191242096\", oauth_nonce=\"kllo9940pd9333jh\", oauth_version=\"1.0\"");
   test_request req(
@@ -209,6 +230,7 @@ int main() {
     ANNOTATE_EXCEPTION(oauth_check_signature_base_string());
     ANNOTATE_EXCEPTION(oauth_check_signature_base_string2());
     ANNOTATE_EXCEPTION(oauth_check_signature_base_string3());
+    ANNOTATE_EXCEPTION(oauth_check_signature_base_string4());
     //ANNOTATE_EXCEPTION(oauth_check_valid_signature_header());
     ANNOTATE_EXCEPTION(oauth_check_invalid_signature_header());
     //ANNOTATE_EXCEPTION(oauth_check_valid_signature_params());

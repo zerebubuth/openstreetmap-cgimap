@@ -132,7 +132,7 @@ std::string urlencode(const std::string &s);
  * The string should already have been url-decoded (i.e: no %-encoded
  * chars remain).
  */
-std::map<std::string, std::string> parse_params(const std::string &p);
+std::vector<std::pair<std::string, std::string> > parse_params(const std::string &p);
 
 /*
  * HTTP Content Encodings.
