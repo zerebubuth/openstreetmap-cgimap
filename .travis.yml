@@ -15,9 +15,6 @@ addons:
       - libmemcached-dev
       - libpqxx3-dev
       - libxml2-dev
-      - ruby
-before_install:
-  - gem install pg libxml-ruby
 script:
   - ./autogen.sh
   - ./configure
