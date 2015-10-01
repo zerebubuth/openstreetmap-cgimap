@@ -3,6 +3,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 #include <stdexcept>
 #include <boost/shared_ptr.hpp>
 #include "cgimap/config.hpp"
