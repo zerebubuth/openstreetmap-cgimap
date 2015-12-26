@@ -15,6 +15,7 @@ addons:
       - libmemcached-dev
       - libpqxx3-dev
       - libxml2-dev
+      - libcrypto++-dev
 script:
   - ./autogen.sh
   - ./configure
