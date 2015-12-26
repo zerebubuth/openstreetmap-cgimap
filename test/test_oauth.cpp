@@ -196,6 +196,103 @@ void oauth_check_signature_base_string4() {
     std::string("POST&http%3A%2F%2Fexample.com%2Frequest&a2%3Dr%2520b%26a3%3D2%2520q%26a3%3Da%26b5%3D%253D%25253D%26c%2540%3D%26c2%3D%26oauth_consumer_key%3D9djdj82h48djs9d2%26oauth_nonce%3D7d8f3e4a%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D137131201%26oauth_token%3Dkkk9d7dh3k39sjv7%26oauth_version%3D1.0"));
 }
 
+struct test_secret_store : public oauth::secret_store {
+  test_secret_store(const std::string &consumer_key,
+                    const std::string &consumer_secret,
+                    const std::string &token_id,
+                    const std::string &token_secret)
+    : m_consumer_key(consumer_key)
+    , m_consumer_secret(consumer_secret)
+    , m_token_id(token_id)
+    , m_token_secret(token_secret) {
+  }
+
+  boost::optional<std::string> consumer_secret(const std::string &key) {
+    if (key == m_consumer_key) {
+      return m_consumer_secret;
+    }
+    return boost::none;
+  }
+
+  boost::optional<std::string> token_secret(const std::string &id) {
+    if (id == m_token_id) {
+      return m_token_secret;
+    }
+    return boost::none;
+  }
+
+private:
+  std::string m_consumer_key, m_consumer_secret, m_token_id, m_token_secret;
+};
+
+void oauth_check_base64() {
+  // examples from https://en.wikipedia.org/wiki/Base64#Examples
+  assert_equal<std::string>(
+    oauth::detail::base64_encode("any carnal pleasure."),
+    "YW55IGNhcm5hbCBwbGVhc3VyZS4=");
+
+  assert_equal<std::string>(
+    oauth::detail::base64_encode("any carnal pleasure"),
+    "YW55IGNhcm5hbCBwbGVhc3VyZQ==");
+
+  assert_equal<std::string>(
+    oauth::detail::base64_encode("any carnal pleasur"),
+    "YW55IGNhcm5hbCBwbGVhc3Vy");
+
+  assert_equal<std::string>(
+    oauth::detail::base64_encode("any carnal pleasu"),
+    "YW55IGNhcm5hbCBwbGVhc3U=");
+
+  assert_equal<std::string>(
+    oauth::detail::base64_encode("any carnal pleas"),
+    "YW55IGNhcm5hbCBwbGVhcw==");
+
+  assert_equal<std::string>(
+    oauth::detail::base64_encode(""),
+    "");
+}
+
+void oauth_check_hmac_sha1() {
+  const unsigned char expected[] = {
+    0xf0, 0x17, 0x31, 0xab, 0xa4, 0x4c, 0xa5, 0x6d, 0x27, 0x99, 0xa6, 0x90, 0xe5,
+    0xda, 0x6b, 0x64, 0x75, 0xc3, 0x44, 0x0f };
+
+  std::string hash = oauth::detail::hmac_sha1(
+    "abcdef123456",
+    "Testing.");
+
+  assert_equal<std::string>(
+    hash,
+    std::string(reinterpret_cast<const char *>(expected), sizeof(expected) / sizeof(unsigned char)));
+}
+
+void oauth_check_signature_hmac_sha1_1() {
+  // generated using http://nouncer.com/oauth/signature.html
+  boost::optional<std::string> auth_header = std::string("OAuth realm=\"http://PHOTOS.example.net:8001/Photos\", oauth_consumer_key=\"dpf43f3%2B%2Bp%2B%232l4k3l03\", oauth_token=\"nnch734d%280%290sl2jdk\", oauth_nonce=\"kllo~9940~pd9333jh\", oauth_timestamp=\"1191242096\", oauth_signature_method=\"HMAC-SHA1\", oauth_version=\"1.0\", oauth_signature=\"MH9NDodF4I%2FV6GjYYVChGaKCtnk%3D\"");
+  test_request req(
+    "GET",
+    "http", "PHOTOS.example.net", "8001", "Photos", "type=%C3%97%C2%90%C3%97%E2%80%A2%C3%97%CB%9C%C3%97%E2%80%A2%C3%97%E2%80%98%C3%97%E2%80%A2%C3%97%C2%A1&scenario=%C3%97%C2%AA%C3%97%C2%90%C3%97%E2%80%A2%C3%97%C2%A0%C3%97%E2%80%9D",
+    auth_header);
+
+  assert_equal<std::string>(
+    oauth::detail::normalise_request_url(req),
+    "http://photos.example.net:8001/Photos");
+
+  assert_equal<boost::optional<std::string> >(
+    oauth::detail::normalise_request_parameters(req),
+    std::string("oauth_consumer_key=dpf43f3%2B%2Bp%2B%232l4k3l03&oauth_nonce=kllo~9940~pd9333jh&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1191242096&oauth_token=nnch734d%280%290sl2jdk&oauth_version=1.0&scenario=%C3%97%C2%AA%C3%97%C2%90%C3%97%E2%80%A2%C3%97%C2%A0%C3%97%E2%80%9D&type=%C3%97%C2%90%C3%97%E2%80%A2%C3%97%CB%9C%C3%97%E2%80%A2%C3%97%E2%80%98%C3%97%E2%80%A2%C3%97%C2%A1"));
+
+  assert_equal<boost::optional<std::string> >(
+    oauth::detail::signature_base_string(req),
+    std::string("GET&http%3A%2F%2Fphotos.example.net%3A8001%2FPhotos&oauth_consumer_key%3Ddpf43f3%252B%252Bp%252B%25232l4k3l03%26oauth_nonce%3Dkllo~9940~pd9333jh%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1191242096%26oauth_token%3Dnnch734d%25280%25290sl2jdk%26oauth_version%3D1.0%26scenario%3D%25C3%2597%25C2%25AA%25C3%2597%25C2%2590%25C3%2597%25E2%2580%25A2%25C3%2597%25C2%25A0%25C3%2597%25E2%2580%259D%26type%3D%25C3%2597%25C2%2590%25C3%2597%25E2%2580%25A2%25C3%2597%25CB%259C%25C3%2597%25E2%2580%25A2%25C3%2597%25E2%2580%2598%25C3%2597%25E2%2580%25A2%25C3%2597%25C2%25A1"));
+
+  test_secret_store store("dpf43f3++p+#2l4k3l03", "kd9@4h%%4f93k423kf44",
+                          "nnch734d(0)0sl2jdk",   "pfkkd#hi9_sl-3r=4s00");
+  assert_equal<boost::optional<std::string> >(
+    oauth::detail::hashed_signature(req, store),
+    std::string("MH9NDodF4I/V6GjYYVChGaKCtnk="));
+}
+
 void oauth_check_valid_signature_header() {
   boost::optional<std::string> auth_header = std::string("OAuth realm=\"http://photos.example.net/\", oauth_consumer_key=\"dpf43f3p2l4k3l03\", oauth_token=\"nnch734d00sl2jdk\", oauth_signature_method=\"HMAC-SHA1\", oauth_signature=\"tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D\", oauth_timestamp=\"1191242096\", oauth_nonce=\"kllo9940pd9333jh\", oauth_version=\"1.0\"");
   test_request req(
@@ -231,6 +328,9 @@ int main() {
     ANNOTATE_EXCEPTION(oauth_check_signature_base_string2());
     ANNOTATE_EXCEPTION(oauth_check_signature_base_string3());
     ANNOTATE_EXCEPTION(oauth_check_signature_base_string4());
+    ANNOTATE_EXCEPTION(oauth_check_base64());
+    ANNOTATE_EXCEPTION(oauth_check_hmac_sha1());
+    ANNOTATE_EXCEPTION(oauth_check_signature_hmac_sha1_1());
     //ANNOTATE_EXCEPTION(oauth_check_valid_signature_header());
     ANNOTATE_EXCEPTION(oauth_check_invalid_signature_header());
     //ANNOTATE_EXCEPTION(oauth_check_valid_signature_params());

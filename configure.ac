@@ -68,6 +68,7 @@ AS_IF([test "x$BOOST_DATE_TIME_LIB" == "x"],
 
 AX_CHECK_ZLIB
 REQUIRE_FCGI
+REQUIRE_CRYPTOPP
 
 AC_MSG_CHECKING([whether to enable experimental other API 0.6 calls])
 AC_ARG_ENABLE([experimental],

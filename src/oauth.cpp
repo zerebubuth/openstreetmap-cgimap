@@ -16,6 +16,14 @@
 
 #include <boost/fusion/include/adapt_struct.hpp>
 #include <boost/spirit/include/qi.hpp>
+#include <boost/archive/iterators/base64_from_binary.hpp>
+#include <boost/archive/iterators/transform_width.hpp>
+
+#include <cryptopp/hmac.h>
+#include <cryptopp/sha.h>
+#include <cryptopp/filters.h>
+
+namespace bai = boost::archive::iterators;
 
 namespace {
 
@@ -227,11 +235,85 @@ std::string urlnormalise(const std::string &str) {
   return http::urlencode(http::urldecode(str));
 }
 
+boost::optional<std::string> find_auth_header_value(const std::string &key, request &req) {
+  std::vector<param> auth_params;
+  const char *auth_header = req.get_param("HTTP_AUTHORIZATION");
+  bool success = parse_oauth_authorization(auth_header, auth_params);
+  if (!success) { return boost::none; }
+
+  for (std::vector<param>::const_iterator itr = auth_params.begin();
+       itr != auth_params.end(); ++itr) {
+    if (itr->k == key) {
+      return itr->v;
+    }
+  }
+
+  return boost::none;
+}
+
+boost::optional<std::string> signature_method(request &req) {
+  return find_auth_header_value("oauth_signature_method", req);
+}
+
+boost::optional<std::string> get_consumer_key(request &req) {
+  return find_auth_header_value("oauth_consumer_key", req);
+}
+
+boost::optional<std::string> get_token_id(request &req) {
+  return find_auth_header_value("oauth_token", req);
+}
+
 } // anonymous namespace
 
 namespace oauth {
 
 namespace detail {
+
+std::string hmac_sha1(const std::string &key, const std::string &text) {
+  std::string hash;
+
+  CryptoPP::HMAC<CryptoPP::SHA1> hmac(
+    reinterpret_cast<const unsigned char *>(key.c_str()),
+    key.size());
+
+  CryptoPP::StringSource ss(
+    text, true,
+    new CryptoPP::HashFilter(
+      hmac,
+      new CryptoPP::StringSink(
+        hash
+        )));
+
+  return hash;
+}
+
+std::string base64_encode(const std::string &str) {
+  typedef
+    bai::base64_from_binary<
+      bai::transform_width<
+        std::string::const_iterator,
+        6,
+        8
+      >
+    >
+    base64_encode;
+
+  std::ostringstream ostr;
+  std::copy(base64_encode(str.begin()),
+            base64_encode(str.end()),
+            std::ostream_iterator<char>(ostr));
+
+  // add '=' for padding
+  size_t dangling_bytes = str.size() % 3;
+  if (dangling_bytes == 1) {
+    ostr << "==";
+
+  } else if (dangling_bytes == 2) {
+    ostr << "=";
+  }
+
+  return ostr.str();
+}
 
 boost::optional<std::string> normalise_request_parameters(request &req) {
   typedef std::vector<std::pair<std::string, std::string> > params_t;
@@ -301,6 +383,51 @@ boost::optional<std::string> signature_base_string(request &req) {
       << http::urlencode(*request_params);
 
   return out.str();
+}
+
+boost::optional<std::string> hashed_signature(request &req, secret_store &store) {
+  boost::optional<std::string> method = signature_method(req);
+  if (!method || ((*method != "HMAC-SHA1") && (*method != "PLAINTEXT"))) {
+    return boost::none;
+  }
+
+  boost::optional<std::string>
+    sig_base_string = signature_base_string(req);
+  if (!sig_base_string) { return boost::none; }
+
+  boost::optional<std::string>
+    consumer_key = get_consumer_key(req),
+    token_id = get_token_id(req);
+
+  if (!consumer_key) { return boost::none; }
+  if (!token_id) { return boost::none; }
+
+  boost::optional<std::string>
+    consumer_secret = store.consumer_secret(http::urldecode(*consumer_key)),
+    token_secret = store.token_secret(http::urldecode(*token_id));
+
+  if (!consumer_secret) { return boost::none; }
+  if (!token_secret) { return boost::none; }
+
+  std::ostringstream key;
+  key << http::urlencode(*consumer_secret) << "&"
+      << http::urlencode(*token_secret);
+
+  std::string hash;
+  if (*method == "HMAC-SHA1") {
+    try {
+      hash = base64_encode(hmac_sha1(key.str(), *sig_base_string));
+
+    } catch (const CryptoPP::Exception &e) {
+      // TODO: log error!
+      return boost::none;
+    }
+
+  } else { // PLAINTEXT
+    hash = key.str();
+  }
+
+  return hash;
 }
 
 } // namespace detail
