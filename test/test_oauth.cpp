@@ -4,9 +4,12 @@
 #include <cstring>
 #include <iostream>
 #include <sstream>
+#include <set>
 
 #include <boost/optional.hpp>
 #include <boost/optional/optional_io.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <boost/tuple/tuple_comparison.hpp>
 
 #define ANNOTATE_EXCEPTION(stmt)                \
   {                                             \
@@ -196,7 +199,10 @@ void oauth_check_signature_base_string4() {
     std::string("POST&http%3A%2F%2Fexample.com%2Frequest&a2%3Dr%2520b%26a3%3D2%2520q%26a3%3Da%26b5%3D%253D%25253D%26c%2540%3D%26c2%3D%26oauth_consumer_key%3D9djdj82h48djs9d2%26oauth_nonce%3D7d8f3e4a%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D137131201%26oauth_token%3Dkkk9d7dh3k39sjv7%26oauth_version%3D1.0"));
 }
 
-struct test_secret_store : public oauth::secret_store {
+struct test_secret_store
+  : public oauth::secret_store
+  , public oauth::nonce_store
+  , public oauth::token_store {
   test_secret_store(const std::string &consumer_key,
                     const std::string &consumer_secret,
                     const std::string &token_id,
@@ -221,8 +227,25 @@ struct test_secret_store : public oauth::secret_store {
     return boost::none;
   }
 
+  bool use_nonce(const std::string &nonce,
+                 const std::string &timestamp,
+                 const std::string &token_id) {
+    boost::tuple<std::string, std::string, std::string> tuple =
+      boost::make_tuple(nonce, timestamp, token_id);
+    if (m_nonces.count(tuple) > 0) {
+      return false;
+    }
+    m_nonces.insert(tuple);
+    return true;
+  }
+
+  bool api_access_ok(const std::string &id) {
+    return id == m_token_id;
+  }
+
 private:
   std::string m_consumer_key, m_consumer_secret, m_token_id, m_token_secret;
+  std::set<boost::tuple<std::string, std::string, std::string> > m_nonces;
 };
 
 void oauth_check_base64() {
@@ -319,7 +342,9 @@ void oauth_check_valid_signature_header() {
     "http", "photos.example.net", "80", "photos", "file=vacation.jpg&size=original",
     auth_header);
 
-  assert_true(oauth::is_valid_signature(req));
+  test_secret_store store("dpf43f3p2l4k3l03", "kd94hf93k423kf44",
+                          "nnch734d00sl2jdk", "pfkkdhi9sl3r4s00");
+  assert_true(oauth::is_valid_signature(req, store, store, store));
 }
 
 void oauth_check_invalid_signature_header() {
@@ -329,7 +354,9 @@ void oauth_check_invalid_signature_header() {
     "http", "photos.example.net", "80", "photo", "file=vacation.jpg&size=original",
     auth_header);
 
-  assert_true(!oauth::is_valid_signature(req));
+  test_secret_store store("dpf43f3p2l4k3l03", "kd94hf93k423kf44",
+                          "nnch734d00sl2jdk", "pfkkdhi9sl3r4s00");
+  assert_true(!oauth::is_valid_signature(req, store, store, store));
 }
 
 void oauth_check_valid_signature_params() {
@@ -338,7 +365,9 @@ void oauth_check_valid_signature_params() {
     "http", "photos.example.net", "80", "photos", "file=vacation.jpg&size=original&oauth_consumer_key=dpf43f3p2l4k3l03&oauth_token=nnch734d00sl2jdk&oauth_signature_method=HMAC-SHA1&oauth_signature=tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D&oauth_timestamp=1191242096&oauth_nonce=kllo9940pd9333jh&oauth_version=1.0",
     boost::none);
 
-  assert_true(oauth::is_valid_signature(req));
+  test_secret_store store("dpf43f3p2l4k3l03", "kd94hf93k423kf44",
+                          "nnch734d00sl2jdk", "pfkkdhi9sl3r4s00");
+  assert_true(oauth::is_valid_signature(req, store, store, store));
 }
 
 int main() {
@@ -351,9 +380,9 @@ int main() {
     ANNOTATE_EXCEPTION(oauth_check_hmac_sha1());
     ANNOTATE_EXCEPTION(oauth_check_signature_hmac_sha1_1());
     ANNOTATE_EXCEPTION(oauth_check_signature_plaintext_1());
-    //ANNOTATE_EXCEPTION(oauth_check_valid_signature_header());
+    ANNOTATE_EXCEPTION(oauth_check_valid_signature_header());
     ANNOTATE_EXCEPTION(oauth_check_invalid_signature_header());
-    //ANNOTATE_EXCEPTION(oauth_check_valid_signature_params());
+    ANNOTATE_EXCEPTION(oauth_check_valid_signature_params());
 
   } catch (const std::exception &e) {
     std::cerr << "EXCEPTION: " << e.what() << std::endl;

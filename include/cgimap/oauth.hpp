@@ -8,11 +8,6 @@
 namespace oauth {
 
 /**
- * Given a request, checks that the OAuth signature is valid.
- */
-bool is_valid_signature(request &);
-
-/**
  * Interface to an object which can lookup secrets and return the
  * secrets associated with those keys / IDs.
  */
@@ -20,6 +15,32 @@ struct secret_store {
   virtual boost::optional<std::string> consumer_secret(const std::string &consumer_key) = 0;
   virtual boost::optional<std::string> token_secret(const std::string &token_id) = 0;
 };
+
+/**
+ * Interface to an object which can "use" a (nonce, timestamp, token ID)
+ * tuple, inserting it into a store of such tuples. It will return true
+ * if the tuple is unique in the store (i.e: didn't already exist), or false
+ * if the tuple already existed. This is used in the OAuth algorithm, as
+ * a client/token is not allowed to use a nonce more than once.
+ */
+struct nonce_store {
+  virtual bool use_nonce(const std::string &nonce,
+                         const std::string &timestamp,
+                         const std::string &token_id) = 0;
+};
+
+/**
+ * Interface which checks if a given token allows API access. Users can grant
+ * tokens without API access, or revoke tokens access to the API.
+ */
+struct token_store {
+  virtual bool api_access_ok(const std::string &token_id) = 0;
+};
+
+/**
+ * Given a request, checks that the OAuth signature is valid.
+ */
+bool is_valid_signature(request &, secret_store &, nonce_store &, token_store &);
 
 namespace detail {
 

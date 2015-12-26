@@ -121,6 +121,11 @@ std::string path(request &req) {
   return get_request_path(req);
 }
 
+bool begins_with(const std::string &str, const std::string &prefix) {
+  return (str.size() >= prefix.size()) &&
+    std::equal(prefix.begin(), prefix.end(), str.begin());
+}
+
 struct param {
   std::string k, v;
   bool operator<(const param &h) const {
@@ -235,16 +240,58 @@ std::string urlnormalise(const std::string &str) {
   return http::urlencode(http::urldecode(str));
 }
 
-boost::optional<std::string> find_auth_header_value(const std::string &key, request &req) {
-  std::vector<param> auth_params;
-  const char *auth_header = req.get_param("HTTP_AUTHORIZATION");
-  bool success = parse_oauth_authorization(auth_header, auth_params);
-  if (!success) { return boost::none; }
+bool get_all_request_parameters(request &req, std::vector<param> &params) {
+  typedef std::vector<std::pair<std::string, std::string> > params_t;
 
-  for (std::vector<param>::const_iterator itr = auth_params.begin();
-       itr != auth_params.end(); ++itr) {
-    if (itr->k == key) {
-      return itr->v;
+  { // add oauth params, except realm
+    std::vector<param> auth_params;
+    const char *auth_header = req.get_param("HTTP_AUTHORIZATION");
+    bool success = parse_oauth_authorization(auth_header, auth_params);
+
+    if (success) {
+      BOOST_FOREACH(param &p, auth_params) {
+        std::string k = http::urldecode(p.k);
+        params.push_back(param());
+        params.back().k = urlnormalise(p.k);
+        params.back().v = urlnormalise(p.v);
+      }
+    }
+  }
+
+  { // add HTTP GET parameters
+    params_t get_params = http::parse_params(get_query_string(req));
+    BOOST_FOREACH(const params_t::value_type &kv, get_params) {
+      params.push_back(param());
+      params.back().k = urlnormalise(kv.first);
+      params.back().v = urlnormalise(kv.second);
+    }
+  }
+
+  std::sort(params.begin(), params.end());
+
+  // check for duplicate protocol parameters
+  std::string last_key;
+  BOOST_FOREACH(const param &p, params) {
+    std::string k = http::urldecode(p.k);
+    if (begins_with(k, "oauth_") && (p.k == last_key)) {
+      return false;
+    }
+    last_key = k;
+  }
+
+  return true;
+}
+
+boost::optional<std::string> find_auth_header_value(const std::string &key, request &req) {
+  std::vector<param> params;
+  if (!get_all_request_parameters(req, params)) {
+    return boost::none;
+  }
+
+  for (std::vector<param>::const_iterator itr = params.begin();
+       itr != params.end(); ++itr) {
+    if (http::urldecode(itr->k) == key) {
+      return http::urldecode(itr->v);
     }
   }
 
@@ -316,43 +363,19 @@ std::string base64_encode(const std::string &str) {
 }
 
 boost::optional<std::string> normalise_request_parameters(request &req) {
-  typedef std::vector<std::pair<std::string, std::string> > params_t;
   std::vector<param> params;
 
-  { // add oauth params, except realm
-    std::vector<param> auth_params;
-    const char *auth_header = req.get_param("HTTP_AUTHORIZATION");
-    bool success = parse_oauth_authorization(auth_header, auth_params);
-    if (!success) { return boost::none; }
-
-    BOOST_FOREACH(param &p, auth_params) {
-      std::string k = http::urldecode(p.k);
-      if ((k != "realm") && (k != "oauth_signature")) {
-        params.push_back(param());
-        params.back().k = urlnormalise(p.k);
-        params.back().v = urlnormalise(p.v);
-      }
-    }
+  if (!get_all_request_parameters(req, params)) {
+    return boost::none;
   }
-
-  { // add HTTP GET parameters
-    params_t get_params = http::parse_params(get_query_string(req));
-    BOOST_FOREACH(const params_t::value_type &kv, get_params) {
-      if ((kv.first != "realm") && (kv.first != "oauth_signature")) {
-        params.push_back(param());
-        params.back().k = urlnormalise(kv.first);
-        params.back().v = urlnormalise(kv.second);
-      }
-    }
-  }
-
-  std::sort(params.begin(), params.end());
 
   std::ostringstream out;
   bool first = true;
   BOOST_FOREACH(const param &p, params) {
-    if (first) { first = false; } else { out << "&"; }
-    out << p.k << "=" << p.v;
+    if ((p.k != "realm") && (p.k != "oauth_signature")) {
+      if (first) { first = false; } else { out << "&"; }
+      out << p.k << "=" << p.v;
+    }
   }
 
   return out.str();
@@ -403,8 +426,8 @@ boost::optional<std::string> hashed_signature(request &req, secret_store &store)
   if (!token_id) { return boost::none; }
 
   boost::optional<std::string>
-    consumer_secret = store.consumer_secret(http::urldecode(*consumer_key)),
-    token_secret = store.token_secret(http::urldecode(*token_id));
+    consumer_secret = store.consumer_secret(*consumer_key),
+    token_secret = store.token_secret(*token_id);
 
   if (!consumer_secret) { return boost::none; }
   if (!token_secret) { return boost::none; }
@@ -432,8 +455,64 @@ boost::optional<std::string> hashed_signature(request &req, secret_store &store)
 
 } // namespace detail
 
-bool is_valid_signature(request &) {
-  return false;
+bool is_valid_signature(request &req, secret_store &store,
+                        nonce_store &nonces, token_store &tokens) {
+  boost::optional<std::string>
+    calculated_signature = detail::hashed_signature(req, store),
+    provided_signature = find_auth_header_value("oauth_signature", req);
+  if (!calculated_signature || !provided_signature) {
+    // NOTE: 400 - bad request, according to section 3.2.
+    return false;
+  }
+
+  // check the signatures are identical
+  if (*calculated_signature != *provided_signature) {
+    // NOTE: 401 - unauthorized, according to section 3.2.
+    return false;
+  }
+
+  boost::optional<std::string>
+    token = find_auth_header_value("oauth_token", req);
+  if (!token) {
+    // NOTE: 401 - unauthorized, according to section 3.2.
+    return false;
+  }
+
+  if (signature_method(req) != std::string("PLAINTEXT")) {
+    // verify nonce/timestamp/token hasn't been used before
+    boost::optional<std::string>
+      nonce = find_auth_header_value("oauth_nonce", req),
+      timestamp = find_auth_header_value("oauth_timestamp", req);
+
+    if (!nonce || !timestamp) {
+      // NOTE: 401 - unauthorized, according to section 3.2.
+      return false;
+    }
+
+    // check that the nonce hasn't been used before.
+    if (!nonces.use_nonce(*nonce, *timestamp, *token)) {
+      // NOTE: 401 - unauthorized, according to section 3.2.
+      return false;
+    }
+
+    // TODO: reject stale timestamps?
+  }
+
+  // verify that the token allows api access.
+  if (!tokens.api_access_ok(*token)) {
+    // the signature is okay, but the token isn't authorized for API access,
+    // so probably best to return a 401 - unauthorized.
+    return false;
+  }
+
+  boost::optional<std::string>
+    version = find_auth_header_value("oauth_version", req);
+  if (version && (*version != "1.0")) {
+    // ??? probably a 400?
+    return false;
+  }
+
+  return true;
 }
 
 } // namespace oauth
