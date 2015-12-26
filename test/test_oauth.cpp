@@ -293,6 +293,25 @@ void oauth_check_signature_hmac_sha1_1() {
     std::string("MH9NDodF4I/V6GjYYVChGaKCtnk="));
 }
 
+void oauth_check_signature_plaintext_1() {
+  // generated using http://nouncer.com/oauth/signature.html
+  boost::optional<std::string> auth_header = std::string("OAuth realm=\"http://PHOTOS.example.net:8001/Photos\", oauth_consumer_key=\"dpf43f3%2B%2Bp%2B%23%26l4k3l03\", oauth_token=\"nnch73%26d%280%290sl2jdk\", oauth_nonce=\"kllo~9940~pd9333jh\", oauth_timestamp=\"1191242096\", oauth_signature_method=\"PLAINTEXT\", oauth_version=\"1.0\", oauth_signature=\"kd9%25404h%2525%2525%2526f93k423kf44%26pfkkd%2523hi9_s%2526-3r%253D4s00\"");
+  test_request req(
+    "GET",
+    "http", "PHOTOS.example.net", "8001", "Photos", "photo%20size=300%25&title=Back%20of%20%24100%20Dollars%20Bill",
+    auth_header);
+
+  assert_equal<std::string>(
+    oauth::detail::normalise_request_url(req),
+    "http://photos.example.net:8001/Photos");
+
+  test_secret_store store("dpf43f3++p+#&l4k3l03", "kd9@4h%%&f93k423kf44",
+                          "nnch73&d(0)0sl2jdk",   "pfkkd#hi9_s&-3r=4s00");
+  assert_equal<boost::optional<std::string> >(
+    oauth::detail::hashed_signature(req, store),
+    std::string("kd9%404h%25%25%26f93k423kf44&pfkkd%23hi9_s%26-3r%3D4s00"));
+}
+
 void oauth_check_valid_signature_header() {
   boost::optional<std::string> auth_header = std::string("OAuth realm=\"http://photos.example.net/\", oauth_consumer_key=\"dpf43f3p2l4k3l03\", oauth_token=\"nnch734d00sl2jdk\", oauth_signature_method=\"HMAC-SHA1\", oauth_signature=\"tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D\", oauth_timestamp=\"1191242096\", oauth_nonce=\"kllo9940pd9333jh\", oauth_version=\"1.0\"");
   test_request req(
@@ -331,6 +350,7 @@ int main() {
     ANNOTATE_EXCEPTION(oauth_check_base64());
     ANNOTATE_EXCEPTION(oauth_check_hmac_sha1());
     ANNOTATE_EXCEPTION(oauth_check_signature_hmac_sha1_1());
+    ANNOTATE_EXCEPTION(oauth_check_signature_plaintext_1());
     //ANNOTATE_EXCEPTION(oauth_check_valid_signature_header());
     ANNOTATE_EXCEPTION(oauth_check_invalid_signature_header());
     //ANNOTATE_EXCEPTION(oauth_check_valid_signature_params());
