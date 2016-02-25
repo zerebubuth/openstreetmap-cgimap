@@ -196,6 +196,12 @@ boost::tuple<string, size_t> process_options_request(request &req) {
     req.status(200);
     req.add_header("Content-Type", "text/plain");
 
+    // if extra headers were requested, then reply that we allow them too.
+    const char *headers = req.get_param("HTTP_ACCESS_CONTROL_REQUEST_HEADERS");
+    if (headers) {
+      req.add_header("Access-Control-Allow-Headers", std::string(headers));
+    }
+
     // ensure the request is finished
     req.finish();
 
