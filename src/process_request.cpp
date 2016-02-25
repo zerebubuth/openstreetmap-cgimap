@@ -189,7 +189,7 @@ boost::tuple<string, size_t> process_options_request(request &req) {
   const char *origin = req.get_param("HTTP_ORIGIN");
   const char *method = req.get_param("HTTP_ACCESS_CONTROL_REQUEST_METHOD");
 
-  if (origin &&
+  if (origin && method &&
       (strcasecmp(method, "GET") == 0 || strcasecmp(method, "HEAD") == 0)) {
 
     // write the response
