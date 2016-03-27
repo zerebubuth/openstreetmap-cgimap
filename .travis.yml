@@ -14,9 +14,9 @@ addons:
       - libboost-system-dev
       - libfcgi-dev
       - libmemcached-dev
-      - libpqxx-dev
       - libxml2-dev
 script:
+  - sudo apt-get install -yqq libpqxx-dev
   - ./autogen.sh
   - ./configure
   - make
