@@ -97,6 +97,7 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
     ("memcache", po::value<string>(), "memcache server specification")
     ("ratelimit", po::value<int>(), "average number of bytes/s to allow each client")
     ("maxdebt", po::value<int>(), "maximum debt (in Mb) to allow each client before rate limiting")
+    ("port", po::value<int>(), "FCGI port number (e.g. 8000) to listen on. This option is for backwards compatibility, please use --socket for new configurations.")
     ("socket", po::value<string>(), "FCGI port number (e.g. :8000) or UNIX socket to listen on")
     ;
   // clang-format on
@@ -249,6 +250,13 @@ int main(int argc, char **argv) {
     if (options.count("socket")) {
       if ((socket = fcgi_request::open_socket(options["socket"].as<string>(), 5)) < 0) {
         throw runtime_error("Couldn't open FCGX socket.");
+      }
+      // fall back to the old --port option if socket isn't available.
+    } else if (options.count("port")) {
+      std::ostringstream sock_str;
+      sock_str << ":" << options["port"].as<int>();
+      if ((socket = fcgi_request::open_socket(sock_str.str(), 5)) < 0) {
+        throw runtime_error("Couldn't open FCGX socket (from port).");
       }
     } else {
       socket = 0;
