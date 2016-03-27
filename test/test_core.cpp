@@ -393,6 +393,39 @@ void check_content_body_json(std::istream &expected, std::istream &actual) {
   check_recursive_tree_json(exp_tree, act_tree);
 }
 
+void check_content_body_plain(std::istream &expected, std::istream &actual) {
+  const size_t buf_size = 1024;
+  char exp_buf[buf_size], act_buf[buf_size];
+
+  while (true) {
+    expected.read(exp_buf, buf_size);
+    actual.read(act_buf, buf_size);
+
+    size_t exp_num = expected.gcount();
+    size_t act_num = actual.gcount();
+
+    if (exp_num != act_num) {
+      throw std::runtime_error(
+        (boost::format("Expected to read %1% bytes, but read %2% in actual "
+                       "plain - responses are different sizes.")
+         % exp_num % act_num).str());
+    }
+
+    if (!std::equal(exp_buf, exp_buf + exp_num, act_buf)) {
+      std::string exp(exp_buf, exp_buf + exp_num),
+        act(act_buf, act_buf + act_num);
+      throw std::runtime_error(
+        (boost::format("Returned content differs: expected \"%1%\", actual "
+                       "\"%2%\" - responses are different.")
+         % exp % act).str());
+    }
+
+    if (expected.eof() && actual.eof()) {
+      break;
+    }
+  }
+}
+
 /**
  * Check the response from cgimap against the expected test result
  * from the test file.
@@ -443,6 +476,9 @@ void check_response(std::istream &expected, std::istream &actual) {
 
     } else if (content_type.substr(0, 9) == "text/json") {
       check_content_body_json(expected, actual);
+
+    } else if (content_type.substr(0, 10) == "text/plain") {
+      check_content_body_plain(expected, actual);
 
     } else {
       throw std::runtime_error(

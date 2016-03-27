@@ -50,3 +50,4 @@ aclocal/lt~obsolete.m4
 libtool
 ltmain.sh
 .vagrant/
+.libs/

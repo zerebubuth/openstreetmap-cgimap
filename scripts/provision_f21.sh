@@ -7,7 +7,7 @@ yum install -y libxml2-devel libpqxx-devel fcgi-devel \
 
 # following stuff is for testing only
 yum install -y postgresql postgresql-contrib postgis \
-  rubygem-pg postgresql-server
+  postgresql-server
 
 sudo systemctl enable postgresql
 sudo postgresql-setup initdb

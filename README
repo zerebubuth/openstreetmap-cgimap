@@ -29,15 +29,15 @@ Requirements
 CGImap depends on the following libraries. Versions used during
 development are in brackets. Other versions may work, but YMMV.
 
-* libxml2  (2.9.1+dfsg1-3ubuntu4.4)
-* libpqxx3 (3.1.1-0ubuntu4)
-* libfcgi  (2.4.0-8.1ubuntu5)
-* libboost (1.54.0-4ubuntu3.1)
+* libxml2     (2.9.1+dfsg1-3ubuntu4.7)
+* libpqxx-4.0 (4.0.1+dfsg-3ubuntu1)
+* libfcgi     (2.4.0-8.1ubuntu5)
+* libboost    (1.54.0-4ubuntu3.1)
 
 If you're running a Debian or Ubuntu system these can be installed
 using the following command:
 
-    sudo apt-get install libxml2-dev libpqxx3-dev libfcgi-dev \
+    sudo apt-get install libxml2-dev libpqxx-dev libfcgi-dev \
       libboost-dev libboost-regex-dev libboost-program-options-dev \
       libboost-date-time-dev libboost-filesystem-dev \
       libboost-system-dev libboost-locale-dev libmemcached-dev \
@@ -81,7 +81,7 @@ A sample lighttd.conf file is provided, which can be used to test. To test
 CGImap with lighttpd use the supplied config file with lighttpd and run cgimap
 on the command line with a command like
 
-    ./map --port 54321 --backend apidb --dbname openstreetmap
+    ./map --socket :54321 --backend apidb --dbname openstreetmap
 
 You can then access the running instance at `http://localhost:31337/api/0.6/map?bbox=...`
 
@@ -139,8 +139,7 @@ Testing
 To run the test suite using `make check` you will need additional 
 packages installed:
 
-    sudo apt-get install postgresql postgresql-contrib postgis \
-      ruby libxml-ruby ruby-pg
+    sudo apt-get install postgresql postgresql-contrib postgis
 
 And you will need to be able to create databases as your user:
 
