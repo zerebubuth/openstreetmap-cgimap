@@ -189,12 +189,18 @@ boost::tuple<string, size_t> process_options_request(request &req) {
   const char *origin = req.get_param("HTTP_ORIGIN");
   const char *method = req.get_param("HTTP_ACCESS_CONTROL_REQUEST_METHOD");
 
-  if (origin &&
+  if (origin && method &&
       (strcasecmp(method, "GET") == 0 || strcasecmp(method, "HEAD") == 0)) {
 
     // write the response
     req.status(200);
     req.add_header("Content-Type", "text/plain");
+
+    // if extra headers were requested, then reply that we allow them too.
+    const char *headers = req.get_param("HTTP_ACCESS_CONTROL_REQUEST_HEADERS");
+    if (headers) {
+      req.add_header("Access-Control-Allow-Headers", std::string(headers));
+    }
 
     // ensure the request is finished
     req.finish();
