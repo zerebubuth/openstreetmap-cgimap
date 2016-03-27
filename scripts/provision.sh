@@ -2,7 +2,7 @@
 
 apt-get install -y git build-essential automake autoconf libtool;
 
-apt-get install -y libxml2-dev libpqxx3-dev libfcgi-dev \
+apt-get install -y libxml2-dev libpqxx-dev libfcgi-dev \
   libboost-dev libboost-regex-dev libboost-program-options-dev \
   libboost-date-time-dev libboost-filesystem-dev \
   libboost-system-dev libmemcached-dev;

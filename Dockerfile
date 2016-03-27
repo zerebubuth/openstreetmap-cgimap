@@ -7,7 +7,7 @@ RUN apt-get update -qq && apt-get install -y gcc g++ make autoconf automake libt
  libfcgi-dev libxml2-dev libmemcached-dev \
  libboost-regex-dev libboost-program-options-dev libboost-system-dev \
  libboost-date-time-dev libboost-filesystem-dev \
- libpqxx3-dev zlib1g-dev --no-install-recommends
+ libpqxx-dev zlib1g-dev --no-install-recommends
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ WORKDIR /app
 COPY . ./
 
 # Compile, install and remove source
-RUN ./autogen.sh && ./configure --with-fcgi=/usr && make install && ldconfig && rm -rf /app
+RUN ./autogen.sh && ./configure && make install && ldconfig && rm -rf /app
 
 ENV CGIMAP_HOST db
 ENV CGIMAP_DBNAME openstreetmap

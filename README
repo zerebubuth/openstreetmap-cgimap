@@ -29,10 +29,10 @@ Requirements
 CGImap depends on the following libraries. Versions used during
 development are in brackets. Other versions may work, but YMMV.
 
-* libxml2  (2.9.1+dfsg1-3ubuntu4.4)
-* libpqxx3 (3.1.1-0ubuntu4)
-* libfcgi  (2.4.0-8.1ubuntu5)
-* libboost (1.54.0-4ubuntu3.1)
+* libxml2     (2.9.1+dfsg1-3ubuntu4.7)
+* libpqxx-4.0 (4.0.1+dfsg-3ubuntu1)
+* libfcgi     (2.4.0-8.1ubuntu5)
+* libboost    (1.54.0-4ubuntu3.1)
 
 If you're running a Debian or Ubuntu system these can be installed
 using the following command:
