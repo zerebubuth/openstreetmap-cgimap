@@ -13,14 +13,14 @@ addons:
       - libboost-system-dev
       - libfcgi-dev
       - libmemcached-dev
-      - libpqxx3-dev
+      - libpqxx-dev
       - libxml2-dev
       - ruby
 before_install:
   - gem install pg libxml-ruby
 script:
   - ./autogen.sh
-  - ./configure --with-fcgi=/usr
+  - ./configure
   - make
   - make check
 after_failure:
