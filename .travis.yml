@@ -17,7 +17,7 @@ addons:
       - libxml2-dev
       - libcrypto++-dev
 script:
-  - sudo apt-get install -yqq libpqxx-dev
+  - sudo apt-get install -yqq libpqxx-dev libboost-locale-dev
   - ./autogen.sh
   - ./configure
   - make
