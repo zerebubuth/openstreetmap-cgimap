@@ -129,8 +129,7 @@ Testing
 To run the test suite using `make check` you will need additional 
 packages installed:
 
-    sudo apt-get install postgresql postgresql-contrib postgis \
-      ruby libxml-ruby ruby-pg
+    sudo apt-get install postgresql postgresql-contrib postgis
 
 And you will need to be able to create databases as your user:
 

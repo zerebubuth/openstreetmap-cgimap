@@ -8,6 +8,5 @@ apt-get install -y libxml2-dev libpqxx-dev libfcgi-dev \
   libboost-system-dev libmemcached-dev;
 
 # following stuff is for testing only
-apt-get install -y postgresql postgresql-contrib postgis \
-  ruby-libxml ruby-pg
+apt-get install -y postgresql postgresql-contrib postgis
 sudo -u postgres createuser -s vagrant
