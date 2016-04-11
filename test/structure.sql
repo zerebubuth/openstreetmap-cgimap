@@ -3,6 +3,7 @@
 --
 
 SET statement_timeout = 0;
+SET lock_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SET check_function_bodies = false;
@@ -62,6 +63,30 @@ CREATE TYPE gpx_visibility_enum AS ENUM (
 
 
 --
+-- Name: note_event_enum; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE note_event_enum AS ENUM (
+    'opened',
+    'closed',
+    'reopened',
+    'commented',
+    'hidden'
+);
+
+
+--
+-- Name: note_status_enum; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE note_status_enum AS ENUM (
+    'open',
+    'closed',
+    'hidden'
+);
+
+
+--
 -- Name: nwr_enum; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -106,9 +131,9 @@ SET default_with_oids = false;
 CREATE TABLE acls (
     id integer NOT NULL,
     address inet,
-    k character varying(255) NOT NULL,
-    v character varying(255),
-    domain character varying(255)
+    k character varying NOT NULL,
+    v character varying,
+    domain character varying
 );
 
 
@@ -132,13 +157,46 @@ ALTER SEQUENCE acls_id_seq OWNED BY acls.id;
 
 
 --
+-- Name: changeset_comments; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE changeset_comments (
+    id integer NOT NULL,
+    changeset_id bigint NOT NULL,
+    author_id bigint NOT NULL,
+    body text NOT NULL,
+    created_at timestamp without time zone NOT NULL,
+    visible boolean NOT NULL
+);
+
+
+--
+-- Name: changeset_comments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE changeset_comments_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: changeset_comments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE changeset_comments_id_seq OWNED BY changeset_comments.id;
+
+
+--
 -- Name: changeset_tags; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE TABLE changeset_tags (
     changeset_id bigint NOT NULL,
-    k character varying(255) DEFAULT ''::character varying NOT NULL,
-    v character varying(255) DEFAULT ''::character varying NOT NULL
+    k character varying DEFAULT ''::character varying NOT NULL,
+    v character varying DEFAULT ''::character varying NOT NULL
 );
 
 
@@ -179,26 +237,37 @@ ALTER SEQUENCE changesets_id_seq OWNED BY changesets.id;
 
 
 --
+-- Name: changesets_subscribers; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE changesets_subscribers (
+    subscriber_id bigint NOT NULL,
+    changeset_id bigint NOT NULL
+);
+
+
+--
 -- Name: client_applications; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE TABLE client_applications (
     id integer NOT NULL,
-    name character varying(255),
-    url character varying(255),
-    support_url character varying(255),
-    callback_url character varying(255),
+    name character varying,
+    url character varying,
+    support_url character varying,
+    callback_url character varying,
     key character varying(50),
     secret character varying(50),
     user_id integer,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone,
     allow_read_prefs boolean DEFAULT false NOT NULL,
     allow_write_prefs boolean DEFAULT false NOT NULL,
     allow_write_diary boolean DEFAULT false NOT NULL,
     allow_write_api boolean DEFAULT false NOT NULL,
     allow_read_gpx boolean DEFAULT false NOT NULL,
-    allow_write_gpx boolean DEFAULT false NOT NULL
+    allow_write_gpx boolean DEFAULT false NOT NULL,
+    allow_write_notes boolean DEFAULT false NOT NULL
 );
 
 
@@ -222,46 +291,13 @@ ALTER SEQUENCE client_applications_id_seq OWNED BY client_applications.id;
 
 
 --
--- Name: countries; Type: TABLE; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE TABLE countries (
-    id integer NOT NULL,
-    code character varying(2) NOT NULL,
-    min_lat double precision NOT NULL,
-    max_lat double precision NOT NULL,
-    min_lon double precision NOT NULL,
-    max_lon double precision NOT NULL
-);
-
-
---
--- Name: countries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE countries_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: countries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE countries_id_seq OWNED BY countries.id;
-
-
---
 -- Name: current_node_tags; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE TABLE current_node_tags (
     node_id bigint NOT NULL,
-    k character varying(255) DEFAULT ''::character varying NOT NULL,
-    v character varying(255) DEFAULT ''::character varying NOT NULL
+    k character varying DEFAULT ''::character varying NOT NULL,
+    v character varying DEFAULT ''::character varying NOT NULL
 );
 
 
@@ -308,7 +344,7 @@ CREATE TABLE current_relation_members (
     relation_id bigint NOT NULL,
     member_type nwr_enum NOT NULL,
     member_id bigint NOT NULL,
-    member_role character varying(255) NOT NULL,
+    member_role character varying NOT NULL,
     sequence_id integer DEFAULT 0 NOT NULL
 );
 
@@ -319,8 +355,8 @@ CREATE TABLE current_relation_members (
 
 CREATE TABLE current_relation_tags (
     relation_id bigint NOT NULL,
-    k character varying(255) DEFAULT ''::character varying NOT NULL,
-    v character varying(255) DEFAULT ''::character varying NOT NULL
+    k character varying DEFAULT ''::character varying NOT NULL,
+    v character varying DEFAULT ''::character varying NOT NULL
 );
 
 
@@ -373,8 +409,8 @@ CREATE TABLE current_way_nodes (
 
 CREATE TABLE current_way_tags (
     way_id bigint NOT NULL,
-    k character varying(255) DEFAULT ''::character varying NOT NULL,
-    v character varying(255) DEFAULT ''::character varying NOT NULL
+    k character varying DEFAULT ''::character varying NOT NULL,
+    v character varying DEFAULT ''::character varying NOT NULL
 );
 
 
@@ -422,7 +458,7 @@ CREATE TABLE diary_comments (
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     visible boolean DEFAULT true NOT NULL,
-    body_format format_enum DEFAULT 'html'::format_enum NOT NULL
+    body_format format_enum DEFAULT 'markdown'::format_enum NOT NULL
 );
 
 
@@ -452,15 +488,15 @@ ALTER SEQUENCE diary_comments_id_seq OWNED BY diary_comments.id;
 CREATE TABLE diary_entries (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
-    title character varying(255) NOT NULL,
+    title character varying NOT NULL,
     body text NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     latitude double precision,
     longitude double precision,
-    language_code character varying(255) DEFAULT 'en'::character varying NOT NULL,
+    language_code character varying DEFAULT 'en'::character varying NOT NULL,
     visible boolean DEFAULT true NOT NULL,
-    body_format format_enum DEFAULT 'html'::format_enum NOT NULL
+    body_format format_enum DEFAULT 'markdown'::format_enum NOT NULL
 );
 
 
@@ -534,7 +570,7 @@ CREATE TABLE gps_points (
 
 CREATE TABLE gpx_file_tags (
     gpx_id bigint DEFAULT 0 NOT NULL,
-    tag character varying(255) NOT NULL,
+    tag character varying NOT NULL,
     id bigint NOT NULL
 );
 
@@ -566,12 +602,12 @@ CREATE TABLE gpx_files (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
     visible boolean DEFAULT true NOT NULL,
-    name character varying(255) DEFAULT ''::character varying NOT NULL,
+    name character varying DEFAULT ''::character varying NOT NULL,
     size bigint,
     latitude double precision,
     longitude double precision,
     "timestamp" timestamp without time zone NOT NULL,
-    description character varying(255) DEFAULT ''::character varying NOT NULL,
+    description character varying DEFAULT ''::character varying NOT NULL,
     inserted boolean NOT NULL,
     visibility gpx_visibility_enum DEFAULT 'public'::gpx_visibility_enum NOT NULL
 );
@@ -601,9 +637,9 @@ ALTER SEQUENCE gpx_files_id_seq OWNED BY gpx_files.id;
 --
 
 CREATE TABLE languages (
-    code character varying(255) NOT NULL,
-    english_name character varying(255) NOT NULL,
-    native_name character varying(255)
+    code character varying NOT NULL,
+    english_name character varying NOT NULL,
+    native_name character varying
 );
 
 
@@ -614,14 +650,14 @@ CREATE TABLE languages (
 CREATE TABLE messages (
     id bigint NOT NULL,
     from_user_id bigint NOT NULL,
-    title character varying(255) NOT NULL,
+    title character varying NOT NULL,
     body text NOT NULL,
     sent_on timestamp without time zone NOT NULL,
     message_read boolean DEFAULT false NOT NULL,
     to_user_id bigint NOT NULL,
     to_user_visible boolean DEFAULT true NOT NULL,
     from_user_visible boolean DEFAULT true NOT NULL,
-    body_format format_enum DEFAULT 'html'::format_enum NOT NULL
+    body_format format_enum DEFAULT 'markdown'::format_enum NOT NULL
 );
 
 
@@ -651,8 +687,8 @@ ALTER SEQUENCE messages_id_seq OWNED BY messages.id;
 CREATE TABLE node_tags (
     node_id bigint NOT NULL,
     version bigint NOT NULL,
-    k character varying(255) DEFAULT ''::character varying NOT NULL,
-    v character varying(255) DEFAULT ''::character varying NOT NULL
+    k character varying DEFAULT ''::character varying NOT NULL,
+    v character varying DEFAULT ''::character varying NOT NULL
 );
 
 
@@ -674,15 +710,85 @@ CREATE TABLE nodes (
 
 
 --
+-- Name: note_comments; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE note_comments (
+    id bigint NOT NULL,
+    note_id bigint NOT NULL,
+    visible boolean NOT NULL,
+    created_at timestamp without time zone NOT NULL,
+    author_ip inet,
+    author_id bigint,
+    body text,
+    event note_event_enum
+);
+
+
+--
+-- Name: note_comments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE note_comments_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: note_comments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE note_comments_id_seq OWNED BY note_comments.id;
+
+
+--
+-- Name: notes; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE notes (
+    id bigint NOT NULL,
+    latitude integer NOT NULL,
+    longitude integer NOT NULL,
+    tile bigint NOT NULL,
+    updated_at timestamp without time zone NOT NULL,
+    created_at timestamp without time zone NOT NULL,
+    status note_status_enum NOT NULL,
+    closed_at timestamp without time zone
+);
+
+
+--
+-- Name: notes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE notes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: notes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE notes_id_seq OWNED BY notes.id;
+
+
+--
 -- Name: oauth_nonces; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE TABLE oauth_nonces (
     id integer NOT NULL,
-    nonce character varying(255),
+    nonce character varying,
     "timestamp" integer,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone
 );
 
 
@@ -718,18 +824,19 @@ CREATE TABLE oauth_tokens (
     secret character varying(50),
     authorized_at timestamp without time zone,
     invalidated_at timestamp without time zone,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone,
     allow_read_prefs boolean DEFAULT false NOT NULL,
     allow_write_prefs boolean DEFAULT false NOT NULL,
     allow_write_diary boolean DEFAULT false NOT NULL,
     allow_write_api boolean DEFAULT false NOT NULL,
     allow_read_gpx boolean DEFAULT false NOT NULL,
     allow_write_gpx boolean DEFAULT false NOT NULL,
-    callback_url character varying(255),
+    callback_url character varying,
     verifier character varying(20),
-    scope character varying(255),
-    valid_to timestamp without time zone
+    scope character varying,
+    valid_to timestamp without time zone,
+    allow_write_notes boolean DEFAULT false NOT NULL
 );
 
 
@@ -758,10 +865,10 @@ ALTER SEQUENCE oauth_tokens_id_seq OWNED BY oauth_tokens.id;
 
 CREATE TABLE redactions (
     id integer NOT NULL,
-    title character varying(255),
+    title character varying,
     description text,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone,
     user_id bigint NOT NULL,
     description_format format_enum DEFAULT 'markdown'::format_enum NOT NULL
 );
@@ -794,7 +901,7 @@ CREATE TABLE relation_members (
     relation_id bigint DEFAULT 0 NOT NULL,
     member_type nwr_enum NOT NULL,
     member_id bigint NOT NULL,
-    member_role character varying(255) NOT NULL,
+    member_role character varying NOT NULL,
     version bigint DEFAULT 0 NOT NULL,
     sequence_id integer DEFAULT 0 NOT NULL
 );
@@ -806,8 +913,8 @@ CREATE TABLE relation_members (
 
 CREATE TABLE relation_tags (
     relation_id bigint DEFAULT 0 NOT NULL,
-    k character varying(255) DEFAULT ''::character varying NOT NULL,
-    v character varying(255) DEFAULT ''::character varying NOT NULL,
+    k character varying DEFAULT ''::character varying NOT NULL,
+    v character varying DEFAULT ''::character varying NOT NULL,
     version bigint NOT NULL
 );
 
@@ -831,7 +938,7 @@ CREATE TABLE relations (
 --
 
 CREATE TABLE schema_migrations (
-    version character varying(255) NOT NULL
+    version character varying NOT NULL
 );
 
 
@@ -847,9 +954,9 @@ CREATE TABLE user_blocks (
     ends_at timestamp without time zone NOT NULL,
     needs_view boolean DEFAULT false NOT NULL,
     revoker_id bigint,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
-    reason_format format_enum DEFAULT 'html'::format_enum NOT NULL
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone,
+    reason_format format_enum DEFAULT 'markdown'::format_enum NOT NULL
 );
 
 
@@ -878,8 +985,8 @@ ALTER SEQUENCE user_blocks_id_seq OWNED BY user_blocks.id;
 
 CREATE TABLE user_preferences (
     user_id bigint NOT NULL,
-    k character varying(255) NOT NULL,
-    v character varying(255) NOT NULL
+    k character varying NOT NULL,
+    v character varying NOT NULL
 );
 
 
@@ -890,9 +997,9 @@ CREATE TABLE user_preferences (
 CREATE TABLE user_roles (
     id integer NOT NULL,
     user_id bigint NOT NULL,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL,
     role user_role_enum NOT NULL,
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone,
     granter_id bigint NOT NULL
 );
 
@@ -923,7 +1030,7 @@ ALTER SEQUENCE user_roles_id_seq OWNED BY user_roles.id;
 CREATE TABLE user_tokens (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
-    token character varying(255) NOT NULL,
+    token character varying NOT NULL,
     expiry timestamp without time zone NOT NULL,
     referer text
 );
@@ -953,31 +1060,37 @@ ALTER SEQUENCE user_tokens_id_seq OWNED BY user_tokens.id;
 --
 
 CREATE TABLE users (
-    email character varying(255) NOT NULL,
+    email character varying NOT NULL,
     id bigint NOT NULL,
-    pass_crypt character varying(255) NOT NULL,
+    pass_crypt character varying NOT NULL,
     creation_time timestamp without time zone NOT NULL,
-    display_name character varying(255) DEFAULT ''::character varying NOT NULL,
+    display_name character varying DEFAULT ''::character varying NOT NULL,
     data_public boolean DEFAULT false NOT NULL,
     description text DEFAULT ''::text NOT NULL,
     home_lat double precision,
     home_lon double precision,
     home_zoom smallint DEFAULT 3,
     nearby integer DEFAULT 50,
-    pass_salt character varying(255),
+    pass_salt character varying,
     image_file_name text,
     email_valid boolean DEFAULT false NOT NULL,
-    new_email character varying(255),
-    creation_ip character varying(255),
-    languages character varying(255),
+    new_email character varying,
+    creation_ip character varying,
+    languages character varying,
     status user_status_enum DEFAULT 'pending'::user_status_enum NOT NULL,
     terms_agreed timestamp without time zone,
     consider_pd boolean DEFAULT false NOT NULL,
-    openid_url character varying(255),
-    preferred_editor character varying(255),
+    auth_uid character varying,
+    preferred_editor character varying,
     terms_seen boolean DEFAULT false NOT NULL,
-    description_format format_enum DEFAULT 'html'::format_enum NOT NULL,
-    image_fingerprint character varying(255)
+    description_format format_enum DEFAULT 'markdown'::format_enum NOT NULL,
+    image_fingerprint character varying,
+    changesets_count integer DEFAULT 0 NOT NULL,
+    traces_count integer DEFAULT 0 NOT NULL,
+    diary_entries_count integer DEFAULT 0 NOT NULL,
+    image_use_gravatar boolean DEFAULT true NOT NULL,
+    image_content_type character varying,
+    auth_provider character varying
 );
 
 
@@ -1018,8 +1131,8 @@ CREATE TABLE way_nodes (
 
 CREATE TABLE way_tags (
     way_id bigint DEFAULT 0 NOT NULL,
-    k character varying(255) NOT NULL,
-    v character varying(255) NOT NULL,
+    k character varying NOT NULL,
+    v character varying NOT NULL,
     version bigint NOT NULL
 );
 
@@ -1049,6 +1162,13 @@ ALTER TABLE ONLY acls ALTER COLUMN id SET DEFAULT nextval('acls_id_seq'::regclas
 -- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
+ALTER TABLE ONLY changeset_comments ALTER COLUMN id SET DEFAULT nextval('changeset_comments_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
+--
+
 ALTER TABLE ONLY changesets ALTER COLUMN id SET DEFAULT nextval('changesets_id_seq'::regclass);
 
 
@@ -1057,13 +1177,6 @@ ALTER TABLE ONLY changesets ALTER COLUMN id SET DEFAULT nextval('changesets_id_s
 --
 
 ALTER TABLE ONLY client_applications ALTER COLUMN id SET DEFAULT nextval('client_applications_id_seq'::regclass);
-
-
---
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY countries ALTER COLUMN id SET DEFAULT nextval('countries_id_seq'::regclass);
 
 
 --
@@ -1133,6 +1246,20 @@ ALTER TABLE ONLY messages ALTER COLUMN id SET DEFAULT nextval('messages_id_seq':
 -- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
+ALTER TABLE ONLY note_comments ALTER COLUMN id SET DEFAULT nextval('note_comments_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY notes ALTER COLUMN id SET DEFAULT nextval('notes_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
+--
+
 ALTER TABLE ONLY oauth_nonces ALTER COLUMN id SET DEFAULT nextval('oauth_nonces_id_seq'::regclass);
 
 
@@ -1187,6 +1314,14 @@ ALTER TABLE ONLY acls
 
 
 --
+-- Name: changeset_comments_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY changeset_comments
+    ADD CONSTRAINT changeset_comments_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: changesets_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -1200,14 +1335,6 @@ ALTER TABLE ONLY changesets
 
 ALTER TABLE ONLY client_applications
     ADD CONSTRAINT client_applications_pkey PRIMARY KEY (id);
-
-
---
--- Name: countries_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY countries
-    ADD CONSTRAINT countries_pkey PRIMARY KEY (id);
 
 
 --
@@ -1347,6 +1474,22 @@ ALTER TABLE ONLY nodes
 
 
 --
+-- Name: note_comments_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY note_comments
+    ADD CONSTRAINT note_comments_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: notes_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY notes
+    ADD CONSTRAINT notes_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: oauth_nonces_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -1476,7 +1619,7 @@ CREATE INDEX changeset_tags_id_idx ON changeset_tags USING btree (changeset_id);
 -- Name: changesets_bbox_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
-CREATE INDEX changesets_bbox_idx ON changesets USING btree (min_lat, max_lat, min_lon, max_lon);
+CREATE INDEX changesets_bbox_idx ON changesets USING gist (min_lat, max_lat, min_lon, max_lon);
 
 
 --
@@ -1505,13 +1648,6 @@ CREATE INDEX changesets_user_id_created_at_idx ON changesets USING btree (user_i
 --
 
 CREATE INDEX changesets_user_id_id_idx ON changesets USING btree (user_id, id);
-
-
---
--- Name: countries_code_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE UNIQUE INDEX countries_code_idx ON countries USING btree (code);
 
 
 --
@@ -1634,10 +1770,45 @@ CREATE INDEX gpx_files_visible_visibility_idx ON gpx_files USING btree (visible,
 
 
 --
+-- Name: index_changeset_comments_on_created_at; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_changeset_comments_on_created_at ON changeset_comments USING btree (created_at);
+
+
+--
+-- Name: index_changesets_subscribers_on_changeset_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_changesets_subscribers_on_changeset_id ON changesets_subscribers USING btree (changeset_id);
+
+
+--
+-- Name: index_changesets_subscribers_on_subscriber_id_and_changeset_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE UNIQUE INDEX index_changesets_subscribers_on_subscriber_id_and_changeset_id ON changesets_subscribers USING btree (subscriber_id, changeset_id);
+
+
+--
 -- Name: index_client_applications_on_key; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE UNIQUE INDEX index_client_applications_on_key ON client_applications USING btree (key);
+
+
+--
+-- Name: index_note_comments_on_body; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_note_comments_on_body ON note_comments USING gin (to_tsvector('english'::regconfig, body));
+
+
+--
+-- Name: index_note_comments_on_created_at; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_note_comments_on_created_at ON note_comments USING btree (created_at);
 
 
 --
@@ -1697,6 +1868,34 @@ CREATE INDEX nodes_timestamp_idx ON nodes USING btree ("timestamp");
 
 
 --
+-- Name: note_comments_note_id_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX note_comments_note_id_idx ON note_comments USING btree (note_id);
+
+
+--
+-- Name: notes_created_at_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX notes_created_at_idx ON notes USING btree (created_at);
+
+
+--
+-- Name: notes_tile_status_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX notes_tile_status_idx ON notes USING btree (tile, status);
+
+
+--
+-- Name: notes_updated_at_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX notes_updated_at_idx ON notes USING btree (updated_at);
+
+
+--
 -- Name: points_gpxid_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -1746,13 +1945,6 @@ CREATE INDEX user_id_idx ON friends USING btree (friend_user_id);
 
 
 --
--- Name: user_openid_url_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE UNIQUE INDEX user_openid_url_idx ON users USING btree (openid_url);
-
-
---
 -- Name: user_roles_id_role_unique; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -1771,6 +1963,13 @@ CREATE UNIQUE INDEX user_tokens_token_idx ON user_tokens USING btree (token);
 --
 
 CREATE INDEX user_tokens_user_id_idx ON user_tokens USING btree (user_id);
+
+
+--
+-- Name: users_auth_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE UNIQUE INDEX users_auth_idx ON users USING btree (auth_provider, auth_uid);
 
 
 --
@@ -1823,11 +2022,43 @@ CREATE INDEX ways_timestamp_idx ON ways USING btree ("timestamp");
 
 
 --
+-- Name: changeset_comments_author_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY changeset_comments
+    ADD CONSTRAINT changeset_comments_author_id_fkey FOREIGN KEY (author_id) REFERENCES users(id);
+
+
+--
+-- Name: changeset_comments_changeset_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY changeset_comments
+    ADD CONSTRAINT changeset_comments_changeset_id_fkey FOREIGN KEY (changeset_id) REFERENCES changesets(id);
+
+
+--
 -- Name: changeset_tags_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY changeset_tags
     ADD CONSTRAINT changeset_tags_id_fkey FOREIGN KEY (changeset_id) REFERENCES changesets(id);
+
+
+--
+-- Name: changesets_subscribers_changeset_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY changesets_subscribers
+    ADD CONSTRAINT changesets_subscribers_changeset_id_fkey FOREIGN KEY (changeset_id) REFERENCES changesets(id);
+
+
+--
+-- Name: changesets_subscribers_subscriber_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY changesets_subscribers
+    ADD CONSTRAINT changesets_subscribers_subscriber_id_fkey FOREIGN KEY (subscriber_id) REFERENCES users(id);
 
 
 --
@@ -2031,6 +2262,22 @@ ALTER TABLE ONLY nodes
 
 
 --
+-- Name: note_comments_author_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY note_comments
+    ADD CONSTRAINT note_comments_author_id_fkey FOREIGN KEY (author_id) REFERENCES users(id);
+
+
+--
+-- Name: note_comments_note_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY note_comments
+    ADD CONSTRAINT note_comments_note_id_fkey FOREIGN KEY (note_id) REFERENCES notes(id);
+
+
+--
 -- Name: oauth_tokens_client_application_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2178,6 +2425,8 @@ ALTER TABLE ONLY ways
 -- PostgreSQL database dump complete
 --
 
+SET search_path TO "$user",public;
+
 INSERT INTO schema_migrations (version) VALUES ('1');
 
 INSERT INTO schema_migrations (version) VALUES ('10');
@@ -2214,6 +2463,10 @@ INSERT INTO schema_migrations (version) VALUES ('20101114011429');
 
 INSERT INTO schema_migrations (version) VALUES ('20110322001319');
 
+INSERT INTO schema_migrations (version) VALUES ('20110508145337');
+
+INSERT INTO schema_migrations (version) VALUES ('20110521142405');
+
 INSERT INTO schema_migrations (version) VALUES ('20110925112722');
 
 INSERT INTO schema_migrations (version) VALUES ('20111116184519');
@@ -2235,6 +2488,38 @@ INSERT INTO schema_migrations (version) VALUES ('20120318201948');
 INSERT INTO schema_migrations (version) VALUES ('20120328090602');
 
 INSERT INTO schema_migrations (version) VALUES ('20120404205604');
+
+INSERT INTO schema_migrations (version) VALUES ('20120808231205');
+
+INSERT INTO schema_migrations (version) VALUES ('20121005195010');
+
+INSERT INTO schema_migrations (version) VALUES ('20121012044047');
+
+INSERT INTO schema_migrations (version) VALUES ('20121119165817');
+
+INSERT INTO schema_migrations (version) VALUES ('20121202155309');
+
+INSERT INTO schema_migrations (version) VALUES ('20121203124841');
+
+INSERT INTO schema_migrations (version) VALUES ('20130328184137');
+
+INSERT INTO schema_migrations (version) VALUES ('20131212124700');
+
+INSERT INTO schema_migrations (version) VALUES ('20140115192822');
+
+INSERT INTO schema_migrations (version) VALUES ('20140117185510');
+
+INSERT INTO schema_migrations (version) VALUES ('20140210003018');
+
+INSERT INTO schema_migrations (version) VALUES ('20140507110937');
+
+INSERT INTO schema_migrations (version) VALUES ('20140519141742');
+
+INSERT INTO schema_migrations (version) VALUES ('20150110152606');
+
+INSERT INTO schema_migrations (version) VALUES ('20150111192335');
+
+INSERT INTO schema_migrations (version) VALUES ('20150222101847');
 
 INSERT INTO schema_migrations (version) VALUES ('21');
 
@@ -2306,6 +2591,16 @@ INSERT INTO schema_migrations (version) VALUES ('51');
 
 INSERT INTO schema_migrations (version) VALUES ('52');
 
+INSERT INTO schema_migrations (version) VALUES ('53');
+
+INSERT INTO schema_migrations (version) VALUES ('54');
+
+INSERT INTO schema_migrations (version) VALUES ('55');
+
+INSERT INTO schema_migrations (version) VALUES ('56');
+
+INSERT INTO schema_migrations (version) VALUES ('57');
+
 INSERT INTO schema_migrations (version) VALUES ('6');
 
 INSERT INTO schema_migrations (version) VALUES ('7');
@@ -2313,3 +2608,4 @@ INSERT INTO schema_migrations (version) VALUES ('7');
 INSERT INTO schema_migrations (version) VALUES ('8');
 
 INSERT INTO schema_migrations (version) VALUES ('9');
+
