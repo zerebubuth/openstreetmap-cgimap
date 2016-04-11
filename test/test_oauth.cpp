@@ -244,7 +244,7 @@ struct test_secret_store
   }
 
   boost::optional<osm_id_t> get_user_id_for_token(const std::string &id) {
-    return 0;
+    return boost::none;
   }
 
 private:
