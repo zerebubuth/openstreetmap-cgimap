@@ -489,15 +489,24 @@ validity::validity is_valid_signature(
     // verify nonce/timestamp/token hasn't been used before
     boost::optional<std::string>
       nonce = find_auth_header_value("oauth_nonce", req),
-      timestamp = find_auth_header_value("oauth_timestamp", req);
+      timestamp_str = find_auth_header_value("oauth_timestamp", req);
 
-    if (!nonce || !timestamp) {
+    if (!nonce || !timestamp_str) {
       // 401 - unauthorized, according to section 3.2.
       return validity::unauthorized();
     }
 
+    // the timestamp MUST be an integer (section 8).
+    std::uint64_t timestamp = 0;
+    {
+      std::istringstream stream(*timestamp_str);
+      if (!(stream >> timestamp)) {
+        return validity::bad_request();
+      }
+    }
+
     // check that the nonce hasn't been used before.
-    if (!nonces.use_nonce(*nonce, *timestamp, *token)) {
+    if (!nonces.use_nonce(*nonce, timestamp)) {
       // 401 - unauthorized, according to section 3.2.
       return validity::unauthorized();
     }

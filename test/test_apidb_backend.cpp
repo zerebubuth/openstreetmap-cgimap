@@ -50,6 +50,10 @@ struct test_database : public boost::noncopyable {
   // do its own testing - the run method here is just plumbing.
   void run(boost::function<void(boost::shared_ptr<data_selection>)> func);
 
+  // run a test. func will be called once with the OAuth store backed by
+  // the database.
+  void run(boost::function<void(boost::shared_ptr<oauth::store>)> func);
+
 private:
   // create a random, and hopefully unique, database name.
   static std::string random_db_name();
@@ -64,6 +68,9 @@ private:
   // read-only data selections.
   boost::shared_ptr<data_selection::factory> m_writeable_factory,
       m_readonly_factory;
+
+  // oauth store based on the writeable connection.
+  boost::shared_ptr<oauth::store> m_oauth_store;
 };
 
 /**
@@ -110,6 +117,7 @@ void test_database::setup() {
     po::store(po::parse_command_line(argc, argv, desc), vm);
     vm.notify();
     m_writeable_factory = apidb->create(vm);
+    m_oauth_store = apidb->create_oauth_store(vm);
   }
 
   {
@@ -129,6 +137,9 @@ test_database::~test_database() {
   }
   if (m_readonly_factory) {
     m_readonly_factory.reset();
+  }
+  if (m_oauth_store) {
+    m_oauth_store.reset();
   }
 
   if (!m_db_name.empty()) {
@@ -181,6 +192,15 @@ void test_database::run(
     throw std::runtime_error(
         (boost::format("%1%, in read-only selection") % e.what()).str());
   }
+}
+
+void test_database::run(
+  boost::function<void(boost::shared_ptr<oauth::store>)> func) {
+  if (!m_oauth_store) {
+    throw std::runtime_error("OAuth store not available.");
+  }
+
+  func(m_oauth_store);
 }
 
 // reads a file of SQL statements, splits on ';' and tries to
@@ -392,6 +412,9 @@ void test_dup_nodes(boost::shared_ptr<data_selection> sel) {
       tags_t()
       ),
     f.m_nodes[0], "first node written");
+}
+
+void test_nonce_store(boost::shared_ptr<oauth::store> &store) {
 }
 
 } // anonymous namespace

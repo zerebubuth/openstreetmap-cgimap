@@ -229,10 +229,9 @@ struct test_secret_store
   }
 
   bool use_nonce(const std::string &nonce,
-                 const std::string &timestamp,
-                 const std::string &token_id) {
-    boost::tuple<std::string, std::string, std::string> tuple =
-      boost::make_tuple(nonce, timestamp, token_id);
+                 uint64_t timestamp) {
+    boost::tuple<std::string, uint64_t> tuple =
+      boost::make_tuple(nonce, timestamp);
     if (m_nonces.count(tuple) > 0) {
       return false;
     }
@@ -250,7 +249,7 @@ struct test_secret_store
 
 private:
   std::string m_consumer_key, m_consumer_secret, m_token_id, m_token_secret;
-  std::set<boost::tuple<std::string, std::string, std::string> > m_nonces;
+  std::set<boost::tuple<std::string, uint64_t> > m_nonces;
 };
 
 void oauth_check_base64() {

@@ -19,16 +19,20 @@ struct secret_store {
 };
 
 /**
- * Interface to an object which can "use" a (nonce, timestamp, token ID)
- * tuple, inserting it into a store of such tuples. It will return true
- * if the tuple is unique in the store (i.e: didn't already exist), or false
- * if the tuple already existed. This is used in the OAuth algorithm, as
- * a client/token is not allowed to use a nonce more than once.
+ * Interface to an object which can "use" a (nonce, timestamp) tuple, inserting
+ * it into a store of such tuples. It will return true if the tuple is unique
+ * in the store (i.e: didn't already exist), or false if the tuple already
+ * existed. This is used in the OAuth algorithm, as a client/token is not
+ * allowed to use a nonce more than once.
+ *
+ * NOTE: although the wording in the OAuth standard appears to suggest that the
+ * (nonce, timestamp, token) tuple is unique, it seems that the implementation
+ * simply assumes that nonces are "unique enough" to avoid collisions between
+ * different tokens.
  */
 struct nonce_store {
   virtual bool use_nonce(const std::string &nonce,
-                         const std::string &timestamp,
-                         const std::string &token_id) = 0;
+                         uint64_t timestamp) = 0;
 };
 
 /**
