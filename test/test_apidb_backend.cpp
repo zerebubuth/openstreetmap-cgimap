@@ -414,7 +414,21 @@ void test_dup_nodes(boost::shared_ptr<data_selection> sel) {
     f.m_nodes[0], "first node written");
 }
 
-void test_nonce_store(boost::shared_ptr<oauth::store> &store) {
+void test_nonce_store(boost::shared_ptr<oauth::store> store) {
+  // can use a nonce
+  assert_equal<bool>(true, store->use_nonce("abcdef", 0), "first use of nonce");
+
+  // can't use it twice
+  assert_equal<bool>(false, !store->use_nonce("abcdef", 0),
+                     "second use of the same nonce");
+
+  // can use the same nonce with a different timestamp
+  assert_equal<bool>(true, store->use_nonce("abcdef", 1),
+                     "use of nonce with a different timestamp");
+
+  // or the same timestamp with a different nonce
+  assert_equal<bool>(true, store->use_nonce("abcdeg", 0),
+                     "use of nonce with a different nonce string");
 }
 
 } // anonymous namespace
@@ -429,6 +443,9 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
         &test_dup_nodes));
+
+    tdb.run(boost::function<void(boost::shared_ptr<oauth::store>)>(
+        &test_nonce_store));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;

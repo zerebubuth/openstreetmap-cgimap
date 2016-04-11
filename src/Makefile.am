@@ -127,7 +127,8 @@ libcgimap_apidb_la_SOURCES=\
 	backend/apidb/writeable_pgsql_selection.cpp \
 	backend/apidb/readonly_pgsql_selection.cpp \
 	backend/apidb/changeset.cpp \
-	backend/apidb/quad_tile.cpp
+	backend/apidb/quad_tile.cpp \
+	backend/apidb/oauth_store.cpp
 libcgimap_apidb_la_LIBADD=libcgimap_core.la @LIBPQXX_LIBS@
 endif
 

@@ -531,4 +531,7 @@ validity::validity is_valid_signature(
   return validity::copacetic(*token);
 }
 
+store::~store() {
+}
+
 } // namespace oauth

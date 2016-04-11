@@ -50,6 +50,7 @@ struct token_store {
  */
 struct store
   : public secret_store, public nonce_store, public token_store {
+  virtual ~store();
 };
 
 namespace validity {
