@@ -92,6 +92,9 @@ bandwidth_limit_exceeded::bandwidth_limit_exceeded(const string &message)
 
 gone::gone() : exception(410, "Gone", "") {}
 
+unauthorized::unauthorized(const std::string &message)
+  : exception(401, "Unauthorized", message) {}
+
 string urldecode(const string &s) { return form_urldecode(s); }
 
 string urlencode(const string &s) {

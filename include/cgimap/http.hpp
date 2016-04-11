@@ -116,6 +116,14 @@ public:
 };
 
 /**
+ * Indicates that the client is not authorized to perform the request.
+ */
+class unauthorized : public exception {
+public:
+  unauthorized(const std::string &message);
+};
+
+/**
  * Decodes a url-encoded string.
  */
 std::string urldecode(const std::string &s);

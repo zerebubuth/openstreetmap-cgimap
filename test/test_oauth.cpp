@@ -1,4 +1,5 @@
 #include "cgimap/oauth.hpp"
+#include "cgimap/oauth_io.hpp"
 
 #include <stdexcept>
 #include <cstring>
@@ -243,6 +244,10 @@ struct test_secret_store
     return id == m_token_id;
   }
 
+  boost::optional<osm_id_t> get_user_id_for_token(const std::string &id) {
+    return 0;
+  }
+
 private:
   std::string m_consumer_key, m_consumer_secret, m_token_id, m_token_secret;
   std::set<boost::tuple<std::string, std::string, std::string> > m_nonces;
@@ -344,7 +349,9 @@ void oauth_check_valid_signature_header() {
 
   test_secret_store store("dpf43f3p2l4k3l03", "kd94hf93k423kf44",
                           "nnch734d00sl2jdk", "pfkkdhi9sl3r4s00");
-  assert_equal(oauth::validity::copacetic,
+  oauth::validity::validity expected(
+    oauth::validity::copacetic("nnch734d00sl2jdk"));
+  assert_equal(expected,
                oauth::is_valid_signature(req, store, store, store));
 }
 
@@ -357,7 +364,7 @@ void oauth_check_invalid_signature_header() {
 
   test_secret_store store("dpf43f3p2l4k3l03", "kd94hf93k423kf44",
                           "nnch734d00sl2jdk", "pfkkdhi9sl3r4s00");
-  assert_equal(oauth::validity::unauthorized,
+  assert_equal(oauth::validity::validity(oauth::validity::unauthorized()),
                oauth::is_valid_signature(req, store, store, store));
 }
 
@@ -369,7 +376,8 @@ void oauth_check_valid_signature_params() {
 
   test_secret_store store("dpf43f3p2l4k3l03", "kd94hf93k423kf44",
                           "nnch734d00sl2jdk", "pfkkdhi9sl3r4s00");
-  assert_equal(oauth::validity::copacetic,
+  assert_equal(oauth::validity::validity(
+                 oauth::validity::copacetic("nnch734d00sl2jdk")),
                oauth::is_valid_signature(req, store, store, store));
 }
 
@@ -381,7 +389,7 @@ void oauth_check_missing_signature() {
 
   test_secret_store store("dpf43f3p2l4k3l03", "kd94hf93k423kf44",
                           "nnch734d00sl2jdk", "pfkkdhi9sl3r4s00");
-  assert_equal(oauth::validity::not_signed,
+  assert_equal(oauth::validity::validity(oauth::validity::not_signed()),
                oauth::is_valid_signature(req, store, store, store));
 }
 

@@ -211,6 +211,39 @@ boost::tuple<string, size_t> process_options_request(request &req) {
   return boost::make_tuple(request_name, 0);
 }
 
+const std::string addr_prefix("addr:");
+const std::string user_prefix("user:");
+
+struct is_copacetic : public boost::static_visitor<bool> {
+  template <typename T>
+  bool operator()(const T &) const { return false; }
+
+  bool operator()(const oauth::validity::copacetic &) const {
+    return true;
+  }
+};
+
+struct get_oauth_token : public boost::static_visitor<std::string> {
+  template <typename T>
+  std::string operator()(const T &) const {
+    throw std::runtime_error("Type does not contain an OAuth token.");
+  }
+
+  std::string operator()(const oauth::validity::copacetic &c) const {
+    return c.token;
+  }
+};
+
+struct oauth_status_code : public boost::static_visitor<int> {
+  template <typename T>
+  bool operator()(const T &) const { return 500; }
+
+  bool operator()(const oauth::validity::copacetic &) const { return 200; }
+  bool operator()(const oauth::validity::not_signed &) const { return 200; }
+  bool operator()(const oauth::validity::bad_request &) const { return 400; }
+  bool operator()(const oauth::validity::unauthorized &) const { return 401; }
+};
+
 } // anonymous namespace
 
 /**
@@ -218,15 +251,52 @@ boost::tuple<string, size_t> process_options_request(request &req) {
  */
 void process_request(request &req, rate_limiter &limiter,
                      const string &generator, routes &route,
-                     boost::shared_ptr<data_selection::factory> factory) {
+                     boost::shared_ptr<data_selection::factory> factory,
+                     boost::shared_ptr<oauth::store> store) {
   try {
     // get the client IP address
     string ip = fcgi_get_env(req, "REMOTE_ADDR");
+    string client_key;
+
+    if (store) {
+      oauth::validity::validity oauth_valid =
+        oauth::is_valid_signature(req, *store, *store, *store);
+
+      if (boost::apply_visitor(is_copacetic(), oauth_valid)) {
+        string token = boost::apply_visitor(get_oauth_token(), oauth_valid);
+        boost::optional<osm_id_t> user_id = store->get_user_id_for_token(token);
+
+        if (user_id) {
+          client_key = (format("%1%%2%") % user_prefix % (*user_id)).str();
+
+        } else {
+          logger::message(format("Unable to find user ID for token %1%.") %
+                          token);
+          throw http::server_error("Unable to find user ID for token.");
+        }
+
+      } else {
+        int status_code = boost::apply_visitor(oauth_status_code(), oauth_valid);
+
+        if (status_code == 400) {
+          throw http::bad_request("Bad OAuth request.");
+
+        } else if (status_code == 401) {
+          throw http::unauthorized("Unauthorized OAuth request.");
+
+        } else {
+          client_key = addr_prefix + ip;
+        }
+      }
+    } else {
+      client_key = addr_prefix + ip;
+    }
+
     pt::ptime start_time(pt::second_clock::local_time());
 
     // check whether the client is being rate limited
-    if (!limiter.check(ip)) {
-      logger::message(format("Rate limiter rejected request from %1%") % ip);
+    if (!limiter.check(client_key)) {
+      logger::message(format("Rate limiter rejected request from %1%") % client_key);
       throw http::bandwidth_limit_exceeded("You have downloaded too much "
                                            "data. Please try again later.");
     }

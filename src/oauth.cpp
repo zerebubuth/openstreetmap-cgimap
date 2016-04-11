@@ -462,27 +462,27 @@ validity::validity is_valid_signature(
   boost::optional<std::string>
     provided_signature = find_auth_header_value("oauth_signature", req);
   if (!provided_signature) {
-    return validity::not_signed;
+    return validity::not_signed();
   }
 
   boost::optional<std::string>
     calculated_signature = detail::hashed_signature(req, store);
   if (!calculated_signature) {
     // 400 - bad request, according to section 3.2.
-    return validity::bad_request;
+    return validity::bad_request();
   }
 
   // check the signatures are identical
   if (*calculated_signature != *provided_signature) {
     // 401 - unauthorized, according to section 3.2.
-    return validity::unauthorized;
+    return validity::unauthorized();
   }
 
   boost::optional<std::string>
     token = find_auth_header_value("oauth_token", req);
   if (!token) {
     // 401 - unauthorized, according to section 3.2.
-    return validity::unauthorized;
+    return validity::unauthorized();
   }
 
   if (signature_method(req) != std::string("PLAINTEXT")) {
@@ -493,13 +493,13 @@ validity::validity is_valid_signature(
 
     if (!nonce || !timestamp) {
       // 401 - unauthorized, according to section 3.2.
-      return validity::unauthorized;
+      return validity::unauthorized();
     }
 
     // check that the nonce hasn't been used before.
     if (!nonces.use_nonce(*nonce, *timestamp, *token)) {
       // 401 - unauthorized, according to section 3.2.
-      return validity::unauthorized;
+      return validity::unauthorized();
     }
 
     // TODO: reject stale timestamps?
@@ -509,17 +509,17 @@ validity::validity is_valid_signature(
   if (!tokens.allow_read_api(*token)) {
     // the signature is okay, but the token isn't authorized for API access,
     // so probably best to return a 401 - unauthorized.
-    return validity::unauthorized;
+    return validity::unauthorized();
   }
 
   boost::optional<std::string>
     version = find_auth_header_value("oauth_version", req);
   if (version && (*version != "1.0")) {
     // ??? probably a 400?
-    return validity::bad_request;
+    return validity::bad_request();
   }
 
-  return validity::copacetic;
+  return validity::copacetic(*token);
 }
 
 } // namespace oauth

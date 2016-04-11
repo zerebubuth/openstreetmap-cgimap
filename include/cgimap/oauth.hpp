@@ -3,7 +3,9 @@
 
 #include <string>
 #include <boost/optional.hpp>
+#include <boost/variant.hpp>
 #include "cgimap/request.hpp"
+#include "cgimap/types.hpp"
 
 namespace oauth {
 
@@ -35,26 +37,44 @@ struct nonce_store {
  */
 struct token_store {
   virtual bool allow_read_api(const std::string &token_id) = 0;
+  virtual boost::optional<osm_id_t> get_user_id_for_token(
+    const std::string &token_id) = 0;
+};
+
+/**
+ * Interface which combines all the above, for convenience.
+ */
+struct store
+  : public secret_store, public nonce_store, public token_store {
 };
 
 namespace validity {
 
-enum validity {
-  // signature is present, nonce has not been used before, everything looks
-  // correct and valid.
-  copacetic = 0,
-
-  // signature is not present - looks like this request hasn't been signed.
-  not_signed = 1,
-
-  // something bad about the oauth request, but in a way which indicates it has
-  // not been constructed correctly.
-  bad_request = 2,
-
-  // something bad about the oauth request, and it looks like it's an invalid or
-  // replayed message, or one without the relevant permissions.
-  unauthorized = 3
+// signature is present, nonce has not been used before, everything looks
+// correct and valid. this returns the oauth token string to be used by
+// the rest of the code (e.g: to find the user).
+struct copacetic {
+  explicit copacetic(const std::string &t) : token(t) {}
+  std::string token;
 };
+
+// signature is not present - looks like this request hasn't been signed.
+struct not_signed {};
+
+// something bad about the oauth request, but in a way which indicates it has
+// not been constructed correctly.
+struct bad_request {};
+
+// something bad about the oauth request, and it looks like it's an invalid or
+// replayed message, or one without the relevant permissions.
+struct unauthorized {};
+
+typedef boost::variant<
+  copacetic,
+  not_signed,
+  bad_request,
+  unauthorized
+  > validity;
 
 } // namespace validity
 

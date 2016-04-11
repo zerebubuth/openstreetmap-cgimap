@@ -500,13 +500,14 @@ void run_test(fs::path test_case, rate_limiter &limiter,
               boost::shared_ptr<data_selection::factory> factory) {
   try {
     test_request req;
+    boost::shared_ptr<oauth::store> empty_store;
 
     // set up request headers from test case
     fs::ifstream in(test_case);
     setup_request_headers(req, in);
 
     // execute the request
-    process_request(req, limiter, generator, route, factory);
+    process_request(req, limiter, generator, route, factory, empty_store);
 
     // compare the result to what we're expecting
     check_response(in, req.buffer());
