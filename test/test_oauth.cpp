@@ -239,7 +239,7 @@ struct test_secret_store
     return true;
   }
 
-  bool api_access_ok(const std::string &id) {
+  bool allow_read_api(const std::string &id) {
     return id == m_token_id;
   }
 
@@ -344,7 +344,8 @@ void oauth_check_valid_signature_header() {
 
   test_secret_store store("dpf43f3p2l4k3l03", "kd94hf93k423kf44",
                           "nnch734d00sl2jdk", "pfkkdhi9sl3r4s00");
-  assert_true(oauth::is_valid_signature(req, store, store, store));
+  assert_equal(oauth::validity::copacetic,
+               oauth::is_valid_signature(req, store, store, store));
 }
 
 void oauth_check_invalid_signature_header() {
@@ -356,7 +357,8 @@ void oauth_check_invalid_signature_header() {
 
   test_secret_store store("dpf43f3p2l4k3l03", "kd94hf93k423kf44",
                           "nnch734d00sl2jdk", "pfkkdhi9sl3r4s00");
-  assert_true(!oauth::is_valid_signature(req, store, store, store));
+  assert_equal(oauth::validity::unauthorized,
+               oauth::is_valid_signature(req, store, store, store));
 }
 
 void oauth_check_valid_signature_params() {
@@ -367,7 +369,20 @@ void oauth_check_valid_signature_params() {
 
   test_secret_store store("dpf43f3p2l4k3l03", "kd94hf93k423kf44",
                           "nnch734d00sl2jdk", "pfkkdhi9sl3r4s00");
-  assert_true(oauth::is_valid_signature(req, store, store, store));
+  assert_equal(oauth::validity::copacetic,
+               oauth::is_valid_signature(req, store, store, store));
+}
+
+void oauth_check_missing_signature() {
+  test_request req(
+    "GET",
+    "http", "photos.example.net", "80", "photos", "file=vacation.jpg&size=original",
+    boost::none);
+
+  test_secret_store store("dpf43f3p2l4k3l03", "kd94hf93k423kf44",
+                          "nnch734d00sl2jdk", "pfkkdhi9sl3r4s00");
+  assert_equal(oauth::validity::not_signed,
+               oauth::is_valid_signature(req, store, store, store));
 }
 
 int main() {
@@ -383,6 +398,7 @@ int main() {
     ANNOTATE_EXCEPTION(oauth_check_valid_signature_header());
     ANNOTATE_EXCEPTION(oauth_check_invalid_signature_header());
     ANNOTATE_EXCEPTION(oauth_check_valid_signature_params());
+    ANNOTATE_EXCEPTION(oauth_check_missing_signature());
 
   } catch (const std::exception &e) {
     std::cerr << "EXCEPTION: " << e.what() << std::endl;

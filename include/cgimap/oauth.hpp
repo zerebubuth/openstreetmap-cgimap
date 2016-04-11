@@ -34,13 +34,35 @@ struct nonce_store {
  * tokens without API access, or revoke tokens access to the API.
  */
 struct token_store {
-  virtual bool api_access_ok(const std::string &token_id) = 0;
+  virtual bool allow_read_api(const std::string &token_id) = 0;
 };
+
+namespace validity {
+
+enum validity {
+  // signature is present, nonce has not been used before, everything looks
+  // correct and valid.
+  copacetic = 0,
+
+  // signature is not present - looks like this request hasn't been signed.
+  not_signed = 1,
+
+  // something bad about the oauth request, but in a way which indicates it has
+  // not been constructed correctly.
+  bad_request = 2,
+
+  // something bad about the oauth request, and it looks like it's an invalid or
+  // replayed message, or one without the relevant permissions.
+  unauthorized = 3
+};
+
+} // namespace validity
 
 /**
  * Given a request, checks that the OAuth signature is valid.
  */
-bool is_valid_signature(request &, secret_store &, nonce_store &, token_store &);
+validity::validity is_valid_signature(request &, secret_store &, nonce_store &,
+                                      token_store &);
 
 namespace detail {
 

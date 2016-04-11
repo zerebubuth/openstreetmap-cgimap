@@ -455,27 +455,34 @@ boost::optional<std::string> hashed_signature(request &req, secret_store &store)
 
 } // namespace detail
 
-bool is_valid_signature(request &req, secret_store &store,
-                        nonce_store &nonces, token_store &tokens) {
+validity::validity is_valid_signature(
+  request &req, secret_store &store,
+  nonce_store &nonces, token_store &tokens) {
+
   boost::optional<std::string>
-    calculated_signature = detail::hashed_signature(req, store),
     provided_signature = find_auth_header_value("oauth_signature", req);
-  if (!calculated_signature || !provided_signature) {
-    // NOTE: 400 - bad request, according to section 3.2.
-    return false;
+  if (!provided_signature) {
+    return validity::not_signed;
+  }
+
+  boost::optional<std::string>
+    calculated_signature = detail::hashed_signature(req, store);
+  if (!calculated_signature) {
+    // 400 - bad request, according to section 3.2.
+    return validity::bad_request;
   }
 
   // check the signatures are identical
   if (*calculated_signature != *provided_signature) {
-    // NOTE: 401 - unauthorized, according to section 3.2.
-    return false;
+    // 401 - unauthorized, according to section 3.2.
+    return validity::unauthorized;
   }
 
   boost::optional<std::string>
     token = find_auth_header_value("oauth_token", req);
   if (!token) {
-    // NOTE: 401 - unauthorized, according to section 3.2.
-    return false;
+    // 401 - unauthorized, according to section 3.2.
+    return validity::unauthorized;
   }
 
   if (signature_method(req) != std::string("PLAINTEXT")) {
@@ -485,34 +492,34 @@ bool is_valid_signature(request &req, secret_store &store,
       timestamp = find_auth_header_value("oauth_timestamp", req);
 
     if (!nonce || !timestamp) {
-      // NOTE: 401 - unauthorized, according to section 3.2.
-      return false;
+      // 401 - unauthorized, according to section 3.2.
+      return validity::unauthorized;
     }
 
     // check that the nonce hasn't been used before.
     if (!nonces.use_nonce(*nonce, *timestamp, *token)) {
-      // NOTE: 401 - unauthorized, according to section 3.2.
-      return false;
+      // 401 - unauthorized, according to section 3.2.
+      return validity::unauthorized;
     }
 
     // TODO: reject stale timestamps?
   }
 
   // verify that the token allows api access.
-  if (!tokens.api_access_ok(*token)) {
+  if (!tokens.allow_read_api(*token)) {
     // the signature is okay, but the token isn't authorized for API access,
     // so probably best to return a 401 - unauthorized.
-    return false;
+    return validity::unauthorized;
   }
 
   boost::optional<std::string>
     version = find_auth_header_value("oauth_version", req);
   if (version && (*version != "1.0")) {
     // ??? probably a 400?
-    return false;
+    return validity::bad_request;
   }
 
-  return true;
+  return validity::copacetic;
 }
 
 } // namespace oauth
