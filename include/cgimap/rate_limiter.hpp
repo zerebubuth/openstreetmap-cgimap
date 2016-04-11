@@ -12,8 +12,8 @@ public:
    */
   rate_limiter(const boost::program_options::variables_map &options);
   ~rate_limiter(void);
-  bool check(const std::string &ip);
-  void update(const std::string &ip, int bytes);
+  bool check(const std::string &key);
+  void update(const std::string &key, int bytes);
 
 private:
   memcached_st *ptr;
