@@ -33,6 +33,7 @@ development are in brackets. Other versions may work, but YMMV.
 * libpqxx-4.0 (4.0.1+dfsg-3ubuntu1)
 * libfcgi     (2.4.0-8.1ubuntu5)
 * libboost    (1.54.0-4ubuntu3.1)
+* libcrypto++ (5.6.1-8)
 
 If you're running a Debian or Ubuntu system these can be installed
 using the following command:
