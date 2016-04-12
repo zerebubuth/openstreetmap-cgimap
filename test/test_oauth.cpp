@@ -33,7 +33,7 @@ void assert_true(bool value) {
 
 template <typename T>
 void assert_equal(const T &actual, const T &expected) {
-  if (actual != expected) {
+  if (!(actual == expected)) {
     std::ostringstream ostr;
     ostr << "Expected `" << expected << "', but got `" << actual << "'";
     throw std::runtime_error(ostr.str());
