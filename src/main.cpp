@@ -115,7 +115,8 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
     exit(1);
   }
 
-  if (options.count("daemon") != 0 && options.count("socket") == 0) {
+  // for ability to accept both the old --port option if socket isn't available.
+  if (options.count("daemon") != 0 && options.count("socket") == 0 && options.count("port") == 0) {
     throw runtime_error("an FCGI port number or UNIX socket is required in daemon mode");
   }
 }
