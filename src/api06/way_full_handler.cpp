@@ -9,10 +9,10 @@ using std::vector;
 
 namespace api06 {
 
-way_full_responder::way_full_responder(mime::type mt_, osm_id_t id_,
+way_full_responder::way_full_responder(mime::type mt_, osm_nwr_id_t id_,
                                        factory_ptr &w_)
     : osm_current_responder(mt_, w_), id(id_) {
-  vector<osm_id_t> ids;
+  vector<osm_nwr_id_t> ids;
   ids.push_back(id);
 
   if (sel->select_ways(ids) == 0) {
@@ -42,7 +42,7 @@ void way_full_responder::check_visibility() {
   }
 }
 
-way_full_handler::way_full_handler(request &, osm_id_t id_) : id(id_) {
+way_full_handler::way_full_handler(request &, osm_nwr_id_t id_) : id(id_) {
   logger::message(
       (boost::format("starting way/full handler with id = %1%") % id).str());
 }

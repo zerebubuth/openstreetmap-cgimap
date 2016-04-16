@@ -8,9 +8,9 @@ using std::vector;
 
 namespace api06 {
 
-node_responder::node_responder(mime::type mt, osm_id_t id_, factory_ptr &w_)
+node_responder::node_responder(mime::type mt, osm_nwr_id_t id_, factory_ptr &w_)
     : osm_current_responder(mt, w_), id(id_) {
-  vector<osm_id_t> ids;
+  vector<osm_nwr_id_t> ids;
   ids.push_back(id);
 
   if (sel->select_nodes(ids) == 0) {
@@ -22,7 +22,7 @@ node_responder::node_responder(mime::type mt, osm_id_t id_, factory_ptr &w_)
 
 node_responder::~node_responder() {}
 
-node_handler::node_handler(request &, osm_id_t id_) : id(id_) {}
+node_handler::node_handler(request &, osm_nwr_id_t id_) : id(id_) {}
 
 node_handler::~node_handler() {}
 

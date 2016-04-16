@@ -301,7 +301,7 @@ void test_single_nodes(boost::shared_ptr<data_selection> sel) {
     throw std::runtime_error("Node 2 should be visible, but isn't");
   }
 
-  std::vector<osm_id_t> ids;
+  std::vector<osm_nwr_id_t> ids;
   ids.push_back(1);
   ids.push_back(2);
   ids.push_back(3);
@@ -367,7 +367,7 @@ void test_dup_nodes(boost::shared_ptr<data_selection> sel) {
     throw std::runtime_error("Node 1 should be visible, but isn't");
   }
 
-  std::vector<osm_id_t> ids;
+  std::vector<osm_nwr_id_t> ids;
   ids.push_back(1);
   ids.push_back(1);
   ids.push_back(1);

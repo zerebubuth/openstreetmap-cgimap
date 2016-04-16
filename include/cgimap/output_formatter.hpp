@@ -20,16 +20,18 @@ enum element_type {
 struct element_info {
   element_info();
   element_info(const element_info &);
-  element_info(osm_id_t id_, osm_id_t version_, osm_id_t changeset_,
+  element_info(osm_nwr_id_t id_, osm_nwr_id_t version_,
+               osm_changeset_id_t changeset_,
                const std::string &timestamp_,
-               const boost::optional<osm_id_t> &uid_,
+               const boost::optional<osm_user_id_t> &uid_,
                const boost::optional<std::string> &display_name_,
                bool visible_);
   // Standard meanings
-  osm_id_t id, version, changeset;
+  osm_nwr_id_t id, version;
+  osm_changeset_id_t changeset;
   std::string timestamp;
   // Anonymous objects will not have uids or display names
-  boost::optional<osm_id_t> uid;
+  boost::optional<osm_user_id_t> uid;
   boost::optional<std::string> display_name;
   // If an object has been deleted
   bool visible;
@@ -37,11 +39,11 @@ struct element_info {
 
 struct member_info {
   element_type type;
-  osm_id_t ref;
+  osm_nwr_id_t ref;
   std::string role;
 };
 
-typedef std::list<osm_id_t> nodes_t;
+typedef std::list<osm_nwr_id_t> nodes_t;
 typedef std::list<member_info> members_t;
 typedef std::list<std::pair<std::string, std::string> > tags_t;
 

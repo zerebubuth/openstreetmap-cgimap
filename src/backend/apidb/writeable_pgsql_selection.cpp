@@ -27,21 +27,43 @@ using std::vector;
 using boost::shared_ptr;
 
 namespace pqxx {
-template <> struct string_traits<vector<osm_id_t> > {
-  static const char *name() { return "vector<osm_id_t>"; }
+template <> struct string_traits<vector<osm_nwr_id_t> > {
+  static const char *name() { return "vector<osm_nwr_id_t>"; }
   static bool has_null() { return false; }
-  static bool is_null(const vector<osm_id_t> &) { return false; }
+  static bool is_null(const vector<osm_nwr_id_t> &) { return false; }
   static stringstream null() {
     internal::throw_null_conversion(name());
     // No, dear compiler, we don't need a return here.
     throw 0;
   }
-  static void from_string(const char[], vector<osm_id_t> &) {}
-  static std::string to_string(const vector<osm_id_t> &ids) {
+  static void from_string(const char[], vector<osm_nwr_id_t> &) {}
+  static std::string to_string(const vector<osm_nwr_id_t> &ids) {
     stringstream ostr;
     ostr << "{";
     std::copy(ids.begin(), ids.end(),
-              infix_ostream_iterator<osm_id_t>(ostr, ","));
+              infix_ostream_iterator<osm_nwr_id_t>(ostr, ","));
+    ostr << "}";
+    return ostr.str();
+  }
+};
+
+// need this for PQXX to serialise lists of tile_id_t, which is different
+// from osm_nwr_id_t
+template <> struct string_traits<vector<tile_id_t> > {
+  static const char *name() { return "vector<tile_id_t>"; }
+  static bool has_null() { return false; }
+  static bool is_null(const vector<tile_id_t> &) { return false; }
+  static stringstream null() {
+    internal::throw_null_conversion(name());
+    // No, dear compiler, we don't need a return here.
+    throw 0;
+  }
+  static void from_string(const char[], vector<tile_id_t> &) {}
+  static std::string to_string(const vector<tile_id_t> &ids) {
+    stringstream ostr;
+    ostr << "{";
+    std::copy(ids.begin(), ids.end(),
+              infix_ostream_iterator<tile_id_t>(ostr, ","));
     ostr << "}";
     return ostr.str();
   }
@@ -70,7 +92,7 @@ std::string connect_db_str(const po::variables_map &options) {
 }
 
 inline data_selection::visibility_t
-check_table_visibility(pqxx::work &w, osm_id_t id,
+check_table_visibility(pqxx::work &w, osm_nwr_id_t id,
                        const std::string &prepared_name) {
   pqxx::result res = w.prepared(prepared_name)(id).exec();
 
@@ -86,11 +108,11 @@ check_table_visibility(pqxx::work &w, osm_id_t id,
 }
 
 void extract_elem(const pqxx::result::tuple &row, element_info &elem,
-                  cache<osm_id_t, changeset> &changeset_cache) {
-  elem.id = row["id"].as<osm_id_t>();
+                  cache<osm_changeset_id_t, changeset> &changeset_cache) {
+  elem.id = row["id"].as<osm_nwr_id_t>();
   elem.version = row["version"].as<int>();
   elem.timestamp = row["timestamp"].c_str();
-  elem.changeset = row["changeset_id"].as<osm_id_t>();
+  elem.changeset = row["changeset_id"].as<osm_changeset_id_t>();
   elem.visible = row["visible"].as<bool>();
   shared_ptr<changeset const> cs = changeset_cache.get(elem.changeset);
   if (cs->data_public) {
@@ -115,7 +137,7 @@ void extract_nodes(const pqxx::result &res, nodes_t &nodes) {
   nodes.clear();
   for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
        ++itr) {
-    nodes.push_back((*itr)[0].as<osm_id_t>());
+    nodes.push_back((*itr)[0].as<osm_nwr_id_t>());
   }
 }
 
@@ -153,7 +175,7 @@ void extract_members(const pqxx::result &res, members_t &members) {
   for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
        ++itr) {
     member.type = type_from_name((*itr)["member_type"].c_str());
-    member.ref = (*itr)["member_id"].as<osm_id_t>();
+    member.ref = (*itr)["member_id"].as<osm_nwr_id_t>();
     member.role = (*itr)["member_role"].c_str();
     members.push_back(member);
   }
@@ -162,7 +184,7 @@ void extract_members(const pqxx::result &res, members_t &members) {
 } // anonymous namespace
 
 writeable_pgsql_selection::writeable_pgsql_selection(
-    pqxx::connection &conn, cache<osm_id_t, changeset> &changeset_cache)
+    pqxx::connection &conn, cache<osm_changeset_id_t, changeset> &changeset_cache)
     : w(conn), cc(changeset_cache) {
   w.exec("CREATE TEMPORARY TABLE tmp_nodes (id bigint PRIMARY KEY)");
   w.exec("CREATE TEMPORARY TABLE tmp_ways (id bigint PRIMARY KEY)");
@@ -228,40 +250,40 @@ void writeable_pgsql_selection::write_relations(output_formatter &formatter) {
 }
 
 data_selection::visibility_t
-writeable_pgsql_selection::check_node_visibility(osm_id_t id) {
+writeable_pgsql_selection::check_node_visibility(osm_nwr_id_t id) {
   return check_table_visibility(w, id, "visible_node");
 }
 
 data_selection::visibility_t
-writeable_pgsql_selection::check_way_visibility(osm_id_t id) {
+writeable_pgsql_selection::check_way_visibility(osm_nwr_id_t id) {
   return check_table_visibility(w, id, "visible_way");
 }
 
 data_selection::visibility_t
-writeable_pgsql_selection::check_relation_visibility(osm_id_t id) {
+writeable_pgsql_selection::check_relation_visibility(osm_nwr_id_t id) {
   return check_table_visibility(w, id, "visible_relation");
 }
 
-int writeable_pgsql_selection::select_nodes(const std::vector<osm_id_t> &ids) {
+int writeable_pgsql_selection::select_nodes(const std::vector<osm_nwr_id_t> &ids) {
   m_tables_empty = false;
   return w.prepared("add_nodes_list")(ids).exec().affected_rows();
 }
 
-int writeable_pgsql_selection::select_ways(const std::vector<osm_id_t> &ids) {
+int writeable_pgsql_selection::select_ways(const std::vector<osm_nwr_id_t> &ids) {
   m_tables_empty = false;
   return w.prepared("add_ways_list")(ids).exec().affected_rows();
 }
 
 int writeable_pgsql_selection::select_relations(
-    const std::vector<osm_id_t> &ids) {
+    const std::vector<osm_nwr_id_t> &ids) {
   m_tables_empty = false;
   return w.prepared("add_relations_list")(ids).exec().affected_rows();
 }
 
 int writeable_pgsql_selection::select_nodes_from_bbox(const bbox &bounds,
                                                       int max_nodes) {
-  const vector<osm_id_t> tiles = tiles_for_area(bounds.minlat, bounds.minlon,
-                                                bounds.maxlat, bounds.maxlon);
+  const vector<tile_id_t> tiles = tiles_for_area(bounds.minlat, bounds.minlon,
+                                                 bounds.maxlat, bounds.maxlon);
 
   // hack around problem with postgres' statistics, which was
   // making it do seq scans all the time on smaug...

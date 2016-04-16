@@ -6,10 +6,10 @@
 using std::string;
 using boost::format;
 
-changeset::changeset(bool dp, const string &dn, osm_id_t id)
+changeset::changeset(bool dp, const string &dn, osm_user_id_t id)
     : data_public(dp), display_name(dn), user_id(id) {}
 
-changeset *fetch_changeset(pqxx::transaction_base &w, osm_id_t id) {
+changeset *fetch_changeset(pqxx::transaction_base &w, osm_changeset_id_t id) {
   pqxx::result res =
       w.exec("select u.data_public, u.display_name, u.id from users u "
              "join changesets c on u.id=c.user_id where c.id=" +
@@ -37,6 +37,6 @@ changeset *fetch_changeset(pqxx::transaction_base &w, osm_id_t id) {
     return new changeset(false, "", 0);
   } else {
     return new changeset(res[0][0].as<bool>(), res[0][1].as<string>(),
-                         osm_id_t(user_id));
+                         osm_user_id_t(user_id));
   }
 }
