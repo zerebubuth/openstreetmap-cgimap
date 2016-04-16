@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 typedef uint64_t osm_user_id_t;
-typedef uint64_t osm_changeset_id_t;
+typedef int64_t osm_changeset_id_t;
 typedef uint64_t osm_nwr_id_t;
 typedef uint32_t tile_id_t;
 
