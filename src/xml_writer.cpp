@@ -124,18 +124,35 @@ void xml_writer::attribute(const std::string &name, double value) {
 
 void xml_writer::attribute(const std::string &name, unsigned long int value) {
   int rc = xmlTextWriterWriteFormatAttribute(
-      pimpl->writer, BAD_CAST name.c_str(), "%ld", value);
+      pimpl->writer, BAD_CAST name.c_str(), "%lu", value);
   if (rc < 0) {
-    throw write_error("cannot write osm_id_t attribute.");
+    throw write_error("cannot write osm_id_t(unsigned long int) attribute.");
   }
 }
 
 void xml_writer::attribute(const std::string &name,
                            unsigned long long int value) {
   int rc = xmlTextWriterWriteFormatAttribute(
+      pimpl->writer, BAD_CAST name.c_str(), "%llu", value);
+  if (rc < 0) {
+    throw write_error("cannot write osm_id_t(unsigned long long int) attribute.");
+  }
+}
+
+void xml_writer::attribute(const std::string &name, long int value) {
+  int rc = xmlTextWriterWriteFormatAttribute(
+      pimpl->writer, BAD_CAST name.c_str(), "%ld", value);
+  if (rc < 0) {
+    throw write_error("cannot write osm_id_t(long int) attribute.");
+  }
+}
+
+void xml_writer::attribute(const std::string &name,
+                           long long int value) {
+  int rc = xmlTextWriterWriteFormatAttribute(
       pimpl->writer, BAD_CAST name.c_str(), "%lld", value);
   if (rc < 0) {
-    throw write_error("cannot write long long int attribute.");
+    throw write_error("cannot write osm_id_t(long long int) attribute.");
   }
 }
 

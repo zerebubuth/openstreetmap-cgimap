@@ -32,27 +32,27 @@ public:
   /******************* information functions *******************/
 
   // check if the node is visible, deleted or has never existed
-  virtual visibility_t check_node_visibility(osm_id_t id) = 0;
+  virtual visibility_t check_node_visibility(osm_nwr_id_t id) = 0;
 
   // check if the way is visible, deleted or has never existed
-  virtual visibility_t check_way_visibility(osm_id_t id) = 0;
+  virtual visibility_t check_way_visibility(osm_nwr_id_t id) = 0;
 
   // check if the relation is visible, deleted or has never existed
-  virtual visibility_t check_relation_visibility(osm_id_t id) = 0;
+  virtual visibility_t check_relation_visibility(osm_nwr_id_t id) = 0;
 
   /******************* manipulation functions ******************/
 
   /// select the nodes in the vector, returning the number of nodes
   /// which are selected now which weren't selected before.
-  virtual int select_nodes(const std::vector<osm_id_t> &) = 0;
+  virtual int select_nodes(const std::vector<osm_nwr_id_t> &) = 0;
 
   /// select the ways in the vector, returning the number of ways
   /// which are selected now which weren't selected before.
-  virtual int select_ways(const std::vector<osm_id_t> &) = 0;
+  virtual int select_ways(const std::vector<osm_nwr_id_t> &) = 0;
 
   /// select the relations in the vector, returning the number of
   /// relations which are selected now which weren't selected before.
-  virtual int select_relations(const std::vector<osm_id_t> &) = 0;
+  virtual int select_relations(const std::vector<osm_nwr_id_t> &) = 0;
 
   /// given a bounding box, select nodes within that bbox up to a limit of
   /// max_nodes

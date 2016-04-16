@@ -29,7 +29,7 @@ match_osm_id::match_type match_osm_id::match(part_iterator &begin,
   if (begin != end) {
     try {
       std::string bit = *begin;
-      // note that osm_id_t is actually unsigned, so we lose a bit of
+      // note that osm_nwr_id_t is actually unsigned, so we lose a bit of
       // precision here, but it's OK since IDs are postgres 'bigint' types
       // which are also signed, so element 2^63 is unlikely to exist.
       int64_t x = boost::lexical_cast<int64_t>(bit);
