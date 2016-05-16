@@ -1,3 +1,4 @@
 usr/include/*
-usr/lib/*/lib*.a
-usr/lib/*/lib*.la
+usr/lib/*/libcgimap*.a
+usr/lib/*/libcgimap*.la
+usr/lib/*/libcgimap*.so.*

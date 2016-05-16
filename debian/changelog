@@ -1,3 +1,11 @@
+openstreetmap-cgimap (0.4.2-0ubuntu2~1.gbpa76065) UNRELEASED; urgency=medium
+
+  ** SNAPSHOT build @a76065bd4af810836400ed63b40b2dd42bf50cfb **
+
+  * UNRELEASED
+
+ -- Matt Amos <matt@baird>  Mon, 16 May 2016 19:04:15 +0100
+
 openstreetmap-cgimap (0.4.2-0ubuntu1) trusty; urgency=medium
 
   * Initial release.
