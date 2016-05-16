@@ -1,27 +1,26 @@
-
 AM_LDFLAGS=@BOOST_LDFLAGS@
 AM_CPPFLAGS=-I../include @FCGI_CPPFLAGS@ @LIBPQXX_CFLAGS@ @LIBXML_CFLAGS@ @LIBMEMCACHED_CFLAGS@ @BOOST_CPPFLAGS@
 
-bin_PROGRAMS=../map
+bin_PROGRAMS=../openstreetmap-cgimap
 check_PROGRAMS=../test/test_core
 
 lib_LTLIBRARIES=\
 	libcgimap_core.la \
 	libcgimap_fcgi.la
-___map_LDADD=libcgimap_fcgi.la
+___openstreetmap_cgimap_LDADD=libcgimap_fcgi.la
 ___test_test_core_LDADD=
 
 if ENABLE_APIDB
 lib_LTLIBRARIES+=libcgimap_apidb.la
 check_PROGRAMS+=../test/test_apidb_backend
-___map_LDADD+=libcgimap_apidb.la
+___openstreetmap_cgimap_LDADD+=libcgimap_apidb.la
 ___test_test_core_LDADD+=libcgimap_apidb.la
 ___test_test_apidb_backend_LDADD=libcgimap_core.la libcgimap_apidb.la
 endif
 
 if ENABLE_PGSNAPSHOT
 lib_LTLIBRARIES+=libcgimap_pgsnapshot.la
-___map_LDADD+=libcgimap_pgsnapshot.la
+___openstreetmap_cgimap_LDADD+=libcgimap_pgsnapshot.la
 ___test_test_core_LDADD+=libcgimap_pgsnapshot.la
 if ENABLE_APIDB
 ___test_test_apidb_backend_LDADD+=libcgimap_pgsnapshot.la
@@ -29,13 +28,13 @@ endif
 endif
 
 lib_LTLIBRARIES+=libcgimap_staticxml.la
-___map_LDADD+=libcgimap_staticxml.la
+___openstreetmap_cgimap_LDADD+=libcgimap_staticxml.la
 ___test_test_core_LDADD+=libcgimap_staticxml.la
 if ENABLE_APIDB
 ___test_test_apidb_backend_LDADD+=libcgimap_staticxml.la
 endif
 
-___map_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @LIBPQXX_LIBS@
+___openstreetmap_cgimap_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @LIBPQXX_LIBS@
 ___test_test_core_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@
 check_PROGRAMS+=../test/test_parse_id_list
 ___test_test_parse_id_list_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @LIBPQXX_LIBS@
@@ -44,7 +43,7 @@ ___test_test_apidb_backend_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ 
 endif
 
 ################################################################################
-___map_SOURCES=\
+___openstreetmap_cgimap_SOURCES=\
 	main.cpp
 
 ___test_test_core_SOURCES=\
