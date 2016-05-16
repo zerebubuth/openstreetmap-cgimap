@@ -1,0 +1,74 @@
+Source: openstreetmap-cgimap
+Section: libs
+Priority: optional
+Maintainer: Matt Amos <zerebubuth@gmail.com>
+Build-Depends: debhelper (>=9), autotools-dev, dh-autoreconf, pkg-config, libxml2-dev, libpqxx-dev, libfcgi-dev, libboost-dev, libboost-regex-dev, libboost-program-options-dev, libboost-date-time-dev, libboost-filesystem-dev, libboost-system-dev, libmemcached-dev
+Homepage: https://github.com/zerebubuth/openstreetmap-cgimap
+Standards-Version: 3.9.7
+
+Package: libcgimap-dev
+Section: contrib/libdevel
+Architecture: any
+Priority: optional
+Depends: libcgimap-apidb0 (= ${binary:Version}), libcgimap-core0 (= ${binary:Version}), libcgimap-fcgi0 (= ${binary:Version}), libcgimap-pgsnapshot0 (= ${binary:Version}), libcgimap-staticxml0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Description: CGImap is a C++ implementation of the OpenStreetMap API map call.
+ Development packages for CGImap.
+
+Package: libcgimap-apidb0
+Section: contrib/libs
+Architecture: any
+Priority: optional
+Depends: libcgimap-apidb0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Homepage: https://github.com/zerebubuth/openstreetmap-cgimap
+Description: CGImap is a C++ implementation of the OpenStreetMap API map call.
+ Libraries used by CGImap.
+
+Package: libcgimap-core0
+Section: contrib/libs
+Architecture: any
+Priority: optional
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Homepage: https://github.com/zerebubuth/openstreetmap-cgimap
+Description: CGImap is a C++ implementation of the OpenStreetMap API map call.
+ Libraries used by CGImap.
+
+Package: libcgimap-fcgi0
+Section: contrib/libs
+Architecture: any
+Priority: optional
+Depends: libcgimap-apidb0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Homepage: https://github.com/zerebubuth/openstreetmap-cgimap
+Description: CGImap is a C++ implementation of the OpenStreetMap API map call.
+ Libraries used by CGImap.
+
+Package: libcgimap-pgsnapshot0
+Section: contrib/libs
+Architecture: any
+Priority: optional
+Depends: libcgimap-apidb0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Homepage: https://github.com/zerebubuth/openstreetmap-cgimap
+Description: CGImap is a C++ implementation of the OpenStreetMap API map call.
+ Libraries used by CGImap.
+
+Package: libcgimap-staticxml0
+Section: contrib/libs
+Architecture: any
+Priority: optional
+Depends: libcgimap-apidb0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Homepage: https://github.com/zerebubuth/openstreetmap-cgimap
+Description: CGImap is a C++ implementation of the OpenStreetMap API map call.
+ Libraries used by CGImap.
+
+Package: openstreetmap-cgimap-bin
+Section: contrib/net
+Architecture: any
+Priority: optional
+Depends: libcgimap-apidb0 (= ${binary:Version}), libcgimap-core0 (= ${binary:Version}), libcgimap-fcgi0 (= ${binary:Version}), libcgimap-pgsnapshot0 (= ${binary:Version}), libcgimap-staticxml0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Description: CGImap is a C++ implementation of the OpenStreetMap API map call.
+ CGImap is a C++ implementation of some parts of the OpenStreetMap API as an
+ FCGI process. The rails implementation of the "map" call had a few problems
+ with memory - it uses a lot of it and there is a leak which makes it annoying
+ to use in long-running environments, like the main OSM server.
+ .
+ CGImap attempts to address these memory problems and makes it easier to
+ optimise the queries, something which is also a bit of a pain to do in Rails.
