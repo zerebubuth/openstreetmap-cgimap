@@ -13,13 +13,13 @@ TMPDB="openstreetmap_${RANDOM}_$$"
 function clean_up() {
     if [[ -d "$TMPDIR" ]]; then
 	if [[ -f "$CGIMAP_PIDFILE" ]]; then
-	    # cgimap traps SIGTERM, but would need another 
-	    # request to break it out of the loop, so we 
+	    # cgimap traps SIGTERM, but would need another
+	    # request to break it out of the loop, so we
 	    # just kill it with extreme prejudice.
 	    kill -KILL `cat $CGIMAP_PIDFILE`
 	else
 	    echo "pidfile $CGIMAP_PIDFILE doesn't exist!"
-	    killall map
+	    killall openstreetmap-cgimap
 	fi
 	rm -f "$CGIMAP_PIDFILE"
 	rm -f "$CGIMAP_SOCKET"
@@ -58,7 +58,7 @@ cat <<EOF > $MAPSCRIPT
 #!/bin/bash
 ulimit -c unlimited
 cd "$TMPDIR"
-"$PWD/$BUILD_DIR/map" $2 --dbname "$TMPDB" --pidfile "$CGIMAP_PIDFILE" --logfile "$TMPDIR/map.log" > "$TMPDIR/out.log" 2>&1
+"$PWD/$BUILD_DIR/openstreetmap-cgimap" $2 --dbname "$TMPDB" --pidfile "$CGIMAP_PIDFILE" --logfile "$TMPDIR/map.log" > "$TMPDIR/out.log" 2>&1
 echo "Return value: \$?" >> "$TMPDIR/out.log"
 EOF
 chmod +x "$MAPSCRIPT"

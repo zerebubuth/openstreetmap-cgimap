@@ -13,15 +13,15 @@ CGIMAP_RATELIMIT=102400; export CGIMAP_RATELIMIT
 CGIMAP_MAXDEBT=250; export CGIMAP_MAXDEBT
 
 start() {
-  start-stop-daemon --start --chuid rails --exec /home/rails/bin/map -- --daemon --port=8000 --instances=30
+  start-stop-daemon --start --chuid rails --exec /home/rails/bin/openstreetmap-cgimap -- --daemon --port=8000 --instances=30
 }
 
 stop() {
-  start-stop-daemon --stop --retry 300 --pidfile $CGIMAP_PIDFILE --exec /home/rails/bin/map
+  start-stop-daemon --stop --retry 300 --pidfile $CGIMAP_PIDFILE --exec /home/rails/bin/openstreetmap-cgimap
 }
 
 reload() {
-  start-stop-daemon --stop --signal HUP --pidfile $CGIMAP_PIDFILE --exec /home/rails/bin/map
+  start-stop-daemon --stop --signal HUP --pidfile $CGIMAP_PIDFILE --exec /home/rails/bin/openstreetmap-cgimap
 }
 
 case "$1" in
