@@ -13,7 +13,7 @@ configure
 compile
 depcomp
 install-sh
-map
+openstreetmap-cgimap
 missing
 compile
 src/.deps/
