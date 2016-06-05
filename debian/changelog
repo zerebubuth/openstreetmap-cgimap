@@ -1,8 +1,12 @@
-openstreetmap-cgimap (0.4.2-0ubuntu2~1.gbpa76065) UNRELEASED; urgency=medium
+openstreetmap-cgimap (0.4.2-0ubuntu2~2.gbpa65c55) UNRELEASED; urgency=medium
 
-  ** SNAPSHOT build @a76065bd4af810836400ed63b40b2dd42bf50cfb **
+  ** SNAPSHOT build @a65c55bcd99b7ae271947e534d927a228c86919d **
 
   * UNRELEASED
+  * Fixing Lintian errors.
+  * Proper email address.
+  * Add version to watch file.
+  * Where should the so.0.0.0 and the symlink go?
 
  -- Matt Amos <zerebubuth@gmail.com>  Mon, 16 May 2016 19:04:15 +0100
 
