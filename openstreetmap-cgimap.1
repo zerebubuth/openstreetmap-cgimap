@@ -1,0 +1,126 @@
+.TH OPENSTREETMAP-CGIMAP 1
+.SH NAME
+openstreetmap-cgimap \- FCGI version of the OpenStreetMap API
+.SH SYNOPSIS
+.B openstreetmap-cgimap
+[
+[\fB\-\-help]
+[\fB\-\-daemon]
+[\fB\-\-instances \fIINSTANCES\fR]
+[\fB\-\-pidfile \fIPIDFILE\fR]
+[\fB\-\-logfile \fILOGFILE\fR]
+[\fB\-\-memcache \fISPEC\fR]
+[\fB\-\-ratelimit \fILIMIT\fR]
+[\fB\-\-maxdebt \fIDEBT\fR]
+[\fB\-\-port \fIPORT\fR]
+[\fB\-\-socket \fISOCKET\fR]
+[\fB\-\-backend \fIBACKEND\fR]
+] [
+[\fB\-\-dbname \fIDBNAME\fR]
+[\fB\-\-host \fIHOST\fR]
+[\fB\-\-username \fIUSER\fR]
+[\fB\-\-password \fIPASS\fR]
+[\fB\-\-charset \fICHARSET\fR]
+[\fB\-\-readonly\fR]
+[\fB\-\-cachesize \fISIZE\fR]
+[\fB\-\-dbport \fIPORT\fR]
+] [
+[\fB\-\-dbname \fIDBNAME\fR]
+[\fB\-\-host \fIHOST\fR]
+[\fB\-\-username \fIUSER\fR]
+[\fB\-\-password \fIPASS\fR]
+[\fB\-\-charset \fICHARSET\fR]
+[\fB\-\-dbport \fIPORT\fR]
+] [
+[\fB\-\-file \fIFILE\fR]
+]
+.SH DESCRIPTION
+.B openstreetmap-cgimap
+a C++ implementation of parts of the OpenStreetMap API as an FCGI process.
+.SH OPTIONS
+.TP
+.BR \-\-help
+Display help message and exit.
+.TP
+.BR \-\-daemon
+Run as a daemon.
+.TP
+.BR \-\-instances =\fIINSTANCES\fR
+Number of daemon instances to run.
+Default is 5.
+.TP
+.BR \-\-pidfile =\fIPIDFILE\fR
+Write pid to \fIPIDFILE\fR.
+.TP
+.BR \-\-logfile =\fILOGFILE\fR
+File to write log messages to.
+.TP
+.BR \-\-memcache =\fISPEC\fR
+Memcache server specification.
+.TP
+.BR \-\-ratelimit =\fILIMIT\fR
+Average number of bytes/s to allow each client.
+.TP
+.BR \-\-maxdebt =\fIDEBT\fR
+Maximum debt (in Mb) to allow each client before rate limiting.
+.TP
+.BR \-\-port =\fIPORT\fR
+FCGI port number (e.g. 8000) to listen on. This option is for backwards compatibility, please use \-\-socket for new configurations.
+.TP
+.BR \-\-socket =\fISOCKET\fR
+FCGI port number (e.g. :8000) or UNIX socket to listen on.
+.TP
+.BR \-\-backend =\fIBACKEND\fR
+Backend to use, available options are: apidb, pgsnapshot, staticxml.
+Default is apidb.
+.SS ApiDB backend options
+.TP
+.BR \-\-dbname =\fIDBNAME\fR
+Database name.
+.TP
+.BR \-\-host =\fIHOST\fR
+Database server host.
+.TP
+.BR \-\-username =\fIUSER\fR
+Database user name.
+.TP
+.BR \-\-password =\fIPASS\fR
+Database password.
+.TP
+.BR \-\-charset =\fICHARSET\fR
+Database character set.
+Default is utf8.
+.TP
+.BR \-\-readonly
+Use the database in read-only mode.
+.TP
+.BR \-\-cachesize =\fISIZE\fR
+Maximum size of changeset cache.
+Default is 1000.
+.TP
+.BR \-\-dbport =\fIPORT\fR
+Database port number or UNIX socket file name.
+.SS pgsnapshot backend options
+.TP
+.BR \-\-dbname =\fIDBNAME\fR
+Database name.
+.TP
+.BR \-\-host =\fIHOST\fR
+Database server host.
+.TP
+.BR \-\-username =\fIUSER\fR
+Database user name.
+.TP
+.BR \-\-password =\fIPASS\fR
+Database password.
+.TP
+.BR \-\-charset =\fICHARSET\fR
+Database character set.
+Default is utf8.
+.TP
+.BR \-\-dbport =\fIPORT\fR
+Database port number or UNIX socket file name.
+.SS Static XML backend options:
+.TP
+.BR \-\-file =\fIFILE\fR
+File to load static OSM XML from.
