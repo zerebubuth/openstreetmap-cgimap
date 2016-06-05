@@ -1,4 +1,10 @@
-openstreetmap-cgimap (0.4.3-0ubuntu2~4.gbp0bf067) UNRELEASED; urgency=medium
+openstreetmap-cgimap (0.4.3-0ubuntu2) unstable; urgency=medium
+
+  * Update changelog. Add signature location for upstream verification.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Sun, 05 Jun 2016 18:20:34 +0100
+
+openstreetmap-cgimap (0.4.3-0ubuntu2~4.gbp0bf067) unstable; urgency=medium
 
   ** SNAPSHOT build @0bf0674b2ed4060d0c80cc14648a390a07c96f88 **
 
@@ -13,7 +19,7 @@ openstreetmap-cgimap (0.4.3-0ubuntu2~4.gbp0bf067) UNRELEASED; urgency=medium
 
  -- Matt Amos <zerebubuth@gmail.com>  Mon, 16 May 2016 19:04:15 +0100
 
-openstreetmap-cgimap (0.4.2-0ubuntu1) trusty; urgency=medium
+openstreetmap-cgimap (0.4.2-0ubuntu1) unstable; urgency=medium
 
   * Initial release.
 
