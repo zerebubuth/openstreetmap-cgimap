@@ -1,6 +1,6 @@
-openstreetmap-cgimap (0.4.2-0ubuntu2~3.gbpd78d7b) UNRELEASED; urgency=medium
+openstreetmap-cgimap (0.4.3-0ubuntu2~4.gbp0bf067) UNRELEASED; urgency=medium
 
-  ** SNAPSHOT build @d78d7bc597577d0a782526815acc7c1b3483d1f5 **
+  ** SNAPSHOT build @0bf0674b2ed4060d0c80cc14648a390a07c96f88 **
 
   * UNRELEASED
   * Fixing Lintian errors.
@@ -9,6 +9,7 @@ openstreetmap-cgimap (0.4.2-0ubuntu2~3.gbpd78d7b) UNRELEASED; urgency=medium
   * Where should the so.0.0.0 and the symlink go?
   * Update changelog with DCH.
   * Shuffling package contents around at random attempting to satisfy Lintian.
+  * Update changelog again.
 
  -- Matt Amos <zerebubuth@gmail.com>  Mon, 16 May 2016 19:04:15 +0100
 
