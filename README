@@ -6,11 +6,11 @@ CGImap
 Overview
 --------
 
-CGImap is a C++ implementation of some parts of the OpenStreetMap 
-API as an FCGI process. The rails implementation of the "map" call 
-had a few problems with memory - it uses a lot of it and there is 
-a leak which makes it annoying to use in long-running environments, 
-like the main OSM server.
+CGImap is a C++ implementation of some parts of the OpenStreetMap
+API as an FCGI process. The rails implementation of the "map" call
+had a few problems with memory - it uses a lot of it and there is
+a leak which makes it annoying to use in long-running environments,
+such as the main OSM server.
 
 CGImap attempts to address these memory problems and makes it easier
 to optimise the queries, something which is also a bit of a pain to do
@@ -62,34 +62,36 @@ Then change to the source code directory to configure and build:
     ./configure
     make
 
-You should now have a "./map" executable in the current directory.
+You should now have a "./openstreetmap-cgimap" executable in the current
+directory.
 
 Setup
 -----
 
-A sample lighttd.conf file is provided, which can be used to test. To test 
+A sample lighttd.conf file is provided, which can be used to test. To test
 CGImap with lighttpd use the supplied config file with lighttpd and run cgimap
 on the command line with a command like
 
-    ./map --socket :54321 --backend apidb --dbname openstreetmap
+    ./openstreetmap-cgimap --socket :54321 --backend apidb \
+      --dbname openstreetmap
 
 You can then access the running instance at `http://localhost:31337/api/0.6/map?bbox=...`
 
-The api.osm.org instance runs CGImap as a daemon and Apache with 
+The api.osm.org instance runs CGImap as a daemon and Apache with
 [mod_fastcgi_handler](https://github.com/hollow/mod_fastcgi_handler).
 An init.d script to run CGImap as a daemon is supplied in
-scripts/cgimap.init. To use it modify the paths and environment 
-variables to suit your installation, copy it to `/etc/init.d/cgibin` and 
+scripts/cgimap.init. To use it modify the paths and environment
+variables to suit your installation, copy it to `/etc/init.d/cgibin` and
 change the mode to 755, and owner:group to root:root.
 
-An example of this can be found in 
+An example of this can be found in
 [OSM Chef](http://git.openstreetmap.org/chef.git/blob/HEAD:/cookbooks/web/recipes/cgimap.rb).
 
 Typically you will need to modify the database connection parameters and path
-to the executable. See `./map --help` for a list of options. To convert a
-command line option to an environment variable append `CGIMAP_` to the option
-and capatalize it. For example, the option `--dbname` becomes the environment
-variable `CGIMAP_DBNAME`.
+to the executable. See `./openstreetmap-cgimap --help` for a list of options.
+To convert a command line option to an environment variable append `CGIMAP_` to
+the option and capatalize it. For example, the option `--dbname` becomes the
+environment variable `CGIMAP_DBNAME`.
 
 Fcgi programs can be deployed with Apache using `mod_fastcgi_handler`,
 `mod_fcgid`, `mod_fastcgi`, and on recent versions `mod_proxy_fcgi`. A sample
@@ -110,12 +112,12 @@ The apache modules mod_proxy and mod_fastcgi_handler must also be enabled.
 Database Permissions
 --------------------
 
-The apidb backend requires permissions to SELECT and CREATE TEMPORARY on the 
-Postgres server. For situations where temporary tables cannot be created there 
+The apidb backend requires permissions to SELECT and CREATE TEMPORARY on the
+Postgres server. For situations where temporary tables cannot be created there
 is the `--readonly` option.
 
-The pgsnapshot backend requires permissions to SELECT and CREATE TEMPORARY on 
-the Postgres server, but will not work in situations where temporary tables 
+The pgsnapshot backend requires permissions to SELECT and CREATE TEMPORARY on
+the Postgres server, but will not work in situations where temporary tables
 cannot be created.
 
 In both cases it is recommended that a separate account is created for
@@ -126,7 +128,7 @@ the chance of an exploitable flaw leading to complete pwnage.
 Testing
 -------
 
-To run the test suite using `make check` you will need additional 
+To run the test suite using `make check` you will need additional
 packages installed:
 
     sudo apt-get install postgresql postgresql-contrib postgis
