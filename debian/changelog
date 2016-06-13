@@ -1,3 +1,9 @@
+openstreetmap-cgimap (0.4.3-0ubuntu2ppa1~xenial2) xenial; urgency=medium
+
+  * Add postinst call to ldconfig.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Mon, 13 Jun 2016 13:13:06 +0100
+
 openstreetmap-cgimap (0.4.3-0ubuntu2ppa1~xenial1) xenial; urgency=medium
 
   * Update changelog. Add signature location for upstream verification.
