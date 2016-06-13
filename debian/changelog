@@ -1,8 +1,8 @@
-openstreetmap-cgimap (0.4.3-0ubuntu2) wily; urgency=medium
+openstreetmap-cgimap (0.4.3-0ubuntu2ppa1~wily1) wily; urgency=medium
 
   * Update changelog. Add signature location for upstream verification.
 
- -- Matt Amos <zerebubuth@gmail.com>  Sun, 05 Jun 2016 18:20:34 +0100
+ -- Matt Amos <zerebubuth@gmail.com>  Mon, 13 Jun 2016 11:51:19 +0100
 
 openstreetmap-cgimap (0.4.3-0ubuntu2~4.gbp0bf067) wily; urgency=medium
 
