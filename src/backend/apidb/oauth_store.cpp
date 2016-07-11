@@ -101,7 +101,7 @@ oauth_store::allow_read_api(const std::string &token_id) {
   return false;
 }
 
-boost::optional<osm_id_t>
+boost::optional<osm_user_id_t>
 oauth_store::get_user_id_for_token(const std::string &token_id) {
   return boost::none;
 }

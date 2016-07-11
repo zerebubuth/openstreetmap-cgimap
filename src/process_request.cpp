@@ -264,7 +264,7 @@ void process_request(request &req, rate_limiter &limiter,
 
       if (boost::apply_visitor(is_copacetic(), oauth_valid)) {
         string token = boost::apply_visitor(get_oauth_token(), oauth_valid);
-        boost::optional<osm_id_t> user_id = store->get_user_id_for_token(token);
+        boost::optional<osm_user_id_t> user_id = store->get_user_id_for_token(token);
 
         if (user_id) {
           client_key = (format("%1%%2%") % user_prefix % (*user_id)).str();

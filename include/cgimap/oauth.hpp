@@ -41,7 +41,7 @@ struct nonce_store {
  */
 struct token_store {
   virtual bool allow_read_api(const std::string &token_id) = 0;
-  virtual boost::optional<osm_id_t> get_user_id_for_token(
+  virtual boost::optional<osm_user_id_t> get_user_id_for_token(
     const std::string &token_id) = 0;
 };
 
