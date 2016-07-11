@@ -26,3 +26,26 @@ VALUES (1,       0,       0, 1, true,  '2013-11-14T02:10:00Z', 3221225472, 1),
        -- note: node 5 intentionally missing
        (6, 90000000, 90000000,  0, true,  '2016-04-16T15:09:00Z', 3229120632, 1),
        (7, 90000000, 90000000, -1, true,  '2016-04-16T15:09:00Z', 3229120632, 1);
+
+-- add some OAuth tokens, one valid and the others revoked or not valid.
+-- the API is publicly readable, so _all_ tokens can read the API. there is no
+-- "allow_read_api" setting on the token itself. but some tokens might have been
+-- revoked or expired.
+INSERT INTO oauth_tokens
+  (id, user_id, token, secret, created_at, authorized_at, invalidated_at)
+VALUES
+  -- valid key
+  (1, 1,
+   'OfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA',
+   'fFCKdXsLxeHPlgrIPr5fZSpXKnDuLw0GvJTzeE99',
+   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', NULL),
+  -- not authorized
+  (2, 1,
+   'wpNsXPhrgWl4ELPjPbhfwjjSbNk9npsKoNrMGFlC',
+   'NZskvUUYlOuCsPKuMbSTz5eMpVJVI3LsyW11Z2Uq',
+   '2016-07-11T19:12:00Z', NULL, NULL),
+  -- invalidated
+  (3, 1,
+   'Rzcm5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf',
+   '2UxsEFziZGv64hdWN3Qa90Vb6v1aovVxaTTQIn1D',
+   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z');

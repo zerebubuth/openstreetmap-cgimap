@@ -431,6 +431,20 @@ void test_nonce_store(boost::shared_ptr<oauth::store> store) {
                      "use of nonce with a different nonce string");
 }
 
+void test_allow_read_api(boost::shared_ptr<oauth::store> store) {
+  assert_equal<bool>(
+    true, store->allow_read_api("OfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA"),
+    "valid token allows reading API");
+
+  assert_equal<bool>(
+    false, store->allow_read_api("wpNsXPhrgWl4ELPjPbhfwjjSbNk9npsKoNrMGFlC"),
+    "non-authorized token does not allow reading API");
+
+  assert_equal<bool>(
+    false, store->allow_read_api("Rzcm5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf"),
+    "invalid token does not allow reading API");
+}
+
 void test_negative_changeset_ids(boost::shared_ptr<data_selection> sel) {
   assert_equal<data_selection::visibility_t>(
     sel->check_node_visibility(6), data_selection::exists,
@@ -480,6 +494,9 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(boost::shared_ptr<oauth::store>)>(
         &test_nonce_store));
+
+    tdb.run(boost::function<void(boost::shared_ptr<oauth::store>)>(
+        &test_allow_read_api));
 
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
         &test_negative_changeset_ids));

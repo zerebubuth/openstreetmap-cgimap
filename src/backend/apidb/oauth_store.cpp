@@ -74,6 +74,16 @@ oauth_store::oauth_store(const po::variables_map &opts)
         "WHERE nonce=$1 AND \"timestamp\"=$2)")
     PREPARE_ARGS(("character varying")("integer"));
 
+  // return a row if there's a token with the given ID which is authorized and
+  // valid.
+  m_connection.prepare("token_is_valid",
+    "SELECT 1 FROM oauth_tokens "
+    "WHERE "
+      "token=$1 AND "
+      "authorized_at IS NOT NULL AND "
+      "invalidated_at IS NULL")
+    PREPARE_ARGS(("character varying"));
+
   // clang-format on
 }
 
@@ -98,7 +108,9 @@ oauth_store::use_nonce(const std::string &nonce, uint64_t timestamp) {
 
 bool
 oauth_store::allow_read_api(const std::string &token_id) {
-  return false;
+  pqxx::work w(m_connection, "oauth_use_nonce");
+  pqxx::result res = w.prepared("token_is_valid")(token_id).exec();
+  return res.affected_rows() > 0;
 }
 
 boost::optional<osm_user_id_t>
