@@ -25,21 +25,21 @@ using std::stringstream;
 using std::vector;
 
 namespace pqxx {
-template <> struct string_traits<vector<osm_id_t> > {
-  static const char *name() { return "vector<osm_id_t>"; }
+template <> struct string_traits<vector<osm_nwr_id_t> > {
+  static const char *name() { return "vector<osm_nwr_id_t>"; }
   static bool has_null() { return false; }
-  static bool is_null(const vector<osm_id_t> &) { return false; }
+  static bool is_null(const vector<osm_nwr_id_t> &) { return false; }
   static stringstream null() {
     internal::throw_null_conversion(name());
     // No, dear compiler, we don't need a return here.
     throw 0;
   }
-  static void from_string(const char[], vector<osm_id_t> &) {}
-  static std::string to_string(const vector<osm_id_t> &ids) {
+  static void from_string(const char[], vector<osm_nwr_id_t> &) {}
+  static std::string to_string(const vector<osm_nwr_id_t> &ids) {
     stringstream ostr;
     ostr << "{";
     std::copy(ids.begin(), ids.end(),
-              infix_ostream_iterator<osm_id_t>(ostr, ","));
+              infix_ostream_iterator<osm_nwr_id_t>(ostr, ","));
     ostr << "}";
     return ostr.str();
   }
@@ -65,12 +65,12 @@ std::string connect_db_str(const po::variables_map &options) {
 }
 
 void extract_elem(const pqxx::result::tuple &row, element_info &elem) {
-  elem.id = row["id"].as<osm_id_t>();
+  elem.id = row["id"].as<osm_nwr_id_t>();
   elem.version = row["version"].as<int>();
   elem.timestamp = row["timestamp"].c_str();
-  elem.changeset = row["changeset_id"].as<osm_id_t>();
+  elem.changeset = row["changeset_id"].as<osm_changeset_id_t>();
   if (!row["uid"].is_null()) {
-    elem.uid = row["uid"].as<osm_id_t>();
+    elem.uid = row["uid"].as<osm_user_id_t>();
   } else {
     elem.uid = boost::none;
   }
@@ -95,7 +95,7 @@ void extract_nodes(const pqxx::result &res, nodes_t &nodes) {
   nodes.clear();
   for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
        ++itr) {
-    nodes.push_back((*itr)[0].as<osm_id_t>());
+    nodes.push_back((*itr)[0].as<osm_nwr_id_t>());
   }
 }
 
@@ -128,7 +128,7 @@ void extract_members(const pqxx::result &res, members_t &members) {
   for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
        ++itr) {
     member.type = type_from_name((*itr)["member_type"].c_str());
-    member.ref = (*itr)["member_id"].as<osm_id_t>();
+    member.ref = (*itr)["member_id"].as<osm_nwr_id_t>();
     member.role = (*itr)["member_role"].c_str();
     members.push_back(member);
   }
@@ -226,29 +226,29 @@ void snapshot_selection::write_relations(output_formatter &formatter) {
 }
 
 data_selection::visibility_t
-    snapshot_selection::check_node_visibility(osm_id_t) {
+    snapshot_selection::check_node_visibility(osm_nwr_id_t) {
   return data_selection::exists;
 }
 
 data_selection::visibility_t
-    snapshot_selection::check_way_visibility(osm_id_t) {
+    snapshot_selection::check_way_visibility(osm_nwr_id_t) {
   return data_selection::exists;
 }
 
 data_selection::visibility_t
-    snapshot_selection::check_relation_visibility(osm_id_t) {
+    snapshot_selection::check_relation_visibility(osm_nwr_id_t) {
   return data_selection::exists;
 }
 
-int snapshot_selection::select_nodes(const std::vector<osm_id_t> &ids) {
+int snapshot_selection::select_nodes(const std::vector<osm_nwr_id_t> &ids) {
   return w.prepared("add_nodes_list")(ids).exec().affected_rows();
 }
 
-int snapshot_selection::select_ways(const std::vector<osm_id_t> &ids) {
+int snapshot_selection::select_ways(const std::vector<osm_nwr_id_t> &ids) {
   return w.prepared("add_ways_list")(ids).exec().affected_rows();
 }
 
-int snapshot_selection::select_relations(const std::vector<osm_id_t> &ids) {
+int snapshot_selection::select_relations(const std::vector<osm_nwr_id_t> &ids) {
   return w.prepared("add_relations_list")(ids).exec().affected_rows();
 }
 

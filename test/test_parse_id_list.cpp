@@ -51,11 +51,11 @@ int main(int argc, char *argv[]) {
 
   // the container returned from parse_id_list_params should not contain
   // any duplicates.
-  std::vector<osm_id_t> ids = api06::parse_id_list_params(req, "nodes");
+  std::vector<osm_nwr_id_t> ids = api06::parse_id_list_params(req, "nodes");
   if (ids.size() != 1) {
     std::cerr << "Parsing " << query_str << " as a list of nodes should "
               << "discard duplicates, but got: {";
-    BOOST_FOREACH(osm_id_t id, ids) {
+    BOOST_FOREACH(osm_nwr_id_t id, ids) {
       std::cerr << id << ", ";
     }
     std::cerr << "}\n";

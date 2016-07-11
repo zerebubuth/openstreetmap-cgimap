@@ -10,9 +10,10 @@ element_info::element_info(const element_info &other)
     timestamp(other.timestamp), uid(other.uid), display_name(other.display_name),
     visible(other.visible) {}
 
-element_info::element_info(osm_id_t id_, osm_id_t version_, osm_id_t changeset_,
+element_info::element_info(osm_nwr_id_t id_, osm_nwr_id_t version_,
+                           osm_changeset_id_t changeset_,
                            const std::string &timestamp_,
-                           const boost::optional<osm_id_t> &uid_,
+                           const boost::optional<osm_user_id_t> &uid_,
                            const boost::optional<std::string> &display_name_,
                            bool visible_)
   : id(id_), version(version_), changeset(changeset_),

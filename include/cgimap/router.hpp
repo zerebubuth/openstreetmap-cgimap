@@ -123,7 +123,7 @@ private:
  * match an OSM ID, returning it in the match tuple.
  */
 struct match_osm_id : public ops<match_osm_id> {
-  typedef list<osm_id_t> match_type;
+  typedef list<osm_nwr_id_t> match_type;
   match_osm_id();
   match_type match(part_iterator &begin, const part_iterator &end) const;
 };

@@ -106,3 +106,5 @@ clang-format:
 	for i in src/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in test/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done;
 endif
+
+man1_MANS = openstreetmap-cgimap.1

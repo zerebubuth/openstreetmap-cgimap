@@ -321,7 +321,7 @@ void test_single_nodes(boost::shared_ptr<data_selection> sel) {
     throw std::runtime_error("Node 2 should be visible, but isn't");
   }
 
-  std::vector<osm_id_t> ids;
+  std::vector<osm_nwr_id_t> ids;
   ids.push_back(1);
   ids.push_back(2);
   ids.push_back(3);
@@ -387,7 +387,7 @@ void test_dup_nodes(boost::shared_ptr<data_selection> sel) {
     throw std::runtime_error("Node 1 should be visible, but isn't");
   }
 
-  std::vector<osm_id_t> ids;
+  std::vector<osm_nwr_id_t> ids;
   ids.push_back(1);
   ids.push_back(1);
   ids.push_back(1);
@@ -431,6 +431,40 @@ void test_nonce_store(boost::shared_ptr<oauth::store> store) {
                      "use of nonce with a different nonce string");
 }
 
+void test_negative_changeset_ids(boost::shared_ptr<data_selection> sel) {
+  assert_equal<data_selection::visibility_t>(
+    sel->check_node_visibility(6), data_selection::exists,
+    "node 6 visibility");
+  assert_equal<data_selection::visibility_t>(
+    sel->check_node_visibility(7), data_selection::exists,
+    "node 7 visibility");
+
+  std::vector<osm_nwr_id_t> ids;
+  ids.push_back(6);
+  ids.push_back(7);
+  if (sel->select_nodes(ids) != 2) {
+    throw std::runtime_error("Selecting 2 nodes failed");
+  }
+
+  test_formatter f;
+  sel->write_nodes(f);
+  assert_equal<size_t>(f.m_nodes.size(), 2, "number of nodes written");
+  assert_equal<test_formatter::node_t>(
+    test_formatter::node_t(
+      element_info(6, 1, 0, "2016-04-16T15:09:00Z", boost::none, boost::none, true),
+      9.0, 9.0,
+      tags_t()
+      ),
+    f.m_nodes[0], "first node written");
+  assert_equal<test_formatter::node_t>(
+    test_formatter::node_t(
+      element_info(7, 1, -1, "2016-04-16T15:09:00Z", boost::none, boost::none, true),
+      9.0, 9.0,
+      tags_t()
+      ),
+    f.m_nodes[1], "second node written");
+}
+
 } // anonymous namespace
 
 int main(int, char **) {
@@ -446,6 +480,9 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(boost::shared_ptr<oauth::store>)>(
         &test_nonce_store));
+
+    tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
+        &test_negative_changeset_ids));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;

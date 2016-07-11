@@ -18,20 +18,20 @@
 class readonly_pgsql_selection : public data_selection {
 public:
   readonly_pgsql_selection(pqxx::connection &conn,
-                           cache<osm_id_t, changeset> &changeset_cache);
+                           cache<osm_changeset_id_t, changeset> &changeset_cache);
   ~readonly_pgsql_selection();
 
   void write_nodes(output_formatter &formatter);
   void write_ways(output_formatter &formatter);
   void write_relations(output_formatter &formatter);
 
-  visibility_t check_node_visibility(osm_id_t id);
-  visibility_t check_way_visibility(osm_id_t id);
-  visibility_t check_relation_visibility(osm_id_t id);
+  visibility_t check_node_visibility(osm_nwr_id_t id);
+  visibility_t check_way_visibility(osm_nwr_id_t id);
+  visibility_t check_relation_visibility(osm_nwr_id_t id);
 
-  int select_nodes(const std::vector<osm_id_t> &);
-  int select_ways(const std::vector<osm_id_t> &);
-  int select_relations(const std::vector<osm_id_t> &);
+  int select_nodes(const std::vector<osm_nwr_id_t> &);
+  int select_ways(const std::vector<osm_nwr_id_t> &);
+  int select_relations(const std::vector<osm_nwr_id_t> &);
   int select_nodes_from_bbox(const bbox &bounds, int max_nodes);
   void select_nodes_from_relations();
   void select_ways_from_nodes();
@@ -58,7 +58,7 @@ public:
     pqxx::quiet_errorhandler m_errorhandler, m_cache_errorhandler;
 #endif
     pqxx::nontransaction m_cache_tx;
-    cache<osm_id_t, changeset> m_cache;
+    cache<osm_changeset_id_t, changeset> m_cache;
   };
 
 private:
@@ -68,8 +68,8 @@ private:
   pqxx::work w;
 
   // the set of selected nodes, ways and relations
-  std::set<osm_id_t> sel_nodes, sel_ways, sel_relations;
-  cache<osm_id_t, changeset> &cc;
+  std::set<osm_nwr_id_t> sel_nodes, sel_ways, sel_relations;
+  cache<osm_changeset_id_t, changeset> &cc;
 };
 
 #endif /* READONLY_PGSQL_SELECTION_HPP */

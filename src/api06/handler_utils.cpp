@@ -29,13 +29,13 @@ struct first_equals {
 
 namespace api06 {
 
-vector<osm_id_t> parse_id_list_params(request &req, const string &param_name) {
+vector<osm_nwr_id_t> parse_id_list_params(request &req, const string &param_name) {
   string decoded = http::urldecode(get_query_string(req));
   const vector<pair<string, string> > params = http::parse_params(decoded);
   vector<pair<string, string> >::const_iterator itr =
     std::find_if(params.begin(), params.end(), first_equals(param_name));
 
-  vector<osm_id_t> myids;
+  vector<osm_nwr_id_t> myids;
 
   if (itr != params.end()) {
     // just check for blank string, which shouldn't be converted.
@@ -45,7 +45,7 @@ vector<osm_id_t> parse_id_list_params(request &req, const string &param_name) {
       try {
         for (vector<string>::iterator itr = strs.begin(); itr != strs.end();
              ++itr) {
-          osm_id_t id = lexical_cast<osm_id_t>(*itr);
+          osm_nwr_id_t id = lexical_cast<osm_nwr_id_t>(*itr);
           myids.push_back(id);
         }
       } catch (const bad_lexical_cast &) {
@@ -60,7 +60,7 @@ vector<osm_id_t> parse_id_list_params(request &req, const string &param_name) {
 
   // ensure list of IDs is unique
   std::sort(myids.begin(), myids.end());
-  vector<osm_id_t>::iterator new_end = std::unique(myids.begin(), myids.end());
+  vector<osm_nwr_id_t>::iterator new_end = std::unique(myids.begin(), myids.end());
   myids.erase(new_end, myids.end());
 
   return myids;

@@ -27,19 +27,19 @@ inline unsigned int lat2y(double lat) {
   return round((lat + 90.0) * 65535.0 / 180.0);
 }
 
-std::vector<osm_id_t> tiles_for_area(double minlat, double minlon, double maxlat,
+std::vector<tile_id_t> tiles_for_area(double minlat, double minlon, double maxlat,
                                    double maxlon) {
   const unsigned int minx = lon2x(minlon);
   const unsigned int maxx = lon2x(maxlon);
   const unsigned int miny = lat2y(minlat);
   const unsigned int maxy = lat2y(maxlat);
-  set<unsigned int> tiles;
+  set<tile_id_t> tiles;
 
-  for (unsigned int x = minx; x <= maxx; x++) {
-    for (unsigned int y = miny; y <= maxy; y++) {
+  for (tile_id_t x = minx; x <= maxx; x++) {
+    for (tile_id_t y = miny; y <= maxy; y++) {
       tiles.insert(xy2tile(x, y));
     }
   }
 
-  return std::vector<osm_id_t>(tiles.begin(), tiles.end());
+  return std::vector<tile_id_t>(tiles.begin(), tiles.end());
 }

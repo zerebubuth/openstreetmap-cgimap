@@ -36,6 +36,8 @@ public:
   void attribute(const std::string &name, int value);
   void attribute(const std::string &name, unsigned long int value);
   void attribute(const std::string &name, unsigned long long int value);
+  void attribute(const std::string &name, long int value);
+  void attribute(const std::string &name, long long int value);
   void attribute(const std::string &name, bool value);
 
   // write a child text element

@@ -13,11 +13,11 @@
 struct changeset {
   bool data_public;
   std::string display_name;
-  osm_id_t user_id;
+  osm_user_id_t user_id;
 
-  changeset(bool dp, const std::string &dn, osm_id_t id);
+  changeset(bool dp, const std::string &dn, osm_user_id_t id);
 };
 
-changeset *fetch_changeset(pqxx::transaction_base &w, osm_id_t id);
+changeset *fetch_changeset(pqxx::transaction_base &w, osm_changeset_id_t id);
 
 #endif /* CHANGESET_HPP */
