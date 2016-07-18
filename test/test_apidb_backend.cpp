@@ -445,6 +445,25 @@ void test_allow_read_api(boost::shared_ptr<oauth::store> store) {
     "invalid token does not allow reading API");
 }
 
+void test_get_user_id_for_token(boost::shared_ptr<oauth::store> store) {
+  assert_equal<boost::optional<osm_user_id_t> >(
+    1, store->get_user_id_for_token("OfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA"),
+    "valid token belongs to user 1");
+
+  assert_equal<boost::optional<osm_user_id_t> >(
+    1, store->get_user_id_for_token("wpNsXPhrgWl4ELPjPbhfwjjSbNk9npsKoNrMGFlC"),
+    "non-authorized token belongs to user 1");
+
+  assert_equal<boost::optional<osm_user_id_t> >(
+    1, store->get_user_id_for_token("Rzcm5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf"),
+    "invalid token belongs to user 1");
+
+  assert_equal<boost::optional<osm_user_id_t> >(
+    boost::none,
+    store->get_user_id_for_token("____5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf"),
+    "non-existent token does not belong to anyone");
+}
+
 void test_negative_changeset_ids(boost::shared_ptr<data_selection> sel) {
   assert_equal<data_selection::visibility_t>(
     sel->check_node_visibility(6), data_selection::exists,
@@ -497,6 +516,9 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(boost::shared_ptr<oauth::store>)>(
         &test_allow_read_api));
+
+    tdb.run(boost::function<void(boost::shared_ptr<oauth::store>)>(
+        &test_get_user_id_for_token));
 
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
         &test_negative_changeset_ids));

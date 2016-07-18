@@ -84,6 +84,12 @@ oauth_store::oauth_store(const po::variables_map &opts)
       "invalidated_at IS NULL")
     PREPARE_ARGS(("character varying"));
 
+  // return a row with the user ID of the owner of the given token ID.
+  m_connection.prepare("token_belongs_to",
+    "SELECT user_id FROM oauth_tokens "
+    "WHERE token=$1")
+    PREPARE_ARGS(("character varying"));
+
   // clang-format on
 }
 
@@ -108,12 +114,21 @@ oauth_store::use_nonce(const std::string &nonce, uint64_t timestamp) {
 
 bool
 oauth_store::allow_read_api(const std::string &token_id) {
-  pqxx::work w(m_connection, "oauth_use_nonce");
+  pqxx::work w(m_connection, "oauth_check_allow_read_api");
   pqxx::result res = w.prepared("token_is_valid")(token_id).exec();
   return res.affected_rows() > 0;
 }
 
 boost::optional<osm_user_id_t>
 oauth_store::get_user_id_for_token(const std::string &token_id) {
-  return boost::none;
+  pqxx::work w(m_connection, "oauth_get_user_id_for_token");
+  pqxx::result res = w.prepared("token_belongs_to")(token_id).exec();
+
+  if (res.affected_rows() > 0) {
+    osm_user_id_t uid = res[0][0].as<osm_user_id_t>();
+    return uid;
+
+  } else {
+    return boost::none;
+  }
 }
