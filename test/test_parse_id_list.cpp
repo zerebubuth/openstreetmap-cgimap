@@ -69,11 +69,32 @@ void test_parse_returns_no_duplicates() {
   }
 }
 
+void test_parse_negative_nodes() {
+  std::string query_str =
+    "nodes=-1875196430,1970729486,-715595887,153329585,276538320,276538320,"
+    "276538320,276538320,557671215,268800768,268800768,272134694,416571249,"
+    "4118507737,639141976,-120408340,4118507737,4118507737,-176459559,"
+    "-176459559,-176459559,416571249,-176459559,-176459559,-176459559,"
+    "557671215";
+
+  std::vector<osm_nwr_id_t> ids = parse_query_str(query_str);
+
+  // maximum ID that postgres can handle is 2^63-1, so that should never
+  // be returned by the parsing function.
+  const osm_nwr_id_t max_id = std::numeric_limits<int64_t>::max();
+  BOOST_FOREACH(osm_nwr_id_t id, ids) {
+    if (id > max_id) {
+      throw std::runtime_error("Found ID > max allowed ID in parsed list.");
+    }
+  }
+}
+
 } // anonymous namespace
 
 int main(int argc, char *argv[]) {
   try {
     test_parse_returns_no_duplicates();
+    test_parse_negative_nodes();
 
   } catch (const std::exception &e) {
     std::cout << "Error: " << e.what() << std::endl;
