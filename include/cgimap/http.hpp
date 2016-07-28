@@ -2,7 +2,6 @@
 #define HTTP_HPP
 
 #include <string>
-#include <map>
 #include <vector>
 #include <stdexcept>
 #include <boost/shared_ptr.hpp>
@@ -136,7 +135,17 @@ std::string urldecode(const std::string &s);
 std::string urlencode(const std::string &s);
 
 /**
- * Parses a query string into a key-value map.
+ * Parses a query string into an array of key-value pairs.
+ *
+ * Note that it can be important to keep the parameters as an array of key-value
+ * pairs, since it is possible to have duplicate parameters - for example, in
+ * https://tools.ietf.org/html/rfc5849#section-3.4.1.3.1
+ *
+ * Behaviour of duplicate items in the query string seems undefined in
+ * https://tools.ietf.org/html/rfc3986#section-3.4, and the above example has
+ * the duplicate in the form-encoded POST body. It seems best to never use
+ * duplicates in request parameters, but hopefully this code is now robust to
+ * their existence.
  *
  * The string should already have been url-decoded (i.e: no %-encoded
  * chars remain).

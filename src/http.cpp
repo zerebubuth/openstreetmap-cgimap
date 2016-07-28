@@ -10,7 +10,6 @@
 
 namespace al = boost::algorithm;
 using std::string;
-using std::map;
 using std::vector;
 using std::pair;
 using boost::shared_ptr;
