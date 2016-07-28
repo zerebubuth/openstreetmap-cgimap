@@ -270,6 +270,11 @@ void process_request(request &req, rate_limiter &limiter,
           client_key = (format("%1%%2%") % user_prefix % (*user_id)).str();
 
         } else {
+          // we can get here if there's a valid OAuth signature, with an
+          // authorised token matching the secret stored in the database,
+          // but that's not assigned to a user ID. perhaps this can
+          // happen due to concurrent revokation? in any case, we don't
+          // want to go any further.
           logger::message(format("Unable to find user ID for token %1%.") %
                           token);
           throw http::server_error("Unable to find user ID for token.");
