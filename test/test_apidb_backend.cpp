@@ -50,6 +50,10 @@ struct test_database : public boost::noncopyable {
   // do its own testing - the run method here is just plumbing.
   void run(boost::function<void(boost::shared_ptr<data_selection>)> func);
 
+  // run a test. func will be called once with the OAuth store backed by
+  // the database.
+  void run(boost::function<void(boost::shared_ptr<oauth::store>)> func);
+
 private:
   // create a random, and hopefully unique, database name.
   static std::string random_db_name();
@@ -64,6 +68,9 @@ private:
   // read-only data selections.
   boost::shared_ptr<data_selection::factory> m_writeable_factory,
       m_readonly_factory;
+
+  // oauth store based on the writeable connection.
+  boost::shared_ptr<oauth::store> m_oauth_store;
 };
 
 /**
@@ -110,6 +117,7 @@ void test_database::setup() {
     po::store(po::parse_command_line(argc, argv, desc), vm);
     vm.notify();
     m_writeable_factory = apidb->create(vm);
+    m_oauth_store = apidb->create_oauth_store(vm);
   }
 
   {
@@ -129,6 +137,9 @@ test_database::~test_database() {
   }
   if (m_readonly_factory) {
     m_readonly_factory.reset();
+  }
+  if (m_oauth_store) {
+    m_oauth_store.reset();
   }
 
   if (!m_db_name.empty()) {
@@ -181,6 +192,15 @@ void test_database::run(
     throw std::runtime_error(
         (boost::format("%1%, in read-only selection") % e.what()).str());
   }
+}
+
+void test_database::run(
+  boost::function<void(boost::shared_ptr<oauth::store>)> func) {
+  if (!m_oauth_store) {
+    throw std::runtime_error("OAuth store not available.");
+  }
+
+  func(m_oauth_store);
 }
 
 // reads a file of SQL statements, splits on ';' and tries to
@@ -394,6 +414,56 @@ void test_dup_nodes(boost::shared_ptr<data_selection> sel) {
     f.m_nodes[0], "first node written");
 }
 
+void test_nonce_store(boost::shared_ptr<oauth::store> store) {
+  // can use a nonce
+  assert_equal<bool>(true, store->use_nonce("abcdef", 0), "first use of nonce");
+
+  // can't use it twice
+  assert_equal<bool>(false, !store->use_nonce("abcdef", 0),
+                     "second use of the same nonce");
+
+  // can use the same nonce with a different timestamp
+  assert_equal<bool>(true, store->use_nonce("abcdef", 1),
+                     "use of nonce with a different timestamp");
+
+  // or the same timestamp with a different nonce
+  assert_equal<bool>(true, store->use_nonce("abcdeg", 0),
+                     "use of nonce with a different nonce string");
+}
+
+void test_allow_read_api(boost::shared_ptr<oauth::store> store) {
+  assert_equal<bool>(
+    true, store->allow_read_api("OfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA"),
+    "valid token allows reading API");
+
+  assert_equal<bool>(
+    false, store->allow_read_api("wpNsXPhrgWl4ELPjPbhfwjjSbNk9npsKoNrMGFlC"),
+    "non-authorized token does not allow reading API");
+
+  assert_equal<bool>(
+    false, store->allow_read_api("Rzcm5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf"),
+    "invalid token does not allow reading API");
+}
+
+void test_get_user_id_for_token(boost::shared_ptr<oauth::store> store) {
+  assert_equal<boost::optional<osm_user_id_t> >(
+    1, store->get_user_id_for_token("OfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA"),
+    "valid token belongs to user 1");
+
+  assert_equal<boost::optional<osm_user_id_t> >(
+    1, store->get_user_id_for_token("wpNsXPhrgWl4ELPjPbhfwjjSbNk9npsKoNrMGFlC"),
+    "non-authorized token belongs to user 1");
+
+  assert_equal<boost::optional<osm_user_id_t> >(
+    1, store->get_user_id_for_token("Rzcm5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf"),
+    "invalid token belongs to user 1");
+
+  assert_equal<boost::optional<osm_user_id_t> >(
+    boost::none,
+    store->get_user_id_for_token("____5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf"),
+    "non-existent token does not belong to anyone");
+}
+
 void test_negative_changeset_ids(boost::shared_ptr<data_selection> sel) {
   assert_equal<data_selection::visibility_t>(
     sel->check_node_visibility(6), data_selection::exists,
@@ -440,6 +510,15 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
         &test_dup_nodes));
+
+    tdb.run(boost::function<void(boost::shared_ptr<oauth::store>)>(
+        &test_nonce_store));
+
+    tdb.run(boost::function<void(boost::shared_ptr<oauth::store>)>(
+        &test_allow_read_api));
+
+    tdb.run(boost::function<void(boost::shared_ptr<oauth::store>)>(
+        &test_get_user_id_for_token));
 
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
         &test_negative_changeset_ids));

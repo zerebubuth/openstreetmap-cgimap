@@ -45,19 +45,19 @@ rate_limiter::~rate_limiter(void) {
     memcached_free(ptr);
 }
 
-bool rate_limiter::check(const std::string &ip) {
+bool rate_limiter::check(const std::string &key) {
   int bytes_served = 0;
-  std::string key;
+  std::string mc_key;
   state *sp;
   size_t length;
   uint32_t flags;
   memcached_return error;
 
-  key = "cgimap:" + ip;
+  mc_key = "cgimap:" + key;
 
   if (ptr &&
-      (sp = (state *)memcached_get(ptr, key.data(), key.size(), &length, &flags,
-                                   &error)) != NULL) {
+      (sp = (state *)memcached_get(ptr, mc_key.data(), mc_key.size(), &length,
+                                   &flags, &error)) != NULL) {
     assert(length == sizeof(state));
 
     int64_t elapsed = time(NULL) - sp->last_update;
@@ -72,21 +72,21 @@ bool rate_limiter::check(const std::string &ip) {
   return bytes_served < max_bytes;
 }
 
-void rate_limiter::update(const std::string &ip, int bytes) {
+void rate_limiter::update(const std::string &key, int bytes) {
   if (ptr) {
     time_t now = time(NULL);
-    std::string key;
+    std::string mc_key;
     state *sp;
     size_t length;
     uint32_t flags;
     memcached_return error;
 
-    key = "cgimap:" + ip;
+    mc_key = "cgimap:" + key;
 
   retry:
 
     if (ptr &&
-        (sp = (state *)memcached_get(ptr, key.data(), key.size(), &length,
+        (sp = (state *)memcached_get(ptr, mc_key.data(), mc_key.size(), &length,
                                      &flags, &error)) != NULL) {
       assert(length == sizeof(state));
 
@@ -101,8 +101,8 @@ void rate_limiter::update(const std::string &ip, int bytes) {
       }
 
       // should use CAS but it's a right pain so we'll wing it for now...
-      memcached_replace(ptr, key.data(), key.size(), (char *)sp, sizeof(state),
-                        0, 0);
+      memcached_replace(ptr, mc_key.data(), mc_key.size(), (char *)sp,
+                        sizeof(state), 0, 0);
 
       free(sp);
     } else {
@@ -111,8 +111,8 @@ void rate_limiter::update(const std::string &ip, int bytes) {
       s.last_update = now;
       s.bytes_served = bytes;
 
-      if (memcached_add(ptr, key.data(), key.size(), (char *)&s, sizeof(state),
-                        0, 0) == MEMCACHED_NOTSTORED) {
+      if (memcached_add(ptr, mc_key.data(), mc_key.size(), (char *)&s,
+                        sizeof(state), 0, 0) == MEMCACHED_NOTSTORED) {
         goto retry;
       }
     }

@@ -35,6 +35,8 @@ test/.libs/
 test/test_core
 test/test_apidb_backend
 test/test_parse_id_list
+test/test_http
+test/test_oauth
 test/*.trs
 include/cgimap/config.hpp.in
 include/cgimap/config.hpp

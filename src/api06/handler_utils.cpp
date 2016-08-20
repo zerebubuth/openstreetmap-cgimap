@@ -12,16 +12,28 @@ using std::list;
 using std::string;
 using std::map;
 using std::vector;
+using std::pair;
 using boost::lexical_cast;
 using boost::bad_lexical_cast;
 namespace al = boost::algorithm;
+
+namespace {
+struct first_equals {
+  first_equals(const std::string &k) : m_key(k) {}
+  bool operator()(const pair<string, string> &v) const {
+    return v.first == m_key;
+  }
+  string m_key;
+};
+} // anonymous namespace
 
 namespace api06 {
 
 vector<osm_nwr_id_t> parse_id_list_params(request &req, const string &param_name) {
   string decoded = http::urldecode(get_query_string(req));
-  const map<string, string> params = http::parse_params(decoded);
-  map<string, string>::const_iterator itr = params.find(param_name);
+  const vector<pair<string, string> > params = http::parse_params(decoded);
+  vector<pair<string, string> >::const_iterator itr =
+    std::find_if(params.begin(), params.end(), first_equals(param_name));
 
   vector<osm_nwr_id_t> myids;
 

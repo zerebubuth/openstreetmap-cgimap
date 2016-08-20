@@ -146,6 +146,8 @@ static void process_requests(int socket, const po::variables_map &options) {
   // getting at data.
   boost::shared_ptr<data_selection::factory> factory = create_backend(options);
 
+  boost::shared_ptr<oauth::store> oauth_store = create_oauth_store(options);
+
   logger::message("Initialised");
 
   // enter the main loop
@@ -161,7 +163,7 @@ static void process_requests(int socket, const po::variables_map &options) {
 
     // get the next request
     if (req.accept_r() >= 0) {
-      process_request(req, limiter, generator, route, factory);
+      process_request(req, limiter, generator, route, factory, oauth_store);
     }
   }
 

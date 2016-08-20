@@ -481,6 +481,11 @@ struct staticxml_backend : public backend {
     return boost::make_shared<factory>(file);
   }
 
+  boost::shared_ptr<oauth::store> create_oauth_store(
+    const po::variables_map &opts) {
+    return boost::shared_ptr<oauth::store>();
+  }
+
 private:
   string m_name;
   po::options_description m_options;

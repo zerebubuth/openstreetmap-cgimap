@@ -6,11 +6,12 @@
 #include <boost/regex.hpp>
 #include <iterator> // for distance
 #include <cctype>   // for toupper, isxdigit
+#include <sstream>
 
 namespace al = boost::algorithm;
 using std::string;
-using std::map;
 using std::vector;
+using std::pair;
 using boost::shared_ptr;
 
 namespace {
@@ -90,11 +91,39 @@ bandwidth_limit_exceeded::bandwidth_limit_exceeded(const string &message)
 
 gone::gone() : exception(410, "Gone", "") {}
 
+unauthorized::unauthorized(const std::string &message)
+  : exception(401, "Unauthorized", message) {}
+
 string urldecode(const string &s) { return form_urldecode(s); }
 
-map<string, string> parse_params(const string &p) {
+string urlencode(const string &s) {
+  static const char hex[] = { '0', '1', '2', '3', '4', '5', '6', '7',
+                              '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+  std::ostringstream ostr;
+
+  BOOST_FOREACH(char c, s) {
+    if (((c >= 'a') && (c <= 'z')) ||
+        ((c >= 'A') && (c <= 'Z')) ||
+        ((c >= '0') && (c <= '9')) ||
+        (c == '-') ||
+        (c == '.') ||
+        (c == '_') ||
+        (c == '~')) {
+      ostr << c;
+
+    } else {
+      unsigned char idx = (unsigned char)(c);
+      ostr << "%" << hex[idx >> 4] << hex[idx & 0xf];
+    }
+  }
+
+  std::string rv(ostr.str());
+  return rv;
+}
+
+vector<pair<string, string> > parse_params(const string &p) {
   // Split the query string into components
-  map<string, string> queryKVPairs;
+  vector<pair<string, string> > queryKVPairs;
   if (!p.empty()) {
     vector<string> temp;
     al::split(temp, p, al::is_any_of("&"));
@@ -102,9 +131,12 @@ map<string, string> parse_params(const string &p) {
     BOOST_FOREACH(const string &kvPair, temp) {
       vector<string> kvTemp;
       al::split(kvTemp, kvPair, al::is_any_of("="));
-      // ASSERT( kvTemp.size() == 2 );
+
       if (kvTemp.size() == 2) {
-        queryKVPairs[kvTemp[0]] = kvTemp[1];
+        queryKVPairs.push_back(std::make_pair(kvTemp[0], kvTemp[1]));
+
+      } else if (kvTemp.size() == 1) {
+        queryKVPairs.push_back(std::make_pair(kvTemp[0], std::string()));
       }
     }
   }
