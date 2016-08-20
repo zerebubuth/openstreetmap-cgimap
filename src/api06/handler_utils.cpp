@@ -45,8 +45,21 @@ vector<osm_nwr_id_t> parse_id_list_params(request &req, const string &param_name
       try {
         for (vector<string>::iterator itr = strs.begin(); itr != strs.end();
              ++itr) {
-          osm_nwr_id_t id = lexical_cast<osm_nwr_id_t>(*itr);
-          myids.push_back(id);
+          // parse as a 64-bit signed int to catch negative numbers. postgres
+          // bigint is int64_t anyway, so this doesn't truncate the allowed
+          // range.
+          int64_t id = lexical_cast<int64_t>(*itr);
+          // note: osm_nwr_id_t is currently uint64_t, so int64_t cannot
+          // overflow it in the positive direction. this would need to change
+          // if the types changed.
+          if (id > 0) {
+            myids.push_back(osm_nwr_id_t(id));
+
+          } else {
+            // simulate rails_port behaviour - things that we can't parse are
+            // treated as zero.
+            myids.push_back(0);
+          }
         }
       } catch (const bad_lexical_cast &) {
         // note: this is pretty silly, and may change when the rails_port
