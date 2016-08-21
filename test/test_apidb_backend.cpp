@@ -211,7 +211,6 @@ void test_negative_changeset_ids(boost::shared_ptr<data_selection> sel) {
     f.m_nodes[1], "second node written");
 }
 
-#ifdef ENABLE_EXPERIMENTAL
 void test_changeset(boost::shared_ptr<data_selection> sel) {
   assert_equal<bool>(sel->supports_changesets(), true,
                      "apidb should support changesets.");
@@ -395,7 +394,6 @@ void test_changeset_with_comments_including_discussions(boost::shared_ptr<data_s
     throw std::runtime_error(ostr.str());
   }
 }
-#endif /* ENABLE_EXPERIMENTAL */
 
 } // anonymous namespace
 
@@ -422,7 +420,6 @@ int main(int, char **) {
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
         &test_negative_changeset_ids));
 
-#ifdef ENABLE_EXPERIMENTAL
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
               &test_changeset));
 
@@ -437,7 +434,6 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
               &test_changeset_with_comments_including_discussions));
-#endif /* ENABLE_EXPERIMENTAL */
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;

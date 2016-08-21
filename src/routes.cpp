@@ -16,9 +16,10 @@
 #include "cgimap/api06/relation_full_handler.hpp"
 #include "cgimap/api06/relations_handler.hpp"
 
+#include "cgimap/api06/changeset_handler.hpp"
+
 #ifdef ENABLE_EXPERIMENTAL
 #include "cgimap/api06/node_ways_handler.hpp"
-#include "cgimap/api06/changeset_handler.hpp"
 #endif /* ENABLE_EXPERIMENTAL */
 
 #ifdef ENABLE_API07
@@ -154,9 +155,7 @@ routes::routes()
     r->add<relation_handler>(root_ / "relation" / osm_id_);
     r->add<relations_handler>(root_ / "relations");
 
-#ifdef ENABLE_EXPERIMENTAL
     r->add<changeset_handler>(root_ / "changeset" / osm_id_);
-#endif /* ENABLE_EXPERIMENTAL */
   }
 
 #ifdef ENABLE_API07

@@ -2,7 +2,6 @@
 
 data_selection::~data_selection() {}
 
-#ifdef ENABLE_EXPERIMENTAL
 void data_selection::write_changesets(output_formatter &, const boost::posix_time::ptime &) {
 }
 
@@ -16,6 +15,5 @@ int data_selection::select_changesets(const std::vector<osm_changeset_id_t> &) {
 
 void data_selection::select_changeset_discussions() {
 }
-#endif /* ENABLE_EXPERIMENTAL */
 
 data_selection::factory::~factory() {}

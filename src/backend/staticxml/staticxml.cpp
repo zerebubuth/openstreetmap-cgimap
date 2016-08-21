@@ -309,10 +309,7 @@ boost::shared_ptr<database> parse_xml(const char *filename) {
 struct static_data_selection : public data_selection {
   explicit static_data_selection(boost::shared_ptr<database> db)
     : m_db(db)
-#ifdef ENABLE_EXPERIMENTAL
-    , m_include_changeset_comments(false)
-#endif /* ENABLE_EXPERIMENTAL */
-    {}
+    , m_include_changeset_comments(false) {}
   virtual ~static_data_selection() {}
 
   virtual void write_nodes(output_formatter &formatter) {
@@ -345,7 +342,6 @@ struct static_data_selection : public data_selection {
     }
   }
 
-#ifdef ENABLE_EXPERIMENTAL
   virtual void write_changesets(output_formatter &formatter,
                                 const pt::ptime &now) {
     BOOST_FOREACH(osm_changeset_id_t id, m_changesets) {
@@ -358,7 +354,6 @@ struct static_data_selection : public data_selection {
       }
     }
   }
-#endif /* ENABLE_EXPERIMENTAL */
 
   virtual visibility_t check_node_visibility(osm_nwr_id_t id) {
     std::map<osm_nwr_id_t, node>::iterator itr = m_db->m_nodes.find(id);
@@ -557,7 +552,6 @@ struct static_data_selection : public data_selection {
     }
   }
 
-#ifdef ENABLE_EXPERIMENTAL
   virtual bool supports_changesets() { return true; }
 
   virtual int select_changesets(const std::vector<osm_changeset_id_t> &ids) {
@@ -575,16 +569,13 @@ struct static_data_selection : public data_selection {
   virtual void select_changeset_discussions() {
     m_include_changeset_comments = true;
   }
-#endif /* ENABLE_EXPERIMENTAL */
 
 
 private:
   boost::shared_ptr<database> m_db;
   std::set<osm_changeset_id_t> m_changesets;
   std::set<osm_nwr_id_t> m_nodes, m_ways, m_relations;
-#ifdef ENABLE_EXPERIMENTAL
   bool m_include_changeset_comments;
-#endif /* ENABLE_EXPERIMENTAL */
 };
 
 struct factory : public data_selection::factory {

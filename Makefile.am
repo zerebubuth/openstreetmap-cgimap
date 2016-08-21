@@ -74,8 +74,9 @@ endif
 TESTS = test/map.testcore test/node.testcore test/anon.testcore test/way.testcore test/relation.testcore
 TESTS += test/empty.testcore test/way_full.testcore test/relation_full.testcore
 TESTS += test/test_parse_id_list test/test_oauth test/test_http test/test_parse_time
+TESTS += test/changesets.testcore
 if ENABLE_EXPERIMENTAL
-TESTS += test/node_ways.testcore test/changesets.testcore
+TESTS += test/node_ways.testcore
 endif
 if HAVE_YAJL
 TESTS += test/json.testcore

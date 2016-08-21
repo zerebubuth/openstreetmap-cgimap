@@ -328,10 +328,7 @@ void extract_comments(const pqxx::result &res, comments_t &comments) {
 readonly_pgsql_selection::readonly_pgsql_selection(
     pqxx::connection &conn, cache<osm_changeset_id_t, changeset> &changeset_cache)
     : w(conn), cc(changeset_cache)
-#ifdef ENABLE_EXPERIMENTAL
-    , include_changeset_discussions(false)
-#endif /* ENABLE_EXPERIMENTAL */
-{}
+    , include_changeset_discussions(false) {}
 
 readonly_pgsql_selection::~readonly_pgsql_selection() {}
 
@@ -455,7 +452,6 @@ void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
   }
 }
 
-#ifdef ENABLE_EXPERIMENTAL
 void readonly_pgsql_selection::write_changesets(output_formatter &formatter,
                                                 const pt::ptime &now) {
   changeset_info elem;
@@ -496,7 +492,6 @@ void readonly_pgsql_selection::write_changesets(output_formatter &formatter,
       break;
   }
 }
-#endif /* ENABLE_EXPERIMENTAL */
 
 data_selection::visibility_t
 readonly_pgsql_selection::check_node_visibility(osm_nwr_id_t id) {
@@ -619,7 +614,6 @@ void readonly_pgsql_selection::select_relations_members_of_relations() {
   }
 }
 
-#ifdef ENABLE_EXPERIMENTAL
 bool readonly_pgsql_selection::supports_changesets() {
   return true;
 }
@@ -635,7 +629,6 @@ int readonly_pgsql_selection::select_changesets(const std::vector<osm_changeset_
 void readonly_pgsql_selection::select_changeset_discussions() {
   include_changeset_discussions = true;
 }
-#endif /* ENABLE_EXPERIMENTAL */
 
 readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
     : m_connection(connect_db_str(opts)),

@@ -30,11 +30,9 @@ public:
   /// write the relations to an output formatter
   virtual void write_relations(output_formatter &formatter) = 0;
 
-#ifdef ENABLE_EXPERIMENTAL
   /// does this data selection support changesets?
   virtual void write_changesets(output_formatter &formatter,
                                 const boost::posix_time::ptime &now);
-#endif /* ENABLE_EXPERIMENTAL */
 
   /******************* information functions *******************/
 
@@ -89,7 +87,6 @@ public:
   /// select relations which are members of selected relations
   virtual void select_relations_members_of_relations() = 0;
 
-#ifdef ENABLE_EXPERIMENTAL
   /// does this data selection support changesets?
   virtual bool supports_changesets();
 
@@ -101,7 +98,6 @@ public:
   /// just sets a flag - by default, discussions are not included,
   /// if this is called then discussions will be included.
   virtual void select_changeset_discussions();
-#endif /* ENABLE_EXPERIMENTAL */
 
   /**
    * factory for the creation of data selections. this abstracts away
