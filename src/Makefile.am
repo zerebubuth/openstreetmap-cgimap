@@ -105,7 +105,8 @@ libcgimap_core_la_SOURCES+=\
 	api06/way_handler.cpp \
 	api06/ways_handler.cpp \
 	api06/relation_full_handler.cpp \
-	api06/way_full_handler.cpp
+	api06/way_full_handler.cpp \
+	api06/id_version_io.cpp
 
 if ENABLE_EXPERIMENTAL
 libcgimap_core_la_SOURCES+=\

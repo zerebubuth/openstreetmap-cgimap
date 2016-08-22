@@ -106,6 +106,9 @@ struct xml_parser {
       parse_info(n.m_info, attributes);
       n.m_lon = get_attribute<double>("lon", 4, attributes);
       n.m_lat = get_attribute<double>("lat", 4, attributes);
+      // **********************************************************************
+      // TODO: need PK by id_version!
+      // **********************************************************************
       std::pair<std::map<osm_nwr_id_t, node>::iterator, bool> status =
           parser->m_db->m_nodes.insert(std::make_pair(n.m_info.id, n));
       parser->m_cur_node = &(status.first->second);

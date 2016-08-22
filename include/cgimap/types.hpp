@@ -2,6 +2,7 @@
 #define TYPES_HPP
 
 #include <stdint.h>
+#include <cassert>
 
 typedef uint64_t osm_user_id_t;
 typedef int64_t osm_changeset_id_t;
