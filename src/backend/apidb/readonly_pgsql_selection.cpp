@@ -1,5 +1,6 @@
 #include "cgimap/backend/apidb/readonly_pgsql_selection.hpp"
 #include "cgimap/backend/apidb/apidb.hpp"
+#include "cgimap/backend/apidb/pqxx_string_traits.hpp"
 #include "cgimap/logger.hpp"
 #include "cgimap/backend/apidb/quad_tile.hpp"
 #include "cgimap/infix_ostream_iterator.hpp"
@@ -30,109 +31,6 @@ using boost::shared_ptr;
 
 // number of nodes to chunk together
 #define STRIDE (1000)
-
-namespace pqxx {
-template <> struct string_traits<vector<osm_nwr_id_t> > {
-  static const char *name() { return "vector<osm_nwr_id_t>"; }
-  static bool has_null() { return false; }
-  static bool is_null(const vector<osm_nwr_id_t> &) { return false; }
-  static stringstream null() {
-    internal::throw_null_conversion(name());
-    // No, dear compiler, we don't need a return here.
-    throw 0;
-  }
-  static void from_string(const char[], vector<osm_nwr_id_t> &) {}
-  static std::string to_string(const vector<osm_nwr_id_t> &ids) {
-    stringstream ostr;
-    ostr << "{";
-    std::copy(ids.begin(), ids.end(),
-              infix_ostream_iterator<osm_nwr_id_t>(ostr, ","));
-    ostr << "}";
-    return ostr.str();
-  }
-};
-template <> struct string_traits<set<osm_nwr_id_t> > {
-  static const char *name() { return "set<osm_nwr_id_t>"; }
-  static bool has_null() { return false; }
-  static bool is_null(const set<osm_nwr_id_t> &) { return false; }
-  static stringstream null() {
-    internal::throw_null_conversion(name());
-    // No, dear compiler, we don't need a return here.
-    throw 0;
-  }
-  static void from_string(const char[], set<osm_nwr_id_t> &) {}
-  static std::string to_string(const set<osm_nwr_id_t> &ids) {
-    stringstream ostr;
-    ostr << "{";
-    std::copy(ids.begin(), ids.end(),
-              infix_ostream_iterator<osm_nwr_id_t>(ostr, ","));
-    ostr << "}";
-    return ostr.str();
-  }
-};
-
-// need this for PQXX to serialise lists of tile_id_t, which is different
-// from osm_nwr_id_t
-template <> struct string_traits<vector<tile_id_t> > {
-  static const char *name() { return "vector<tile_id_t>"; }
-  static bool has_null() { return false; }
-  static bool is_null(const vector<tile_id_t> &) { return false; }
-  static stringstream null() {
-    internal::throw_null_conversion(name());
-    // No, dear compiler, we don't need a return here.
-    throw 0;
-  }
-  static void from_string(const char[], vector<tile_id_t> &) {}
-  static std::string to_string(const vector<tile_id_t> &ids) {
-    stringstream ostr;
-    ostr << "{";
-    std::copy(ids.begin(), ids.end(),
-              infix_ostream_iterator<tile_id_t>(ostr, ","));
-    ostr << "}";
-    return ostr.str();
-  }
-};
-
-// and again for osm_changeset_id_t
-template <> struct string_traits<vector<osm_changeset_id_t> > {
-  static const char *name() { return "vector<osm_changeset_id_t>"; }
-  static bool has_null() { return false; }
-  static bool is_null(const vector<osm_changeset_id_t> &) { return false; }
-  static stringstream null() {
-    internal::throw_null_conversion(name());
-    // No, dear compiler, we don't need a return here.
-    throw 0;
-  }
-  static void from_string(const char[], vector<osm_changeset_id_t> &) {}
-  static std::string to_string(const vector<osm_changeset_id_t> &ids) {
-    stringstream ostr;
-    ostr << "{";
-    std::copy(ids.begin(), ids.end(),
-              infix_ostream_iterator<osm_changeset_id_t>(ostr, ","));
-    ostr << "}";
-    return ostr.str();
-  }
-};
-template <> struct string_traits<set<osm_changeset_id_t> > {
-  static const char *name() { return "set<osm_changeset_id_t>"; }
-  static bool has_null() { return false; }
-  static bool is_null(const set<osm_changeset_id_t> &) { return false; }
-  static stringstream null() {
-    internal::throw_null_conversion(name());
-    // No, dear compiler, we don't need a return here.
-    throw 0;
-  }
-  static void from_string(const char[], set<osm_changeset_id_t> &) {}
-  static std::string to_string(const set<osm_changeset_id_t> &ids) {
-    stringstream ostr;
-    ostr << "{";
-    std::copy(ids.begin(), ids.end(),
-              infix_ostream_iterator<osm_changeset_id_t>(ostr, ","));
-    ostr << "}";
-    return ostr.str();
-  }
-};
-}
 
 namespace {
 std::string connect_db_str(const po::variables_map &options) {
