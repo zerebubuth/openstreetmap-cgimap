@@ -21,11 +21,10 @@ nodes_responder::nodes_responder(mime::type mt, vector<id_version> ids_,
 
   vector<osm_nwr_id_t> just_ids;
   BOOST_FOREACH(id_version idv, ids_) {
-    if (idv.version) {
-      assert(0);
+    // TODO! add a select_historical to data selection
+    if (!idv.version) {
+      just_ids.push_back(idv.id);
     }
-    assert(!idv.version);
-    just_ids.push_back(idv.id);
   }
   size_t num_selected = sel->select_nodes(just_ids);
   if (num_selected != ids.size()) {
