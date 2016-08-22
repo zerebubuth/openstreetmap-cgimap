@@ -19,8 +19,6 @@
 #define PREPARE_ARGS(args) args
 #endif
 
-#define MAX_ELEMENTS (50000)
-
 namespace po = boost::program_options;
 namespace pt = boost::posix_time;
 using std::set;

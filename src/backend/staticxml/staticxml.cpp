@@ -17,7 +17,6 @@ using boost::shared_ptr;
 using std::string;
 
 #define CACHE_SIZE (1000)
-#define MAX_ELEMENTS (50000)
 
 namespace {
 
