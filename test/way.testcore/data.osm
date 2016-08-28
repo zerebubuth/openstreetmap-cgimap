@@ -17,6 +17,15 @@
     <tag k="name" v="Foo"/>
   </way>
 
+  <way id="2" version="1" changeset="3" user="foo" uid="1" visible="true" timestamp="2012-12-01T00:00:00Z">
+    <nd ref="1"/>
+    <nd ref="3"/>
+    <nd ref="2"/>
+    <nd ref="1"/>
+    <tag k="building" v="yes"/>
+    <tag k="name" v="Bar"/>
+  </way>
+
   <way id="2" version="2" changeset="3" user="foo" uid="1" visible="false" timestamp="2012-12-01T00:00:00Z"/>
 
   <way id="8589934592" visible="true" version="1" changeset="4" timestamp="2013-10-20T00:00:00Z" user="user_4" uid="4"/>

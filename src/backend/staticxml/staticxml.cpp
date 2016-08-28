@@ -246,8 +246,18 @@ struct static_data_selection : public data_selection {
   }
 
   virtual void write_ways(output_formatter &formatter) {
+    std::set<osm_edition_t> editions = m_historic_ways;
+
     BOOST_FOREACH(osm_nwr_id_t id, m_ways) {
       boost::optional<const way &> maybe_way = find_current<way>(id);
+      if (maybe_way) {
+        const way &w = *maybe_way;
+        editions.insert(std::make_pair(id, w.m_info.version));
+      }
+    }
+
+    BOOST_FOREACH(osm_edition_t ed, editions) {
+      boost::optional<const way &> maybe_way = find<way>(ed);
       if (maybe_way) {
         const way &w = *maybe_way;
         formatter.write_way(w.m_info, w.m_nodes, w.m_tags);
@@ -498,8 +508,16 @@ struct static_data_selection : public data_selection {
     return selected;
   }
 
-  virtual int select_historical_ways(const std::vector<osm_edition_t> &) {
-    throw std::runtime_error("unimplemented");
+  virtual int select_historical_ways(const std::vector<osm_edition_t> &editions) {
+    int selected = 0;
+    BOOST_FOREACH(osm_edition_t ed, editions) {
+      boost::optional<const way &> w = find<way>(ed);
+      if (w) {
+        m_historic_ways.insert(ed);
+        ++selected;
+      }
+    }
+    return selected;
   }
 
   virtual int select_historical_relations(const std::vector<osm_edition_t> &) {
@@ -543,7 +561,7 @@ private:
 
   boost::shared_ptr<database> m_db;
   std::set<osm_nwr_id_t> m_nodes, m_ways, m_relations;
-  std::set<osm_edition_t> m_historic_nodes;
+  std::set<osm_edition_t> m_historic_nodes, m_historic_ways;
 };
 
 template <>
