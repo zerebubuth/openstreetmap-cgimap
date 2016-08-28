@@ -19,14 +19,26 @@ nodes_responder::nodes_responder(mime::type mt, vector<id_version> ids_,
                                  factory_ptr &w_)
     : osm_current_responder(mt, w_), ids(ids_) {
 
-  vector<osm_nwr_id_t> just_ids;
+  vector<osm_nwr_id_t> current_ids;
+  vector<osm_edition_t> historic_ids;
+
   BOOST_FOREACH(id_version idv, ids_) {
-    // TODO! add a select_historical to data selection
-    if (!idv.version) {
-      just_ids.push_back(idv.id);
+    if (idv.version) {
+      historic_ids.push_back(std::make_pair(idv.id, *idv.version));
+    } else {
+      current_ids.push_back(idv.id);
     }
   }
-  size_t num_selected = sel->select_nodes(just_ids);
+
+  size_t num_selected = sel->select_nodes(current_ids);
+  if (!historic_ids.empty()) {
+    if (sel->supports_historical_versions()) {
+      num_selected += sel->select_historical_nodes(historic_ids);
+    } else {
+      throw http::server_error("Data source does not support historical versions.");
+    }
+  }
+
   if (num_selected != ids.size()) {
     throw http::not_found("One or more of the nodes were not found.");
   }

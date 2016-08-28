@@ -82,6 +82,25 @@ public:
   /// select relations which are members of selected relations
   virtual void select_relations_members_of_relations() = 0;
 
+  /******************* historical functions ********************/
+
+  /// returns true if this data selections supports selecting historical
+  /// versions of nodes, ways and relations. if it returns false, then calling
+  /// any of the select_historical_* functions will throw an exception.
+  virtual bool supports_historical_versions();
+
+  /// select the given (id, version) versions of nodes, returning the number of
+  /// nodes added to the selected set.
+  virtual int select_historical_nodes(const std::vector<osm_edition_t> &);
+
+  /// select the given (id, version) versions of ways, returning the number of
+  /// ways added to the selected set.
+  virtual int select_historical_ways(const std::vector<osm_edition_t> &);
+
+  /// select the given (id, version) versions of relations, returning the number
+  /// of relations added to the selected set.
+  virtual int select_historical_relations(const std::vector<osm_edition_t> &);
+
   /**
    * factory for the creation of data selections. this abstracts away
    * the creation process of transactions, and allows some up-front

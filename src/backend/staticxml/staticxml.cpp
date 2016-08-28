@@ -226,8 +226,18 @@ struct static_data_selection : public data_selection {
   virtual ~static_data_selection() {}
 
   virtual void write_nodes(output_formatter &formatter) {
+    std::set<osm_edition_t> editions = m_historic_nodes;
+
     BOOST_FOREACH(osm_nwr_id_t id, m_nodes) {
       boost::optional<const node &> maybe_node = find_current<node>(id);
+      if (maybe_node) {
+        const node &n = *maybe_node;
+        editions.insert(std::make_pair(id, n.m_info.version));
+      }
+    }
+
+    BOOST_FOREACH(osm_edition_t ed, editions) {
+      boost::optional<const node &> maybe_node = find<node>(ed);
       if (maybe_node) {
         const node &n = *maybe_node;
         formatter.write_node(n.m_info, n.m_lon, n.m_lat, n.m_tags);
@@ -472,6 +482,30 @@ struct static_data_selection : public data_selection {
     }
   }
 
+  virtual bool supports_historical_versions() {
+    return true;
+  }
+
+  virtual int select_historical_nodes(const std::vector<osm_edition_t> &editions) {
+    int selected = 0;
+    BOOST_FOREACH(osm_edition_t ed, editions) {
+      boost::optional<const node &> n = find<node>(ed);
+      if (n) {
+        m_historic_nodes.insert(ed);
+        ++selected;
+      }
+    }
+    return selected;
+  }
+
+  virtual int select_historical_ways(const std::vector<osm_edition_t> &) {
+    throw std::runtime_error("unimplemented");
+  }
+
+  virtual int select_historical_relations(const std::vector<osm_edition_t> &) {
+    throw std::runtime_error("unimplemented");
+  }
+
 private:
   template <typename T>
   const std::map<id_version, T> &map_of() const;
@@ -493,8 +527,23 @@ private:
     return boost::none;
   }
 
+  template <typename T>
+  boost::optional<const T &> find(osm_edition_t edition) const {
+    typedef std::map<id_version, T> element_map_t;
+    id_version idv(edition.first, edition.second);
+    const element_map_t &m = map_of<T>();
+    if (!m.empty()) {
+      typename element_map_t::const_iterator itr = m.find(idv);
+      if (itr != m.end()) {
+        return itr->second;
+      }
+    }
+    return boost::none;
+  }
+
   boost::shared_ptr<database> m_db;
   std::set<osm_nwr_id_t> m_nodes, m_ways, m_relations;
+  std::set<osm_edition_t> m_historic_nodes;
 };
 
 template <>
