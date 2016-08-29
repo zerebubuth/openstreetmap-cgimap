@@ -16,6 +16,11 @@
     <tag k="ref" v="W8"/>
   </relation>
 
+  <relation id="2" version="1" changeset="3" user="foo" uid="1" visible="true" timestamp="2013-01-12T00:00:00Z">
+    <member type="node" ref="2" role="stop"/>
+    <tag k="foo" v="bar"/>
+  </relation>
+
   <relation id="2" version="2" changeset="3" user="foo" uid="1" visible="false" timestamp="2013-01-12T00:00:00Z"/>
 
   <!-- contains another relation -->
