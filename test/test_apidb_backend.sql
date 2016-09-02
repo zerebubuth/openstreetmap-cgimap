@@ -27,6 +27,17 @@ VALUES (1,       0,       0, 1, true,  '2013-11-14T02:10:00Z', 3221225472, 1),
        (6, 90000000, 90000000,  0, true,  '2016-04-16T15:09:00Z', 3229120632, 1),
        (7, 90000000, 90000000, -1, true,  '2016-04-16T15:09:00Z', 3229120632, 1);
 
+-- add historical versions of nodes
+INSERT INTO nodes (node_id, latitude, longitude, changeset_id, visible, "timestamp", tile, version, redaction_id)
+VALUES (1,       0,       0, 1, true,  '2013-11-14T02:10:00Z', 3221225472, 1, NULL),
+       (2, 1000000, 1000000, 1, true,  '2013-11-14T02:10:01Z', 3221227032, 1, NULL),
+       (3,       0,       0, 2, true,  '2015-03-02T18:27:00Z', 3221225472, 1, NULL),
+       (3,       0,       0, 2, false, '2015-03-02T18:27:00Z', 3221225472, 2, NULL),
+       (4,       0,       0, 4, true,  '2015-03-02T19:25:00Z', 3221225472, 1, NULL),
+       -- note: node 5 intentionally missing
+       (6, 90000000, 90000000,  0, true,  '2016-04-16T15:09:00Z', 3229120632, 1, NULL),
+       (7, 90000000, 90000000, -1, true,  '2016-04-16T15:09:00Z', 3229120632, 1, NULL);
+
 -- add some OAuth tokens, one valid and the others revoked or not valid.
 -- the API is publicly readable, so _all_ tokens can read the API. there is no
 -- "allow_read_api" setting on the token itself. but some tokens might have been

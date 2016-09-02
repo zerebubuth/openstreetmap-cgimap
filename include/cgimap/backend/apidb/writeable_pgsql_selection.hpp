@@ -39,6 +39,11 @@ public:
   void select_relations_from_relations();
   void select_relations_members_of_relations();
 
+  bool supports_historical_versions();
+  int select_historical_nodes(const std::vector<osm_edition_t> &);
+  int select_historical_ways(const std::vector<osm_edition_t> &);
+  int select_historical_relations(const std::vector<osm_edition_t> &);
+
   /**
    * abstracts the creation of transactions for the writeable
    * data selection.
@@ -68,6 +73,7 @@ private:
   // true if a query hasn't been run yet, i.e: it's possible to
   // assume that all the temporary tables are empty.
   bool m_tables_empty;
+  bool m_historic_tables_empty;
 };
 
 #endif /* WRITEABLE_PGSQL_SELECTION_HPP */

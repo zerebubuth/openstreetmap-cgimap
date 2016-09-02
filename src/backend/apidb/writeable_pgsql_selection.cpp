@@ -12,6 +12,8 @@
 #include <boost/ref.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
+#include <boost/foreach.hpp>
+#include <boost/iterator/transform_iterator.hpp>
 
 #if PQXX_VERSION_MAJOR >= 4
 #define PREPARE_ARGS(args)
@@ -181,6 +183,35 @@ void extract_members(const pqxx::result &res, members_t &members) {
   }
 }
 
+struct node_from_db {
+  element_info elem;
+  double lon, lat;
+  tags_t tags;
+};
+
+struct unpack_nodes {
+  typedef cache<osm_changeset_id_t, changeset> changeset_cache;
+  changeset_cache &m_cc;
+  pqxx::work &m_w;
+  bool m_historic;
+
+  unpack_nodes(changeset_cache &cc, pqxx::work &w, bool historic)
+    : m_cc(cc), m_w(w), m_historic(historic) {}
+
+  node_from_db operator()(const pqxx::result::tuple &r) const {
+    node_from_db n;
+    extract_elem(r, n.elem, m_cc);
+    n.lon = double(r["longitude"].as<int64_t>()) / (SCALE);
+    n.lat = double(r["latitude"].as<int64_t>()) / (SCALE);
+    if (m_historic) {
+      extract_tags(m_w.prepared("extract_historic_node_tags")(n.elem.id)(n.elem.version).exec(), n.tags);
+    } else {
+      extract_tags(m_w.prepared("extract_node_tags")(n.elem.id).exec(), n.tags);
+    }
+    return n;
+  }
+};
+
 } // anonymous namespace
 
 writeable_pgsql_selection::writeable_pgsql_selection(
@@ -190,26 +221,39 @@ writeable_pgsql_selection::writeable_pgsql_selection(
   w.exec("CREATE TEMPORARY TABLE tmp_ways (id bigint PRIMARY KEY)");
   w.exec("CREATE TEMPORARY TABLE tmp_relations (id bigint PRIMARY KEY)");
   m_tables_empty = true;
+
+  w.exec("CREATE TEMPORARY TABLE tmp_historic_nodes "
+         "(id bigint, version bigint, PRIMARY KEY (id, version))");
+  m_historic_tables_empty = true;
 }
 
 writeable_pgsql_selection::~writeable_pgsql_selection() {}
 
 void writeable_pgsql_selection::write_nodes(output_formatter &formatter) {
+  typedef boost::transform_iterator<unpack_nodes, pqxx::result::const_iterator> nodes_iterator;
+
   // get all nodes - they already contain their own tags, so
   // we don't need to do anything else.
   logger::message("Fetching nodes");
-  element_info elem;
-  double lon, lat;
-  tags_t tags;
 
-  pqxx::result nodes = w.prepared("extract_nodes").exec();
-  for (pqxx::result::const_iterator itr = nodes.begin(); itr != nodes.end();
-       ++itr) {
-    extract_elem(*itr, elem, cc);
-    lon = double((*itr)["longitude"].as<int64_t>()) / (SCALE);
-    lat = double((*itr)["latitude"].as<int64_t>()) / (SCALE);
-    extract_tags(w.prepared("extract_node_tags")(elem.id).exec(), tags);
-    formatter.write_node(elem, lon, lat, tags);
+  if (!m_tables_empty) {
+    pqxx::result nodes = w.prepared("extract_nodes").exec();
+
+    unpack_nodes func(cc, w, false);
+    const nodes_iterator end(nodes.end(), func);
+    for (nodes_iterator itr(nodes.begin(), func); itr != end; ++itr) {
+      formatter.write_node(itr->elem, itr->lon, itr->lat, itr->tags);
+    }
+  }
+
+  if (!m_historic_tables_empty) {
+    pqxx::result nodes = w.prepared("extract_historic_nodes").exec();
+
+    unpack_nodes func(cc, w, true);
+    const nodes_iterator end(nodes.end(), func);
+    for (nodes_iterator itr(nodes.begin(), func); itr != end; ++itr) {
+      formatter.write_node(itr->elem, itr->lon, itr->lat, itr->tags);
+    }
   }
 }
 
@@ -344,6 +388,34 @@ void writeable_pgsql_selection::select_relations_from_relations() {
 
 void writeable_pgsql_selection::select_relations_members_of_relations() {
   w.prepared("relation_members_of_relations").exec();
+}
+
+bool writeable_pgsql_selection::supports_historical_versions() {
+  return true;
+}
+
+int writeable_pgsql_selection::select_historical_nodes(
+  const std::vector<osm_edition_t> &eds) {
+  m_historic_tables_empty = false;
+
+  size_t selected = 0;
+  BOOST_FOREACH(osm_edition_t ed, eds) {
+    selected += w.prepared("add_historic_node")(ed.first)(ed.second)
+      .exec().affected_rows();
+  }
+
+  assert(selected < size_t(std::numeric_limits<int>::max()));
+  return selected;
+}
+
+int writeable_pgsql_selection::select_historical_ways(
+  const std::vector<osm_edition_t> &) {
+  return 0;
+}
+
+int writeable_pgsql_selection::select_historical_relations(
+  const std::vector<osm_edition_t> &) {
+  return 0;
 }
 
 namespace {
@@ -572,6 +644,26 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
             "ON (tr.id = rm.member_id AND rm.member_type='Relation') "
           "LEFT JOIN tmp_relations xr ON rm.relation_id = xr.id "
         "WHERE xr.id IS NULL");
+
+  // select a historic (id, version) edition of a node
+  m_connection.prepare("add_historic_node",
+    "INSERT INTO tmp_historic_nodes "
+       "SELECT node_id, version "
+         "FROM nodes "
+         "WHERE "
+           "node_id = $1 AND version = $2")
+    PREPARE_ARGS(("bigint")("bigint"));
+
+  m_connection.prepare("extract_historic_nodes",
+    "SELECT n.id, n.latitude, n.longitude, n.visible, "
+        "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
+        "n.changeset_id, n.version "
+      "FROM nodes n "
+        "JOIN tmp_historic_nodes tn "
+        "ON n.id = tn.id AND n.version = tn.version");
+  m_connection.prepare("extract_historic_node_tags",
+    "SELECT k, v FROM node_tags WHERE node_id=$1 AND version=$2")
+    PREPARE_ARGS(("bigint")("bigint"));
 
   // clang-format on
 }

@@ -498,6 +498,20 @@ void test_negative_changeset_ids(boost::shared_ptr<data_selection> sel) {
     f.m_nodes[1], "second node written");
 }
 
+void test_historic_elements(boost::shared_ptr<data_selection> sel) {
+  assert_equal<bool>(
+    sel->supports_historical_versions(), true,
+    "data selection supports historical versions");
+
+  std::vector<osm_edition_t> editions;
+  editions.push_back(std::make_pair(osm_nwr_id_t(3), osm_version_t(1)));
+  editions.push_back(std::make_pair(osm_nwr_id_t(3), osm_version_t(2)));
+
+  assert_equal<int>(
+    sel->select_historical_nodes(editions), 2,
+    "number of nodes selected");
+}
+
 } // anonymous namespace
 
 int main(int, char **) {
@@ -522,6 +536,9 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
         &test_negative_changeset_ids));
+
+    //tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
+    //    &test_historic_elements));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;
