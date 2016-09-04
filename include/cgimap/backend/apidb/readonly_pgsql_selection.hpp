@@ -42,6 +42,11 @@ public:
   void select_relations_from_relations();
   void select_relations_members_of_relations();
 
+  bool supports_historical_versions();
+  int select_historical_nodes(const std::vector<osm_edition_t> &);
+  int select_historical_ways(const std::vector<osm_edition_t> &);
+  int select_historical_relations(const std::vector<osm_edition_t> &);
+
   /**
    * a factory for the creation of read-only selections, so it
    * can set up prepared statements.
@@ -69,6 +74,7 @@ private:
 
   // the set of selected nodes, ways and relations
   std::set<osm_nwr_id_t> sel_nodes, sel_ways, sel_relations;
+  std::set<osm_edition_t> sel_historic_nodes;
   cache<osm_changeset_id_t, changeset> &cc;
 };
 

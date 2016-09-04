@@ -224,6 +224,56 @@ void extract_members(const pqxx::result &res, members_t &members) {
   }
 }
 
+void output_chunk(pqxx::result &nodes, output_formatter &formatter, bool historic,
+                  cache<osm_changeset_id_t, changeset> &cc, pqxx::work &w) {
+  element_info elem;
+  double lon, lat;
+  tags_t tags;
+
+  for (pqxx::result::const_iterator itr = nodes.begin(); itr != nodes.end();
+       ++itr) {
+    extract_elem(*itr, elem, cc);
+    lon = double((*itr)["longitude"].as<int64_t>()) / (SCALE);
+    lat = double((*itr)["latitude"].as<int64_t>()) / (SCALE);
+    if (historic) {
+      extract_tags(w.prepared("extract_historic_node_tags")(elem.id)(elem.version).exec(), tags);
+    } else {
+      extract_tags(w.prepared("extract_node_tags")(elem.id).exec(), tags);
+    }
+    formatter.write_node(elem, lon, lat, tags);
+  }
+}
+
+void fetch_current_nodes_in_chunks(
+  const std::set<osm_nwr_id_t> &sel_nodes, output_formatter &formatter,
+  cache<osm_changeset_id_t, changeset> &cc, pqxx::work &w) {
+
+  // fetch in chunks...
+  set<osm_nwr_id_t>::const_iterator prev_itr = sel_nodes.begin();
+  size_t chunk_i = 0;
+  for (set<osm_nwr_id_t>::const_iterator n_itr = sel_nodes.begin();; ++n_itr, ++chunk_i) {
+    bool at_end = n_itr == sel_nodes.end();
+    if ((chunk_i >= STRIDE) || ((chunk_i > 0) && at_end)) {
+      stringstream query;
+      query << "select n.id, n.latitude, n.longitude, n.visible, "
+               "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as "
+               "timestamp, n.changeset_id, n.version from current_nodes n "
+               "where n.id in (";
+      std::copy(prev_itr, n_itr, infix_ostream_iterator<osm_nwr_id_t>(query, ","));
+      query << ")";
+      pqxx::result nodes = w.exec(query);
+
+      output_chunk(nodes, formatter, false, cc, w);
+
+      chunk_i = 0;
+      prev_itr = n_itr;
+    }
+
+    if (at_end)
+      break;
+  }
+}
+
 } // anonymous namespace
 
 readonly_pgsql_selection::readonly_pgsql_selection(
@@ -236,41 +286,7 @@ void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
   // get all nodes - they already contain their own tags, so
   // we don't need to do anything else.
   logger::message("Fetching nodes");
-  element_info elem;
-  double lon, lat;
-  tags_t tags;
-
-  // fetch in chunks...
-  set<osm_nwr_id_t>::iterator prev_itr = sel_nodes.begin();
-  size_t chunk_i = 0;
-  for (set<osm_nwr_id_t>::iterator n_itr = sel_nodes.begin();; ++n_itr, ++chunk_i) {
-    bool at_end = n_itr == sel_nodes.end();
-    if ((chunk_i >= STRIDE) || ((chunk_i > 0) && at_end)) {
-      stringstream query;
-      query << "select n.id, n.latitude, n.longitude, n.visible, "
-               "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as "
-               "timestamp, n.changeset_id, n.version from current_nodes n "
-               "where n.id in (";
-      std::copy(prev_itr, n_itr, infix_ostream_iterator<osm_nwr_id_t>(query, ","));
-      query << ")";
-      pqxx::result nodes = w.exec(query);
-
-      for (pqxx::result::const_iterator itr = nodes.begin(); itr != nodes.end();
-           ++itr) {
-        extract_elem(*itr, elem, cc);
-        lon = double((*itr)["longitude"].as<int64_t>()) / (SCALE);
-        lat = double((*itr)["latitude"].as<int64_t>()) / (SCALE);
-        extract_tags(w.prepared("extract_node_tags")(elem.id).exec(), tags);
-        formatter.write_node(elem, lon, lat, tags);
-      }
-
-      chunk_i = 0;
-      prev_itr = n_itr;
-    }
-
-    if (at_end)
-      break;
-  }
+  fetch_current_nodes_in_chunks(sel_nodes, formatter, cc, w);
 }
 
 void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
@@ -471,6 +487,37 @@ void readonly_pgsql_selection::select_relations_members_of_relations() {
         w.prepared("relation_members_of_relations")(sel_relations).exec(),
         sel_relations);
   }
+}
+
+bool readonly_pgsql_selection::supports_historical_versions() {
+  return true;
+}
+
+int readonly_pgsql_selection::select_historical_nodes(
+  const std::vector<osm_edition_t> &eds) {
+  int num_inserted = 0;
+
+  for (std::vector<osm_edition_t>::const_iterator itr = eds.begin();
+       itr != eds.end(); ++itr) {
+    const osm_edition_t ed = *itr;
+
+    // note: only count the *new* rows inserted.
+    if (sel_historic_nodes.insert(ed).second) {
+      ++num_inserted;
+    }
+  }
+
+  return num_inserted;
+}
+
+int readonly_pgsql_selection::select_historical_ways(
+  const std::vector<osm_edition_t> &) {
+  return 0;
+}
+
+int readonly_pgsql_selection::select_historical_relations(
+  const std::vector<osm_edition_t> &) {
+  return 0;
 }
 
 readonly_pgsql_selection::factory::factory(const po::variables_map &opts)

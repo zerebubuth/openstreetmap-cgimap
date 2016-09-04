@@ -537,8 +537,8 @@ int main(int, char **) {
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
         &test_negative_changeset_ids));
 
-    //tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
-    //    &test_historic_elements));
+    tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
+        &test_historic_elements));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;
