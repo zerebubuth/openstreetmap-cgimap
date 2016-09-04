@@ -247,6 +247,10 @@ void writeable_pgsql_selection::write_nodes(output_formatter &formatter) {
   }
 
   if (!m_historic_tables_empty) {
+    if (!m_tables_empty) {
+      w.prepared("drop_current_versions_from_historic").exec();
+    }
+
     pqxx::result nodes = w.prepared("extract_historic_nodes").exec();
 
     unpack_nodes func(cc, w, true);
@@ -653,6 +657,14 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
          "WHERE "
            "node_id = $1 AND version = $2")
     PREPARE_ARGS(("bigint")("bigint"));
+
+  m_connection.prepare("drop_current_versions_from_historic",
+    "WITH cv AS ("
+      "SELECT n.id, n.version "
+        "FROM current_nodes n "
+        "JOIN tmp_nodes tn ON n.id = tn.id) "
+    "DELETE FROM tmp_historic_nodes thn USING cv "
+      "WHERE thn.node_id = cv.id AND thn.version = cv.version");
 
   m_connection.prepare("extract_historic_nodes",
     "SELECT n.node_id AS id, n.latitude, n.longitude, n.visible, "

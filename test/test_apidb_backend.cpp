@@ -531,6 +531,36 @@ void test_historic_elements(boost::shared_ptr<data_selection> sel) {
     f.m_nodes[1], "second node written");
 }
 
+void test_historic_dup(boost::shared_ptr<data_selection> sel) {
+  assert_equal<bool>(
+    sel->supports_historical_versions(), true,
+    "data selection supports historical versions");
+
+  std::vector<osm_edition_t> editions;
+  editions.push_back(std::make_pair(osm_nwr_id_t(3), osm_version_t(2)));
+  assert_equal<int>(
+    sel->select_historical_nodes(editions), 1,
+    "number of historic nodes selected");
+
+  std::vector<osm_nwr_id_t> ids;
+  ids.push_back(3);
+  assert_equal<int>(
+    sel->select_nodes(ids), 1,
+    "number of current nodes selected");
+
+  test_formatter f;
+  sel->write_nodes(f);
+  assert_equal<size_t>(f.m_nodes.size(), 1, "number of nodes written");
+
+  assert_equal<test_formatter::node_t>(
+    test_formatter::node_t(
+      element_info(3, 2, 2, "2015-03-02T18:27:00Z", 1, std::string("user_1"), false),
+      0.0, 0.0,
+      tags_t()
+      ),
+    f.m_nodes[0], "node written");
+}
+
 } // anonymous namespace
 
 int main(int, char **) {
@@ -558,6 +588,9 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
         &test_historic_elements));
+
+    tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
+        &test_historic_dup));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;

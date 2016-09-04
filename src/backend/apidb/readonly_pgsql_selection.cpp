@@ -224,7 +224,8 @@ void extract_members(const pqxx::result &res, members_t &members) {
   }
 }
 
-void output_chunk(pqxx::result &nodes, output_formatter &formatter, bool historic,
+void output_chunk(pqxx::result &nodes, std::set<osm_edition_t> &versions,
+                  output_formatter &formatter, bool historic,
                   cache<osm_changeset_id_t, changeset> &cc, pqxx::work &w) {
   element_info elem;
   double lon, lat;
@@ -241,11 +242,14 @@ void output_chunk(pqxx::result &nodes, output_formatter &formatter, bool histori
       extract_tags(w.prepared("extract_node_tags")(elem.id).exec(), tags);
     }
     formatter.write_node(elem, lon, lat, tags);
+    versions.erase(std::make_pair(elem.id, elem.version));
   }
 }
 
 void fetch_current_nodes_in_chunks(
-  const std::set<osm_nwr_id_t> &sel_nodes, output_formatter &formatter,
+  const std::set<osm_nwr_id_t> &sel_nodes,
+  std::set<osm_edition_t> &node_versions,
+  output_formatter &formatter,
   cache<osm_changeset_id_t, changeset> &cc, pqxx::work &w) {
 
   // fetch in chunks...
@@ -263,7 +267,7 @@ void fetch_current_nodes_in_chunks(
       query << ")";
       pqxx::result nodes = w.exec(query);
 
-      output_chunk(nodes, formatter, false, cc, w);
+      output_chunk(nodes, node_versions, formatter, false, cc, w);
 
       chunk_i = 0;
       prev_itr = n_itr;
@@ -277,6 +281,7 @@ void fetch_current_nodes_in_chunks(
 void fetch_historic_nodes(
   const std::set<osm_edition_t> &sel_nodes, output_formatter &formatter,
   cache<osm_changeset_id_t, changeset> &cc, pqxx::work &w) {
+  std::set<osm_edition_t> empty;
 
   // fetch in chunks...
   for (set<osm_edition_t>::const_iterator n_itr = sel_nodes.begin();
@@ -291,7 +296,7 @@ void fetch_historic_nodes(
           << "n.version = " << (n_itr->second);
     pqxx::result nodes = w.exec(query);
 
-    output_chunk(nodes, formatter, true, cc, w);
+    output_chunk(nodes, empty, formatter, true, cc, w);
   }
 }
 
@@ -307,8 +312,9 @@ void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
   // get all nodes - they already contain their own tags, so
   // we don't need to do anything else.
   logger::message("Fetching nodes");
-  fetch_current_nodes_in_chunks(sel_nodes, formatter, cc, w);
-  fetch_historic_nodes(sel_historic_nodes, formatter, cc, w);
+  std::set<osm_edition_t> historic_nodes = sel_historic_nodes;
+  fetch_current_nodes_in_chunks(sel_nodes, historic_nodes, formatter, cc, w);
+  fetch_historic_nodes(historic_nodes, formatter, cc, w);
 }
 
 void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
