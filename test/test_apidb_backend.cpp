@@ -514,6 +514,21 @@ void test_historic_elements(boost::shared_ptr<data_selection> sel) {
   test_formatter f;
   sel->write_nodes(f);
   assert_equal<size_t>(f.m_nodes.size(), 2, "number of nodes written");
+
+  assert_equal<test_formatter::node_t>(
+    test_formatter::node_t(
+      element_info(3, 1, 2, "2015-03-02T18:27:00Z", 1, std::string("user_1"), true),
+      0.0, 0.0,
+      tags_t()
+      ),
+    f.m_nodes[0], "first node written");
+  assert_equal<test_formatter::node_t>(
+    test_formatter::node_t(
+      element_info(3, 2, 2, "2015-03-02T18:27:00Z", 1, std::string("user_1"), false),
+      0.0, 0.0,
+      tags_t()
+      ),
+    f.m_nodes[1], "second node written");
 }
 
 } // anonymous namespace
