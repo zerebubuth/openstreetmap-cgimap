@@ -510,6 +510,10 @@ void test_historic_elements(boost::shared_ptr<data_selection> sel) {
   assert_equal<int>(
     sel->select_historical_nodes(editions), 2,
     "number of nodes selected");
+
+  test_formatter f;
+  sel->write_nodes(f);
+  assert_equal<size_t>(f.m_nodes.size(), 2, "number of nodes written");
 }
 
 } // anonymous namespace

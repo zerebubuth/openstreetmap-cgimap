@@ -274,6 +274,27 @@ void fetch_current_nodes_in_chunks(
   }
 }
 
+void fetch_historic_nodes(
+  const std::set<osm_edition_t> &sel_nodes, output_formatter &formatter,
+  cache<osm_changeset_id_t, changeset> &cc, pqxx::work &w) {
+
+  // fetch in chunks...
+  for (set<osm_edition_t>::const_iterator n_itr = sel_nodes.begin();
+       n_itr != sel_nodes.end(); ++n_itr) {
+
+    stringstream query;
+    query << "select n.node_id AS id, n.latitude, n.longitude, n.visible, "
+      "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as "
+      "timestamp, n.changeset_id, n.version from nodes n "
+      "where "
+          << "n.node_id = " << (n_itr->first) << " and "
+          << "n.version = " << (n_itr->second);
+    pqxx::result nodes = w.exec(query);
+
+    output_chunk(nodes, formatter, true, cc, w);
+  }
+}
+
 } // anonymous namespace
 
 readonly_pgsql_selection::readonly_pgsql_selection(
@@ -287,6 +308,7 @@ void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
   // we don't need to do anything else.
   logger::message("Fetching nodes");
   fetch_current_nodes_in_chunks(sel_nodes, formatter, cc, w);
+  fetch_historic_nodes(sel_historic_nodes, formatter, cc, w);
 }
 
 void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
@@ -657,6 +679,10 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
       "WHERE rm.member_type = 'Relation' "
         "AND rm.relation_id = ANY($1)")
     PREPARE_ARGS(("bigint[]"));
+
+  m_connection.prepare("extract_historic_node_tags",
+    "SELECT k, v FROM node_tags WHERE node_id=$1 AND version=$2")
+    PREPARE_ARGS(("bigint")("bigint"));
 
   // clang-format on
 }

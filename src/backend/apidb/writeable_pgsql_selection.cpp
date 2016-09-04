@@ -223,7 +223,7 @@ writeable_pgsql_selection::writeable_pgsql_selection(
   m_tables_empty = true;
 
   w.exec("CREATE TEMPORARY TABLE tmp_historic_nodes "
-         "(id bigint, version bigint, PRIMARY KEY (id, version))");
+         "(node_id bigint, version bigint, PRIMARY KEY (node_id, version))");
   m_historic_tables_empty = true;
 }
 
@@ -655,12 +655,12 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
     PREPARE_ARGS(("bigint")("bigint"));
 
   m_connection.prepare("extract_historic_nodes",
-    "SELECT n.id, n.latitude, n.longitude, n.visible, "
+    "SELECT n.node_id AS id, n.latitude, n.longitude, n.visible, "
         "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
         "n.changeset_id, n.version "
       "FROM nodes n "
         "JOIN tmp_historic_nodes tn "
-        "ON n.id = tn.id AND n.version = tn.version");
+        "ON n.node_id = tn.node_id AND n.version = tn.version");
   m_connection.prepare("extract_historic_node_tags",
     "SELECT k, v FROM node_tags WHERE node_id=$1 AND version=$2")
     PREPARE_ARGS(("bigint")("bigint"));
