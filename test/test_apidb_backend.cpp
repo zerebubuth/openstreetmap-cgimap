@@ -268,7 +268,38 @@ struct test_formatter : public output_formatter {
     }
   };
 
+  struct way_t {
+    way_t(const element_info &elem_, const nodes_t &nodes_,
+          const tags_t &tags_)
+      : elem(elem_), nodes(nodes_), tags(tags_) {}
+
+    element_info elem;
+    nodes_t nodes;
+    tags_t tags;
+
+    inline bool operator!=(const way_t &other) const {
+      return !operator==(other);
+    }
+
+    bool operator==(const way_t &other) const {
+#define CMP(sym) { if ((sym) != other. sym) { return false; } }
+      CMP(elem.id);
+      CMP(elem.version);
+      CMP(elem.changeset);
+      CMP(elem.timestamp);
+      CMP(elem.uid);
+      CMP(elem.display_name);
+      CMP(elem.visible);
+      CMP(nodes.size());
+      CMP(tags.size());
+#undef CMP
+      return std::equal(tags.begin(), tags.end(), other.tags.begin()) &&
+        std::equal(nodes.begin(), nodes.end(), other.nodes.begin());
+    }
+  };
+
   std::vector<node_t> m_nodes;
+  std::vector<way_t> m_ways;
 
   virtual ~test_formatter() {}
   mime::type mime_type() const { throw std::runtime_error("Unimplemented"); }
@@ -282,7 +313,9 @@ struct test_formatter : public output_formatter {
     m_nodes.push_back(node_t(elem, lon, lat, tags));
   }
   void write_way(const element_info &elem, const nodes_t &nodes,
-                 const tags_t &tags) {}
+                 const tags_t &tags) {
+    m_ways.push_back(way_t(elem, nodes, tags));
+  }
   void write_relation(const element_info &elem,
                       const members_t &members, const tags_t &tags) {}
   void flush() {}
@@ -308,6 +341,26 @@ std::ostream &operator<<(std::ostream &out, const test_formatter::node_t &n) {
       << "lat=" << n.lat << ", "
       << "{";
   BOOST_FOREACH(const tags_t::value_type &v, n.tags) {
+    out << "\"" << v.first << "\" => \"" << v.second << "\", ";
+  }
+  out << "})";
+}
+
+std::ostream &operator<<(std::ostream &out, const test_formatter::way_t &w) {
+  out << "node(element_info("
+      << "id=" << w.elem.id << ", "
+      << "version=" << w.elem.version << ", "
+      << "changeset=" << w.elem.changeset << ", "
+      << "timestamp=" << w.elem.timestamp << ", "
+      << "uid=" << w.elem.uid << ", "
+      << "display_name=" << w.elem.display_name << ", "
+      << "visible=" << w.elem.visible << "), "
+      << "[";
+  BOOST_FOREACH(const nodes_t::value_type &v, w.nodes) {
+    out << v << ", ";
+  }
+  out << "], {";
+  BOOST_FOREACH(const tags_t::value_type &v, w.tags) {
     out << "\"" << v.first << "\" => \"" << v.second << "\", ";
   }
   out << "})";
@@ -561,6 +614,39 @@ void test_historic_dup(boost::shared_ptr<data_selection> sel) {
     f.m_nodes[0], "node written");
 }
 
+void test_historic_dup_way(boost::shared_ptr<data_selection> sel) {
+  assert_equal<bool>(
+    sel->supports_historical_versions(), true,
+    "data selection supports historical versions");
+
+  std::vector<osm_edition_t> editions;
+  editions.push_back(std::make_pair(osm_nwr_id_t(1), osm_version_t(2)));
+  assert_equal<int>(
+    sel->select_historical_ways(editions), 1,
+    "number of historic ways selected");
+
+  std::vector<osm_nwr_id_t> ids;
+  ids.push_back(1);
+  assert_equal<int>(
+    sel->select_ways(ids), 1,
+    "number of current ways selected");
+
+  test_formatter f;
+  sel->write_ways(f);
+  assert_equal<size_t>(f.m_ways.size(), 1, "number of ways written");
+
+  nodes_t way1_nds;
+  way1_nds.push_back(3);
+
+  assert_equal<test_formatter::way_t>(
+    test_formatter::way_t(
+      element_info(1, 2, 3, "2016-09-06T19:55:00Z", 1, std::string("user_1"), true),
+      way1_nds,
+      tags_t()
+      ),
+    f.m_ways[0], "way written");
+}
+
 } // anonymous namespace
 
 int main(int, char **) {
@@ -591,6 +677,9 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
         &test_historic_dup));
+
+    //tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
+    //    &test_historic_dup_way));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;

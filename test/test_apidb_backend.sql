@@ -27,6 +27,13 @@ VALUES (1,       0,       0, 1, true,  '2013-11-14T02:10:00Z', 3221225472, 1),
        (6, 90000000, 90000000,  0, true,  '2016-04-16T15:09:00Z', 3229120632, 1),
        (7, 90000000, 90000000, -1, true,  '2016-04-16T15:09:00Z', 3229120632, 1);
 
+-- add some ways
+INSERT INTO current_ways (id, changeset_id, "timestamp", visible, version)
+VALUES (1, 3, '2016-09-06T19:55:00Z', true, 2);
+
+INSERT INTO current_way_nodes (way_id, node_id, sequence_id)
+VALUES (1, 3, 1);
+
 -- add historical versions of nodes
 INSERT INTO nodes (node_id, latitude, longitude, changeset_id, visible, "timestamp", tile, version, redaction_id)
 VALUES (1,       0,       0, 1, true,  '2013-11-14T02:10:00Z', 3221225472, 1, NULL),
@@ -37,6 +44,16 @@ VALUES (1,       0,       0, 1, true,  '2013-11-14T02:10:00Z', 3221225472, 1, NU
        -- note: node 5 intentionally missing
        (6, 90000000, 90000000,  0, true,  '2016-04-16T15:09:00Z', 3229120632, 1, NULL),
        (7, 90000000, 90000000, -1, true,  '2016-04-16T15:09:00Z', 3229120632, 1, NULL);
+
+-- add historic versions of ways
+INSERT INTO ways (way_id, changeset_id, "timestamp", visible, version, redaction_id)
+VALUES (1, 3, '2016-09-06T19:55:00Z', true, 2, NULL),
+       (1, 3, '2016-09-06T19:54:00Z', true, 1, NULL);
+
+INSERT INTO way_nodes (way_id, version, node_id, sequence_id)
+VALUES (1, 2, 3, 1),
+       (1, 1, 3, 1),
+       (1, 1, 2, 2);
 
 -- add some OAuth tokens, one valid and the others revoked or not valid.
 -- the API is publicly readable, so _all_ tokens can read the API. there is no

@@ -187,30 +187,86 @@ struct node_from_db {
   element_info elem;
   double lon, lat;
   tags_t tags;
+
+  inline void format(output_formatter &f) {
+    f.write_node(elem, lon, lat, tags);
+  }
+
+  static std::string current_tags() { return "extract_node_tags"; }
+  static std::string historic_tags() { return "extract_historic_node_tags"; }
 };
 
-struct unpack_nodes {
+struct way_from_db {
+  element_info elem;
+  nodes_t nodes;
+  tags_t tags;
+
+  inline void format(output_formatter &f) {
+    f.write_way(elem, nodes, tags);
+  }
+
+  static std::string current_tags() { return "extract_way_tags"; }
+  static std::string historic_tags() { return "extract_historic_way_tags"; }
+};
+
+template <typename T>
+void extract_extra(const pqxx::result::tuple &r, T& t, pqxx::work &w, bool historic);
+
+template <>
+void extract_extra<node_from_db>(const pqxx::result::tuple &r, node_from_db &n,
+                                 pqxx::work &w, bool historic) {
+  n.lon = double(r["longitude"].as<int64_t>()) / (SCALE);
+  n.lat = double(r["latitude"].as<int64_t>()) / (SCALE);
+}
+
+template <>
+void extract_extra<way_from_db>(const pqxx::result::tuple &r, way_from_db &way,
+                                 pqxx::work &w, bool historic) {
+  if (historic) {
+    extract_nodes(w.prepared("extract_historic_way_nds")(way.elem.id)(way.elem.version).exec(), way.nodes);
+  } else {
+    extract_nodes(w.prepared("extract_way_nds")(way.elem.id).exec(), way.nodes);
+  }
+}
+
+template <typename T>
+struct unpack_elems {
   typedef cache<osm_changeset_id_t, changeset> changeset_cache;
   changeset_cache &m_cc;
   pqxx::work &m_w;
   bool m_historic;
 
-  unpack_nodes(changeset_cache &cc, pqxx::work &w, bool historic)
+  unpack_elems(changeset_cache &cc, pqxx::work &w, bool historic)
     : m_cc(cc), m_w(w), m_historic(historic) {}
 
-  node_from_db operator()(const pqxx::result::tuple &r) const {
-    node_from_db n;
-    extract_elem(r, n.elem, m_cc);
-    n.lon = double(r["longitude"].as<int64_t>()) / (SCALE);
-    n.lat = double(r["latitude"].as<int64_t>()) / (SCALE);
+  T operator()(const pqxx::result::tuple &r) const {
+    T t;
+    extract_elem(r, t.elem, m_cc);
+    extract_extra<T>(r, t, m_w, m_historic);
     if (m_historic) {
-      extract_tags(m_w.prepared("extract_historic_node_tags")(n.elem.id)(n.elem.version).exec(), n.tags);
+      extract_tags(m_w.prepared(T::historic_tags())(t.elem.id)(t.elem.version).exec(), t.tags);
     } else {
-      extract_tags(m_w.prepared("extract_node_tags")(n.elem.id).exec(), n.tags);
+      extract_tags(m_w.prepared(T::current_tags())(t.elem.id).exec(), t.tags);
     }
-    return n;
+    return t;
   }
 };
+
+template <typename T>
+void unpack_format(pqxx::work &w, cache<osm_changeset_id_t, changeset> &cc,
+                   const std::string &statement, bool historic,
+                   output_formatter &formatter) {
+  typedef unpack_elems<T> unpacker;
+  typedef boost::transform_iterator<unpacker, pqxx::result::const_iterator> iterator;
+
+  pqxx::result res = w.prepared(statement).exec();
+
+  unpacker func(cc, w, historic);
+  const iterator end(res.end(), func);
+  for (iterator itr(res.begin(), func); itr != end; ++itr) {
+    itr->format(formatter);
+  }
+}
 
 } // anonymous namespace
 
@@ -224,40 +280,28 @@ writeable_pgsql_selection::writeable_pgsql_selection(
 
   w.exec("CREATE TEMPORARY TABLE tmp_historic_nodes "
          "(node_id bigint, version bigint, PRIMARY KEY (node_id, version))");
+  w.exec("CREATE TEMPORARY TABLE tmp_historic_ways "
+         "(way_id bigint, version bigint, PRIMARY KEY (way_id, version))");
   m_historic_tables_empty = true;
 }
 
 writeable_pgsql_selection::~writeable_pgsql_selection() {}
 
 void writeable_pgsql_selection::write_nodes(output_formatter &formatter) {
-  typedef boost::transform_iterator<unpack_nodes, pqxx::result::const_iterator> nodes_iterator;
-
   // get all nodes - they already contain their own tags, so
   // we don't need to do anything else.
   logger::message("Fetching nodes");
 
   if (!m_tables_empty) {
-    pqxx::result nodes = w.prepared("extract_nodes").exec();
-
-    unpack_nodes func(cc, w, false);
-    const nodes_iterator end(nodes.end(), func);
-    for (nodes_iterator itr(nodes.begin(), func); itr != end; ++itr) {
-      formatter.write_node(itr->elem, itr->lon, itr->lat, itr->tags);
-    }
+    unpack_format<node_from_db>(w, cc, "extract_nodes", false, formatter);
   }
 
   if (!m_historic_tables_empty) {
     if (!m_tables_empty) {
-      w.prepared("drop_current_versions_from_historic").exec();
+      w.prepared("drop_current_node_versions_from_historic").exec();
     }
 
-    pqxx::result nodes = w.prepared("extract_historic_nodes").exec();
-
-    unpack_nodes func(cc, w, true);
-    const nodes_iterator end(nodes.end(), func);
-    for (nodes_iterator itr(nodes.begin(), func); itr != end; ++itr) {
-      formatter.write_node(itr->elem, itr->lon, itr->lat, itr->tags);
-    }
+    unpack_format<node_from_db>(w, cc, "extract_historic_nodes", true, formatter);
   }
 }
 
@@ -266,17 +310,17 @@ void writeable_pgsql_selection::write_ways(output_formatter &formatter) {
   // way nodes and tags are on a separate connections so that the
   // entire result set can be streamed from a single query.
   logger::message("Fetching ways");
-  element_info elem;
-  nodes_t nodes;
-  tags_t tags;
 
-  pqxx::result ways = w.prepared("extract_ways").exec();
-  for (pqxx::result::const_iterator itr = ways.begin(); itr != ways.end();
-       ++itr) {
-    extract_elem(*itr, elem, cc);
-    extract_nodes(w.prepared("extract_way_nds")(elem.id).exec(), nodes);
-    extract_tags(w.prepared("extract_way_tags")(elem.id).exec(), tags);
-    formatter.write_way(elem, nodes, tags);
+  if (!m_tables_empty) {
+    unpack_format<way_from_db>(w, cc, "extract_ways", false, formatter);
+  }
+
+  if (!m_historic_tables_empty) {
+    if (!m_tables_empty) {
+      w.prepared("drop_current_way_versions_from_historic").exec();
+    }
+
+    unpack_format<way_from_db>(w, cc, "extract_historic_ways", true, formatter);
   }
 }
 
@@ -413,8 +457,17 @@ int writeable_pgsql_selection::select_historical_nodes(
 }
 
 int writeable_pgsql_selection::select_historical_ways(
-  const std::vector<osm_edition_t> &) {
-  return 0;
+  const std::vector<osm_edition_t> &eds) {
+  m_historic_tables_empty = false;
+
+  size_t selected = 0;
+  BOOST_FOREACH(osm_edition_t ed, eds) {
+    selected += w.prepared("add_historic_way")(ed.first)(ed.second)
+      .exec().affected_rows();
+  }
+
+  assert(selected < size_t(std::numeric_limits<int>::max()));
+  return selected;
 }
 
 int writeable_pgsql_selection::select_historical_relations(
@@ -658,7 +711,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
            "node_id = $1 AND version = $2")
     PREPARE_ARGS(("bigint")("bigint"));
 
-  m_connection.prepare("drop_current_versions_from_historic",
+  m_connection.prepare("drop_current_node_versions_from_historic",
     "WITH cv AS ("
       "SELECT n.id, n.version "
         "FROM current_nodes n "
@@ -675,6 +728,41 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
         "ON n.node_id = tn.node_id AND n.version = tn.version");
   m_connection.prepare("extract_historic_node_tags",
     "SELECT k, v FROM node_tags WHERE node_id=$1 AND version=$2")
+    PREPARE_ARGS(("bigint")("bigint"));
+
+  m_connection.prepare("drop_current_way_versions_from_historic",
+    "WITH cv AS ("
+      "SELECT w.id, w.version "
+        "FROM current_ways w "
+        "JOIN tmp_ways tw ON w.id = tw.id) "
+    "DELETE FROM tmp_historic_ways thw USING cv "
+      "WHERE thw.way_id = cv.id AND thw.version = cv.version");
+
+  // select a historic (id, version) edition of a way
+  m_connection.prepare("add_historic_way",
+    "INSERT INTO tmp_historic_ways "
+       "SELECT way_id, version "
+         "FROM ways "
+         "WHERE "
+           "way_id = $1 AND version = $2")
+    PREPARE_ARGS(("bigint")("bigint"));
+
+  m_connection.prepare("extract_historic_ways",
+    "SELECT w.way_id AS id, w.visible, "
+        "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
+        "w.changeset_id, w.version "
+      "FROM ways w "
+        "JOIN tmp_historic_ways tw "
+        "ON w.way_id = tw.way_id AND w.version = tw.version");
+  m_connection.prepare("extract_historic_way_tags",
+    "SELECT k, v FROM way_tags WHERE way_id=$1 AND version=$2")
+    PREPARE_ARGS(("bigint")("bigint"));
+
+  m_connection.prepare("extract_historic_way_nds",
+    "SELECT node_id "
+      "FROM way_nodes "
+      "WHERE way_id=$1 AND version=$2"
+      "ORDER BY sequence_id ASC")
     PREPARE_ARGS(("bigint")("bigint"));
 
   // clang-format on
