@@ -678,8 +678,8 @@ int main(int, char **) {
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
         &test_historic_dup));
 
-    //tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
-    //    &test_historic_dup_way));
+    tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
+        &test_historic_dup_way));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;

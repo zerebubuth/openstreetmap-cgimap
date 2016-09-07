@@ -224,50 +224,122 @@ void extract_members(const pqxx::result &res, members_t &members) {
   }
 }
 
-void output_chunk(pqxx::result &nodes, std::set<osm_edition_t> &versions,
-                  output_formatter &formatter, bool historic,
-                  cache<osm_changeset_id_t, changeset> &cc, pqxx::work &w) {
+struct node_from_db {
   element_info elem;
   double lon, lat;
   tags_t tags;
 
-  for (pqxx::result::const_iterator itr = nodes.begin(); itr != nodes.end();
-       ++itr) {
-    extract_elem(*itr, elem, cc);
-    lon = double((*itr)["longitude"].as<int64_t>()) / (SCALE);
-    lat = double((*itr)["latitude"].as<int64_t>()) / (SCALE);
+  void extract(const pqxx::result::tuple &row, output_formatter &formatter,
+               bool historic, cache<osm_changeset_id_t, changeset> &cc,
+               pqxx::work &w) {
+    extract_elem(row, elem, cc);
+    lon = double(row["longitude"].as<int64_t>()) / (SCALE);
+    lat = double(row["latitude"].as<int64_t>()) / (SCALE);
     if (historic) {
       extract_tags(w.prepared("extract_historic_node_tags")(elem.id)(elem.version).exec(), tags);
     } else {
       extract_tags(w.prepared("extract_node_tags")(elem.id).exec(), tags);
     }
     formatter.write_node(elem, lon, lat, tags);
-    versions.erase(std::make_pair(elem.id, elem.version));
+  }
+
+  static void current_query(
+    stringstream &query, set<osm_nwr_id_t>::const_iterator begin,
+    set<osm_nwr_id_t>::const_iterator end) {
+
+    query << "select cur.id, cur.latitude, cur.longitude, cur.visible, "
+      "to_char(cur.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as "
+      "timestamp, cur.changeset_id, cur.version from current_nodes cur"
+      " where cur.id in (";
+    std::copy(begin, end, infix_ostream_iterator<osm_nwr_id_t>(query, ","));
+    query << ")";
+  }
+
+  static void historic_query(
+    stringstream &query, osm_nwr_id_t id, osm_version_t version) {
+
+    query << "select hst.node_id AS id, hst.latitude, hst.longitude, hst.visible, "
+      "to_char(hst.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as "
+      "timestamp, hst.changeset_id, hst.version from nodes hst "
+      "where "
+      "hst.node_id = " << id << " and "
+      "hst.version = " << version;
+  }
+};
+
+struct way_from_db {
+  element_info elem;
+  nodes_t nodes;
+  tags_t tags;
+
+  void extract(const pqxx::result::tuple &row, output_formatter &formatter,
+               bool historic, cache<osm_changeset_id_t, changeset> &cc,
+               pqxx::work &w) {
+    extract_elem(row, elem, cc);
+    if (historic) {
+      extract_nodes(w.prepared("extract_historic_way_nds")(elem.id)(elem.version).exec(), nodes);
+      extract_tags(w.prepared("extract_historic_way_tags")(elem.id)(elem.version).exec(), tags);
+    } else {
+      extract_nodes(w.prepared("extract_way_nds")(elem.id).exec(), nodes);
+      extract_tags(w.prepared("extract_way_tags")(elem.id).exec(), tags);
+    }
+    formatter.write_way(elem, nodes, tags);
+  }
+
+  static void current_query(
+    stringstream &query, set<osm_nwr_id_t>::const_iterator begin,
+    set<osm_nwr_id_t>::const_iterator end) {
+
+    query << "select w.id, w.visible, w.version, w.changeset_id, "
+      "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as "
+      "timestamp from current_ways w where w.id in (";
+    std::copy(begin, end, infix_ostream_iterator<osm_nwr_id_t>(query, ","));
+    query << ")";
+  }
+
+  static void historic_query(
+    stringstream &query, osm_nwr_id_t id, osm_version_t version) {
+
+    query << "select hst.way_id AS id, hst.visible, "
+      "to_char(hst.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as "
+      "timestamp, hst.changeset_id, hst.version from ways hst "
+      "where "
+      "hst.way_id = " << id << " and "
+      "hst.version = " << version;
+  }
+};
+
+template <typename T>
+void output_chunk(pqxx::result &res, std::set<osm_edition_t> &versions,
+                  output_formatter &formatter, bool historic,
+                  cache<osm_changeset_id_t, changeset> &cc, pqxx::work &w) {
+  T t;
+
+  for (pqxx::result::const_iterator itr = res.begin();
+       itr != res.end(); ++itr) {
+    t.extract(*itr, formatter, historic, cc, w);
+    versions.erase(std::make_pair(t.elem.id, t.elem.version));
   }
 }
 
-void fetch_current_nodes_in_chunks(
-  const std::set<osm_nwr_id_t> &sel_nodes,
-  std::set<osm_edition_t> &node_versions,
+template <typename T>
+void fetch_current_in_chunks(
+  const std::set<osm_nwr_id_t> &sel,
+  std::set<osm_edition_t> &editions,
   output_formatter &formatter,
   cache<osm_changeset_id_t, changeset> &cc, pqxx::work &w) {
 
   // fetch in chunks...
-  set<osm_nwr_id_t>::const_iterator prev_itr = sel_nodes.begin();
+  set<osm_nwr_id_t>::const_iterator prev_itr = sel.begin();
   size_t chunk_i = 0;
-  for (set<osm_nwr_id_t>::const_iterator n_itr = sel_nodes.begin();; ++n_itr, ++chunk_i) {
-    bool at_end = n_itr == sel_nodes.end();
+  for (set<osm_nwr_id_t>::const_iterator n_itr = sel.begin();; ++n_itr, ++chunk_i) {
+    bool at_end = n_itr == sel.end();
     if ((chunk_i >= STRIDE) || ((chunk_i > 0) && at_end)) {
       stringstream query;
-      query << "select n.id, n.latitude, n.longitude, n.visible, "
-               "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as "
-               "timestamp, n.changeset_id, n.version from current_nodes n "
-               "where n.id in (";
-      std::copy(prev_itr, n_itr, infix_ostream_iterator<osm_nwr_id_t>(query, ","));
-      query << ")";
-      pqxx::result nodes = w.exec(query);
+      T::current_query(query, prev_itr, n_itr);
+      pqxx::result res = w.exec(query);
 
-      output_chunk(nodes, node_versions, formatter, false, cc, w);
+      output_chunk<T>(res, editions, formatter, false, cc, w);
 
       chunk_i = 0;
       prev_itr = n_itr;
@@ -278,25 +350,20 @@ void fetch_current_nodes_in_chunks(
   }
 }
 
-void fetch_historic_nodes(
-  const std::set<osm_edition_t> &sel_nodes, output_formatter &formatter,
+template <typename T>
+void fetch_historic(
+  const std::set<osm_edition_t> &sel, output_formatter &formatter,
   cache<osm_changeset_id_t, changeset> &cc, pqxx::work &w) {
   std::set<osm_edition_t> empty;
 
-  // fetch in chunks...
-  for (set<osm_edition_t>::const_iterator n_itr = sel_nodes.begin();
-       n_itr != sel_nodes.end(); ++n_itr) {
+  for (set<osm_edition_t>::const_iterator n_itr = sel.begin();
+       n_itr != sel.end(); ++n_itr) {
 
     stringstream query;
-    query << "select n.node_id AS id, n.latitude, n.longitude, n.visible, "
-      "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as "
-      "timestamp, n.changeset_id, n.version from nodes n "
-      "where "
-          << "n.node_id = " << (n_itr->first) << " and "
-          << "n.version = " << (n_itr->second);
-    pqxx::result nodes = w.exec(query);
+    T::historic_query(query, n_itr->first, n_itr->second);
+    pqxx::result res = w.exec(query);
 
-    output_chunk(nodes, empty, formatter, true, cc, w);
+    output_chunk<T>(res, empty, formatter, true, cc, w);
   }
 }
 
@@ -313,8 +380,8 @@ void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
   // we don't need to do anything else.
   logger::message("Fetching nodes");
   std::set<osm_edition_t> historic_nodes = sel_historic_nodes;
-  fetch_current_nodes_in_chunks(sel_nodes, historic_nodes, formatter, cc, w);
-  fetch_historic_nodes(historic_nodes, formatter, cc, w);
+  fetch_current_in_chunks<node_from_db>(sel_nodes, historic_nodes, formatter, cc, w);
+  fetch_historic<node_from_db>(historic_nodes, formatter, cc, w);
 }
 
 void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
@@ -322,39 +389,10 @@ void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
   // way nodes and tags are on a separate connections so that the
   // entire result set can be streamed from a single query.
   logger::message("Fetching ways");
-  element_info elem;
-  nodes_t nodes;
-  tags_t tags;
 
-  // fetch in chunks...
-  set<osm_nwr_id_t>::iterator prev_itr = sel_ways.begin();
-  size_t chunk_i = 0;
-  for (set<osm_nwr_id_t>::iterator n_itr = sel_ways.begin();; ++n_itr, ++chunk_i) {
-    bool at_end = n_itr == sel_ways.end();
-    if ((chunk_i >= STRIDE) || ((chunk_i > 0) && at_end)) {
-      stringstream query;
-      query << "select w.id, w.visible, w.version, w.changeset_id, "
-               "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as "
-               "timestamp from current_ways w where w.id in (";
-      std::copy(prev_itr, n_itr, infix_ostream_iterator<osm_nwr_id_t>(query, ","));
-      query << ")";
-      pqxx::result ways = w.exec(query);
-
-      for (pqxx::result::const_iterator itr = ways.begin(); itr != ways.end();
-           ++itr) {
-        extract_elem(*itr, elem, cc);
-        extract_nodes(w.prepared("extract_way_nds")(elem.id).exec(), nodes);
-        extract_tags(w.prepared("extract_way_tags")(elem.id).exec(), tags);
-        formatter.write_way(elem, nodes, tags);
-      }
-
-      chunk_i = 0;
-      prev_itr = n_itr;
-    }
-
-    if (at_end)
-      break;
-  }
+  std::set<osm_edition_t> historic_ways = sel_historic_ways;
+  fetch_current_in_chunks<way_from_db>(sel_ways, historic_ways, formatter, cc, w);
+  fetch_historic<way_from_db>(historic_ways, formatter, cc, w);
 }
 
 void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
@@ -539,8 +577,20 @@ int readonly_pgsql_selection::select_historical_nodes(
 }
 
 int readonly_pgsql_selection::select_historical_ways(
-  const std::vector<osm_edition_t> &) {
-  return 0;
+  const std::vector<osm_edition_t> &eds) {
+  int num_inserted = 0;
+
+  for (std::vector<osm_edition_t>::const_iterator itr = eds.begin();
+       itr != eds.end(); ++itr) {
+    const osm_edition_t ed = *itr;
+
+    // note: only count the *new* rows inserted.
+    if (sel_historic_ways.insert(ed).second) {
+      ++num_inserted;
+    }
+  }
+
+  return num_inserted;
 }
 
 int readonly_pgsql_selection::select_historical_relations(
@@ -688,6 +738,16 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
 
   m_connection.prepare("extract_historic_node_tags",
     "SELECT k, v FROM node_tags WHERE node_id=$1 AND version=$2")
+    PREPARE_ARGS(("bigint")("bigint"));
+  m_connection.prepare("extract_historic_way_tags",
+    "SELECT k, v FROM way_tags WHERE way_id=$1 AND version=$2")
+    PREPARE_ARGS(("bigint")("bigint"));
+
+  m_connection.prepare("extract_historic_way_nds",
+    "SELECT node_id "
+      "FROM way_nodes "
+      "WHERE way_id=$1 AND version=$2 "
+      "ORDER BY sequence_id ASC")
     PREPARE_ARGS(("bigint")("bigint"));
 
   // clang-format on

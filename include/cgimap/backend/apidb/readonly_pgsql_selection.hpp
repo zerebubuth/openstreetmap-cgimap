@@ -74,7 +74,7 @@ private:
 
   // the set of selected nodes, ways and relations
   std::set<osm_nwr_id_t> sel_nodes, sel_ways, sel_relations;
-  std::set<osm_edition_t> sel_historic_nodes;
+  std::set<osm_edition_t> sel_historic_nodes, sel_historic_ways;
   cache<osm_changeset_id_t, changeset> &cc;
 };
 
