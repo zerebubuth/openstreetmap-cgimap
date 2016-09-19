@@ -34,6 +34,13 @@ VALUES (1, 3, '2016-09-06T19:55:00Z', true, 2);
 INSERT INTO current_way_nodes (way_id, node_id, sequence_id)
 VALUES (1, 3, 1);
 
+-- add a relation
+INSERT INTO current_relations (id, changeset_id, "timestamp", visible, version)
+VALUES (1, 3, '2016-09-19T18:49:00Z', true, 2);
+
+INSERT INTO current_relation_members (relation_id, member_type, member_id, member_role, sequence_id)
+VALUES (1, 'Node', 3, 'foo', 1);
+
 -- add historical versions of nodes
 INSERT INTO nodes (node_id, latitude, longitude, changeset_id, visible, "timestamp", tile, version, redaction_id)
 VALUES (1,       0,       0, 1, true,  '2013-11-14T02:10:00Z', 3221225472, 1, NULL),
@@ -54,6 +61,15 @@ INSERT INTO way_nodes (way_id, version, node_id, sequence_id)
 VALUES (1, 2, 3, 1),
        (1, 1, 3, 1),
        (1, 1, 2, 2);
+
+-- add a historic relation
+INSERT INTO relations (relation_id, changeset_id, "timestamp", visible, version, redaction_id)
+VALUES (1, 3, '2016-09-19T18:49:00Z', true, 2, NULL),
+       (1, 3, '2016-09-19T18:48:00Z', true, 1, NULL);
+
+INSERT INTO relation_members (relation_id, member_type, member_id, member_role, sequence_id, version)
+VALUES (1, 'Node', 3, 'foo', 1, 2),
+       (1, 'Node', 3, 'bar', 1, 1);
 
 -- add some OAuth tokens, one valid and the others revoked or not valid.
 -- the API is publicly readable, so _all_ tokens can read the API. there is no

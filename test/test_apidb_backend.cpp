@@ -298,8 +298,39 @@ struct test_formatter : public output_formatter {
     }
   };
 
+  struct relation_t {
+    relation_t(const element_info &elem_, const members_t &members_,
+               const tags_t &tags_)
+      : elem(elem_), members(members_), tags(tags_) {}
+
+    element_info elem;
+    members_t members;
+    tags_t tags;
+
+    inline bool operator!=(const relation_t &other) const {
+      return !operator==(other);
+    }
+
+    bool operator==(const relation_t &other) const {
+#define CMP(sym) { if ((sym) != other. sym) { return false; } }
+      CMP(elem.id);
+      CMP(elem.version);
+      CMP(elem.changeset);
+      CMP(elem.timestamp);
+      CMP(elem.uid);
+      CMP(elem.display_name);
+      CMP(elem.visible);
+      CMP(members.size());
+      CMP(tags.size());
+#undef CMP
+      return std::equal(tags.begin(), tags.end(), other.tags.begin()) &&
+        std::equal(members.begin(), members.end(), other.members.begin());
+    }
+  };
+
   std::vector<node_t> m_nodes;
   std::vector<way_t> m_ways;
+  std::vector<relation_t> m_relations;
 
   virtual ~test_formatter() {}
   mime::type mime_type() const { throw std::runtime_error("Unimplemented"); }
@@ -317,7 +348,9 @@ struct test_formatter : public output_formatter {
     m_ways.push_back(way_t(elem, nodes, tags));
   }
   void write_relation(const element_info &elem,
-                      const members_t &members, const tags_t &tags) {}
+                      const members_t &members, const tags_t &tags) {
+    m_relations.push_back(relation_t(elem, members, tags));
+  }
   void flush() {}
 
   void error(const std::exception &e) {
@@ -328,15 +361,20 @@ struct test_formatter : public output_formatter {
   }
 };
 
+std::ostream &operator<<(std::ostream &out, const element_info &e) {
+  out << "element_info("
+      << "id=" << e.id << ", "
+      << "version=" << e.version << ", "
+      << "changeset=" << e.changeset << ", "
+      << "timestamp=" << e.timestamp << ", "
+      << "uid=" << e.uid << ", "
+      << "display_name=" << e.display_name << ", "
+      << "visible=" << e.visible << ")";
+  return out;
+}
+
 std::ostream &operator<<(std::ostream &out, const test_formatter::node_t &n) {
-  out << "node(element_info("
-      << "id=" << n.elem.id << ", "
-      << "version=" << n.elem.version << ", "
-      << "changeset=" << n.elem.changeset << ", "
-      << "timestamp=" << n.elem.timestamp << ", "
-      << "uid=" << n.elem.uid << ", "
-      << "display_name=" << n.elem.display_name << ", "
-      << "visible=" << n.elem.visible << "), "
+  out << "node(" << n.elem << ", "
       << "lon=" << n.lon << ", "
       << "lat=" << n.lat << ", "
       << "{";
@@ -347,20 +385,33 @@ std::ostream &operator<<(std::ostream &out, const test_formatter::node_t &n) {
 }
 
 std::ostream &operator<<(std::ostream &out, const test_formatter::way_t &w) {
-  out << "node(element_info("
-      << "id=" << w.elem.id << ", "
-      << "version=" << w.elem.version << ", "
-      << "changeset=" << w.elem.changeset << ", "
-      << "timestamp=" << w.elem.timestamp << ", "
-      << "uid=" << w.elem.uid << ", "
-      << "display_name=" << w.elem.display_name << ", "
-      << "visible=" << w.elem.visible << "), "
+  out << "way(" << w.elem << ", "
       << "[";
   BOOST_FOREACH(const nodes_t::value_type &v, w.nodes) {
     out << v << ", ";
   }
   out << "], {";
   BOOST_FOREACH(const tags_t::value_type &v, w.tags) {
+    out << "\"" << v.first << "\" => \"" << v.second << "\", ";
+  }
+  out << "})";
+}
+
+std::ostream &operator<<(std::ostream &out, const member_info &m) {
+  out << "member_info(type=" << m.type << ", "
+      << "ref=" << m.ref << ", "
+      << "role=\"" << m.role << "\")";
+  return out;
+}
+
+std::ostream &operator<<(std::ostream &out, const test_formatter::relation_t &r) {
+  out << "relation(" << r.elem << ", "
+      << "[";
+  BOOST_FOREACH(const member_info &m, r.members) {
+    out << m << ", ";
+  }
+  out << "], {";
+  BOOST_FOREACH(const tags_t::value_type &v, r.tags) {
     out << "\"" << v.first << "\" => \"" << v.second << "\", ";
   }
   out << "})";
@@ -647,6 +698,39 @@ void test_historic_dup_way(boost::shared_ptr<data_selection> sel) {
     f.m_ways[0], "way written");
 }
 
+void test_historic_dup_relation(boost::shared_ptr<data_selection> sel) {
+  assert_equal<bool>(
+    sel->supports_historical_versions(), true,
+    "data selection supports historical versions");
+
+  std::vector<osm_edition_t> editions;
+  editions.push_back(std::make_pair(osm_nwr_id_t(1), osm_version_t(2)));
+  assert_equal<int>(
+    sel->select_historical_relations(editions), 1,
+    "number of historic relations selected");
+
+  std::vector<osm_nwr_id_t> ids;
+  ids.push_back(1);
+  assert_equal<int>(
+    sel->select_relations(ids), 1,
+    "number of current relations selected");
+
+  test_formatter f;
+  sel->write_relations(f);
+  assert_equal<size_t>(f.m_relations.size(), 1, "number of relations written");
+
+  members_t relation1_members;
+  relation1_members.push_back(member_info(element_type_node, 3, "foo"));
+
+  assert_equal<test_formatter::relation_t>(
+    test_formatter::relation_t(
+      element_info(1, 2, 3, "2016-09-19T18:49:00Z", 1, std::string("user_1"), true),
+      relation1_members,
+      tags_t()
+      ),
+    f.m_relations[0], "relation written");
+}
+
 } // anonymous namespace
 
 int main(int, char **) {
@@ -680,6 +764,9 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
         &test_historic_dup_way));
+
+    tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
+        &test_historic_dup_relation));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;

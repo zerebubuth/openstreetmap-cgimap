@@ -209,6 +209,19 @@ struct way_from_db {
   static std::string historic_tags() { return "extract_historic_way_tags"; }
 };
 
+struct rel_from_db {
+  element_info elem;
+  members_t members;
+  tags_t tags;
+
+  inline void format(output_formatter &f) {
+    f.write_relation(elem, members, tags);
+  }
+
+  static std::string current_tags() { return "extract_relation_tags"; }
+  static std::string historic_tags() { return "extract_historic_relation_tags"; }
+};
+
 template <typename T>
 void extract_extra(const pqxx::result::tuple &r, T& t, pqxx::work &w, bool historic);
 
@@ -226,6 +239,16 @@ void extract_extra<way_from_db>(const pqxx::result::tuple &r, way_from_db &way,
     extract_nodes(w.prepared("extract_historic_way_nds")(way.elem.id)(way.elem.version).exec(), way.nodes);
   } else {
     extract_nodes(w.prepared("extract_way_nds")(way.elem.id).exec(), way.nodes);
+  }
+}
+
+template <>
+void extract_extra<rel_from_db>(const pqxx::result::tuple &r, rel_from_db &rel,
+                                pqxx::work &w, bool historic) {
+  if (historic) {
+    extract_members(w.prepared("extract_historic_relation_members")(rel.elem.id)(rel.elem.version).exec(), rel.members);
+  } else {
+    extract_members(w.prepared("extract_relation_members")(rel.elem.id).exec(), rel.members);
   }
 }
 
@@ -282,6 +305,8 @@ writeable_pgsql_selection::writeable_pgsql_selection(
          "(node_id bigint, version bigint, PRIMARY KEY (node_id, version))");
   w.exec("CREATE TEMPORARY TABLE tmp_historic_ways "
          "(way_id bigint, version bigint, PRIMARY KEY (way_id, version))");
+  w.exec("CREATE TEMPORARY TABLE tmp_historic_relations "
+         "(relation_id bigint, version bigint, PRIMARY KEY (relation_id, version))");
   m_historic_tables_empty = true;
 }
 
@@ -325,19 +350,19 @@ void writeable_pgsql_selection::write_ways(output_formatter &formatter) {
 }
 
 void writeable_pgsql_selection::write_relations(output_formatter &formatter) {
+  // grab the relations, relation members and tags
   logger::message("Fetching relations");
-  element_info elem;
-  members_t members;
-  tags_t tags;
 
-  pqxx::result relations = w.prepared("extract_relations").exec();
-  for (pqxx::result::const_iterator itr = relations.begin();
-       itr != relations.end(); ++itr) {
-    extract_elem(*itr, elem, cc);
-    extract_members(w.prepared("extract_relation_members")(elem.id).exec(),
-                    members);
-    extract_tags(w.prepared("extract_relation_tags")(elem.id).exec(), tags);
-    formatter.write_relation(elem, members, tags);
+  if (!m_tables_empty) {
+    unpack_format<rel_from_db>(w, cc, "extract_relations", false, formatter);
+  }
+
+  if (!m_historic_tables_empty) {
+    if (!m_tables_empty) {
+      w.prepared("drop_current_relation_versions_from_historic").exec();
+    }
+
+    unpack_format<rel_from_db>(w, cc, "extract_historic_relations", true, formatter);
   }
 }
 
@@ -471,8 +496,17 @@ int writeable_pgsql_selection::select_historical_ways(
 }
 
 int writeable_pgsql_selection::select_historical_relations(
-  const std::vector<osm_edition_t> &) {
-  return 0;
+  const std::vector<osm_edition_t> &eds) {
+  m_historic_tables_empty = false;
+
+  size_t selected = 0;
+  BOOST_FOREACH(osm_edition_t ed, eds) {
+    selected += w.prepared("add_historic_relation")(ed.first)(ed.second)
+      .exec().affected_rows();
+  }
+
+  assert(selected < size_t(std::numeric_limits<int>::max()));
+  return selected;
 }
 
 namespace {
@@ -762,6 +796,40 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
     "SELECT node_id "
       "FROM way_nodes "
       "WHERE way_id=$1 AND version=$2"
+      "ORDER BY sequence_id ASC")
+    PREPARE_ARGS(("bigint")("bigint"));
+
+  m_connection.prepare("drop_current_relation_versions_from_historic",
+    "WITH cv AS ("
+      "SELECT r.id, r.version "
+        "FROM current_relations r "
+        "JOIN tmp_relations tr ON r.id = tr.id) "
+    "DELETE FROM tmp_historic_relations thr USING cv "
+      "WHERE thr.relation_id = cv.id AND thr.version = cv.version");
+
+  // select a historic (id, version) edition of a relation
+  m_connection.prepare("add_historic_relation",
+    "INSERT INTO tmp_historic_relations "
+       "SELECT relation_id, version "
+         "FROM relations "
+         "WHERE "
+           "relation_id = $1 AND version = $2")
+    PREPARE_ARGS(("bigint")("bigint"));
+
+  m_connection.prepare("extract_historic_relations",
+    "SELECT r.relation_id AS id, r.visible, "
+        "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
+        "r.changeset_id, r.version "
+      "FROM relations r "
+        "JOIN tmp_historic_relations tr "
+        "ON r.relation_id = tr.relation_id AND r.version = tr.version");
+  m_connection.prepare("extract_historic_relation_tags",
+    "SELECT k, v FROM relation_tags WHERE relation_id=$1 AND version=$2")
+    PREPARE_ARGS(("bigint")("bigint"));
+  m_connection.prepare("extract_historic_relation_members",
+    "SELECT member_type, member_id, member_role "
+      "FROM relation_members "
+      "WHERE relation_id=$1 AND version=$2 "
       "ORDER BY sequence_id ASC")
     PREPARE_ARGS(("bigint")("bigint"));
 

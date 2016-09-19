@@ -309,6 +309,48 @@ struct way_from_db {
   }
 };
 
+struct rel_from_db {
+  element_info elem;
+  members_t members;
+  tags_t tags;
+
+  void extract(const pqxx::result::tuple &row, output_formatter &formatter,
+               bool historic, cache<osm_changeset_id_t, changeset> &cc,
+               pqxx::work &w) {
+    extract_elem(row, elem, cc);
+    if (historic) {
+      extract_members(w.prepared("extract_historic_relation_members")(elem.id)(elem.version).exec(), members);
+      extract_tags(w.prepared("extract_historic_relation_tags")(elem.id)(elem.version).exec(), tags);
+    } else {
+      extract_members(w.prepared("extract_relation_members")(elem.id).exec(), members);
+      extract_tags(w.prepared("extract_relation_tags")(elem.id).exec(), tags);
+    }
+    formatter.write_relation(elem, members, tags);
+  }
+
+  static void current_query(
+    stringstream &query, set<osm_nwr_id_t>::const_iterator begin,
+    set<osm_nwr_id_t>::const_iterator end) {
+
+    query << "select r.id, r.visible, r.version, r.changeset_id, "
+      "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as "
+      "timestamp from current_relations r where r.id in (";
+    std::copy(begin, end, infix_ostream_iterator<osm_nwr_id_t>(query, ","));
+    query << ")";
+  }
+
+  static void historic_query(
+    stringstream &query, osm_nwr_id_t id, osm_version_t version) {
+
+    query << "select hst.relation_id AS id, hst.visible, "
+      "to_char(hst.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as "
+      "timestamp, hst.changeset_id, hst.version from relations hst "
+      "where "
+      "hst.relation_id = " << id << " and "
+      "hst.version = " << version;
+  }
+};
+
 template <typename T>
 void output_chunk(pqxx::result &res, std::set<osm_edition_t> &versions,
                   output_formatter &formatter, bool historic,
@@ -397,41 +439,10 @@ void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
 
 void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
   logger::message("Fetching relations");
-  element_info elem;
-  members_t members;
-  tags_t tags;
 
-  // fetch in chunks...
-  set<osm_nwr_id_t>::iterator prev_itr = sel_relations.begin();
-  size_t chunk_i = 0;
-  for (set<osm_nwr_id_t>::iterator n_itr = sel_relations.begin();;
-       ++n_itr, ++chunk_i) {
-    bool at_end = n_itr == sel_relations.end();
-    if ((chunk_i >= STRIDE) || ((chunk_i > 0) && at_end)) {
-      stringstream query;
-      query << "select r.id, r.visible, r.version, r.changeset_id, "
-               "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as "
-               "timestamp from current_relations r where r.id in (";
-      std::copy(prev_itr, n_itr, infix_ostream_iterator<osm_nwr_id_t>(query, ","));
-      query << ")";
-      pqxx::result relations = w.exec(query);
-
-      for (pqxx::result::const_iterator itr = relations.begin();
-           itr != relations.end(); ++itr) {
-        extract_elem(*itr, elem, cc);
-        extract_members(w.prepared("extract_relation_members")(elem.id).exec(),
-                        members);
-        extract_tags(w.prepared("extract_relation_tags")(elem.id).exec(), tags);
-        formatter.write_relation(elem, members, tags);
-      }
-
-      chunk_i = 0;
-      prev_itr = n_itr;
-    }
-
-    if (at_end)
-      break;
-  }
+  std::set<osm_edition_t> historic_relations = sel_historic_relations;
+  fetch_current_in_chunks<rel_from_db>(sel_relations, historic_relations, formatter, cc, w);
+  fetch_historic<rel_from_db>(historic_relations, formatter, cc, w);
 }
 
 data_selection::visibility_t
@@ -594,8 +605,20 @@ int readonly_pgsql_selection::select_historical_ways(
 }
 
 int readonly_pgsql_selection::select_historical_relations(
-  const std::vector<osm_edition_t> &) {
-  return 0;
+  const std::vector<osm_edition_t> &eds) {
+  int num_inserted = 0;
+
+  for (std::vector<osm_edition_t>::const_iterator itr = eds.begin();
+       itr != eds.end(); ++itr) {
+    const osm_edition_t ed = *itr;
+
+    // note: only count the *new* rows inserted.
+    if (sel_historic_relations.insert(ed).second) {
+      ++num_inserted;
+    }
+  }
+
+  return num_inserted;
 }
 
 readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
@@ -742,11 +765,20 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
   m_connection.prepare("extract_historic_way_tags",
     "SELECT k, v FROM way_tags WHERE way_id=$1 AND version=$2")
     PREPARE_ARGS(("bigint")("bigint"));
+  m_connection.prepare("extract_historic_relation_tags",
+    "SELECT k, v FROM relation_tags WHERE relation_id=$1 AND version=$2")
+    PREPARE_ARGS(("bigint")("bigint"));
 
   m_connection.prepare("extract_historic_way_nds",
     "SELECT node_id "
       "FROM way_nodes "
       "WHERE way_id=$1 AND version=$2 "
+      "ORDER BY sequence_id ASC")
+    PREPARE_ARGS(("bigint")("bigint"));
+  m_connection.prepare("extract_historic_relation_members",
+    "SELECT member_type, member_id, member_role "
+      "FROM relation_members "
+      "WHERE relation_id=$1 AND version=$2 "
       "ORDER BY sequence_id ASC")
     PREPARE_ARGS(("bigint")("bigint"));
 

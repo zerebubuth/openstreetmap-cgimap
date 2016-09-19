@@ -41,6 +41,16 @@ struct member_info {
   element_type type;
   osm_nwr_id_t ref;
   std::string role;
+
+  member_info() {}
+  member_info(element_type type_, osm_nwr_id_t ref_, const std::string &role_)
+    : type(type_), ref(ref_), role(role_) {}
+
+  inline bool operator==(const member_info &other) const {
+    return ((type == other.type) &&
+            (ref == other.ref) &&
+            (role == other.role));
+  }
 };
 
 typedef std::list<osm_nwr_id_t> nodes_t;
