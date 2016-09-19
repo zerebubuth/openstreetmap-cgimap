@@ -21,6 +21,7 @@ public:
   void write_nodes(output_formatter &formatter);
   void write_ways(output_formatter &formatter);
   void write_relations(output_formatter &formatter);
+  void write_changesets(output_formatter &formatter, const boost::posix_time::ptime &now);
 
   visibility_t check_node_visibility(osm_nwr_id_t id);
   visibility_t check_way_visibility(osm_nwr_id_t id);
@@ -38,6 +39,10 @@ public:
   void select_relations_from_nodes();
   void select_relations_from_relations();
   void select_relations_members_of_relations();
+
+  bool supports_changesets();
+  int select_changesets(const std::vector<osm_changeset_id_t> &);
+  void select_changeset_discussions();
 
   /**
    * abstracts the creation of transactions for the writeable
@@ -68,6 +73,10 @@ private:
   // true if a query hasn't been run yet, i.e: it's possible to
   // assume that all the temporary tables are empty.
   bool m_tables_empty;
+
+  // true if we want to include changeset discussions along with
+  // the changesets themselves. defaults to false.
+  bool include_changeset_discussions;
 };
 
 #endif /* WRITEABLE_PGSQL_SELECTION_HPP */

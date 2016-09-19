@@ -4,6 +4,7 @@
 
 #include <libxml/parser.h>
 
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
@@ -11,10 +12,11 @@
 #include <sstream>
 
 namespace po = boost::program_options;
+namespace pt = boost::posix_time;
 using boost::shared_ptr;
 using std::string;
 
-#define CACHE_SIZE 1000
+#define CACHE_SIZE (1000)
 
 namespace {
 
@@ -54,7 +56,14 @@ struct relation {
   tags_t m_tags;
 };
 
+struct changeset {
+  changeset_info m_info;
+  tags_t m_tags;
+  comments_t m_comments;
+};
+
 struct database {
+  std::map<osm_changeset_id_t, changeset> m_changesets;
   std::map<osm_nwr_id_t, node> m_nodes;
   std::map<osm_nwr_id_t, way> m_ways;
   std::map<osm_nwr_id_t, relation> m_relations;
@@ -85,17 +94,49 @@ boost::optional<T> opt_attribute(const char *name, size_t len,
 }
 
 void parse_info(element_info &info, const xmlChar **attributes) {
-  info.id = get_attribute<osm_nwr_id_t>("id", 2, attributes);
+  info.id = get_attribute<osm_nwr_id_t>("id", 3, attributes);
   info.version = get_attribute<osm_nwr_id_t>("version", 8, attributes);
-  info.changeset = get_attribute<osm_changeset_id_t>("changeset", 2, attributes);
+  info.changeset = get_attribute<osm_changeset_id_t>("changeset", 10, attributes);
   info.timestamp = get_attribute<std::string>("timestamp", 10, attributes);
   info.uid = opt_attribute<osm_user_id_t>("uid", 4, attributes);
   info.display_name = opt_attribute<std::string>("user", 5, attributes);
   info.visible = get_attribute<bool_alpha>("visible", 8, attributes);
 }
 
+void parse_changeset_info(changeset_info &info, const xmlChar **attributes) {
+  info.id = get_attribute<osm_changeset_id_t>("id", 3, attributes);
+  info.created_at = get_attribute<std::string>("created_at", 11, attributes);
+  info.closed_at = get_attribute<std::string>("closed_at", 10, attributes);
+  info.uid = opt_attribute<osm_user_id_t>("uid", 4, attributes);
+  info.display_name = opt_attribute<std::string>("user", 5, attributes);
+
+  const boost::optional<double>
+    min_lat = opt_attribute<double>("min_lat", 8, attributes),
+    min_lon = opt_attribute<double>("min_lon", 8, attributes),
+    max_lat = opt_attribute<double>("max_lat", 8, attributes),
+    max_lon = opt_attribute<double>("max_lon", 8, attributes);
+
+  if (bool(min_lat) && bool(min_lon) && bool(max_lat) &&
+      bool(max_lon)) {
+    info.bounding_box = bbox(*min_lat, *min_lon, *max_lat, *max_lon);
+  } else {
+    info.bounding_box = boost::none;
+  }
+
+  info.num_changes = get_attribute<size_t>("num_changes", 11, attributes);
+  info.comments_count = 0;
+}
+
 struct xml_parser {
-  xml_parser(database *db) : m_db(db) {}
+  xml_parser(database *db)
+    : m_db(db),
+      m_cur_node(NULL),
+      m_cur_way(NULL),
+      m_cur_rel(NULL),
+      m_cur_tags(NULL),
+      m_cur_changeset(NULL),
+      m_in_text(false)
+    {}
 
   static void start_element(void *ctx, const xmlChar *name,
                             const xmlChar **attributes) {
@@ -112,6 +153,7 @@ struct xml_parser {
       parser->m_cur_tags = &(parser->m_cur_node->m_tags);
       parser->m_cur_way = NULL;
       parser->m_cur_rel = NULL;
+      parser->m_cur_changeset = NULL;
 
     } else if (strncmp((const char *)name, "way", 4) == 0) {
       way w;
@@ -122,6 +164,7 @@ struct xml_parser {
       parser->m_cur_tags = &(parser->m_cur_way->m_tags);
       parser->m_cur_node = NULL;
       parser->m_cur_rel = NULL;
+      parser->m_cur_changeset = NULL;
 
     } else if (strncmp((const char *)name, "relation", 9) == 0) {
       relation r;
@@ -132,6 +175,20 @@ struct xml_parser {
       parser->m_cur_tags = &(parser->m_cur_rel->m_tags);
       parser->m_cur_node = NULL;
       parser->m_cur_way = NULL;
+      parser->m_cur_changeset = NULL;
+
+    } else if (strncmp((const char *)name, "changeset", 10) == 0) {
+      changeset c;
+
+      parse_changeset_info(c.m_info, attributes);
+      std::pair<std::map<osm_changeset_id_t, changeset>::iterator, bool> status =
+        parser->m_db->m_changesets.insert(std::make_pair(c.m_info.id, c));
+
+      parser->m_cur_changeset = &(status.first->second);
+      parser->m_cur_tags = &(parser->m_cur_changeset->m_tags);
+      parser->m_cur_node = NULL;
+      parser->m_cur_way = NULL;
+      parser->m_cur_rel = NULL;
 
     } else if (strncmp((const char *)name, "tag", 4) == 0) {
       if (parser->m_cur_tags != NULL) {
@@ -170,6 +227,34 @@ struct xml_parser {
 
         parser->m_cur_rel->m_members.push_back(m);
       }
+    } else if (strncmp((const char *)name, "comment", 8) == 0) {
+      if (parser->m_cur_changeset != NULL) {
+        parser->m_cur_changeset->m_info.comments_count += 1;
+
+        changeset_comment_info info;
+        info.author_id = get_attribute<osm_user_id_t>("uid", 4, attributes);
+        info.author_display_name = get_attribute<std::string>("user", 5, attributes);
+        info.created_at = get_attribute<std::string>("date", 5, attributes);
+        parser->m_cur_changeset->m_comments.push_back(info);
+      }
+    } else if (strncmp((const char *)name, "text", 5) == 0) {
+      if ((parser->m_cur_changeset != NULL) &&
+          (parser->m_cur_changeset->m_comments.size() > 0)) {
+        parser->m_in_text = true;
+      }
+    }
+  }
+
+  static void end_element(void *ctx, const xmlChar *) {
+    xml_parser *parser = static_cast<xml_parser *>(ctx);
+    parser->m_in_text = false;
+  }
+
+  static void characters(void *ctx, const xmlChar *str, int len) {
+    xml_parser *parser = static_cast<xml_parser *>(ctx);
+
+    if (parser->m_in_text) {
+      parser->m_cur_changeset->m_comments.back().body.append((const char *)str, len);
     }
   }
 
@@ -191,6 +276,8 @@ struct xml_parser {
   way *m_cur_way;
   relation *m_cur_rel;
   tags_t *m_cur_tags;
+  changeset *m_cur_changeset;
+  bool m_in_text;
 };
 
 boost::shared_ptr<database> parse_xml(const char *filename) {
@@ -199,8 +286,10 @@ boost::shared_ptr<database> parse_xml(const char *filename) {
 
   handler.initialized = XML_SAX2_MAGIC;
   handler.startElement = &xml_parser::start_element;
+  handler.endElement = &xml_parser::end_element;
   handler.warning = &xml_parser::warning;
   handler.error = &xml_parser::error;
+  handler.characters = &xml_parser::characters;
 
   boost::shared_ptr<database> db = boost::make_shared<database>();
   xml_parser parser(db.get());
@@ -217,7 +306,9 @@ boost::shared_ptr<database> parse_xml(const char *filename) {
 }
 
 struct static_data_selection : public data_selection {
-  static_data_selection(boost::shared_ptr<database> db) : m_db(db) {}
+  explicit static_data_selection(boost::shared_ptr<database> db)
+    : m_db(db)
+    , m_include_changeset_comments(false) {}
   virtual ~static_data_selection() {}
 
   virtual void write_nodes(output_formatter &formatter) {
@@ -246,6 +337,19 @@ struct static_data_selection : public data_selection {
       if (itr != m_db->m_relations.end()) {
         const relation &r = itr->second;
         formatter.write_relation(r.m_info, r.m_members, r.m_tags);
+      }
+    }
+  }
+
+  virtual void write_changesets(output_formatter &formatter,
+                                const pt::ptime &now) {
+    BOOST_FOREACH(osm_changeset_id_t id, m_changesets) {
+      std::map<osm_changeset_id_t, changeset>::iterator itr = m_db->m_changesets.find(id);
+      if (itr != m_db->m_changesets.end()) {
+        const changeset &c = itr->second;
+        formatter.write_changeset(
+          c.m_info, c.m_tags, m_include_changeset_comments,
+          c.m_comments, now);
       }
     }
   }
@@ -447,13 +551,35 @@ struct static_data_selection : public data_selection {
     }
   }
 
+  virtual bool supports_changesets() { return true; }
+
+  virtual int select_changesets(const std::vector<osm_changeset_id_t> &ids) {
+    int selected = 0;
+    BOOST_FOREACH(osm_changeset_id_t id, ids) {
+      std::map<osm_changeset_id_t, changeset>::iterator itr = m_db->m_changesets.find(id);
+      if (itr != m_db->m_changesets.end()) {
+        m_changesets.insert(id);
+        ++selected;
+      }
+    }
+    return selected;
+  }
+
+  virtual void select_changeset_discussions() {
+    m_include_changeset_comments = true;
+  }
+
+
 private:
   boost::shared_ptr<database> m_db;
+  std::set<osm_changeset_id_t> m_changesets;
   std::set<osm_nwr_id_t> m_nodes, m_ways, m_relations;
+  bool m_include_changeset_comments;
 };
 
 struct factory : public data_selection::factory {
-  factory(const std::string &file) : m_database(parse_xml(file.c_str())) {}
+  factory(const std::string &file)
+    : m_database(parse_xml(file.c_str())) {}
 
   virtual ~factory() {}
 

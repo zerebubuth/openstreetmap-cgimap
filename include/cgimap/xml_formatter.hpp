@@ -37,6 +37,12 @@ public:
   void write_relation(const element_info &elem, const members_t &members,
                       const tags_t &tags);
 
+  void write_changeset(const changeset_info &elem,
+                       const tags_t &tags,
+                       bool include_comments,
+                       const comments_t &comments,
+                       const boost::posix_time::ptime &now);
+
   void flush();
   void error(const std::string &);
 };

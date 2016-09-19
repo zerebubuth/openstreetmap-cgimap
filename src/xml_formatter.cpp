@@ -7,6 +7,7 @@
 using std::string;
 using boost::shared_ptr;
 using std::transform;
+namespace pt = boost::posix_time;
 
 namespace {
 
@@ -144,6 +145,56 @@ void xml_formatter::write_relation(const element_info &elem,
   }
 
   write_tags(tags);
+
+  writer->end();
+}
+
+void xml_formatter::write_changeset(const changeset_info &elem,
+                                    const tags_t &tags,
+                                    bool include_comments,
+                                    const comments_t &comments,
+                                    const pt::ptime &now) {
+  writer->start("changeset");
+
+  writer->attribute("id", elem.id);
+  writer->attribute("created_at", elem.created_at);
+  const bool is_open = elem.is_open_at(now);
+  if (!is_open) {
+    writer->attribute("closed_at", elem.closed_at);
+  }
+  writer->attribute("open", is_open);
+
+  if (bool(elem.display_name) && bool(elem.uid)) {
+    writer->attribute("user", elem.display_name.get());
+    writer->attribute("uid", elem.uid.get());
+  }
+
+  if (elem.bounding_box) {
+    writer->attribute("min_lat", elem.bounding_box->minlat);
+    writer->attribute("min_lon", elem.bounding_box->minlon);
+    writer->attribute("max_lat", elem.bounding_box->maxlat);
+    writer->attribute("max_lon", elem.bounding_box->maxlon);
+  }
+
+  writer->attribute("comments_count", elem.comments_count);
+
+  write_tags(tags);
+
+  if (include_comments) {
+    writer->start("discussion");
+    for (comments_t::const_iterator itr = comments.begin();
+         itr != comments.end(); ++itr) {
+      writer->start("comment");
+      writer->attribute("date", itr->created_at);
+      writer->attribute("uid", itr->author_id);
+      writer->attribute("user", itr->author_display_name);
+      writer->start("text");
+      writer->text(itr->body);
+      writer->end();
+      writer->end();
+    }
+    writer->end();
+  }
 
   writer->end();
 }

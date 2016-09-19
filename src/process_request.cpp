@@ -111,7 +111,7 @@ process_get_request(request &req, routes &route,
 
   try {
     // call to write the response
-    responder->write(o_formatter, generator);
+    responder->write(o_formatter, generator, req.get_current_time());
 
     // ensure the request is finished
     req.finish();
@@ -316,7 +316,7 @@ void process_request(request &req, rate_limiter &limiter,
     // process request
     if (method == "GET") {
       boost::tie(request_name, bytes_written) =
-          process_get_request(req, route, factory, ip, generator);
+        process_get_request(req, route, factory, ip, generator);
 
     } else if (method == "HEAD") {
       boost::tie(request_name, bytes_written) =

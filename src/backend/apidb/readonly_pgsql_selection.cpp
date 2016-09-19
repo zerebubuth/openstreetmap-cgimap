@@ -1,5 +1,6 @@
 #include "cgimap/backend/apidb/readonly_pgsql_selection.hpp"
 #include "cgimap/backend/apidb/apidb.hpp"
+#include "cgimap/backend/apidb/pqxx_string_traits.hpp"
 #include "cgimap/logger.hpp"
 #include "cgimap/backend/apidb/quad_tile.hpp"
 #include "cgimap/infix_ostream_iterator.hpp"
@@ -19,6 +20,7 @@
 #endif
 
 namespace po = boost::program_options;
+namespace pt = boost::posix_time;
 using std::set;
 using std::stringstream;
 using std::list;
@@ -27,69 +29,6 @@ using boost::shared_ptr;
 
 // number of nodes to chunk together
 #define STRIDE (1000)
-
-namespace pqxx {
-template <> struct string_traits<vector<osm_nwr_id_t> > {
-  static const char *name() { return "vector<osm_nwr_id_t>"; }
-  static bool has_null() { return false; }
-  static bool is_null(const vector<osm_nwr_id_t> &) { return false; }
-  static stringstream null() {
-    internal::throw_null_conversion(name());
-    // No, dear compiler, we don't need a return here.
-    throw 0;
-  }
-  static void from_string(const char[], vector<osm_nwr_id_t> &) {}
-  static std::string to_string(const vector<osm_nwr_id_t> &ids) {
-    stringstream ostr;
-    ostr << "{";
-    std::copy(ids.begin(), ids.end(),
-              infix_ostream_iterator<osm_nwr_id_t>(ostr, ","));
-    ostr << "}";
-    return ostr.str();
-  }
-};
-template <> struct string_traits<set<osm_nwr_id_t> > {
-  static const char *name() { return "set<osm_nwr_id_t>"; }
-  static bool has_null() { return false; }
-  static bool is_null(const set<osm_nwr_id_t> &) { return false; }
-  static stringstream null() {
-    internal::throw_null_conversion(name());
-    // No, dear compiler, we don't need a return here.
-    throw 0;
-  }
-  static void from_string(const char[], set<osm_nwr_id_t> &) {}
-  static std::string to_string(const set<osm_nwr_id_t> &ids) {
-    stringstream ostr;
-    ostr << "{";
-    std::copy(ids.begin(), ids.end(),
-              infix_ostream_iterator<osm_nwr_id_t>(ostr, ","));
-    ostr << "}";
-    return ostr.str();
-  }
-};
-
-// need this for PQXX to serialise lists of tile_id_t, which is different
-// from osm_nwr_id_t
-template <> struct string_traits<vector<tile_id_t> > {
-  static const char *name() { return "vector<tile_id_t>"; }
-  static bool has_null() { return false; }
-  static bool is_null(const vector<tile_id_t> &) { return false; }
-  static stringstream null() {
-    internal::throw_null_conversion(name());
-    // No, dear compiler, we don't need a return here.
-    throw 0;
-  }
-  static void from_string(const char[], vector<tile_id_t> &) {}
-  static std::string to_string(const vector<tile_id_t> &ids) {
-    stringstream ostr;
-    ostr << "{";
-    std::copy(ids.begin(), ids.end(),
-              infix_ostream_iterator<tile_id_t>(ostr, ","));
-    ostr << "}";
-    return ostr.str();
-  }
-};
-}
 
 namespace {
 std::string connect_db_str(const po::variables_map &options) {
@@ -128,12 +67,13 @@ check_table_visibility(pqxx::work &w, osm_nwr_id_t id,
   }
 }
 
-inline int insert_results(const pqxx::result &res, set<osm_nwr_id_t> &elems) {
+template <typename T>
+inline int insert_results(const pqxx::result &res, set<T> &elems) {
   int num_inserted = 0;
 
   for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
        ++itr) {
-    const osm_nwr_id_t id = (*itr)["id"].as<osm_nwr_id_t>();
+    const T id = (*itr)["id"].as<T>();
 
     // note: only count the *new* rows inserted.
     if (elems.insert(id).second) {
@@ -165,6 +105,48 @@ void extract_elem(const pqxx::result::tuple &row, element_info &elem,
     elem.uid = boost::none;
     elem.display_name = boost::none;
   }
+}
+
+template <typename T>
+boost::optional<T> extract_optional(const pqxx::result::field &f) {
+  if (f.is_null()) {
+    return boost::none;
+  } else {
+    return f.as<T>();
+  }
+}
+
+void extract_changeset(const pqxx::result::tuple &row,
+                       changeset_info &elem,
+                       cache<osm_changeset_id_t, changeset> &changeset_cache) {
+  elem.id = row["id"].as<osm_changeset_id_t>();
+  elem.created_at = row["created_at"].c_str();
+  elem.closed_at = row["closed_at"].c_str();
+
+  shared_ptr<changeset const> cs = changeset_cache.get(elem.id);
+  if (cs->data_public) {
+    elem.uid = cs->user_id;
+    elem.display_name = cs->display_name;
+  } else {
+    elem.uid = boost::none;
+    elem.display_name = boost::none;
+  }
+
+  boost::optional<int64_t> min_lat = extract_optional<int64_t>(row["min_lat"]);
+  boost::optional<int64_t> max_lat = extract_optional<int64_t>(row["max_lat"]);
+  boost::optional<int64_t> min_lon = extract_optional<int64_t>(row["min_lon"]);
+  boost::optional<int64_t> max_lon = extract_optional<int64_t>(row["max_lon"]);
+
+  if (bool(min_lat) && bool(min_lon) && bool(max_lat) && bool(max_lon)) {
+    elem.bounding_box = bbox(double(*min_lat) / SCALE,
+                             double(*min_lon) / SCALE,
+                             double(*max_lat) / SCALE,
+                             double(*max_lon) / SCALE);
+  } else {
+    elem.bounding_box = boost::none;
+  }
+
+  elem.num_changes = row["num_changes"].as<size_t>();
 }
 
 void extract_tags(const pqxx::result &res, tags_t &tags) {
@@ -224,11 +206,25 @@ void extract_members(const pqxx::result &res, members_t &members) {
   }
 }
 
+void extract_comments(const pqxx::result &res, comments_t &comments) {
+  changeset_comment_info comment;
+  comments.clear();
+  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
+       ++itr) {
+    comment.author_id = (*itr)["author_id"].as<osm_user_id_t>();
+    comment.author_display_name = (*itr)["display_name"].c_str();
+    comment.body = (*itr)["body"].c_str();
+    comment.created_at = (*itr)["created_at"].c_str();
+    comments.push_back(comment);
+  }
+}
+
 } // anonymous namespace
 
 readonly_pgsql_selection::readonly_pgsql_selection(
     pqxx::connection &conn, cache<osm_changeset_id_t, changeset> &changeset_cache)
-    : w(conn), cc(changeset_cache) {}
+    : w(conn), cc(changeset_cache)
+    , include_changeset_discussions(false) {}
 
 readonly_pgsql_selection::~readonly_pgsql_selection() {}
 
@@ -341,6 +337,47 @@ void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
                         members);
         extract_tags(w.prepared("extract_relation_tags")(elem.id).exec(), tags);
         formatter.write_relation(elem, members, tags);
+      }
+
+      chunk_i = 0;
+      prev_itr = n_itr;
+    }
+
+    if (at_end)
+      break;
+  }
+}
+
+void readonly_pgsql_selection::write_changesets(output_formatter &formatter,
+                                                const pt::ptime &now) {
+  changeset_info elem;
+  tags_t tags;
+  comments_t comments;
+
+  // fetch in chunks...
+  set<osm_changeset_id_t>::iterator prev_itr = sel_changesets.begin();
+  size_t chunk_i = 0;
+  for (set<osm_changeset_id_t>::iterator n_itr = sel_changesets.begin();;
+       ++n_itr, ++chunk_i) {
+    bool at_end = n_itr == sel_changesets.end();
+    if ((chunk_i >= STRIDE) || ((chunk_i > 0) && at_end)) {
+      stringstream query;
+      query << "SELECT id, "
+            << "to_char(created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at, "
+            << "to_char(closed_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS closed_at, "
+            << "min_lat, max_lat, min_lon, max_lon, "
+            << "num_changes "
+            << "FROM changesets WHERE id IN (";
+      std::copy(prev_itr, n_itr, infix_ostream_iterator<osm_changeset_id_t>(query, ","));
+      query << ")";
+
+      pqxx::result changesets = w.exec(query);
+      for (pqxx::result::const_iterator itr = changesets.begin();
+           itr != changesets.end(); ++itr) {
+        extract_changeset(*itr, elem, cc);
+        extract_tags(w.prepared("extract_changeset_tags")(elem.id).exec(), tags);
+        extract_comments(w.prepared("extract_changeset_comments")(elem.id).exec(), comments);
+        formatter.write_changeset(elem, tags, include_changeset_discussions, comments, now);
       }
 
       chunk_i = 0;
@@ -473,6 +510,22 @@ void readonly_pgsql_selection::select_relations_members_of_relations() {
   }
 }
 
+bool readonly_pgsql_selection::supports_changesets() {
+  return true;
+}
+
+int readonly_pgsql_selection::select_changesets(const std::vector<osm_changeset_id_t> &ids) {
+  if (!ids.empty()) {
+    return insert_results(w.prepared("select_changesets")(ids).exec(), sel_changesets);
+  } else {
+    return 0;
+  }
+}
+
+void readonly_pgsql_selection::select_changeset_discussions() {
+  include_changeset_discussions = true;
+}
+
 readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
     : m_connection(connect_db_str(opts)),
       m_cache_connection(connect_db_str(opts)),
@@ -532,6 +585,14 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
       "WHERE relation_id=$1 "
       "ORDER BY sequence_id ASC")
     PREPARE_ARGS(("bigint"));
+  m_connection.prepare("extract_changeset_comments",
+    "SELECT cc.author_id, u.display_name, cc.body, "
+        "to_char(cc.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at "
+      "FROM changeset_comments cc "
+      "JOIN users u ON cc.author_id = u.id "
+      "WHERE cc.changeset_id=$1 AND cc.visible "
+      "ORDER BY cc.created_at ASC")
+    PREPARE_ARGS(("bigint"));
 
   // extraction functions for tags
   m_connection.prepare("extract_node_tags",
@@ -540,6 +601,8 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
     "SELECT k, v FROM current_way_tags WHERE way_id=$1")PREPARE_ARGS(("bigint"));
   m_connection.prepare("extract_relation_tags",
     "SELECT k, v FROM current_relation_tags WHERE relation_id=$1")PREPARE_ARGS(("bigint"));
+  m_connection.prepare("extract_changeset_tags",
+    "SELECT k, v FROM changeset_tags WHERE changeset_id=$1")PREPARE_ARGS(("bigint"));
 
   // selecting a set of objects as a list
   m_connection.prepare("select_nodes",
@@ -555,6 +618,11 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
   m_connection.prepare("select_relations",
     "SELECT id "
       "FROM current_relations "
+      "WHERE id = ANY($1)")
+    PREPARE_ARGS(("bigint[]"));
+  m_connection.prepare("select_changesets",
+    "SELECT id "
+      "FROM changesets "
       "WHERE id = ANY($1)")
     PREPARE_ARGS(("bigint[]"));
 
