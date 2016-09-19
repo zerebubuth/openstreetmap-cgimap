@@ -1,3 +1,9 @@
+openstreetmap-cgimap (0.5.0-0ubuntu2ppa1~xenial1) xenial; urgency=medium
+
+  * Add support for changeset metadata and discussions.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Mon 19 Sep 2016 21:07:06 +0100
+
 openstreetmap-cgimap (0.4.3-0ubuntu2ppa1~xenial2) xenial; urgency=medium
 
   * Add postinst call to ldconfig.
