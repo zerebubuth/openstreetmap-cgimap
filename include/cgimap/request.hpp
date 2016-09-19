@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
 
 // forward declaration of output_buffer, which is only needed here by
 // reference.
@@ -28,6 +29,9 @@ struct request {
   // get the value associated with a key in the request headers. returns NULL if
   // the key could not be found. this function can be called at any time.
   virtual const char *get_param(const char *key) = 0;
+
+  // get the current time of the request.
+  virtual boost::posix_time::ptime get_current_time() const = 0;
 
   /********************** RESPONSE HEADER FUNCTIONS **************************/
 

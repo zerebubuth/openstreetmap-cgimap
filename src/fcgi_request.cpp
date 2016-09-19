@@ -39,9 +39,10 @@ private:
 
 struct fcgi_request::pimpl {
   FCGX_Request req;
+  boost::posix_time::ptime now;
 };
 
-fcgi_request::fcgi_request(int socket) : m_impl(new pimpl) {
+fcgi_request::fcgi_request(int socket, const boost::posix_time::ptime &now) : m_impl(new pimpl) {
   // initialise FCGI
   if (FCGX_Init() != 0) {
     throw runtime_error("Couldn't initialise FCGX library.");
@@ -49,6 +50,7 @@ fcgi_request::fcgi_request(int socket) : m_impl(new pimpl) {
   if (FCGX_InitRequest(&m_impl->req, socket, FCGI_FAIL_ACCEPT_ON_INTR) != 0) {
     throw runtime_error("Couldn't initialise FCGX request structure.");
   }
+  m_impl->now = now;
   m_buffer = boost::shared_ptr<output_buffer>(new fcgi_buffer(m_impl->req));
 }
 
@@ -56,6 +58,14 @@ fcgi_request::~fcgi_request() { FCGX_Free(&m_impl->req, true); }
 
 const char *fcgi_request::get_param(const char *key) {
   return FCGX_GetParam(key, m_impl->req.envp);
+}
+
+boost::posix_time::ptime fcgi_request::get_current_time() const {
+  return m_impl->now;
+}
+
+void fcgi_request::set_current_time(const boost::posix_time::ptime &now) {
+  m_impl->now = now;
 }
 
 void fcgi_request::write_header_info(int status,

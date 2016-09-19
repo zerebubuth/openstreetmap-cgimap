@@ -3,6 +3,7 @@
 #include "cgimap/backend/staticxml/staticxml.hpp"
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/config.hpp"
+#include "cgimap/time.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -22,6 +23,7 @@ namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 namespace al = boost::algorithm;
 namespace pt = boost::property_tree;
+namespace bt = boost::posix_time;
 
 /**
  * Mock output buffer so that we can get back an in-memory result as a string
@@ -71,6 +73,9 @@ struct test_request : public request {
   }
   std::stringstream &buffer() { return m_output; }
 
+  bt::ptime get_current_time() const { return m_now; }
+  void set_current_time(const bt::ptime &now) { m_now = now; }
+
 protected:
   virtual void write_header_info(int status, const headers_t &headers) {
     assert(m_output.tellp() == 0);
@@ -88,6 +93,7 @@ protected:
 private:
   std::stringstream m_output;
   std::map<std::string, std::string> m_params;
+  bt::ptime m_now;
 };
 
 std::map<std::string, std::string> read_headers(std::istream &in,
@@ -145,7 +151,12 @@ void setup_request_headers(test_request &req, std::istream &in) {
     al::to_upper(key);
     al::replace_all(key, "-", "_");
 
-    req.set_header(key, val.second);
+    if (key == "DATE") {
+      req.set_current_time(parse_time(val.second));
+
+    } else {
+      req.set_header(key, val.second);
+    }
   }
 
   // always set the remote addr variable
@@ -179,20 +190,37 @@ void check_xmlattr(const pt::ptree &expected, const pt::ptree &actual) {
   if (act_keys.size() > exp_keys.size()) {
     BOOST_FOREACH(const std::string &ek, exp_keys) { act_keys.erase(ek); }
     std::ostringstream out;
-    out << "Missing attributes [";
+    out << "Extra attributes [";
     BOOST_FOREACH(const std::string &ak, act_keys) { out << ak << " "; }
     out << "]";
     throw std::runtime_error(out.str());
   }
 
   BOOST_FOREACH(const std::string &k, exp_keys) {
-    std::string exp_val = expected.get_child(k).data();
-    std::string act_val = actual.get_child(k).data();
-    if ((exp_val != act_val) && (exp_val != "***")) {
-      throw std::runtime_error(
+    boost::optional<const pt::ptree &> exp_child = expected.get_child_optional(k);
+    boost::optional<const pt::ptree &> act_child = actual.get_child_optional(k);
+
+    if (exp_child) {
+      if (act_child) {
+        std::string exp_val = exp_child->data();
+        std::string act_val = act_child->data();
+        if ((exp_val != act_val) && (exp_val != "***")) {
+          throw std::runtime_error(
+            (boost::format(
+              "Attribute `%1%' expected value `%2%', but got `%3%'") %
+             k % exp_val % act_val).str());
+        }
+      } else {
+        throw std::runtime_error(
           (boost::format(
-               "Attribute `%1%' expected value `%2%', but got `%3%'") %
-           k % exp_val % act_val).str());
+            "Expected to find attribute `%1%', but it was missing.") %
+           k).str());
+      }
+    } else if (act_child) {
+      throw std::runtime_error(
+        (boost::format(
+          "Found attribute `%1%', but it was not expected to exist.") %
+           k).str());
     }
   }
 }
@@ -500,13 +528,14 @@ void run_test(fs::path test_case, rate_limiter &limiter,
               boost::shared_ptr<data_selection::factory> factory) {
   try {
     test_request req;
+    boost::shared_ptr<oauth::store> empty_store;
 
     // set up request headers from test case
     fs::ifstream in(test_case);
     setup_request_headers(req, in);
 
     // execute the request
-    process_request(req, limiter, generator, route, factory);
+    process_request(req, limiter, generator, route, factory, empty_store);
 
     // compare the result to what we're expecting
     check_response(in, req.buffer());

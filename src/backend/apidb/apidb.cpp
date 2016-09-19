@@ -1,6 +1,7 @@
 #include "cgimap/backend/apidb/apidb.hpp"
 #include "cgimap/backend/apidb/writeable_pgsql_selection.hpp"
 #include "cgimap/backend/apidb/readonly_pgsql_selection.hpp"
+#include "cgimap/backend/apidb/oauth_store.hpp"
 #include "cgimap/backend.hpp"
 
 #include <boost/make_shared.hpp>
@@ -27,7 +28,19 @@ struct apidb_backend : public backend {
       ("cachesize", po::value<size_t>()->default_value(CACHE_SIZE),
        "maximum size of changeset cache")
       ("dbport", po::value<string>(),
-       "database port number or UNIX socket file name");
+       "database port number or UNIX socket file name")
+      ("oauth-dbname", po::value<string>(),
+       "database name to use for OAuth, if different from --dbname")
+      ("oauth-host", po::value<string>(),
+       "database server host for OAuth, if different from --host")
+      ("oauth-username", po::value<string>(),
+       "database user name for OAuth, if different from --username")
+      ("oauth-password", po::value<string>(),
+       "database password for OAuth, if different from --password")
+      ("oauth-charset", po::value<string>(),
+       "database character set for OAuth, if different from --charset")
+      ("oauth-dbport", po::value<string>(),
+       "database port for OAuth, if different from --dbport");
     // clang-format on
   }
   virtual ~apidb_backend() {}
@@ -51,6 +64,13 @@ struct apidb_backend : public backend {
     }
 
     return factory;
+  }
+
+  boost::shared_ptr<oauth::store> create_oauth_store(
+    const po::variables_map &opts) {
+    shared_ptr<oauth::store> store =
+      boost::make_shared<oauth_store>(opts);
+    return store;
   }
 
 private:

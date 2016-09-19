@@ -113,6 +113,9 @@ struct match_string : public ops<match_string> {
   match_string(const std::string &s);
   match_string(const char *s);
 
+  // copy just copies the held string
+  inline match_string(const match_string &m) : str(m.str) {}
+
   match_type match(part_iterator &begin, const part_iterator &end) const;
 
 private:

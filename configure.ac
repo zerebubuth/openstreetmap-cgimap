@@ -1,7 +1,7 @@
 AC_INIT([CGImap],
-        [0.4.3],
+        [0.5.0],
         [https://github.com/zerebubuth/openstreetmap-cgimap/issues],
-        [cgimap-0.4.3],
+        [cgimap-0.5.0],
         [https://github.com/zerebubuth/openstreetmap-cgimap])
 AM_INIT_AUTOMAKE([subdir-objects parallel-tests])
 LT_INIT
@@ -47,6 +47,7 @@ AX_BOOST_SYSTEM
 AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_DATE_TIME
 AX_BOOST_FILESYSTEM
+AX_BOOST_LOCALE
 
 # the boost libraries are required, not optional, but the
 # AX_BOOST_* checks only error if the headers aren't
@@ -59,9 +60,15 @@ AS_IF([test "x$BOOST_PROGRAM_OPTIONS_LIB" == "x"],
       [AC_MSG_ERROR([Boost::ProgramOptions library not detected, please install libboost-program-options-dev.])],)
 AS_IF([test "x$BOOST_DATE_TIME_LIB" == "x"],
       [AC_MSG_ERROR([Boost::DateTime library not detected, please install libboost-date-time-dev.])],)
+## travis-ci doesn't have a boost with locale yet (grumble,
+## grumble), so put up with not having this lib available.
+#
+#AS_IF([test "x$BOOST_LOCALE_LIB" == "x"],
+#		[AC_MSG_ERROR([Boost::Locale library not detected, please install libboost-locale-dev.])],)
 
 AX_CHECK_ZLIB
 REQUIRE_FCGI
+REQUIRE_CRYPTOPP
 
 AC_MSG_CHECKING([whether to enable experimental other API 0.6 calls])
 AC_ARG_ENABLE([experimental],

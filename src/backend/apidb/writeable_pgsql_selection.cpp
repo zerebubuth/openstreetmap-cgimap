@@ -3,7 +3,7 @@
 #include "cgimap/logger.hpp"
 #include "cgimap/backend/apidb/quad_tile.hpp"
 #include "cgimap/infix_ostream_iterator.hpp"
-
+#include "cgimap/backend/apidb/pqxx_string_traits.hpp"
 #include <set>
 #include <sstream>
 #include <list>
@@ -20,55 +20,11 @@
 #endif
 
 namespace po = boost::program_options;
+namespace pt = boost::posix_time;
 using std::set;
-using std::stringstream;
 using std::list;
 using std::vector;
 using boost::shared_ptr;
-
-namespace pqxx {
-template <> struct string_traits<vector<osm_nwr_id_t> > {
-  static const char *name() { return "vector<osm_nwr_id_t>"; }
-  static bool has_null() { return false; }
-  static bool is_null(const vector<osm_nwr_id_t> &) { return false; }
-  static stringstream null() {
-    internal::throw_null_conversion(name());
-    // No, dear compiler, we don't need a return here.
-    throw 0;
-  }
-  static void from_string(const char[], vector<osm_nwr_id_t> &) {}
-  static std::string to_string(const vector<osm_nwr_id_t> &ids) {
-    stringstream ostr;
-    ostr << "{";
-    std::copy(ids.begin(), ids.end(),
-              infix_ostream_iterator<osm_nwr_id_t>(ostr, ","));
-    ostr << "}";
-    return ostr.str();
-  }
-};
-
-// need this for PQXX to serialise lists of tile_id_t, which is different
-// from osm_nwr_id_t
-template <> struct string_traits<vector<tile_id_t> > {
-  static const char *name() { return "vector<tile_id_t>"; }
-  static bool has_null() { return false; }
-  static bool is_null(const vector<tile_id_t> &) { return false; }
-  static stringstream null() {
-    internal::throw_null_conversion(name());
-    // No, dear compiler, we don't need a return here.
-    throw 0;
-  }
-  static void from_string(const char[], vector<tile_id_t> &) {}
-  static std::string to_string(const vector<tile_id_t> &ids) {
-    stringstream ostr;
-    ostr << "{";
-    std::copy(ids.begin(), ids.end(),
-              infix_ostream_iterator<tile_id_t>(ostr, ","));
-    ostr << "}";
-    return ostr.str();
-  }
-};
-}
 
 namespace {
 std::string connect_db_str(const po::variables_map &options) {
@@ -122,6 +78,48 @@ void extract_elem(const pqxx::result::tuple &row, element_info &elem,
     elem.uid = boost::none;
     elem.display_name = boost::none;
   }
+}
+
+template <typename T>
+boost::optional<T> extract_optional(const pqxx::result::field &f) {
+  if (f.is_null()) {
+    return boost::none;
+  } else {
+    return f.as<T>();
+  }
+}
+
+void extract_changeset(const pqxx::result::tuple &row,
+                       changeset_info &elem,
+                       cache<osm_changeset_id_t, changeset> &changeset_cache) {
+  elem.id = row["id"].as<osm_changeset_id_t>();
+  elem.created_at = row["created_at"].c_str();
+  elem.closed_at = row["closed_at"].c_str();
+
+  shared_ptr<changeset const> cs = changeset_cache.get(elem.id);
+  if (cs->data_public) {
+    elem.uid = cs->user_id;
+    elem.display_name = cs->display_name;
+  } else {
+    elem.uid = boost::none;
+    elem.display_name = boost::none;
+  }
+
+  boost::optional<int64_t> min_lat = extract_optional<int64_t>(row["min_lat"]);
+  boost::optional<int64_t> max_lat = extract_optional<int64_t>(row["max_lat"]);
+  boost::optional<int64_t> min_lon = extract_optional<int64_t>(row["min_lon"]);
+  boost::optional<int64_t> max_lon = extract_optional<int64_t>(row["max_lon"]);
+
+  if (bool(min_lat) && bool(min_lon) && bool(max_lat) && bool(max_lon)) {
+    elem.bounding_box = bbox(double(*min_lat) / SCALE,
+                             double(*min_lon) / SCALE,
+                             double(*max_lat) / SCALE,
+                             double(*max_lon) / SCALE);
+  } else {
+    elem.bounding_box = boost::none;
+  }
+
+  elem.num_changes = row["num_changes"].as<size_t>();
 }
 
 void extract_tags(const pqxx::result &res, tags_t &tags) {
@@ -181,14 +179,29 @@ void extract_members(const pqxx::result &res, members_t &members) {
   }
 }
 
+void extract_comments(const pqxx::result &res, comments_t &comments) {
+  changeset_comment_info comment;
+  comments.clear();
+  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
+       ++itr) {
+    comment.author_id = (*itr)["author_id"].as<osm_user_id_t>();
+    comment.author_display_name = (*itr)["display_name"].c_str();
+    comment.body = (*itr)["body"].c_str();
+    comment.created_at = (*itr)["created_at"].c_str();
+    comments.push_back(comment);
+  }
+}
+
 } // anonymous namespace
 
 writeable_pgsql_selection::writeable_pgsql_selection(
     pqxx::connection &conn, cache<osm_changeset_id_t, changeset> &changeset_cache)
-    : w(conn), cc(changeset_cache) {
+    : w(conn), cc(changeset_cache)
+    , include_changeset_discussions(false) {
   w.exec("CREATE TEMPORARY TABLE tmp_nodes (id bigint PRIMARY KEY)");
   w.exec("CREATE TEMPORARY TABLE tmp_ways (id bigint PRIMARY KEY)");
   w.exec("CREATE TEMPORARY TABLE tmp_relations (id bigint PRIMARY KEY)");
+  w.exec("CREATE TEMPORARY TABLE tmp_changesets (id bigint PRIMARY KEY)");
   m_tables_empty = true;
 }
 
@@ -246,6 +259,22 @@ void writeable_pgsql_selection::write_relations(output_formatter &formatter) {
                     members);
     extract_tags(w.prepared("extract_relation_tags")(elem.id).exec(), tags);
     formatter.write_relation(elem, members, tags);
+  }
+}
+
+void writeable_pgsql_selection::write_changesets(output_formatter &formatter,
+                                                 const pt::ptime &now) {
+  changeset_info elem;
+  tags_t tags;
+  comments_t comments;
+
+  pqxx::result changesets = w.prepared("extract_changesets").exec();
+  for (pqxx::result::const_iterator itr = changesets.begin();
+       itr != changesets.end(); ++itr) {
+    extract_changeset(*itr, elem, cc);
+    extract_tags(w.prepared("extract_changeset_tags")(elem.id).exec(), tags);
+    extract_comments(w.prepared("extract_changeset_comments")(elem.id).exec(), comments);
+    formatter.write_changeset(elem, tags, include_changeset_discussions, comments, now);
   }
 }
 
@@ -344,6 +373,18 @@ void writeable_pgsql_selection::select_relations_from_relations() {
 
 void writeable_pgsql_selection::select_relations_members_of_relations() {
   w.prepared("relation_members_of_relations").exec();
+}
+
+bool writeable_pgsql_selection::supports_changesets() {
+  return true;
+}
+
+int writeable_pgsql_selection::select_changesets(const std::vector<osm_changeset_id_t> &ids) {
+  return w.prepared("add_changesets_list")(ids).exec().affected_rows();
+}
+
+void writeable_pgsql_selection::select_changeset_discussions() {
+  include_changeset_discussions = true;
 }
 
 namespace {
@@ -454,6 +495,14 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
         "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp "
       "FROM current_relations r "
         "JOIN tmp_relations tr ON tr.id=r.id");
+  m_connection.prepare("extract_changesets",
+     "SELECT c.id, "
+       "to_char(c.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at, "
+       "to_char(c.closed_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS closed_at, "
+       "c.min_lat, c.max_lat, c.min_lon, c.max_lon, "
+       "c.num_changes "
+     "FROM changesets c "
+       "JOIN tmp_changesets tc ON tc.id=c.id");
 
   // extraction functions for child information
   m_connection.prepare("extract_way_nds",
@@ -468,6 +517,14 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       "WHERE relation_id=$1 "
       "ORDER BY sequence_id ASC")
     PREPARE_ARGS(("bigint"));
+  m_connection.prepare("extract_changeset_comments",
+    "SELECT cc.author_id, u.display_name, cc.body, "
+        "to_char(cc.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at "
+      "FROM changeset_comments cc "
+      "JOIN users u ON cc.author_id = u.id "
+      "WHERE cc.changeset_id=$1 AND cc.visible "
+      "ORDER BY cc.created_at ASC")
+    PREPARE_ARGS(("bigint"));
 
   // extraction functions for tags
   m_connection.prepare("extract_node_tags",
@@ -476,6 +533,8 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
     "SELECT k, v FROM current_way_tags WHERE way_id=$1")PREPARE_ARGS(("bigint"));
   m_connection.prepare("extract_relation_tags",
     "SELECT k, v FROM current_relation_tags WHERE relation_id=$1")PREPARE_ARGS(("bigint"));
+  m_connection.prepare("extract_changeset_tags",
+    "SELECT k, v FROM changeset_tags WHERE changeset_id=$1")PREPARE_ARGS(("bigint"));
 
   // selecting a set of nodes as a list
   m_connection.prepare("add_nodes_list",
@@ -501,6 +560,11 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
           "LEFT JOIN tmp_relations tr ON r.id = tr.id "
         "WHERE r.id = ANY($1) "
           "AND tr.id IS NULL")
+    PREPARE_ARGS(("bigint[]"));
+  m_connection.prepare("add_changesets_list",
+    "INSERT INTO tmp_changesets "
+      "SELECT c.id from changesets c "
+        "WHERE c.id = ANY($1)")
     PREPARE_ARGS(("bigint[]"));
 
   // queries for filling elements which are used as members in relations

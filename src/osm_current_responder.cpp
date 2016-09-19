@@ -3,6 +3,7 @@
 
 using std::list;
 using boost::shared_ptr;
+namespace pt = boost::posix_time;
 
 osm_current_responder::osm_current_responder(mime::type mt, factory_ptr &f,
                                              boost::optional<bbox> b)
@@ -11,7 +12,8 @@ osm_current_responder::osm_current_responder(mime::type mt, factory_ptr &f,
 osm_current_responder::~osm_current_responder() {}
 
 void osm_current_responder::write(shared_ptr<output_formatter> formatter,
-                                  const std::string &generator) {
+                                  const std::string &generator,
+                                  const pt::ptime &now) {
   // TODO: is it possible that formatter can be null?
   output_formatter &fmt = *formatter;
 
@@ -20,6 +22,11 @@ void osm_current_responder::write(shared_ptr<output_formatter> formatter,
     if (bounds) {
       fmt.write_bounds(bounds.get());
     }
+
+    // write all selected changesets
+    fmt.start_element_type(element_type_changeset);
+    sel->write_changesets(fmt, now);
+    fmt.end_element_type(element_type_changeset);
 
     // write all selected nodes
     fmt.start_element_type(element_type_node);

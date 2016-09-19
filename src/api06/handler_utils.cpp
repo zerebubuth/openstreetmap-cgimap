@@ -12,16 +12,28 @@ using std::list;
 using std::string;
 using std::map;
 using std::vector;
+using std::pair;
 using boost::lexical_cast;
 using boost::bad_lexical_cast;
 namespace al = boost::algorithm;
+
+namespace {
+struct first_equals {
+  first_equals(const std::string &k) : m_key(k) {}
+  bool operator()(const pair<string, string> &v) const {
+    return v.first == m_key;
+  }
+  string m_key;
+};
+} // anonymous namespace
 
 namespace api06 {
 
 vector<osm_nwr_id_t> parse_id_list_params(request &req, const string &param_name) {
   string decoded = http::urldecode(get_query_string(req));
-  const map<string, string> params = http::parse_params(decoded);
-  map<string, string>::const_iterator itr = params.find(param_name);
+  const vector<pair<string, string> > params = http::parse_params(decoded);
+  vector<pair<string, string> >::const_iterator itr =
+    std::find_if(params.begin(), params.end(), first_equals(param_name));
 
   vector<osm_nwr_id_t> myids;
 
@@ -33,8 +45,21 @@ vector<osm_nwr_id_t> parse_id_list_params(request &req, const string &param_name
       try {
         for (vector<string>::iterator itr = strs.begin(); itr != strs.end();
              ++itr) {
-          osm_nwr_id_t id = lexical_cast<osm_nwr_id_t>(*itr);
-          myids.push_back(id);
+          // parse as a 64-bit signed int to catch negative numbers. postgres
+          // bigint is int64_t anyway, so this doesn't truncate the allowed
+          // range.
+          int64_t id = lexical_cast<int64_t>(*itr);
+          // note: osm_nwr_id_t is currently uint64_t, so int64_t cannot
+          // overflow it in the positive direction. this would need to change
+          // if the types changed.
+          if (id > 0) {
+            myids.push_back(osm_nwr_id_t(id));
+
+          } else {
+            // simulate rails_port behaviour - things that we can't parse are
+            // treated as zero.
+            myids.push_back(0);
+          }
         }
       } catch (const bad_lexical_cast &) {
         // note: this is pretty silly, and may change when the rails_port

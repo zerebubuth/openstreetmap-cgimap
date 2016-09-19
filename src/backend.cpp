@@ -39,6 +39,7 @@ struct registry {
   void setup_options(int argc, char *argv[], po::options_description &desc);
   void output_options(std::ostream &out);
   shared_ptr<data_selection::factory> create(const po::variables_map &options);
+  shared_ptr<oauth::store> create_oauth_store(const boost::program_options::variables_map &opts);
 
 private:
   typedef std::map<std::string, shared_ptr<backend> > backend_map_t;
@@ -128,6 +129,21 @@ registry::create(const po::variables_map &options) {
   return ptr->create(options);
 }
 
+boost::shared_ptr<oauth::store>
+registry::create_oauth_store(const boost::program_options::variables_map &options) {
+  shared_ptr<backend> ptr = default_backend;
+
+  if (options.count("backend")) {
+    backend_map_t::iterator itr =
+        backends.find(options["backend"].as<std::string>());
+    if (itr != backends.end()) {
+      ptr = itr->second;
+    }
+  }
+
+  return ptr->create_oauth_store(options);
+}
+
 registry *registry_ptr = NULL;
 boost::mutex registry_mut;
 
@@ -171,4 +187,14 @@ create_backend(const po::variables_map &options) {
   }
 
   return registry_ptr->create(options);
+}
+
+boost::shared_ptr<oauth::store>
+create_oauth_store(const po::variables_map &options) {
+  boost::unique_lock<boost::mutex> lock(registry_mut);
+  if (registry_ptr == NULL) {
+    registry_ptr = new registry;
+  }
+
+  return registry_ptr->create_oauth_store(options);
 }
