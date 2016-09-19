@@ -20,8 +20,12 @@ Currently, CGImap implements:
 
 * the "map" API call,
 * single node, way and relation fetches,
-* multiple node, way and relation fetches and
-* the "full" way and relation calls.
+* multiple node, way and relation fetches,
+* the "full" way and relation calls and
+* changset metadata downloads, including discussions.
+
+Note that changeset metadata isn't the same thing as the changeset
+download (i.e: `osmChange` data).
 
 Requirements
 ------------
