@@ -2,7 +2,7 @@ Source: openstreetmap-cgimap
 Section: libs
 Priority: optional
 Maintainer: Matt Amos <zerebubuth@gmail.com>
-Build-Depends: debhelper (>=9), autotools-dev, dh-autoreconf, pkg-config, libxml2-dev, libpqxx-dev, libfcgi-dev, libboost-dev, libboost-regex-dev, libboost-program-options-dev, libboost-date-time-dev, libboost-filesystem-dev, libboost-system-dev, libmemcached-dev, libboost-locale-dev
+Build-Depends: debhelper (>=9), autotools-dev, dh-autoreconf, pkg-config, libxml2-dev, libpqxx-dev, libfcgi-dev, libboost-dev, libboost-regex-dev, libboost-program-options-dev, libboost-date-time-dev, libboost-filesystem-dev, libboost-system-dev, libmemcached-dev, libboost-locale-dev, libcrypto++-dev
 Homepage: https://github.com/zerebubuth/openstreetmap-cgimap
 Standards-Version: 3.9.6
 
