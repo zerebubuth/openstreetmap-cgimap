@@ -48,15 +48,13 @@ using the following command:
       libboost-system-dev libboost-locale-dev libmemcached-dev \
       libcrypto++-dev
 
-Note that on older versions of Ubuntu (e.g: 12.04),
-`libboost-locale-dev` may not be available, in which case it can be
-omitted.
+Note that C++11 is _required_ to build CGImap.
 
 The build system used is GNU Make, using pkg-config to provide some of
 the flags.
 
 Note that the full set of packages needed from a fresh install (tested
-with Ubuntu 14.04.1) - you may already have many or all of these - is:
+with Ubuntu 16.04) - you may already have many or all of these - is:
 
     sudo apt-get install git build-essential automake autoconf libtool
 
