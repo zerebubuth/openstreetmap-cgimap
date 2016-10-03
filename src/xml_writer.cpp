@@ -122,45 +122,35 @@ void xml_writer::attribute(const std::string &name, double value) {
   }
 }
 
-void xml_writer::attribute(const std::string &name, unsigned long int value) {
+void xml_writer::attribute(const std::string &name, int32_t value) {
   int rc = xmlTextWriterWriteFormatAttribute(
-      pimpl->writer, BAD_CAST name.c_str(), "%lu", value);
+      pimpl->writer, BAD_CAST name.c_str(), "%" PRId32, value);
   if (rc < 0) {
-    throw write_error("cannot write osm_id_t(unsigned long int) attribute.");
+    throw write_error("cannot write int32_t attribute.");
   }
 }
 
-void xml_writer::attribute(const std::string &name,
-                           unsigned long long int value) {
+void xml_writer::attribute(const std::string &name, int64_t value) {
   int rc = xmlTextWriterWriteFormatAttribute(
-      pimpl->writer, BAD_CAST name.c_str(), "%llu", value);
+      pimpl->writer, BAD_CAST name.c_str(), "%" PRId64, value);
   if (rc < 0) {
-    throw write_error("cannot write osm_id_t(unsigned long long int) attribute.");
+    throw write_error("cannot write int64_t attribute.");
   }
 }
 
-void xml_writer::attribute(const std::string &name, long int value) {
+void xml_writer::attribute(const std::string &name, uint32_t value) {
   int rc = xmlTextWriterWriteFormatAttribute(
-      pimpl->writer, BAD_CAST name.c_str(), "%ld", value);
+      pimpl->writer, BAD_CAST name.c_str(), "%" PRIu32, value);
   if (rc < 0) {
-    throw write_error("cannot write osm_id_t(long int) attribute.");
+    throw write_error("cannot write uint32_t attribute.");
   }
 }
 
-void xml_writer::attribute(const std::string &name,
-                           long long int value) {
+void xml_writer::attribute(const std::string &name, uint64_t value) {
   int rc = xmlTextWriterWriteFormatAttribute(
-      pimpl->writer, BAD_CAST name.c_str(), "%lld", value);
+      pimpl->writer, BAD_CAST name.c_str(), "%" PRIu64, value);
   if (rc < 0) {
-    throw write_error("cannot write osm_id_t(long long int) attribute.");
-  }
-}
-
-void xml_writer::attribute(const std::string &name, int value) {
-  int rc = xmlTextWriterWriteFormatAttribute(
-      pimpl->writer, BAD_CAST name.c_str(), "%d", value);
-  if (rc < 0) {
-    throw write_error("cannot write integer attribute.");
+    throw write_error("cannot write uint64_t attribute.");
   }
 }
 
