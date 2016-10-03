@@ -1,3 +1,9 @@
+openstreetmap-cgimap (0.5.1-0ubuntu2ppa1~xenial1) xenial; urgency=medium
+
+  * Fix integer types so that 32-bit builds work.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Mon, 3 Oct 2016 14:13:36 +0100
+
 openstreetmap-cgimap (0.5.0-0ubuntu2ppa1~xenial6) xenial; urgency=medium
 
   * Fix date formatting of changelog lines.
