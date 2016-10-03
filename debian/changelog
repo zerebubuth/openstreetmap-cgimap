@@ -1,3 +1,9 @@
+openstreetmap-cgimap (0.5.0-0ubuntu2ppa1~xenial4) xenial; urgency=medium
+
+  * Bump version to get launchpad to build it.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Mon  3 Oct 2016 10:56:02 +0100
+
 openstreetmap-cgimap (0.5.0-0ubuntu2ppa1~xenial3) xenial; urgency=medium
 
   * Bump version to get launchpad to build it.
