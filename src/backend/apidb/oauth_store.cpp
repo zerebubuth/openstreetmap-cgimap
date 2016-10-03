@@ -21,11 +21,11 @@ std::string connect_db_str(const po::variables_map &options) {
                              "name for OAuth connections.");
   }
 
-#define CONNOPT(a,b)                                            \
-  if (options.count("oauth-" a)) {                              \
-    ostr << (b "=") << options["oauth-" a].as<std::string>();   \
-  } else if (options.count(a)) {                                \
-    ostr << (b "=") << options[a].as<std::string>();            \
+#define CONNOPT(a,b)                                                 \
+  if (options.count("oauth-" a)) {                                   \
+    ostr << " " << (b "=") << options["oauth-" a].as<std::string>(); \
+  } else if (options.count(a)) {                                     \
+    ostr << " " << (b "=") << options[a].as<std::string>();          \
   }
 
   CONNOPT("dbname", "dbname");
