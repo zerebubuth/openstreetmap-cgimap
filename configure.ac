@@ -1,7 +1,7 @@
 AC_INIT([CGImap],
-        [0.5.1],
+        [0.5.2],
         [https://github.com/zerebubuth/openstreetmap-cgimap/issues],
-        [cgimap-0.5.1],
+        [cgimap-0.5.2],
         [https://github.com/zerebubuth/openstreetmap-cgimap])
 AM_INIT_AUTOMAKE([subdir-objects parallel-tests])
 LT_INIT
