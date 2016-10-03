@@ -82,6 +82,23 @@ static string get_generator_string() {
 }
 
 /**
+ * convert an environment variable name to an option name
+ */
+static string environment_option_name(string name){
+  string option;
+
+  if (name.substr(0, 7) == "CGIMAP_") {
+    std::transform(name.begin() + 7, name.end(),
+                   std::back_inserter(option),
+                   [](unsigned char c) {
+                     return c == '_' ? '-' : std::tolower(c);
+                   });
+  }
+
+  return option;
+}
+
+/**
  * parse the comment line and environment for options.
  */
 static void get_options(int argc, char **argv, po::variables_map &options) {
@@ -106,7 +123,7 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
   setup_backend_options(argc, argv, desc);
 
   po::store(po::parse_command_line(argc, argv, desc), options);
-  po::store(po::parse_environment(desc, "CGIMAP_"), options);
+  po::store(po::parse_environment(desc, environment_option_name), options);
   po::notify(options);
 
   if (options.count("help")) {
