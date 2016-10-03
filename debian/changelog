@@ -1,3 +1,10 @@
+openstreetmap-cgimap (0.5.2-0ubuntu2ppa1~xenial1) xenial; urgency=medium
+
+  * Fix bug with OAuth database connection parameters.
+  * Fix environment variable parsing.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Mon, 3 Oct 2016 23:55:03 +0100
+
 openstreetmap-cgimap (0.5.1-0ubuntu2ppa1~xenial1) xenial; urgency=medium
 
   * Fix integer types so that 32-bit builds work.
