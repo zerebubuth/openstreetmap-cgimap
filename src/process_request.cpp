@@ -331,7 +331,7 @@ void process_request(request &req, rate_limiter &limiter,
 
     // update the rate limiter, if anything was written
     if (bytes_written > 0) {
-      limiter.update(ip, bytes_written);
+      limiter.update(client_key, bytes_written);
     }
 
     // log the completion time (note: this comes last to avoid
