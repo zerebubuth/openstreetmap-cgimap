@@ -1,3 +1,9 @@
+openstreetmap-cgimap (0.5.3-0ubuntu2ppa1~xenial1) xenial; urgency=medium
+
+  * Fix bug with rate limiting.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Tue, 4 Oct 2016 12:19:06 +0100
+
 openstreetmap-cgimap (0.5.2-0ubuntu2ppa1~xenial1) xenial; urgency=medium
 
   * Fix bug with OAuth database connection parameters.
