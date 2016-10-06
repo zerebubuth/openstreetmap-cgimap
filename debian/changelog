@@ -1,3 +1,10 @@
+openstreetmap-cgimap (0.5.4-0ubuntu2ppa1~xenial1) xenial; urgency=medium
+
+  * Fix bug with OAuth return checking logic.
+  * Fix bug with OAuth path normalisation.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Thu, 6 Oct 2016 14:04:40 +0100
+
 openstreetmap-cgimap (0.5.3-0ubuntu2ppa1~xenial1) xenial; urgency=medium
 
   * Fix bug with rate limiting.
