@@ -398,6 +398,33 @@ void oauth_check_missing_signature() {
                oauth::is_valid_signature(req, store, store, store));
 }
 
+void oauth_check_valid_signature_header_2() {
+  boost::optional<std::string> auth_header = std::string("OAuth oauth_consumer_key=\"x3tHSMbotPe5fBlItMbg\", oauth_nonce=\"ZGsGj6qzGYUhSLHJWUC8tyW6RbxOQuX4mv6PKj0mU\", oauth_signature=\"H%2Fxl6jdk4dC0WaONfohWfZhcHYA%3D\", oauth_signature_method=\"HMAC-SHA1\", oauth_timestamp=\"1475754589\", oauth_token=\"15zpwgGjdjBu1DD65X7kcHzaWqfQpvqmMtqa3ZIO\", oauth_version=\"1.0\"");
+  test_request req(
+    "GET",
+    "http", "www.openstreetmap.org", "80", "/api/0.6/relation/165475/full", "",
+    auth_header);
+
+  assert_equal<boost::optional<std::string> >(
+    oauth::detail::signature_base_string(req),
+    std::string("GET&http%3A%2F%2Fwww.openstreetmap.org%2Fapi%2F0.6%2Frelation%2F165475%2Ffull&oauth_consumer_key%3Dx3tHSMbotPe5fBlItMbg%26oauth_nonce%3DZGsGj6qzGYUhSLHJWUC8tyW6RbxOQuX4mv6PKj0mU%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1475754589%26oauth_token%3D15zpwgGjdjBu1DD65X7kcHzaWqfQpvqmMtqa3ZIO%26oauth_version%3D1.0"));
+
+  std::string consumer_key("x3tHSMbotPe5fBlItMbg");
+  std::string consumer_secret("1NZRJ0u2o7OilPDe60nfZsKJTC7RUZPrNfYwGBjATw");
+  std::string token_id("15zpwgGjdjBu1DD65X7kcHzaWqfQpvqmMtqa3ZIO");
+  std::string token_secret("H3Vb9Kgf4LpTyVlft5xsI9MwzknQsTu6CkHE0qK3");
+
+  test_secret_store store(consumer_key, consumer_secret, token_id, token_secret);
+
+  assert_equal<boost::optional<std::string> >(
+    oauth::detail::hashed_signature(req, store),
+    std::string("H/xl6jdk4dC0WaONfohWfZhcHYA="));
+
+  oauth::validity::copacetic copacetic(token_id);
+  oauth::validity::validity expected(copacetic);
+  assert_equal(oauth::is_valid_signature(req, store, store, store), expected);
+}
+
 int main() {
   try {
     ANNOTATE_EXCEPTION(oauth_check_signature_base_string());
@@ -412,6 +439,7 @@ int main() {
     ANNOTATE_EXCEPTION(oauth_check_invalid_signature_header());
     ANNOTATE_EXCEPTION(oauth_check_valid_signature_params());
     ANNOTATE_EXCEPTION(oauth_check_missing_signature());
+    ANNOTATE_EXCEPTION(oauth_check_valid_signature_header_2());
 
   } catch (const std::exception &e) {
     std::cerr << "EXCEPTION: " << e.what() << std::endl;

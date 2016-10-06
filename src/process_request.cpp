@@ -217,27 +217,28 @@ const std::string user_prefix("user:");
 struct is_copacetic : public boost::static_visitor<bool> {
   template <typename T>
   bool operator()(const T &) const { return false; }
-
-  bool operator()(const oauth::validity::copacetic &) const {
-    return true;
-  }
 };
+
+template <>
+bool is_copacetic::operator()<oauth::validity::copacetic>(
+  const oauth::validity::copacetic &) const {
+  return true;
+}
 
 struct get_oauth_token : public boost::static_visitor<std::string> {
   template <typename T>
   std::string operator()(const T &) const {
     throw std::runtime_error("Type does not contain an OAuth token.");
   }
-
-  std::string operator()(const oauth::validity::copacetic &c) const {
-    return c.token;
-  }
 };
 
-struct oauth_status_code : public boost::static_visitor<int> {
-  template <typename T>
-  bool operator()(const T &) const { return 500; }
+template <>
+std::string get_oauth_token::operator()<oauth::validity::copacetic>(
+  const oauth::validity::copacetic &c) const {
+  return c.token;
+}
 
+struct oauth_status_code : public boost::static_visitor<int> {
   bool operator()(const oauth::validity::copacetic &) const { return 200; }
   bool operator()(const oauth::validity::not_signed &) const { return 200; }
   bool operator()(const oauth::validity::bad_request &) const { return 400; }
