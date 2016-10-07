@@ -51,7 +51,8 @@ ___openstreetmap_cgimap_SOURCES=\
 	main.cpp
 
 ___test_test_core_SOURCES=\
-	../test/test_core.cpp
+	../test/test_core.cpp \
+	../test/test_request.cpp
 
 ___test_test_parse_id_list_SOURCES=\
 	../test/test_parse_id_list.cpp
@@ -69,7 +70,8 @@ if ENABLE_APIDB
 ___test_test_apidb_backend_SOURCES=\
 	../test/test_apidb_backend.cpp \
 	../test/test_formatter.cpp \
-	../test/test_database.cpp
+	../test/test_database.cpp \
+	../test/test_request.cpp
 endif
 
 libcgimap_fcgi_la_SOURCES=\

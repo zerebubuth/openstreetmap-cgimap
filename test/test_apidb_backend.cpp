@@ -4,15 +4,22 @@
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <boost/optional/optional_io.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/program_options.hpp>
 
 #include <sys/time.h>
 #include <stdio.h>
 
 #include "cgimap/config.hpp"
 #include "cgimap/time.hpp"
+#include "cgimap/oauth.hpp"
+#include "cgimap/rate_limiter.hpp"
+#include "cgimap/routes.hpp"
+#include "cgimap/process_request.hpp"
+
 #include "test_formatter.hpp"
 #include "test_database.hpp"
-#include "cgimap/oauth.hpp"
+#include "test_request.hpp"
 
 namespace {
 
@@ -395,6 +402,127 @@ void test_changeset_with_comments_including_discussions(boost::shared_ptr<data_s
   }
 }
 
+class empty_data_selection
+  : public data_selection {
+public:
+
+  virtual ~empty_data_selection() {}
+
+  void write_nodes(output_formatter &formatter) {}
+  void write_ways(output_formatter &formatter) {}
+  void write_relations(output_formatter &formatter) {}
+  void write_changesets(output_formatter &formatter,
+                        const boost::posix_time::ptime &now) {}
+
+  visibility_t check_node_visibility(osm_nwr_id_t id) {}
+  visibility_t check_way_visibility(osm_nwr_id_t id) {}
+  visibility_t check_relation_visibility(osm_nwr_id_t id) {}
+
+  int select_nodes(const std::vector<osm_nwr_id_t> &) { return 0; }
+  int select_ways(const std::vector<osm_nwr_id_t> &) { return 0; }
+  int select_relations(const std::vector<osm_nwr_id_t> &) { return 0; }
+  int select_nodes_from_bbox(const bbox &bounds, int max_nodes) { return 0; }
+  void select_nodes_from_relations() {}
+  void select_ways_from_nodes() {}
+  void select_ways_from_relations() {}
+  void select_relations_from_ways() {}
+  void select_nodes_from_way_nodes() {}
+  void select_relations_from_nodes() {}
+  void select_relations_from_relations() {}
+  void select_relations_members_of_relations() {}
+  bool supports_changesets() { return false; }
+  int select_changesets(const std::vector<osm_changeset_id_t> &) { return 0; }
+  void select_changeset_discussions() {}
+
+  struct factory
+    : public data_selection::factory {
+    virtual ~factory() {}
+    virtual boost::shared_ptr<data_selection> make_selection() {
+      return boost::make_shared<empty_data_selection>();
+    }
+  };
+};
+
+struct recording_rate_limiter
+  : public rate_limiter {
+  ~recording_rate_limiter() {}
+
+  bool check(const std::string &key) {
+    m_keys_seen.insert(key);
+    return true;
+  }
+
+  void update(const std::string &key, int bytes) {
+    m_keys_seen.insert(key);
+  }
+
+  bool saw_key(const std::string &key) {
+    return m_keys_seen.count(key) > 0;
+  }
+
+private:
+  std::set<std::string> m_keys_seen;
+};
+
+
+void test_oauth_end_to_end(boost::shared_ptr<oauth::store> store) {
+  recording_rate_limiter limiter;
+  std::string generator("test_apidb_backend.cpp");
+  routes route;
+  boost::shared_ptr<data_selection::factory> factory =
+    boost::make_shared<empty_data_selection::factory>();
+
+  test_request req;
+  req.set_header("SCRIPT_URL", "/api/0.6/relation/165475/full");
+  req.set_header("SCRIPT_URI",
+                 "http://www.openstreetmap.org/api/0.6/relation/165475/full");
+  req.set_header("HTTP_HOST", "www.openstreetmap.org");
+  req.set_header("HTTP_ACCEPT_ENCODING",
+                 "gzip;q=1.0,deflate;q=0.6,identity;q=0.3");
+  req.set_header("HTTP_ACCEPT", "*/*");
+  req.set_header("HTTP_USER_AGENT", "OAuth gem v0.4.7");
+  req.set_header("HTTP_AUTHORIZATION",
+                 "OAuth oauth_consumer_key=\"x3tHSMbotPe5fBlItMbg\", "
+                 "oauth_nonce=\"dvu3eTk8i1uvj8zQ8Wef91UF6ngQdlTA3xQ2vEf7xU\", "
+                 "oauth_signature=\"ewKFprItE5uaDHKFu3IVzuEHbno%3D\", "
+                 "oauth_signature_method=\"HMAC-SHA1\", "
+                 "oauth_timestamp=\"1475844649\", "
+                 "oauth_token=\"15zpwgGjdjBu1DD65X7kcHzaWqfQpvqmMtqa3ZIO\", "
+                 "oauth_version=\"1.0\"");
+  req.set_header("HTTP_X_REQUEST_ID", "V-eaKX8AAQEAAF4UzHwAAAHt");
+  req.set_header("HTTP_X_FORWARDED_HOST", "www.openstreetmap.org");
+  req.set_header("HTTP_X_FORWARDED_SERVER", "www.openstreetmap.org");
+  req.set_header("HTTP_CONNECTION", "Keep-Alive");
+  req.set_header("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin");
+  req.set_header("SERVER_SIGNATURE", "<address>Apache/2.4.18 (Ubuntu) Server "
+                 "at www.openstreetmap.org Port 80</address>");
+  req.set_header("SERVER_SOFTWARE", "Apache/2.4.18 (Ubuntu)");
+  req.set_header("SERVER_NAME", "www.openstreetmap.org");
+  req.set_header("SERVER_ADDR", "127.0.0.1");
+  req.set_header("SERVER_PORT", "80");
+  req.set_header("REMOTE_ADDR", "127.0.0.1");
+  req.set_header("DOCUMENT_ROOT", "/srv/www.openstreetmap.org/rails/public");
+  req.set_header("REQUEST_SCHEME", "http");
+  req.set_header("SERVER_PROTOCOL", "HTTP/1.1");
+  req.set_header("REQUEST_METHOD", "GET");
+  req.set_header("QUERY_STRING", "");
+  req.set_header("REQUEST_URI", "/api/0.6/relation/165475/full");
+  req.set_header("SCRIPT_NAME", "/api/0.6/relation/165475/full");
+
+  assert_equal<boost::optional<std::string> >(
+    std::string("ewKFprItE5uaDHKFu3IVzuEHbno="),
+    oauth::detail::hashed_signature(req, *store),
+    "hashed signatures");
+
+  process_request(req, limiter, generator, route, factory, store);
+
+  assert_equal<int>(404, req.response_status(), "response status");
+  assert_equal<bool>(false, limiter.saw_key("addr:127.0.0.1"),
+                     "saw addr:127.0.0.1 as a rate limit key");
+  assert_equal<bool>(true, limiter.saw_key("user:1"),
+                     "saw user:1 as a rate limit key");
+}
+
 } // anonymous namespace
 
 int main(int, char **) {
@@ -417,8 +545,6 @@ int main(int, char **) {
     tdb.run(boost::function<void(boost::shared_ptr<oauth::store>)>(
         &test_get_user_id_for_token));
 
-    // TODO: add tests for consumer_secret and token_secret
-
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
         &test_negative_changeset_ids));
 
@@ -437,7 +563,8 @@ int main(int, char **) {
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
               &test_changeset_with_comments_including_discussions));
 
-    // TODO: add end-to-end test for OAuth request.
+    tdb.run(boost::function<void(boost::shared_ptr<oauth::store>)>(
+              &test_oauth_end_to_end));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;

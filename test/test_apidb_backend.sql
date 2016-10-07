@@ -42,24 +42,35 @@ VALUES (1,       0,       0, 1, true,  '2013-11-14T02:10:00Z', 3221225472, 1),
 -- the API is publicly readable, so _all_ tokens can read the API. there is no
 -- "allow_read_api" setting on the token itself. but some tokens might have been
 -- revoked or expired.
+INSERT INTO client_applications
+  (id, name, user_id, allow_read_prefs, key, secret)
+VALUES
+  (1, 'test_client_application', 1, true,
+   'x3tHSMbotPe5fBlItMbg', '1NZRJ0u2o7OilPDe60nfZsKJTC7RUZPrNfYwGBjATw');
+
 INSERT INTO oauth_tokens
-  (id, user_id, token, secret, created_at, authorized_at, invalidated_at)
+  (id, user_id, client_application_id, allow_read_prefs, token, secret,
+   created_at, authorized_at, invalidated_at)
 VALUES
   -- valid key
-  (1, 1,
+  (1, 1, 1, true,
    'OfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA',
    'fFCKdXsLxeHPlgrIPr5fZSpXKnDuLw0GvJTzeE99',
    '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', NULL),
   -- not authorized
-  (2, 1,
+  (2, 1, 1, true,
    'wpNsXPhrgWl4ELPjPbhfwjjSbNk9npsKoNrMGFlC',
    'NZskvUUYlOuCsPKuMbSTz5eMpVJVI3LsyW11Z2Uq',
    '2016-07-11T19:12:00Z', NULL, NULL),
   -- invalidated
-  (3, 1,
+  (3, 1, 1, true,
    'Rzcm5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf',
    '2UxsEFziZGv64hdWN3Qa90Vb6v1aovVxaTTQIn1D',
-   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z');
+   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z'),
+  (4, 1, 1, true,
+   '15zpwgGjdjBu1DD65X7kcHzaWqfQpvqmMtqa3ZIO',
+   'H3Vb9Kgf4LpTyVlft5xsI9MwzknQsTu6CkHE0qK3',
+   '2016-10-07T00:00:00Z', '2016-10-07T00:00:00Z', NULL);
 
 -- update the number of edits
 UPDATE changesets

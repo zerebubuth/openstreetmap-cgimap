@@ -90,6 +90,18 @@ oauth_store::oauth_store(const po::variables_map &opts)
     "WHERE token=$1")
     PREPARE_ARGS(("character varying"));
 
+  // return a row with the consumer secret for a given consumer key.
+  m_connection.prepare("consumer_secret_for_key",
+    "SELECT secret FROM client_applications "
+    "WHERE key=$1")
+    PREPARE_ARGS(("character varying"));
+
+  // return a row with the token secret given the token ID.
+  m_connection.prepare("token_secret_for_id",
+    "SELECT secret FROM oauth_tokens "
+    "WHERE token=$1")
+    PREPARE_ARGS(("character varying"));
+
   // clang-format on
 }
 
@@ -97,14 +109,28 @@ oauth_store::~oauth_store() {}
 
 boost::optional<std::string>
 oauth_store::consumer_secret(const std::string &consumer_key) {
-  // TODO: implement me!
-  return boost::none;
+  pqxx::work w(m_connection, "oauth_get_consumer_secret_for_key");
+  pqxx::result res = w.prepared("consumer_secret_for_key")(consumer_key).exec();
+
+  if (res.affected_rows() > 0) {
+    return res[0][0].as<std::string>();
+
+  } else {
+    return boost::none;
+  }
 }
 
 boost::optional<std::string>
 oauth_store::token_secret(const std::string &token_id) {
-  // TODO: implement me!
-  return boost::none;
+  pqxx::work w(m_connection, "oauth_get_token_secret_for_id");
+  pqxx::result res = w.prepared("token_secret_for_id")(token_id).exec();
+
+  if (res.affected_rows() > 0) {
+    return res[0][0].as<std::string>();
+
+  } else {
+    return boost::none;
+  }
 }
 
 bool
