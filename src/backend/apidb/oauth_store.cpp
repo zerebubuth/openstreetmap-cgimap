@@ -97,11 +97,13 @@ oauth_store::~oauth_store() {}
 
 boost::optional<std::string>
 oauth_store::consumer_secret(const std::string &consumer_key) {
+  // TODO: implement me!
   return boost::none;
 }
 
 boost::optional<std::string>
 oauth_store::token_secret(const std::string &token_id) {
+  // TODO: implement me!
   return boost::none;
 }
 

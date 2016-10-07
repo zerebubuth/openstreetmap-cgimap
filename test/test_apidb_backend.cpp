@@ -417,6 +417,8 @@ int main(int, char **) {
     tdb.run(boost::function<void(boost::shared_ptr<oauth::store>)>(
         &test_get_user_id_for_token));
 
+    // TODO: add tests for consumer_secret and token_secret
+
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
         &test_negative_changeset_ids));
 
@@ -434,6 +436,8 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
               &test_changeset_with_comments_including_discussions));
+
+    // TODO: add end-to-end test for OAuth request.
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;
