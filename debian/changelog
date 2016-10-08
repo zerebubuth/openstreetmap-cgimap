@@ -1,3 +1,11 @@
+openstreetmap-cgimap (0.5.5-0ubuntu2ppa1~xenial1) xenial; urgency=medium
+
+  * Implement missing apidb OAuth methods.
+  * Fix return type of `oauth_status_code` functor.
+  * Add end-to-end OAuth test.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Sat, 8 Oct 2016 17:19:53 +0100
+
 openstreetmap-cgimap (0.5.4-0ubuntu2ppa1~xenial1) xenial; urgency=medium
 
   * Fix bug with OAuth return checking logic.
