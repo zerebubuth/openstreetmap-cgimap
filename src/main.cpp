@@ -151,7 +151,7 @@ static void process_requests(int socket, const po::variables_map &options) {
   }
 
   // create the rate limiter
-  rate_limiter limiter(options);
+  memcached_rate_limiter limiter(options);
 
   // create the routes map (from URIs to handlers)
   routes route;

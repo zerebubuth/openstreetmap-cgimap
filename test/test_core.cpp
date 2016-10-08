@@ -19,82 +19,13 @@
 #include <vector>
 #include <sstream>
 
+#include "test_request.hpp"
+
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 namespace al = boost::algorithm;
 namespace pt = boost::property_tree;
 namespace bt = boost::posix_time;
-
-/**
- * Mock output buffer so that we can get back an in-memory result as a string
- * backed buffer.
- */
-struct test_output_buffer : public output_buffer {
-  explicit test_output_buffer(std::ostream &out) : m_out(out), m_written(0) {}
-  virtual ~test_output_buffer() {}
-  virtual int write(const char *buffer, int len) {
-    m_out.write(buffer, len);
-    m_written += len;
-    return len;
-  }
-  virtual int written() { return m_written; }
-  virtual int close() { return 0; }
-  virtual void flush() {}
-
-private:
-  std::ostream &m_out;
-  int m_written;
-};
-
-/**
- * Mock request so that we can control the headers and get back the response
- * body for comparison to what we expect.
- */
-struct test_request : public request {
-  test_request() {}
-
-  /// implementation of request interface
-  virtual ~test_request() {}
-  virtual const char *get_param(const char *key) {
-    std::string key_str(key);
-    std::map<std::string, std::string>::iterator itr = m_params.find(key_str);
-    if (itr != m_params.end()) {
-      return itr->second.c_str();
-    } else {
-      return NULL;
-    }
-  }
-
-  virtual void dispose() {}
-
-  /// getters and setters for the input headers and output response
-  void set_header(const std::string &k, const std::string &v) {
-    m_params.insert(std::make_pair(k, v));
-  }
-  std::stringstream &buffer() { return m_output; }
-
-  bt::ptime get_current_time() const { return m_now; }
-  void set_current_time(const bt::ptime &now) { m_now = now; }
-
-protected:
-  virtual void write_header_info(int status, const headers_t &headers) {
-    assert(m_output.tellp() == 0);
-    m_output << "Status: " << status << " " << status_message(status) << "\r\n";
-    BOOST_FOREACH(const request::headers_t::value_type &header, headers) {
-      m_output << header.first << ": " << header.second << "\r\n";
-    }
-    m_output << "\r\n";
-  }
-  virtual boost::shared_ptr<output_buffer> get_buffer_internal() {
-    return boost::shared_ptr<output_buffer>(new test_output_buffer(m_output));
-  }
-  virtual void finish_internal() {}
-
-private:
-  std::stringstream m_output;
-  std::map<std::string, std::string> m_params;
-  bt::ptime m_now;
-};
 
 std::map<std::string, std::string> read_headers(std::istream &in,
                                                 const std::string &separator) {
@@ -598,7 +529,7 @@ int main(int argc, char *argv[]) {
     boost::shared_ptr<backend> data_backend = make_staticxml_backend();
     boost::shared_ptr<data_selection::factory> factory =
         data_backend->create(vm);
-    rate_limiter limiter(vm);
+    null_rate_limiter limiter;
     routes route;
 
     BOOST_FOREACH(fs::path test_case, test_cases) {

@@ -239,10 +239,10 @@ std::string get_oauth_token::operator()<oauth::validity::copacetic>(
 }
 
 struct oauth_status_code : public boost::static_visitor<int> {
-  bool operator()(const oauth::validity::copacetic &) const { return 200; }
-  bool operator()(const oauth::validity::not_signed &) const { return 200; }
-  bool operator()(const oauth::validity::bad_request &) const { return 400; }
-  bool operator()(const oauth::validity::unauthorized &) const { return 401; }
+  int operator()(const oauth::validity::copacetic &) const { return 200; }
+  int operator()(const oauth::validity::not_signed &) const { return 200; }
+  int operator()(const oauth::validity::bad_request &) const { return 400; }
+  int operator()(const oauth::validity::unauthorized &) const { return 401; }
 };
 
 } // anonymous namespace
