@@ -3,6 +3,7 @@
 #include "cgimap/backend/staticxml/staticxml.hpp"
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/config.hpp"
+#include "cgimap/time.hpp"
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -18,77 +19,13 @@
 #include <vector>
 #include <sstream>
 
+#include "test_request.hpp"
+
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 namespace al = boost::algorithm;
 namespace pt = boost::property_tree;
-
-/**
- * Mock output buffer so that we can get back an in-memory result as a string
- * backed buffer.
- */
-struct test_output_buffer : public output_buffer {
-  explicit test_output_buffer(std::ostream &out) : m_out(out), m_written(0) {}
-  virtual ~test_output_buffer() {}
-  virtual int write(const char *buffer, int len) {
-    m_out.write(buffer, len);
-    m_written += len;
-    return len;
-  }
-  virtual int written() { return m_written; }
-  virtual int close() { return 0; }
-  virtual void flush() {}
-
-private:
-  std::ostream &m_out;
-  int m_written;
-};
-
-/**
- * Mock request so that we can control the headers and get back the response
- * body for comparison to what we expect.
- */
-struct test_request : public request {
-  test_request() {}
-
-  /// implementation of request interface
-  virtual ~test_request() {}
-  virtual const char *get_param(const char *key) {
-    std::string key_str(key);
-    std::map<std::string, std::string>::iterator itr = m_params.find(key_str);
-    if (itr != m_params.end()) {
-      return itr->second.c_str();
-    } else {
-      return NULL;
-    }
-  }
-
-  virtual void dispose() {}
-
-  /// getters and setters for the input headers and output response
-  void set_header(const std::string &k, const std::string &v) {
-    m_params.insert(std::make_pair(k, v));
-  }
-  std::stringstream &buffer() { return m_output; }
-
-protected:
-  virtual void write_header_info(int status, const headers_t &headers) {
-    assert(m_output.tellp() == 0);
-    m_output << "Status: " << status << " " << status_message(status) << "\r\n";
-    BOOST_FOREACH(const request::headers_t::value_type &header, headers) {
-      m_output << header.first << ": " << header.second << "\r\n";
-    }
-    m_output << "\r\n";
-  }
-  virtual boost::shared_ptr<output_buffer> get_buffer_internal() {
-    return boost::shared_ptr<output_buffer>(new test_output_buffer(m_output));
-  }
-  virtual void finish_internal() {}
-
-private:
-  std::stringstream m_output;
-  std::map<std::string, std::string> m_params;
-};
+namespace bt = boost::posix_time;
 
 std::map<std::string, std::string> read_headers(std::istream &in,
                                                 const std::string &separator) {
@@ -145,7 +82,12 @@ void setup_request_headers(test_request &req, std::istream &in) {
     al::to_upper(key);
     al::replace_all(key, "-", "_");
 
-    req.set_header(key, val.second);
+    if (key == "DATE") {
+      req.set_current_time(parse_time(val.second));
+
+    } else {
+      req.set_header(key, val.second);
+    }
   }
 
   // always set the remote addr variable
@@ -179,20 +121,37 @@ void check_xmlattr(const pt::ptree &expected, const pt::ptree &actual) {
   if (act_keys.size() > exp_keys.size()) {
     BOOST_FOREACH(const std::string &ek, exp_keys) { act_keys.erase(ek); }
     std::ostringstream out;
-    out << "Missing attributes [";
+    out << "Extra attributes [";
     BOOST_FOREACH(const std::string &ak, act_keys) { out << ak << " "; }
     out << "]";
     throw std::runtime_error(out.str());
   }
 
   BOOST_FOREACH(const std::string &k, exp_keys) {
-    std::string exp_val = expected.get_child(k).data();
-    std::string act_val = actual.get_child(k).data();
-    if ((exp_val != act_val) && (exp_val != "***")) {
-      throw std::runtime_error(
+    boost::optional<const pt::ptree &> exp_child = expected.get_child_optional(k);
+    boost::optional<const pt::ptree &> act_child = actual.get_child_optional(k);
+
+    if (exp_child) {
+      if (act_child) {
+        std::string exp_val = exp_child->data();
+        std::string act_val = act_child->data();
+        if ((exp_val != act_val) && (exp_val != "***")) {
+          throw std::runtime_error(
+            (boost::format(
+              "Attribute `%1%' expected value `%2%', but got `%3%'") %
+             k % exp_val % act_val).str());
+        }
+      } else {
+        throw std::runtime_error(
           (boost::format(
-               "Attribute `%1%' expected value `%2%', but got `%3%'") %
-           k % exp_val % act_val).str());
+            "Expected to find attribute `%1%', but it was missing.") %
+           k).str());
+      }
+    } else if (act_child) {
+      throw std::runtime_error(
+        (boost::format(
+          "Found attribute `%1%', but it was not expected to exist.") %
+           k).str());
     }
   }
 }
@@ -570,7 +529,7 @@ int main(int argc, char *argv[]) {
     boost::shared_ptr<backend> data_backend = make_staticxml_backend();
     boost::shared_ptr<data_selection::factory> factory =
         data_backend->create(vm);
-    rate_limiter limiter(vm);
+    null_rate_limiter limiter;
     routes route;
 
     BOOST_FOREACH(fs::path test_case, test_cases) {

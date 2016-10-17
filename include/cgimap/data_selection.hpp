@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <boost/shared_ptr.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 /**
  * represents a selected set of data which can be written out to
@@ -28,6 +29,10 @@ public:
 
   /// write the relations to an output formatter
   virtual void write_relations(output_formatter &formatter) = 0;
+
+  /// does this data selection support changesets?
+  virtual void write_changesets(output_formatter &formatter,
+                                const boost::posix_time::ptime &now);
 
   /******************* information functions *******************/
 
@@ -100,6 +105,20 @@ public:
   /// select the given (id, version) versions of relations, returning the number
   /// of relations added to the selected set.
   virtual int select_historical_relations(const std::vector<osm_edition_t> &);
+
+  /****************** changeset functions **********************/
+
+  /// does this data selection support changesets?
+  virtual bool supports_changesets();
+
+  /// select specified changesets, returning the number of
+  /// changesets selected.
+  virtual int select_changesets(const std::vector<osm_changeset_id_t> &);
+
+  /// select the changeset discussions as well. this effectively
+  /// just sets a flag - by default, discussions are not included,
+  /// if this is called then discussions will be included.
+  virtual void select_changeset_discussions();
 
   /**
    * factory for the creation of data selections. this abstracts away

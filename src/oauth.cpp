@@ -385,8 +385,12 @@ std::string normalise_request_url(request &req) {
   std::ostringstream out;
 
   out << downcase(scheme(req)) << "://"
-      << downcase(authority(req)) << "/"
-      << path(req);
+      << downcase(authority(req));
+  std::string p = path(req);
+  if (p.size() > 0 && p[0] != '/') {
+    out << "/";
+  }
+  out << p;
 
   return out.str();
 }

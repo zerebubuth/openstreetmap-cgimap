@@ -5,13 +5,16 @@
 #include "cgimap/types.hpp"
 #include "cgimap/mime_types.hpp"
 #include <list>
+#include <vector>
 #include <stdexcept>
 #include <boost/optional.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
 
 /**
  * What type of element the formatter is starting to write.
  */
 enum element_type {
+  element_type_changeset,
   element_type_node,
   element_type_way,
   element_type_relation
@@ -37,6 +40,55 @@ struct element_info {
   bool visible;
 };
 
+struct changeset_info {
+  changeset_info();
+  changeset_info(const changeset_info &);
+  changeset_info(osm_changeset_id_t id_,
+                 const std::string &created_at_,
+                 const std::string &closed_at_,
+                 const boost::optional<osm_user_id_t> &uid_,
+                 const boost::optional<std::string> &display_name_,
+                 const boost::optional<bbox> &bounding_box_,
+                 size_t num_changes_,
+                 size_t comments_count_);
+
+  // returns true if the changeset is "open" at a particular
+  // point in time.
+  //
+  // note that the definition of "open" is fraught with
+  // difficulty, and it's not wise to rely on it too much.
+  bool is_open_at(const boost::posix_time::ptime &) const;
+
+  // standard meaning of ID
+  osm_changeset_id_t id;
+  // changesets are created at a certain time and may be either
+  // closed explicitly with a closing time, or close implicitly
+  // an hour after the last update to the changeset. closed_at
+  // should have an ISO 8601 format: YYYY-MM-DDTHH:MM:SSZ
+  std::string created_at, closed_at;
+  // anonymous objects don't have UIDs or display names
+  boost::optional<osm_user_id_t> uid;
+  boost::optional<std::string> display_name;
+  // changesets with edits will have a bounding box containing
+  // the extent of all the changes.
+  boost::optional<bbox> bounding_box;
+  // the number of changes (new element versions) associated
+  // with this changeset.
+  size_t num_changes;
+  // if the changeset has a discussion attached, then this will
+  // be the number of comments.
+  size_t comments_count;
+};
+
+struct changeset_comment_info {
+  osm_user_id_t author_id;
+  std::string body;
+  std::string created_at;
+  std::string author_display_name;
+
+  bool operator==(const changeset_comment_info &) const;
+};
+
 struct member_info {
   element_type type;
   osm_nwr_id_t ref;
@@ -56,6 +108,7 @@ struct member_info {
 typedef std::list<osm_nwr_id_t> nodes_t;
 typedef std::list<member_info> members_t;
 typedef std::list<std::pair<std::string, std::string> > tags_t;
+typedef std::vector<changeset_comment_info> comments_t;
 
 /**
  * Base type for different output formats. Hopefully this is general
@@ -105,6 +158,13 @@ struct output_formatter {
   // output a single relation given a row and iterators over members and tags
   virtual void write_relation(const element_info &elem,
                               const members_t &members, const tags_t &tags) = 0;
+
+  // output a single changeset.
+  virtual void write_changeset(const changeset_info &elem,
+                               const tags_t &tags,
+                               bool include_comments,
+                               const comments_t &comments,
+                               const boost::posix_time::ptime &now) = 0;
 
   // flush the current state
   virtual void flush() = 0;

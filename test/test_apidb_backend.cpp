@@ -1,231 +1,27 @@
 #include <iostream>
-#include <fstream>
 #include <stdexcept>
 #include <boost/noncopyable.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/optional/optional_io.hpp>
-#include <pqxx/pqxx>
+#include <boost/make_shared.hpp>
+#include <boost/program_options.hpp>
 
 #include <sys/time.h>
 #include <stdio.h>
 
-#include "cgimap/backend/apidb/apidb.hpp"
+#include "cgimap/config.hpp"
+#include "cgimap/time.hpp"
+#include "cgimap/oauth.hpp"
+#include "cgimap/rate_limiter.hpp"
+#include "cgimap/routes.hpp"
+#include "cgimap/process_request.hpp"
 
-namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+#include "test_formatter.hpp"
+#include "test_database.hpp"
+#include "test_request.hpp"
 
 namespace {
-
-/**
- * test_database is a RAII object to create a unique apidb format database
- * populated with fake data to allow the apidb data selection process to
- * be tested in isolation.
- */
-struct test_database : public boost::noncopyable {
-  // simple error type - we distinguish this from a programming error and
-  // allow the test to be skipped, as people might not have or want an
-  // apidb database set up on their local machines.
-  struct setup_error : public std::exception {
-    setup_error(const boost::format &fmt) : m_str(fmt.str()) {}
-    ~setup_error() throw() {}
-    virtual const char *what() const throw() { return m_str.c_str(); }
-
-  private:
-    const std::string m_str;
-  };
-
-  // set up a unique test database.
-  test_database();
-
-  // drop the test database.
-  ~test_database();
-
-  // create table structure and fill with fake data.
-  void setup();
-
-  // run a test. func will be called once with each of a writeable and
-  // readonly data selection backed by the database. the func should
-  // do its own testing - the run method here is just plumbing.
-  void run(boost::function<void(boost::shared_ptr<data_selection>)> func);
-
-  // run a test. func will be called once with the OAuth store backed by
-  // the database.
-  void run(boost::function<void(boost::shared_ptr<oauth::store>)> func);
-
-private:
-  // create a random, and hopefully unique, database name.
-  static std::string random_db_name();
-
-  // set up the schema of the database and fill it with test data.
-  static void fill_fake_data(pqxx::connection &w);
-
-  // the name of the test database.
-  std::string m_db_name;
-
-  // factories using the test database which produce writeable and
-  // read-only data selections.
-  boost::shared_ptr<data_selection::factory> m_writeable_factory,
-      m_readonly_factory;
-
-  // oauth store based on the writeable connection.
-  boost::shared_ptr<oauth::store> m_oauth_store;
-};
-
-/**
- * set up a test database, isolated from anything else, and fill it with
- * fake data for testing.
- */
-test_database::test_database() {
-  try {
-    std::string db_name = random_db_name();
-
-    pqxx::connection conn("dbname=postgres");
-    pqxx::nontransaction w(conn);
-
-    w.exec((boost::format("CREATE DATABASE %1%") % db_name).str());
-    w.commit();
-    m_db_name = db_name;
-
-  } catch (const std::exception &e) {
-    throw setup_error(boost::format("Unable to set up test database: %1%") %
-                      e.what());
-
-  } catch (...) {
-    throw setup_error(
-        boost::format("Unable to set up test database due to unknown error."));
-  }
-}
-
-/**
- * set up table structure and create access resources. this isn't
- * involved with the table creation per se, so can error independently
- * and cause a rollback / table drop.
- */
-void test_database::setup() {
-  pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
-  fill_fake_data(conn);
-
-  boost::shared_ptr<backend> apidb = make_apidb_backend();
-
-  {
-    po::options_description desc = apidb->options();
-    const char *argv[] = { "", "--dbname", m_db_name.c_str() };
-    int argc = sizeof(argv) / sizeof(*argv);
-    po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    vm.notify();
-    m_writeable_factory = apidb->create(vm);
-    m_oauth_store = apidb->create_oauth_store(vm);
-  }
-
-  {
-    po::options_description desc = apidb->options();
-    const char *argv[] = { "", "--dbname", m_db_name.c_str(), "--readonly" };
-    int argc = sizeof(argv) / sizeof(*argv);
-    po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    vm.notify();
-    m_readonly_factory = apidb->create(vm);
-  }
-}
-
-test_database::~test_database() {
-  if (m_writeable_factory) {
-    m_writeable_factory.reset();
-  }
-  if (m_readonly_factory) {
-    m_readonly_factory.reset();
-  }
-  if (m_oauth_store) {
-    m_oauth_store.reset();
-  }
-
-  if (!m_db_name.empty()) {
-    try {
-      pqxx::connection conn("dbname=postgres");
-      pqxx::nontransaction w(conn);
-
-      w.exec((boost::format("DROP DATABASE %1%") % m_db_name).str());
-      w.commit();
-      m_db_name.clear();
-
-    } catch (const std::exception &e) {
-      // nothing we can do here in the destructor except complain
-      // loudly.
-      std::cerr << "Unable to drop database: " << e.what() << std::endl;
-
-    } catch (...) {
-      std::cerr << "Unable to drop database due to unknown exception."
-                << std::endl;
-    }
-  }
-}
-
-std::string test_database::random_db_name() {
-  char name[20];
-
-  // try to make something that has a reasonable chance of being
-  // unique on this machine, in case we clash with anything else.
-  unsigned int hash = (unsigned int)getpid();
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  hash ^= (unsigned int)((tv.tv_usec & 0xffffu) << 16);
-
-  snprintf(name, 20, "osm_test_%08x", hash);
-  return std::string(name);
-}
-
-void test_database::run(
-    boost::function<void(boost::shared_ptr<data_selection>)> func) {
-  try {
-    func((*m_writeable_factory).make_selection());
-  } catch (const std::exception &e) {
-    throw std::runtime_error(
-        (boost::format("%1%, in writeable selection") % e.what()).str());
-  }
-
-  try {
-    func((*m_readonly_factory).make_selection());
-  } catch (const std::exception &e) {
-    throw std::runtime_error(
-        (boost::format("%1%, in read-only selection") % e.what()).str());
-  }
-}
-
-void test_database::run(
-  boost::function<void(boost::shared_ptr<oauth::store>)> func) {
-  if (!m_oauth_store) {
-    throw std::runtime_error("OAuth store not available.");
-  }
-
-  func(m_oauth_store);
-}
-
-// reads a file of SQL statements, splits on ';' and tries to
-// execute them in a transaction.
-struct file_read_transactor : public pqxx::transactor<pqxx::work> {
-  file_read_transactor(const std::string &filename) : m_filename(filename) {}
-
-  void operator()(pqxx::work &w) {
-    std::streamsize size = fs::file_size(m_filename);
-    std::string big_query(size, '\0');
-    std::ifstream in(m_filename.c_str());
-    in.read(&big_query[0], size);
-    if (in.fail() || (size != in.gcount())) {
-      throw std::runtime_error("Unable to read input SQL file.");
-    }
-    w.exec(big_query);
-  }
-
-  std::string m_filename;
-};
-
-void test_database::fill_fake_data(pqxx::connection &conn) {
-  conn.perform(file_read_transactor("test/structure.sql"));
-  conn.perform(file_read_transactor("test/test_apidb_backend.sql"));
-}
 
 template <typename T>
 void assert_equal(const T& a, const T&b, const std::string &message) {
@@ -235,186 +31,6 @@ void assert_equal(const T& a, const T&b, const std::string &message) {
         "Expecting %1% to be equal, but %2% != %3%")
        % message % a % b).str());
   }
-}
-
-struct test_formatter : public output_formatter {
-  struct node_t {
-    node_t(const element_info &elem_, double lon_, double lat_,
-           const tags_t &tags_)
-      : elem(elem_), lon(lon_), lat(lat_), tags(tags_) {}
-
-    element_info elem;
-    double lon, lat;
-    tags_t tags;
-
-    inline bool operator!=(const node_t &other) const {
-      return !operator==(other);
-    }
-
-    bool operator==(const node_t &other) const {
-#define CMP(sym) { if ((sym) != other. sym) { return false; } }
-      CMP(elem.id);
-      CMP(elem.version);
-      CMP(elem.changeset);
-      CMP(elem.timestamp);
-      CMP(elem.uid);
-      CMP(elem.display_name);
-      CMP(elem.visible);
-      CMP(lon);
-      CMP(lat);
-      CMP(tags.size());
-#undef CMP
-      return std::equal(tags.begin(), tags.end(), other.tags.begin());
-    }
-  };
-
-  struct way_t {
-    way_t(const element_info &elem_, const nodes_t &nodes_,
-          const tags_t &tags_)
-      : elem(elem_), nodes(nodes_), tags(tags_) {}
-
-    element_info elem;
-    nodes_t nodes;
-    tags_t tags;
-
-    inline bool operator!=(const way_t &other) const {
-      return !operator==(other);
-    }
-
-    bool operator==(const way_t &other) const {
-#define CMP(sym) { if ((sym) != other. sym) { return false; } }
-      CMP(elem.id);
-      CMP(elem.version);
-      CMP(elem.changeset);
-      CMP(elem.timestamp);
-      CMP(elem.uid);
-      CMP(elem.display_name);
-      CMP(elem.visible);
-      CMP(nodes.size());
-      CMP(tags.size());
-#undef CMP
-      return std::equal(tags.begin(), tags.end(), other.tags.begin()) &&
-        std::equal(nodes.begin(), nodes.end(), other.nodes.begin());
-    }
-  };
-
-  struct relation_t {
-    relation_t(const element_info &elem_, const members_t &members_,
-               const tags_t &tags_)
-      : elem(elem_), members(members_), tags(tags_) {}
-
-    element_info elem;
-    members_t members;
-    tags_t tags;
-
-    inline bool operator!=(const relation_t &other) const {
-      return !operator==(other);
-    }
-
-    bool operator==(const relation_t &other) const {
-#define CMP(sym) { if ((sym) != other. sym) { return false; } }
-      CMP(elem.id);
-      CMP(elem.version);
-      CMP(elem.changeset);
-      CMP(elem.timestamp);
-      CMP(elem.uid);
-      CMP(elem.display_name);
-      CMP(elem.visible);
-      CMP(members.size());
-      CMP(tags.size());
-#undef CMP
-      return std::equal(tags.begin(), tags.end(), other.tags.begin()) &&
-        std::equal(members.begin(), members.end(), other.members.begin());
-    }
-  };
-
-  std::vector<node_t> m_nodes;
-  std::vector<way_t> m_ways;
-  std::vector<relation_t> m_relations;
-
-  virtual ~test_formatter() {}
-  mime::type mime_type() const { throw std::runtime_error("Unimplemented"); }
-  void start_document(const std::string &generator) {}
-  void end_document() {}
-  void write_bounds(const bbox &bounds) {}
-  void start_element_type(element_type type) {}
-  void end_element_type(element_type type) {}
-  void write_node(const element_info &elem, double lon, double lat,
-                  const tags_t &tags) {
-    m_nodes.push_back(node_t(elem, lon, lat, tags));
-  }
-  void write_way(const element_info &elem, const nodes_t &nodes,
-                 const tags_t &tags) {
-    m_ways.push_back(way_t(elem, nodes, tags));
-  }
-  void write_relation(const element_info &elem,
-                      const members_t &members, const tags_t &tags) {
-    m_relations.push_back(relation_t(elem, members, tags));
-  }
-  void flush() {}
-
-  void error(const std::exception &e) {
-    throw e;
-  }
-  void error(const std::string &str) {
-    throw std::runtime_error(str);
-  }
-};
-
-std::ostream &operator<<(std::ostream &out, const element_info &e) {
-  out << "element_info("
-      << "id=" << e.id << ", "
-      << "version=" << e.version << ", "
-      << "changeset=" << e.changeset << ", "
-      << "timestamp=" << e.timestamp << ", "
-      << "uid=" << e.uid << ", "
-      << "display_name=" << e.display_name << ", "
-      << "visible=" << e.visible << ")";
-  return out;
-}
-
-std::ostream &operator<<(std::ostream &out, const test_formatter::node_t &n) {
-  out << "node(" << n.elem << ", "
-      << "lon=" << n.lon << ", "
-      << "lat=" << n.lat << ", "
-      << "{";
-  BOOST_FOREACH(const tags_t::value_type &v, n.tags) {
-    out << "\"" << v.first << "\" => \"" << v.second << "\", ";
-  }
-  out << "})";
-}
-
-std::ostream &operator<<(std::ostream &out, const test_formatter::way_t &w) {
-  out << "way(" << w.elem << ", "
-      << "[";
-  BOOST_FOREACH(const nodes_t::value_type &v, w.nodes) {
-    out << v << ", ";
-  }
-  out << "], {";
-  BOOST_FOREACH(const tags_t::value_type &v, w.tags) {
-    out << "\"" << v.first << "\" => \"" << v.second << "\", ";
-  }
-  out << "})";
-}
-
-std::ostream &operator<<(std::ostream &out, const member_info &m) {
-  out << "member_info(type=" << m.type << ", "
-      << "ref=" << m.ref << ", "
-      << "role=\"" << m.role << "\")";
-  return out;
-}
-
-std::ostream &operator<<(std::ostream &out, const test_formatter::relation_t &r) {
-  out << "relation(" << r.elem << ", "
-      << "[";
-  BOOST_FOREACH(const member_info &m, r.members) {
-    out << m << ", ";
-  }
-  out << "], {";
-  BOOST_FOREACH(const tags_t::value_type &v, r.tags) {
-    out << "\"" << v.first << "\" => \"" << v.second << "\", ";
-  }
-  out << "})";
 }
 
 void test_single_nodes(boost::shared_ptr<data_selection> sel) {
@@ -731,6 +347,311 @@ void test_historic_dup_relation(boost::shared_ptr<data_selection> sel) {
     f.m_relations[0], "relation written");
 }
 
+void test_changeset(boost::shared_ptr<data_selection> sel) {
+  assert_equal<bool>(sel->supports_changesets(), true,
+                     "apidb should support changesets.");
+
+  std::vector<osm_changeset_id_t> ids;
+  ids.push_back(1);
+  int num = sel->select_changesets(ids);
+  assert_equal<int>(num, 1, "should have selected one changeset.");
+
+  boost::posix_time::ptime t = parse_time("2015-09-05T17:15:33Z");
+
+  test_formatter f;
+  sel->write_changesets(f, t);
+  assert_equal<size_t>(f.m_changesets.size(), 1,
+                       "should have written one changeset.");
+
+  assert_equal<test_formatter::changeset_t>(
+    f.m_changesets.front(),
+    test_formatter::changeset_t(
+      changeset_info(
+        1, // ID
+        "2013-11-14T02:10:00Z", // created_at
+        "2013-11-14T03:10:00Z", // closed_at
+        1, // uid
+        std::string("user_1"), // display_name
+        boost::none, // bounding box
+        2, // num_changes
+        0 // comments_count
+        ),
+      tags_t(),
+      false,
+      comments_t(),
+      t),
+    "changesets");
+}
+
+void test_nonpublic_changeset(boost::shared_ptr<data_selection> sel) {
+  assert_equal<bool>(sel->supports_changesets(), true,
+                     "apidb should support changesets.");
+
+  std::vector<osm_changeset_id_t> ids;
+  ids.push_back(4);
+  int num = sel->select_changesets(ids);
+  assert_equal<int>(num, 1, "should have selected one changeset.");
+
+  boost::posix_time::ptime t = parse_time("2015-09-05T20:13:23Z");
+
+  test_formatter f;
+  sel->write_changesets(f, t);
+  assert_equal<size_t>(f.m_changesets.size(), 1,
+                       "should have written one changeset.");
+
+  assert_equal<test_formatter::changeset_t>(
+    f.m_changesets.front(),
+    test_formatter::changeset_t(
+      changeset_info(
+        4, // ID
+        "2013-11-14T02:10:00Z", // created_at
+        "2013-11-14T03:10:00Z", // closed_at
+        boost::none, // uid
+        boost::none, // display_name
+        boost::none, // bounding box
+        1, // num_changes
+        0 // comments_count
+        ),
+      tags_t(),
+      false,
+      comments_t(),
+      t),
+    "changesets");
+}
+
+void test_changeset_with_tags(boost::shared_ptr<data_selection> sel) {
+  assert_equal<bool>(sel->supports_changesets(), true,
+                     "apidb should support changesets.");
+
+  std::vector<osm_changeset_id_t> ids;
+  ids.push_back(2);
+  int num = sel->select_changesets(ids);
+  assert_equal<int>(num, 1, "should have selected one changeset.");
+
+  boost::posix_time::ptime t = parse_time("2015-09-05T20:33:00Z");
+
+  test_formatter f;
+  sel->write_changesets(f, t);
+  assert_equal<size_t>(f.m_changesets.size(), 1,
+                       "should have written one changeset.");
+
+  tags_t tags;
+  tags.push_back(std::make_pair("test_key", "test_value"));
+  tags.push_back(std::make_pair("test_key2", "test_value2"));
+  assert_equal<test_formatter::changeset_t>(
+    f.m_changesets.front(),
+    test_formatter::changeset_t(
+      changeset_info(
+        2, // ID
+        "2013-11-14T02:10:00Z", // created_at
+        "2013-11-14T03:10:00Z", // closed_at
+        1, // uid
+        std::string("user_1"), // display_name
+        boost::none, // bounding box
+        1, // num_changes
+        0 // comments_count
+        ),
+      tags,
+      false,
+      comments_t(),
+      t),
+    "changesets should be equal.");
+}
+
+void check_changeset_with_comments(boost::shared_ptr<data_selection> sel,
+                                   bool include_discussion) {
+  assert_equal<bool>(sel->supports_changesets(), true,
+                     "apidb should support changesets.");
+
+  std::vector<osm_changeset_id_t> ids;
+  ids.push_back(3);
+  int num = sel->select_changesets(ids);
+  assert_equal<int>(num, 1, "should have selected one changeset.");
+
+  if (include_discussion) {
+    sel->select_changeset_discussions();
+  }
+
+  boost::posix_time::ptime t = parse_time("2015-09-05T20:38:00Z");
+
+  test_formatter f;
+  sel->write_changesets(f, t);
+  assert_equal<size_t>(f.m_changesets.size(), 1,
+                       "should have written one changeset.");
+
+  comments_t comments;
+  {
+    changeset_comment_info comment;
+    comment.author_id = 3;
+    comment.body = "a nice comment!";
+    comment.created_at = "2015-09-05T20:37:01Z";
+    comment.author_display_name = "user_3";
+    comments.push_back(comment);
+  }
+  // note that we don't see the non-visible one in the database.
+  assert_equal<test_formatter::changeset_t>(
+    f.m_changesets.front(),
+    test_formatter::changeset_t(
+      changeset_info(
+        3, // ID
+        "2013-11-14T02:10:00Z", // created_at
+        "2013-11-14T03:10:00Z", // closed_at
+        1, // uid
+        std::string("user_1"), // display_name
+        boost::none, // bounding box
+        0, // num_changes
+        0 // comments_count
+        ),
+      tags_t(),
+      include_discussion,
+      comments,
+      t),
+    "changesets should be equal.");
+}
+
+void test_changeset_with_comments_not_including_discussions(boost::shared_ptr<data_selection> sel) {
+  try {
+    check_changeset_with_comments(sel, false);
+
+  } catch (const std::exception &e) {
+    std::ostringstream ostr;
+    ostr << e.what() << ", while include_discussion was false";
+    throw std::runtime_error(ostr.str());
+  }
+}
+
+void test_changeset_with_comments_including_discussions(boost::shared_ptr<data_selection> sel) {
+  try {
+    check_changeset_with_comments(sel, true);
+
+  } catch (const std::exception &e) {
+    std::ostringstream ostr;
+    ostr << e.what() << ", while include_discussion was true";
+    throw std::runtime_error(ostr.str());
+  }
+}
+
+class empty_data_selection
+  : public data_selection {
+public:
+
+  virtual ~empty_data_selection() {}
+
+  void write_nodes(output_formatter &formatter) {}
+  void write_ways(output_formatter &formatter) {}
+  void write_relations(output_formatter &formatter) {}
+  void write_changesets(output_formatter &formatter,
+                        const boost::posix_time::ptime &now) {}
+
+  visibility_t check_node_visibility(osm_nwr_id_t id) {}
+  visibility_t check_way_visibility(osm_nwr_id_t id) {}
+  visibility_t check_relation_visibility(osm_nwr_id_t id) {}
+
+  int select_nodes(const std::vector<osm_nwr_id_t> &) { return 0; }
+  int select_ways(const std::vector<osm_nwr_id_t> &) { return 0; }
+  int select_relations(const std::vector<osm_nwr_id_t> &) { return 0; }
+  int select_nodes_from_bbox(const bbox &bounds, int max_nodes) { return 0; }
+  void select_nodes_from_relations() {}
+  void select_ways_from_nodes() {}
+  void select_ways_from_relations() {}
+  void select_relations_from_ways() {}
+  void select_nodes_from_way_nodes() {}
+  void select_relations_from_nodes() {}
+  void select_relations_from_relations() {}
+  void select_relations_members_of_relations() {}
+  bool supports_changesets() { return false; }
+  int select_changesets(const std::vector<osm_changeset_id_t> &) { return 0; }
+  void select_changeset_discussions() {}
+
+  struct factory
+    : public data_selection::factory {
+    virtual ~factory() {}
+    virtual boost::shared_ptr<data_selection> make_selection() {
+      return boost::make_shared<empty_data_selection>();
+    }
+  };
+};
+
+struct recording_rate_limiter
+  : public rate_limiter {
+  ~recording_rate_limiter() {}
+
+  bool check(const std::string &key) {
+    m_keys_seen.insert(key);
+    return true;
+  }
+
+  void update(const std::string &key, int bytes) {
+    m_keys_seen.insert(key);
+  }
+
+  bool saw_key(const std::string &key) {
+    return m_keys_seen.count(key) > 0;
+  }
+
+private:
+  std::set<std::string> m_keys_seen;
+};
+
+
+void test_oauth_end_to_end(boost::shared_ptr<oauth::store> store) {
+  recording_rate_limiter limiter;
+  std::string generator("test_apidb_backend.cpp");
+  routes route;
+  boost::shared_ptr<data_selection::factory> factory =
+    boost::make_shared<empty_data_selection::factory>();
+
+  test_request req;
+  req.set_header("SCRIPT_URL", "/api/0.6/relation/165475/full");
+  req.set_header("SCRIPT_URI",
+                 "http://www.openstreetmap.org/api/0.6/relation/165475/full");
+  req.set_header("HTTP_HOST", "www.openstreetmap.org");
+  req.set_header("HTTP_ACCEPT_ENCODING",
+                 "gzip;q=1.0,deflate;q=0.6,identity;q=0.3");
+  req.set_header("HTTP_ACCEPT", "*/*");
+  req.set_header("HTTP_USER_AGENT", "OAuth gem v0.4.7");
+  req.set_header("HTTP_AUTHORIZATION",
+                 "OAuth oauth_consumer_key=\"x3tHSMbotPe5fBlItMbg\", "
+                 "oauth_nonce=\"dvu3eTk8i1uvj8zQ8Wef91UF6ngQdlTA3xQ2vEf7xU\", "
+                 "oauth_signature=\"ewKFprItE5uaDHKFu3IVzuEHbno%3D\", "
+                 "oauth_signature_method=\"HMAC-SHA1\", "
+                 "oauth_timestamp=\"1475844649\", "
+                 "oauth_token=\"15zpwgGjdjBu1DD65X7kcHzaWqfQpvqmMtqa3ZIO\", "
+                 "oauth_version=\"1.0\"");
+  req.set_header("HTTP_X_REQUEST_ID", "V-eaKX8AAQEAAF4UzHwAAAHt");
+  req.set_header("HTTP_X_FORWARDED_HOST", "www.openstreetmap.org");
+  req.set_header("HTTP_X_FORWARDED_SERVER", "www.openstreetmap.org");
+  req.set_header("HTTP_CONNECTION", "Keep-Alive");
+  req.set_header("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin");
+  req.set_header("SERVER_SIGNATURE", "<address>Apache/2.4.18 (Ubuntu) Server "
+                 "at www.openstreetmap.org Port 80</address>");
+  req.set_header("SERVER_SOFTWARE", "Apache/2.4.18 (Ubuntu)");
+  req.set_header("SERVER_NAME", "www.openstreetmap.org");
+  req.set_header("SERVER_ADDR", "127.0.0.1");
+  req.set_header("SERVER_PORT", "80");
+  req.set_header("REMOTE_ADDR", "127.0.0.1");
+  req.set_header("DOCUMENT_ROOT", "/srv/www.openstreetmap.org/rails/public");
+  req.set_header("REQUEST_SCHEME", "http");
+  req.set_header("SERVER_PROTOCOL", "HTTP/1.1");
+  req.set_header("REQUEST_METHOD", "GET");
+  req.set_header("QUERY_STRING", "");
+  req.set_header("REQUEST_URI", "/api/0.6/relation/165475/full");
+  req.set_header("SCRIPT_NAME", "/api/0.6/relation/165475/full");
+
+  assert_equal<boost::optional<std::string> >(
+    std::string("ewKFprItE5uaDHKFu3IVzuEHbno="),
+    oauth::detail::hashed_signature(req, *store),
+    "hashed signatures");
+
+  process_request(req, limiter, generator, route, factory, store);
+
+  assert_equal<int>(404, req.response_status(), "response status");
+  assert_equal<bool>(false, limiter.saw_key("addr:127.0.0.1"),
+                     "saw addr:127.0.0.1 as a rate limit key");
+  assert_equal<bool>(true, limiter.saw_key("user:1"),
+                     "saw user:1 as a rate limit key");
+}
+
 } // anonymous namespace
 
 int main(int, char **) {
@@ -767,6 +688,24 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
         &test_historic_dup_relation));
+
+    tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
+              &test_changeset));
+
+    tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
+              &test_nonpublic_changeset));
+
+    tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
+              &test_changeset_with_tags));
+
+    tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
+              &test_changeset_with_comments_not_including_discussions));
+
+    tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
+              &test_changeset_with_comments_including_discussions));
+
+    tdb.run(boost::function<void(boost::shared_ptr<oauth::store>)>(
+              &test_oauth_end_to_end));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;

@@ -5,9 +5,16 @@
 #include <boost/scoped_ptr.hpp>
 
 struct fcgi_request : public request {
-  explicit fcgi_request(int socket);
+  fcgi_request(int socket, const boost::posix_time::ptime &now);
   virtual ~fcgi_request();
   const char *get_param(const char *key);
+
+  // getting and setting the current time
+  boost::posix_time::ptime get_current_time() const;
+  // need to be able to set the time, since the fcgi_request is
+  // actually wrapping the whole socket and so persists over
+  // several calls.
+  void set_current_time(const boost::posix_time::ptime &now);
 
   int accept_r();
   static int open_socket(const std::string &, int);

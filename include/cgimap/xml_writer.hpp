@@ -6,6 +6,7 @@
 #include <boost/shared_ptr.hpp>
 #include "cgimap/output_buffer.hpp"
 #include "cgimap/output_writer.hpp"
+#include <inttypes.h>
 
 /**
  * Writes UTF-8 output to a file or stdout.
@@ -33,11 +34,10 @@ public:
 
   // overloaded versions of writeAttribute for convenience
   void attribute(const std::string &name, double value);
-  void attribute(const std::string &name, int value);
-  void attribute(const std::string &name, unsigned long int value);
-  void attribute(const std::string &name, unsigned long long int value);
-  void attribute(const std::string &name, long int value);
-  void attribute(const std::string &name, long long int value);
+  void attribute(const std::string &name, int32_t value);
+  void attribute(const std::string &name, int64_t value);
+  void attribute(const std::string &name, uint32_t value);
+  void attribute(const std::string &name, uint64_t value);
   void attribute(const std::string &name, bool value);
 
   // write a child text element

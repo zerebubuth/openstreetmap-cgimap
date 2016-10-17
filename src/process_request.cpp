@@ -111,7 +111,7 @@ process_get_request(request &req, routes &route,
 
   try {
     // call to write the response
-    responder->write(o_formatter, generator);
+    responder->write(o_formatter, generator, req.get_current_time());
 
     // ensure the request is finished
     req.finish();
@@ -217,31 +217,32 @@ const std::string user_prefix("user:");
 struct is_copacetic : public boost::static_visitor<bool> {
   template <typename T>
   bool operator()(const T &) const { return false; }
-
-  bool operator()(const oauth::validity::copacetic &) const {
-    return true;
-  }
 };
+
+template <>
+bool is_copacetic::operator()<oauth::validity::copacetic>(
+  const oauth::validity::copacetic &) const {
+  return true;
+}
 
 struct get_oauth_token : public boost::static_visitor<std::string> {
   template <typename T>
   std::string operator()(const T &) const {
     throw std::runtime_error("Type does not contain an OAuth token.");
   }
-
-  std::string operator()(const oauth::validity::copacetic &c) const {
-    return c.token;
-  }
 };
 
-struct oauth_status_code : public boost::static_visitor<int> {
-  template <typename T>
-  bool operator()(const T &) const { return 500; }
+template <>
+std::string get_oauth_token::operator()<oauth::validity::copacetic>(
+  const oauth::validity::copacetic &c) const {
+  return c.token;
+}
 
-  bool operator()(const oauth::validity::copacetic &) const { return 200; }
-  bool operator()(const oauth::validity::not_signed &) const { return 200; }
-  bool operator()(const oauth::validity::bad_request &) const { return 400; }
-  bool operator()(const oauth::validity::unauthorized &) const { return 401; }
+struct oauth_status_code : public boost::static_visitor<int> {
+  int operator()(const oauth::validity::copacetic &) const { return 200; }
+  int operator()(const oauth::validity::not_signed &) const { return 200; }
+  int operator()(const oauth::validity::bad_request &) const { return 400; }
+  int operator()(const oauth::validity::unauthorized &) const { return 401; }
 };
 
 } // anonymous namespace
@@ -316,7 +317,7 @@ void process_request(request &req, rate_limiter &limiter,
     // process request
     if (method == "GET") {
       boost::tie(request_name, bytes_written) =
-          process_get_request(req, route, factory, ip, generator);
+        process_get_request(req, route, factory, ip, generator);
 
     } else if (method == "HEAD") {
       boost::tie(request_name, bytes_written) =
@@ -331,7 +332,7 @@ void process_request(request &req, rate_limiter &limiter,
 
     // update the rate limiter, if anything was written
     if (bytes_written > 0) {
-      limiter.update(ip, bytes_written);
+      limiter.update(client_key, bytes_written);
     }
 
     // log the completion time (note: this comes last to avoid

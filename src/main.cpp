@@ -82,6 +82,23 @@ static string get_generator_string() {
 }
 
 /**
+ * convert an environment variable name to an option name
+ */
+static string environment_option_name(string name){
+  string option;
+
+  if (name.substr(0, 7) == "CGIMAP_") {
+    std::transform(name.begin() + 7, name.end(),
+                   std::back_inserter(option),
+                   [](unsigned char c) {
+                     return c == '_' ? '-' : std::tolower(c);
+                   });
+  }
+
+  return option;
+}
+
+/**
  * parse the comment line and environment for options.
  */
 static void get_options(int argc, char **argv, po::variables_map &options) {
@@ -106,7 +123,7 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
   setup_backend_options(argc, argv, desc);
 
   po::store(po::parse_command_line(argc, argv, desc), options);
-  po::store(po::parse_environment(desc, "CGIMAP_"), options);
+  po::store(po::parse_environment(desc, environment_option_name), options);
   po::notify(options);
 
   if (options.count("help")) {
@@ -134,13 +151,13 @@ static void process_requests(int socket, const po::variables_map &options) {
   }
 
   // create the rate limiter
-  rate_limiter limiter(options);
+  memcached_rate_limiter limiter(options);
 
   // create the routes map (from URIs to handlers)
   routes route;
 
   // create the request object (persists over several calls)
-  fcgi_request req(socket);
+  fcgi_request req(socket, pt::ptime());
 
   // create a factory for data selections - the mechanism for actually
   // getting at data.
@@ -163,6 +180,8 @@ static void process_requests(int socket, const po::variables_map &options) {
 
     // get the next request
     if (req.accept_r() >= 0) {
+      pt::ptime now(pt::second_clock::local_time());
+      req.set_current_time(now);
       process_request(req, limiter, generator, route, factory, oauth_store);
     }
   }

@@ -3,12 +3,25 @@
 
 #include "cgimap/rate_limiter.hpp"
 
-struct rate_limiter::state {
+rate_limiter::~rate_limiter() {
+}
+
+null_rate_limiter::~null_rate_limiter() {
+}
+
+bool null_rate_limiter::check(const std::string &key) {
+  return true;
+}
+
+void null_rate_limiter::update(const std::string &key, int bytes) {
+}
+
+struct memcached_rate_limiter::state {
   time_t last_update;
   int bytes_served;
 };
 
-rate_limiter::rate_limiter(
+memcached_rate_limiter::memcached_rate_limiter(
     const boost::program_options::variables_map &options) {
   if (options.count("memcache") && (ptr = memcached_create(NULL)) != NULL) {
     memcached_server_st *server_list;
@@ -40,12 +53,12 @@ rate_limiter::rate_limiter(
   }
 }
 
-rate_limiter::~rate_limiter(void) {
+memcached_rate_limiter::~memcached_rate_limiter(void) {
   if (ptr)
     memcached_free(ptr);
 }
 
-bool rate_limiter::check(const std::string &key) {
+bool memcached_rate_limiter::check(const std::string &key) {
   int bytes_served = 0;
   std::string mc_key;
   state *sp;
@@ -72,7 +85,7 @@ bool rate_limiter::check(const std::string &key) {
   return bytes_served < max_bytes;
 }
 
-void rate_limiter::update(const std::string &key, int bytes) {
+void memcached_rate_limiter::update(const std::string &key, int bytes) {
   if (ptr) {
     time_t now = time(NULL);
     std::string mc_key;

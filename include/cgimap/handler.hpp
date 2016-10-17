@@ -10,6 +10,7 @@
 #include <string>
 #include <memory>
 #include <boost/shared_ptr.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 /**
  * object which is able to respond to an already-setup request.
@@ -19,7 +20,8 @@ public:
   responder(mime::type);
   virtual ~responder();
   virtual void write(boost::shared_ptr<output_formatter> f,
-                     const std::string &generator) = 0;
+                     const std::string &generator,
+                     const boost::posix_time::ptime &now) = 0;
 
   mime::type resource_type() const;
 
