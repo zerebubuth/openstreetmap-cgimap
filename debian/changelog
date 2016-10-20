@@ -1,3 +1,9 @@
+openstreetmap-cgimap (0.5.6-0ubuntu2ppa1~xenial1) xenial; urgency=medium
+
+  * Fix but where changeset comments count was always zero.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Thu, 20 Oct 2016 17:32:39 +0100
+
 openstreetmap-cgimap (0.5.5-0ubuntu2ppa1~xenial1) xenial; urgency=medium
 
   * Implement missing apidb OAuth methods.
