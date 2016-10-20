@@ -371,7 +371,7 @@ void check_changeset_with_comments(boost::shared_ptr<data_selection> sel,
         std::string("user_1"), // display_name
         boost::none, // bounding box
         0, // num_changes
-        0 // comments_count
+        1 // comments_count
         ),
       tags_t(),
       include_discussion,
