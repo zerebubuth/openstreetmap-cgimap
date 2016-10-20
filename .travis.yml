@@ -9,15 +9,16 @@ addons:
       - libboost-dev
       - libboost-date-time-dev
       - libboost-filesystem-dev
+      - libboost-locale-dev
       - libboost-program-options-dev
       - libboost-regex-dev
       - libboost-system-dev
+      - libcrypto++-dev
       - libfcgi-dev
       - libmemcached-dev
+      - libpqxx-dev
       - libxml2-dev
-      - libcrypto++-dev
 script:
-  - sudo apt-get install -yqq libpqxx-dev libboost-locale-dev
   - ./autogen.sh
   - ./configure
   - make
