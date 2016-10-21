@@ -82,7 +82,11 @@ if HAVE_YAJL
 TESTS += test/json.testcore
 endif
 if ENABLE_APIDB
-TESTS += test/test_apidb_backend
+TESTS += \
+	test/test_apidb_backend_nodes \
+	test/test_apidb_backend_oauth \
+	test/test_apidb_backend_historic \
+	test/test_apidb_backend_changesets
 endif
 TEST_EXTENSIONS = .testcore
 TESTCORE_LOG_COMPILER = test/test_core

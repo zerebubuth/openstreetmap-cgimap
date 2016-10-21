@@ -33,7 +33,10 @@ test/*.o
 test/.deps/
 test/.libs/
 test/test_core
-test/test_apidb_backend
+test/test_apidb_backend_nodes
+test/test_apidb_backend_oauth
+test/test_apidb_backend_historic
+test/test_apidb_backend_changesets
 test/test_parse_id_list
 test/test_http
 test/test_oauth
