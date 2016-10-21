@@ -470,6 +470,7 @@ void readonly_pgsql_selection::write_changesets(output_formatter &formatter,
         extract_changeset(*itr, elem, cc);
         extract_tags(w.prepared("extract_changeset_tags")(elem.id).exec(), tags);
         extract_comments(w.prepared("extract_changeset_comments")(elem.id).exec(), comments);
+        elem.comments_count = comments.size();
         formatter.write_changeset(elem, tags, include_changeset_discussions, comments, now);
       }
 
