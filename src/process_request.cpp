@@ -238,11 +238,18 @@ std::string get_oauth_token::operator()<oauth::validity::copacetic>(
   return c.token;
 }
 
-struct oauth_status_code : public boost::static_visitor<int> {
-  int operator()(const oauth::validity::copacetic &) const { return 200; }
-  int operator()(const oauth::validity::not_signed &) const { return 200; }
-  int operator()(const oauth::validity::bad_request &) const { return 400; }
-  int operator()(const oauth::validity::unauthorized &) const { return 401; }
+struct oauth_status_response : public boost::static_visitor<void> {
+  void operator()(const oauth::validity::copacetic &) const {}
+  void operator()(const oauth::validity::not_signed &) const {}
+  void operator()(const oauth::validity::bad_request &) const {
+    throw http::bad_request("Bad OAuth request.");
+  }
+  void operator()(const oauth::validity::unauthorized &u) const {
+    std::ostringstream message;
+    message << "Unauthorized OAuth request, because "
+            << u.reason;
+    throw http::unauthorized(message.str());
+  }
 };
 
 } // anonymous namespace
@@ -282,17 +289,11 @@ void process_request(request &req, rate_limiter &limiter,
         }
 
       } else {
-        int status_code = boost::apply_visitor(oauth_status_code(), oauth_valid);
+        boost::apply_visitor(oauth_status_response(), oauth_valid);
 
-        if (status_code == 400) {
-          throw http::bad_request("Bad OAuth request.");
-
-        } else if (status_code == 401) {
-          throw http::unauthorized("Unauthorized OAuth request.");
-
-        } else {
-          client_key = addr_prefix + ip;
-        }
+        // if we got here then oauth_status_response didn't throw, which means
+        // the request must have been unsigned.
+        client_key = addr_prefix + ip;
       }
     } else {
       client_key = addr_prefix + ip;

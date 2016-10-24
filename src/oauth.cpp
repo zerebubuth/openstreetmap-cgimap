@@ -479,14 +479,16 @@ validity::validity is_valid_signature(
   // check the signatures are identical
   if (*calculated_signature != *provided_signature) {
     // 401 - unauthorized, according to section 3.2.
-    return validity::unauthorized();
+    return validity::unauthorized(
+      "Calculated signature differs from provided.");
   }
 
   boost::optional<std::string>
     token = find_auth_header_value("oauth_token", req);
   if (!token) {
     // 401 - unauthorized, according to section 3.2.
-    return validity::unauthorized();
+    return validity::unauthorized(
+      "No oauth_token Authorization parameter found.");
   }
 
   if (signature_method(req) != std::string("PLAINTEXT")) {
@@ -497,7 +499,8 @@ validity::validity is_valid_signature(
 
     if (!nonce || !timestamp_str) {
       // 401 - unauthorized, according to section 3.2.
-      return validity::unauthorized();
+      return validity::unauthorized(
+        "Both nonce and timestamp must be provided.");
     }
 
     // the timestamp MUST be an integer (section 8).
@@ -512,7 +515,8 @@ validity::validity is_valid_signature(
     // check that the nonce hasn't been used before.
     if (!nonces.use_nonce(*nonce, timestamp)) {
       // 401 - unauthorized, according to section 3.2.
-      return validity::unauthorized();
+      return validity::unauthorized(
+        "Nonce has been used before.");
     }
 
     // TODO: reject stale timestamps?
@@ -522,7 +526,8 @@ validity::validity is_valid_signature(
   if (!tokens.allow_read_api(*token)) {
     // the signature is okay, but the token isn't authorized for API access,
     // so probably best to return a 401 - unauthorized.
-    return validity::unauthorized();
+    return validity::unauthorized(
+      "The user token does not allow read API access.");
   }
 
   boost::optional<std::string>
