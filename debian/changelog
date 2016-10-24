@@ -1,3 +1,10 @@
+openstreetmap-cgimap (0.5.7-0ubuntu0ppa0~xenial0) xenial; urgency=medium
+
+  * Add more information for OAuth unauthorized rejections.
+  * Fix status message when code is 401.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Mon, 24 Oct 2016 11:44:01 +0100
+
 openstreetmap-cgimap (0.5.6-0ubuntu2ppa1~xenial1) xenial; urgency=medium
 
   * Fix but where changeset comments count was always zero.
