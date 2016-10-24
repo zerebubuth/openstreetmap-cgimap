@@ -369,7 +369,7 @@ void oauth_check_invalid_signature_header() {
 
   test_secret_store store("dpf43f3p2l4k3l03", "kd94hf93k423kf44",
                           "nnch734d00sl2jdk", "pfkkdhi9sl3r4s00");
-  assert_equal(oauth::validity::validity(oauth::validity::unauthorized()),
+  assert_equal(oauth::validity::validity(oauth::validity::unauthorized("")),
                oauth::is_valid_signature(req, store, store, store));
 }
 

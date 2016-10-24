@@ -72,7 +72,10 @@ struct bad_request {};
 
 // something bad about the oauth request, and it looks like it's an invalid or
 // replayed message, or one without the relevant permissions.
-struct unauthorized {};
+struct unauthorized {
+  explicit unauthorized(const std::string &r) : reason(r) {}
+  std::string reason;
+};
 
 typedef boost::variant<
   copacetic,
