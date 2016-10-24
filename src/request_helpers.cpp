@@ -99,6 +99,7 @@ boost::shared_ptr<http::encoding> get_encoding(request &req) {
 namespace {
 const char *http_message_status_200 = "OK";
 const char *http_message_status_400 = "Bad Request";
+const char *http_message_status_401 = "Unauthorized";
 const char *http_message_status_404 = "Not Found";
 const char *http_message_status_405 = "Method Not Allowed";
 const char *http_message_status_406 = "Not Acceptable";
@@ -116,6 +117,9 @@ const char *status_message(int code) {
     break;
   case 400:
     msg = http_message_status_400;
+    break;
+  case 401:
+    msg = http_message_status_401;
     break;
   case 404:
     msg = http_message_status_404;
