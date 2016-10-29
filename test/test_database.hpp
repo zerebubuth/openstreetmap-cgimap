@@ -49,6 +49,12 @@ struct test_database : public boost::noncopyable {
   // the database.
   void run(boost::function<void(boost::shared_ptr<oauth::store>)> func);
 
+  void run(boost::function<void(test_database&)> func);
+
+  boost::shared_ptr<data_selection> get_data_selection();
+
+  void run_sql(const std::string &sql);
+
 private:
   // create a random, and hopefully unique, database name.
   static std::string random_db_name();
@@ -66,6 +72,9 @@ private:
 
   // oauth store based on the writeable connection.
   boost::shared_ptr<oauth::store> m_oauth_store;
+
+  // whether to use read-only code (true) or writeable code (false)
+  bool m_use_readonly;
 };
 
 #endif /* TEST_TEST_DATABASE_HPP */

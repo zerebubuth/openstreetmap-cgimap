@@ -41,6 +41,8 @@ test_database::test_database() {
     throw setup_error(
         boost::format("Unable to set up test database due to unknown error."));
   }
+
+  m_use_readonly = false;
 }
 
 /**
@@ -148,6 +150,34 @@ void test_database::run(
   func(m_oauth_store);
 }
 
+void test_database::run(
+    boost::function<void(test_database&)> func) {
+  try {
+    m_use_readonly = false;
+    func(*this);
+  } catch (const std::exception &e) {
+    throw std::runtime_error(
+        (boost::format("%1%, in writeable selection") % e.what()).str());
+  }
+
+  try {
+    m_use_readonly = true;
+    func(*this);
+  } catch (const std::exception &e) {
+    throw std::runtime_error(
+        (boost::format("%1%, in read-only selection") % e.what()).str());
+  }
+}
+
+boost::shared_ptr<data_selection> test_database::get_data_selection() {
+  if (m_use_readonly) {
+    return (*m_readonly_factory).make_selection();
+
+  } else {
+    return (*m_writeable_factory).make_selection();
+  }
+}
+
 namespace {
 // reads a file of SQL statements, splits on ';' and tries to
 // execute them in a transaction.
@@ -168,7 +198,29 @@ struct file_read_transactor : public pqxx::transactor<pqxx::work> {
   std::string m_filename;
 };
 
+struct truncate_all_tables : public pqxx::transactor<pqxx::work> {
+  void operator()(pqxx::work &w) {
+    w.exec("TRUNCATE TABLE users CASCADE");
+  }
+};
+
+struct sql_string : public pqxx::transactor<pqxx::work> {
+  std::string m_sql;
+  sql_string(const std::string &s) : m_sql(s) {}
+
+  void operator()(pqxx::work &w) {
+    w.exec(m_sql);
+  }
+};
+
 } // anonymous namespace
+
+void test_database::run_sql(const std::string &sql) {
+  pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
+
+  conn.perform(truncate_all_tables());
+  conn.perform(sql_string(sql));
+}
 
 void test_database::fill_fake_data(pqxx::connection &conn) {
   conn.perform(file_read_transactor("test/structure.sql"));

@@ -33,7 +33,28 @@ void assert_equal(const T& a, const T&b, const std::string &message) {
   }
 }
 
-void test_single_nodes(boost::shared_ptr<data_selection> sel) {
+void test_single_nodes(test_database &tdb) {
+  tdb.run_sql(
+    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+    "VALUES "
+    "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true), "
+    "  (2, 'user_2@example.com', '', '2013-11-14T02:10:00Z', 'user_2', false); "
+
+    "INSERT INTO changesets (id, user_id, created_at, closed_at) "
+    "VALUES "
+    "  (1, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'), "
+    "  (2, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'), "
+    "  (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z');"
+
+    "INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, \"timestamp\", tile, version) "
+    " VALUES "
+    "  (1,       0,       0, 1, true,  '2013-11-14T02:10:00Z', 3221225472, 1), "
+    "  (2, 1000000, 1000000, 1, true,  '2013-11-14T02:10:01Z', 3221227032, 1), "
+    "  (3,       0,       0, 2, false, '2015-03-02T18:27:00Z', 3221225472, 2), "
+    "  (4,       0,       0, 4, true,  '2015-03-02T19:25:00Z', 3221225472, 1);"
+    );
+  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+
   if (sel->check_node_visibility(1) != data_selection::exists) {
     throw std::runtime_error("Node 1 should be visible, but isn't");
   }
@@ -102,7 +123,23 @@ void test_single_nodes(boost::shared_ptr<data_selection> sel) {
     f.m_nodes[3], "fourth (anonymous) node written");
 }
 
-void test_dup_nodes(boost::shared_ptr<data_selection> sel) {
+void test_dup_nodes(test_database &tdb) {
+  tdb.run_sql(
+    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+    "VALUES "
+    "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true); "
+
+    "INSERT INTO changesets (id, user_id, created_at, closed_at) "
+    "VALUES "
+    "  (1, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z');"
+
+    "INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, \"timestamp\", tile, version) "
+    " VALUES "
+    "  (1,       0,       0, 1, true,  '2013-11-14T02:10:00Z', 3221225472, 1);"
+    );
+
+  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+
   if (sel->check_node_visibility(1) != data_selection::exists) {
     throw std::runtime_error("Node 1 should be visible, but isn't");
   }
@@ -141,10 +178,10 @@ int main(int, char **) {
     test_database tdb;
     tdb.setup();
 
-    tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
+    tdb.run(boost::function<void(test_database&)>(
         &test_single_nodes));
 
-    tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
+    tdb.run(boost::function<void(test_database&)>(
         &test_dup_nodes));
 
   } catch (const test_database::setup_error &e) {
