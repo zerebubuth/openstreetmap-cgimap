@@ -52,6 +52,7 @@ struct test_database : public boost::noncopyable {
   void run(boost::function<void(test_database&)> func);
 
   boost::shared_ptr<data_selection> get_data_selection();
+  boost::shared_ptr<oauth::store> get_oauth_store();
 
   void run_sql(const std::string &sql);
 

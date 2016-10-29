@@ -33,7 +33,10 @@ void assert_equal(const T& a, const T&b, const std::string &message) {
   }
 }
 
-void test_nonce_store(boost::shared_ptr<oauth::store> store) {
+void test_nonce_store(test_database &tdb) {
+  tdb.run_sql("");
+  boost::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+
   // can use a nonce
   assert_equal<bool>(true, store->use_nonce("abcdef", 0), "first use of nonce");
 
@@ -50,7 +53,40 @@ void test_nonce_store(boost::shared_ptr<oauth::store> store) {
                      "use of nonce with a different nonce string");
 }
 
-void test_allow_read_api(boost::shared_ptr<oauth::store> store) {
+void test_allow_read_api(test_database &tdb) {
+  tdb.run_sql(
+    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+    "VALUES "
+    "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true); "
+
+    "INSERT INTO client_applications "
+    "  (id, name, user_id, allow_read_prefs, key, secret) "
+    "VALUES "
+    "  (1, 'test_client_application', 1, true, "
+    "   'x3tHSMbotPe5fBlItMbg', '1NZRJ0u2o7OilPDe60nfZsKJTC7RUZPrNfYwGBjATw'); "
+
+    "INSERT INTO oauth_tokens "
+    "  (id, user_id, client_application_id, allow_read_prefs, token, secret, "
+    "   created_at, authorized_at, invalidated_at) "
+    "VALUES "
+    // valid key
+    "  (1, 1, 1, true, "
+    "   'OfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA', "
+    "   'fFCKdXsLxeHPlgrIPr5fZSpXKnDuLw0GvJTzeE99', "
+    "   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', NULL), "
+    // not authorized
+    "  (2, 1, 1, true, "
+    "   'wpNsXPhrgWl4ELPjPbhfwjjSbNk9npsKoNrMGFlC', "
+    "   'NZskvUUYlOuCsPKuMbSTz5eMpVJVI3LsyW11Z2Uq', "
+    "   '2016-07-11T19:12:00Z', NULL, NULL), "
+    // invalidated
+    "  (3, 1, 1, true, "
+    "   'Rzcm5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf', "
+    "   '2UxsEFziZGv64hdWN3Qa90Vb6v1aovVxaTTQIn1D', "
+    "   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z'); "
+    "");
+  boost::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+
   assert_equal<bool>(
     true, store->allow_read_api("OfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA"),
     "valid token allows reading API");
@@ -64,7 +100,40 @@ void test_allow_read_api(boost::shared_ptr<oauth::store> store) {
     "invalid token does not allow reading API");
 }
 
-void test_get_user_id_for_token(boost::shared_ptr<oauth::store> store) {
+void test_get_user_id_for_token(test_database &tdb) {
+  tdb.run_sql(
+    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+    "VALUES "
+    "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true); "
+
+    "INSERT INTO client_applications "
+    "  (id, name, user_id, allow_read_prefs, key, secret) "
+    "VALUES "
+    "  (1, 'test_client_application', 1, true, "
+    "   'x3tHSMbotPe5fBlItMbg', '1NZRJ0u2o7OilPDe60nfZsKJTC7RUZPrNfYwGBjATw'); "
+
+    "INSERT INTO oauth_tokens "
+    "  (id, user_id, client_application_id, allow_read_prefs, token, secret, "
+    "   created_at, authorized_at, invalidated_at) "
+    "VALUES "
+    // valid key
+    "  (1, 1, 1, true, "
+    "   'OfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA', "
+    "   'fFCKdXsLxeHPlgrIPr5fZSpXKnDuLw0GvJTzeE99', "
+    "   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', NULL), "
+    // not authorized
+    "  (2, 1, 1, true, "
+    "   'wpNsXPhrgWl4ELPjPbhfwjjSbNk9npsKoNrMGFlC', "
+    "   'NZskvUUYlOuCsPKuMbSTz5eMpVJVI3LsyW11Z2Uq', "
+    "   '2016-07-11T19:12:00Z', NULL, NULL), "
+    // invalidated
+    "  (3, 1, 1, true, "
+    "   'Rzcm5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf', "
+    "   '2UxsEFziZGv64hdWN3Qa90Vb6v1aovVxaTTQIn1D', "
+    "   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z'); "
+    "");
+  boost::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+
   assert_equal<boost::optional<osm_user_id_t> >(
     1, store->get_user_id_for_token("OfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA"),
     "valid token belongs to user 1");
@@ -145,7 +214,29 @@ private:
   std::set<std::string> m_keys_seen;
 };
 
-void test_oauth_end_to_end(boost::shared_ptr<oauth::store> store) {
+void test_oauth_end_to_end(test_database &tdb) {
+  tdb.run_sql(
+    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+    "VALUES "
+    "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true); "
+
+    "INSERT INTO client_applications "
+    "  (id, name, user_id, allow_read_prefs, key, secret) "
+    "VALUES "
+    "  (1, 'test_client_application', 1, true, "
+    "   'x3tHSMbotPe5fBlItMbg', '1NZRJ0u2o7OilPDe60nfZsKJTC7RUZPrNfYwGBjATw'); "
+
+    "INSERT INTO oauth_tokens "
+    "  (id, user_id, client_application_id, allow_read_prefs, token, secret, "
+    "   created_at, authorized_at, invalidated_at) "
+    "VALUES "
+    "  (4, 1, 1, true, "
+    "   '15zpwgGjdjBu1DD65X7kcHzaWqfQpvqmMtqa3ZIO', "
+    "   'H3Vb9Kgf4LpTyVlft5xsI9MwzknQsTu6CkHE0qK3', "
+    "   '2016-10-07T00:00:00Z', '2016-10-07T00:00:00Z', NULL); "
+    "");
+  boost::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+
   recording_rate_limiter limiter;
   std::string generator("test_apidb_backend.cpp");
   routes route;
@@ -210,16 +301,16 @@ int main(int, char **) {
     test_database tdb;
     tdb.setup();
 
-    tdb.run(boost::function<void(boost::shared_ptr<oauth::store>)>(
+    tdb.run(boost::function<void(test_database&)>(
         &test_nonce_store));
 
-    tdb.run(boost::function<void(boost::shared_ptr<oauth::store>)>(
+    tdb.run(boost::function<void(test_database&)>(
         &test_allow_read_api));
 
-    tdb.run(boost::function<void(boost::shared_ptr<oauth::store>)>(
+    tdb.run(boost::function<void(test_database&)>(
         &test_get_user_id_for_token));
 
-    tdb.run(boost::function<void(boost::shared_ptr<oauth::store>)>(
+    tdb.run(boost::function<void(test_database&)>(
               &test_oauth_end_to_end));
 
   } catch (const test_database::setup_error &e) {

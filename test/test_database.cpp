@@ -178,6 +178,14 @@ boost::shared_ptr<data_selection> test_database::get_data_selection() {
   }
 }
 
+boost::shared_ptr<oauth::store> test_database::get_oauth_store() {
+  if (!m_oauth_store) {
+    throw std::runtime_error("OAuth store not available.");
+  }
+
+  return m_oauth_store;
+}
+
 namespace {
 // reads a file of SQL statements, splits on ';' and tries to
 // execute them in a transaction.
