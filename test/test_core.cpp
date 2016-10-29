@@ -385,44 +385,67 @@ void check_content_body_plain(std::istream &expected, std::istream &actual) {
   }
 }
 
-/**
- * Check the response from cgimap against the expected test result
- * from the test file.
- */
-void check_response(std::istream &expected, std::istream &actual) {
-  typedef std::map<std::string, std::string> dict;
+typedef std::map<std::string, std::string> dict;
 
-  // check that, for some headers that we get, they are the same
-  // as we expect.
-  const dict expected_headers = read_headers(expected, "---");
-  const dict actual_headers = read_headers(actual, "");
+std::ostream &operator<<(std::ostream &out, const dict &d) {
+  BOOST_FOREACH(const dict::value_type &val, d) {
+    out << val.first << ": " << val.second << "\n";
+  }
+  return out;
+}
 
+void check_headers(const dict &expected_headers,
+                   const dict &actual_headers) {
   BOOST_FOREACH(const dict::value_type &val, expected_headers) {
     if ((val.first.size() > 0) && (val.first[0] == '!')) {
       dict::const_iterator itr = actual_headers.find(val.first.substr(1));
       if (itr != actual_headers.end()) {
         throw std::runtime_error(
-            (boost::format(
-                 "Expected not to find header `%1%', but it is present.") %
-             itr->first).str());
+          (boost::format(
+            "Expected not to find header `%1%', but it is present.") %
+           itr->first).str());
       }
     } else {
       dict::const_iterator itr = actual_headers.find(val.first);
       if (itr == actual_headers.end()) {
         throw std::runtime_error(
-            (boost::format("Expected header `%1%: %2%', but didn't find it in "
-                           "actual response.") %
-             val.first % val.second).str());
+          (boost::format("Expected header `%1%: %2%', but didn't find it in "
+                         "actual response.") %
+           val.first % val.second).str());
       }
       if (!val.second.empty()) {
         if (val.second != itr->second) {
           throw std::runtime_error(
-              (boost::format(
-                   "Header key `%1%'; expected `%2%' but got `%3%'.") %
-               val.first % val.second % itr->second).str());
+            (boost::format(
+              "Header key `%1%'; expected `%2%' but got `%3%'.") %
+             val.first % val.second % itr->second).str());
         }
       }
     }
+  }
+}
+
+/**
+ * Check the response from cgimap against the expected test result
+ * from the test file.
+ */
+void check_response(std::istream &expected, std::istream &actual) {
+  // check that, for some headers that we get, they are the same
+  // as we expect.
+  const dict expected_headers = read_headers(expected, "---");
+  const dict actual_headers = read_headers(actual, "");
+
+  try {
+    check_headers(expected_headers, actual_headers);
+
+  } catch (const std::runtime_error &e) {
+    std::ostringstream out;
+    out << "While comparing expected headers:\n"
+        << expected_headers << "\n"
+        << "with actual headers:\n"
+        << actual_headers << "\n"
+        << "ERROR: " << e.what();
+    throw std::runtime_error(out.str());
   }
 
   // now check the body, if there is one. we judge this by whether we expect a
@@ -469,7 +492,17 @@ void run_test(fs::path test_case, rate_limiter &limiter,
     process_request(req, limiter, generator, route, factory, empty_store);
 
     // compare the result to what we're expecting
-    check_response(in, req.buffer());
+    try {
+      check_response(in, req.buffer());
+
+    } catch (const std::exception &e) {
+      if (getenv("VERBOSE") != NULL) {
+        std::cout << "ERROR: " << e.what() << "\n\n"
+                  << "Response was:\n----------------------\n"
+                  << req.buffer().str() << "\n";
+      }
+      throw;
+    }
 
     // output test case name if verbose output is requested
     if (getenv("VERBOSE") != NULL) {
