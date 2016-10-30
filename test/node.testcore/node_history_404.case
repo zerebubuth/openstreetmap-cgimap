@@ -1,0 +1,6 @@
+# node/history call returns node versions
+Request-Method: GET
+Request-URI: /api/0.6/node/4/history
+---
+Status: 404 Not Found
+---
