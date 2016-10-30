@@ -15,6 +15,7 @@
 #include "cgimap/api06/ways_handler.hpp"
 
 #include "cgimap/api06/relation_handler.hpp"
+#include "cgimap/api06/relation_version_handler.hpp"
 #include "cgimap/api06/relation_full_handler.hpp"
 #include "cgimap/api06/relations_handler.hpp"
 
@@ -157,6 +158,7 @@ routes::routes()
     r->add<ways_handler>(root_ / "ways");
 
     r->add<relation_full_handler>(root_ / "relation" / osm_id_ / "full");
+    r->add<relation_version_handler>(root_ / "relation" / osm_id_ / osm_id_ );
     r->add<relation_handler>(root_ / "relation" / osm_id_);
     r->add<relations_handler>(root_ / "relations");
 
