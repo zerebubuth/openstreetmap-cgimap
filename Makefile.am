@@ -30,6 +30,7 @@ cgimap_api06_include_HEADERS = \
 	include/cgimap/api06/handler_utils.hpp \
 	include/cgimap/api06/map_handler.hpp \
 	include/cgimap/api06/node_handler.hpp \
+	include/cgimap/api06/node_version_handler.hpp \
 	include/cgimap/api06/nodes_handler.hpp \
 	include/cgimap/api06/relation_full_handler.hpp \
 	include/cgimap/api06/relation_handler.hpp \

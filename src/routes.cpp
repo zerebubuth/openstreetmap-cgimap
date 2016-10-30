@@ -6,6 +6,7 @@
 #include "cgimap/api06/map_handler.hpp"
 
 #include "cgimap/api06/node_handler.hpp"
+#include "cgimap/api06/node_version_handler.hpp"
 #include "cgimap/api06/nodes_handler.hpp"
 
 #include "cgimap/api06/way_handler.hpp"
@@ -144,6 +145,8 @@ routes::routes()
 #ifdef ENABLE_EXPERIMENTAL
     r->add<node_ways_handler>(root_ / "node" / osm_id_ / "ways");
 #endif /* ENABLE_EXPERIMENTAL */
+    // make sure that node_version_handler is listed before node_handler
+    r->add<node_version_handler>(root_ / "node" / osm_id_ / osm_id_ );
     r->add<node_handler>(root_ / "node" / osm_id_);
     r->add<nodes_handler>(root_ / "nodes");
 
@@ -205,7 +208,6 @@ handler_ptr_t routes::operator()(request &req) const {
   // full path from request handler
   string path = get_request_path(req);
   handler_ptr_t hptr;
-
   // check the prefix
   if (path.compare(0, common_prefix.size(), common_prefix) == 0) {
     hptr = route_resource(req, string(path, common_prefix.size()), r);
