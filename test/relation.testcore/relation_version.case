@@ -1,4 +1,4 @@
-# relation call with a specific version number
+# relation call with a specific version number pointing to an existing version
 Request-Method: GET
 Request-URI: /api/0.6/relation/2/1
 ---

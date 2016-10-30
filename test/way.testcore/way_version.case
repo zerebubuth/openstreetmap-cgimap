@@ -1,4 +1,4 @@
-# way call with a specific version number
+# way call with a specific version number pointing to an existing version
 Request-Method: GET
 Request-URI: /api/0.6/way/2/1
 ---

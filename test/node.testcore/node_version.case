@@ -1,4 +1,4 @@
-# node call with a specific version number
+# node call with a specific version number pointing to an existing version
 Request-Method: GET
 Request-URI: /api/0.6/node/3/1
 ---
