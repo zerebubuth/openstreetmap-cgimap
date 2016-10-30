@@ -10,6 +10,7 @@
 #include "cgimap/api06/nodes_handler.hpp"
 
 #include "cgimap/api06/way_handler.hpp"
+#include "cgimap/api06/way_version_handler.hpp"
 #include "cgimap/api06/way_full_handler.hpp"
 #include "cgimap/api06/ways_handler.hpp"
 
@@ -145,12 +146,13 @@ routes::routes()
 #ifdef ENABLE_EXPERIMENTAL
     r->add<node_ways_handler>(root_ / "node" / osm_id_ / "ways");
 #endif /* ENABLE_EXPERIMENTAL */
-    // make sure that node_version_handler is listed before node_handler
+    // make sure that *_version_handler is listed before matching *_handler
     r->add<node_version_handler>(root_ / "node" / osm_id_ / osm_id_ );
     r->add<node_handler>(root_ / "node" / osm_id_);
     r->add<nodes_handler>(root_ / "nodes");
 
     r->add<way_full_handler>(root_ / "way" / osm_id_ / "full");
+    r->add<way_version_handler>(root_ / "way" / osm_id_ / osm_id_ );
     r->add<way_handler>(root_ / "way" / osm_id_);
     r->add<ways_handler>(root_ / "ways");
 

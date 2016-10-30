@@ -144,6 +144,7 @@ libcgimap_core_la_SOURCES+=\
 	api06/relation_handler.cpp \
 	api06/relations_handler.cpp \
 	api06/way_handler.cpp \
+	api06/way_version_handler.cpp \
 	api06/ways_handler.cpp \
 	api06/relation_full_handler.cpp \
 	api06/way_full_handler.cpp \
