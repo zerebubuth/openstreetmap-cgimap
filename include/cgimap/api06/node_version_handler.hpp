@@ -10,7 +10,7 @@ namespace api06 {
 
 class node_version_responder : public osm_current_responder {
 public:
-  node_version_responder(mime::type, osm_nwr_id_t, osm_nwr_id_t, factory_ptr &);
+  node_version_responder(mime::type, osm_nwr_id_t, osm_version_t, factory_ptr &);
   ~node_version_responder();
 
 private:
@@ -20,7 +20,7 @@ private:
 
 class node_version_handler : public handler {
 public:
-  node_version_handler(request &req, osm_nwr_id_t id, osm_nwr_id_t v);
+  node_version_handler(request &req, osm_nwr_id_t id, osm_version_t v);
   ~node_version_handler();
 
   std::string log_name() const;
@@ -28,7 +28,7 @@ public:
 
 private:
   osm_nwr_id_t id;
-  osm_nwr_id_t v;
+  osm_version_t v;
 };
 
 } // namespace api06
