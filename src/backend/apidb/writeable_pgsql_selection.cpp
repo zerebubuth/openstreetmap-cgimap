@@ -539,6 +539,45 @@ int writeable_pgsql_selection::select_historical_relations(
   return selected;
 }
 
+int writeable_pgsql_selection::select_nodes_with_history(
+  const std::vector<osm_nwr_id_t> &ids) {
+  m_historic_tables_empty = false;
+  size_t selected = 0;
+  BOOST_FOREACH(osm_nwr_id_t id, ids) {
+    selected += w.prepared("add_all_versions_of_node")(id)
+      .exec().affected_rows();
+  }
+
+  assert(selected < size_t(std::numeric_limits<int>::max()));
+  return selected;
+}
+
+int writeable_pgsql_selection::select_ways_with_history(
+  const std::vector<osm_nwr_id_t> &ids) {
+  m_historic_tables_empty = false;
+  size_t selected = 0;
+  BOOST_FOREACH(osm_nwr_id_t id, ids) {
+    selected += w.prepared("add_all_versions_of_way")(id)
+      .exec().affected_rows();
+  }
+
+  assert(selected < size_t(std::numeric_limits<int>::max()));
+  return selected;
+}
+
+int writeable_pgsql_selection::select_relations_with_history(
+  const std::vector<osm_nwr_id_t> &ids) {
+  m_historic_tables_empty = false;
+  size_t selected = 0;
+  BOOST_FOREACH(osm_nwr_id_t id, ids) {
+    selected += w.prepared("add_all_versions_of_relation")(id)
+      .exec().affected_rows();
+  }
+
+  assert(selected < size_t(std::numeric_limits<int>::max()));
+  return selected;
+}
+
 bool writeable_pgsql_selection::supports_changesets() {
   return true;
 }
@@ -897,6 +936,31 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       "WHERE relation_id=$1 AND version=$2 "
       "ORDER BY sequence_id ASC")
     PREPARE_ARGS(("bigint")("bigint"));
+
+  m_connection.prepare("add_all_versions_of_node",
+    "INSERT INTO tmp_historic_nodes "
+      "SELECT n.node_id, n.version "
+      "FROM nodes n "
+      "LEFT JOIN tmp_historic_nodes t "
+      "ON t.node_id = n.node_id AND t.version = n.version "
+      "WHERE n.node_id = $1 AND t.node_id IS NULL")
+    PREPARE_ARGS(("bigint"));
+  m_connection.prepare("add_all_versions_of_way",
+    "INSERT INTO tmp_historic_ways "
+      "SELECT w.way_id, w.version "
+      "FROM ways w "
+      "LEFT JOIN tmp_historic_ways t "
+      "ON t.way_id = w.way_id AND t.version = w.version "
+      "WHERE w.way_id = $1 AND t.way_id IS NULL")
+    PREPARE_ARGS(("bigint"));
+  m_connection.prepare("add_all_versions_of_relation",
+    "INSERT INTO tmp_historic_relations "
+      "SELECT r.relation_id, r.version "
+      "FROM relations r "
+      "LEFT JOIN tmp_historic_relations t "
+      "ON t.relation_id = r.relation_id AND t.version = r.version "
+      "WHERE r.relation_id = $1 AND t.relation_id IS NULL")
+    PREPARE_ARGS(("bigint"));
 
   // clang-format on
 }

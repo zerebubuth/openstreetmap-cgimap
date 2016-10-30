@@ -12,6 +12,7 @@
 #include <boost/ref.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
+#include <boost/foreach.hpp>
 
 #if PQXX_VERSION_MAJOR >= 4
 #define PREPARE_ARGS(args)
@@ -67,13 +68,33 @@ check_table_visibility(pqxx::work &w, osm_nwr_id_t id,
   }
 }
 
+template <typename T> T id_of(const pqxx::tuple &);
+
+template <>
+osm_nwr_id_t id_of<osm_nwr_id_t>(const pqxx::tuple &row) {
+  return row["id"].as<osm_nwr_id_t>();
+}
+
+template <>
+osm_changeset_id_t id_of<osm_changeset_id_t>(const pqxx::tuple &row) {
+  return row["id"].as<osm_changeset_id_t>();
+}
+
+template <>
+osm_edition_t id_of<osm_edition_t>(const pqxx::tuple &row) {
+  osm_nwr_id_t id = row["id"].as<osm_nwr_id_t>();
+  osm_version_t ver = row["version"].as<osm_version_t>();
+  return osm_edition_t(id, ver);
+}
+
 template <typename T>
 inline int insert_results(const pqxx::result &res, set<T> &elems) {
   int num_inserted = 0;
 
   for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
        ++itr) {
-    const T id = (*itr)["id"].as<T>();
+    const pqxx::tuple &row = *itr;
+    const T id = id_of<T>(row);
 
     // note: only count the *new* rows inserted.
     if (elems.insert(id).second) {
@@ -659,6 +680,36 @@ int readonly_pgsql_selection::select_historical_relations(
   return num_inserted;
 }
 
+int readonly_pgsql_selection::select_nodes_with_history(
+  const std::vector<osm_nwr_id_t> &ids) {
+  if (!ids.empty()) {
+    return insert_results(w.prepared("select_nodes_history")(ids).exec(),
+                          sel_historic_nodes);
+  } else {
+    return 0;
+  }
+}
+
+int readonly_pgsql_selection::select_ways_with_history(
+  const std::vector<osm_nwr_id_t> &ids) {
+  if (!ids.empty()) {
+    return insert_results(w.prepared("select_ways_history")(ids).exec(),
+                          sel_historic_ways);
+  } else {
+    return 0;
+  }
+}
+
+int readonly_pgsql_selection::select_relations_with_history(
+  const std::vector<osm_nwr_id_t> &ids) {
+  if (!ids.empty()) {
+    return insert_results(w.prepared("select_relations_history")(ids).exec(),
+                          sel_historic_relations);
+  } else {
+    return 0;
+  }
+}
+
 bool readonly_pgsql_selection::supports_changesets() {
   return true;
 }
@@ -850,6 +901,22 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
       "WHERE relation_id=$1 AND version=$2 "
       "ORDER BY sequence_id ASC")
     PREPARE_ARGS(("bigint")("bigint"));
+
+  m_connection.prepare("select_nodes_history",
+    "SELECT node_id AS id, version "
+      "FROM nodes "
+      "WHERE node_id = ANY($1)")
+    PREPARE_ARGS(("bigint[]"));
+  m_connection.prepare("select_ways_history",
+    "SELECT way_id AS id, version "
+      "FROM ways "
+      "WHERE way_id = ANY($1)")
+    PREPARE_ARGS(("bigint[]"));
+  m_connection.prepare("select_relations_history",
+    "SELECT relation_id AS id, version "
+      "FROM relations "
+      "WHERE relation_id = ANY($1)")
+    PREPARE_ARGS(("bigint[]"));
 
   // clang-format on
 }

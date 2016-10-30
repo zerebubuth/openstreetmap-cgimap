@@ -48,6 +48,9 @@ public:
   int select_historical_nodes(const std::vector<osm_edition_t> &);
   int select_historical_ways(const std::vector<osm_edition_t> &);
   int select_historical_relations(const std::vector<osm_edition_t> &);
+  int select_nodes_with_history(const std::vector<osm_nwr_id_t> &);
+  int select_ways_with_history(const std::vector<osm_nwr_id_t> &);
+  int select_relations_with_history(const std::vector<osm_nwr_id_t> &);
 
   /**
    * abstracts the creation of transactions for the writeable
