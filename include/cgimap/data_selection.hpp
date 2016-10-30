@@ -98,13 +98,25 @@ public:
   /// nodes added to the selected set.
   virtual int select_historical_nodes(const std::vector<osm_edition_t> &);
 
+  /// select all versions of the node with the given IDs. returns the number of
+  /// distinct (id, version) pairs selected.
+  virtual int select_nodes_with_history(const std::vector<osm_nwr_id_t> &);
+
   /// select the given (id, version) versions of ways, returning the number of
   /// ways added to the selected set.
   virtual int select_historical_ways(const std::vector<osm_edition_t> &);
 
+  /// select all versions of the way with the given IDs. returns the number of
+  /// distinct (id, version) pairs selected.
+  virtual int select_ways_with_history(const std::vector<osm_nwr_id_t> &);
+
   /// select the given (id, version) versions of relations, returning the number
   /// of relations added to the selected set.
   virtual int select_historical_relations(const std::vector<osm_edition_t> &);
+
+  /// select all versions of the relation with the given IDs. returns the number
+  /// of distinct (id, version) pairs selected.
+  virtual int select_relations_with_history(const std::vector<osm_nwr_id_t> &);
 
   /****************** changeset functions **********************/
 

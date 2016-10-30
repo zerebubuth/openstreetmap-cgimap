@@ -1,0 +1,15 @@
+# relation/history call returns all versions, even deleted ones, in the request
+Request-Method: GET
+Request-URI: /api/0.6/relation/2/history
+---
+Status: 200 OK
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition:
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <relation id="2" version="1" changeset="3" user="foo" uid="1" visible="true" timestamp="2013-01-12T00:00:00Z">
+    <member type="node" ref="2" role="stop"/>
+    <tag k="foo" v="bar"/>
+  </relation>
+  <relation id="2" version="2" changeset="3" user="foo" uid="1" visible="false" timestamp="2013-01-12T00:00:00Z"/>
+</osm>

@@ -533,12 +533,24 @@ struct static_data_selection : public data_selection {
     return select_historical<node>(m_historic_nodes, editions);
   }
 
+  virtual int select_nodes_with_history(const std::vector<osm_nwr_id_t> &ids) {
+    return select_historical_all<node>(m_historic_nodes, ids);
+  }
+
   virtual int select_historical_ways(const std::vector<osm_edition_t> &editions) {
     return select_historical<way>(m_historic_ways, editions);
   }
 
+  virtual int select_ways_with_history(const std::vector<osm_nwr_id_t> &ids) {
+    return select_historical_all<way>(m_historic_ways, ids);
+  }
+
   virtual int select_historical_relations(const std::vector<osm_edition_t> &editions) {
     return select_historical<relation>(m_historic_relations, editions);
+  }
+
+  virtual int select_relations_with_history(const std::vector<osm_nwr_id_t> &ids) {
+    return select_historical_all<relation>(m_historic_relations, ids);
   }
 
   virtual bool supports_changesets() { return true; }
@@ -654,6 +666,28 @@ private:
       if (t) {
         found_eds.insert(ed);
         ++selected;
+      }
+    }
+    return selected;
+  }
+
+  template <typename T>
+  int select_historical_all(std::set<osm_edition_t> &found_eds,
+                            const std::vector<osm_nwr_id_t> &ids) const {
+    int selected = 0;
+    BOOST_FOREACH(osm_nwr_id_t id, ids) {
+      typedef std::map<id_version, T> element_map_t;
+      id_version idv_start(id, 0), idv_end(id+1, 0);
+      const element_map_t &m = map_of<T>();
+      if (!m.empty()) {
+        typename element_map_t::const_iterator itr = m.lower_bound(idv_start);
+        typename element_map_t::const_iterator end = m.lower_bound(idv_end);
+
+        for (; itr != end; ++itr) {
+          osm_edition_t ed(id, *itr->first.version);
+          found_eds.insert(ed);
+          ++selected;
+        }
       }
     }
     return selected;
