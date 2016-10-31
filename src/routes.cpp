@@ -6,13 +6,16 @@
 #include "cgimap/api06/map_handler.hpp"
 
 #include "cgimap/api06/node_handler.hpp"
+#include "cgimap/api06/node_version_handler.hpp"
 #include "cgimap/api06/nodes_handler.hpp"
 
 #include "cgimap/api06/way_handler.hpp"
+#include "cgimap/api06/way_version_handler.hpp"
 #include "cgimap/api06/way_full_handler.hpp"
 #include "cgimap/api06/ways_handler.hpp"
 
 #include "cgimap/api06/relation_handler.hpp"
+#include "cgimap/api06/relation_version_handler.hpp"
 #include "cgimap/api06/relation_full_handler.hpp"
 #include "cgimap/api06/relations_handler.hpp"
 
@@ -144,14 +147,18 @@ routes::routes()
 #ifdef ENABLE_EXPERIMENTAL
     r->add<node_ways_handler>(root_ / "node" / osm_id_ / "ways");
 #endif /* ENABLE_EXPERIMENTAL */
+    // make sure that *_version_handler is listed before matching *_handler
+    r->add<node_version_handler>(root_ / "node" / osm_id_ / osm_id_ );
     r->add<node_handler>(root_ / "node" / osm_id_);
     r->add<nodes_handler>(root_ / "nodes");
 
     r->add<way_full_handler>(root_ / "way" / osm_id_ / "full");
+    r->add<way_version_handler>(root_ / "way" / osm_id_ / osm_id_ );
     r->add<way_handler>(root_ / "way" / osm_id_);
     r->add<ways_handler>(root_ / "ways");
 
     r->add<relation_full_handler>(root_ / "relation" / osm_id_ / "full");
+    r->add<relation_version_handler>(root_ / "relation" / osm_id_ / osm_id_ );
     r->add<relation_handler>(root_ / "relation" / osm_id_);
     r->add<relations_handler>(root_ / "relations");
 
@@ -205,7 +212,6 @@ handler_ptr_t routes::operator()(request &req) const {
   // full path from request handler
   string path = get_request_path(req);
   handler_ptr_t hptr;
-
   // check the prefix
   if (path.compare(0, common_prefix.size(), common_prefix) == 0) {
     hptr = route_resource(req, string(path, common_prefix.size()), r);

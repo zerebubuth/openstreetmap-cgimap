@@ -1,0 +1,6 @@
+# way call with a specific version number that points to a nonexistent version
+Request-Method: GET
+Request-URI: /api/0.6/way/2/3
+---
+Status: 404 Not Found
+---

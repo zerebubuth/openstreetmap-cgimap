@@ -1,0 +1,6 @@
+# relation call with a specific version number pointing to a nonexistent version
+Request-Method: GET
+Request-URI: /api/0.6/relation/2/3
+---
+Status: 404 Not Found
+---

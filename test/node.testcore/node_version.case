@@ -1,0 +1,11 @@
+# node call with a specific version number pointing to an existing version
+Request-Method: GET
+Request-URI: /api/0.6/node/3/1
+---
+Status: 200 OK
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition:
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <node id="3" version="1" changeset="3" lat="0.0000000" lon="0.0000000" user="foo" uid="1" visible="true" timestamp="2012-09-25T00:00:59Z"/>
+</osm>
