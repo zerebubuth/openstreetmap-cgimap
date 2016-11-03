@@ -1,3 +1,9 @@
+openstreetmap-cgimap (0.5.8-0ubuntu0ppa0~xenial1) UNRELEASED; urgency=medium
+
+  * Attempting to coax a package out of Launchpad...
+
+ -- Matt Amos <zerebubuth@gmail.com>  Thu, 03 Nov 2016 12:28:42 +0000
+
 openstreetmap-cgimap (0.5.8-0ubuntu0ppa0~xenial0) xenial; urgency=medium
 
   * Reject OAuth nonces more than 24h old, allowing them to be expired.
