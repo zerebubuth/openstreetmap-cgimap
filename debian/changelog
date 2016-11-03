@@ -2,7 +2,7 @@ openstreetmap-cgimap (0.5.8-0ubuntu0ppa0~xenial0) xenial; urgency=medium
 
   * Reject OAuth nonces more than 24h old, allowing them to be expired.
 
- -- Matt Amos <zerebubuth@gmail.com>  Thu, 3 Nov 2016 11:48:40 +0000
+ -- Matt Amos <zerebubuth@gmail.com>  Thu, 03 Nov 2016 12:22:14 +0000
 
 openstreetmap-cgimap (0.5.7-0ubuntu0ppa0~xenial0) xenial; urgency=medium
 
