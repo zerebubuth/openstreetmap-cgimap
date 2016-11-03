@@ -18,12 +18,15 @@
 #include <boost/spirit/include/qi.hpp>
 #include <boost/archive/iterators/base64_from_binary.hpp>
 #include <boost/archive/iterators/transform_width.hpp>
+#include <boost/date_time/posix_time/conversion.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
 
 #include <cryptopp/hmac.h>
 #include <cryptopp/sha.h>
 #include <cryptopp/filters.h>
 
 namespace bai = boost::archive::iterators;
+namespace pt = boost::posix_time;
 
 namespace {
 
@@ -503,12 +506,19 @@ validity::validity is_valid_signature(
         "Both nonce and timestamp must be provided.");
     }
 
-    // the timestamp MUST be an integer (section 8).
     std::uint64_t timestamp = 0;
     {
       std::istringstream stream(*timestamp_str);
+
+      // the timestamp MUST be an integer (section 8).
       if (!(stream >> timestamp)) {
         return validity::bad_request();
+      }
+
+      // check that the time isn't too far in the past
+      if (req.get_current_time() - pt::from_time_t(timestamp) > pt::hours(24)) {
+        return validity::unauthorized(
+          "Timestamp is too far in the past.");
       }
     }
 
@@ -518,8 +528,6 @@ validity::validity is_valid_signature(
       return validity::unauthorized(
         "Nonce has been used before.");
     }
-
-    // TODO: reject stale timestamps?
   }
 
   // verify that the token allows api access.
