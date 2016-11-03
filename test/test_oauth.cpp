@@ -7,6 +7,7 @@
 #include <sstream>
 #include <set>
 
+#include <boost/date_time/posix_time/conversion.hpp>
 #include <boost/optional.hpp>
 #include <boost/optional/optional_io.hpp>
 #include <boost/tuple/tuple.hpp>
@@ -47,6 +48,7 @@ struct test_request : public request {
                const std::string &port,
                const std::string &path,
                const std::string &get_params,
+               const boost::optional<time_t> &timestamp,
                const boost::optional<std::string> &auth_header);
   virtual ~test_request();
 
@@ -63,6 +65,7 @@ protected:
 
 private:
   std::string method, scheme, authority, port, path, get_params;
+  boost::posix_time::ptime timestamp;
   boost::optional<std::string> auth_header;
 };
 
@@ -72,9 +75,13 @@ test_request::test_request(const std::string &method_,
                            const std::string &port_,
                            const std::string &path_,
                            const std::string &get_params_,
+                           const boost::optional<time_t> &timestamp_,
                            const boost::optional<std::string> &auth_header_)
   : method(method_), scheme(scheme_), authority(authority_), port(port_),
     path(path_), get_params(get_params_), auth_header(auth_header_) {
+  if (bool(timestamp_)) {
+    timestamp = boost::posix_time::from_time_t(*timestamp_);
+  }
 }
 
 test_request::~test_request() {
@@ -118,7 +125,7 @@ void test_request::finish_internal() {
 }
 
 boost::posix_time::ptime test_request::get_current_time() const {
-  return boost::posix_time::ptime();
+  return timestamp;
 }
 
 } // anonymous namespace
@@ -128,6 +135,7 @@ void oauth_check_signature_base_string() {
   test_request req(
     "GET",
     "http", "photos.example.net", "80", "photos", "file=vacation.jpg&size=original",
+    1191242096,
     auth_header);
 
   assert_equal<std::string>(
@@ -149,6 +157,7 @@ void oauth_check_signature_base_string2() {
   test_request req(
     "GET",
     "http", "PHOTOS.example.net", "8001", "Photos", "photo%20size=300%25&title=Back%20of%20%24100%20Dollars%20Bill",
+    1191242096,
     auth_header);
 
   assert_equal<std::string>(
@@ -170,6 +179,7 @@ void oauth_check_signature_base_string3() {
   test_request req(
     "POST",
     "https", "www.example.com", "443", "path", "",
+    1443648660,
     auth_header);
 
   assert_equal<std::string>(
@@ -191,6 +201,7 @@ void oauth_check_signature_base_string4() {
   test_request req(
     "POST",
     "http", "example.com", "80", "request", "b5=%3D%253D&a3=a&c%40=&a2=r%20b&c2&a3=2+q",
+    137131201,
     auth_header);
 
   assert_equal<std::string>(
@@ -305,6 +316,7 @@ void oauth_check_signature_hmac_sha1_1() {
   test_request req(
     "GET",
     "http", "PHOTOS.example.net", "8001", "Photos", "type=%C3%97%C2%90%C3%97%E2%80%A2%C3%97%CB%9C%C3%97%E2%80%A2%C3%97%E2%80%98%C3%97%E2%80%A2%C3%97%C2%A1&scenario=%C3%97%C2%AA%C3%97%C2%90%C3%97%E2%80%A2%C3%97%C2%A0%C3%97%E2%80%9D",
+    1191242096,
     auth_header);
 
   assert_equal<std::string>(
@@ -332,6 +344,7 @@ void oauth_check_signature_plaintext_1() {
   test_request req(
     "GET",
     "http", "PHOTOS.example.net", "8001", "Photos", "photo%20size=300%25&title=Back%20of%20%24100%20Dollars%20Bill",
+    1191242096,
     auth_header);
 
   assert_equal<std::string>(
@@ -350,6 +363,7 @@ void oauth_check_valid_signature_header() {
   test_request req(
     "GET",
     "http", "photos.example.net", "80", "photos", "file=vacation.jpg&size=original",
+    1191242096,
     auth_header);
 
   test_secret_store store("dpf43f3p2l4k3l03", "kd94hf93k423kf44",
@@ -365,6 +379,7 @@ void oauth_check_invalid_signature_header() {
   test_request req(
     "GET",
     "http", "photos.example.net", "80", "photo", "file=vacation.jpg&size=original",
+    1191242096,
     auth_header);
 
   test_secret_store store("dpf43f3p2l4k3l03", "kd94hf93k423kf44",
@@ -377,6 +392,7 @@ void oauth_check_valid_signature_params() {
   test_request req(
     "GET",
     "http", "photos.example.net", "80", "photos", "file=vacation.jpg&size=original&oauth_consumer_key=dpf43f3p2l4k3l03&oauth_token=nnch734d00sl2jdk&oauth_signature_method=HMAC-SHA1&oauth_signature=tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D&oauth_timestamp=1191242096&oauth_nonce=kllo9940pd9333jh&oauth_version=1.0",
+    boost::none,
     boost::none);
 
   test_secret_store store("dpf43f3p2l4k3l03", "kd94hf93k423kf44",
@@ -390,6 +406,7 @@ void oauth_check_missing_signature() {
   test_request req(
     "GET",
     "http", "photos.example.net", "80", "photos", "file=vacation.jpg&size=original",
+    boost::none,
     boost::none);
 
   test_secret_store store("dpf43f3p2l4k3l03", "kd94hf93k423kf44",
@@ -403,6 +420,7 @@ void oauth_check_valid_signature_header_2() {
   test_request req(
     "GET",
     "http", "www.openstreetmap.org", "80", "/api/0.6/relation/165475/full", "",
+    1475754589,
     auth_header);
 
   assert_equal<boost::optional<std::string> >(
@@ -425,6 +443,38 @@ void oauth_check_valid_signature_header_2() {
   assert_equal(oauth::is_valid_signature(req, store, store, store), expected);
 }
 
+void oauth_check_almost_expired_signature() {
+  boost::optional<std::string> auth_header = std::string("OAuth realm=\"http://photos.example.net/\", oauth_consumer_key=\"dpf43f3p2l4k3l03\", oauth_token=\"nnch734d00sl2jdk\", oauth_signature_method=\"HMAC-SHA1\", oauth_signature=\"tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D\", oauth_timestamp=\"1191242096\", oauth_nonce=\"kllo9940pd9333jh\", oauth_version=\"1.0\"");
+  test_request req(
+    "GET",
+    "http", "photos.example.net", "80", "photos", "file=vacation.jpg&size=original",
+    1191242096 + 86370,
+    auth_header);
+
+  test_secret_store store("dpf43f3p2l4k3l03", "kd94hf93k423kf44",
+                          "nnch734d00sl2jdk", "pfkkdhi9sl3r4s00");
+  oauth::validity::validity expected(
+    oauth::validity::copacetic("nnch734d00sl2jdk"));
+  assert_equal(expected,
+               oauth::is_valid_signature(req, store, store, store));
+}
+
+void oauth_check_expired_signature() {
+  boost::optional<std::string> auth_header = std::string("OAuth realm=\"http://photos.example.net/\", oauth_consumer_key=\"dpf43f3p2l4k3l03\", oauth_token=\"nnch734d00sl2jdk\", oauth_signature_method=\"HMAC-SHA1\", oauth_signature=\"tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D\", oauth_timestamp=\"1191242096\", oauth_nonce=\"kllo9940pd9333jh\", oauth_version=\"1.0\"");
+  test_request req(
+    "GET",
+    "http", "photos.example.net", "80", "photos", "file=vacation.jpg&size=original",
+    1191242096 + 86430,
+    auth_header);
+
+  test_secret_store store("dpf43f3p2l4k3l03", "kd94hf93k423kf44",
+                          "nnch734d00sl2jdk", "pfkkdhi9sl3r4s00");
+  oauth::validity::validity expected(
+    oauth::validity::unauthorized("Timestamp is too far in the past."));
+  assert_equal(expected,
+               oauth::is_valid_signature(req, store, store, store));
+}
+
 int main() {
   try {
     ANNOTATE_EXCEPTION(oauth_check_signature_base_string());
@@ -440,6 +490,8 @@ int main() {
     ANNOTATE_EXCEPTION(oauth_check_valid_signature_params());
     ANNOTATE_EXCEPTION(oauth_check_missing_signature());
     ANNOTATE_EXCEPTION(oauth_check_valid_signature_header_2());
+    ANNOTATE_EXCEPTION(oauth_check_almost_expired_signature());
+    ANNOTATE_EXCEPTION(oauth_check_expired_signature());
 
   } catch (const std::exception &e) {
     std::cerr << "EXCEPTION: " << e.what() << std::endl;
