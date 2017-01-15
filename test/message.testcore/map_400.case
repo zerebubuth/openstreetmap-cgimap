@@ -1,0 +1,9 @@
+Request-Method: GET
+Request-URI: /api/0.6/map
+---
+Content-Length: 88
+Error: The parameter bbox is required, and must be of the form min_lon,min_lat,max_lon,max_lat.
+Status: 400 Bad Request
+Content-Type: text/plain
+---
+The parameter bbox is required, and must be of the form min_lon,min_lat,max_lon,max_lat.

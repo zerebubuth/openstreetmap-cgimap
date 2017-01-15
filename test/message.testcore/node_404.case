@@ -4,8 +4,7 @@ Request-Method: GET
 Request-URI: /api/0.6/node/1
 ---
 Status: 404 Not Found
-Error: Node 1 was not found.
-Content-Type: text/plain
-Content-Length: 21
+!Error:
+Content-Type: text/html; charset=utf-8
+Content-Length: 0
 ---
-Node 1 was not found.
