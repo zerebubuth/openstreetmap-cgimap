@@ -28,7 +28,8 @@ struct element_info {
                const std::string &timestamp_,
                const boost::optional<osm_user_id_t> &uid_,
                const boost::optional<std::string> &display_name_,
-               bool visible_);
+               bool visible_,
+               boost::optional<osm_redaction_id_t> redaction_ = boost::none);
   // Standard meanings
   osm_nwr_id_t id, version;
   osm_changeset_id_t changeset;
@@ -38,6 +39,10 @@ struct element_info {
   boost::optional<std::string> display_name;
   // If an object has been deleted
   bool visible;
+  // If an object has been deleted _and_ administratively hidden in a
+  // "redaction". note that this is never output - if it is present,
+  // then the element should not be displayed except to moderators.
+  boost::optional<osm_redaction_id_t> redaction;
 };
 
 struct changeset_info {

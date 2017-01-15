@@ -103,6 +103,7 @@ void parse_info(element_info &info, const xmlChar **attributes) {
   info.uid = opt_attribute<osm_user_id_t>("uid", 4, attributes);
   info.display_name = opt_attribute<std::string>("user", 5, attributes);
   info.visible = get_attribute<bool_alpha>("visible", 8, attributes);
+  info.redaction = opt_attribute<osm_redaction_id_t>("redaction", 10, attributes);
 }
 
 void parse_changeset_info(changeset_info &info, const xmlChar **attributes) {
@@ -664,8 +665,11 @@ private:
     BOOST_FOREACH(osm_edition_t ed, select_eds) {
       boost::optional<const T &> t = find<T>(ed);
       if (t) {
-        found_eds.insert(ed);
-        ++selected;
+        bool is_redacted = t->m_info.redaction;
+        if (!is_redacted) {
+          found_eds.insert(ed);
+          ++selected;
+        }
       }
     }
     return selected;
@@ -685,8 +689,11 @@ private:
 
         for (; itr != end; ++itr) {
           osm_edition_t ed(id, *itr->first.version);
-          found_eds.insert(ed);
-          ++selected;
+          bool is_redacted = itr->second.m_info.redaction;
+          if (!is_redacted) {
+            found_eds.insert(ed);
+            ++selected;
+          }
         }
       }
     }
