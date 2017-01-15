@@ -48,11 +48,18 @@ void respond_error(const http::exception &e, request &r) {
     r.put(ostr.str());
 
   } else {
+    std::string message(e.what());
+    std::ostringstream message_size;
+    message_size << message.size();
+
     r.status(e.code());
-    r.add_header("Content-Type", "text/html");
-    r.add_header("Content-Length", "0");
-    r.add_header("Error", e.what());
+    r.add_header("Content-Type", "text/plain");
+    r.add_header("Content-Length", message_size.str());
+    r.add_header("Error", message);
     r.add_header("Cache-Control", "no-cache");
+
+    // output the message as well
+    r.put(message);
   }
 
   r.finish();
