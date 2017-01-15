@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<osm version="0.6" generator="by hand">
+  <!-- first version is deleted, but not redacted, therefore should still
+       appear in output -->
+  <node id="1" version="1" changeset="1" lat="0.0" lon="0.0" user="foo"
+        uid="1" visible="false" timestamp="2017-01-15T16:52:00Z"/>
+
+  <!-- second version is deleted _and_ redacted, so should only appear in
+       output for moderators where they've asked for it. -->
+  <node id="1" version="2" changeset="1" lat="0.0" lon="0.0" user="foo"
+        uid="1" visible="false" timestamp="2017-01-15T16:53:00Z"
+        redaction="1"/>
+
+  <!-- current version cannot be deleted or redacted. -->
+  <node id="1" version="3" changeset="1" lat="0.0" lon="0.0" user="foo"
+        uid="1" visible="true" timestamp="2017-01-15T16:54:00Z"/>
+</osm>
