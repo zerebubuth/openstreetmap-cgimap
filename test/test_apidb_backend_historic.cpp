@@ -402,6 +402,80 @@ void test_way_history(test_database &tdb) {
     f.m_ways[1], "second way written");
 }
 
+void test_relation_history(test_database &tdb) {
+  tdb.run_sql(
+    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+    "VALUES "
+    "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true); "
+
+    "INSERT INTO changesets (id, user_id, created_at, closed_at) "
+    "VALUES "
+    "  (3, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'); "
+
+    "INSERT INTO current_nodes (id, latitude, longitude, changeset_id, "
+    "                           visible, \"timestamp\", tile, version) "
+    "VALUES "
+    "  (3, 0, 0, 3, false, '2015-03-02T18:27:00Z', 3221225472, 2); "
+
+    "INSERT INTO current_relations (id, changeset_id, \"timestamp\", "
+    "                               visible, version) "
+    "VALUES "
+    "  (1, 3, '2016-09-19T18:49:00Z', true, 2); "
+
+    "INSERT INTO current_relation_members ("
+        "relation_id, member_type, member_id, member_role, sequence_id) "
+    "VALUES "
+    "  (1, 'Node', 3, 'foo', 1); "
+
+    "INSERT INTO relations (relation_id, changeset_id, \"timestamp\", "
+    "                       visible, version, redaction_id) "
+    "VALUES "
+    "  (1, 3, '2016-09-19T18:49:00Z', true, 2, NULL), "
+    "  (1, 3, '2016-09-19T18:48:00Z', true, 1, NULL); "
+
+    "INSERT INTO relation_members (relation_id, member_type, member_id, "
+    "                              member_role, sequence_id, version) "
+    "VALUES "
+    "  (1, 'Node', 3, 'foo', 1, 2), "
+    "  (1, 'Node', 3, 'bar', 1, 1); "
+    "");
+  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+
+  assert_equal<bool>(
+    sel->supports_historical_versions(), true,
+    "data selection supports historical versions");
+
+  std::vector<osm_nwr_id_t> ids;
+  ids.push_back(1);
+
+  assert_equal<int>(
+    sel->select_relations_with_history(ids), 2,
+    "number of relation versions selected");
+
+  test_formatter f;
+  sel->write_relations(f);
+  assert_equal<size_t>(f.m_relations.size(), 2, "number of relations written");
+
+  members_t relation1v1_members, relation1v2_members;
+  relation1v1_members.push_back(member_info(element_type_node, 3, "bar"));
+  relation1v2_members.push_back(member_info(element_type_node, 3, "foo"));
+
+  assert_equal<test_formatter::relation_t>(
+    test_formatter::relation_t(
+      element_info(1, 1, 3, "2016-09-19T18:48:00Z", 1, std::string("user_1"), true),
+      relation1v1_members,
+      tags_t()
+      ),
+    f.m_relations[0], "first relation written");
+  assert_equal<test_formatter::relation_t>(
+    test_formatter::relation_t(
+      element_info(1, 2, 3, "2016-09-19T18:49:00Z", 1, std::string("user_1"), true),
+      relation1v2_members,
+      tags_t()
+      ),
+    f.m_relations[1], "second relation written");
+}
+
 } // anonymous namespace
 
 int main(int, char **) {
@@ -426,6 +500,9 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(test_database&)>(
         &test_way_history));
+
+    tdb.run(boost::function<void(test_database&)>(
+        &test_relation_history));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;
