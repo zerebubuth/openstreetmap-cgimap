@@ -15,7 +15,9 @@ relation_responder::relation_responder(mime::type mt, osm_nwr_id_t id_,
   ids.push_back(id);
 
   if (sel->select_relations(ids) == 0) {
-    throw http::not_found("");
+    std::ostringstream error;
+    error << "Relation " << id << " was not found.";
+    throw http::not_found(error.str());
   } else {
     check_visibility();
   }

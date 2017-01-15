@@ -1,0 +1,16 @@
+# Adding a request X-Error-Format: xml header should result in the error being
+# returned in an XML document, and the return status being 200 OK. This is
+# mainly a legacy thing to handle clients (e.g: Flash) which weren't able to
+# handle HTTP statuses other than 200 and 404.
+Request-Method: GET
+Request-URI: /api/0.6/node/1
+HTTP-X-Error-Format: xml
+---
+Status: 200 OK
+Content-Type: text/xml; charset=utf-8
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<osmError>
+  <status>404 Not Found</status>
+  <message>Node 1 was not found.</message>
+</osmError>

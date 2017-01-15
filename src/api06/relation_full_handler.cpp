@@ -16,7 +16,9 @@ relation_full_responder::relation_full_responder(mime::type mt_, osm_nwr_id_t id
   ids.push_back(id);
 
   if (sel->select_relations(ids) == 0) {
-    throw http::not_found("");
+    std::ostringstream error;
+    error << "Relation " << id << " was not found.";
+    throw http::not_found(error.str());
   } else {
     check_visibility();
   }
@@ -33,8 +35,11 @@ void relation_full_responder::check_visibility() {
   switch (sel->check_relation_visibility(id)) {
 
   case data_selection::non_exist:
-    // TODO: fix error message / throw structure to emit better error message
-    throw http::not_found("");
+  {
+    std::ostringstream error;
+    error << "Relation " << id << " was not found.";
+    throw http::not_found(error.str());
+  }
 
   case data_selection::deleted:
     // TODO: fix error message / throw structure to emit better error message
