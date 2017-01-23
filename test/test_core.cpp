@@ -479,17 +479,17 @@ void check_response(std::istream &expected, std::istream &actual) {
  */
 void run_test(fs::path test_case, rate_limiter &limiter,
               const std::string &generator, routes &route,
-              boost::shared_ptr<data_selection::factory> factory) {
+              boost::shared_ptr<data_selection::factory> factory,
+              boost::shared_ptr<oauth::store> store) {
   try {
     test_request req;
-    boost::shared_ptr<oauth::store> empty_store;
 
     // set up request headers from test case
     fs::ifstream in(test_case);
     setup_request_headers(req, in);
 
     // execute the request
-    process_request(req, limiter, generator, route, factory, empty_store);
+    process_request(req, limiter, generator, route, factory, store);
 
     // compare the result to what we're expecting
     try {
@@ -515,6 +515,81 @@ void run_test(fs::path test_case, rate_limiter &limiter,
   }
 }
 
+struct test_oauth
+  : public oauth::store {
+
+  test_oauth(const pt::ptree &config) {
+    boost::optional<const pt::ptree &> consumers =
+      config.get_child_optional("consumers");
+    if (consumers) {
+      for (const auto &entry : *consumers) {
+        std::string key = entry.first;
+        std::string data = entry.second.data();
+
+        if (!key.empty() && !data.empty()) {
+          m_consumers.emplace(key, data);
+        }
+      }
+    }
+
+    boost::optional<const pt::ptree &> tokens =
+      config.get_child_optional("tokens");
+    if (tokens) {
+      for (const auto &entry : *tokens) {
+        std::string key = entry.first;
+        osm_user_id_t user_id = entry.second.get<osm_user_id_t>("user_id");
+        std::string secret = entry.second.get<std::string>("secret");
+
+        m_tokens.emplace(key, secret);
+        m_users.emplace(key, user_id);
+      }
+    }
+  }
+
+  virtual ~test_oauth() {}
+
+  boost::optional<std::string> consumer_secret(const std::string &consumer_key) {
+    auto itr = m_consumers.find(consumer_key);
+    if (itr != m_consumers.end()) {
+      return itr->second;
+    } else {
+      return boost::none;
+    }
+  }
+
+  boost::optional<std::string> token_secret(const std::string &token_id) {
+    auto itr = m_tokens.find(token_id);
+    if (itr != m_tokens.end()) {
+      return itr->second;
+    } else {
+      return boost::none;
+    }
+  }
+
+  bool use_nonce(const std::string &nonce, uint64_t timestamp) {
+    // pretend all nonces are new for these tests
+    return true;
+  }
+
+  bool allow_read_api(const std::string &token_id) {
+    // everyone can read the api
+    return true;
+  }
+
+  boost::optional<osm_user_id_t> get_user_id_for_token(const std::string &token_id) {
+    auto itr = m_users.find(token_id);
+    if (itr != m_users.end()) {
+      return itr->second;
+    } else {
+      return boost::none;
+    }
+  }
+
+private:
+  std::map<std::string, std::string> m_consumers, m_tokens;
+  std::map<std::string, osm_user_id_t> m_users;
+};
+
 int main(int argc, char *argv[]) {
   if (argc != 2) {
     std::cerr << "Usage: " << argv[0] << " <test-directory>." << std::endl;
@@ -523,7 +598,10 @@ int main(int argc, char *argv[]) {
 
   fs::path test_directory = argv[1];
   fs::path data_file = test_directory / "data.osm";
+  fs::path oauth_file = test_directory / "oauth.json";
   std::vector<fs::path> test_cases;
+
+  boost::shared_ptr<oauth::store> store;
 
   try {
     if (fs::is_directory(test_directory) == false) {
@@ -543,6 +621,19 @@ int main(int argc, char *argv[]) {
       if (ext == ".case") {
         test_cases.push_back(filename);
       }
+    }
+
+    if (fs::is_regular_file(oauth_file)) {
+      pt::ptree config;
+
+      try {
+        pt::read_json(oauth_file.string(), config);
+      } catch (const std::exception &ex) {
+        throw std::runtime_error
+          ((boost::format("%1%, while reading expected JSON.") % ex.what()).str());
+      }
+
+      store = boost::make_shared<test_oauth>(config);
     }
 
   } catch (const std::exception &e) {
@@ -568,7 +659,7 @@ int main(int argc, char *argv[]) {
     BOOST_FOREACH(fs::path test_case, test_cases) {
       std::string generator =
           (boost::format(PACKAGE_STRING " (test %1%)") % test_case).str();
-      run_test(test_case, limiter, generator, route, factory);
+      run_test(test_case, limiter, generator, route, factory, store);
     }
 
   } catch (const std::exception &e) {
