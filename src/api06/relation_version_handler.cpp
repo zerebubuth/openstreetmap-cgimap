@@ -9,7 +9,7 @@ using std::vector;
 namespace api06 {
 
 relation_version_responder::relation_version_responder(mime::type mt, osm_nwr_id_t id_, 
-                                       osm_version_t v_, factory_ptr &w_)
+                                       osm_version_t v_, data_selection_ptr &w_)
     : osm_current_responder(mt, w_), id(id_), v(v_) {
   vector<osm_edition_t> historic_ids;
   historic_ids.push_back(std::make_pair(id, v));
@@ -30,7 +30,7 @@ relation_version_handler::~relation_version_handler() {}
 
 std::string relation_version_handler::log_name() const { return "relation"; }
 
-responder_ptr_t relation_version_handler::responder(factory_ptr &x) const {
+responder_ptr_t relation_version_handler::responder(data_selection_ptr &x) const {
   return responder_ptr_t(new relation_version_responder(mime_type, id, v, x));
 }
 

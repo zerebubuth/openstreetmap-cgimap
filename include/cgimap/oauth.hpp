@@ -2,6 +2,7 @@
 #define OAUTH_HPP
 
 #include <string>
+#include <set>
 #include <boost/optional.hpp>
 #include <boost/variant.hpp>
 #include "cgimap/request.hpp"

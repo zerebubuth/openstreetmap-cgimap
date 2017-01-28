@@ -8,7 +8,7 @@ using std::vector;
 
 namespace api06 {
 
-way_version_responder::way_version_responder(mime::type mt, osm_nwr_id_t id_, osm_version_t v_, factory_ptr &w_)
+way_version_responder::way_version_responder(mime::type mt, osm_nwr_id_t id_, osm_version_t v_, data_selection_ptr &w_)
     : osm_current_responder(mt, w_), id(id_), v(v_) {
   vector<osm_edition_t> historic_ids;
   historic_ids.push_back(std::make_pair(id, v));
@@ -29,7 +29,7 @@ way_version_handler::~way_version_handler() {}
 
 std::string way_version_handler::log_name() const { return "way"; }
 
-responder_ptr_t way_version_handler::responder(factory_ptr &x) const {
+responder_ptr_t way_version_handler::responder(data_selection_ptr &x) const {
   return responder_ptr_t(new way_version_responder(mime_type, id, v, x));
 }
 

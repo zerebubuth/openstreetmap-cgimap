@@ -75,7 +75,7 @@ void process_not_allowed(request &req) {
  */
 boost::tuple<string, size_t>
 process_get_request(request &req, routes &route,
-                    boost::shared_ptr<data_selection::factory> factory,
+                    data_selection_ptr selection,
                     const string &ip, const string &generator) {
   // figure how to handle the request
   handler_ptr_t handler = route(req);
@@ -86,7 +86,7 @@ process_get_request(request &req, routes &route,
                   ip);
 
   // constructor of responder handles dynamic validation (i.e: with db access).
-  responder_ptr_t responder = handler->responder(factory);
+  responder_ptr_t responder = handler->responder(selection);
 
   // get encoding to use
   shared_ptr<http::encoding> encoding = get_encoding(req);
@@ -142,7 +142,7 @@ process_get_request(request &req, routes &route,
  */
 boost::tuple<string, size_t>
 process_head_request(request &req, routes &route,
-                     boost::shared_ptr<data_selection::factory> factory,
+                     data_selection_ptr selection,
                      const string &ip) {
   // figure how to handle the request
   handler_ptr_t handler = route(req);
@@ -159,7 +159,7 @@ process_head_request(request &req, routes &route,
   // them unmodified
 
   // constructor of responder handles dynamic validation (i.e: with db access).
-  responder_ptr_t responder = handler->responder(factory);
+  responder_ptr_t responder = handler->responder(selection);
 
   // get encoding to use
   shared_ptr<http::encoding> encoding = get_encoding(req);
@@ -265,6 +265,7 @@ void process_request(request &req, rate_limiter &limiter,
     // get the client IP address
     string ip = fcgi_get_env(req, "REMOTE_ADDR");
     string client_key;
+    boost::optional<osm_user_id_t> user_id;
 
     if (store) {
       oauth::validity::validity oauth_valid =
@@ -272,7 +273,7 @@ void process_request(request &req, rate_limiter &limiter,
 
       if (boost::apply_visitor(is_copacetic(), oauth_valid)) {
         string token = boost::apply_visitor(get_oauth_token(), oauth_valid);
-        boost::optional<osm_user_id_t> user_id = store->get_user_id_for_token(token);
+        user_id = store->get_user_id_for_token(token);
 
         if (user_id) {
           client_key = (format("%1%%2%") % user_prefix % (*user_id)).str();
@@ -315,14 +316,17 @@ void process_request(request &req, rate_limiter &limiter,
     string request_name;
     size_t bytes_written;
 
+    // create a data selection for the request
+    auto selection = factory->make_selection();
+
     // process request
     if (method == "GET") {
       boost::tie(request_name, bytes_written) =
-        process_get_request(req, route, factory, ip, generator);
+        process_get_request(req, route, selection, ip, generator);
 
     } else if (method == "HEAD") {
       boost::tie(request_name, bytes_written) =
-          process_head_request(req, route, factory, ip);
+          process_head_request(req, route, selection, ip);
 
     } else if (method == "OPTIONS") {
       boost::tie(request_name, bytes_written) = process_options_request(req);

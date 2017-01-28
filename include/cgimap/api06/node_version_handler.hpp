@@ -10,7 +10,7 @@ namespace api06 {
 
 class node_version_responder : public osm_current_responder {
 public:
-  node_version_responder(mime::type, osm_nwr_id_t, osm_version_t, factory_ptr &);
+  node_version_responder(mime::type, osm_nwr_id_t, osm_version_t, data_selection_ptr &);
   ~node_version_responder();
 
 private:
@@ -24,7 +24,7 @@ public:
   ~node_version_handler();
 
   std::string log_name() const;
-  responder_ptr_t responder(factory_ptr &x) const;
+  responder_ptr_t responder(data_selection_ptr &x) const;
 
 private:
   osm_nwr_id_t id;

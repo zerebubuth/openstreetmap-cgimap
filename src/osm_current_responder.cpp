@@ -5,9 +5,9 @@ using std::list;
 using boost::shared_ptr;
 namespace pt = boost::posix_time;
 
-osm_current_responder::osm_current_responder(mime::type mt, factory_ptr &f,
+osm_current_responder::osm_current_responder(mime::type mt, data_selection_ptr &s,
                                              boost::optional<bbox> b)
-    : osm_responder(mt, b), sel(f->make_selection()) {}
+    : osm_responder(mt, b), sel(s) {}
 
 osm_current_responder::~osm_current_responder() {}
 

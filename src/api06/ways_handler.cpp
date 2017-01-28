@@ -16,7 +16,7 @@ using std::string;
 namespace api06 {
 
 ways_responder::ways_responder(mime::type mt, vector<id_version> ids_,
-                               factory_ptr &w_)
+                               data_selection_ptr &w_)
     : osm_current_responder(mt, w_), ids(ids_) {
   vector<osm_nwr_id_t> current_ids;
   vector<osm_edition_t> historic_ids;
@@ -57,7 +57,7 @@ std::string ways_handler::log_name() const {
   return msg.str();
 }
 
-responder_ptr_t ways_handler::responder(factory_ptr &x) const {
+responder_ptr_t ways_handler::responder(data_selection_ptr &x) const {
   return responder_ptr_t(new ways_responder(mime_type, ids, x));
 }
 

@@ -8,7 +8,7 @@ using std::vector;
 
 namespace api06 {
 
-node_history_responder::node_history_responder(mime::type mt, osm_nwr_id_t id_, factory_ptr &w_)
+node_history_responder::node_history_responder(mime::type mt, osm_nwr_id_t id_, data_selection_ptr &w_)
   : osm_current_responder(mt, w_), id(id_) {
   vector<osm_nwr_id_t> ids;
   ids.push_back(id);
@@ -26,7 +26,7 @@ node_history_handler::~node_history_handler() {}
 
 std::string node_history_handler::log_name() const { return "node/history"; }
 
-responder_ptr_t node_history_handler::responder(factory_ptr &w) const {
+responder_ptr_t node_history_handler::responder(data_selection_ptr &w) const {
   return responder_ptr_t(new node_history_responder(mime_type, id, w));
 }
 

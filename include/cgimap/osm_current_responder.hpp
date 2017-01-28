@@ -11,7 +11,7 @@ class osm_current_responder : public osm_responder {
 public:
   // construct, passing the mime type down to the responder.
   // optional bounds are stored at this level, but available to derived classes.
-  osm_current_responder(mime::type, factory_ptr &f,
+  osm_current_responder(mime::type, data_selection_ptr &s,
                         boost::optional<bbox> bounds = boost::optional<bbox>());
 
   virtual ~osm_current_responder();
@@ -24,7 +24,7 @@ public:
 
 protected:
   // current selection of elements to be written out
-  boost::shared_ptr<data_selection> sel;
+  data_selection_ptr sel;
 };
 
 #endif /* OSM_CURRENT_RESPONDER_HPP */

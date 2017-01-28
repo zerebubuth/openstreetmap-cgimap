@@ -10,7 +10,7 @@ using std::vector;
 namespace api06 {
 
 relation_full_responder::relation_full_responder(mime::type mt_, osm_nwr_id_t id_,
-                                                 factory_ptr &w_)
+                                                 data_selection_ptr &w_)
     : osm_current_responder(mt_, w_), id(id_) {
   vector<osm_nwr_id_t> ids;
   ids.push_back(id);
@@ -56,7 +56,7 @@ relation_full_handler::~relation_full_handler() {}
 
 std::string relation_full_handler::log_name() const { return "relation/full"; }
 
-responder_ptr_t relation_full_handler::responder(factory_ptr &x) const {
+responder_ptr_t relation_full_handler::responder(data_selection_ptr &x) const {
   return responder_ptr_t(new relation_full_responder(mime_type, id, x));
 }
 

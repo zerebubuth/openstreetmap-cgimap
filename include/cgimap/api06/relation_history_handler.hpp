@@ -9,7 +9,7 @@ namespace api06 {
 
 class relation_history_responder : public osm_current_responder {
 public:
-  relation_history_responder(mime::type, osm_nwr_id_t, factory_ptr &);
+  relation_history_responder(mime::type, osm_nwr_id_t, data_selection_ptr &);
   ~relation_history_responder();
 
 private:
@@ -22,7 +22,7 @@ public:
   ~relation_history_handler();
 
   std::string log_name() const;
-  responder_ptr_t responder(factory_ptr &) const;
+  responder_ptr_t responder(data_selection_ptr &) const;
 
 private:
   osm_nwr_id_t id;
