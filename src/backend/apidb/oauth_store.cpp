@@ -160,3 +160,9 @@ oauth_store::get_user_id_for_token(const std::string &token_id) {
     return boost::none;
   }
 }
+
+std::set<osm_user_role_t>
+oauth_store::get_roles_for_user(osm_user_id_t id) {
+  // TODO: implement!
+  return std::set<osm_user_role_t>();
+}

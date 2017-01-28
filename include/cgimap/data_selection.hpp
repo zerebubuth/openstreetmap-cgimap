@@ -118,6 +118,10 @@ public:
   /// of distinct (id, version) pairs selected.
   virtual int select_relations_with_history(const std::vector<osm_nwr_id_t> &);
 
+  /// if true, then include redactions in returned data. should default to
+  /// false.
+  virtual void set_redactions_visible(bool visible);
+
   /****************** changeset functions **********************/
 
   /// does this data selection support changesets?

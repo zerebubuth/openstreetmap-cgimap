@@ -30,6 +30,10 @@ int data_selection::select_relations_with_history(const std::vector<osm_nwr_id_t
   throw std::runtime_error("data_selection does not support historical relations");
 }
 
+void data_selection::set_redactions_visible(bool) {
+  throw std::runtime_error("data_selection does not support redactions");
+}
+
 void data_selection::write_changesets(output_formatter &, const boost::posix_time::ptime &) {
 }
 

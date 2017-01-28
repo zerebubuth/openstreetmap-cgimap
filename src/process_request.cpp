@@ -252,6 +252,20 @@ struct oauth_status_response : public boost::static_visitor<void> {
   }
 };
 
+// look in the request get parameters to see if the user requested that
+// redactions be shown
+bool show_redactions_requested(request &req) {
+  typedef std::vector<std::pair<std::string, std::string> > params_t;
+  std::string decoded = http::urldecode(get_query_string(req));
+  const params_t params = http::parse_params(decoded);
+  auto itr = std::find_if(
+    params.begin(), params.end(),
+    [](const params_t::value_type &param) -> bool {
+      return param.first == "show_redactions" && param.second == "true";
+    });
+  return itr != params.end();
+}
+
 } // anonymous namespace
 
 /**
@@ -266,6 +280,7 @@ void process_request(request &req, rate_limiter &limiter,
     string ip = fcgi_get_env(req, "REMOTE_ADDR");
     string client_key;
     boost::optional<osm_user_id_t> user_id;
+    std::set<osm_user_role_t> user_roles;
 
     if (store) {
       oauth::validity::validity oauth_valid =
@@ -277,6 +292,7 @@ void process_request(request &req, rate_limiter &limiter,
 
         if (user_id) {
           client_key = (format("%1%%2%") % user_prefix % (*user_id)).str();
+          user_roles = store->get_roles_for_user(*user_id);
 
         } else {
           // we can get here if there's a valid OAuth signature, with an
@@ -318,6 +334,11 @@ void process_request(request &req, rate_limiter &limiter,
 
     // create a data selection for the request
     auto selection = factory->make_selection();
+    if (selection->supports_historical_versions() &&
+        show_redactions_requested(req) &&
+        (user_roles.count(osm_user_role_t::moderator) > 0)) {
+      selection->set_redactions_visible(true);
+    }
 
     // process request
     if (method == "GET") {

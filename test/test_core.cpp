@@ -544,6 +544,8 @@ struct test_oauth
         m_users.emplace(key, user_id);
       }
     }
+
+    // TODO: parse users here!
   }
 
   virtual ~test_oauth() {}
@@ -583,6 +585,12 @@ struct test_oauth
     } else {
       return boost::none;
     }
+  }
+
+  std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t) {
+    // TODO: handle user roles - at the moment, just assume everyone is a normal
+    // user.
+    return std::set<osm_user_role_t>();
   }
 
 private:
