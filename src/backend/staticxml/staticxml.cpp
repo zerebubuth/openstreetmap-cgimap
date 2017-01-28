@@ -332,7 +332,8 @@ inline void write_element<relation>(const relation &r, output_formatter &formatt
 struct static_data_selection : public data_selection {
   explicit static_data_selection(boost::shared_ptr<database> db)
     : m_db(db)
-    , m_include_changeset_comments(false) {}
+    , m_include_changeset_comments(false)
+    , m_redactions_visible(false) {}
   virtual ~static_data_selection() {}
 
   virtual void write_nodes(output_formatter &formatter) {
@@ -554,6 +555,10 @@ struct static_data_selection : public data_selection {
     return select_historical_all<relation>(m_historic_relations, ids);
   }
 
+  virtual void set_redactions_visible(bool visible) {
+    m_redactions_visible = visible;
+  }
+
   virtual bool supports_changesets() { return true; }
 
   virtual int select_changesets(const std::vector<osm_changeset_id_t> &ids) {
@@ -666,7 +671,7 @@ private:
       boost::optional<const T &> t = find<T>(ed);
       if (t) {
         bool is_redacted = t->m_info.redaction;
-        if (!is_redacted) {
+        if (!is_redacted || m_redactions_visible) {
           found_eds.insert(ed);
           ++selected;
         }
@@ -690,7 +695,7 @@ private:
         for (; itr != end; ++itr) {
           osm_edition_t ed(id, *itr->first.version);
           bool is_redacted = itr->second.m_info.redaction;
-          if (!is_redacted) {
+          if (!is_redacted || m_redactions_visible) {
             found_eds.insert(ed);
             ++selected;
           }
@@ -704,7 +709,7 @@ private:
   std::set<osm_changeset_id_t> m_changesets;
   std::set<osm_nwr_id_t> m_nodes, m_ways, m_relations;
   std::set<osm_edition_t> m_historic_nodes, m_historic_ways, m_historic_relations;
-  bool m_include_changeset_comments;
+  bool m_include_changeset_comments, m_redactions_visible;
 };
 
 template <>

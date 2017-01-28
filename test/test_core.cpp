@@ -515,6 +515,18 @@ void run_test(fs::path test_case, rate_limiter &limiter,
   }
 }
 
+osm_user_role_t parse_role(const std::string &str) {
+  if (str == "administrator") {
+    return osm_user_role_t::administrator;
+
+  } else if (str == "moderator") {
+    return osm_user_role_t::moderator;
+
+  } else {
+    throw std::runtime_error("Unable to parse role in config file.");
+  }
+}
+
 struct test_oauth
   : public oauth::store {
 
@@ -545,7 +557,24 @@ struct test_oauth
       }
     }
 
-    // TODO: parse users here!
+    boost::optional<const pt::ptree &> users =
+      config.get_child_optional("users");
+    if (users) {
+      for (const auto &entry : *users) {
+        osm_user_id_t id = boost::lexical_cast<osm_user_id_t>(entry.first);
+        boost::optional<const pt::ptree &> roles =
+          entry.second.get_child_optional("roles");
+
+        std::set<osm_user_role_t> r;
+        if (roles) {
+          for (const auto &role : *roles) {
+            r.insert(parse_role(role.second.get_value<std::string>()));
+          }
+        }
+
+        m_user_roles.emplace(id, std::move(r));
+      }
+    }
   }
 
   virtual ~test_oauth() {}
@@ -587,15 +616,19 @@ struct test_oauth
     }
   }
 
-  std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t) {
-    // TODO: handle user roles - at the moment, just assume everyone is a normal
-    // user.
-    return std::set<osm_user_role_t>();
+  std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t id) {
+    std::set<osm_user_role_t> roles;
+    auto itr = m_user_roles.find(id);
+    if (itr != m_user_roles.end()) {
+      roles = itr->second;
+    }
+    return roles;
   }
 
 private:
   std::map<std::string, std::string> m_consumers, m_tokens;
   std::map<std::string, osm_user_id_t> m_users;
+  std::map<osm_user_id_t, std::set<osm_user_role_t> > m_user_roles;
 };
 
 int main(int argc, char *argv[]) {

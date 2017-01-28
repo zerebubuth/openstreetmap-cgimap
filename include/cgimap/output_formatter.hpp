@@ -39,9 +39,9 @@ struct element_info {
   boost::optional<std::string> display_name;
   // If an object has been deleted
   bool visible;
-  // If an object has been deleted _and_ administratively hidden in a
-  // "redaction". note that this is never output - if it is present,
-  // then the element should not be displayed except to moderators.
+  // If an object has administratively hidden in a "redaction". note that this
+  // is never output - if it is present, then the element should not be
+  // displayed except to moderators.
   boost::optional<osm_redaction_id_t> redaction;
 };
 
