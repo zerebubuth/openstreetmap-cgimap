@@ -1,5 +1,4 @@
-# relation/history call for a regular user should return the deleted version and
-# the current version, but not the redacted version - even if they ask for it.
+# relation/history call for a moderator should return everything.
 Request-Method: GET
 Request-URI: /api/0.6/relation/1/history?show_redactions=true
 Http-Host: cgimap.example.com
