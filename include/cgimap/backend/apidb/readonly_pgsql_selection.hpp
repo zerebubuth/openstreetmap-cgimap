@@ -54,6 +54,7 @@ public:
   int select_nodes_with_history(const std::vector<osm_nwr_id_t> &);
   int select_ways_with_history(const std::vector<osm_nwr_id_t> &);
   int select_relations_with_history(const std::vector<osm_nwr_id_t> &);
+  void set_redactions_visible(bool);
 
   /**
    * a factory for the creation of read-only selections, so it
@@ -83,6 +84,10 @@ private:
   // true if we want to include changeset discussions along with
   // the changesets themselves. defaults to false.
   bool include_changeset_discussions;
+
+  // true if the user is a moderator and we should include redacted historical
+  // versions in the responses.
+  bool m_redactions_visible;
 
   // the set of selected nodes, ways and relations
   std::set<osm_changeset_id_t> sel_changesets;

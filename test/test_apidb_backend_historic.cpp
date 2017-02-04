@@ -476,6 +476,92 @@ void test_relation_history(test_database &tdb) {
     f.m_relations[1], "second relation written");
 }
 
+void test_node_with_history_redacted(test_database &tdb) {
+  tdb.run_sql(
+    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+    "VALUES "
+    "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true); "
+
+    "INSERT INTO changesets (id, user_id, created_at, closed_at) "
+    "VALUES "
+    "  (2, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'); "
+
+    "INSERT INTO redactions (id, title, created_at, updated_at, user_id) "
+    "VALUES "
+    "  (1, 'test redaction', '2017-02-04T16:56:00Z', '2017-02-04T16:56:00Z', 1); "
+
+    "INSERT INTO current_nodes (id, latitude, longitude, changeset_id, "
+    "                           visible, \"timestamp\", tile, version) "
+    "VALUES "
+    "  (3, 0, 0, 2, true, '2017-02-04T16:57:00Z', 3221225472, 2); "
+
+    "INSERT INTO nodes (node_id, latitude, longitude, changeset_id, visible, "
+    "                   \"timestamp\", tile, version, redaction_id) "
+    "VALUES "
+    "  (3, 0, 0, 2, true, '2017-02-04T16:56:00Z', 3221225472, 1, 1), "
+    "  (3, 0, 0, 2, true, '2017-02-04T16:57:00Z', 3221225472, 2, NULL); "
+    "");
+  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+
+  assert_equal<bool>(
+    sel->supports_historical_versions(), true,
+    "data selection supports historical versions");
+
+  // as a normal user, the redactions should not be visible
+  {
+    std::vector<osm_nwr_id_t> ids;
+    ids.push_back(3);
+
+    assert_equal<int>(sel->select_nodes_with_history(ids), 1,
+      "number of node versions selected for regular user");
+
+    test_formatter f;
+    sel->write_nodes(f);
+    assert_equal<size_t>(f.m_nodes.size(), 1,
+      "number of nodes written for regular user");
+
+    assert_equal<test_formatter::node_t>(
+      test_formatter::node_t(
+        element_info(3, 2, 2, "2017-02-04T16:57:00Z", 1, std::string("user_1"), true),
+        0.0, 0.0,
+        tags_t()
+        ),
+      f.m_nodes[0], "node written");
+  }
+
+  // as a moderator, should have all redacted elements shown.
+  // NOTE: the node versions which have already been selected are still
+  // selected.
+  sel->set_redactions_visible(true);
+  {
+    std::vector<osm_nwr_id_t> ids;
+    ids.push_back(3);
+
+    assert_equal<int>(sel->select_nodes_with_history(ids), 1,
+      "number of extra node versions selected for moderator");
+
+    test_formatter f;
+    sel->write_nodes(f);
+    assert_equal<size_t>(f.m_nodes.size(), 2,
+      "number of nodes written for moderator");
+
+    assert_equal<test_formatter::node_t>(
+      test_formatter::node_t(
+        element_info(3, 1, 2, "2017-02-04T16:56:00Z", 1, std::string("user_1"), true),
+        0.0, 0.0,
+        tags_t()
+        ),
+      f.m_nodes[0], "first node written");
+    assert_equal<test_formatter::node_t>(
+      test_formatter::node_t(
+        element_info(3, 2, 2, "2017-02-04T16:57:00Z", 1, std::string("user_1"), true),
+        0.0, 0.0,
+        tags_t()
+        ),
+      f.m_nodes[1], "second node written");
+  }
+}
+
 } // anonymous namespace
 
 int main(int, char **) {
@@ -503,6 +589,9 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(test_database&)>(
         &test_relation_history));
+
+    tdb.run(boost::function<void(test_database&)>(
+        &test_node_with_history_redacted));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;

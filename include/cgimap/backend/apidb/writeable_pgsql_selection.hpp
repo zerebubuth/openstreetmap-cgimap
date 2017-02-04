@@ -51,6 +51,7 @@ public:
   int select_nodes_with_history(const std::vector<osm_nwr_id_t> &);
   int select_ways_with_history(const std::vector<osm_nwr_id_t> &);
   int select_relations_with_history(const std::vector<osm_nwr_id_t> &);
+  void set_redactions_visible(bool);
 
   /**
    * abstracts the creation of transactions for the writeable
@@ -86,6 +87,10 @@ private:
   // true if we want to include changeset discussions along with
   // the changesets themselves. defaults to false.
   bool include_changeset_discussions;
+
+  // true if redacted historical versions should be included in
+  // the query output.
+  bool m_redactions_visible;
 };
 
 #endif /* WRITEABLE_PGSQL_SELECTION_HPP */

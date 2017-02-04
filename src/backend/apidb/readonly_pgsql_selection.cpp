@@ -683,8 +683,9 @@ int readonly_pgsql_selection::select_historical_relations(
 int readonly_pgsql_selection::select_nodes_with_history(
   const std::vector<osm_nwr_id_t> &ids) {
   if (!ids.empty()) {
-    return insert_results(w.prepared("select_nodes_history")(ids).exec(),
-                          sel_historic_nodes);
+    return insert_results(
+      w.prepared("select_nodes_history")(ids)(m_redactions_visible).exec(),
+      sel_historic_nodes);
   } else {
     return 0;
   }
@@ -708,6 +709,10 @@ int readonly_pgsql_selection::select_relations_with_history(
   } else {
     return 0;
   }
+}
+
+void readonly_pgsql_selection::set_redactions_visible(bool visible) {
+  m_redactions_visible = visible;
 }
 
 bool readonly_pgsql_selection::supports_changesets() {
@@ -905,8 +910,9 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
   m_connection.prepare("select_nodes_history",
     "SELECT node_id AS id, version "
       "FROM nodes "
-      "WHERE node_id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+      "WHERE node_id = ANY($1) AND "
+            "(redaction_id IS NULL OR $2 = TRUE)")
+    PREPARE_ARGS(("bigint[]")("boolean"));
   m_connection.prepare("select_ways_history",
     "SELECT way_id AS id, version "
       "FROM ways "

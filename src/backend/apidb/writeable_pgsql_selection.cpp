@@ -307,7 +307,8 @@ void extract_comments(const pqxx::result &res, comments_t &comments) {
 writeable_pgsql_selection::writeable_pgsql_selection(
     pqxx::connection &conn, cache<osm_changeset_id_t, changeset> &changeset_cache)
     : w(conn), cc(changeset_cache)
-    , include_changeset_discussions(false) {
+    , include_changeset_discussions(false)
+    , m_redactions_visible(false) {
   w.exec("CREATE TEMPORARY TABLE tmp_nodes (id bigint PRIMARY KEY)");
   w.exec("CREATE TEMPORARY TABLE tmp_ways (id bigint PRIMARY KEY)");
   w.exec("CREATE TEMPORARY TABLE tmp_relations (id bigint PRIMARY KEY)");
@@ -544,7 +545,8 @@ int writeable_pgsql_selection::select_nodes_with_history(
   m_historic_tables_empty = false;
   size_t selected = 0;
   BOOST_FOREACH(osm_nwr_id_t id, ids) {
-    selected += w.prepared("add_all_versions_of_node")(id)
+    selected += w.prepared("add_all_versions_of_node")
+      (id)(m_redactions_visible)
       .exec().affected_rows();
   }
 
@@ -576,6 +578,10 @@ int writeable_pgsql_selection::select_relations_with_history(
 
   assert(selected < size_t(std::numeric_limits<int>::max()));
   return selected;
+}
+
+void writeable_pgsql_selection::set_redactions_visible(bool visible) {
+  m_redactions_visible = visible;
 }
 
 bool writeable_pgsql_selection::supports_changesets() {
@@ -943,8 +949,9 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       "FROM nodes n "
       "LEFT JOIN tmp_historic_nodes t "
       "ON t.node_id = n.node_id AND t.version = n.version "
-      "WHERE n.node_id = $1 AND t.node_id IS NULL")
-    PREPARE_ARGS(("bigint"));
+      "WHERE n.node_id = $1 AND t.node_id IS NULL AND "
+            "(n.redaction_id IS NULL OR $2 = TRUE)")
+    PREPARE_ARGS(("bigint")("boolean"));
   m_connection.prepare("add_all_versions_of_way",
     "INSERT INTO tmp_historic_ways "
       "SELECT w.way_id, w.version "
