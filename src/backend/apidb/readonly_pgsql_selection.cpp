@@ -430,7 +430,8 @@ void fetch_historic(
 readonly_pgsql_selection::readonly_pgsql_selection(
     pqxx::connection &conn, cache<osm_changeset_id_t, changeset> &changeset_cache)
     : w(conn), cc(changeset_cache)
-    , include_changeset_discussions(false) {}
+    , include_changeset_discussions(false)
+    , m_redactions_visible(false) {}
 
 readonly_pgsql_selection::~readonly_pgsql_selection() {}
 
@@ -631,19 +632,22 @@ bool readonly_pgsql_selection::supports_historical_versions() {
 
 int readonly_pgsql_selection::select_historical_nodes(
   const std::vector<osm_edition_t> &eds) {
-  int num_inserted = 0;
 
-  for (std::vector<osm_edition_t>::const_iterator itr = eds.begin();
-       itr != eds.end(); ++itr) {
-    const osm_edition_t ed = *itr;
-
-    // note: only count the *new* rows inserted.
-    if (sel_historic_nodes.insert(ed).second) {
-      ++num_inserted;
+  if (!eds.empty()) {
+    std::vector<osm_nwr_id_t> ids;
+    std::vector<osm_version_t> vers;
+    ids.resize(eds.size());
+    vers.resize(eds.size());
+    for (const auto &ed : eds) {
+      ids.emplace_back(ed.first);
+      vers.emplace_back(ed.second);
     }
+    return insert_results(
+      w.prepared("select_historical_nodes")(ids)(vers)(m_redactions_visible).exec(),
+      sel_historic_nodes);
+  } else {
+    return 0;
   }
-
-  return num_inserted;
 }
 
 int readonly_pgsql_selection::select_historical_ways(
@@ -923,6 +927,16 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
       "FROM relations "
       "WHERE relation_id = ANY($1)")
     PREPARE_ARGS(("bigint[]"));
+
+  m_connection.prepare("select_historical_nodes",
+    "WITH wanted(id, version) AS ("
+      "SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))"
+    ")"
+    "SELECT n.node_id AS id, n.version "
+      "FROM nodes n "
+      "INNER JOIN wanted w ON n.node_id = w.id AND n.version = w.version "
+      "WHERE (n.redaction_id IS NULL OR $3 = TRUE)")
+    PREPARE_ARGS(("bigint[]")("bigint[]")("boolean"));
 
   // clang-format on
 }

@@ -504,7 +504,8 @@ int writeable_pgsql_selection::select_historical_nodes(
 
   size_t selected = 0;
   BOOST_FOREACH(osm_edition_t ed, eds) {
-    selected += w.prepared("add_historic_node")(ed.first)(ed.second)
+    selected += w.prepared("add_historic_node")
+      (ed.first)(ed.second)(m_redactions_visible)
       .exec().affected_rows();
   }
 
@@ -852,8 +853,9 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
        "SELECT node_id, version "
          "FROM nodes "
          "WHERE "
-           "node_id = $1 AND version = $2")
-    PREPARE_ARGS(("bigint")("bigint"));
+           "node_id = $1 AND version = $2 AND"
+           "(redaction_id IS NULL OR $3 = TRUE)")
+    PREPARE_ARGS(("bigint")("bigint")("boolean"));
 
   m_connection.prepare("drop_current_node_versions_from_historic",
     "WITH cv AS ("
