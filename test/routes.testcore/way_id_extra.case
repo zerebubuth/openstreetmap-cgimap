@@ -1,0 +1,8 @@
+# the '/foo' on the end of the URL isn't a valid URL and should return a
+# 404 response rather than falling back to /api/0.6/way/1 and ignoring the
+# '/foo' on the end.
+Request-Method: GET
+Request-URI: /api/0.6/way/1/foo
+---
+Status: 404 Not Found
+---
