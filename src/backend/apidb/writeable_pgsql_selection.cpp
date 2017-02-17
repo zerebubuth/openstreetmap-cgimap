@@ -534,7 +534,8 @@ int writeable_pgsql_selection::select_historical_relations(
 
   size_t selected = 0;
   BOOST_FOREACH(osm_edition_t ed, eds) {
-    selected += w.prepared("add_historic_relation")(ed.first)(ed.second)
+    selected += w.prepared("add_historic_relation")
+      (ed.first)(ed.second)(m_redactions_visible)
       .exec().affected_rows();
   }
 
@@ -929,8 +930,9 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
        "SELECT relation_id, version "
          "FROM relations "
          "WHERE "
-           "relation_id = $1 AND version = $2")
-    PREPARE_ARGS(("bigint")("bigint"));
+           "relation_id = $1 AND version = $2 AND"
+           "(redaction_id IS NULL OR $3 = TRUE)")
+    PREPARE_ARGS(("bigint")("bigint")("boolean"));
 
   m_connection.prepare("extract_historic_relations",
     "SELECT r.relation_id AS id, r.visible, "

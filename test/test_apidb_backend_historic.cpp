@@ -924,6 +924,95 @@ void test_relation_with_history_redacted(test_database &tdb) {
   }
 }
 
+void test_historical_relations_redacted(test_database &tdb) {
+  tdb.run_sql(
+    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+    "VALUES "
+    "  (1, 'user_1@example.com', '', '2017-02-17T15:34:00Z', 'user_1', true); "
+
+    "INSERT INTO changesets (id, user_id, created_at, closed_at) "
+    "VALUES "
+    "  (3, 1, '2017-02-17T15:34:00Z', '2017-02-17T15:34:00Z'); "
+
+    "INSERT INTO redactions (id, title, created_at, updated_at, user_id) "
+    "VALUES "
+    "  (1, 'test redaction', '2017-02-17T16:56:00Z', '2017-02-17T16:56:00Z', 1); "
+
+    "INSERT INTO current_nodes (id, latitude, longitude, changeset_id, "
+    "                           visible, \"timestamp\", tile, version) "
+    "VALUES "
+    "  (3, 0, 0, 3, false, '2017-02-17T15:34:00Z', 3221225472, 2); "
+
+    "INSERT INTO current_relations (id, changeset_id, \"timestamp\", "
+    "                               visible, version) "
+    "VALUES "
+    "  (1, 3, '2017-02-17T15:34:00Z', true, 2); "
+
+    "INSERT INTO current_relation_members ("
+        "relation_id, member_type, member_id, member_role, sequence_id) "
+    "VALUES "
+    "  (1, 'Node', 3, 'foo', 1); "
+
+    "INSERT INTO relations (relation_id, changeset_id, \"timestamp\", "
+    "                       visible, version, redaction_id) "
+    "VALUES "
+    "  (1, 3, '2017-02-17T15:34:00Z', true, 2, NULL), "
+    "  (1, 3, '2017-02-17T15:34:00Z', true, 1, 1); "
+
+    "INSERT INTO relation_members (relation_id, member_type, member_id, "
+    "                              member_role, sequence_id, version) "
+    "VALUES "
+    "  (1, 'Node', 3, 'foo', 1, 2), "
+    "  (1, 'Node', 3, 'bar', 1, 1); "
+    "");
+  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+
+  assert_equal<bool>(
+    sel->supports_historical_versions(), true,
+    "data selection supports historical versions");
+
+  // as a normal user, the redactions should not be visible
+  {
+    std::vector<osm_edition_t> eds;
+    eds.emplace_back(1, 1);
+
+    assert_equal<int>(
+      sel->select_historical_relations(eds), 0,
+      "number of relation versions selected for regular user");
+
+    test_formatter f;
+    sel->write_relations(f);
+    assert_equal<size_t>(f.m_relations.size(), 0, "number of relations written for regular user");
+  }
+
+  // as a moderator (and setting the request flag), all the versions should be
+  // visible.
+  sel->set_redactions_visible(true);
+  {
+    std::vector<osm_edition_t> eds;
+    eds.emplace_back(1, 1);
+
+    assert_equal<int>(
+      sel->select_historical_relations(eds), 1,
+      "number of relation versions selected for moderator");
+
+    test_formatter f;
+    sel->write_relations(f);
+    assert_equal<size_t>(f.m_relations.size(), 1, "number of relations written for moderator");
+
+    members_t relation1v1_members;
+    relation1v1_members.push_back(member_info(element_type_node, 3, "bar"));
+
+    assert_equal<test_formatter::relation_t>(
+      test_formatter::relation_t(
+        element_info(1, 1, 3, "2017-02-17T15:34:00Z", 1, std::string("user_1"), true),
+        relation1v1_members,
+        tags_t()
+        ),
+      f.m_relations[0], "first relation written");
+  }
+}
+
 } // anonymous namespace
 
 int main(int, char **) {
@@ -966,6 +1055,9 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(test_database&)>(
         &test_relation_with_history_redacted));
+
+    tdb.run(boost::function<void(test_database&)>(
+        &test_historical_relations_redacted));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;
