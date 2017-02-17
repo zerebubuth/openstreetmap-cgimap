@@ -78,8 +78,11 @@ struct router {
                    handler_ptr_t &ptr) {
       try {
         list<string>::const_iterator begin = parts.begin();
+        auto sequence = r.match(begin, parts.end());
+        if(begin!=parts.end())
+          throw match::error();
         ptr.reset(
-            invoke(func, make_cons(ref(params), r.match(begin, parts.end()))));
+            invoke(func, make_cons(ref(params), sequence)));
         return true;
       } catch (const match::error &e) {
         return false;
