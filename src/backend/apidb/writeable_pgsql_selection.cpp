@@ -519,7 +519,8 @@ int writeable_pgsql_selection::select_historical_ways(
 
   size_t selected = 0;
   BOOST_FOREACH(osm_edition_t ed, eds) {
-    selected += w.prepared("add_historic_way")(ed.first)(ed.second)
+    selected += w.prepared("add_historic_way")
+      (ed.first)(ed.second)(m_redactions_visible)
       .exec().affected_rows();
   }
 
@@ -891,8 +892,9 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
        "SELECT way_id, version "
          "FROM ways "
          "WHERE "
-           "way_id = $1 AND version = $2")
-    PREPARE_ARGS(("bigint")("bigint"));
+           "way_id = $1 AND version = $2 AND"
+           "(redaction_id IS NULL OR $3 = TRUE)")
+    PREPARE_ARGS(("bigint")("bigint")("boolean"));
 
   m_connection.prepare("extract_historic_ways",
     "SELECT w.way_id AS id, w.visible, "

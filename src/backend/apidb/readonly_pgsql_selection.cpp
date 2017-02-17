@@ -652,19 +652,21 @@ int readonly_pgsql_selection::select_historical_nodes(
 
 int readonly_pgsql_selection::select_historical_ways(
   const std::vector<osm_edition_t> &eds) {
-  int num_inserted = 0;
-
-  for (std::vector<osm_edition_t>::const_iterator itr = eds.begin();
-       itr != eds.end(); ++itr) {
-    const osm_edition_t ed = *itr;
-
-    // note: only count the *new* rows inserted.
-    if (sel_historic_ways.insert(ed).second) {
-      ++num_inserted;
+  if (!eds.empty()) {
+    std::vector<osm_nwr_id_t> ids;
+    std::vector<osm_version_t> vers;
+    ids.resize(eds.size());
+    vers.resize(eds.size());
+    for (const auto &ed : eds) {
+      ids.emplace_back(ed.first);
+      vers.emplace_back(ed.second);
     }
+    return insert_results(
+      w.prepared("select_historical_ways")(ids)(vers)(m_redactions_visible).exec(),
+      sel_historic_ways);
+  } else {
+    return 0;
   }
-
-  return num_inserted;
 }
 
 int readonly_pgsql_selection::select_historical_relations(
@@ -938,6 +940,15 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
       "FROM nodes n "
       "INNER JOIN wanted w ON n.node_id = w.id AND n.version = w.version "
       "WHERE (n.redaction_id IS NULL OR $3 = TRUE)")
+    PREPARE_ARGS(("bigint[]")("bigint[]")("boolean"));
+  m_connection.prepare("select_historical_ways",
+    "WITH wanted(id, version) AS ("
+      "SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))"
+    ")"
+    "SELECT w.way_id AS id, w.version "
+      "FROM ways w "
+      "INNER JOIN wanted x ON w.way_id = x.id AND w.version = x.version "
+      "WHERE (w.redaction_id IS NULL OR $3 = TRUE)")
     PREPARE_ARGS(("bigint[]")("bigint[]")("boolean"));
 
   // clang-format on
