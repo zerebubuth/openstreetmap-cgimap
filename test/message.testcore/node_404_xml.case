@@ -1,0 +1,16 @@
+# Adding a request X-Error-Format: xml header would normally result in the
+# error being returned in an XML document, and the return status being 200 OK.
+# This is mainly a legacy thing to handle clients (e.g: Flash) which weren't
+# able to handle HTTP statuses other than 200 and 404.
+#
+# HOWEVER, that seems to be bypassed for 404s, which ignore the X-Error-Format
+# header.
+Request-Method: GET
+Request-URI: /api/0.6/node/1
+HTTP-X-Error-Format: xml
+---
+Status: 404 Not Found
+!Error:
+Content-Type: text/html; charset=utf-8
+Content-Length: 0
+---

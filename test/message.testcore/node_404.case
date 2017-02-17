@@ -1,0 +1,10 @@
+# requesting a missing node should result in a "Not Found" message, and the same
+# message repeated in the HTML body.
+Request-Method: GET
+Request-URI: /api/0.6/node/1
+---
+Status: 404 Not Found
+!Error:
+Content-Type: text/html; charset=utf-8
+Content-Length: 0
+---

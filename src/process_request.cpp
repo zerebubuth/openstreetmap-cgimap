@@ -29,6 +29,18 @@ namespace po = boost::program_options;
 
 namespace {
 
+// Rails responds to ActiveRecord::RecordNotFound with an empty HTML document.
+// Arguably, this isn't very useful. But it looks like we might be able to get
+// more information soon:
+// https://github.com/zerebubuth/openstreetmap-cgimap/pull/125#issuecomment-272720417
+void respond_404(const http::not_found &e, request &r) {
+  r.status(e.code());
+  r.add_header("Content-Type", "text/html; charset=utf-8");
+  r.add_header("Content-Length", "0");
+  r.add_header("Cache-Control", "no-cache");
+  r.put("");
+}
+
 void respond_error(const http::exception &e, request &r) {
   logger::message(format("Returning with http error %1% with reason %2%") %
                   e.code() % e.what());
@@ -48,11 +60,18 @@ void respond_error(const http::exception &e, request &r) {
     r.put(ostr.str());
 
   } else {
+    std::string message(e.what());
+    std::ostringstream message_size;
+    message_size << message.size();
+
     r.status(e.code());
-    r.add_header("Content-Type", "text/html");
-    r.add_header("Content-Length", "0");
-    r.add_header("Error", e.what());
+    r.add_header("Content-Type", "text/plain");
+    r.add_header("Content-Length", message_size.str());
+    r.add_header("Error", message);
     r.add_header("Cache-Control", "no-cache");
+
+    // output the message as well
+    r.put(message);
   }
 
   r.finish();
@@ -370,9 +389,16 @@ void process_request(request &req, rate_limiter &limiter,
                     (end_time - start_time).total_milliseconds() %
                     bytes_written);
 
+  } catch (const http::not_found &e) {
+    // most errors are passed back giving the client a choice of whether to
+    // receive it as a standard HTTP error or a 200 OK with the body as an XML
+    // encoded description of the error. not found errors are special - they're
+    // passed back just as empty HTML documents.
+    respond_404(e, req);
+
   } catch (const http::exception &e) {
     // errors here occur before we've started writing the response
-    // so we\ can send something helpful back to the client.
+    // so we can send something helpful back to the client.
     respond_error(e, req);
 
   } catch (const std::exception &e) {

@@ -14,7 +14,9 @@ way_responder::way_responder(mime::type mt, osm_nwr_id_t id_, data_selection_ptr
   ids.push_back(id);
 
   if (sel->select_ways(ids) == 0) {
-    throw http::not_found("");
+    std::ostringstream error;
+    error << "Way " << id << " was not found.";
+    throw http::not_found(error.str());
   } else {
     check_visibility();
   }

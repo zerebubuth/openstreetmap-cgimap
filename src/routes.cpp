@@ -238,6 +238,8 @@ handler_ptr_t routes::operator()(request &req) const {
 
   } else {
     // doesn't match prefix...
-    throw http::not_found(path);
+    std::ostringstream error;
+    error << "Path does not match any known routes: " << path;
+    throw http::not_found(error.str());
   }
 }

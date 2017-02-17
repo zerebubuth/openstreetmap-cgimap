@@ -15,7 +15,9 @@ node_ways_responder::node_ways_responder(mime::type mt, osm_nwr_id_t id_,
   ids.push_back(id);
 
   if (sel->select_nodes(ids) == 0) {
-    throw http::not_found("");
+    std::ostringstream error;
+    error << "Node " << id << " was not found.";
+    throw http::not_found(error.str());
   } else {
     sel->select_ways_from_nodes();
     check_visibility();
