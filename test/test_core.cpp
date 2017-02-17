@@ -430,7 +430,8 @@ void check_response(std::istream &expected, std::istream &actual) {
   if (expected_headers.count("Content-Type") > 0) {
     const std::string content_type =
         expected_headers.find("Content-Type")->second;
-    if (content_type.substr(0, 8) == "text/xml") {
+    if (content_type.substr(0, 8) == "text/xml" ||
+        content_type.substr(0, 9) == "text/html") {
       check_content_body_xml(expected, actual);
 
     } else if (content_type.substr(0, 9) == "text/json") {

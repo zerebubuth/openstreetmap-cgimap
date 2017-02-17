@@ -16,7 +16,9 @@ way_full_responder::way_full_responder(mime::type mt_, osm_nwr_id_t id_,
   ids.push_back(id);
 
   if (sel->select_ways(ids) == 0) {
-    throw http::not_found("");
+    std::ostringstream error;
+    error << "Way " << id << " was not found.";
+    throw http::not_found(error.str());
   } else {
     check_visibility();
   }
@@ -30,8 +32,11 @@ void way_full_responder::check_visibility() {
   switch (sel->check_way_visibility(id)) {
 
   case data_selection::non_exist:
-    // TODO: fix error message / throw structure to emit better error message
-    throw http::not_found("");
+  {
+    std::ostringstream error;
+    error << "Way " << id << " was not found.";
+    throw http::not_found(error.str());
+  }
 
   case data_selection::deleted:
     // TODO: fix error message / throw structure to emit better error message

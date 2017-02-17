@@ -23,7 +23,9 @@ changeset_responder::changeset_responder(mime::type mt, osm_changeset_id_t id_,
   }
 
   if (sel->select_changesets(ids) == 0) {
-    throw http::not_found("");
+    std::ostringstream error;
+    error << "Changeset " << id << " was not found.";
+    throw http::not_found(error.str());
   }
 
   if (include_discussion) {
