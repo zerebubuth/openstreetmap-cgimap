@@ -560,7 +560,8 @@ int writeable_pgsql_selection::select_ways_with_history(
   m_historic_tables_empty = false;
   size_t selected = 0;
   BOOST_FOREACH(osm_nwr_id_t id, ids) {
-    selected += w.prepared("add_all_versions_of_way")(id)
+    selected += w.prepared("add_all_versions_of_way")
+      (id)(m_redactions_visible)
       .exec().affected_rows();
   }
 
@@ -960,8 +961,9 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       "FROM ways w "
       "LEFT JOIN tmp_historic_ways t "
       "ON t.way_id = w.way_id AND t.version = w.version "
-      "WHERE w.way_id = $1 AND t.way_id IS NULL")
-    PREPARE_ARGS(("bigint"));
+      "WHERE w.way_id = $1 AND t.way_id IS NULL AND "
+            "(w.redaction_id IS NULL OR $2 = TRUE)")
+    PREPARE_ARGS(("bigint")("boolean"));
   m_connection.prepare("add_all_versions_of_relation",
     "INSERT INTO tmp_historic_relations "
       "SELECT r.relation_id, r.version "

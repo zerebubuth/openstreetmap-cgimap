@@ -633,6 +633,105 @@ void test_historical_nodes_redacted(test_database &tdb) {
   }
 }
 
+void test_way_with_history_redacted(test_database &tdb) {
+  tdb.run_sql(
+    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+    "VALUES "
+    "  (1, 'user_1@example.com', '', '2017-02-17T02:10:00Z', 'user_1', true); "
+
+    "INSERT INTO changesets (id, user_id, created_at, closed_at) "
+    "VALUES "
+    "  (3, 1, '2017-02-17T02:10:00Z', '2017-02-17T03:10:00Z'); "
+
+    "INSERT INTO redactions (id, title, created_at, updated_at, user_id) "
+    "VALUES "
+    "  (1, 'test redaction', '2017-02-17T16:56:00Z', '2017-02-17T16:56:00Z', 1); "
+
+    "INSERT INTO current_nodes (id, latitude, longitude, changeset_id, "
+    "                           visible, \"timestamp\", tile, version) "
+    "VALUES "
+    "  (3, 0, 0, 3, false, '2017-02-17T18:27:00Z', 3221225472, 2); "
+
+    "INSERT INTO current_ways (id, changeset_id, \"timestamp\", visible, version) "
+    "VALUES "
+    "  (1, 3, '2017-02-17T19:55:00Z', true, 2); "
+
+    "INSERT INTO current_way_nodes (way_id, node_id, sequence_id) "
+    "VALUES "
+    "  (1, 3, 1); "
+
+    "INSERT INTO ways (way_id, changeset_id, \"timestamp\", visible, "
+    "                  version, redaction_id) "
+    "VALUES "
+    "  (1, 3, '2017-02-17T19:55:00Z', true, 2, NULL), "
+    "  (1, 3, '2017-02-17T19:54:00Z', true, 1, 1); "
+
+    "INSERT INTO way_nodes (way_id, version, node_id, sequence_id) "
+    "VALUES "
+    "  (1, 2, 3, 1), "
+    "  (1, 1, 3, 1), "
+    "  (1, 1, 2, 2); "
+    "");
+  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+
+  assert_equal<bool>(
+    sel->supports_historical_versions(), true,
+    "data selection supports historical versions");
+
+  // as a normal user, the redactions should not be visible
+  {
+    std::vector<osm_nwr_id_t> ids;
+    ids.push_back(1);
+
+    assert_equal<int>(
+      sel->select_ways_with_history(ids), 1,
+      "number of way versions selected for regular user");
+
+    test_formatter f;
+    sel->write_ways(f);
+    assert_equal<size_t>(f.m_ways.size(), 1, "number of ways written for regular user");
+
+    assert_equal<test_formatter::way_t>(
+      test_formatter::way_t(
+        element_info(1, 2, 3, "2017-02-17T19:55:00Z", 1, std::string("user_1"), true),
+        {3},
+        tags_t()
+        ),
+      f.m_ways[0], "way for regular user");
+  }
+
+  // as a moderator (and setting the request flag), all the versions should be
+  // visible.
+  sel->set_redactions_visible(true);
+  {
+    std::vector<osm_nwr_id_t> ids;
+    ids.push_back(1);
+
+    assert_equal<int>(
+      sel->select_ways_with_history(ids), 1, // note: one is already selected
+      "number of extra way versions selected for moderator");
+
+    test_formatter f;
+    sel->write_ways(f);
+    assert_equal<size_t>(f.m_ways.size(), 2, "number of ways written for moderator");
+
+    assert_equal<test_formatter::way_t>(
+      test_formatter::way_t(
+        element_info(1, 1, 3, "2017-02-17T19:54:00Z", 1, std::string("user_1"), true),
+        {3, 2},
+        tags_t()
+        ),
+      f.m_ways[0], "first way written");
+    assert_equal<test_formatter::way_t>(
+      test_formatter::way_t(
+        element_info(1, 2, 3, "2017-02-17T19:55:00Z", 1, std::string("user_1"), true),
+        {3},
+        tags_t()
+        ),
+      f.m_ways[1], "second way written");
+  }
+}
+
 } // anonymous namespace
 
 int main(int, char **) {
@@ -666,6 +765,9 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(test_database&)>(
         &test_historical_nodes_redacted));
+
+    tdb.run(boost::function<void(test_database&)>(
+        &test_way_with_history_redacted));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;
