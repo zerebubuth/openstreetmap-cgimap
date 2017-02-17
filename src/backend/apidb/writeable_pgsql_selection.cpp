@@ -575,7 +575,8 @@ int writeable_pgsql_selection::select_relations_with_history(
   m_historic_tables_empty = false;
   size_t selected = 0;
   BOOST_FOREACH(osm_nwr_id_t id, ids) {
-    selected += w.prepared("add_all_versions_of_relation")(id)
+    selected += w.prepared("add_all_versions_of_relation")
+      (id)(m_redactions_visible)
       .exec().affected_rows();
   }
 
@@ -972,8 +973,9 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       "FROM relations r "
       "LEFT JOIN tmp_historic_relations t "
       "ON t.relation_id = r.relation_id AND t.version = r.version "
-      "WHERE r.relation_id = $1 AND t.relation_id IS NULL")
-    PREPARE_ARGS(("bigint"));
+      "WHERE r.relation_id = $1 AND t.relation_id IS NULL AND "
+            "(r.redaction_id IS NULL OR $2 = TRUE)")
+    PREPARE_ARGS(("bigint")("boolean"));
 
   // clang-format on
 }

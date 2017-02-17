@@ -711,8 +711,9 @@ int readonly_pgsql_selection::select_ways_with_history(
 int readonly_pgsql_selection::select_relations_with_history(
   const std::vector<osm_nwr_id_t> &ids) {
   if (!ids.empty()) {
-    return insert_results(w.prepared("select_relations_history")(ids).exec(),
-                          sel_historic_relations);
+    return insert_results(w.prepared("select_relations_history")
+      (ids)(m_redactions_visible).exec(),
+      sel_historic_relations);
   } else {
     return 0;
   }
@@ -929,8 +930,9 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
   m_connection.prepare("select_relations_history",
     "SELECT relation_id AS id, version "
       "FROM relations "
-      "WHERE relation_id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+      "WHERE relation_id = ANY($1) AND "
+            "(redaction_id IS NULL OR $2 = TRUE)")
+    PREPARE_ARGS(("bigint[]")("boolean"));
 
   m_connection.prepare("select_historical_nodes",
     "WITH wanted(id, version) AS ("
