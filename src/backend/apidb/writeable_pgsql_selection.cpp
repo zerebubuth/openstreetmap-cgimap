@@ -8,6 +8,7 @@
 #include <sstream>
 #include <list>
 #include <vector>
+#include <boost/algorithm/string/trim.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/ref.hpp>
 #include <boost/shared_ptr.hpp>
@@ -131,6 +132,31 @@ void extract_tags(const pqxx::result &res, tags_t &tags) {
   }
 }
 
+std::vector<std::string> psql_array_to_vector(std::string str) {
+  std::vector<std::string> strs;
+  if(str == "{NULL}")
+	return strs;
+  bool quotedValue = false;
+  for(int i = 1, prev = 1; i < str.size(); i++) {
+    if( (str[i] == ',' && !quotedValue) || str[i] == '}'){
+      std::string value = str.substr(prev, i-prev);
+      boost::trim_if(value, boost::is_any_of("\""));
+      strs.push_back(value);
+      prev=i+1;
+    }else if(str[i] == '\"')
+      quotedValue = !quotedValue;
+  }
+  return strs;
+}
+
+void extract_tags(const pqxx::result::tuple &row, tags_t &tags) {
+  tags.clear();
+  std::vector<std::string> keys = psql_array_to_vector(row["tag_k"].c_str());
+  std::vector<std::string> values = psql_array_to_vector(row["tag_v"].c_str());
+  for(int i=0; i<keys.size(); i++)
+     tags.push_back(std::make_pair(keys[i], values[i]));
+}
+
 void extract_nodes(const pqxx::result &res, nodes_t &nodes) {
   nodes.clear();
   for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
@@ -221,7 +247,7 @@ void writeable_pgsql_selection::write_nodes(output_formatter &formatter) {
     extract_elem(*itr, elem, cc);
     lon = double((*itr)["longitude"].as<int64_t>()) / (SCALE);
     lat = double((*itr)["latitude"].as<int64_t>()) / (SCALE);
-    extract_tags(w.prepared("extract_node_tags")(elem.id).exec(), tags);
+    extract_tags(*itr, tags);
     formatter.write_node(elem, lon, lat, tags);
   }
 }
@@ -483,9 +509,10 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
   m_connection.prepare("extract_nodes",
     "SELECT n.id, n.latitude, n.longitude, n.visible, "
         "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
-        "n.changeset_id, n.version "
+        "n.changeset_id, n.version, array_agg(t.k) as tag_k, array_agg(t.v) as tag_v "
       "FROM current_nodes n "
-        "JOIN tmp_nodes tn ON n.id = tn.id");
+        "JOIN tmp_nodes tn ON n.id=tn.id "
+        "LEFT JOIN current_node_tags t ON n.id=t.node_id GROUP BY n.id");
   m_connection.prepare("extract_ways",
     "SELECT w.id, w.visible, w.version, w.changeset_id, "
         "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp "
