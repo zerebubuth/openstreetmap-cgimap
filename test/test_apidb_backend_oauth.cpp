@@ -23,13 +23,30 @@
 
 namespace {
 
+std::ostream &operator<<(
+  std::ostream &out, const std::set<osm_user_role_t> &roles) {
+
+  out << "{";
+  bool first = true;
+  for (osm_user_role_t r : roles) {
+    if (first) { first = false; } else { out << ", "; }
+    if (r == osm_user_role_t::moderator) {
+      out << "moderator";
+    } else if (r == osm_user_role_t::administrator) {
+      out << "administrator";
+    }
+  }
+  out << "}";
+  return out;
+}
+
 template <typename T>
 void assert_equal(const T& a, const T&b, const std::string &message) {
   if (a != b) {
-    throw std::runtime_error(
-      (boost::format(
-        "Expecting %1% to be equal, but %2% != %3%")
-       % message % a % b).str());
+    std::ostringstream out;
+    out << "Expecting " << message << " to be equal, but "
+        << a << " != " << b;
+    throw std::runtime_error(out.str());
   }
 }
 
@@ -294,6 +311,41 @@ void test_oauth_end_to_end(test_database &tdb) {
                      "saw user:1 as a rate limit key");
 }
 
+void test_oauth_get_roles_for_user(test_database &tdb) {
+  tdb.run_sql(
+    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+    "VALUES "
+    "  (1, 'user_1@example.com', '', '2017-02-20T11:41:00Z', 'user_1', true), "
+    "  (2, 'user_2@example.com', '', '2017-02-20T11:41:00Z', 'user_2', true), "
+    "  (3, 'user_3@example.com', '', '2017-02-20T11:41:00Z', 'user_3', true); "
+
+    "INSERT INTO user_roles (id, user_id, role, granter_id) "
+    "VALUES "
+    "  (1, 1, 'administrator', 1), "
+    "  (2, 1, 'moderator', 1), "
+    "  (3, 2, 'moderator', 1);"
+    "");
+  boost::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+
+  typedef std::set<osm_user_role_t> roles_t;
+
+  // user 3 has no roles -> should return empty set
+  assert_equal<roles_t>(roles_t(), store->get_roles_for_user(3),
+    "roles for normal user");
+
+  // user 2 is a moderator
+  assert_equal<roles_t>(
+    roles_t({osm_user_role_t::moderator}),
+    store->get_roles_for_user(2),
+    "roles for moderator user");
+
+  // user 1 is an administrator and a moderator
+  assert_equal<roles_t>(
+    roles_t({osm_user_role_t::moderator, osm_user_role_t::administrator}),
+    store->get_roles_for_user(1),
+    "roles for admin+moderator user");
+}
+
 } // anonymous namespace
 
 int main(int, char **) {
@@ -311,7 +363,10 @@ int main(int, char **) {
         &test_get_user_id_for_token));
 
     tdb.run(boost::function<void(test_database&)>(
-              &test_oauth_end_to_end));
+        &test_oauth_end_to_end));
+
+    tdb.run(boost::function<void(test_database&)>(
+        &test_oauth_get_roles_for_user));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;
