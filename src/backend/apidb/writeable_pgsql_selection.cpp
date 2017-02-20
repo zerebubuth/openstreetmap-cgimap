@@ -123,15 +123,6 @@ void extract_changeset(const pqxx::result::tuple &row,
   elem.num_changes = row["num_changes"].as<size_t>();
 }
 
-void extract_tags(const pqxx::result &res, tags_t &tags) {
-  tags.clear();
-  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
-       ++itr) {
-    tags.push_back(std::make_pair(std::string((*itr)["k"].c_str()),
-                                  std::string((*itr)["v"].c_str())));
-  }
-}
-
 void extract_tags(const pqxx::result::tuple &row, tags_t &tags) {
   tags.clear();
   std::vector<std::string> keys = psql_array_to_vector(row["tag_k"].c_str());
@@ -538,16 +529,6 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       "WHERE cc.changeset_id=$1 AND cc.visible "
       "ORDER BY cc.created_at ASC")
     PREPARE_ARGS(("bigint"));
-
-  // extraction functions for tags
-  m_connection.prepare("extract_node_tags",
-    "SELECT k, v FROM current_node_tags WHERE node_id=$1")PREPARE_ARGS(("bigint"));
-  m_connection.prepare("extract_way_tags",
-    "SELECT k, v FROM current_way_tags WHERE way_id=$1")PREPARE_ARGS(("bigint"));
-  m_connection.prepare("extract_relation_tags",
-    "SELECT k, v FROM current_relation_tags WHERE relation_id=$1")PREPARE_ARGS(("bigint"));
-  m_connection.prepare("extract_changeset_tags",
-    "SELECT k, v FROM changeset_tags WHERE changeset_id=$1")PREPARE_ARGS(("bigint"));
 
   // selecting a set of nodes as a list
   m_connection.prepare("add_nodes_list",
