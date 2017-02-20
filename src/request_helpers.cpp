@@ -136,8 +136,6 @@ const char *status_message(int code) {
   case 509:
     msg = http_message_status_509;
     break;
-  default:
-    msg = http_message_status_500;
   }
 
   return msg;

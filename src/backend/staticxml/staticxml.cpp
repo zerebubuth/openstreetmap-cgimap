@@ -670,7 +670,7 @@ private:
     BOOST_FOREACH(osm_edition_t ed, select_eds) {
       boost::optional<const T &> t = find<T>(ed);
       if (t) {
-        bool is_redacted = t->m_info.redaction;
+        bool is_redacted = bool(t->m_info.redaction);
         if (!is_redacted || m_redactions_visible) {
           found_eds.insert(ed);
           ++selected;
@@ -694,7 +694,7 @@ private:
 
         for (; itr != end; ++itr) {
           osm_edition_t ed(id, *itr->first.version);
-          bool is_redacted = itr->second.m_info.redaction;
+          bool is_redacted = bool(itr->second.m_info.redaction);
           if (!is_redacted || m_redactions_visible) {
             found_eds.insert(ed);
             ++selected;

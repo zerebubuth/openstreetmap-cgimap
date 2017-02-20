@@ -347,10 +347,6 @@ void process_request(request &req, rate_limiter &limiter,
     // get the request method
     string method = fcgi_get_env(req, "REQUEST_METHOD");
 
-    // data returned from request methods
-    string request_name;
-    size_t bytes_written;
-
     // create a data selection for the request
     auto selection = factory->make_selection();
     if (selection->supports_historical_versions() &&
@@ -358,6 +354,10 @@ void process_request(request &req, rate_limiter &limiter,
         (user_roles.count(osm_user_role_t::moderator) > 0)) {
       selection->set_redactions_visible(true);
     }
+
+    // data returned from request methods
+    string request_name;
+    size_t bytes_written = 0;
 
     // process request
     if (method == "GET") {
