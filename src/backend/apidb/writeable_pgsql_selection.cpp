@@ -281,7 +281,7 @@ void writeable_pgsql_selection::write_changesets(output_formatter &formatter,
   for (pqxx::result::const_iterator itr = changesets.begin();
        itr != changesets.end(); ++itr) {
     extract_changeset(*itr, elem, cc);
-    extract_tags(w.prepared("extract_changeset_tags")(elem.id).exec(), tags);
+    extract_tags(*itr, tags);
     extract_comments(w.prepared("extract_changeset_comments")(elem.id).exec(), comments);
     elem.comments_count = comments.size();
     formatter.write_changeset(elem, tags, include_changeset_discussions, comments, now);
@@ -513,9 +513,9 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
        "to_char(c.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at, "
        "to_char(c.closed_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS closed_at, "
        "c.min_lat, c.max_lat, c.min_lon, c.max_lon, "
-       "c.num_changes "
-     "FROM changesets c "
-       "JOIN tmp_changesets tc ON tc.id=c.id");
+       "c.num_changes, array_agg(t.k) as tag_k, array_agg(t.v) as tag_v "
+     "FROM changesets c JOIN tmp_changesets tc ON tc.id=c.id "
+     "LEFT JOIN changeset_tags t ON c.id=t.changeset_id GROUP BY c.id");
 
   // extraction functions for child information
   m_connection.prepare("extract_way_nds",
