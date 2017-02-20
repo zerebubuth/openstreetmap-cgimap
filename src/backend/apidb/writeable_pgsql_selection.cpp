@@ -127,6 +127,9 @@ void extract_tags(const pqxx::result::tuple &row, tags_t &tags) {
   tags.clear();
   std::vector<std::string> keys = psql_array_to_vector(row["tag_k"].c_str());
   std::vector<std::string> values = psql_array_to_vector(row["tag_v"].c_str());
+  if (keys.size()!=values.size()) {
+    throw std::runtime_error("Mismatch in tags key and value size");
+  }
   for(int i=0; i<keys.size(); i++)
      tags.push_back(std::make_pair(keys[i], values[i]));
 }
