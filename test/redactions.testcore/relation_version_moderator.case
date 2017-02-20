@@ -1,5 +1,5 @@
-# relation/version call for a regular user should behave like the redacted version
-# does not exist. NOTE: OAuth stuff generated with http://lti.tools/oauth/
+# relation/version call for a moderator should return everything.
+# NOTE: OAuth stuff generated with http://lti.tools/oauth/
 Request-Method: GET
 Request-URI: /api/0.6/relation/1/2?show_redactions=true
 Http-Host: cgimap.example.com

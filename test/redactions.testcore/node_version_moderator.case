@@ -1,5 +1,4 @@
-# node/version call for a regular user should behave like the redacted version
-# does not exist.
+# node/version call for a moderator should return redacted versions
 Request-Method: GET
 Request-URI: /api/0.6/node/1/2?show_redactions=true
 Http-Host: cgimap.example.com
