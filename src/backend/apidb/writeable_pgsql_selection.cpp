@@ -266,7 +266,7 @@ void writeable_pgsql_selection::write_relations(output_formatter &formatter) {
     extract_elem(*itr, elem, cc);
     extract_members(w.prepared("extract_relation_members")(elem.id).exec(),
                     members);
-    extract_tags(w.prepared("extract_relation_tags")(elem.id).exec(), tags);
+    extract_tags(*itr, tags);
     formatter.write_relation(elem, members, tags);
   }
 }
@@ -504,9 +504,10 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       "LEFT JOIN current_way_tags t ON w.id=t.way_id GROUP BY w.id");
   m_connection.prepare("extract_relations",
      "SELECT r.id, r.visible, r.version, r.changeset_id, "
-        "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp "
-      "FROM current_relations r "
-        "JOIN tmp_relations tr ON tr.id=r.id");
+        "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
+        "array_agg(t.k) as tag_k, array_agg(t.v) as tag_v "
+      "FROM current_relations r JOIN tmp_relations tr ON tr.id=r.id "
+      "LEFT JOIN current_relation_tags t ON r.id=t.relation_id GROUP BY r.id");
   m_connection.prepare("extract_changesets",
      "SELECT c.id, "
        "to_char(c.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at, "
