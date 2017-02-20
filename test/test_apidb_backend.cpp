@@ -345,7 +345,6 @@ void test_changeset_with_tags(boost::shared_ptr<data_selection> sel) {
 
   tags_t tags;
   tags.push_back(std::make_pair("test_key", "test_value"));
-  tags.push_back(std::make_pair("test_key2", "test_value2"));
   assert_equal<test_formatter::changeset_t>(
     f.m_changesets.front(),
     test_formatter::changeset_t(
