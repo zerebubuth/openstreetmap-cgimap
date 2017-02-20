@@ -1,4 +1,4 @@
-# node/history call returns node versions
+# node/history call returns Not Found if the node has never existed.
 Request-Method: GET
 Request-URI: /api/0.6/node/4/history
 ---
