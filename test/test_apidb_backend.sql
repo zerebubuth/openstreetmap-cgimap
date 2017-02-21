@@ -20,8 +20,7 @@ VALUES (-1, -1, '2016-04-16T15:09:00Z', '2016-04-16T15:09:00Z'),
 
 -- and some tags on those changesets
 INSERT INTO changeset_tags (changeset_id, k, v)
-VALUES (2, 'test_key', 'test_value'),
-       (2, 'test_key2', 'test_value2');
+VALUES (2, 'test_key', 'test_value');
 
 -- and a discussion on one of those changesets
 INSERT INTO changeset_comments (id, changeset_id, author_id, body, created_at, visible)

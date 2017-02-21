@@ -8,6 +8,7 @@
 #include <sstream>
 #include <list>
 #include <vector>
+#include <boost/algorithm/string/trim.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/ref.hpp>
 #include <boost/shared_ptr.hpp>
@@ -122,13 +123,15 @@ void extract_changeset(const pqxx::result::tuple &row,
   elem.num_changes = row["num_changes"].as<size_t>();
 }
 
-void extract_tags(const pqxx::result &res, tags_t &tags) {
+void extract_tags(const pqxx::result::tuple &row, tags_t &tags) {
   tags.clear();
-  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
-       ++itr) {
-    tags.push_back(std::make_pair(std::string((*itr)["k"].c_str()),
-                                  std::string((*itr)["v"].c_str())));
+  std::vector<std::string> keys = psql_array_to_vector(row["tag_k"].c_str());
+  std::vector<std::string> values = psql_array_to_vector(row["tag_v"].c_str());
+  if (keys.size()!=values.size()) {
+    throw std::runtime_error("Mismatch in tags key and value size");
   }
+  for(int i=0; i<keys.size(); i++)
+     tags.push_back(std::make_pair(keys[i], values[i]));
 }
 
 void extract_nodes(const pqxx::result &res, nodes_t &nodes) {
@@ -221,7 +224,7 @@ void writeable_pgsql_selection::write_nodes(output_formatter &formatter) {
     extract_elem(*itr, elem, cc);
     lon = double((*itr)["longitude"].as<int64_t>()) / (SCALE);
     lat = double((*itr)["latitude"].as<int64_t>()) / (SCALE);
-    extract_tags(w.prepared("extract_node_tags")(elem.id).exec(), tags);
+    extract_tags(*itr, tags);
     formatter.write_node(elem, lon, lat, tags);
   }
 }
@@ -240,7 +243,7 @@ void writeable_pgsql_selection::write_ways(output_formatter &formatter) {
        ++itr) {
     extract_elem(*itr, elem, cc);
     extract_nodes(w.prepared("extract_way_nds")(elem.id).exec(), nodes);
-    extract_tags(w.prepared("extract_way_tags")(elem.id).exec(), tags);
+    extract_tags(*itr, tags);
     formatter.write_way(elem, nodes, tags);
   }
 }
@@ -257,7 +260,7 @@ void writeable_pgsql_selection::write_relations(output_formatter &formatter) {
     extract_elem(*itr, elem, cc);
     extract_members(w.prepared("extract_relation_members")(elem.id).exec(),
                     members);
-    extract_tags(w.prepared("extract_relation_tags")(elem.id).exec(), tags);
+    extract_tags(*itr, tags);
     formatter.write_relation(elem, members, tags);
   }
 }
@@ -272,7 +275,7 @@ void writeable_pgsql_selection::write_changesets(output_formatter &formatter,
   for (pqxx::result::const_iterator itr = changesets.begin();
        itr != changesets.end(); ++itr) {
     extract_changeset(*itr, elem, cc);
-    extract_tags(w.prepared("extract_changeset_tags")(elem.id).exec(), tags);
+    extract_tags(*itr, tags);
     extract_comments(w.prepared("extract_changeset_comments")(elem.id).exec(), comments);
     elem.comments_count = comments.size();
     formatter.write_changeset(elem, tags, include_changeset_discussions, comments, now);
@@ -483,27 +486,30 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
   m_connection.prepare("extract_nodes",
     "SELECT n.id, n.latitude, n.longitude, n.visible, "
         "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
-        "n.changeset_id, n.version "
+        "n.changeset_id, n.version, array_agg(t.k) as tag_k, array_agg(t.v) as tag_v "
       "FROM current_nodes n "
-        "JOIN tmp_nodes tn ON n.id = tn.id");
+        "JOIN tmp_nodes tn ON n.id=tn.id "
+        "LEFT JOIN current_node_tags t ON n.id=t.node_id GROUP BY n.id");
   m_connection.prepare("extract_ways",
     "SELECT w.id, w.visible, w.version, w.changeset_id, "
-        "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp "
-      "FROM current_ways w "
-        "JOIN tmp_ways tw ON w.id=tw.id");
+        "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
+        "array_agg(t.k) as tag_k, array_agg(t.v) as tag_v "
+      "FROM current_ways w JOIN tmp_ways tw ON w.id=tw.id "
+      "LEFT JOIN current_way_tags t ON w.id=t.way_id GROUP BY w.id");
   m_connection.prepare("extract_relations",
      "SELECT r.id, r.visible, r.version, r.changeset_id, "
-        "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp "
-      "FROM current_relations r "
-        "JOIN tmp_relations tr ON tr.id=r.id");
+        "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
+        "array_agg(t.k) as tag_k, array_agg(t.v) as tag_v "
+      "FROM current_relations r JOIN tmp_relations tr ON tr.id=r.id "
+      "LEFT JOIN current_relation_tags t ON r.id=t.relation_id GROUP BY r.id");
   m_connection.prepare("extract_changesets",
      "SELECT c.id, "
        "to_char(c.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at, "
        "to_char(c.closed_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS closed_at, "
        "c.min_lat, c.max_lat, c.min_lon, c.max_lon, "
-       "c.num_changes "
-     "FROM changesets c "
-       "JOIN tmp_changesets tc ON tc.id=c.id");
+       "c.num_changes, array_agg(t.k) as tag_k, array_agg(t.v) as tag_v "
+     "FROM changesets c JOIN tmp_changesets tc ON tc.id=c.id "
+     "LEFT JOIN changeset_tags t ON c.id=t.changeset_id GROUP BY c.id");
 
   // extraction functions for child information
   m_connection.prepare("extract_way_nds",
@@ -526,16 +532,6 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       "WHERE cc.changeset_id=$1 AND cc.visible "
       "ORDER BY cc.created_at ASC")
     PREPARE_ARGS(("bigint"));
-
-  // extraction functions for tags
-  m_connection.prepare("extract_node_tags",
-    "SELECT k, v FROM current_node_tags WHERE node_id=$1")PREPARE_ARGS(("bigint"));
-  m_connection.prepare("extract_way_tags",
-    "SELECT k, v FROM current_way_tags WHERE way_id=$1")PREPARE_ARGS(("bigint"));
-  m_connection.prepare("extract_relation_tags",
-    "SELECT k, v FROM current_relation_tags WHERE relation_id=$1")PREPARE_ARGS(("bigint"));
-  m_connection.prepare("extract_changeset_tags",
-    "SELECT k, v FROM changeset_tags WHERE changeset_id=$1")PREPARE_ARGS(("bigint"));
 
   // selecting a set of nodes as a list
   m_connection.prepare("add_nodes_list",

@@ -114,6 +114,10 @@ public:
   };
 };
 
+// parses psql array based on specs given
+// https://www.postgresql.org/docs/current/static/arrays.html#ARRAYS-IO
+std::vector<std::string> psql_array_to_vector(std::string str);
+
 typedef boost::shared_ptr<data_selection::factory> factory_ptr;
 
 #endif /* DATA_SELECTION_HPP */

@@ -33,6 +33,43 @@ void assert_equal(const T& a, const T&b, const std::string &message) {
   }
 }
 
+void test_psql_array_to_vector() {
+  std::string test = "{NULL}";
+  std::vector<std::string> actual_values;
+  std::vector<std::string> values = psql_array_to_vector(test);
+
+  if (values != actual_values) {
+    throw std::runtime_error("Psql array parse failed for " + test);
+  }
+
+  test = "{1,2}";
+  values = psql_array_to_vector(test);
+  actual_values.clear();
+  actual_values.push_back("1");
+  actual_values.push_back("2");
+  if (values != actual_values) {
+    throw std::runtime_error("Psql array parse failed for " + test);
+  }
+
+  test = "{\"TEST\",TEST123}";
+  values = psql_array_to_vector(test);
+  actual_values.clear();
+  actual_values.push_back("TEST");
+  actual_values.push_back("TEST123");
+  if (values != actual_values) {
+    throw std::runtime_error("Psql array parse failed for " + test);
+  }
+
+  test = "{\"},\\\"\",\",{}}\\\\\"}";
+  values = psql_array_to_vector(test);
+  actual_values.clear();
+  actual_values.push_back("},\"");
+  actual_values.push_back(",{}}\\");
+  if (values != actual_values) {
+    throw std::runtime_error("Psql array parse failed for " + test + " " +values[0] + " " +values[1]);
+  }
+}
+
 void test_single_nodes(boost::shared_ptr<data_selection> sel) {
   if (sel->check_node_visibility(1) != data_selection::exists) {
     throw std::runtime_error("Node 1 should be visible, but isn't");
@@ -308,7 +345,6 @@ void test_changeset_with_tags(boost::shared_ptr<data_selection> sel) {
 
   tags_t tags;
   tags.push_back(std::make_pair("test_key", "test_value"));
-  tags.push_back(std::make_pair("test_key2", "test_value2"));
   assert_equal<test_formatter::changeset_t>(
     f.m_changesets.front(),
     test_formatter::changeset_t(
@@ -529,6 +565,8 @@ int main(int, char **) {
   try {
     test_database tdb;
     tdb.setup();
+
+    test_psql_array_to_vector();
 
     tdb.run(boost::function<void(boost::shared_ptr<data_selection>)>(
         &test_single_nodes));
