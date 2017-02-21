@@ -23,6 +23,7 @@
 #include "cgimap/api06/relation_history_handler.hpp"
 
 #include "cgimap/api06/changeset_handler.hpp"
+#include "cgimap/api06/changeset_download_handler.hpp"
 
 #ifdef ENABLE_EXPERIMENTAL
 #include "cgimap/api06/node_ways_handler.hpp"
@@ -171,6 +172,7 @@ routes::routes()
     r->add<relation_handler>(root_ / "relation" / osm_id_);
     r->add<relations_handler>(root_ / "relations");
 
+    r->add<changeset_download_handler>(root_ / "changeset" / osm_id_ / "download");
     r->add<changeset_handler>(root_ / "changeset" / osm_id_);
   }
 

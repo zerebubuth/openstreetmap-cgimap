@@ -136,7 +136,8 @@ mime::type test_formatter::mime_type() const {
   throw std::runtime_error("Unimplemented");
 }
 
-void test_formatter::start_document(const std::string &generator) {
+void test_formatter::start_document(
+  const std::string &generator, const std::string &root_name) {
 }
 
 void test_formatter::end_document() {
@@ -149,6 +150,12 @@ void test_formatter::start_element_type(element_type type) {
 }
 
 void test_formatter::end_element_type(element_type type) {
+}
+
+void test_formatter::start_action(action_type type) {
+}
+
+void test_formatter::end_action(action_type type) {
 }
 
 void test_formatter::write_node(const element_info &elem, double lon, double lat,

@@ -18,7 +18,7 @@ void osm_current_responder::write(shared_ptr<output_formatter> formatter,
   output_formatter &fmt = *formatter;
 
   try {
-    fmt.start_document(generator);
+    fmt.start_document(generator, "osm");
     if (bounds) {
       fmt.write_bounds(bounds.get());
     }

@@ -121,6 +121,7 @@ libcgimap_core_la_SOURCES=\
 	oauth.cpp \
 	osm_responder.cpp \
 	osm_current_responder.cpp \
+	osmchange_responder.cpp \
 	output_formatter.cpp \
 	output_writer.cpp \
 	process_request.cpp \
@@ -153,7 +154,8 @@ libcgimap_core_la_SOURCES+=\
 	api06/relation_full_handler.cpp \
 	api06/way_full_handler.cpp \
 	api06/id_version_io.cpp \
-	api06/changeset_handler.cpp
+	api06/changeset_handler.cpp \
+	api06/changeset_download_handler.cpp
 
 if ENABLE_EXPERIMENTAL
 libcgimap_core_la_SOURCES+=\

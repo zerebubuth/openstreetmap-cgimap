@@ -130,8 +130,9 @@ struct erase_formatter
 
   mime::type mime_type() const { return m_fmt.mime_type(); }
 
-  void start_document(const std::string &generator) {
-    m_fmt.start_document(generator);
+  void start_document(
+    const std::string &generator, const std::string &root_name) {
+    m_fmt.start_document(generator, root_name);
   }
 
   void end_document() { m_fmt.end_document(); }
@@ -139,6 +140,8 @@ struct erase_formatter
   void write_bounds(const bbox &bounds) { m_fmt.write_bounds(bounds); }
   void start_element_type(element_type type) { m_fmt.start_element_type(type); }
   void end_element_type(element_type type) { m_fmt.end_element_type(type); }
+  void start_action(action_type type) { m_fmt.start_action(type); }
+  void end_action(action_type type) { m_fmt.end_action(type); }
   void flush() { m_fmt.flush(); }
   void error(const std::string &str) { m_fmt.error(str); }
 
