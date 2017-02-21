@@ -8,7 +8,6 @@
 #include <sstream>
 #include <list>
 #include <vector>
-#include <boost/algorithm/string/trim.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/ref.hpp>
 #include <boost/shared_ptr.hpp>
