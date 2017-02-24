@@ -141,14 +141,6 @@ void extract_nodes(const pqxx::result::tuple &row, nodes_t &nodes) {
     nodes.push_back(boost::lexical_cast<osm_nwr_id_t>(ids[i]));
 }
 
-void extract_nodes(const pqxx::result &res, nodes_t &nodes) {
-  nodes.clear();
-  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
-       ++itr) {
-    nodes.push_back((*itr)[0].as<osm_nwr_id_t>());
-  }
-}
-
 element_type type_from_name(const char *name) {
   element_type type;
 
@@ -525,12 +517,6 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
      "LEFT JOIN changeset_tags t ON c.id=t.changeset_id GROUP BY c.id");
 
   // extraction functions for child information
-  m_connection.prepare("extract_way_nds",
-    "SELECT node_id "
-      "FROM current_way_nodes "
-      "WHERE way_id=$1 "
-      "ORDER BY sequence_id ASC")
-    PREPARE_ARGS(("bigint"));
   m_connection.prepare("extract_relation_members",
     "SELECT member_type, member_id, member_role "
       "FROM current_relation_members "
