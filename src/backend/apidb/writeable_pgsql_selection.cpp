@@ -169,18 +169,6 @@ element_type type_from_name(const char *name) {
   return type;
 }
 
-void extract_members(const pqxx::result &res, members_t &members) {
-  member_info member;
-  members.clear();
-  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
-       ++itr) {
-    member.type = type_from_name((*itr)["member_type"].c_str());
-    member.ref = (*itr)["member_id"].as<osm_nwr_id_t>();
-    member.role = (*itr)["member_role"].c_str();
-    members.push_back(member);
-  }
-}
-
 void extract_members(const pqxx::result::tuple &row, members_t &members) {
   member_info member;
   members.clear();
@@ -542,12 +530,6 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
      "LEFT JOIN changeset_tags t ON c.id=t.changeset_id GROUP BY c.id");
 
   // extraction functions for child information
-  m_connection.prepare("extract_relation_members",
-    "SELECT member_type, member_id, member_role "
-      "FROM current_relation_members "
-      "WHERE relation_id=$1 "
-      "ORDER BY sequence_id ASC")
-    PREPARE_ARGS(("bigint"));
   m_connection.prepare("extract_changeset_comments",
     "SELECT cc.author_id, u.display_name, cc.body, "
         "to_char(cc.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at "
