@@ -181,6 +181,23 @@ void extract_members(const pqxx::result &res, members_t &members) {
   }
 }
 
+void extract_members(const pqxx::result::tuple &row, members_t &members) {
+  member_info member;
+  members.clear();
+  std::vector<std::string> types = psql_array_to_vector(row["member_types"].c_str());
+  std::vector<std::string> ids = psql_array_to_vector(row["member_ids"].c_str());
+  std::vector<std::string> roles = psql_array_to_vector(row["member_roles"].c_str());
+  if (types.size()!=ids.size() || ids.size()!=roles.size()) {
+    throw std::runtime_error("Mismatch in members types, ids and roles size");
+  }
+  for (int i=0; i<ids.size(); i++) {
+    member.type = type_from_name(types[i].c_str());
+    member.ref = boost::lexical_cast<osm_nwr_id_t>(ids[i]);
+    member.role = roles[i];
+    members.push_back(member);
+  }
+}
+
 void extract_comments(const pqxx::result &res, comments_t &comments) {
   changeset_comment_info comment;
   comments.clear();
@@ -257,8 +274,7 @@ void writeable_pgsql_selection::write_relations(output_formatter &formatter) {
   for (pqxx::result::const_iterator itr = relations.begin();
        itr != relations.end(); ++itr) {
     extract_elem(*itr, elem, cc);
-    extract_members(w.prepared("extract_relation_members")(elem.id).exec(),
-                    members);
+    extract_members(*itr, members);
     extract_tags(*itr, tags);
     formatter.write_relation(elem, members, tags);
   }
@@ -504,9 +520,18 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
   m_connection.prepare("extract_relations",
      "SELECT r.id, r.visible, r.version, r.changeset_id, "
         "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
-        "array_agg(t.k) as tag_k, array_agg(t.v) as tag_v "
+        "t.keys as tag_k, t.values as tag_v, rm.types as member_types, "
+        "rm.ids as member_ids, rm.roles as member_roles "
       "FROM current_relations r JOIN tmp_relations tr ON tr.id=r.id "
-      "LEFT JOIN current_relation_tags t ON r.id=t.relation_id GROUP BY r.id");
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(k) AS keys, array_agg(v) AS values "
+          "FROM current_relation_tags WHERE r.id=relation_id ) t ON true "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(member_type) AS types, array_agg(member_id) AS ids, "
+          "array_agg(member_role) AS roles FROM "
+            "( SELECT * FROM current_relation_members WHERE r.id=relation_id "
+            "ORDER BY sequence_id) x"
+          ")rm ON true");
   m_connection.prepare("extract_changesets",
      "SELECT c.id, "
        "to_char(c.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at, "
