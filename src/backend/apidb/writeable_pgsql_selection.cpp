@@ -186,6 +186,26 @@ void extract_members(const pqxx::result::tuple &row, members_t &members) {
   }
 }
 
+void extract_comments(const pqxx::result::tuple &row, comments_t &comments) {
+  changeset_comment_info comment;
+  comments.clear();
+  std::vector<std::string> author_id = psql_array_to_vector(row["comment_author_id"].c_str());
+  std::vector<std::string> display_name = psql_array_to_vector(row["comment_display_name"].c_str());
+  std::vector<std::string> body = psql_array_to_vector(row["comment_body"].c_str());
+  std::vector<std::string> created_at = psql_array_to_vector(row["comment_created_at"].c_str());
+  if (author_id.size()!=display_name.size() || display_name.size()!=body.size()
+      || body.size()!=created_at.size()) {
+    throw std::runtime_error("Mismatch in comments author_id, display_name, body and created_at size");
+  }
+  for (int i=0; i<author_id.size(); i++) {
+    comment.author_id = boost::lexical_cast<osm_nwr_id_t>(author_id[i]);
+    comment.author_display_name = display_name[i];
+    comment.body = body[i];
+    comment.created_at = created_at[i];
+    comments.push_back(comment);
+  }
+}
+
 void extract_comments(const pqxx::result &res, comments_t &comments) {
   changeset_comment_info comment;
   comments.clear();
@@ -279,7 +299,7 @@ void writeable_pgsql_selection::write_changesets(output_formatter &formatter,
        itr != changesets.end(); ++itr) {
     extract_changeset(*itr, elem, cc);
     extract_tags(*itr, tags);
-    extract_comments(w.prepared("extract_changeset_comments")(elem.id).exec(), comments);
+    extract_comments(*itr, comments);
     elem.comments_count = comments.size();
     formatter.write_changeset(elem, tags, include_changeset_discussions, comments, now);
   }
@@ -524,10 +544,23 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
      "SELECT c.id, "
        "to_char(c.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at, "
        "to_char(c.closed_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS closed_at, "
-       "c.min_lat, c.max_lat, c.min_lon, c.max_lon, "
-       "c.num_changes, array_agg(t.k) as tag_k, array_agg(t.v) as tag_v "
+       "c.min_lat, c.max_lat, c.min_lon, c.max_lon, c.num_changes, t.keys as tag_k, "
+       "t.values as tag_v, cc.author_id as comment_author_id, "
+       "cc.display_name as comment_display_name, "
+       "cc.body as comment_body, cc.created_at as comment_created_at "
      "FROM changesets c JOIN tmp_changesets tc ON tc.id=c.id "
-     "LEFT JOIN changeset_tags t ON c.id=t.changeset_id GROUP BY c.id");
+      "LEFT JOIN LATERAL "
+          "(SELECT array_agg(k) AS keys, array_agg(v) AS values "
+          "FROM changeset_tags WHERE c.id=changeset_id ) t ON true "
+      "LEFT JOIN LATERAL "
+        "(SELECT array_agg(author_id) as author_id, array_agg(display_name) "
+        "as display_name, array_agg(body) as body, "
+        "array_agg(created_at) as created_at FROM "
+          "(SELECT cc.author_id, u.display_name, cc.body, "
+          "to_char(cc.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at "
+          "FROM changeset_comments cc JOIN users u ON cc.author_id = u.id "
+          "where cc.changeset_id=c.id AND cc.visible ORDER BY cc.created_at) x "
+        ")cc ON true");
 
   // extraction functions for child information
   m_connection.prepare("extract_changeset_comments",
