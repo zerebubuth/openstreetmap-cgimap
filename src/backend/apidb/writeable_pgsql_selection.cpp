@@ -8,6 +8,7 @@
 #include <sstream>
 #include <list>
 #include <vector>
+#include <boost/lexical_cast.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/ref.hpp>
 #include <boost/shared_ptr.hpp>
@@ -133,12 +134,11 @@ void extract_tags(const pqxx::result::tuple &row, tags_t &tags) {
      tags.push_back(std::make_pair(keys[i], values[i]));
 }
 
-void extract_nodes(const pqxx::result &res, nodes_t &nodes) {
+void extract_nodes(const pqxx::result::tuple &row, nodes_t &nodes) {
   nodes.clear();
-  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
-       ++itr) {
-    nodes.push_back((*itr)[0].as<osm_nwr_id_t>());
-  }
+  std::vector<std::string> ids = psql_array_to_vector(row["node_ids"].c_str());
+  for (int i=0; i<ids.size(); i++)
+    nodes.push_back(boost::lexical_cast<osm_nwr_id_t>(ids[i]));
 }
 
 element_type type_from_name(const char *name) {
@@ -169,27 +169,39 @@ element_type type_from_name(const char *name) {
   return type;
 }
 
-void extract_members(const pqxx::result &res, members_t &members) {
+void extract_members(const pqxx::result::tuple &row, members_t &members) {
   member_info member;
   members.clear();
-  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
-       ++itr) {
-    member.type = type_from_name((*itr)["member_type"].c_str());
-    member.ref = (*itr)["member_id"].as<osm_nwr_id_t>();
-    member.role = (*itr)["member_role"].c_str();
+  std::vector<std::string> types = psql_array_to_vector(row["member_types"].c_str());
+  std::vector<std::string> ids = psql_array_to_vector(row["member_ids"].c_str());
+  std::vector<std::string> roles = psql_array_to_vector(row["member_roles"].c_str());
+  if (types.size()!=ids.size() || ids.size()!=roles.size()) {
+    throw std::runtime_error("Mismatch in members types, ids and roles size");
+  }
+  for (int i=0; i<ids.size(); i++) {
+    member.type = type_from_name(types[i].c_str());
+    member.ref = boost::lexical_cast<osm_nwr_id_t>(ids[i]);
+    member.role = roles[i];
     members.push_back(member);
   }
 }
 
-void extract_comments(const pqxx::result &res, comments_t &comments) {
+void extract_comments(const pqxx::result::tuple &row, comments_t &comments) {
   changeset_comment_info comment;
   comments.clear();
-  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
-       ++itr) {
-    comment.author_id = (*itr)["author_id"].as<osm_user_id_t>();
-    comment.author_display_name = (*itr)["display_name"].c_str();
-    comment.body = (*itr)["body"].c_str();
-    comment.created_at = (*itr)["created_at"].c_str();
+  std::vector<std::string> author_id = psql_array_to_vector(row["comment_author_id"].c_str());
+  std::vector<std::string> display_name = psql_array_to_vector(row["comment_display_name"].c_str());
+  std::vector<std::string> body = psql_array_to_vector(row["comment_body"].c_str());
+  std::vector<std::string> created_at = psql_array_to_vector(row["comment_created_at"].c_str());
+  if (author_id.size()!=display_name.size() || display_name.size()!=body.size()
+      || body.size()!=created_at.size()) {
+    throw std::runtime_error("Mismatch in comments author_id, display_name, body and created_at size");
+  }
+  for (int i=0; i<author_id.size(); i++) {
+    comment.author_id = boost::lexical_cast<osm_nwr_id_t>(author_id[i]);
+    comment.author_display_name = display_name[i];
+    comment.body = body[i];
+    comment.created_at = created_at[i];
     comments.push_back(comment);
   }
 }
@@ -241,7 +253,7 @@ void writeable_pgsql_selection::write_ways(output_formatter &formatter) {
   for (pqxx::result::const_iterator itr = ways.begin(); itr != ways.end();
        ++itr) {
     extract_elem(*itr, elem, cc);
-    extract_nodes(w.prepared("extract_way_nds")(elem.id).exec(), nodes);
+    extract_nodes(*itr, nodes);
     extract_tags(*itr, tags);
     formatter.write_way(elem, nodes, tags);
   }
@@ -257,8 +269,7 @@ void writeable_pgsql_selection::write_relations(output_formatter &formatter) {
   for (pqxx::result::const_iterator itr = relations.begin();
        itr != relations.end(); ++itr) {
     extract_elem(*itr, elem, cc);
-    extract_members(w.prepared("extract_relation_members")(elem.id).exec(),
-                    members);
+    extract_members(*itr, members);
     extract_tags(*itr, tags);
     formatter.write_relation(elem, members, tags);
   }
@@ -275,7 +286,7 @@ void writeable_pgsql_selection::write_changesets(output_formatter &formatter,
        itr != changesets.end(); ++itr) {
     extract_changeset(*itr, elem, cc);
     extract_tags(*itr, tags);
-    extract_comments(w.prepared("extract_changeset_comments")(elem.id).exec(), comments);
+    extract_comments(*itr, comments);
     elem.comments_count = comments.size();
     formatter.write_changeset(elem, tags, include_changeset_discussions, comments, now);
   }
@@ -492,45 +503,51 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
   m_connection.prepare("extract_ways",
     "SELECT w.id, w.visible, w.version, w.changeset_id, "
         "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
-        "array_agg(t.k) as tag_k, array_agg(t.v) as tag_v "
+        "t.keys as tag_k, t.values as tag_v, wn.node_ids as node_ids "
       "FROM current_ways w JOIN tmp_ways tw ON w.id=tw.id "
-      "LEFT JOIN current_way_tags t ON w.id=t.way_id GROUP BY w.id");
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(k) AS keys, array_agg(v) AS values "
+          "FROM current_way_tags WHERE w.id=way_id ) t ON true "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(node_id) AS node_ids from "
+            "(SELECT * FROM current_way_nodes WHERE w.id=way_id ) x "
+          ") wn ON true ");
   m_connection.prepare("extract_relations",
      "SELECT r.id, r.visible, r.version, r.changeset_id, "
         "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
-        "array_agg(t.k) as tag_k, array_agg(t.v) as tag_v "
+        "t.keys as tag_k, t.values as tag_v, rm.types as member_types, "
+        "rm.ids as member_ids, rm.roles as member_roles "
       "FROM current_relations r JOIN tmp_relations tr ON tr.id=r.id "
-      "LEFT JOIN current_relation_tags t ON r.id=t.relation_id GROUP BY r.id");
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(k) AS keys, array_agg(v) AS values "
+          "FROM current_relation_tags WHERE r.id=relation_id ) t ON true "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(member_type) AS types, array_agg(member_id) AS ids, "
+          "array_agg(member_role) AS roles FROM "
+            "( SELECT * FROM current_relation_members WHERE r.id=relation_id "
+            "ORDER BY sequence_id) x"
+          ")rm ON true");
   m_connection.prepare("extract_changesets",
      "SELECT c.id, "
        "to_char(c.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at, "
        "to_char(c.closed_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS closed_at, "
-       "c.min_lat, c.max_lat, c.min_lon, c.max_lon, "
-       "c.num_changes, array_agg(t.k) as tag_k, array_agg(t.v) as tag_v "
+       "c.min_lat, c.max_lat, c.min_lon, c.max_lon, c.num_changes, t.keys as tag_k, "
+       "t.values as tag_v, cc.author_id as comment_author_id, "
+       "cc.display_name as comment_display_name, "
+       "cc.body as comment_body, cc.created_at as comment_created_at "
      "FROM changesets c JOIN tmp_changesets tc ON tc.id=c.id "
-     "LEFT JOIN changeset_tags t ON c.id=t.changeset_id GROUP BY c.id");
-
-  // extraction functions for child information
-  m_connection.prepare("extract_way_nds",
-    "SELECT node_id "
-      "FROM current_way_nodes "
-      "WHERE way_id=$1 "
-      "ORDER BY sequence_id ASC")
-    PREPARE_ARGS(("bigint"));
-  m_connection.prepare("extract_relation_members",
-    "SELECT member_type, member_id, member_role "
-      "FROM current_relation_members "
-      "WHERE relation_id=$1 "
-      "ORDER BY sequence_id ASC")
-    PREPARE_ARGS(("bigint"));
-  m_connection.prepare("extract_changeset_comments",
-    "SELECT cc.author_id, u.display_name, cc.body, "
-        "to_char(cc.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at "
-      "FROM changeset_comments cc "
-      "JOIN users u ON cc.author_id = u.id "
-      "WHERE cc.changeset_id=$1 AND cc.visible "
-      "ORDER BY cc.created_at ASC")
-    PREPARE_ARGS(("bigint"));
+      "LEFT JOIN LATERAL "
+          "(SELECT array_agg(k) AS keys, array_agg(v) AS values "
+          "FROM changeset_tags WHERE c.id=changeset_id ) t ON true "
+      "LEFT JOIN LATERAL "
+        "(SELECT array_agg(author_id) as author_id, array_agg(display_name) "
+        "as display_name, array_agg(body) as body, "
+        "array_agg(created_at) as created_at FROM "
+          "(SELECT cc.author_id, u.display_name, cc.body, "
+          "to_char(cc.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at "
+          "FROM changeset_comments cc JOIN users u ON cc.author_id = u.id "
+          "where cc.changeset_id=c.id AND cc.visible ORDER BY cc.created_at) x "
+        ")cc ON true");
 
   // selecting a set of nodes as a list
   m_connection.prepare("add_nodes_list",
