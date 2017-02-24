@@ -8,6 +8,7 @@
 #include <sstream>
 #include <list>
 #include <vector>
+#include <boost/lexical_cast.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/ref.hpp>
 #include <boost/shared_ptr.hpp>
@@ -133,6 +134,13 @@ void extract_tags(const pqxx::result::tuple &row, tags_t &tags) {
      tags.push_back(std::make_pair(keys[i], values[i]));
 }
 
+void extract_nodes(const pqxx::result::tuple &row, nodes_t &nodes) {
+  nodes.clear();
+  std::vector<std::string> ids = psql_array_to_vector(row["node_ids"].c_str());
+  for (int i=0; i<ids.size(); i++)
+    nodes.push_back(boost::lexical_cast<osm_nwr_id_t>(ids[i]));
+}
+
 void extract_nodes(const pqxx::result &res, nodes_t &nodes) {
   nodes.clear();
   for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
@@ -241,7 +249,7 @@ void writeable_pgsql_selection::write_ways(output_formatter &formatter) {
   for (pqxx::result::const_iterator itr = ways.begin(); itr != ways.end();
        ++itr) {
     extract_elem(*itr, elem, cc);
-    extract_nodes(w.prepared("extract_way_nds")(elem.id).exec(), nodes);
+    extract_nodes(*itr, nodes);
     extract_tags(*itr, tags);
     formatter.write_way(elem, nodes, tags);
   }
@@ -492,9 +500,15 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
   m_connection.prepare("extract_ways",
     "SELECT w.id, w.visible, w.version, w.changeset_id, "
         "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
-        "array_agg(t.k) as tag_k, array_agg(t.v) as tag_v "
+        "t.keys as tag_k, t.values as tag_v, wn.node_ids as node_ids "
       "FROM current_ways w JOIN tmp_ways tw ON w.id=tw.id "
-      "LEFT JOIN current_way_tags t ON w.id=t.way_id GROUP BY w.id");
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(k) AS keys, array_agg(v) AS values "
+          "FROM current_way_tags WHERE w.id=way_id ) t ON true "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(node_id) AS node_ids from "
+            "(SELECT * FROM current_way_nodes WHERE w.id=way_id ) x "
+          ") wn ON true ");
   m_connection.prepare("extract_relations",
      "SELECT r.id, r.visible, r.version, r.changeset_id, "
         "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
