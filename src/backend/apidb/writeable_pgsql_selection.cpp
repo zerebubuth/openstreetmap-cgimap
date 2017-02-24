@@ -206,19 +206,6 @@ void extract_comments(const pqxx::result::tuple &row, comments_t &comments) {
   }
 }
 
-void extract_comments(const pqxx::result &res, comments_t &comments) {
-  changeset_comment_info comment;
-  comments.clear();
-  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
-       ++itr) {
-    comment.author_id = (*itr)["author_id"].as<osm_user_id_t>();
-    comment.author_display_name = (*itr)["display_name"].c_str();
-    comment.body = (*itr)["body"].c_str();
-    comment.created_at = (*itr)["created_at"].c_str();
-    comments.push_back(comment);
-  }
-}
-
 } // anonymous namespace
 
 writeable_pgsql_selection::writeable_pgsql_selection(
@@ -561,16 +548,6 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
           "FROM changeset_comments cc JOIN users u ON cc.author_id = u.id "
           "where cc.changeset_id=c.id AND cc.visible ORDER BY cc.created_at) x "
         ")cc ON true");
-
-  // extraction functions for child information
-  m_connection.prepare("extract_changeset_comments",
-    "SELECT cc.author_id, u.display_name, cc.body, "
-        "to_char(cc.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at "
-      "FROM changeset_comments cc "
-      "JOIN users u ON cc.author_id = u.id "
-      "WHERE cc.changeset_id=$1 AND cc.visible "
-      "ORDER BY cc.created_at ASC")
-    PREPARE_ARGS(("bigint"));
 
   // selecting a set of nodes as a list
   m_connection.prepare("add_nodes_list",
