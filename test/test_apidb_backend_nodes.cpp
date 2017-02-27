@@ -171,12 +171,51 @@ void test_dup_nodes(test_database &tdb) {
     f.m_nodes[0], "first node written");
 }
 
+void test_psql_array_to_vector() {
+  std::string test = "{NULL}";
+  std::vector<std::string> actual_values;
+  std::vector<std::string> values = psql_array_to_vector(test);
+
+  if (values != actual_values) {
+    throw std::runtime_error("Psql array parse failed for " + test);
+  }
+
+  test = "{1,2}";
+  values = psql_array_to_vector(test);
+  actual_values.clear();
+  actual_values.push_back("1");
+  actual_values.push_back("2");
+  if (values != actual_values) {
+    throw std::runtime_error("Psql array parse failed for " + test);
+  }
+
+  test = "{\"TEST\",TEST123}";
+  values = psql_array_to_vector(test);
+  actual_values.clear();
+  actual_values.push_back("TEST");
+  actual_values.push_back("TEST123");
+  if (values != actual_values) {
+    throw std::runtime_error("Psql array parse failed for " + test);
+  }
+
+  test = "{\"},\\\"\",\",{}}\\\\\"}";
+  values = psql_array_to_vector(test);
+  actual_values.clear();
+  actual_values.push_back("},\"");
+  actual_values.push_back(",{}}\\");
+  if (values != actual_values) {
+    throw std::runtime_error("Psql array parse failed for " + test + " " +values[0] + " " +values[1]);
+  }
+}
+
 } // anonymous namespace
 
 int main(int, char **) {
   try {
     test_database tdb;
     tdb.setup();
+
+    test_psql_array_to_vector();
 
     tdb.run(boost::function<void(test_database&)>(
         &test_single_nodes));

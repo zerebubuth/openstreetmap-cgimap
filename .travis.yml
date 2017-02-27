@@ -4,7 +4,7 @@ language: cpp
 compiler: gcc
 cache: ccache
 addons:
-  postgresql: 9.1
+  postgresql: 9.3
   apt:
     packages:
       - libboost-dev
