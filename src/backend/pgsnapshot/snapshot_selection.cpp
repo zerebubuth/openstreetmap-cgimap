@@ -309,6 +309,10 @@ snapshot_selection::factory::factory(const po::variables_map &opts)
     , m_errorhandler(m_connection)
 #endif
 {
+  if (m_connection.server_version() < 90300) {
+    throw std::runtime_error("Expected Postgres version 9.3+, currently installed version "
+        + std::to_string(m_connection.server_version()));
+  }
 
   // set the connections to use the appropriate charset.
   m_connection.set_client_encoding(opts["charset"].as<std::string>());
