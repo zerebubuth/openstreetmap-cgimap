@@ -176,7 +176,8 @@ libcgimap_apidb_la_SOURCES=\
 	backend/apidb/readonly_pgsql_selection.cpp \
 	backend/apidb/changeset.cpp \
 	backend/apidb/quad_tile.cpp \
-	backend/apidb/oauth_store.cpp
+	backend/apidb/oauth_store.cpp \
+	backend/apidb/utils.cpp
 libcgimap_apidb_la_LIBADD=libcgimap_core.la @BOOST_DATE_TIME_LIB@ @LIBPQXX_LIBS@
 endif
 

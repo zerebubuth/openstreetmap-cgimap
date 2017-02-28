@@ -49,7 +49,8 @@ cgimap_apidb_include_HEADERS = \
 	include/cgimap/backend/apidb/changeset.hpp \
 	include/cgimap/backend/apidb/quad_tile.hpp \
 	include/cgimap/backend/apidb/readonly_pgsql_selection.hpp \
-	include/cgimap/backend/apidb/writeable_pgsql_selection.hpp
+	include/cgimap/backend/apidb/writeable_pgsql_selection.hpp \
+	include/cgimap/backend/apidb/utils.hpp
 endif
 
 if ENABLE_PGSNAPSHOT

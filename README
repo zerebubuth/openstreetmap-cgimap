@@ -30,6 +30,8 @@ download (i.e: `osmChange` data).
 Requirements
 ------------
 
+CGImap uses a PostgreSQL server for either the APIDB or PGsnapshot backends. A minimum server version of 9.4 is required.
+
 CGImap depends on the following libraries. Versions used during
 development are in brackets. Other versions may work, but YMMV.
 
