@@ -1013,6 +1013,116 @@ void test_historical_relations_redacted(test_database &tdb) {
   }
 }
 
+void test_historic_way_node_order(test_database &tdb) {
+  tdb.run_sql(
+    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+    "VALUES "
+    "  (1, 'user_1@example.com', '', '2017-02-27T19:33:00Z', 'user_1', true); "
+
+    "INSERT INTO changesets (id, user_id, created_at, closed_at) "
+    "VALUES "
+    "  (3, 1, '2017-02-27T19:33:00Z', '2017-02-27T19:33:00Z'); "
+
+    "INSERT INTO current_nodes (id, latitude, longitude, changeset_id, "
+    "                           visible, \"timestamp\", tile, version) "
+    "VALUES "
+    "  ( 3,  0,  0, 3, false, '2017-02-27T19:33:00Z', 3221225472, 2), "
+    "  ( 4, 10, 10, 3, false, '2017-02-27T19:33:00Z', 3221225472, 2), "
+    "  ( 5, 20, 20, 3, false, '2017-02-27T19:33:00Z', 3221225472, 2), "
+    "  ( 6, 30, 30, 3, false, '2017-02-27T19:33:00Z', 3221225472, 2), "
+    "  ( 7, 40, 40, 3, false, '2017-02-27T19:33:00Z', 3221225472, 2), "
+    "  ( 8, 50, 50, 3, false, '2017-02-27T19:33:00Z', 3221225472, 2), "
+    "  ( 9, 60, 60, 3, false, '2017-02-27T19:33:00Z', 3221225472, 2), "
+    "  (10, 70, 70, 3, false, '2017-02-27T19:33:00Z', 3221225472, 2); "
+
+    "INSERT INTO nodes (node_id, latitude, longitude, changeset_id, "
+    "                   visible, \"timestamp\", tile, version) "
+    "VALUES "
+    "  ( 3,  0,  0, 3, false, '2017-02-27T19:33:00Z', 3221225472, 2), "
+    "  ( 4, 10, 10, 3, false, '2017-02-27T19:33:00Z', 3221225472, 2), "
+    "  ( 5, 20, 20, 3, false, '2017-02-27T19:33:00Z', 3221225472, 2), "
+    "  ( 6, 30, 30, 3, false, '2017-02-27T19:33:00Z', 3221225472, 2), "
+    "  ( 7, 40, 40, 3, false, '2017-02-27T19:33:00Z', 3221225472, 2), "
+    "  ( 8, 50, 50, 3, false, '2017-02-27T19:33:00Z', 3221225472, 2), "
+    "  ( 9, 60, 60, 3, false, '2017-02-27T19:33:00Z', 3221225472, 2), "
+    "  (10, 70, 70, 3, false, '2017-02-27T19:33:00Z', 3221225472, 2); "
+
+    "INSERT INTO current_ways (id, changeset_id, \"timestamp\", visible, version) "
+    "VALUES "
+    "  (1, 3, '2017-02-27T19:33:00Z', true, 2); "
+
+    "INSERT INTO current_way_nodes (way_id, node_id, sequence_id) "
+    "VALUES "
+    "  (1,  3,  1), "
+    "  (1,  4,  2), "
+    "  (1,  5,  3), "
+    "  (1,  6,  4), "
+    "  (1,  7,  5), "
+    "  (1,  8,  6), "
+    "  (1,  9,  7), "
+    "  (1, 10,  8); "
+
+    "INSERT INTO ways (way_id, changeset_id, \"timestamp\", visible, "
+    "                  version, redaction_id) "
+    "VALUES "
+    "  (1, 3, '2017-02-27T19:33:00Z', true, 2, NULL), "
+    "  (1, 3, '2017-02-27T19:33:00Z', true, 1, NULL); "
+
+    "INSERT INTO way_nodes (way_id, version, node_id, sequence_id) "
+    "VALUES "
+    "  (1, 1,  3,  8), "
+    "  (1, 1,  4,  7), "
+    "  (1, 1,  5,  6), "
+    "  (1, 1,  6,  5), "
+    "  (1, 1,  7,  4), "
+    "  (1, 1,  8,  3), "
+    "  (1, 1,  9,  2), "
+    "  (1, 1, 10,  1), "
+    "  (1, 2,  3,  1), "
+    "  (1, 2,  4,  2), "
+    "  (1, 2,  5,  3), "
+    "  (1, 2,  6,  4), "
+    "  (1, 2,  7,  5), "
+    "  (1, 2,  8,  6), "
+    "  (1, 2,  9,  7), "
+    "  (1, 2, 10,  8); "
+    "");
+  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+
+  assert_equal<bool>(
+    sel->supports_historical_versions(), true,
+    "data selection supports historical versions");
+
+  std::vector<osm_nwr_id_t> ids;
+  ids.push_back(1);
+  assert_equal<int>(
+    sel->select_ways_with_history(ids), 2,
+    "number of way versions with history selected");
+
+  test_formatter f;
+  sel->write_ways(f);
+  assert_equal<size_t>(f.m_ways.size(), 2, "number of ways written");
+
+  nodes_t way_v1_nds({10, 9, 8, 7, 6, 5, 4, 3});
+  nodes_t way_v2_nds({3, 4, 5, 6, 7, 8, 9, 10});
+
+  assert_equal<test_formatter::way_t>(
+    test_formatter::way_t(
+      element_info(1, 1, 3, "2017-02-27T19:33:00Z", 1, std::string("user_1"), true),
+      way_v1_nds,
+      tags_t()
+      ),
+    f.m_ways[0], "first way written");
+
+  assert_equal<test_formatter::way_t>(
+    test_formatter::way_t(
+      element_info(1, 2, 3, "2017-02-27T19:33:00Z", 1, std::string("user_1"), true),
+      way_v2_nds,
+      tags_t()
+      ),
+    f.m_ways[1], "second way written");
+}
+
 } // anonymous namespace
 
 int main(int, char **) {
@@ -1058,6 +1168,9 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(test_database&)>(
         &test_historical_relations_redacted));
+
+    tdb.run(boost::function<void(test_database&)>(
+        &test_historic_way_node_order));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;

@@ -677,7 +677,8 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
           "FROM current_way_tags WHERE w.id=way_id ) t ON true "
         "LEFT JOIN LATERAL "
           "(SELECT array_agg(node_id) AS node_ids from "
-            "(SELECT * FROM current_way_nodes WHERE w.id=way_id ) x "
+            "(SELECT * FROM current_way_nodes WHERE w.id=way_id "
+             "ORDER BY sequence_id) x "
           ") wn ON true ");
   m_connection.prepare("extract_relations",
      "SELECT r.id, r.visible, r.version, r.changeset_id, "
@@ -880,7 +881,8 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
         "LEFT JOIN LATERAL "
           "(SELECT array_agg(node_id) AS node_ids from "
             "(SELECT * FROM way_nodes "
-              "WHERE w.way_id = way_id AND w.version = version) x "
+              "WHERE w.way_id = way_id AND w.version = version "
+              "ORDER BY sequence_id) x "
           ") wn ON true ");
   m_connection.prepare("extract_historic_way_tags",
     "SELECT k, v FROM way_tags WHERE way_id=$1 AND version=$2")

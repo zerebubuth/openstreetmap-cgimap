@@ -5,6 +5,42 @@
 #include <boost/optional/optional_io.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+namespace {
+
+bool equal_tags(const tags_t &a, const tags_t &b) {
+  typedef std::vector<std::pair<std::string, std::string> > vec_tags_t;
+  if (a.size() != b.size()) { return false; }
+  vec_tags_t sorted_a(a.begin(), a.end());
+  vec_tags_t sorted_b(b.begin(), b.end());
+  std::sort(sorted_a.begin(), sorted_a.end());
+  std::sort(sorted_b.begin(), sorted_b.end());
+  return std::equal(sorted_a.begin(), sorted_a.end(), sorted_b.begin());
+}
+
+bool equal_nodes(const nodes_t &a, const nodes_t &b) {
+  if (a.size() != b.size()) { return false; }
+  std::vector<osm_nwr_id_t> a_vec(a.begin(), a.end());
+  std::vector<osm_nwr_id_t> b_vec(b.begin(), b.end());
+  return std::equal(a_vec.begin(), a_vec.end(), b_vec.begin());
+}
+
+bool equal_members(const members_t &a, const members_t &b) {
+  if (a.size() != b.size()) { return false; }
+  std::vector<member_info> a_vec(a.begin(), a.end());
+  std::vector<member_info> b_vec(b.begin(), b.end());
+  const size_t n = a_vec.size();
+  for (size_t i = 0; i < n; ++i) {
+    if ((a_vec[i].type != b_vec[i].type)
+      || (a_vec[i].ref != b_vec[i].ref)
+      || (a_vec[i].role != b_vec[i].role)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+} // anonymous namespace
+
 test_formatter::node_t::node_t(const element_info &elem_, double lon_, double lat_,
                                const tags_t &tags_)
   : elem(elem_), lon(lon_), lat(lat_), tags(tags_) {}
@@ -20,9 +56,8 @@ bool test_formatter::node_t::operator==(const node_t &other) const {
   CMP(elem.visible);
   CMP(lon);
   CMP(lat);
-  CMP(tags.size());
 #undef CMP
-  return std::equal(tags.begin(), tags.end(), other.tags.begin());
+  return equal_tags(tags, other.tags);
 }
 
 test_formatter::way_t::way_t(const element_info &elem_, const nodes_t &nodes_,
@@ -38,11 +73,8 @@ bool test_formatter::way_t::operator==(const way_t &other) const {
   CMP(elem.uid);
   CMP(elem.display_name);
   CMP(elem.visible);
-  CMP(nodes.size());
-  CMP(tags.size());
 #undef CMP
-  return std::equal(tags.begin(), tags.end(), other.tags.begin()) &&
-    std::equal(nodes.begin(), nodes.end(), other.nodes.begin());
+  return equal_tags(tags, other.tags) && equal_nodes(nodes, other.nodes);
 }
 
 test_formatter::relation_t::relation_t(const element_info &elem_,
@@ -59,11 +91,8 @@ bool test_formatter::relation_t::operator==(const relation_t &other) const {
   CMP(elem.uid);
   CMP(elem.display_name);
   CMP(elem.visible);
-  CMP(members.size());
-  CMP(tags.size());
 #undef CMP
-  return std::equal(tags.begin(), tags.end(), other.tags.begin()) &&
-    std::equal(members.begin(), members.end(), other.members.begin());
+  return equal_tags(tags, other.tags) && equal_members(members, other.members);
 }
 
 test_formatter::changeset_t::changeset_t(const changeset_info &info,
