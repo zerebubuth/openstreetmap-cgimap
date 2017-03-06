@@ -276,10 +276,12 @@ writeable_pgsql_selection::writeable_pgsql_selection(
     : w(conn), cc(changeset_cache)
     , include_changeset_discussions(false)
     , m_redactions_visible(false) {
+  w.set_variable("default_transaction_read_only", "false");
   w.exec("CREATE TEMPORARY TABLE tmp_nodes (id bigint PRIMARY KEY)");
   w.exec("CREATE TEMPORARY TABLE tmp_ways (id bigint PRIMARY KEY)");
   w.exec("CREATE TEMPORARY TABLE tmp_relations (id bigint PRIMARY KEY)");
   w.exec("CREATE TEMPORARY TABLE tmp_changesets (id bigint PRIMARY KEY)");
+  w.set_variable("default_transaction_read_only", "true");
   m_tables_empty = true;
 
   w.exec("CREATE TEMPORARY TABLE tmp_historic_nodes "

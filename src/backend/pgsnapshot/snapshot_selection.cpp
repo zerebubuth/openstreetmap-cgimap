@@ -132,6 +132,7 @@ void extract_members(const pqxx::result &res, members_t &members) {
 } // anonymous namespace
 
 snapshot_selection::snapshot_selection(pqxx::connection &conn) : w(conn) {
+  w.set_variable("default_transaction_read_only", "false");
   w.exec("CREATE TEMPORARY TABLE tmp_nodes ("
          "id bigint NOT NULL PRIMARY KEY,"
          "version integer NOT NULL,"
@@ -159,6 +160,7 @@ snapshot_selection::snapshot_selection(pqxx::connection &conn) : w(conn) {
          "tstamp timestamp without time zone NOT NULL, "
          "changeset_id bigint NOT NULL, "
          "tags hstore)");
+  w.set_variable("default_transaction_read_only", "true");
 }
 
 snapshot_selection::~snapshot_selection() {}

@@ -30,7 +30,7 @@ string get_query_string(request &req) {
 
   // if that isn't present, then this may be being invoked as part of a
   // 404 handler, so look at the request uri instead.
-  if (query_string == NULL) {
+  if (query_string == NULL || strlen(query_string) == 0) {
     const char *request_uri = req.get_param("REQUEST_URI");
 
     if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
