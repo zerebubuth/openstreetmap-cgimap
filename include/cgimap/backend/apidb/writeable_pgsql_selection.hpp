@@ -44,6 +44,15 @@ public:
   int select_changesets(const std::vector<osm_changeset_id_t> &);
   void select_changeset_discussions();
 
+  bool supports_historical_versions();
+  int select_historical_nodes(const std::vector<osm_edition_t> &);
+  int select_historical_ways(const std::vector<osm_edition_t> &);
+  int select_historical_relations(const std::vector<osm_edition_t> &);
+  int select_nodes_with_history(const std::vector<osm_nwr_id_t> &);
+  int select_ways_with_history(const std::vector<osm_nwr_id_t> &);
+  int select_relations_with_history(const std::vector<osm_nwr_id_t> &);
+  void set_redactions_visible(bool);
+
   /**
    * abstracts the creation of transactions for the writeable
    * data selection.
@@ -73,10 +82,15 @@ private:
   // true if a query hasn't been run yet, i.e: it's possible to
   // assume that all the temporary tables are empty.
   bool m_tables_empty;
+  bool m_historic_tables_empty;
 
   // true if we want to include changeset discussions along with
   // the changesets themselves. defaults to false.
   bool include_changeset_discussions;
+
+  // true if redacted historical versions should be included in
+  // the query output.
+  bool m_redactions_visible;
 };
 
 #endif /* WRITEABLE_PGSQL_SELECTION_HPP */

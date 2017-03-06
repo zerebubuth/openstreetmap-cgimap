@@ -19,6 +19,36 @@ struct test_formatter : public output_formatter {
     bool operator==(const node_t &other) const;
   };
 
+  struct way_t {
+    way_t(const element_info &elem_, const nodes_t &nodes_,
+          const tags_t &tags_);
+
+    element_info elem;
+    nodes_t nodes;
+    tags_t tags;
+
+    inline bool operator!=(const way_t &other) const {
+      return !operator==(other);
+    }
+
+    bool operator==(const way_t &other) const;
+  };
+
+  struct relation_t {
+    relation_t(const element_info &elem_, const members_t &members_,
+               const tags_t &tags_);
+
+    element_info elem;
+    members_t members;
+    tags_t tags;
+
+    inline bool operator!=(const relation_t &other) const {
+      return !operator==(other);
+    }
+
+    bool operator==(const relation_t &other) const;
+  };
+
   struct changeset_t {
     changeset_info m_info;
     tags_t m_tags;
@@ -41,6 +71,8 @@ struct test_formatter : public output_formatter {
 
   std::vector<changeset_t> m_changesets;
   std::vector<node_t> m_nodes;
+  std::vector<way_t> m_ways;
+  std::vector<relation_t> m_relations;
 
   virtual ~test_formatter();
   mime::type mime_type() const;
@@ -64,7 +96,11 @@ struct test_formatter : public output_formatter {
   void error(const std::string &str);
 };
 
+std::ostream &operator<<(std::ostream &out, const element_info &elem);
 std::ostream &operator<<(std::ostream &out, const test_formatter::node_t &n);
 std::ostream &operator<<(std::ostream &out, const test_formatter::changeset_t &n);
+std::ostream &operator<<(std::ostream &out, const test_formatter::way_t &w);
+std::ostream &operator<<(std::ostream &out, const member_info &m);
+std::ostream &operator<<(std::ostream &out, const test_formatter::relation_t &r);
 
 #endif /* TEST_TEST_FORMATTER */

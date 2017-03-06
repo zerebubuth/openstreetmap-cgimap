@@ -94,7 +94,7 @@ void process_not_allowed(request &req) {
  */
 boost::tuple<string, size_t>
 process_get_request(request &req, routes &route,
-                    boost::shared_ptr<data_selection::factory> factory,
+                    data_selection_ptr selection,
                     const string &ip, const string &generator) {
   // figure how to handle the request
   handler_ptr_t handler = route(req);
@@ -105,7 +105,7 @@ process_get_request(request &req, routes &route,
                   ip);
 
   // constructor of responder handles dynamic validation (i.e: with db access).
-  responder_ptr_t responder = handler->responder(factory);
+  responder_ptr_t responder = handler->responder(selection);
 
   // get encoding to use
   shared_ptr<http::encoding> encoding = get_encoding(req);
@@ -161,7 +161,7 @@ process_get_request(request &req, routes &route,
  */
 boost::tuple<string, size_t>
 process_head_request(request &req, routes &route,
-                     boost::shared_ptr<data_selection::factory> factory,
+                     data_selection_ptr selection,
                      const string &ip) {
   // figure how to handle the request
   handler_ptr_t handler = route(req);
@@ -178,7 +178,7 @@ process_head_request(request &req, routes &route,
   // them unmodified
 
   // constructor of responder handles dynamic validation (i.e: with db access).
-  responder_ptr_t responder = handler->responder(factory);
+  responder_ptr_t responder = handler->responder(selection);
 
   // get encoding to use
   shared_ptr<http::encoding> encoding = get_encoding(req);
@@ -271,6 +271,20 @@ struct oauth_status_response : public boost::static_visitor<void> {
   }
 };
 
+// look in the request get parameters to see if the user requested that
+// redactions be shown
+bool show_redactions_requested(request &req) {
+  typedef std::vector<std::pair<std::string, std::string> > params_t;
+  std::string decoded = http::urldecode(get_query_string(req));
+  const params_t params = http::parse_params(decoded);
+  auto itr = std::find_if(
+    params.begin(), params.end(),
+    [](const params_t::value_type &param) -> bool {
+      return param.first == "show_redactions" && param.second == "true";
+    });
+  return itr != params.end();
+}
+
 } // anonymous namespace
 
 /**
@@ -284,6 +298,8 @@ void process_request(request &req, rate_limiter &limiter,
     // get the client IP address
     string ip = fcgi_get_env(req, "REMOTE_ADDR");
     string client_key;
+    boost::optional<osm_user_id_t> user_id;
+    std::set<osm_user_role_t> user_roles;
 
     if (store) {
       oauth::validity::validity oauth_valid =
@@ -291,10 +307,11 @@ void process_request(request &req, rate_limiter &limiter,
 
       if (boost::apply_visitor(is_copacetic(), oauth_valid)) {
         string token = boost::apply_visitor(get_oauth_token(), oauth_valid);
-        boost::optional<osm_user_id_t> user_id = store->get_user_id_for_token(token);
+        user_id = store->get_user_id_for_token(token);
 
         if (user_id) {
           client_key = (format("%1%%2%") % user_prefix % (*user_id)).str();
+          user_roles = store->get_roles_for_user(*user_id);
 
         } else {
           // we can get here if there's a valid OAuth signature, with an
@@ -330,18 +347,26 @@ void process_request(request &req, rate_limiter &limiter,
     // get the request method
     string method = fcgi_get_env(req, "REQUEST_METHOD");
 
+    // create a data selection for the request
+    auto selection = factory->make_selection();
+    if (selection->supports_historical_versions() &&
+        show_redactions_requested(req) &&
+        (user_roles.count(osm_user_role_t::moderator) > 0)) {
+      selection->set_redactions_visible(true);
+    }
+
     // data returned from request methods
     string request_name;
-    size_t bytes_written;
+    size_t bytes_written = 0;
 
     // process request
     if (method == "GET") {
       boost::tie(request_name, bytes_written) =
-        process_get_request(req, route, factory, ip, generator);
+        process_get_request(req, route, selection, ip, generator);
 
     } else if (method == "HEAD") {
       boost::tie(request_name, bytes_written) =
-          process_head_request(req, route, factory, ip);
+          process_head_request(req, route, selection, ip);
 
     } else if (method == "OPTIONS") {
       boost::tie(request_name, bytes_written) = process_options_request(req);

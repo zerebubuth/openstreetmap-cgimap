@@ -8,7 +8,7 @@ using std::vector;
 
 namespace api06 {
 
-node_responder::node_responder(mime::type mt, osm_nwr_id_t id_, factory_ptr &w_)
+node_responder::node_responder(mime::type mt, osm_nwr_id_t id_, data_selection_ptr &w_)
     : osm_current_responder(mt, w_), id(id_) {
   vector<osm_nwr_id_t> ids;
   ids.push_back(id);
@@ -30,7 +30,7 @@ node_handler::~node_handler() {}
 
 std::string node_handler::log_name() const { return "node"; }
 
-responder_ptr_t node_handler::responder(factory_ptr &w) const {
+responder_ptr_t node_handler::responder(data_selection_ptr &w) const {
   return responder_ptr_t(new node_responder(mime_type, id, w));
 }
 

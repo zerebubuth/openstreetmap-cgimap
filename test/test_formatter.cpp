@@ -5,6 +5,42 @@
 #include <boost/optional/optional_io.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+namespace {
+
+bool equal_tags(const tags_t &a, const tags_t &b) {
+  typedef std::vector<std::pair<std::string, std::string> > vec_tags_t;
+  if (a.size() != b.size()) { return false; }
+  vec_tags_t sorted_a(a.begin(), a.end());
+  vec_tags_t sorted_b(b.begin(), b.end());
+  std::sort(sorted_a.begin(), sorted_a.end());
+  std::sort(sorted_b.begin(), sorted_b.end());
+  return std::equal(sorted_a.begin(), sorted_a.end(), sorted_b.begin());
+}
+
+bool equal_nodes(const nodes_t &a, const nodes_t &b) {
+  if (a.size() != b.size()) { return false; }
+  std::vector<osm_nwr_id_t> a_vec(a.begin(), a.end());
+  std::vector<osm_nwr_id_t> b_vec(b.begin(), b.end());
+  return std::equal(a_vec.begin(), a_vec.end(), b_vec.begin());
+}
+
+bool equal_members(const members_t &a, const members_t &b) {
+  if (a.size() != b.size()) { return false; }
+  std::vector<member_info> a_vec(a.begin(), a.end());
+  std::vector<member_info> b_vec(b.begin(), b.end());
+  const size_t n = a_vec.size();
+  for (size_t i = 0; i < n; ++i) {
+    if ((a_vec[i].type != b_vec[i].type)
+      || (a_vec[i].ref != b_vec[i].ref)
+      || (a_vec[i].role != b_vec[i].role)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+} // anonymous namespace
+
 test_formatter::node_t::node_t(const element_info &elem_, double lon_, double lat_,
                                const tags_t &tags_)
   : elem(elem_), lon(lon_), lat(lat_), tags(tags_) {}
@@ -20,9 +56,43 @@ bool test_formatter::node_t::operator==(const node_t &other) const {
   CMP(elem.visible);
   CMP(lon);
   CMP(lat);
-  CMP(tags.size());
 #undef CMP
-  return std::equal(tags.begin(), tags.end(), other.tags.begin());
+  return equal_tags(tags, other.tags);
+}
+
+test_formatter::way_t::way_t(const element_info &elem_, const nodes_t &nodes_,
+                             const tags_t &tags_)
+  : elem(elem_), nodes(nodes_), tags(tags_) {}
+
+bool test_formatter::way_t::operator==(const way_t &other) const {
+#define CMP(sym) { if ((sym) != other. sym) { return false; } }
+  CMP(elem.id);
+  CMP(elem.version);
+  CMP(elem.changeset);
+  CMP(elem.timestamp);
+  CMP(elem.uid);
+  CMP(elem.display_name);
+  CMP(elem.visible);
+#undef CMP
+  return equal_tags(tags, other.tags) && equal_nodes(nodes, other.nodes);
+}
+
+test_formatter::relation_t::relation_t(const element_info &elem_,
+                                       const members_t &members_,
+                                       const tags_t &tags_)
+  : elem(elem_), members(members_), tags(tags_) {}
+
+bool test_formatter::relation_t::operator==(const relation_t &other) const {
+#define CMP(sym) { if ((sym) != other. sym) { return false; } }
+  CMP(elem.id);
+  CMP(elem.version);
+  CMP(elem.changeset);
+  CMP(elem.timestamp);
+  CMP(elem.uid);
+  CMP(elem.display_name);
+  CMP(elem.visible);
+#undef CMP
+  return equal_tags(tags, other.tags) && equal_members(members, other.members);
 }
 
 test_formatter::changeset_t::changeset_t(const changeset_info &info,
@@ -87,10 +157,12 @@ void test_formatter::write_node(const element_info &elem, double lon, double lat
 }
 void test_formatter::write_way(const element_info &elem, const nodes_t &nodes,
                                const tags_t &tags) {
+  m_ways.push_back(way_t(elem, nodes, tags));
 }
 
 void test_formatter::write_relation(const element_info &elem,
                                     const members_t &members, const tags_t &tags) {
+  m_relations.push_back(relation_t(elem, members, tags));
 }
 
 void test_formatter::write_changeset(const changeset_info &elem, const tags_t &tags,
@@ -109,15 +181,20 @@ void test_formatter::error(const std::string &str) {
   throw std::runtime_error(str);
 }
 
+std::ostream &operator<<(std::ostream &out, const element_info &elem) {
+  out << "element_info("
+      << "id=" << elem.id << ", "
+      << "version=" << elem.version << ", "
+      << "changeset=" << elem.changeset << ", "
+      << "timestamp=" << elem.timestamp << ", "
+      << "uid=" << elem.uid << ", "
+      << "display_name=" << elem.display_name << ", "
+      << "visible=" << elem.visible << ")";
+  return out;
+}
+
 std::ostream &operator<<(std::ostream &out, const test_formatter::node_t &n) {
-  out << "node(element_info("
-      << "id=" << n.elem.id << ", "
-      << "version=" << n.elem.version << ", "
-      << "changeset=" << n.elem.changeset << ", "
-      << "timestamp=" << n.elem.timestamp << ", "
-      << "uid=" << n.elem.uid << ", "
-      << "display_name=" << n.elem.display_name << ", "
-      << "visible=" << n.elem.visible << "), "
+  out << "node(" << n.elem << ", "
       << "lon=" << n.lon << ", "
       << "lat=" << n.lat << ", "
       << "tags{";
@@ -166,4 +243,37 @@ std::ostream &operator<<(std::ostream &out, const test_formatter::changeset_t &c
       << ")";
 
   return out;
+}
+
+std::ostream &operator<<(std::ostream &out, const test_formatter::way_t &w) {
+  out << "way(" << w.elem << ", "
+      << "[";
+  BOOST_FOREACH(const nodes_t::value_type &v, w.nodes) {
+    out << v << ", ";
+  }
+  out << "], {";
+  BOOST_FOREACH(const tags_t::value_type &v, w.tags) {
+    out << "\"" << v.first << "\" => \"" << v.second << "\", ";
+  }
+  out << "})";
+}
+
+std::ostream &operator<<(std::ostream &out, const member_info &m) {
+  out << "member_info(type=" << m.type << ", "
+      << "ref=" << m.ref << ", "
+      << "role=\"" << m.role << "\")";
+  return out;
+}
+
+std::ostream &operator<<(std::ostream &out, const test_formatter::relation_t &r) {
+  out << "relation(" << r.elem << ", "
+      << "[";
+  BOOST_FOREACH(const member_info &m, r.members) {
+    out << m << ", ";
+  }
+  out << "], {";
+  BOOST_FOREACH(const tags_t::value_type &v, r.tags) {
+    out << "\"" << v.first << "\" => \"" << v.second << "\", ";
+  }
+  out << "})";
 }

@@ -100,26 +100,21 @@ void extract_nodes(const pqxx::result &res, nodes_t &nodes) {
 }
 
 element_type type_from_name(const char *name) {
-  element_type type;
-
   switch (name[0]) {
   case 'N':
   case 'n':
-    type = element_type_node;
-    break;
+    return element_type_node;
 
   case 'W':
   case 'w':
-    type = element_type_way;
-    break;
+    return element_type_way;
 
   case 'R':
   case 'r':
-    type = element_type_relation;
-    break;
+    return element_type_relation;
   }
 
-  return type;
+  throw std::runtime_error("Unable to determine element type from name.");
 }
 
 void extract_members(const pqxx::result &res, members_t &members) {

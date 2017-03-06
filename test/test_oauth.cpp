@@ -264,6 +264,10 @@ struct test_secret_store
     return boost::none;
   }
 
+  std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t) {
+    return std::set<osm_user_role_t>();
+  }
+
 private:
   std::string m_consumer_key, m_consumer_secret, m_token_id, m_token_secret;
   std::set<boost::tuple<std::string, uint64_t> > m_nonces;

@@ -28,7 +28,8 @@ struct element_info {
                const std::string &timestamp_,
                const boost::optional<osm_user_id_t> &uid_,
                const boost::optional<std::string> &display_name_,
-               bool visible_);
+               bool visible_,
+               boost::optional<osm_redaction_id_t> redaction_ = boost::none);
   // Standard meanings
   osm_nwr_id_t id, version;
   osm_changeset_id_t changeset;
@@ -38,6 +39,10 @@ struct element_info {
   boost::optional<std::string> display_name;
   // If an object has been deleted
   bool visible;
+  // If an object has administratively hidden in a "redaction". note that this
+  // is never output - if it is present, then the element should not be
+  // displayed except to moderators.
+  boost::optional<osm_redaction_id_t> redaction;
 };
 
 struct changeset_info {
@@ -93,6 +98,16 @@ struct member_info {
   element_type type;
   osm_nwr_id_t ref;
   std::string role;
+
+  member_info() {}
+  member_info(element_type type_, osm_nwr_id_t ref_, const std::string &role_)
+    : type(type_), ref(ref_), role(role_) {}
+
+  inline bool operator==(const member_info &other) const {
+    return ((type == other.type) &&
+            (ref == other.ref) &&
+            (role == other.role));
+  }
 };
 
 typedef std::list<osm_nwr_id_t> nodes_t;

@@ -47,6 +47,15 @@ public:
   int select_changesets(const std::vector<osm_changeset_id_t> &);
   void select_changeset_discussions();
 
+  bool supports_historical_versions();
+  int select_historical_nodes(const std::vector<osm_edition_t> &);
+  int select_historical_ways(const std::vector<osm_edition_t> &);
+  int select_historical_relations(const std::vector<osm_edition_t> &);
+  int select_nodes_with_history(const std::vector<osm_nwr_id_t> &);
+  int select_ways_with_history(const std::vector<osm_nwr_id_t> &);
+  int select_relations_with_history(const std::vector<osm_nwr_id_t> &);
+  void set_redactions_visible(bool);
+
   /**
    * a factory for the creation of read-only selections, so it
    * can set up prepared statements.
@@ -76,9 +85,14 @@ private:
   // the changesets themselves. defaults to false.
   bool include_changeset_discussions;
 
+  // true if the user is a moderator and we should include redacted historical
+  // versions in the responses.
+  bool m_redactions_visible;
+
   // the set of selected nodes, ways and relations
   std::set<osm_changeset_id_t> sel_changesets;
   std::set<osm_nwr_id_t> sel_nodes, sel_ways, sel_relations;
+  std::set<osm_edition_t> sel_historic_nodes, sel_historic_ways, sel_historic_relations;
   cache<osm_changeset_id_t, changeset> &cc;
 };
 

@@ -1,0 +1,7 @@
+# node/version call for a regular user should behave like the redacted version
+# does not exist - even if the user asked to see the redaction.
+Request-Method: GET
+Request-URI: /api/0.6/node/1/2?show_redactions=true
+---
+Status: 404 Not Found
+---

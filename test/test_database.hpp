@@ -40,21 +40,28 @@ struct test_database : public boost::noncopyable {
   // create table structure and fill with fake data.
   void setup();
 
-  // run a test. func will be called once with each of a writeable and
-  // readonly data selection backed by the database. the func should
+  // run a test. func will be called twice - once with each of a
+  // writeable and readonly data selection available from the
+  // test_database's get_data_selection() call. the func should
   // do its own testing - the run method here is just plumbing.
-  void run(boost::function<void(boost::shared_ptr<data_selection>)> func);
+  void run(boost::function<void(test_database&)> func);
 
-  // run a test. func will be called once with the OAuth store backed by
-  // the database.
-  void run(boost::function<void(boost::shared_ptr<oauth::store>)> func);
+  // return a data selection pointing at the current database
+  boost::shared_ptr<data_selection> get_data_selection();
+
+  // return an oauth store pointing at the current database
+  boost::shared_ptr<oauth::store> get_oauth_store();
+
+  // run a (possible set of) SQL strings against the database.
+  // intended for setting up data that the test needs.
+  void run_sql(const std::string &sql);
 
 private:
   // create a random, and hopefully unique, database name.
   static std::string random_db_name();
 
-  // set up the schema of the database and fill it with test data.
-  static void fill_fake_data(pqxx::connection &w);
+  // set up the schema of the database
+  static void setup_schema(pqxx::connection &w);
 
   // the name of the test database.
   std::string m_db_name;
@@ -66,6 +73,9 @@ private:
 
   // oauth store based on the writeable connection.
   boost::shared_ptr<oauth::store> m_oauth_store;
+
+  // whether to use read-only code (true) or writeable code (false)
+  bool m_use_readonly;
 };
 
 #endif /* TEST_TEST_DATABASE_HPP */

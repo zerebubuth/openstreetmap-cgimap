@@ -1,6 +1,7 @@
 #include "cgimap/backend/staticxml/staticxml.hpp"
 #include "cgimap/backend.hpp"
 #include "cgimap/output_formatter.hpp"
+#include "cgimap/api06/id_version.hpp"
 
 #include <libxml/parser.h>
 
@@ -15,6 +16,7 @@ namespace po = boost::program_options;
 namespace pt = boost::posix_time;
 using boost::shared_ptr;
 using std::string;
+using api06::id_version;
 
 #define CACHE_SIZE (1000)
 
@@ -64,9 +66,9 @@ struct changeset {
 
 struct database {
   std::map<osm_changeset_id_t, changeset> m_changesets;
-  std::map<osm_nwr_id_t, node> m_nodes;
-  std::map<osm_nwr_id_t, way> m_ways;
-  std::map<osm_nwr_id_t, relation> m_relations;
+  std::map<id_version, node> m_nodes;
+  std::map<id_version, way> m_ways;
+  std::map<id_version, relation> m_relations;
 };
 
 template <typename T>
@@ -101,6 +103,7 @@ void parse_info(element_info &info, const xmlChar **attributes) {
   info.uid = opt_attribute<osm_user_id_t>("uid", 4, attributes);
   info.display_name = opt_attribute<std::string>("user", 5, attributes);
   info.visible = get_attribute<bool_alpha>("visible", 8, attributes);
+  info.redaction = opt_attribute<osm_redaction_id_t>("redaction", 10, attributes);
 }
 
 void parse_changeset_info(changeset_info &info, const xmlChar **attributes) {
@@ -147,8 +150,9 @@ struct xml_parser {
       parse_info(n.m_info, attributes);
       n.m_lon = get_attribute<double>("lon", 4, attributes);
       n.m_lat = get_attribute<double>("lat", 4, attributes);
-      std::pair<std::map<osm_nwr_id_t, node>::iterator, bool> status =
-          parser->m_db->m_nodes.insert(std::make_pair(n.m_info.id, n));
+      id_version idv(n.m_info.id, n.m_info.version);
+      std::pair<std::map<id_version, node>::iterator, bool> status =
+          parser->m_db->m_nodes.insert(std::make_pair(idv, n));
       parser->m_cur_node = &(status.first->second);
       parser->m_cur_tags = &(parser->m_cur_node->m_tags);
       parser->m_cur_way = NULL;
@@ -158,8 +162,9 @@ struct xml_parser {
     } else if (strncmp((const char *)name, "way", 4) == 0) {
       way w;
       parse_info(w.m_info, attributes);
-      std::pair<std::map<osm_nwr_id_t, way>::iterator, bool> status =
-          parser->m_db->m_ways.insert(std::make_pair(w.m_info.id, w));
+      id_version idv(w.m_info.id, w.m_info.version);
+      std::pair<std::map<id_version, way>::iterator, bool> status =
+          parser->m_db->m_ways.insert(std::make_pair(idv, w));
       parser->m_cur_way = &(status.first->second);
       parser->m_cur_tags = &(parser->m_cur_way->m_tags);
       parser->m_cur_node = NULL;
@@ -169,8 +174,9 @@ struct xml_parser {
     } else if (strncmp((const char *)name, "relation", 9) == 0) {
       relation r;
       parse_info(r.m_info, attributes);
-      std::pair<std::map<osm_nwr_id_t, relation>::iterator, bool> status =
-          parser->m_db->m_relations.insert(std::make_pair(r.m_info.id, r));
+      id_version idv(r.m_info.id, r.m_info.version);
+      std::pair<std::map<id_version, relation>::iterator, bool> status =
+          parser->m_db->m_relations.insert(std::make_pair(idv, r));
       parser->m_cur_rel = &(status.first->second);
       parser->m_cur_tags = &(parser->m_cur_rel->m_tags);
       parser->m_cur_node = NULL;
@@ -305,40 +311,41 @@ boost::shared_ptr<database> parse_xml(const char *filename) {
   return db;
 }
 
+template <typename T>
+void write_element(const T &, output_formatter &formatter);
+
+template <>
+inline void write_element<node>(const node &n, output_formatter &formatter) {
+  formatter.write_node(n.m_info, n.m_lon, n.m_lat, n.m_tags);
+}
+
+template <>
+inline void write_element<way>(const way &w, output_formatter &formatter) {
+  formatter.write_way(w.m_info, w.m_nodes, w.m_tags);
+}
+
+template <>
+inline void write_element<relation>(const relation &r, output_formatter &formatter) {
+  formatter.write_relation(r.m_info, r.m_members, r.m_tags);
+}
+
 struct static_data_selection : public data_selection {
   explicit static_data_selection(boost::shared_ptr<database> db)
     : m_db(db)
-    , m_include_changeset_comments(false) {}
+    , m_include_changeset_comments(false)
+    , m_redactions_visible(false) {}
   virtual ~static_data_selection() {}
 
   virtual void write_nodes(output_formatter &formatter) {
-    BOOST_FOREACH(osm_nwr_id_t id, m_nodes) {
-      std::map<osm_nwr_id_t, node>::iterator itr = m_db->m_nodes.find(id);
-      if (itr != m_db->m_nodes.end()) {
-        const node &n = itr->second;
-        formatter.write_node(n.m_info, n.m_lon, n.m_lat, n.m_tags);
-      }
-    }
+    write_elements<node>(m_historic_nodes, m_nodes, formatter);
   }
 
   virtual void write_ways(output_formatter &formatter) {
-    BOOST_FOREACH(osm_nwr_id_t id, m_ways) {
-      std::map<osm_nwr_id_t, way>::iterator itr = m_db->m_ways.find(id);
-      if (itr != m_db->m_ways.end()) {
-        const way &w = itr->second;
-        formatter.write_way(w.m_info, w.m_nodes, w.m_tags);
-      }
-    }
+    write_elements<way>(m_historic_ways, m_ways, formatter);
   }
 
   virtual void write_relations(output_formatter &formatter) {
-    BOOST_FOREACH(osm_nwr_id_t id, m_relations) {
-      std::map<osm_nwr_id_t, relation>::iterator itr = m_db->m_relations.find(id);
-      if (itr != m_db->m_relations.end()) {
-        const relation &r = itr->second;
-        formatter.write_relation(r.m_info, r.m_members, r.m_tags);
-      }
-    }
+    write_elements<relation>(m_historic_relations, m_relations, formatter);
   }
 
   virtual void write_changesets(output_formatter &formatter,
@@ -355,86 +362,39 @@ struct static_data_selection : public data_selection {
   }
 
   virtual visibility_t check_node_visibility(osm_nwr_id_t id) {
-    std::map<osm_nwr_id_t, node>::iterator itr = m_db->m_nodes.find(id);
-    if (itr != m_db->m_nodes.end()) {
-      if (itr->second.m_info.visible) {
-        return data_selection::exists;
-      } else {
-        return data_selection::deleted;
-      }
-    } else {
-      return data_selection::non_exist;
-    }
+    return check_visibility<node>(id);
   }
 
   virtual visibility_t check_way_visibility(osm_nwr_id_t id) {
-    std::map<osm_nwr_id_t, way>::iterator itr = m_db->m_ways.find(id);
-    if (itr != m_db->m_ways.end()) {
-      if (itr->second.m_info.visible) {
-        return data_selection::exists;
-      } else {
-        return data_selection::deleted;
-      }
-    } else {
-      return data_selection::non_exist;
-    }
+    return check_visibility<way>(id);
   }
 
   virtual visibility_t check_relation_visibility(osm_nwr_id_t id) {
-    std::map<osm_nwr_id_t, relation>::iterator itr = m_db->m_relations.find(id);
-    if (itr != m_db->m_relations.end()) {
-      if (itr->second.m_info.visible) {
-        return data_selection::exists;
-      } else {
-        return data_selection::deleted;
-      }
-    } else {
-      return data_selection::non_exist;
-    }
+    return check_visibility<relation>(id);
   }
 
   virtual int select_nodes(const std::vector<osm_nwr_id_t> &ids) {
-    int selected = 0;
-    BOOST_FOREACH(osm_nwr_id_t id, ids) {
-      std::map<osm_nwr_id_t, node>::iterator itr = m_db->m_nodes.find(id);
-      if (itr != m_db->m_nodes.end()) {
-        m_nodes.insert(id);
-        ++selected;
-      }
-    }
-    return selected;
+    return select<node>(m_nodes, ids);
   }
 
   virtual int select_ways(const std::vector<osm_nwr_id_t> &ids) {
-    int selected = 0;
-    BOOST_FOREACH(osm_nwr_id_t id, ids) {
-      std::map<osm_nwr_id_t, way>::iterator itr = m_db->m_ways.find(id);
-      if (itr != m_db->m_ways.end()) {
-        m_ways.insert(id);
-        ++selected;
-      }
-    }
-    return selected;
+    return select<way>(m_ways, ids);
   }
 
   virtual int select_relations(const std::vector<osm_nwr_id_t> &ids) {
-    int selected = 0;
-    BOOST_FOREACH(osm_nwr_id_t id, ids) {
-      std::map<osm_nwr_id_t, relation>::iterator itr = m_db->m_relations.find(id);
-      if (itr != m_db->m_relations.end()) {
-        m_relations.insert(id);
-        ++selected;
-      }
-    }
-    return selected;
+    return select<relation>(m_relations, ids);
   }
 
   virtual int select_nodes_from_bbox(const bbox &bounds, int max_nodes) {
-    typedef std::pair<osm_nwr_id_t, node> value_type;
+    typedef std::map<id_version, node> node_map_t;
     int selected = 0;
-    BOOST_FOREACH(const value_type &val, m_db->m_nodes) {
-      const node &n = val.second;
-      if ((n.m_lon >= bounds.minlon) && (n.m_lon <= bounds.maxlon) &&
+    const node_map_t::const_iterator end = m_db->m_nodes.end();
+    for (node_map_t::const_iterator itr = m_db->m_nodes.begin();
+         itr != end; ++itr) {
+      node_map_t::const_iterator next = itr; ++next;
+      const node &n = itr->second;
+      if ((next == end || next->second.m_info.id != n.m_info.id) &&
+          (n.m_lon >= bounds.minlon) && (n.m_lon <= bounds.maxlon) &&
           (n.m_lat >= bounds.minlat) && (n.m_lat <= bounds.maxlat) &&
           (n.m_info.visible)) {
         m_nodes.insert(n.m_info.id);
@@ -450,9 +410,9 @@ struct static_data_selection : public data_selection {
 
   virtual void select_nodes_from_relations() {
     BOOST_FOREACH(osm_nwr_id_t id, m_relations) {
-      std::map<osm_nwr_id_t, relation>::iterator itr = m_db->m_relations.find(id);
-      if (itr != m_db->m_relations.end()) {
-        BOOST_FOREACH(const member_info &m, itr->second.m_members) {
+      boost::optional<const relation &> r = find_current<relation>(id);
+      if (r) {
+        BOOST_FOREACH(const member_info &m, r->m_members) {
           if (m.type == element_type_node) {
             m_nodes.insert(m.ref);
           }
@@ -462,13 +422,18 @@ struct static_data_selection : public data_selection {
   }
 
   virtual void select_ways_from_nodes() {
-    typedef std::pair<osm_nwr_id_t, way> value_type;
-    BOOST_FOREACH(const value_type &val, m_db->m_ways) {
-      const way &w = val.second;
-      BOOST_FOREACH(osm_nwr_id_t node_id, w.m_nodes) {
-        if (m_nodes.count(node_id) > 0) {
-          m_ways.insert(w.m_info.id);
-          break;
+    typedef std::map<id_version, way> way_map_t;
+    const way_map_t::const_iterator end = m_db->m_ways.end();
+    for (way_map_t::const_iterator itr = m_db->m_ways.begin();
+         itr != end; ++itr) {
+      way_map_t::const_iterator next = itr; ++next;
+      const way &w = itr->second;
+      if (next == end || next->second.m_info.id != w.m_info.id) {
+        BOOST_FOREACH(osm_nwr_id_t node_id, w.m_nodes) {
+          if (m_nodes.count(node_id) > 0) {
+            m_ways.insert(w.m_info.id);
+            break;
+          }
         }
       }
     }
@@ -476,9 +441,9 @@ struct static_data_selection : public data_selection {
 
   virtual void select_ways_from_relations() {
     BOOST_FOREACH(osm_nwr_id_t id, m_relations) {
-      std::map<osm_nwr_id_t, relation>::iterator itr = m_db->m_relations.find(id);
-      if (itr != m_db->m_relations.end()) {
-        BOOST_FOREACH(const member_info &m, itr->second.m_members) {
+      boost::optional<const relation &> r = find_current<relation>(id);
+      if (r) {
+        BOOST_FOREACH(const member_info &m, r->m_members) {
           if (m.type == element_type_way) {
             m_ways.insert(m.ref);
           }
@@ -488,13 +453,18 @@ struct static_data_selection : public data_selection {
   }
 
   virtual void select_relations_from_ways() {
-    typedef std::pair<osm_nwr_id_t, relation> value_type;
-    BOOST_FOREACH(const value_type &val, m_db->m_relations) {
-      const relation &r = val.second;
-      BOOST_FOREACH(const member_info &m, r.m_members) {
-        if ((m.type == element_type_way) && (m_ways.count(m.ref) > 0)) {
-          m_relations.insert(r.m_info.id);
-          break;
+    typedef std::map<id_version, relation> relation_map_t;
+    const relation_map_t::const_iterator end = m_db->m_relations.end();
+    for (relation_map_t::const_iterator itr = m_db->m_relations.begin();
+         itr != end; ++itr) {
+      relation_map_t::const_iterator next = itr; ++next;
+      const relation &r = itr->second;
+      if (next == end || next->second.m_info.id != r.m_info.id) {
+        BOOST_FOREACH(const member_info &m, r.m_members) {
+          if ((m.type == element_type_way) && (m_ways.count(m.ref) > 0)) {
+            m_relations.insert(r.m_info.id);
+            break;
+          }
         }
       }
     }
@@ -502,17 +472,20 @@ struct static_data_selection : public data_selection {
 
   virtual void select_nodes_from_way_nodes() {
     BOOST_FOREACH(osm_nwr_id_t id, m_ways) {
-      std::map<osm_nwr_id_t, way>::iterator itr = m_db->m_ways.find(id);
-      if (itr != m_db->m_ways.end()) {
-        m_nodes.insert(itr->second.m_nodes.begin(), itr->second.m_nodes.end());
+      boost::optional<const way &> w = find_current<way>(id);
+      if (w) {
+        m_nodes.insert(w->m_nodes.begin(), w->m_nodes.end());
       }
     }
   }
 
   virtual void select_relations_from_nodes() {
-    typedef std::pair<osm_nwr_id_t, relation> value_type;
-    BOOST_FOREACH(const value_type &val, m_db->m_relations) {
-      const relation &r = val.second;
+    typedef std::map<id_version, relation> relation_map_t;
+    const relation_map_t::const_iterator end = m_db->m_relations.end();
+    for (relation_map_t::const_iterator itr = m_db->m_relations.begin();
+         itr != end; ++itr) {
+      relation_map_t::const_iterator next = itr; ++next;
+      const relation &r = itr->second;
       BOOST_FOREACH(const member_info &m, r.m_members) {
         if ((m.type == element_type_node) && (m_nodes.count(m.ref) > 0)) {
           m_relations.insert(r.m_info.id);
@@ -523,10 +496,13 @@ struct static_data_selection : public data_selection {
   }
 
   virtual void select_relations_from_relations() {
-    typedef std::pair<osm_nwr_id_t, relation> value_type;
     std::set<osm_nwr_id_t> tmp_relations;
-    BOOST_FOREACH(const value_type &val, m_db->m_relations) {
-      const relation &r = val.second;
+    typedef std::map<id_version, relation> relation_map_t;
+    const relation_map_t::const_iterator end = m_db->m_relations.end();
+    for (relation_map_t::const_iterator itr = m_db->m_relations.begin();
+         itr != end; ++itr) {
+      relation_map_t::const_iterator next = itr; ++next;
+      const relation &r = itr->second;
       BOOST_FOREACH(const member_info &m, r.m_members) {
         if ((m.type == element_type_relation) &&
             (m_relations.count(m.ref) > 0)) {
@@ -540,15 +516,47 @@ struct static_data_selection : public data_selection {
 
   virtual void select_relations_members_of_relations() {
     BOOST_FOREACH(osm_nwr_id_t id, m_relations) {
-      std::map<osm_nwr_id_t, relation>::iterator itr = m_db->m_relations.find(id);
-      if (itr != m_db->m_relations.end()) {
-        BOOST_FOREACH(const member_info &m, itr->second.m_members) {
+      boost::optional<const relation &> r = find_current<relation>(id);
+      if (r) {
+        BOOST_FOREACH(const member_info &m, r->m_members) {
           if (m.type == element_type_relation) {
             m_relations.insert(m.ref);
           }
         }
       }
     }
+  }
+
+  virtual bool supports_historical_versions() {
+    return true;
+  }
+
+  virtual int select_historical_nodes(const std::vector<osm_edition_t> &editions) {
+    return select_historical<node>(m_historic_nodes, editions);
+  }
+
+  virtual int select_nodes_with_history(const std::vector<osm_nwr_id_t> &ids) {
+    return select_historical_all<node>(m_historic_nodes, ids);
+  }
+
+  virtual int select_historical_ways(const std::vector<osm_edition_t> &editions) {
+    return select_historical<way>(m_historic_ways, editions);
+  }
+
+  virtual int select_ways_with_history(const std::vector<osm_nwr_id_t> &ids) {
+    return select_historical_all<way>(m_historic_ways, ids);
+  }
+
+  virtual int select_historical_relations(const std::vector<osm_edition_t> &editions) {
+    return select_historical<relation>(m_historic_relations, editions);
+  }
+
+  virtual int select_relations_with_history(const std::vector<osm_nwr_id_t> &ids) {
+    return select_historical_all<relation>(m_historic_relations, ids);
+  }
+
+  virtual void set_redactions_visible(bool visible) {
+    m_redactions_visible = visible;
   }
 
   virtual bool supports_changesets() { return true; }
@@ -569,13 +577,155 @@ struct static_data_selection : public data_selection {
     m_include_changeset_comments = true;
   }
 
-
 private:
+  template <typename T>
+  const std::map<id_version, T> &map_of() const;
+
+  template <typename T>
+  boost::optional<const T&> find_current(osm_nwr_id_t id) const {
+    typedef std::map<id_version, T> element_map_t;
+    id_version idv(id);
+    const element_map_t &m = map_of<T>();
+    if (!m.empty()) {
+      typename element_map_t::const_iterator itr = m.upper_bound(idv);
+      if (itr != m.begin()) {
+        --itr;
+        if (itr->first.id == id) {
+          return itr->second;
+        }
+      }
+    }
+    return boost::none;
+  }
+
+  template <typename T>
+  boost::optional<const T &> find(osm_edition_t edition) const {
+    typedef std::map<id_version, T> element_map_t;
+    id_version idv(edition.first, edition.second);
+    const element_map_t &m = map_of<T>();
+    if (!m.empty()) {
+      typename element_map_t::const_iterator itr = m.find(idv);
+      if (itr != m.end()) {
+        return itr->second;
+      }
+    }
+    return boost::none;
+  }
+
+  template <typename T>
+  void write_elements(const std::set<osm_edition_t> &historic_ids,
+                      const std::set<osm_nwr_id_t> &current_ids,
+                      output_formatter &formatter) const {
+    std::set<osm_edition_t> editions = historic_ids;
+
+    BOOST_FOREACH(osm_nwr_id_t id, current_ids) {
+      boost::optional<const T &> maybe = find_current<T>(id);
+      if (maybe) {
+        const T &t = *maybe;
+        editions.insert(std::make_pair(id, t.m_info.version));
+      }
+    }
+
+    BOOST_FOREACH(osm_edition_t ed, editions) {
+      boost::optional<const T &> maybe = find<T>(ed);
+      if (maybe) {
+        const T &t = *maybe;
+        write_element(t, formatter);
+      }
+    }
+  }
+
+  template <typename T>
+  visibility_t check_visibility(osm_nwr_id_t &id) {
+    boost::optional<const T &> maybe = find_current<T>(id);
+    if (maybe) {
+      if (maybe->m_info.visible) {
+        return data_selection::exists;
+      } else {
+        return data_selection::deleted;
+      }
+    } else {
+      return data_selection::non_exist;
+    }
+  }
+
+  template <typename T>
+  int select(std::set<osm_nwr_id_t> &found_ids,
+             const std::vector<osm_nwr_id_t> select_ids) const {
+    int selected = 0;
+    BOOST_FOREACH(osm_nwr_id_t id, select_ids) {
+      boost::optional<const T &> t = find_current<T>(id);
+      if (t) {
+        found_ids.insert(id);
+        ++selected;
+      }
+    }
+    return selected;
+  }
+
+  template <typename T>
+  int select_historical(std::set<osm_edition_t> &found_eds,
+                        const std::vector<osm_edition_t> &select_eds) const {
+    int selected = 0;
+    BOOST_FOREACH(osm_edition_t ed, select_eds) {
+      boost::optional<const T &> t = find<T>(ed);
+      if (t) {
+        bool is_redacted = bool(t->m_info.redaction);
+        if (!is_redacted || m_redactions_visible) {
+          found_eds.insert(ed);
+          ++selected;
+        }
+      }
+    }
+    return selected;
+  }
+
+  template <typename T>
+  int select_historical_all(std::set<osm_edition_t> &found_eds,
+                            const std::vector<osm_nwr_id_t> &ids) const {
+    int selected = 0;
+    BOOST_FOREACH(osm_nwr_id_t id, ids) {
+      typedef std::map<id_version, T> element_map_t;
+      id_version idv_start(id, 0), idv_end(id+1, 0);
+      const element_map_t &m = map_of<T>();
+      if (!m.empty()) {
+        typename element_map_t::const_iterator itr = m.lower_bound(idv_start);
+        typename element_map_t::const_iterator end = m.lower_bound(idv_end);
+
+        for (; itr != end; ++itr) {
+          osm_edition_t ed(id, *itr->first.version);
+          bool is_redacted = bool(itr->second.m_info.redaction);
+          if (!is_redacted || m_redactions_visible) {
+            found_eds.insert(ed);
+            ++selected;
+          }
+        }
+      }
+    }
+    return selected;
+  }
+
   boost::shared_ptr<database> m_db;
   std::set<osm_changeset_id_t> m_changesets;
   std::set<osm_nwr_id_t> m_nodes, m_ways, m_relations;
-  bool m_include_changeset_comments;
+  std::set<osm_edition_t> m_historic_nodes, m_historic_ways, m_historic_relations;
+  bool m_include_changeset_comments, m_redactions_visible;
 };
+
+template <>
+const std::map<id_version, node> &static_data_selection::map_of<node>() const {
+  return m_db->m_nodes;
+}
+
+template <>
+const std::map<id_version, way> &static_data_selection::map_of<way>() const {
+  return m_db->m_ways;
+}
+
+template <>
+const std::map<id_version, relation> &static_data_selection::map_of<relation>() const {
+  return m_db->m_relations;
+}
 
 struct factory : public data_selection::factory {
   factory(const std::string &file)

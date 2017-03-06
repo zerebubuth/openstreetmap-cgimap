@@ -46,7 +46,7 @@ public:
   handler(mime::type default_type = mime::unspecified_type);
   virtual ~handler();
   virtual std::string log_name() const = 0;
-  virtual responder_ptr_t responder(factory_ptr &) const = 0;
+  virtual responder_ptr_t responder(data_selection_ptr &) const = 0;
 
   void set_resource_type(mime::type);
 

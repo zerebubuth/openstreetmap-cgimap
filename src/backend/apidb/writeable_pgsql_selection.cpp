@@ -4,6 +4,7 @@
 #include "cgimap/backend/apidb/quad_tile.hpp"
 #include "cgimap/infix_ostream_iterator.hpp"
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
+#include "cgimap/backend/apidb/utils.hpp"
 #include <set>
 #include <sstream>
 #include <list>
@@ -13,6 +14,8 @@
 #include <boost/ref.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
+#include <boost/foreach.hpp>
+#include <boost/iterator/transform_iterator.hpp>
 
 #if PQXX_VERSION_MAJOR >= 4
 #define PREPARE_ARGS(args)
@@ -206,12 +209,73 @@ void extract_comments(const pqxx::result::tuple &row, comments_t &comments) {
   }
 }
 
+struct node {
+  struct extra_info {
+    double lon, lat;
+    inline void extract(const pqxx::tuple &row) {
+      lon = double(row["longitude"].as<int64_t>()) / (SCALE);
+      lat = double(row["latitude"].as<int64_t>()) / (SCALE);
+    }
+  };
+  static inline void write(
+    output_formatter &formatter, const element_info &elem,
+    const extra_info &extra, const tags_t &tags) {
+    formatter.write_node(elem, extra.lon, extra.lat, tags);
+  }
+};
+
+struct way {
+  struct extra_info {
+    nodes_t nodes;
+    inline void extract(const pqxx::tuple &row) {
+      extract_nodes(row, nodes);
+    }
+  };
+  static inline void write(
+    output_formatter &formatter, const element_info &elem,
+    const extra_info &extra, const tags_t &tags) {
+    formatter.write_way(elem, extra.nodes, tags);
+  }
+};
+
+struct relation {
+  struct extra_info {
+    members_t members;
+    inline void extract(const pqxx::tuple &row) {
+      extract_members(row, members);
+    }
+  };
+  static inline void write(
+    output_formatter &formatter, const element_info &elem,
+    const extra_info &extra, const tags_t &tags) {
+    formatter.write_relation(elem, extra.members, tags);
+  }
+};
+
+template <typename T>
+void extract(
+  const pqxx::result &rows, output_formatter &formatter,
+  cache<osm_changeset_id_t, changeset> &cc) {
+
+  element_info elem;
+  typename T::extra_info extra;
+  tags_t tags;
+
+  for (const auto &row : rows) {
+    extract_elem(row, elem, cc);
+    extra.extract(row);
+    extract_tags(row, tags);
+    T::write(formatter, elem, extra, tags);
+  }
+}
+
 } // anonymous namespace
 
 writeable_pgsql_selection::writeable_pgsql_selection(
     pqxx::connection &conn, cache<osm_changeset_id_t, changeset> &changeset_cache)
     : w(conn), cc(changeset_cache)
-    , include_changeset_discussions(false) {
+    , include_changeset_discussions(false)
+    , m_redactions_visible(false) {
   w.set_variable("default_transaction_read_only", "false");
   w.exec("CREATE TEMPORARY TABLE tmp_nodes (id bigint PRIMARY KEY)");
   w.exec("CREATE TEMPORARY TABLE tmp_ways (id bigint PRIMARY KEY)");
@@ -219,6 +283,14 @@ writeable_pgsql_selection::writeable_pgsql_selection(
   w.exec("CREATE TEMPORARY TABLE tmp_changesets (id bigint PRIMARY KEY)");
   w.set_variable("default_transaction_read_only", "true");
   m_tables_empty = true;
+
+  w.exec("CREATE TEMPORARY TABLE tmp_historic_nodes "
+         "(node_id bigint, version bigint, PRIMARY KEY (node_id, version))");
+  w.exec("CREATE TEMPORARY TABLE tmp_historic_ways "
+         "(way_id bigint, version bigint, PRIMARY KEY (way_id, version))");
+  w.exec("CREATE TEMPORARY TABLE tmp_historic_relations "
+         "(relation_id bigint, version bigint, PRIMARY KEY (relation_id, version))");
+  m_historic_tables_empty = true;
 }
 
 writeable_pgsql_selection::~writeable_pgsql_selection() {}
@@ -227,18 +299,16 @@ void writeable_pgsql_selection::write_nodes(output_formatter &formatter) {
   // get all nodes - they already contain their own tags, so
   // we don't need to do anything else.
   logger::message("Fetching nodes");
-  element_info elem;
-  double lon, lat;
-  tags_t tags;
 
-  pqxx::result nodes = w.prepared("extract_nodes").exec();
-  for (pqxx::result::const_iterator itr = nodes.begin(); itr != nodes.end();
-       ++itr) {
-    extract_elem(*itr, elem, cc);
-    lon = double((*itr)["longitude"].as<int64_t>()) / (SCALE);
-    lat = double((*itr)["latitude"].as<int64_t>()) / (SCALE);
-    extract_tags(*itr, tags);
-    formatter.write_node(elem, lon, lat, tags);
+  if (!m_tables_empty) {
+    extract<node>(w.prepared("extract_nodes").exec(), formatter, cc);
+  }
+
+  if (!m_historic_tables_empty) {
+    if (!m_tables_empty) {
+      w.prepared("drop_current_node_versions_from_historic").exec();
+    }
+    extract<node>(w.prepared("extract_historic_nodes").exec(), formatter, cc);
   }
 }
 
@@ -247,33 +317,31 @@ void writeable_pgsql_selection::write_ways(output_formatter &formatter) {
   // way nodes and tags are on a separate connections so that the
   // entire result set can be streamed from a single query.
   logger::message("Fetching ways");
-  element_info elem;
-  nodes_t nodes;
-  tags_t tags;
 
-  pqxx::result ways = w.prepared("extract_ways").exec();
-  for (pqxx::result::const_iterator itr = ways.begin(); itr != ways.end();
-       ++itr) {
-    extract_elem(*itr, elem, cc);
-    extract_nodes(*itr, nodes);
-    extract_tags(*itr, tags);
-    formatter.write_way(elem, nodes, tags);
+  if (!m_tables_empty) {
+    extract<way>(w.prepared("extract_ways").exec(), formatter, cc);
+  }
+
+  if (!m_historic_tables_empty) {
+    if (!m_tables_empty) {
+      w.prepared("drop_current_way_versions_from_historic").exec();
+    }
+    extract<way>(w.prepared("extract_historic_ways").exec(), formatter, cc);
   }
 }
 
 void writeable_pgsql_selection::write_relations(output_formatter &formatter) {
+  // grab the relations, relation members and tags
   logger::message("Fetching relations");
-  element_info elem;
-  members_t members;
-  tags_t tags;
+  if (!m_tables_empty) {
+    extract<relation>(w.prepared("extract_relations").exec(), formatter, cc);
+  }
 
-  pqxx::result relations = w.prepared("extract_relations").exec();
-  for (pqxx::result::const_iterator itr = relations.begin();
-       itr != relations.end(); ++itr) {
-    extract_elem(*itr, elem, cc);
-    extract_members(*itr, members);
-    extract_tags(*itr, tags);
-    formatter.write_relation(elem, members, tags);
+  if (!m_historic_tables_empty) {
+    if (!m_tables_empty) {
+      w.prepared("drop_current_relation_versions_from_historic").exec();
+    }
+    extract<relation>(w.prepared("extract_historic_relations").exec(), formatter, cc);
   }
 }
 
@@ -391,6 +459,101 @@ void writeable_pgsql_selection::select_relations_members_of_relations() {
   w.prepared("relation_members_of_relations").exec();
 }
 
+bool writeable_pgsql_selection::supports_historical_versions() {
+  return true;
+}
+
+int writeable_pgsql_selection::select_historical_nodes(
+  const std::vector<osm_edition_t> &eds) {
+  m_historic_tables_empty = false;
+
+  size_t selected = 0;
+  BOOST_FOREACH(osm_edition_t ed, eds) {
+    selected += w.prepared("add_historic_node")
+      (ed.first)(ed.second)(m_redactions_visible)
+      .exec().affected_rows();
+  }
+
+  assert(selected < size_t(std::numeric_limits<int>::max()));
+  return selected;
+}
+
+int writeable_pgsql_selection::select_historical_ways(
+  const std::vector<osm_edition_t> &eds) {
+  m_historic_tables_empty = false;
+
+  size_t selected = 0;
+  BOOST_FOREACH(osm_edition_t ed, eds) {
+    selected += w.prepared("add_historic_way")
+      (ed.first)(ed.second)(m_redactions_visible)
+      .exec().affected_rows();
+  }
+
+  assert(selected < size_t(std::numeric_limits<int>::max()));
+  return selected;
+}
+
+int writeable_pgsql_selection::select_historical_relations(
+  const std::vector<osm_edition_t> &eds) {
+  m_historic_tables_empty = false;
+
+  size_t selected = 0;
+  BOOST_FOREACH(osm_edition_t ed, eds) {
+    selected += w.prepared("add_historic_relation")
+      (ed.first)(ed.second)(m_redactions_visible)
+      .exec().affected_rows();
+  }
+
+  assert(selected < size_t(std::numeric_limits<int>::max()));
+  return selected;
+}
+
+int writeable_pgsql_selection::select_nodes_with_history(
+  const std::vector<osm_nwr_id_t> &ids) {
+  m_historic_tables_empty = false;
+  size_t selected = 0;
+  BOOST_FOREACH(osm_nwr_id_t id, ids) {
+    selected += w.prepared("add_all_versions_of_node")
+      (id)(m_redactions_visible)
+      .exec().affected_rows();
+  }
+
+  assert(selected < size_t(std::numeric_limits<int>::max()));
+  return selected;
+}
+
+int writeable_pgsql_selection::select_ways_with_history(
+  const std::vector<osm_nwr_id_t> &ids) {
+  m_historic_tables_empty = false;
+  size_t selected = 0;
+  BOOST_FOREACH(osm_nwr_id_t id, ids) {
+    selected += w.prepared("add_all_versions_of_way")
+      (id)(m_redactions_visible)
+      .exec().affected_rows();
+  }
+
+  assert(selected < size_t(std::numeric_limits<int>::max()));
+  return selected;
+}
+
+int writeable_pgsql_selection::select_relations_with_history(
+  const std::vector<osm_nwr_id_t> &ids) {
+  m_historic_tables_empty = false;
+  size_t selected = 0;
+  BOOST_FOREACH(osm_nwr_id_t id, ids) {
+    selected += w.prepared("add_all_versions_of_relation")
+      (id)(m_redactions_visible)
+      .exec().affected_rows();
+  }
+
+  assert(selected < size_t(std::numeric_limits<int>::max()));
+  return selected;
+}
+
+void writeable_pgsql_selection::set_redactions_visible(bool visible) {
+  m_redactions_visible = visible;
+}
+
 bool writeable_pgsql_selection::supports_changesets() {
   return true;
 }
@@ -451,10 +614,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       m_cache(boost::bind(fetch_changeset, boost::ref(m_cache_tx), _1),
               get_or_convert_cachesize(opts)) {
 
-  if (m_connection.server_version() < 90300) {
-    throw std::runtime_error("Expected Postgres version 9.3+, currently installed version "
-        + std::to_string(m_connection.server_version()));
-  }
+  check_postgres_version(m_connection);
 
   // set the connections to use the appropriate charset.
   m_connection.set_client_encoding(opts["charset"].as<std::string>());
@@ -517,7 +677,8 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
           "FROM current_way_tags WHERE w.id=way_id ) t ON true "
         "LEFT JOIN LATERAL "
           "(SELECT array_agg(node_id) AS node_ids from "
-            "(SELECT * FROM current_way_nodes WHERE w.id=way_id ) x "
+            "(SELECT * FROM current_way_nodes WHERE w.id=way_id "
+             "ORDER BY sequence_id) x "
           ") wn ON true ");
   m_connection.prepare("extract_relations",
      "SELECT r.id, r.visible, r.version, r.changeset_id, "
@@ -656,6 +817,160 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
             "ON (tr.id = rm.member_id AND rm.member_type='Relation') "
           "LEFT JOIN tmp_relations xr ON rm.relation_id = xr.id "
         "WHERE xr.id IS NULL");
+
+  // select a historic (id, version) edition of a node
+  m_connection.prepare("add_historic_node",
+    "INSERT INTO tmp_historic_nodes "
+       "SELECT node_id, version "
+         "FROM nodes "
+         "WHERE "
+           "node_id = $1 AND version = $2 AND"
+           "(redaction_id IS NULL OR $3 = TRUE)")
+    PREPARE_ARGS(("bigint")("bigint")("boolean"));
+
+  m_connection.prepare("drop_current_node_versions_from_historic",
+    "WITH cv AS ("
+      "SELECT n.id, n.version "
+        "FROM current_nodes n "
+        "JOIN tmp_nodes tn ON n.id = tn.id) "
+    "DELETE FROM tmp_historic_nodes thn USING cv "
+      "WHERE thn.node_id = cv.id AND thn.version = cv.version");
+
+  m_connection.prepare("extract_historic_nodes",
+    "SELECT n.node_id AS id, n.latitude, n.longitude, n.visible, "
+        "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
+        "n.changeset_id, n.version, array_agg(t.k) as tag_k, array_agg(t.v) as tag_v "
+      "FROM nodes n "
+        "JOIN tmp_historic_nodes tn "
+          "ON n.node_id = tn.node_id AND n.version = tn.version "
+        "LEFT JOIN node_tags t "
+          "ON n.node_id = t.node_id AND n.version = t.version "
+      "GROUP BY n.node_id, n.version");
+  m_connection.prepare("extract_historic_node_tags",
+    "SELECT k, v FROM node_tags WHERE node_id=$1 AND version=$2")
+    PREPARE_ARGS(("bigint")("bigint"));
+
+  m_connection.prepare("drop_current_way_versions_from_historic",
+    "WITH cv AS ("
+      "SELECT w.id, w.version "
+        "FROM current_ways w "
+        "JOIN tmp_ways tw ON w.id = tw.id) "
+    "DELETE FROM tmp_historic_ways thw USING cv "
+      "WHERE thw.way_id = cv.id AND thw.version = cv.version");
+
+  // select a historic (id, version) edition of a way
+  m_connection.prepare("add_historic_way",
+    "INSERT INTO tmp_historic_ways "
+       "SELECT way_id, version "
+         "FROM ways "
+         "WHERE "
+           "way_id = $1 AND version = $2 AND"
+           "(redaction_id IS NULL OR $3 = TRUE)")
+    PREPARE_ARGS(("bigint")("bigint")("boolean"));
+
+  m_connection.prepare("extract_historic_ways",
+    "SELECT w.way_id AS id, w.visible, w.version, w.changeset_id, "
+        "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
+        "t.keys as tag_k, t.values as tag_v, wn.node_ids as node_ids "
+      "FROM ways w "
+        "JOIN tmp_historic_ways tw "
+          "ON w.way_id = tw.way_id AND w.version = tw.version "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(k) AS keys, array_agg(v) AS values "
+          "FROM way_tags WHERE w.way_id = way_id ) t ON true "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(node_id) AS node_ids from "
+            "(SELECT * FROM way_nodes "
+              "WHERE w.way_id = way_id AND w.version = version "
+              "ORDER BY sequence_id) x "
+          ") wn ON true ");
+  m_connection.prepare("extract_historic_way_tags",
+    "SELECT k, v FROM way_tags WHERE way_id=$1 AND version=$2")
+    PREPARE_ARGS(("bigint")("bigint"));
+
+  m_connection.prepare("extract_historic_way_nds",
+    "SELECT node_id "
+      "FROM way_nodes "
+      "WHERE way_id=$1 AND version=$2"
+      "ORDER BY sequence_id ASC")
+    PREPARE_ARGS(("bigint")("bigint"));
+
+  m_connection.prepare("drop_current_relation_versions_from_historic",
+    "WITH cv AS ("
+      "SELECT r.id, r.version "
+        "FROM current_relations r "
+        "JOIN tmp_relations tr ON r.id = tr.id) "
+    "DELETE FROM tmp_historic_relations thr USING cv "
+      "WHERE thr.relation_id = cv.id AND thr.version = cv.version");
+
+  // select a historic (id, version) edition of a relation
+  m_connection.prepare("add_historic_relation",
+    "INSERT INTO tmp_historic_relations "
+       "SELECT relation_id, version "
+         "FROM relations "
+         "WHERE "
+           "relation_id = $1 AND version = $2 AND"
+           "(redaction_id IS NULL OR $3 = TRUE)")
+    PREPARE_ARGS(("bigint")("bigint")("boolean"));
+
+  m_connection.prepare("extract_historic_relations",
+     "SELECT r.relation_id AS id, r.visible, r.version, r.changeset_id, "
+        "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
+        "t.keys as tag_k, t.values as tag_v, rm.types as member_types, "
+        "rm.ids as member_ids, rm.roles as member_roles "
+      "FROM relations r "
+        "JOIN tmp_historic_relations tr "
+          "ON tr.relation_id = r.relation_id AND tr.version = r.version "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(k) AS keys, array_agg(v) AS values "
+           "FROM relation_tags "
+            "WHERE r.relation_id = relation_id AND r.version = version "
+          ") t ON true "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(member_type) AS types, array_agg(member_id) AS ids, "
+           "array_agg(member_role) AS roles "
+           "FROM "
+            "(SELECT * FROM relation_members "
+              "WHERE r.relation_id = relation_id AND r.version = version "
+            "ORDER BY sequence_id) x"
+          ") rm ON true");
+  m_connection.prepare("extract_historic_relation_tags",
+    "SELECT k, v FROM relation_tags WHERE relation_id=$1 AND version=$2")
+    PREPARE_ARGS(("bigint")("bigint"));
+  m_connection.prepare("extract_historic_relation_members",
+    "SELECT member_type, member_id, member_role "
+      "FROM relation_members "
+      "WHERE relation_id=$1 AND version=$2 "
+      "ORDER BY sequence_id ASC")
+    PREPARE_ARGS(("bigint")("bigint"));
+
+  m_connection.prepare("add_all_versions_of_node",
+    "INSERT INTO tmp_historic_nodes "
+      "SELECT n.node_id, n.version "
+      "FROM nodes n "
+      "LEFT JOIN tmp_historic_nodes t "
+      "ON t.node_id = n.node_id AND t.version = n.version "
+      "WHERE n.node_id = $1 AND t.node_id IS NULL AND "
+            "(n.redaction_id IS NULL OR $2 = TRUE)")
+    PREPARE_ARGS(("bigint")("boolean"));
+  m_connection.prepare("add_all_versions_of_way",
+    "INSERT INTO tmp_historic_ways "
+      "SELECT w.way_id, w.version "
+      "FROM ways w "
+      "LEFT JOIN tmp_historic_ways t "
+      "ON t.way_id = w.way_id AND t.version = w.version "
+      "WHERE w.way_id = $1 AND t.way_id IS NULL AND "
+            "(w.redaction_id IS NULL OR $2 = TRUE)")
+    PREPARE_ARGS(("bigint")("boolean"));
+  m_connection.prepare("add_all_versions_of_relation",
+    "INSERT INTO tmp_historic_relations "
+      "SELECT r.relation_id, r.version "
+      "FROM relations r "
+      "LEFT JOIN tmp_historic_relations t "
+      "ON t.relation_id = r.relation_id AND t.version = r.version "
+      "WHERE r.relation_id = $1 AND t.relation_id IS NULL AND "
+            "(r.redaction_id IS NULL OR $2 = TRUE)")
+    PREPARE_ARGS(("bigint")("boolean"));
 
   // clang-format on
 }

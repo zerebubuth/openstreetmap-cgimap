@@ -10,7 +10,7 @@ using std::vector;
 namespace api06 {
 
 way_full_responder::way_full_responder(mime::type mt_, osm_nwr_id_t id_,
-                                       factory_ptr &w_)
+                                       data_selection_ptr &w_)
     : osm_current_responder(mt_, w_), id(id_) {
   vector<osm_nwr_id_t> ids;
   ids.push_back(id);
@@ -56,7 +56,7 @@ way_full_handler::~way_full_handler() {}
 
 std::string way_full_handler::log_name() const { return "way/full"; }
 
-responder_ptr_t way_full_handler::responder(factory_ptr &x) const {
+responder_ptr_t way_full_handler::responder(data_selection_ptr &x) const {
   return responder_ptr_t(new way_full_responder(mime_type, id, x));
 }
 
