@@ -526,60 +526,42 @@ void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
   // way nodes and tags are on a separate connections so that the
   // entire result set can be streamed from a single query.
   logger::message("Fetching ways");
-
-  std::set<osm_edition_t> historic_ways = sel_historic_ways;
-  fetch_current_in_chunks<way_from_db>(sel_ways, historic_ways, formatter, cc, w);
-  fetch_historic<way_from_db>(historic_ways, formatter, cc, w);
+  if (!sel_ways.empty()) {
+    erase_formatter eraser(formatter, sel_historic_nodes, sel_historic_ways,
+      sel_historic_relations);
+    extract_ways(w.prepared("extract_ways")(sel_ways).exec(), eraser, cc);
+  }
+  if (!sel_historic_ways.empty()) {
+    std::vector<osm_nwr_id_t> ids, versions;
+    for (const auto &ed : sel_historic_ways) {
+      ids.emplace_back(ed.first);
+      versions.emplace_back(ed.second);
+    }
+    extract_ways(w.prepared("extract_historic_ways")(ids)(versions).exec(), formatter, cc);
+  }
 }
 
 void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
   logger::message("Fetching relations");
-
-  std::set<osm_edition_t> historic_relations = sel_historic_relations;
-  fetch_current_in_chunks<rel_from_db>(sel_relations, historic_relations, formatter, cc, w);
-  fetch_historic<rel_from_db>(historic_relations, formatter, cc, w);
+  if (!sel_relations.empty()) {
+    erase_formatter eraser(formatter, sel_historic_nodes, sel_historic_ways,
+      sel_historic_relations);
+    extract_relations(w.prepared("extract_relations")(sel_relations).exec(), eraser, cc);
+  }
+  if (!sel_historic_relations.empty()) {
+    std::vector<osm_nwr_id_t> ids, versions;
+    for (const auto &ed : sel_historic_relations) {
+      ids.emplace_back(ed.first);
+      versions.emplace_back(ed.second);
+    }
+    extract_relations(w.prepared("extract_historic_relations")(ids)(versions).exec(), formatter, cc);
+  }
 }
 
 void readonly_pgsql_selection::write_changesets(output_formatter &formatter,
                                                 const pt::ptime &now) {
-  changeset_info elem;
-  tags_t tags;
-  comments_t comments;
-
-  // fetch in chunks...
-  set<osm_changeset_id_t>::iterator prev_itr = sel_changesets.begin();
-  size_t chunk_i = 0;
-  for (set<osm_changeset_id_t>::iterator n_itr = sel_changesets.begin();;
-       ++n_itr, ++chunk_i) {
-    bool at_end = n_itr == sel_changesets.end();
-    if ((chunk_i >= STRIDE) || ((chunk_i > 0) && at_end)) {
-      stringstream query;
-      query << "SELECT id, "
-            << "to_char(created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at, "
-            << "to_char(closed_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS closed_at, "
-            << "min_lat, max_lat, min_lon, max_lon, "
-            << "num_changes "
-            << "FROM changesets WHERE id IN (";
-      std::copy(prev_itr, n_itr, infix_ostream_iterator<osm_changeset_id_t>(query, ","));
-      query << ")";
-
-      pqxx::result changesets = w.exec(query);
-      for (pqxx::result::const_iterator itr = changesets.begin();
-           itr != changesets.end(); ++itr) {
-        extract_changeset(*itr, elem, cc);
-        extract_tags(w.prepared("extract_changeset_tags")(elem.id).exec(), tags);
-        extract_comments(w.prepared("extract_changeset_comments")(elem.id).exec(), comments);
-        elem.comments_count = comments.size();
-        formatter.write_changeset(elem, tags, include_changeset_discussions, comments, now);
-      }
-
-      chunk_i = 0;
-      prev_itr = n_itr;
-    }
-
-    if (at_end)
-      break;
-  }
+  pqxx::result changesets = w.prepared("extract_changesets")(sel_changesets).exec();
+  extract_changesets(changesets, formatter, cc, now, include_changeset_discussions);
 }
 
 data_selection::visibility_t
@@ -1049,6 +1031,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
       "WHERE (r.redaction_id IS NULL OR $3 = TRUE)")
     PREPARE_ARGS(("bigint[]")("bigint[]")("boolean"));
 
+  // ------------------------- NODE EXTRACTION -------------------------------
   m_connection.prepare("extract_nodes",
     "SELECT n.id, n.latitude, n.longitude, n.visible, "
         "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
@@ -1071,6 +1054,114 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
         "LEFT JOIN node_tags t ON n.node_id = t.node_id AND n.version = t.version "
       "GROUP BY n.node_id, n.version ORDER BY n.node_id, n.version")
     PREPARE_ARGS(("bigint[]")("bigint[]"));
+
+  // -------------------------- WAY EXTRACTION -------------------------------
+  m_connection.prepare("extract_ways",
+    "SELECT w.id, w.visible, "
+        "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
+        "w.changeset_id, w.version, t.keys as tag_k, t.values as tag_v, "
+        "wn.node_ids as node_ids "
+      "FROM current_ways w "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(k) as keys, array_agg(v) as values "
+           "FROM current_way_tags WHERE w.id=way_id) t ON true "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(node_id) as node_ids "
+           "FROM "
+             "(SELECT node_id FROM current_way_nodes WHERE w.id=way_id "
+              "ORDER BY sequence_id) x) wn ON true "
+      "WHERE w.id = ANY($1) "
+      "ORDER BY w.id")
+    PREPARE_ARGS(("bigint[]"));
+
+  m_connection.prepare("extract_historic_ways",
+    "WITH wanted(id, version) AS ("
+      "SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))"
+    ")"
+    "SELECT w.way_id AS id, w.visible, "
+        "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
+        "w.changeset_id, w.version, t.keys as tag_k, t.values as tag_v, "
+        "wn.node_ids as node_ids "
+      "FROM ways w "
+        "INNER JOIN wanted x ON w.way_id = x.id AND w.version = x.version "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(k) as keys, array_agg(v) as values "
+           "FROM way_tags WHERE w.way_id=way_id AND w.version=version) t ON true "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(node_id) as node_ids "
+           "FROM "
+             "(SELECT node_id FROM way_nodes "
+              "WHERE w.way_id=way_id AND w.version=version "
+              "ORDER BY sequence_id) x) wn ON true "
+      "ORDER BY w.way_id, w.version")
+    PREPARE_ARGS(("bigint[]")("bigint[]"));
+
+  // --------------------- RELATION EXTRACTION -------------------------------
+  m_connection.prepare("extract_relations",
+    "SELECT r.id, r.visible, "
+        "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
+        "r.changeset_id, r.version, t.keys as tag_k, t.values as tag_v, "
+        "rm.types as member_types, rm.ids as member_ids, rm.roles as member_roles "
+      "FROM current_relations r "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(k) as keys, array_agg(v) as values "
+           "FROM current_relation_tags WHERE r.id=relation_id) t ON true "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(member_type) as types, "
+           "array_agg(member_role) as roles, array_agg(member_id) as ids "
+           "FROM "
+             "(SELECT * FROM current_relation_members WHERE r.id=relation_id "
+              "ORDER BY sequence_id) x) rm ON true "
+      "WHERE r.id = ANY($1) "
+      "ORDER BY r.id")
+    PREPARE_ARGS(("bigint[]"));
+
+  m_connection.prepare("extract_historic_relations",
+    "WITH wanted(id, version) AS ("
+      "SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))"
+    ")"
+    "SELECT r.relation_id AS id, r.visible, "
+        "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
+        "r.changeset_id, r.version, t.keys as tag_k, t.values as tag_v, "
+        "rm.types as member_types, rm.ids as member_ids, rm.roles as member_roles "
+      "FROM relations r "
+        "INNER JOIN wanted x ON r.relation_id = x.id AND r.version = x.version "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(k) as keys, array_agg(v) as values "
+           "FROM relation_tags WHERE r.relation_id=relation_id AND r.version=version) t ON true "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(member_type) as types, "
+           "array_agg(member_role) as roles, array_agg(member_id) as ids "
+           "FROM "
+             "(SELECT * FROM relation_members WHERE r.relation_id=relation_id AND r.version=version "
+              "ORDER BY sequence_id) x) rm ON true "
+      "ORDER BY r.relation_id, r.version")
+    PREPARE_ARGS(("bigint[]")("bigint[]"));
+
+  // --------------------------- CHANGESET EXTRACTION -----------------------
+  m_connection.prepare("extract_changesets",
+     "SELECT c.id, "
+       "to_char(c.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at, "
+       "to_char(c.closed_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS closed_at, "
+       "c.min_lat, c.max_lat, c.min_lon, c.max_lon, c.num_changes, t.keys as tag_k, "
+       "t.values as tag_v, cc.author_id as comment_author_id, "
+       "cc.display_name as comment_display_name, "
+       "cc.body as comment_body, cc.created_at as comment_created_at "
+     "FROM changesets c "
+      "LEFT JOIN LATERAL "
+          "(SELECT array_agg(k) AS keys, array_agg(v) AS values "
+          "FROM changeset_tags WHERE c.id=changeset_id ) t ON true "
+      "LEFT JOIN LATERAL "
+        "(SELECT array_agg(author_id) as author_id, array_agg(display_name) "
+        "as display_name, array_agg(body) as body, "
+        "array_agg(created_at) as created_at FROM "
+          "(SELECT cc.author_id, u.display_name, cc.body, "
+          "to_char(cc.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at "
+          "FROM changeset_comments cc JOIN users u ON cc.author_id = u.id "
+          "where cc.changeset_id=c.id AND cc.visible ORDER BY cc.created_at) x "
+        ")cc ON true "
+     "WHERE c.id = ANY($1)")
+    PREPARE_ARGS(("bigint[]"));
 
   // clang-format on
 }
