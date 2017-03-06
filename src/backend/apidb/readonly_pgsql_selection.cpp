@@ -1,4 +1,5 @@
 #include "cgimap/backend/apidb/readonly_pgsql_selection.hpp"
+#include "cgimap/backend/apidb/common_pgsql_selection.hpp"
 #include "cgimap/backend/apidb/apidb.hpp"
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
 #include "cgimap/logger.hpp"
@@ -425,6 +426,72 @@ void fetch_historic(
   }
 }
 
+// use this to remove current versions from the historical set of elements.
+struct erase_formatter
+  : public output_formatter {
+
+  erase_formatter(
+    output_formatter &fmt,
+    std::set<osm_edition_t> &sel_historic_nodes,
+    std::set<osm_edition_t> &sel_historic_ways,
+    std::set<osm_edition_t> &sel_historic_relations)
+    : m_fmt(fmt)
+    , m_sel_historic_nodes(sel_historic_nodes)
+    , m_sel_historic_ways(sel_historic_ways)
+    , m_sel_historic_relations(sel_historic_relations) {
+  }
+  virtual ~erase_formatter() {}
+
+  mime::type mime_type() const { return m_fmt.mime_type(); }
+
+  void start_document(const std::string &generator) {
+    m_fmt.start_document(generator);
+  }
+
+  void end_document() { m_fmt.end_document(); }
+  void error(const std::exception &e) { m_fmt.error(e); }
+  void write_bounds(const bbox &bounds) { m_fmt.write_bounds(bounds); }
+  void start_element_type(element_type type) { m_fmt.start_element_type(type); }
+  void end_element_type(element_type type) { m_fmt.end_element_type(type); }
+  void flush() { m_fmt.flush(); }
+  void error(const std::string &str) { m_fmt.error(str); }
+
+  void write_node(
+    const element_info &elem, double lon, double lat, const tags_t &tags) {
+
+    m_sel_historic_nodes.erase(osm_edition_t(elem.id, elem.version));
+    m_fmt.write_node(elem, lon, lat, tags);
+  }
+
+  void write_way(
+    const element_info &elem, const nodes_t &nodes, const tags_t &tags) {
+
+    m_sel_historic_ways.erase(osm_edition_t(elem.id, elem.version));
+    m_fmt.write_way(elem, nodes, tags);
+  }
+
+  void write_relation(
+    const element_info &elem, const members_t &members, const tags_t &tags) {
+
+    m_sel_historic_relations.erase(osm_edition_t(elem.id, elem.version));
+    m_fmt.write_relation(elem, members, tags);
+  }
+
+  void write_changeset(
+    const changeset_info &elem,
+    const tags_t &tags,
+    bool include_comments,
+    const comments_t &comments,
+    const boost::posix_time::ptime &now) {
+    m_fmt.write_changeset(elem, tags, include_comments, comments, now);
+  }
+
+private:
+  output_formatter &m_fmt;
+  std::set<osm_edition_t> &m_sel_historic_nodes, &m_sel_historic_ways,
+    &m_sel_historic_relations;
+};
+
 } // anonymous namespace
 
 readonly_pgsql_selection::readonly_pgsql_selection(
@@ -439,9 +506,19 @@ void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
   // get all nodes - they already contain their own tags, so
   // we don't need to do anything else.
   logger::message("Fetching nodes");
-  std::set<osm_edition_t> historic_nodes = sel_historic_nodes;
-  fetch_current_in_chunks<node_from_db>(sel_nodes, historic_nodes, formatter, cc, w);
-  fetch_historic<node_from_db>(historic_nodes, formatter, cc, w);
+  if (!sel_nodes.empty()) {
+    erase_formatter eraser(formatter, sel_historic_nodes, sel_historic_ways,
+      sel_historic_relations);
+    extract_nodes(w.prepared("extract_nodes")(sel_nodes).exec(), eraser, cc);
+  }
+  if (!sel_historic_nodes.empty()) {
+    std::vector<osm_nwr_id_t> ids, versions;
+    for (const auto &ed : sel_historic_nodes) {
+      ids.emplace_back(ed.first);
+      versions.emplace_back(ed.second);
+    }
+    extract_nodes(w.prepared("extract_historic_nodes")(ids)(versions).exec(), formatter, cc);
+  }
 }
 
 void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
@@ -971,6 +1048,29 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
       "INNER JOIN wanted x ON r.relation_id = x.id AND r.version = x.version "
       "WHERE (r.redaction_id IS NULL OR $3 = TRUE)")
     PREPARE_ARGS(("bigint[]")("bigint[]")("boolean"));
+
+  m_connection.prepare("extract_nodes",
+    "SELECT n.id, n.latitude, n.longitude, n.visible, "
+        "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
+        "n.changeset_id, n.version, array_agg(t.k) as tag_k, array_agg(t.v) as tag_v "
+      "FROM current_nodes n "
+        "LEFT JOIN current_node_tags t ON n.id=t.node_id "
+      "WHERE n.id = ANY($1) "
+      "GROUP BY n.id ORDER BY n.id")
+    PREPARE_ARGS(("bigint[]"));
+
+  m_connection.prepare("extract_historic_nodes",
+    "WITH wanted(id, version) AS ("
+      "SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))"
+    ")"
+    "SELECT n.node_id AS id, n.latitude, n.longitude, n.visible, "
+        "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
+        "n.changeset_id, n.version, array_agg(t.k) as tag_k, array_agg(t.v) as tag_v "
+      "FROM nodes n "
+        "INNER JOIN wanted x ON n.node_id = x.id AND n.version = x.version "
+        "LEFT JOIN node_tags t ON n.node_id = t.node_id AND n.version = t.version "
+      "GROUP BY n.node_id, n.version ORDER BY n.node_id, n.version")
+    PREPARE_ARGS(("bigint[]")("bigint[]"));
 
   // clang-format on
 }
