@@ -174,6 +174,7 @@ libcgimap_apidb_la_SOURCES=\
 	backend/apidb/apidb.cpp \
 	backend/apidb/writeable_pgsql_selection.cpp \
 	backend/apidb/readonly_pgsql_selection.cpp \
+	backend/apidb/common_pgsql_selection.cpp \
 	backend/apidb/changeset.cpp \
 	backend/apidb/quad_tile.cpp \
 	backend/apidb/oauth_store.cpp \

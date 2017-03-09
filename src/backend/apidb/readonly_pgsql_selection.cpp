@@ -1,4 +1,5 @@
 #include "cgimap/backend/apidb/readonly_pgsql_selection.hpp"
+#include "cgimap/backend/apidb/common_pgsql_selection.hpp"
 #include "cgimap/backend/apidb/apidb.hpp"
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
 #include "cgimap/logger.hpp"
@@ -111,319 +112,71 @@ inline int insert_results_of(pqxx::work &w, std::stringstream &query,
   return insert_results(w.exec(query), elems);
 }
 
-void extract_elem(const pqxx::result::tuple &row, element_info &elem,
-                  cache<osm_changeset_id_t, changeset> &changeset_cache) {
-  elem.id = row["id"].as<osm_nwr_id_t>();
-  elem.version = row["version"].as<int>();
-  elem.timestamp = row["timestamp"].c_str();
-  elem.changeset = row["changeset_id"].as<osm_changeset_id_t>();
-  elem.visible = row["visible"].as<bool>();
-  shared_ptr<changeset const> cs = changeset_cache.get(elem.changeset);
-  if (cs->data_public) {
-    elem.uid = cs->user_id;
-    elem.display_name = cs->display_name;
-  } else {
-    elem.uid = boost::none;
-    elem.display_name = boost::none;
+// use this to remove current versions from the historical set of elements.
+struct erase_formatter
+  : public output_formatter {
+
+  erase_formatter(
+    output_formatter &fmt,
+    std::set<osm_edition_t> &sel_historic_nodes,
+    std::set<osm_edition_t> &sel_historic_ways,
+    std::set<osm_edition_t> &sel_historic_relations)
+    : m_fmt(fmt)
+    , m_sel_historic_nodes(sel_historic_nodes)
+    , m_sel_historic_ways(sel_historic_ways)
+    , m_sel_historic_relations(sel_historic_relations) {
   }
-}
+  virtual ~erase_formatter() {}
 
-template <typename T>
-boost::optional<T> extract_optional(const pqxx::result::field &f) {
-  if (f.is_null()) {
-    return boost::none;
-  } else {
-    return f.as<T>();
-  }
-}
+  mime::type mime_type() const { return m_fmt.mime_type(); }
 
-void extract_changeset(const pqxx::result::tuple &row,
-                       changeset_info &elem,
-                       cache<osm_changeset_id_t, changeset> &changeset_cache) {
-  elem.id = row["id"].as<osm_changeset_id_t>();
-  elem.created_at = row["created_at"].c_str();
-  elem.closed_at = row["closed_at"].c_str();
-
-  shared_ptr<changeset const> cs = changeset_cache.get(elem.id);
-  if (cs->data_public) {
-    elem.uid = cs->user_id;
-    elem.display_name = cs->display_name;
-  } else {
-    elem.uid = boost::none;
-    elem.display_name = boost::none;
+  void start_document(const std::string &generator) {
+    m_fmt.start_document(generator);
   }
 
-  boost::optional<int64_t> min_lat = extract_optional<int64_t>(row["min_lat"]);
-  boost::optional<int64_t> max_lat = extract_optional<int64_t>(row["max_lat"]);
-  boost::optional<int64_t> min_lon = extract_optional<int64_t>(row["min_lon"]);
-  boost::optional<int64_t> max_lon = extract_optional<int64_t>(row["max_lon"]);
+  void end_document() { m_fmt.end_document(); }
+  void error(const std::exception &e) { m_fmt.error(e); }
+  void write_bounds(const bbox &bounds) { m_fmt.write_bounds(bounds); }
+  void start_element_type(element_type type) { m_fmt.start_element_type(type); }
+  void end_element_type(element_type type) { m_fmt.end_element_type(type); }
+  void flush() { m_fmt.flush(); }
+  void error(const std::string &str) { m_fmt.error(str); }
 
-  if (bool(min_lat) && bool(min_lon) && bool(max_lat) && bool(max_lon)) {
-    elem.bounding_box = bbox(double(*min_lat) / SCALE,
-                             double(*min_lon) / SCALE,
-                             double(*max_lat) / SCALE,
-                             double(*max_lon) / SCALE);
-  } else {
-    elem.bounding_box = boost::none;
+  void write_node(
+    const element_info &elem, double lon, double lat, const tags_t &tags) {
+
+    m_sel_historic_nodes.erase(osm_edition_t(elem.id, elem.version));
+    m_fmt.write_node(elem, lon, lat, tags);
   }
 
-  elem.num_changes = row["num_changes"].as<size_t>();
-}
+  void write_way(
+    const element_info &elem, const nodes_t &nodes, const tags_t &tags) {
 
-void extract_tags(const pqxx::result &res, tags_t &tags) {
-  tags.clear();
-  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
-       ++itr) {
-    tags.push_back(std::make_pair(std::string((*itr)["k"].c_str()),
-                                  std::string((*itr)["v"].c_str())));
-  }
-}
-
-void extract_nodes(const pqxx::result &res, nodes_t &nodes) {
-  nodes.clear();
-  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
-       ++itr) {
-    nodes.push_back((*itr)[0].as<osm_nwr_id_t>());
-  }
-}
-
-element_type type_from_name(const char *name) {
-  element_type type;
-
-  switch (name[0]) {
-  case 'N':
-  case 'n':
-    type = element_type_node;
-    break;
-
-  case 'W':
-  case 'w':
-    type = element_type_way;
-    break;
-
-  case 'R':
-  case 'r':
-    type = element_type_relation;
-    break;
-
-  default:
-    // in case the name match isn't exhaustive...
-    throw std::runtime_error(
-        "Unexpected name not matched to type in type_from_name().");
+    m_sel_historic_ways.erase(osm_edition_t(elem.id, elem.version));
+    m_fmt.write_way(elem, nodes, tags);
   }
 
-  return type;
-}
+  void write_relation(
+    const element_info &elem, const members_t &members, const tags_t &tags) {
 
-void extract_members(const pqxx::result &res, members_t &members) {
-  member_info member;
-  members.clear();
-  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
-       ++itr) {
-    member.type = type_from_name((*itr)["member_type"].c_str());
-    member.ref = (*itr)["member_id"].as<osm_nwr_id_t>();
-    member.role = (*itr)["member_role"].c_str();
-    members.push_back(member);
-  }
-}
-
-void extract_comments(const pqxx::result &res, comments_t &comments) {
-  changeset_comment_info comment;
-  comments.clear();
-  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
-       ++itr) {
-    comment.author_id = (*itr)["author_id"].as<osm_user_id_t>();
-    comment.author_display_name = (*itr)["display_name"].c_str();
-    comment.body = (*itr)["body"].c_str();
-    comment.created_at = (*itr)["created_at"].c_str();
-    comments.push_back(comment);
-  }
-}
-
-struct node_from_db {
-  element_info elem;
-  double lon, lat;
-  tags_t tags;
-
-  void extract(const pqxx::result::tuple &row, output_formatter &formatter,
-               bool historic, cache<osm_changeset_id_t, changeset> &cc,
-               pqxx::work &w) {
-    extract_elem(row, elem, cc);
-    lon = double(row["longitude"].as<int64_t>()) / (SCALE);
-    lat = double(row["latitude"].as<int64_t>()) / (SCALE);
-    if (historic) {
-      extract_tags(w.prepared("extract_historic_node_tags")(elem.id)(elem.version).exec(), tags);
-    } else {
-      extract_tags(w.prepared("extract_node_tags")(elem.id).exec(), tags);
-    }
-    formatter.write_node(elem, lon, lat, tags);
+    m_sel_historic_relations.erase(osm_edition_t(elem.id, elem.version));
+    m_fmt.write_relation(elem, members, tags);
   }
 
-  static void current_query(
-    stringstream &query, set<osm_nwr_id_t>::const_iterator begin,
-    set<osm_nwr_id_t>::const_iterator end) {
-
-    query << "select cur.id, cur.latitude, cur.longitude, cur.visible, "
-      "to_char(cur.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as "
-      "timestamp, cur.changeset_id, cur.version from current_nodes cur"
-      " where cur.id in (";
-    std::copy(begin, end, infix_ostream_iterator<osm_nwr_id_t>(query, ","));
-    query << ")";
+  void write_changeset(
+    const changeset_info &elem,
+    const tags_t &tags,
+    bool include_comments,
+    const comments_t &comments,
+    const boost::posix_time::ptime &now) {
+    m_fmt.write_changeset(elem, tags, include_comments, comments, now);
   }
 
-  static void historic_query(
-    stringstream &query, osm_nwr_id_t id, osm_version_t version) {
-
-    query << "select hst.node_id AS id, hst.latitude, hst.longitude, hst.visible, "
-      "to_char(hst.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as "
-      "timestamp, hst.changeset_id, hst.version from nodes hst "
-      "where "
-      "hst.node_id = " << id << " and "
-      "hst.version = " << version;
-  }
+private:
+  output_formatter &m_fmt;
+  std::set<osm_edition_t> &m_sel_historic_nodes, &m_sel_historic_ways,
+    &m_sel_historic_relations;
 };
-
-struct way_from_db {
-  element_info elem;
-  nodes_t nodes;
-  tags_t tags;
-
-  void extract(const pqxx::result::tuple &row, output_formatter &formatter,
-               bool historic, cache<osm_changeset_id_t, changeset> &cc,
-               pqxx::work &w) {
-    extract_elem(row, elem, cc);
-    if (historic) {
-      extract_nodes(w.prepared("extract_historic_way_nds")(elem.id)(elem.version).exec(), nodes);
-      extract_tags(w.prepared("extract_historic_way_tags")(elem.id)(elem.version).exec(), tags);
-    } else {
-      extract_nodes(w.prepared("extract_way_nds")(elem.id).exec(), nodes);
-      extract_tags(w.prepared("extract_way_tags")(elem.id).exec(), tags);
-    }
-    formatter.write_way(elem, nodes, tags);
-  }
-
-  static void current_query(
-    stringstream &query, set<osm_nwr_id_t>::const_iterator begin,
-    set<osm_nwr_id_t>::const_iterator end) {
-
-    query << "select w.id, w.visible, w.version, w.changeset_id, "
-      "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as "
-      "timestamp from current_ways w where w.id in (";
-    std::copy(begin, end, infix_ostream_iterator<osm_nwr_id_t>(query, ","));
-    query << ")";
-  }
-
-  static void historic_query(
-    stringstream &query, osm_nwr_id_t id, osm_version_t version) {
-
-    query << "select hst.way_id AS id, hst.visible, "
-      "to_char(hst.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as "
-      "timestamp, hst.changeset_id, hst.version from ways hst "
-      "where "
-      "hst.way_id = " << id << " and "
-      "hst.version = " << version;
-  }
-};
-
-struct rel_from_db {
-  element_info elem;
-  members_t members;
-  tags_t tags;
-
-  void extract(const pqxx::result::tuple &row, output_formatter &formatter,
-               bool historic, cache<osm_changeset_id_t, changeset> &cc,
-               pqxx::work &w) {
-    extract_elem(row, elem, cc);
-    if (historic) {
-      extract_members(w.prepared("extract_historic_relation_members")(elem.id)(elem.version).exec(), members);
-      extract_tags(w.prepared("extract_historic_relation_tags")(elem.id)(elem.version).exec(), tags);
-    } else {
-      extract_members(w.prepared("extract_relation_members")(elem.id).exec(), members);
-      extract_tags(w.prepared("extract_relation_tags")(elem.id).exec(), tags);
-    }
-    formatter.write_relation(elem, members, tags);
-  }
-
-  static void current_query(
-    stringstream &query, set<osm_nwr_id_t>::const_iterator begin,
-    set<osm_nwr_id_t>::const_iterator end) {
-
-    query << "select r.id, r.visible, r.version, r.changeset_id, "
-      "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as "
-      "timestamp from current_relations r where r.id in (";
-    std::copy(begin, end, infix_ostream_iterator<osm_nwr_id_t>(query, ","));
-    query << ")";
-  }
-
-  static void historic_query(
-    stringstream &query, osm_nwr_id_t id, osm_version_t version) {
-
-    query << "select hst.relation_id AS id, hst.visible, "
-      "to_char(hst.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as "
-      "timestamp, hst.changeset_id, hst.version from relations hst "
-      "where "
-      "hst.relation_id = " << id << " and "
-      "hst.version = " << version;
-  }
-};
-
-template <typename T>
-void output_chunk(pqxx::result &res, std::set<osm_edition_t> &versions,
-                  output_formatter &formatter, bool historic,
-                  cache<osm_changeset_id_t, changeset> &cc, pqxx::work &w) {
-  T t;
-
-  for (pqxx::result::const_iterator itr = res.begin();
-       itr != res.end(); ++itr) {
-    t.extract(*itr, formatter, historic, cc, w);
-    versions.erase(std::make_pair(t.elem.id, t.elem.version));
-  }
-}
-
-template <typename T>
-void fetch_current_in_chunks(
-  const std::set<osm_nwr_id_t> &sel,
-  std::set<osm_edition_t> &editions,
-  output_formatter &formatter,
-  cache<osm_changeset_id_t, changeset> &cc, pqxx::work &w) {
-
-  // fetch in chunks...
-  set<osm_nwr_id_t>::const_iterator prev_itr = sel.begin();
-  size_t chunk_i = 0;
-  for (set<osm_nwr_id_t>::const_iterator n_itr = sel.begin();; ++n_itr, ++chunk_i) {
-    bool at_end = n_itr == sel.end();
-    if ((chunk_i >= STRIDE) || ((chunk_i > 0) && at_end)) {
-      stringstream query;
-      T::current_query(query, prev_itr, n_itr);
-      pqxx::result res = w.exec(query);
-
-      output_chunk<T>(res, editions, formatter, false, cc, w);
-
-      chunk_i = 0;
-      prev_itr = n_itr;
-    }
-
-    if (at_end)
-      break;
-  }
-}
-
-template <typename T>
-void fetch_historic(
-  const std::set<osm_edition_t> &sel, output_formatter &formatter,
-  cache<osm_changeset_id_t, changeset> &cc, pqxx::work &w) {
-  std::set<osm_edition_t> empty;
-
-  for (set<osm_edition_t>::const_iterator n_itr = sel.begin();
-       n_itr != sel.end(); ++n_itr) {
-
-    stringstream query;
-    T::historic_query(query, n_itr->first, n_itr->second);
-    pqxx::result res = w.exec(query);
-
-    output_chunk<T>(res, empty, formatter, true, cc, w);
-  }
-}
 
 } // anonymous namespace
 
@@ -439,9 +192,19 @@ void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
   // get all nodes - they already contain their own tags, so
   // we don't need to do anything else.
   logger::message("Fetching nodes");
-  std::set<osm_edition_t> historic_nodes = sel_historic_nodes;
-  fetch_current_in_chunks<node_from_db>(sel_nodes, historic_nodes, formatter, cc, w);
-  fetch_historic<node_from_db>(historic_nodes, formatter, cc, w);
+  if (!sel_nodes.empty()) {
+    erase_formatter eraser(formatter, sel_historic_nodes, sel_historic_ways,
+      sel_historic_relations);
+    extract_nodes(w.prepared("extract_nodes")(sel_nodes).exec(), eraser, cc);
+  }
+  if (!sel_historic_nodes.empty()) {
+    std::vector<osm_nwr_id_t> ids, versions;
+    for (const auto &ed : sel_historic_nodes) {
+      ids.emplace_back(ed.first);
+      versions.emplace_back(ed.second);
+    }
+    extract_nodes(w.prepared("extract_historic_nodes")(ids)(versions).exec(), formatter, cc);
+  }
 }
 
 void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
@@ -449,60 +212,42 @@ void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
   // way nodes and tags are on a separate connections so that the
   // entire result set can be streamed from a single query.
   logger::message("Fetching ways");
-
-  std::set<osm_edition_t> historic_ways = sel_historic_ways;
-  fetch_current_in_chunks<way_from_db>(sel_ways, historic_ways, formatter, cc, w);
-  fetch_historic<way_from_db>(historic_ways, formatter, cc, w);
+  if (!sel_ways.empty()) {
+    erase_formatter eraser(formatter, sel_historic_nodes, sel_historic_ways,
+      sel_historic_relations);
+    extract_ways(w.prepared("extract_ways")(sel_ways).exec(), eraser, cc);
+  }
+  if (!sel_historic_ways.empty()) {
+    std::vector<osm_nwr_id_t> ids, versions;
+    for (const auto &ed : sel_historic_ways) {
+      ids.emplace_back(ed.first);
+      versions.emplace_back(ed.second);
+    }
+    extract_ways(w.prepared("extract_historic_ways")(ids)(versions).exec(), formatter, cc);
+  }
 }
 
 void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
   logger::message("Fetching relations");
-
-  std::set<osm_edition_t> historic_relations = sel_historic_relations;
-  fetch_current_in_chunks<rel_from_db>(sel_relations, historic_relations, formatter, cc, w);
-  fetch_historic<rel_from_db>(historic_relations, formatter, cc, w);
+  if (!sel_relations.empty()) {
+    erase_formatter eraser(formatter, sel_historic_nodes, sel_historic_ways,
+      sel_historic_relations);
+    extract_relations(w.prepared("extract_relations")(sel_relations).exec(), eraser, cc);
+  }
+  if (!sel_historic_relations.empty()) {
+    std::vector<osm_nwr_id_t> ids, versions;
+    for (const auto &ed : sel_historic_relations) {
+      ids.emplace_back(ed.first);
+      versions.emplace_back(ed.second);
+    }
+    extract_relations(w.prepared("extract_historic_relations")(ids)(versions).exec(), formatter, cc);
+  }
 }
 
 void readonly_pgsql_selection::write_changesets(output_formatter &formatter,
                                                 const pt::ptime &now) {
-  changeset_info elem;
-  tags_t tags;
-  comments_t comments;
-
-  // fetch in chunks...
-  set<osm_changeset_id_t>::iterator prev_itr = sel_changesets.begin();
-  size_t chunk_i = 0;
-  for (set<osm_changeset_id_t>::iterator n_itr = sel_changesets.begin();;
-       ++n_itr, ++chunk_i) {
-    bool at_end = n_itr == sel_changesets.end();
-    if ((chunk_i >= STRIDE) || ((chunk_i > 0) && at_end)) {
-      stringstream query;
-      query << "SELECT id, "
-            << "to_char(created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at, "
-            << "to_char(closed_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS closed_at, "
-            << "min_lat, max_lat, min_lon, max_lon, "
-            << "num_changes "
-            << "FROM changesets WHERE id IN (";
-      std::copy(prev_itr, n_itr, infix_ostream_iterator<osm_changeset_id_t>(query, ","));
-      query << ")";
-
-      pqxx::result changesets = w.exec(query);
-      for (pqxx::result::const_iterator itr = changesets.begin();
-           itr != changesets.end(); ++itr) {
-        extract_changeset(*itr, elem, cc);
-        extract_tags(w.prepared("extract_changeset_tags")(elem.id).exec(), tags);
-        extract_comments(w.prepared("extract_changeset_comments")(elem.id).exec(), comments);
-        elem.comments_count = comments.size();
-        formatter.write_changeset(elem, tags, include_changeset_discussions, comments, now);
-      }
-
-      chunk_i = 0;
-      prev_itr = n_itr;
-    }
-
-    if (at_end)
-      break;
-  }
+  pqxx::result changesets = w.prepared("extract_changesets")(sel_changesets).exec();
+  extract_changesets(changesets, formatter, cc, now, include_changeset_discussions);
 }
 
 data_selection::visibility_t
@@ -795,38 +540,6 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
   m_connection.prepare("visible_relation",
     "SELECT visible FROM current_relations WHERE id = $1")PREPARE_ARGS(("bigint"));
 
-  // extraction functions for child information
-  m_connection.prepare("extract_way_nds",
-    "SELECT node_id "
-      "FROM current_way_nodes "
-      "WHERE way_id=$1 "
-      "ORDER BY sequence_id ASC")
-    PREPARE_ARGS(("bigint"));
-  m_connection.prepare("extract_relation_members",
-    "SELECT member_type, member_id, member_role "
-      "FROM current_relation_members "
-      "WHERE relation_id=$1 "
-      "ORDER BY sequence_id ASC")
-    PREPARE_ARGS(("bigint"));
-  m_connection.prepare("extract_changeset_comments",
-    "SELECT cc.author_id, u.display_name, cc.body, "
-        "to_char(cc.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at "
-      "FROM changeset_comments cc "
-      "JOIN users u ON cc.author_id = u.id "
-      "WHERE cc.changeset_id=$1 AND cc.visible "
-      "ORDER BY cc.created_at ASC")
-    PREPARE_ARGS(("bigint"));
-
-  // extraction functions for tags
-  m_connection.prepare("extract_node_tags",
-    "SELECT k, v FROM current_node_tags WHERE node_id=$1")PREPARE_ARGS(("bigint"));
-  m_connection.prepare("extract_way_tags",
-    "SELECT k, v FROM current_way_tags WHERE way_id=$1")PREPARE_ARGS(("bigint"));
-  m_connection.prepare("extract_relation_tags",
-    "SELECT k, v FROM current_relation_tags WHERE relation_id=$1")PREPARE_ARGS(("bigint"));
-  m_connection.prepare("extract_changeset_tags",
-    "SELECT k, v FROM changeset_tags WHERE changeset_id=$1")PREPARE_ARGS(("bigint"));
-
   // selecting a set of objects as a list
   m_connection.prepare("select_nodes",
     "SELECT id "
@@ -902,29 +615,6 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
         "AND rm.relation_id = ANY($1)")
     PREPARE_ARGS(("bigint[]"));
 
-  m_connection.prepare("extract_historic_node_tags",
-    "SELECT k, v FROM node_tags WHERE node_id=$1 AND version=$2")
-    PREPARE_ARGS(("bigint")("bigint"));
-  m_connection.prepare("extract_historic_way_tags",
-    "SELECT k, v FROM way_tags WHERE way_id=$1 AND version=$2")
-    PREPARE_ARGS(("bigint")("bigint"));
-  m_connection.prepare("extract_historic_relation_tags",
-    "SELECT k, v FROM relation_tags WHERE relation_id=$1 AND version=$2")
-    PREPARE_ARGS(("bigint")("bigint"));
-
-  m_connection.prepare("extract_historic_way_nds",
-    "SELECT node_id "
-      "FROM way_nodes "
-      "WHERE way_id=$1 AND version=$2 "
-      "ORDER BY sequence_id ASC")
-    PREPARE_ARGS(("bigint")("bigint"));
-  m_connection.prepare("extract_historic_relation_members",
-    "SELECT member_type, member_id, member_role "
-      "FROM relation_members "
-      "WHERE relation_id=$1 AND version=$2 "
-      "ORDER BY sequence_id ASC")
-    PREPARE_ARGS(("bigint")("bigint"));
-
   m_connection.prepare("select_nodes_history",
     "SELECT node_id AS id, version "
       "FROM nodes "
@@ -971,6 +661,138 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
       "INNER JOIN wanted x ON r.relation_id = x.id AND r.version = x.version "
       "WHERE (r.redaction_id IS NULL OR $3 = TRUE)")
     PREPARE_ARGS(("bigint[]")("bigint[]")("boolean"));
+
+  // ------------------------- NODE EXTRACTION -------------------------------
+  m_connection.prepare("extract_nodes",
+    "SELECT n.id, n.latitude, n.longitude, n.visible, "
+        "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
+        "n.changeset_id, n.version, array_agg(t.k) as tag_k, array_agg(t.v) as tag_v "
+      "FROM current_nodes n "
+        "LEFT JOIN current_node_tags t ON n.id=t.node_id "
+      "WHERE n.id = ANY($1) "
+      "GROUP BY n.id ORDER BY n.id")
+    PREPARE_ARGS(("bigint[]"));
+
+  m_connection.prepare("extract_historic_nodes",
+    "WITH wanted(id, version) AS ("
+      "SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))"
+    ")"
+    "SELECT n.node_id AS id, n.latitude, n.longitude, n.visible, "
+        "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
+        "n.changeset_id, n.version, array_agg(t.k) as tag_k, array_agg(t.v) as tag_v "
+      "FROM nodes n "
+        "INNER JOIN wanted x ON n.node_id = x.id AND n.version = x.version "
+        "LEFT JOIN node_tags t ON n.node_id = t.node_id AND n.version = t.version "
+      "GROUP BY n.node_id, n.version ORDER BY n.node_id, n.version")
+    PREPARE_ARGS(("bigint[]")("bigint[]"));
+
+  // -------------------------- WAY EXTRACTION -------------------------------
+  m_connection.prepare("extract_ways",
+    "SELECT w.id, w.visible, "
+        "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
+        "w.changeset_id, w.version, t.keys as tag_k, t.values as tag_v, "
+        "wn.node_ids as node_ids "
+      "FROM current_ways w "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(k) as keys, array_agg(v) as values "
+           "FROM current_way_tags WHERE w.id=way_id) t ON true "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(node_id) as node_ids "
+           "FROM "
+             "(SELECT node_id FROM current_way_nodes WHERE w.id=way_id "
+              "ORDER BY sequence_id) x) wn ON true "
+      "WHERE w.id = ANY($1) "
+      "ORDER BY w.id")
+    PREPARE_ARGS(("bigint[]"));
+
+  m_connection.prepare("extract_historic_ways",
+    "WITH wanted(id, version) AS ("
+      "SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))"
+    ")"
+    "SELECT w.way_id AS id, w.visible, "
+        "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
+        "w.changeset_id, w.version, t.keys as tag_k, t.values as tag_v, "
+        "wn.node_ids as node_ids "
+      "FROM ways w "
+        "INNER JOIN wanted x ON w.way_id = x.id AND w.version = x.version "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(k) as keys, array_agg(v) as values "
+           "FROM way_tags WHERE w.way_id=way_id AND w.version=version) t ON true "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(node_id) as node_ids "
+           "FROM "
+             "(SELECT node_id FROM way_nodes "
+              "WHERE w.way_id=way_id AND w.version=version "
+              "ORDER BY sequence_id) x) wn ON true "
+      "ORDER BY w.way_id, w.version")
+    PREPARE_ARGS(("bigint[]")("bigint[]"));
+
+  // --------------------- RELATION EXTRACTION -------------------------------
+  m_connection.prepare("extract_relations",
+    "SELECT r.id, r.visible, "
+        "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
+        "r.changeset_id, r.version, t.keys as tag_k, t.values as tag_v, "
+        "rm.types as member_types, rm.ids as member_ids, rm.roles as member_roles "
+      "FROM current_relations r "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(k) as keys, array_agg(v) as values "
+           "FROM current_relation_tags WHERE r.id=relation_id) t ON true "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(member_type) as types, "
+           "array_agg(member_role) as roles, array_agg(member_id) as ids "
+           "FROM "
+             "(SELECT * FROM current_relation_members WHERE r.id=relation_id "
+              "ORDER BY sequence_id) x) rm ON true "
+      "WHERE r.id = ANY($1) "
+      "ORDER BY r.id")
+    PREPARE_ARGS(("bigint[]"));
+
+  m_connection.prepare("extract_historic_relations",
+    "WITH wanted(id, version) AS ("
+      "SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))"
+    ")"
+    "SELECT r.relation_id AS id, r.visible, "
+        "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
+        "r.changeset_id, r.version, t.keys as tag_k, t.values as tag_v, "
+        "rm.types as member_types, rm.ids as member_ids, rm.roles as member_roles "
+      "FROM relations r "
+        "INNER JOIN wanted x ON r.relation_id = x.id AND r.version = x.version "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(k) as keys, array_agg(v) as values "
+           "FROM relation_tags WHERE r.relation_id=relation_id AND r.version=version) t ON true "
+        "LEFT JOIN LATERAL "
+          "(SELECT array_agg(member_type) as types, "
+           "array_agg(member_role) as roles, array_agg(member_id) as ids "
+           "FROM "
+             "(SELECT * FROM relation_members WHERE r.relation_id=relation_id AND r.version=version "
+              "ORDER BY sequence_id) x) rm ON true "
+      "ORDER BY r.relation_id, r.version")
+    PREPARE_ARGS(("bigint[]")("bigint[]"));
+
+  // --------------------------- CHANGESET EXTRACTION -----------------------
+  m_connection.prepare("extract_changesets",
+     "SELECT c.id, "
+       "to_char(c.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at, "
+       "to_char(c.closed_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS closed_at, "
+       "c.min_lat, c.max_lat, c.min_lon, c.max_lon, c.num_changes, t.keys as tag_k, "
+       "t.values as tag_v, cc.author_id as comment_author_id, "
+       "cc.display_name as comment_display_name, "
+       "cc.body as comment_body, cc.created_at as comment_created_at "
+     "FROM changesets c "
+      "LEFT JOIN LATERAL "
+          "(SELECT array_agg(k) AS keys, array_agg(v) AS values "
+          "FROM changeset_tags WHERE c.id=changeset_id ) t ON true "
+      "LEFT JOIN LATERAL "
+        "(SELECT array_agg(author_id) as author_id, array_agg(display_name) "
+        "as display_name, array_agg(body) as body, "
+        "array_agg(created_at) as created_at FROM "
+          "(SELECT cc.author_id, u.display_name, cc.body, "
+          "to_char(cc.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at "
+          "FROM changeset_comments cc JOIN users u ON cc.author_id = u.id "
+          "where cc.changeset_id=c.id AND cc.visible ORDER BY cc.created_at) x "
+        ")cc ON true "
+     "WHERE c.id = ANY($1)")
+    PREPARE_ARGS(("bigint[]"));
 
   // clang-format on
 }
