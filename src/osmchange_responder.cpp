@@ -35,6 +35,12 @@ bool operator<(const element &a, const element &b) {
   } else if (cmp > 0) {
     return false;
 
+  } else if (a.m_info.version < b.m_info.version) {
+    return true;
+
+  } else if (a.m_info.version > b.m_info.version) {
+    return false;
+
   } else if (a.m_type < b.m_type) {
     return true;
 
