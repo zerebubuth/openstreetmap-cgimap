@@ -111,7 +111,11 @@ struct sorting_formatter
     const members_t &members,
     const tags_t &tags) {
 
-    throw std::runtime_error("sorting_formatter::write_relation unimplemented");
+    element rel{
+      element_type_relation, elem, tags, element::lonlat{},
+        nodes_t(), members};
+
+    m_elements.emplace_back(std::move(rel));
   }
 
   void write_changeset(
