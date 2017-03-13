@@ -9,6 +9,10 @@
   </changeset>
   <changeset id="2" created_at="2015-09-05T20:16:06Z" closed_at="2015-09-05T20:16:06Z" comments_count="0" num_changes="0"/>
   <changeset id="3" user="FakeUser2" uid="2" created_at="2017-03-13T09:52:00Z" closed_at="2017-03-13T09:52:00Z" comments_count="0" num_changes="0"/>
+  <changeset id="4" user="FakeUser2" uid="2" created_at="2017-03-13T15:34:00Z" closed_at="2017-03-13T15:34:00Z" comments_count="0" num_changes="0"/>
+  <changeset id="5" user="FakeUser2" uid="2" created_at="2017-03-13T15:35:00Z" closed_at="2017-03-13T15:35:00Z" comments_count="0" num_changes="0"/>
   <node id="1" version="1" changeset="1" lat="0.0" lon="0.0" user="FakeUser1" uid="1" visible="true" timestamp="2015-08-09T10:33:13Z"/>
-  <node id="2" version="1" changeset="2" lat="0.0" lon="0.0" user="FakeUser2" uid="2" visible="true" timestamp="2017-03-13T09:52:00Z"/>
+  <node id="2" version="1" changeset="3" lat="0.0" lon="0.0" user="FakeUser2" uid="2" visible="true" timestamp="2017-03-13T09:52:00Z"/>
+  <node id="3" version="1" changeset="4" lat="0.0" lon="0.0" user="FakeUser2" uid="2" visible="true" timestamp="2017-03-13T15:34:00Z"/>
+  <node id="3" version="2" changeset="5" lat="0.0" lon="0.0" user="FakeUser2" uid="2" visible="true" timestamp="2017-03-13T15:35:00Z"/>
 </osm>
