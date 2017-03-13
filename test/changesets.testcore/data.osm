@@ -1,12 +1,14 @@
 <osm version="0.6" generator="by hand">
   <changeset id="1" user="FakeUser1" uid="1" created_at="2015-08-09T10:33:13Z" closed_at="2015-08-09T11:33:13Z" min_lat="51.5288506" min_lon="-0.1465242" max_lat="51.528862" max_lon="-0.1464925" comments_count="1" num_changes="1">
-	 <tag k="created_by" v="manually"/>
-	 <discussion>
-		<comment date="2015-08-09T10:33:13Z" uid="1" user="FakeUser1">
-		  <text>First post!!!!</text>
-		</comment>
-	 </discussion>
+    <tag k="created_by" v="manually"/>
+    <discussion>
+      <comment date="2015-08-09T10:33:13Z" uid="1" user="FakeUser1">
+        <text>First post!!!!</text>
+      </comment>
+    </discussion>
   </changeset>
   <changeset id="2" created_at="2015-09-05T20:16:06Z" closed_at="2015-09-05T20:16:06Z" comments_count="0" num_changes="0"/>
+  <changeset id="3" user="FakeUser2" uid="2" created_at="2017-03-13T09:52:00Z" closed_at="2017-03-13T09:52:00Z" comments_count="0" num_changes="0"/>
   <node id="1" version="1" changeset="1" lat="0.0" lon="0.0" user="FakeUser1" uid="1" visible="true" timestamp="2015-08-09T10:33:13Z"/>
+  <node id="2" version="1" changeset="2" lat="0.0" lon="0.0" user="FakeUser2" uid="2" visible="true" timestamp="2017-03-13T09:52:00Z"/>
 </osm>

@@ -22,12 +22,9 @@ changeset_download_responder::changeset_download_responder(
     throw http::server_error("Data source does not support historical versions.");
   }
 
-  //vector<osm_changeset_id_t> ids;
-  //ids.push_back(id);
-
-  vector<osm_edition_t> nodes;
-  nodes.emplace_back(1, 1);
-  sel->select_historical_nodes(nodes);
+  vector<osm_changeset_id_t> ids;
+  ids.push_back(id);
+  sel->select_historical_by_changesets(ids);
 }
 
 changeset_download_responder::~changeset_download_responder() {}
