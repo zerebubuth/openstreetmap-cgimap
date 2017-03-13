@@ -11,8 +11,26 @@
   <changeset id="3" user="FakeUser2" uid="2" created_at="2017-03-13T09:52:00Z" closed_at="2017-03-13T09:52:00Z" comments_count="0" num_changes="0"/>
   <changeset id="4" user="FakeUser2" uid="2" created_at="2017-03-13T15:34:00Z" closed_at="2017-03-13T15:34:00Z" comments_count="0" num_changes="0"/>
   <changeset id="5" user="FakeUser2" uid="2" created_at="2017-03-13T15:35:00Z" closed_at="2017-03-13T15:35:00Z" comments_count="0" num_changes="0"/>
+  <changeset id="6" user="FakeUser2" uid="2" created_at="2017-03-13T15:43:00Z" closed_at="2017-03-13T15:43:00Z" comments_count="0" num_changes="0"/>
+  <changeset id="7" user="FakeUser2" uid="2" created_at="2017-03-13T15:44:00Z" closed_at="2017-03-13T15:44:00Z" comments_count="0" num_changes="0"/>
+  <changeset id="8" user="FakeUser2" uid="2" created_at="2017-03-13T15:45:00Z" closed_at="2017-03-13T15:45:00Z" comments_count="0" num_changes="0"/>
   <node id="1" version="1" changeset="1" lat="0.0" lon="0.0" user="FakeUser1" uid="1" visible="true" timestamp="2015-08-09T10:33:13Z"/>
   <node id="2" version="1" changeset="3" lat="0.0" lon="0.0" user="FakeUser2" uid="2" visible="true" timestamp="2017-03-13T09:52:00Z"/>
   <node id="3" version="1" changeset="4" lat="0.0" lon="0.0" user="FakeUser2" uid="2" visible="true" timestamp="2017-03-13T15:34:00Z"/>
   <node id="3" version="2" changeset="5" lat="0.0" lon="0.0" user="FakeUser2" uid="2" visible="true" timestamp="2017-03-13T15:35:00Z"/>
+  <way id="1" version="1" changeset="6" user="FakeUser2" uid="2" visible="true" timestamp="2017-03-13T15:43:00Z">
+    <nd ref="1"/>
+    <nd ref="2"/>
+    <nd ref="3"/>
+  </way>
+  <way id="1" version="2" changeset="7" user="FakeUser2" uid="2" visible="true" timestamp="2017-03-13T15:44:00Z">
+    <nd ref="1"/>
+    <nd ref="2"/>
+    <nd ref="3"/>
+  </way>
+  <way id="1" version="3" changeset="8" user="FakeUser2" uid="2" visible="true" timestamp="2017-03-13T15:45:00Z">
+    <nd ref="1"/>
+    <nd ref="2"/>
+    <nd ref="3"/>
+  </way>
 </osm>

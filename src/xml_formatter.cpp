@@ -76,6 +76,12 @@ void xml_formatter::start_action(action_type type) {
   case action_type_create:
     writer->start("create");
     break;
+  case action_type_modify:
+    writer->start("modify");
+    break;
+  case action_type_delete:
+    writer->start("delete");
+    break;
   }
 }
 

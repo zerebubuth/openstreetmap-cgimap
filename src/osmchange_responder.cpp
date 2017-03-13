@@ -52,34 +52,34 @@ struct sorting_formatter
   virtual ~sorting_formatter() {}
 
   mime::type mime_type() const {
-    throw std::runtime_error("unimplemented");
+    throw std::runtime_error("sorting_formatter::mime_type unimplemented");
   }
 
   void start_document(
     const std::string &generator,
     const std::string &root_name) {
 
-    throw std::runtime_error("unimplemented");
+    throw std::runtime_error("sorting_formatter::start_document unimplemented");
   }
 
   void end_document() {
-    throw std::runtime_error("unimplemented");
+    throw std::runtime_error("sorting_formatter::end_document unimplemented");
   }
 
   void error(const std::exception &e) {
-    throw std::runtime_error("unimplemented");
+    throw std::runtime_error("sorting_formatter::error unimplemented");
   }
 
   void write_bounds(const bbox &bounds) {
-    throw std::runtime_error("unimplemented");
+    throw std::runtime_error("sorting_formatter::write_bounds unimplemented");
   }
 
   void start_element_type(element_type type) {
-    throw std::runtime_error("unimplemented");
+    throw std::runtime_error("sorting_formatter::start_element_type unimplemented");
   }
 
   void end_element_type(element_type type) {
-    throw std::runtime_error("unimplemented");
+    throw std::runtime_error("sorting_formatter::end_element_type unimplemented");
   }
 
   void write_node(
@@ -99,7 +99,11 @@ struct sorting_formatter
     const nodes_t &nodes,
     const tags_t &tags) {
 
-    throw std::runtime_error("unimplemented");
+    element way{
+      element_type_way, elem, tags, element::lonlat{},
+        nodes, members_t()};
+
+    m_elements.emplace_back(std::move(way));
   }
 
   void write_relation(
@@ -107,7 +111,7 @@ struct sorting_formatter
     const members_t &members,
     const tags_t &tags) {
 
-    throw std::runtime_error("unimplemented");
+    throw std::runtime_error("sorting_formatter::write_relation unimplemented");
   }
 
   void write_changeset(
@@ -117,16 +121,16 @@ struct sorting_formatter
     const comments_t &comments,
     const boost::posix_time::ptime &now) {
 
-    throw std::runtime_error("unimplemented");
+    throw std::runtime_error("sorting_formatter::write_changeset unimplemented");
   }
 
   void flush() {
-    throw std::runtime_error("unimplemented");
+    throw std::runtime_error("sorting_formatter::flush unimplemented");
   }
 
   // write an error to the output stream
   void error(const std::string &) {
-    throw std::runtime_error("unimplemented");
+    throw std::runtime_error("sorting_formatter::error unimplemented");
   }
 
   void start_action(action_type type) {
@@ -148,6 +152,16 @@ struct sorting_formatter
         fmt.start_action(action_type_create);
         write_element(e, fmt);
         fmt.end_action(action_type_create);
+
+      } else if (e.m_info.visible) {
+        fmt.start_action(action_type_modify);
+        write_element(e, fmt);
+        fmt.end_action(action_type_modify);
+
+      } else {
+        fmt.start_action(action_type_delete);
+        write_element(e, fmt);
+        fmt.end_action(action_type_delete);
       }
     }
   }
@@ -159,6 +173,12 @@ private:
     switch (e.m_type) {
     case element_type_node:
       fmt.write_node(e.m_info, e.m_lonlat.m_lon, e.m_lonlat.m_lat, e.m_tags);
+      break;
+    case element_type_way:
+      fmt.write_way(e.m_info, e.m_nds, e.m_tags);
+      break;
+    case element_type_relation:
+      fmt.write_relation(e.m_info, e.m_members, e.m_tags);
       break;
     }
   }
