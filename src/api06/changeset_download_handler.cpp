@@ -24,6 +24,13 @@ changeset_download_responder::changeset_download_responder(
 
   vector<osm_changeset_id_t> ids;
   ids.push_back(id);
+
+  if (sel->select_changesets(ids) == 0) {
+    std::ostringstream error;
+    error << "Changeset " << id << " was not found.";
+    throw http::not_found(error.str());
+  }
+
   sel->select_historical_by_changesets(ids);
 }
 
