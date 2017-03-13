@@ -88,6 +88,8 @@ void xml_formatter::start_action(action_type type) {
 void xml_formatter::end_action(action_type type) {
   switch (type) {
   case action_type_create:
+  case action_type_modify:
+  case action_type_delete:
     writer->end();
     break;
   }

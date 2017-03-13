@@ -1,0 +1,13 @@
+Request-Method: GET
+Request-URI: /api/0.6/changeset/9/download
+Date: 2017-03-13T16:12:00Z
+---
+Status: 200 OK
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition: 
+---
+<osmChange version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <delete>
+    <way id="1" version="4" changeset="9" user="FakeUser2" uid="2" visible="false" timestamp="2017-03-13T16:12:00Z"/>
+  </delete>
+</osmChange>
