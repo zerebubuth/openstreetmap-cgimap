@@ -729,8 +729,11 @@ private:
     for (const auto &row : map_of<T>()) {
       const T &t = row.second;
       if (changesets.count(t.m_info.changeset) > 0) {
-        found_eds.emplace(t.m_info.id, t.m_info.version);
-        selected += 1;
+        bool is_redacted = bool(t.m_info.redaction);
+        if (!is_redacted || m_redactions_visible) {
+          found_eds.emplace(t.m_info.id, t.m_info.version);
+          selected += 1;
+        }
       }
     }
 
