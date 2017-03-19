@@ -198,6 +198,75 @@ void test_changeset_select_relation(test_database &tdb) {
     "relation 1, version 1 in changeset 1");
 }
 
+void test_changeset_redacted(test_database &tdb) {
+  tdb.run_sql(
+    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+    "VALUES "
+    "  (1, 'user_1@example.com', '', '2017-03-19T20:18:00Z', 'user_1', true); "
+
+    "INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes) "
+    "VALUES "
+    "  (1, 1, '2017-03-19T20:18:00Z', '2017-03-19T20:18:00Z', 1),"
+    "  (2, 1, '2017-03-19T20:18:00Z', '2017-03-19T20:18:00Z', 1),"
+    "  (3, 1, '2017-03-19T20:18:00Z', '2017-03-19T20:18:00Z', 1);"
+
+    "INSERT INTO redactions (id, title, created_at, updated_at, user_id) "
+    "VALUES "
+    "  (1, 'test redaction', '2017-03-19T20:18:00Z', '2017-03-19T20:18:00Z', 1); "
+
+    "INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, \"timestamp\", tile, version) "
+    " VALUES "
+    "  (1, 0, 0, 3, true,  '2017-03-19T20:18:00Z', 3221225472, 3); "
+
+    "INSERT INTO nodes (node_id, latitude, longitude, changeset_id, visible, "
+    "                   \"timestamp\", tile, version, redaction_id) "
+    "VALUES "
+    "  (1, 0, 0, 1, true,  '2017-03-19T20:18:00Z', 3221225472, 1, NULL),"
+    "  (1, 0, 0, 2, true,  '2017-03-19T20:18:00Z', 3221225472, 2, 1),"
+    "  (1, 0, 0, 3, true,  '2017-03-19T20:18:00Z', 3221225472, 3, NULL);"
+    );
+  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+
+  assert_equal<bool>(sel->supports_changesets(), true,
+    "apidb should support changesets.");
+  assert_equal<bool>(sel->supports_historical_versions(), true,
+    "apidb should support historical versions.");
+
+  {
+    std::vector<osm_changeset_id_t> ids;
+    ids.push_back(2);
+    int num = sel->select_historical_by_changesets(ids);
+    assert_equal<int>(num, 0, "number of elements (0) selected by regular user from changeset 2");
+
+    test_formatter f;
+    sel->write_nodes(f);
+    assert_equal<size_t>(f.m_nodes.size(), 0,
+      "number of nodes (0) written for regular user from changeset 2");
+  }
+
+  // as a moderator, should have all redacted elements shown.
+  sel->set_redactions_visible(true);
+  {
+    std::vector<osm_changeset_id_t> ids;
+    ids.push_back(2);
+    int num = sel->select_historical_by_changesets(ids);
+    assert_equal<int>(num, 1, "number of elements (1) selected by moderator from changeset 2");
+
+    test_formatter f;
+    sel->write_nodes(f);
+    assert_equal<size_t>(f.m_nodes.size(), 1,
+      "number of nodes (1) written for moderator from changeset 2");
+
+    assert_equal<test_formatter::node_t>(
+      f.m_nodes.front(),
+      test_formatter::node_t(
+        element_info(1, 2, 2, "2017-03-19T20:18:00Z", 1, std::string("user_1"), true),
+        0.0, 0.0,
+        tags_t()),
+      "redacted node 1 in changeset 2");
+  }
+}
+
 } // anonymous namespace
 
 int main(int, char **) {
@@ -213,6 +282,9 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(test_database&)>(
         &test_changeset_select_relation));
+
+    tdb.run(boost::function<void(test_database&)>(
+        &test_changeset_redacted));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;
