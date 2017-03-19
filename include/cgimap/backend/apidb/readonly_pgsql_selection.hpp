@@ -55,6 +55,7 @@ public:
   int select_ways_with_history(const std::vector<osm_nwr_id_t> &);
   int select_relations_with_history(const std::vector<osm_nwr_id_t> &);
   void set_redactions_visible(bool);
+  int select_historical_by_changesets(const std::vector<osm_changeset_id_t> &);
 
   /**
    * a factory for the creation of read-only selections, so it

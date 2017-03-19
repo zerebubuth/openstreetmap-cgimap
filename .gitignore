@@ -37,6 +37,7 @@ test/test_apidb_backend_nodes
 test/test_apidb_backend_oauth
 test/test_apidb_backend_historic
 test/test_apidb_backend_changesets
+test/test_apidb_backend_changeset_downloads
 test/test_parse_id_list
 test/test_http
 test/test_oauth
