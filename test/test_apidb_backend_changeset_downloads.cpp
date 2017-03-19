@@ -142,6 +142,62 @@ void test_changeset_select_way(test_database &tdb) {
     "way 1, version 2 in changeset 1");
 }
 
+void test_changeset_select_relation(test_database &tdb) {
+  tdb.run_sql(
+    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+    "VALUES "
+    "  (1, 'user_1@example.com', '', '2017-03-19T20:15:00Z', 'user_1', true); "
+
+    "INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes) "
+    "VALUES "
+    "  (1, 1, '2017-03-19T19:13:00Z', '2017-03-19T20:15:00Z', 1),"
+    "  (2, 1, '2017-03-19T19:13:00Z', '2017-03-19T20:15:00Z', 1);"
+
+    "INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, \"timestamp\", tile, version) "
+    " VALUES "
+    "  (1, 90000000, 90000000, 1, true,  '2017-03-19T20:15:00Z', 3229120632, 1); "
+
+    "INSERT INTO nodes (node_id, latitude, longitude, changeset_id, visible, "
+    "                   \"timestamp\", tile, version, redaction_id) "
+    "VALUES "
+    "  (1, 90000000, 90000000, 1, true,  '2017-03-19T20:15:00Z', 3229120632, 1, NULL);"
+
+    "INSERT INTO relations (relation_id, changeset_id, \"timestamp\", "
+    "                       visible, version, redaction_id) "
+    "VALUES "
+    "  (1, 2, '2017-03-19T20:15:00Z', true, 1, NULL); "
+
+    "INSERT INTO relation_members (relation_id, member_type, member_id, "
+    "                              member_role, sequence_id, version) "
+    "VALUES "
+    "  (1, 'Node', 1, 'foo', 1, 1); "
+    );
+  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+
+  assert_equal<bool>(sel->supports_changesets(), true,
+    "apidb should support changesets.");
+  assert_equal<bool>(sel->supports_historical_versions(), true,
+    "apidb should support historical versions.");
+
+  std::vector<osm_changeset_id_t> ids;
+  ids.push_back(2);
+  int num = sel->select_historical_by_changesets(ids);
+  assert_equal<int>(num, 1, "number of relations (1) selected from changeset 1");
+
+  test_formatter f;
+  sel->write_relations(f);
+  assert_equal<size_t>(f.m_relations.size(), 1,
+    "number of relations (1) written from changeset 1");
+
+  assert_equal<test_formatter::relation_t>(
+    f.m_relations.front(),
+    test_formatter::relation_t(
+      element_info(1, 1, 2, "2017-03-19T20:15:00Z", 1, std::string("user_1"), true),
+      members_t{member_info(element_type_node, 1, "foo")},
+      tags_t()),
+    "relation 1, version 1 in changeset 1");
+}
+
 } // anonymous namespace
 
 int main(int, char **) {
@@ -154,6 +210,9 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(test_database&)>(
         &test_changeset_select_way));
+
+    tdb.run(boost::function<void(test_database&)>(
+        &test_changeset_select_relation));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;
