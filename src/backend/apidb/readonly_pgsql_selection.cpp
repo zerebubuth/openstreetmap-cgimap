@@ -484,10 +484,10 @@ int readonly_pgsql_selection::select_historical_by_changesets(
       sel_historic_nodes);
     selected += insert_results(w.prepared("select_ways_by_changesets")
       (ids)(m_redactions_visible).exec(),
-      sel_historic_nodes);
+      sel_historic_ways);
     selected += insert_results(w.prepared("select_relations_by_changesets")
       (ids)(m_redactions_visible).exec(),
-      sel_historic_nodes);
+      sel_historic_relations);
   }
 
   return selected;
