@@ -1,0 +1,21 @@
+# relations?relations= call for a moderator should return everything.
+Request-Method: GET
+Request-URI: /api/0.6/relations?relations=1v1,1v2&show_redactions=true
+Http-Host: cgimap.example.com
+Date: 2017-02-03T17:26:00Z
+Http-Authorization: OAuth realm="http://cgimap.example.com/api/0.6/relations", oauth_consumer_key="heqfjrcolc", oauth_token="scgncknxqr", oauth_nonce="s5ikn2rEXP8sEY4yWioL", oauth_timestamp="1486142760", oauth_signature_method="HMAC-SHA1", oauth_version="1.0", oauth_signature="OQMjxYyDtdnAkz%2Fz%2FYVN7cQDj6w%3D"
+---
+Status: 200 OK
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition:
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <relation id="1" version="1" changeset="1" user="foo" uid="1" visible="false"
+       timestamp="2017-01-21T18:06:00Z">
+    <member type="node" ref="1" role=""/>
+  </relation>
+  <relation id="1" version="2" changeset="2" user="foo" uid="1" visible="true"
+       timestamp="2017-01-21T18:07:00Z">
+    <member type="node" ref="1" role=""/>
+  </relation>
+</osm>

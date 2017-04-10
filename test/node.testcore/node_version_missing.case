@@ -1,0 +1,6 @@
+# node call with a specific version number where the version does not exist
+Request-Method: GET
+Request-URI: /api/0.6/node/3/3
+---
+Status: 404 Not Found
+---

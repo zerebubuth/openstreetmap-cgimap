@@ -1,0 +1,6 @@
+# request for the history of a non-existent relation returns Not Found
+Request-Method: GET
+Request-URI: /api/0.6/relation/3/history
+---
+Status: 404 Not Found
+---

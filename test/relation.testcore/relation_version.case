@@ -1,0 +1,14 @@
+# relation call with a specific version number pointing to an existing version
+Request-Method: GET
+Request-URI: /api/0.6/relation/2/1
+---
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition:
+Status: 200 OK
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <relation id="2" version="1" changeset="3" user="foo" uid="1" visible="true" timestamp="2013-01-12T00:00:00Z">
+    <member type="node" ref="2" role="stop"/>
+    <tag k="foo" v="bar"/>
+  </relation>
+</osm>

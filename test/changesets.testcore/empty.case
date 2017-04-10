@@ -1,0 +1,10 @@
+# empty changeset - the changeset exists, so returns an empty response.
+Request-Method: GET
+Request-URI: /api/0.6/changeset/2/download
+Date: 2017-03-13T16:58:00Z
+---
+Status: 200 OK
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition: 
+---
+<osmChange version="0.6" generator="***" copyright="***" attribution="***" license="***"/>

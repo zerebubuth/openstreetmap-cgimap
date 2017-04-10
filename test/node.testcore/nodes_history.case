@@ -1,0 +1,12 @@
+# nodes call returns node versions
+Request-Method: GET
+Request-URI: /api/0.6/nodes?nodes=3v1,3
+---
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition:
+Status: 200 OK
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <node id="3" version="1" changeset="3" lat="0.0000000" lon="0.0000000" user="foo" uid="1" visible="true" timestamp="2012-09-25T00:00:59Z"/>
+  <node id="3" version="2" changeset="3" user="foo" uid="1" visible="false" timestamp="2012-09-25T00:01:00Z"/>
+</osm>

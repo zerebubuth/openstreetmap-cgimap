@@ -1,0 +1,16 @@
+# node/history call for a moderator should return everything.
+Request-Method: GET
+Request-URI: /api/0.6/node/1/history?show_redactions=true
+Http-Host: cgimap.example.com
+Date: 2017-02-03T17:11:00Z
+Http-Authorization: OAuth realm="http://cgimap.example.com/api/0.6/node/1/history", oauth_consumer_key="heqfjrcolc", oauth_token="scgncknxqr", oauth_nonce="ylxApRr7uw94cVGRwxbx", oauth_timestamp="1486141860", oauth_signature_method="HMAC-SHA1", oauth_version="1.0", oauth_signature="IcgPfe%2F4C4Rh5HlnZQg388bn5Fo%3D"
+---
+Status: 200 OK
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition:
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <node id="1" version="1" changeset="1" user="foo" uid="1" visible="false" timestamp="2017-01-15T16:52:00Z"/>
+  <node id="1" version="2" changeset="2" lat="0.0000000" lon="0.0000000" user="foo" uid="1" visible="true" timestamp="2017-01-15T16:53:00Z"/>
+  <node id="1" version="3" changeset="1" lat="0.0000000" lon="0.0000000" user="foo" uid="1" visible="true" timestamp="2017-01-15T16:54:00Z"/>
+</osm>

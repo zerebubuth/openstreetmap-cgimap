@@ -1,0 +1,12 @@
+Request-Method: GET
+Request-URI: /api/0.6/map
+HTTP-X-Error-Format: xml
+---
+Status: 200 OK
+Content-Type: text/xml; charset=utf-8
+---
+<?xml version="1.0" encoding="utf-8" ?>
+<osmError>
+  <status>400 Bad Request</status>
+  <message>The parameter bbox is required, and must be of the form min_lon,min_lat,max_lon,max_lat.</message>
+</osmError>

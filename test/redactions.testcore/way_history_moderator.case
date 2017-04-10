@@ -1,0 +1,25 @@
+# way/history call for a moderator should return everything.
+Request-Method: GET
+Request-URI: /api/0.6/way/1/history?show_redactions=true
+Http-Host: cgimap.example.com
+Date: 2017-02-03T17:13:00Z
+Http-Authorization: OAuth realm="http://cgimap.example.com/api/0.6/way/1/history", oauth_consumer_key="heqfjrcolc", oauth_token="scgncknxqr", oauth_nonce="EsHFWX0Ru330NARIKysY", oauth_timestamp="1486141980", oauth_signature_method="HMAC-SHA1", oauth_version="1.0", oauth_signature="Mkx4Sg%2BXWQkd7P0lhmPyszo2zIo%3D"
+---
+Status: 200 OK
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition:
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <way id="1" version="1" changeset="1" user="foo" uid="1" visible="false"
+       timestamp="2017-01-21T18:02:00Z">
+    <nd ref="1"/>
+  </way>
+  <way id="1" version="2" changeset="2" user="foo" uid="1" visible="true"
+       timestamp="2017-01-21T18:03:00Z">
+    <nd ref="1"/>
+  </way>
+  <way id="1" version="3" changeset="1" user="foo" uid="1" visible="true"
+       timestamp="2017-01-21T18:04:00Z">
+    <nd ref="1"/>
+  </way>
+</osm>

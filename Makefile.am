@@ -30,12 +30,15 @@ cgimap_api06_include_HEADERS = \
 	include/cgimap/api06/handler_utils.hpp \
 	include/cgimap/api06/map_handler.hpp \
 	include/cgimap/api06/node_handler.hpp \
+	include/cgimap/api06/node_version_handler.hpp \
 	include/cgimap/api06/nodes_handler.hpp \
 	include/cgimap/api06/relation_full_handler.hpp \
 	include/cgimap/api06/relation_handler.hpp \
+	include/cgimap/api06/relation_version_handler.hpp \
 	include/cgimap/api06/relations_handler.hpp \
 	include/cgimap/api06/way_full_handler.hpp \
 	include/cgimap/api06/way_handler.hpp \
+	include/cgimap/api06/way_version_handler.hpp \
 	include/cgimap/api06/ways_handler.hpp
 
 if ENABLE_APIDB
@@ -46,7 +49,8 @@ cgimap_apidb_include_HEADERS = \
 	include/cgimap/backend/apidb/changeset.hpp \
 	include/cgimap/backend/apidb/quad_tile.hpp \
 	include/cgimap/backend/apidb/readonly_pgsql_selection.hpp \
-	include/cgimap/backend/apidb/writeable_pgsql_selection.hpp
+	include/cgimap/backend/apidb/writeable_pgsql_selection.hpp \
+	include/cgimap/backend/apidb/utils.hpp
 endif
 
 if ENABLE_PGSNAPSHOT
@@ -74,7 +78,8 @@ endif
 TESTS = test/map.testcore test/node.testcore test/anon.testcore test/way.testcore test/relation.testcore
 TESTS += test/empty.testcore test/way_full.testcore test/relation_full.testcore
 TESTS += test/test_parse_id_list test/test_oauth test/test_http test/test_parse_time
-TESTS += test/changesets.testcore
+TESTS += test/changesets.testcore test/message.testcore test/routes.testcore
+TESTS += test/redactions.testcore
 if ENABLE_EXPERIMENTAL
 TESTS += test/node_ways.testcore
 endif
@@ -82,7 +87,12 @@ if HAVE_YAJL
 TESTS += test/json.testcore
 endif
 if ENABLE_APIDB
-TESTS += test/test_apidb_backend
+TESTS += \
+	test/test_apidb_backend_nodes \
+	test/test_apidb_backend_oauth \
+	test/test_apidb_backend_historic \
+	test/test_apidb_backend_changesets \
+	test/test_apidb_backend_changeset_downloads
 endif
 TEST_EXTENSIONS = .testcore
 TESTCORE_LOG_COMPILER = test/test_core

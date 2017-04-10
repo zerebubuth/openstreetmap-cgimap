@@ -22,7 +22,11 @@ Currently, CGImap implements:
 * single node, way and relation fetches,
 * multiple node, way and relation fetches,
 * the "full" way and relation calls and
-* changset metadata downloads, including discussions.
+* changset metadata downloads, including discussions,
+* single node, way and relation history calls,
+* single node, way and relation specific version fetches,
+* multiple node, way and relation specific version fetches,
+* changeset downloads.
 
 Note that changeset metadata isn't the same thing as the changeset
 download (i.e: `osmChange` data).
@@ -30,14 +34,16 @@ download (i.e: `osmChange` data).
 Requirements
 ------------
 
+CGImap uses a PostgreSQL server for either the APIDB or PGsnapshot backends. A minimum server version of 9.4 is required.
+
 CGImap depends on the following libraries. Versions used during
 development are in brackets. Other versions may work, but YMMV.
 
-* libxml2     (2.9.1+dfsg1-3ubuntu4.7)
-* libpqxx-4.0 (4.0.1+dfsg-3ubuntu1)
-* libfcgi     (2.4.0-8.1ubuntu5)
-* libboost    (1.54.0-4ubuntu3.1)
-* libcrypto++ (5.6.1-8)
+* libxml2     (2.9.3+dfsg1-1ubuntu0.2)
+* libpqxx-4.0 (4.0.1+dfsg-3ubuntu2)
+* libfcgi     (2.4.0-8.3)
+* libboost    (1.58.0+dfsg-5ubuntu3.1)
+* libcrypto++ (5.6.1-9)
 
 If you're running a Debian or Ubuntu system these can be installed
 using the following command:
@@ -81,12 +87,21 @@ directory.
 Setup
 -----
 
-A sample lighttd.conf file is provided, which can be used to test. To test
-CGImap with lighttpd use the supplied config file with lighttpd and run cgimap
-on the command line with a command like
+To run CGImap binary, use the command:
 
     ./openstreetmap-cgimap --socket :54321 --backend apidb \
       --dbname openstreetmap
+
+Note: CGImap has to be used with a fastcgi enabled server like lighttpd, apache2 etc. See the instructions below to use CGImap with lighttpd or apache2.
+
+A sample lighttd.conf file is provided, which can be used to test. To test
+CGImap with lighttpd you will need to install lighttpd:
+
+	sudo apt-get install lighttpd
+
+Edit the supplied lighttpd.config file to include your CGImap path and run it with the lighttpd like
+
+	/usr/sbin/lighttpd -f lighttpd.conf
 
 You can then access the running instance at `http://localhost:31337/api/0.6/map?bbox=...`
 

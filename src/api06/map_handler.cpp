@@ -17,7 +17,7 @@ using std::vector;
 
 namespace api06 {
 
-map_responder::map_responder(mime::type mt, bbox b, factory_ptr &x)
+map_responder::map_responder(mime::type mt, bbox b, data_selection_ptr &x)
     : osm_current_responder(mt, x, boost::optional<bbox>(b)) {
   // create temporary tables of nodes, ways and relations which
   // are in or used by elements in the bbox
@@ -55,7 +55,7 @@ string map_handler::log_name() const {
           bounds.minlat % bounds.maxlon % bounds.maxlat).str();
 }
 
-responder_ptr_t map_handler::responder(factory_ptr &x) const {
+responder_ptr_t map_handler::responder(data_selection_ptr &x) const {
   return responder_ptr_t(new map_responder(mime_type, bounds, x));
 }
 

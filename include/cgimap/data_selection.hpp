@@ -87,6 +87,49 @@ public:
   /// select relations which are members of selected relations
   virtual void select_relations_members_of_relations() = 0;
 
+  /******************* historical functions ********************/
+
+  /// returns true if this data selections supports selecting historical
+  /// versions of nodes, ways and relations. if it returns false, then calling
+  /// any of the select_historical_* functions will throw an exception.
+  virtual bool supports_historical_versions();
+
+  /// select the given (id, version) versions of nodes, returning the number of
+  /// nodes added to the selected set.
+  virtual int select_historical_nodes(const std::vector<osm_edition_t> &);
+
+  /// select all versions of the node with the given IDs. returns the number of
+  /// distinct (id, version) pairs selected.
+  virtual int select_nodes_with_history(const std::vector<osm_nwr_id_t> &);
+
+  /// select the given (id, version) versions of ways, returning the number of
+  /// ways added to the selected set.
+  virtual int select_historical_ways(const std::vector<osm_edition_t> &);
+
+  /// select all versions of the way with the given IDs. returns the number of
+  /// distinct (id, version) pairs selected.
+  virtual int select_ways_with_history(const std::vector<osm_nwr_id_t> &);
+
+  /// select the given (id, version) versions of relations, returning the number
+  /// of relations added to the selected set.
+  virtual int select_historical_relations(const std::vector<osm_edition_t> &);
+
+  /// select all versions of the relation with the given IDs. returns the number
+  /// of distinct (id, version) pairs selected.
+  virtual int select_relations_with_history(const std::vector<osm_nwr_id_t> &);
+
+  /// if true, then include redactions in returned data. should default to
+  /// false.
+  virtual void set_redactions_visible(bool visible);
+
+  /// select all versions of nodes, ways and relations which were added as part
+  /// of any of the changesets with the given IDs. returns the number of
+  /// distinct (element_type, id, version) tuples selected.
+  virtual int select_historical_by_changesets(
+    const std::vector<osm_changeset_id_t> &);
+
+  /****************** changeset functions **********************/
+
   /// does this data selection support changesets?
   virtual bool supports_changesets();
 
@@ -114,6 +157,11 @@ public:
   };
 };
 
+// parses psql array based on specs given
+// https://www.postgresql.org/docs/current/static/arrays.html#ARRAYS-IO
+std::vector<std::string> psql_array_to_vector(std::string str);
+
 typedef boost::shared_ptr<data_selection::factory> factory_ptr;
+typedef boost::shared_ptr<data_selection> data_selection_ptr;
 
 #endif /* DATA_SELECTION_HPP */

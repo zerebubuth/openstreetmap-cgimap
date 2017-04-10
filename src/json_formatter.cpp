@@ -48,18 +48,15 @@ void json_formatter::write_tags(const tags_t &tags) {
   writer->object_key(k); \
   writer->entry_##vt(v);
 
-void json_formatter::start_document(const std::string &generator) {
+void json_formatter::start_document(
+  const std::string &generator, const std::string &root_name) {
   writer->start_object();
 
   WRITE_KV("version", string, "0.6");
-  writer->object_key("generator");
-  writer->entry_string(generator);
-  writer->object_key("copyright");
-  writer->entry_string("OpenStreetMap and contributors");
-  writer->object_key("attribution");
-  writer->entry_string("http://www.openstreetmap.org/copyright");
-  writer->object_key("license");
-  writer->entry_string("http://opendatacommons.org/licenses/odbl/1-0/");
+  WRITE_KV("generator", string, generator);
+  WRITE_KV("copyright", string, "OpenStreetMap and contributors");
+  WRITE_KV("attribution", string, "http://www.openstreetmap.org/copyright");
+  WRITE_KV("license", string, "http://opendatacommons.org/licenses/odbl/1-0/");
 }
 
 void json_formatter::write_bounds(const bbox &bounds) {
@@ -92,6 +89,12 @@ void json_formatter::start_element_type(element_type type) {
 }
 
 void json_formatter::end_element_type(element_type) { writer->end_array(); }
+
+void json_formatter::start_action(action_type type) {
+}
+
+void json_formatter::end_action(action_type type) {
+}
 
 void json_formatter::error(const std::exception &e) {
   writer->start_object();

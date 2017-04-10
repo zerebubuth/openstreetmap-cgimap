@@ -29,6 +29,18 @@ namespace po = boost::program_options;
 
 namespace {
 
+// Rails responds to ActiveRecord::RecordNotFound with an empty HTML document.
+// Arguably, this isn't very useful. But it looks like we might be able to get
+// more information soon:
+// https://github.com/zerebubuth/openstreetmap-cgimap/pull/125#issuecomment-272720417
+void respond_404(const http::not_found &e, request &r) {
+  r.status(e.code());
+  r.add_header("Content-Type", "text/html; charset=utf-8");
+  r.add_header("Content-Length", "0");
+  r.add_header("Cache-Control", "no-cache");
+  r.put("");
+}
+
 void respond_error(const http::exception &e, request &r) {
   logger::message(format("Returning with http error %1% with reason %2%") %
                   e.code() % e.what());
@@ -48,11 +60,18 @@ void respond_error(const http::exception &e, request &r) {
     r.put(ostr.str());
 
   } else {
+    std::string message(e.what());
+    std::ostringstream message_size;
+    message_size << message.size();
+
     r.status(e.code());
-    r.add_header("Content-Type", "text/html");
-    r.add_header("Content-Length", "0");
-    r.add_header("Error", e.what());
+    r.add_header("Content-Type", "text/plain");
+    r.add_header("Content-Length", message_size.str());
+    r.add_header("Error", message);
     r.add_header("Cache-Control", "no-cache");
+
+    // output the message as well
+    r.put(message);
   }
 
   r.finish();
@@ -75,7 +94,7 @@ void process_not_allowed(request &req) {
  */
 boost::tuple<string, size_t>
 process_get_request(request &req, routes &route,
-                    boost::shared_ptr<data_selection::factory> factory,
+                    data_selection_ptr selection,
                     const string &ip, const string &generator) {
   // figure how to handle the request
   handler_ptr_t handler = route(req);
@@ -86,7 +105,7 @@ process_get_request(request &req, routes &route,
                   ip);
 
   // constructor of responder handles dynamic validation (i.e: with db access).
-  responder_ptr_t responder = handler->responder(factory);
+  responder_ptr_t responder = handler->responder(selection);
 
   // get encoding to use
   shared_ptr<http::encoding> encoding = get_encoding(req);
@@ -142,7 +161,7 @@ process_get_request(request &req, routes &route,
  */
 boost::tuple<string, size_t>
 process_head_request(request &req, routes &route,
-                     boost::shared_ptr<data_selection::factory> factory,
+                     data_selection_ptr selection,
                      const string &ip) {
   // figure how to handle the request
   handler_ptr_t handler = route(req);
@@ -159,7 +178,7 @@ process_head_request(request &req, routes &route,
   // them unmodified
 
   // constructor of responder handles dynamic validation (i.e: with db access).
-  responder_ptr_t responder = handler->responder(factory);
+  responder_ptr_t responder = handler->responder(selection);
 
   // get encoding to use
   shared_ptr<http::encoding> encoding = get_encoding(req);
@@ -252,6 +271,20 @@ struct oauth_status_response : public boost::static_visitor<void> {
   }
 };
 
+// look in the request get parameters to see if the user requested that
+// redactions be shown
+bool show_redactions_requested(request &req) {
+  typedef std::vector<std::pair<std::string, std::string> > params_t;
+  std::string decoded = http::urldecode(get_query_string(req));
+  const params_t params = http::parse_params(decoded);
+  auto itr = std::find_if(
+    params.begin(), params.end(),
+    [](const params_t::value_type &param) -> bool {
+      return param.first == "show_redactions" && param.second == "true";
+    });
+  return itr != params.end();
+}
+
 } // anonymous namespace
 
 /**
@@ -265,6 +298,8 @@ void process_request(request &req, rate_limiter &limiter,
     // get the client IP address
     string ip = fcgi_get_env(req, "REMOTE_ADDR");
     string client_key;
+    boost::optional<osm_user_id_t> user_id;
+    std::set<osm_user_role_t> user_roles;
 
     if (store) {
       oauth::validity::validity oauth_valid =
@@ -272,10 +307,11 @@ void process_request(request &req, rate_limiter &limiter,
 
       if (boost::apply_visitor(is_copacetic(), oauth_valid)) {
         string token = boost::apply_visitor(get_oauth_token(), oauth_valid);
-        boost::optional<osm_user_id_t> user_id = store->get_user_id_for_token(token);
+        user_id = store->get_user_id_for_token(token);
 
         if (user_id) {
           client_key = (format("%1%%2%") % user_prefix % (*user_id)).str();
+          user_roles = store->get_roles_for_user(*user_id);
 
         } else {
           // we can get here if there's a valid OAuth signature, with an
@@ -311,18 +347,26 @@ void process_request(request &req, rate_limiter &limiter,
     // get the request method
     string method = fcgi_get_env(req, "REQUEST_METHOD");
 
+    // create a data selection for the request
+    auto selection = factory->make_selection();
+    if (selection->supports_historical_versions() &&
+        show_redactions_requested(req) &&
+        (user_roles.count(osm_user_role_t::moderator) > 0)) {
+      selection->set_redactions_visible(true);
+    }
+
     // data returned from request methods
     string request_name;
-    size_t bytes_written;
+    size_t bytes_written = 0;
 
     // process request
     if (method == "GET") {
       boost::tie(request_name, bytes_written) =
-        process_get_request(req, route, factory, ip, generator);
+        process_get_request(req, route, selection, ip, generator);
 
     } else if (method == "HEAD") {
       boost::tie(request_name, bytes_written) =
-          process_head_request(req, route, factory, ip);
+          process_head_request(req, route, selection, ip);
 
     } else if (method == "OPTIONS") {
       boost::tie(request_name, bytes_written) = process_options_request(req);
@@ -345,9 +389,16 @@ void process_request(request &req, rate_limiter &limiter,
                     (end_time - start_time).total_milliseconds() %
                     bytes_written);
 
+  } catch (const http::not_found &e) {
+    // most errors are passed back giving the client a choice of whether to
+    // receive it as a standard HTTP error or a 200 OK with the body as an XML
+    // encoded description of the error. not found errors are special - they're
+    // passed back just as empty HTML documents.
+    respond_404(e, req);
+
   } catch (const http::exception &e) {
     // errors here occur before we've started writing the response
-    // so we\ can send something helpful back to the client.
+    // so we can send something helpful back to the client.
     respond_error(e, req);
 
   } catch (const std::exception &e) {

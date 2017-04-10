@@ -1,0 +1,25 @@
+# relation/history call for a moderator should return everything.
+Request-Method: GET
+Request-URI: /api/0.6/relation/1/history?show_redactions=true
+Http-Host: cgimap.example.com
+Date: 2017-02-03T17:15:00Z
+Http-Authorization: OAuth realm="http://cgimap.example.com/api/0.6/relation/1/history", oauth_consumer_key="heqfjrcolc", oauth_token="scgncknxqr", oauth_nonce="i89B012BEg0Y5KHiiG5j", oauth_timestamp="1486142100", oauth_signature_method="HMAC-SHA1", oauth_version="1.0", oauth_signature="dI%2F6nEplWIcCUtwXul3LYC8ZuZI%3D"
+---
+Status: 200 OK
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition:
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <relation id="1" version="1" changeset="1" user="foo" uid="1" visible="false"
+       timestamp="2017-01-21T18:06:00Z">
+    <member type="node" ref="1" role=""/>
+  </relation>
+  <relation id="1" version="2" changeset="2" user="foo" uid="1" visible="true"
+       timestamp="2017-01-21T18:07:00Z">
+    <member type="node" ref="1" role=""/>
+  </relation>
+  <relation id="1" version="3" changeset="1" user="foo" uid="1" visible="true"
+       timestamp="2017-01-21T18:08:00Z">
+    <member type="node" ref="1" role=""/>
+  </relation>
+</osm>

@@ -1,4 +1,5 @@
 #include "cgimap/api06/handler_utils.hpp"
+#include "cgimap/api06/id_version_io.hpp"
 #include <boost/foreach.hpp>
 #include <iostream>
 #include <sstream>
@@ -45,7 +46,7 @@ private:
   std::map<std::string, std::string> m_params;
 };
 
-std::vector<osm_nwr_id_t> parse_query_str(std::string query_str) {
+std::vector<api06::id_version> parse_query_str(std::string query_str) {
   test_request req;
   req.set_header("REQUEST_METHOD", "GET");
   req.set_header("QUERY_STRING", query_str);
@@ -59,13 +60,13 @@ void test_parse_returns_no_duplicates() {
 
   // the container returned from parse_id_list_params should not contain
   // any duplicates.
-  std::vector<osm_nwr_id_t> ids = parse_query_str(query_str);
+  std::vector<api06::id_version> ids = parse_query_str(query_str);
 
   if (ids.size() != 1) {
     std::ostringstream err;
     err << "Parsing " << query_str << " as a list of nodes should "
         << "discard duplicates, but got: {";
-    BOOST_FOREACH(osm_nwr_id_t id, ids) {
+    BOOST_FOREACH(api06::id_version id, ids) {
       err << id << ", ";
     }
     err << "}\n";
@@ -81,15 +82,38 @@ void test_parse_negative_nodes() {
     "-176459559,-176459559,416571249,-176459559,-176459559,-176459559,"
     "557671215";
 
-  std::vector<osm_nwr_id_t> ids = parse_query_str(query_str);
+  std::vector<api06::id_version> ids = parse_query_str(query_str);
 
   // maximum ID that postgres can handle is 2^63-1, so that should never
   // be returned by the parsing function.
   const osm_nwr_id_t max_id = std::numeric_limits<int64_t>::max();
-  BOOST_FOREACH(osm_nwr_id_t id, ids) {
-    if (id > max_id) {
+  BOOST_FOREACH(api06::id_version idv, ids) {
+    if (idv.id > max_id) {
       throw std::runtime_error("Found ID > max allowed ID in parsed list.");
     }
+  }
+}
+
+void test_parse_history() {
+  std::string query_str = "nodes=1,1v1";
+
+  std::vector<api06::id_version> ids = parse_query_str(query_str);
+
+  if (ids.size() != 2) {
+    throw std::runtime_error("Expected ID list of size 2.");
+  }
+
+  // NOTE: ID list is uniqued and sorted, which puts the "latest" version
+  // at the end.
+  if (ids[0] != api06::id_version(1, 1)) {
+  std::ostringstream out;
+    out << "Expected ID=1, version=1 to be the first element, but got "
+        << ids[0] << ".";
+    throw std::runtime_error(out.str());
+  }
+
+  if (ids[1] != api06::id_version(1)) {
+    throw std::runtime_error("Expected ID=1, latest version to be the second element.");
   }
 }
 
@@ -99,6 +123,7 @@ int main(int argc, char *argv[]) {
   try {
     test_parse_returns_no_duplicates();
     test_parse_negative_nodes();
+    test_parse_history();
 
   } catch (const std::exception &e) {
     std::cout << "Error: " << e.what() << std::endl;

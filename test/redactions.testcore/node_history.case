@@ -1,0 +1,13 @@
+# node/history call for a regular user should return the deleted version and
+# the current version, but not the redacted version - even if they ask for it.
+Request-Method: GET
+Request-URI: /api/0.6/node/1/history?show_redactions=true
+---
+Status: 200 OK
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition:
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <node id="1" version="1" changeset="1" user="foo" uid="1" visible="false" timestamp="2017-01-15T16:52:00Z"/>
+  <node id="1" version="3" changeset="1" lat="0.0000000" lon="0.0000000" user="foo" uid="1" visible="true" timestamp="2017-01-15T16:54:00Z"/>
+</osm>

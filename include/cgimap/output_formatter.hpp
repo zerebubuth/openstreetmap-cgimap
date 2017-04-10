@@ -20,6 +20,13 @@ enum element_type {
   element_type_relation
 };
 
+// TODO: document me.
+enum action_type {
+  action_type_create,
+  action_type_modify,
+  action_type_delete
+};
+
 struct element_info {
   element_info();
   element_info(const element_info &);
@@ -28,7 +35,8 @@ struct element_info {
                const std::string &timestamp_,
                const boost::optional<osm_user_id_t> &uid_,
                const boost::optional<std::string> &display_name_,
-               bool visible_);
+               bool visible_,
+               boost::optional<osm_redaction_id_t> redaction_ = boost::none);
   // Standard meanings
   osm_nwr_id_t id, version;
   osm_changeset_id_t changeset;
@@ -38,6 +46,10 @@ struct element_info {
   boost::optional<std::string> display_name;
   // If an object has been deleted
   bool visible;
+  // If an object has administratively hidden in a "redaction". note that this
+  // is never output - if it is present, then the element should not be
+  // displayed except to moderators.
+  boost::optional<osm_redaction_id_t> redaction;
 };
 
 struct changeset_info {
@@ -93,6 +105,16 @@ struct member_info {
   element_type type;
   osm_nwr_id_t ref;
   std::string role;
+
+  member_info() {}
+  member_info(element_type type_, osm_nwr_id_t ref_, const std::string &role_)
+    : type(type_), ref(ref_), role(role_) {}
+
+  inline bool operator==(const member_info &other) const {
+    return ((type == other.type) &&
+            (ref == other.ref) &&
+            (role == other.role));
+  }
 };
 
 typedef std::list<osm_nwr_id_t> nodes_t;
@@ -112,10 +134,12 @@ struct output_formatter {
   // produce.
   virtual mime::type mime_type() const = 0;
 
-  // called once to start the document - this will be the first call
-  // to this object after construction. the string passed will be
-  // used as the "generator" header attribute.
-  virtual void start_document(const std::string &generator) = 0;
+  // called once to start the document - this will be the first call to this
+  // object after construction. the first argument will be used as the
+  // "generator" header attribute, and the second will name the root element
+  // (if there is one - JSON doesn't have one), e.g: "osm" or "osmChange".
+  virtual void start_document(
+    const std::string &generator, const std::string &root_name) = 0;
 
   // called once to end the document - there will be no calls after this
   // one. this will be called, even if an error has occurred.
@@ -136,6 +160,10 @@ struct output_formatter {
 
   // end a type of element. this is called once for nodes, ways or relations
   virtual void end_element_type(element_type type) = 0;
+
+  // TODO: document me.
+  virtual void start_action(action_type type) = 0;
+  virtual void end_action(action_type type) = 0;
 
   // output a single node given that node's row and an iterator over its tags
   virtual void write_node(const element_info &elem, double lon, double lat,

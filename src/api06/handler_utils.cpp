@@ -8,14 +8,18 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
 
+#include <boost/spirit/include/qi.hpp>
+#include <boost/spirit/include/phoenix_core.hpp>
+#include <boost/spirit/include/phoenix_operator.hpp>
+#include <boost/fusion/include/adapt_struct.hpp>
+
 using std::list;
 using std::string;
 using std::map;
 using std::vector;
 using std::pair;
-using boost::lexical_cast;
-using boost::bad_lexical_cast;
-namespace al = boost::algorithm;
+namespace qi = boost::spirit::qi;
+namespace ascii = boost::spirit::ascii;
 
 namespace {
 struct first_equals {
@@ -27,53 +31,74 @@ struct first_equals {
 };
 } // anonymous namespace
 
+BOOST_FUSION_ADAPT_STRUCT(
+  api06::id_version,
+  (uint64_t, id)
+  (boost::optional<uint32_t>, version)
+  )
+
+namespace {
+
+template <typename Iterator>
+struct id_version_parser : qi::grammar<Iterator, api06::id_version(), ascii::space_type> {
+  id_version_parser() : id_version_parser::base_type(root) {
+    using qi::lit;
+    using qi::uint_;
+    using boost::spirit::ulong_long;
+
+    root = ulong_long >> -(lit("v") >> uint_);
+  }
+
+  qi::rule<Iterator, api06::id_version(), ascii::space_type> root;
+};
+
+template <typename Iterator>
+struct id_version_list_parser
+  : qi::grammar<Iterator, std::vector<api06::id_version>(), ascii::space_type> {
+  id_version_list_parser() : id_version_list_parser::base_type(root) {
+    using qi::lit;
+
+    root = idv % lit(",");
+  }
+
+  qi::rule<Iterator, std::vector<api06::id_version>(), ascii::space_type> root;
+  id_version_parser<Iterator> idv;
+};
+
+} // anonymous namespace
+
 namespace api06 {
 
-vector<osm_nwr_id_t> parse_id_list_params(request &req, const string &param_name) {
+vector<id_version> parse_id_list_params(request &req, const string &param_name) {
   string decoded = http::urldecode(get_query_string(req));
   const vector<pair<string, string> > params = http::parse_params(decoded);
   vector<pair<string, string> >::const_iterator itr =
     std::find_if(params.begin(), params.end(), first_equals(param_name));
 
-  vector<osm_nwr_id_t> myids;
+  vector<id_version> myids;
 
   if (itr != params.end()) {
-    // just check for blank string, which shouldn't be converted.
-    if (!itr->second.empty()) {
-      vector<string> strs;
-      al::split(strs, itr->second, al::is_any_of(","));
-      try {
-        for (vector<string>::iterator itr = strs.begin(); itr != strs.end();
-             ++itr) {
-          // parse as a 64-bit signed int to catch negative numbers. postgres
-          // bigint is int64_t anyway, so this doesn't truncate the allowed
-          // range.
-          int64_t id = lexical_cast<int64_t>(*itr);
-          // note: osm_nwr_id_t is currently uint64_t, so int64_t cannot
-          // overflow it in the positive direction. this would need to change
-          // if the types changed.
-          if (id > 0) {
-            myids.push_back(osm_nwr_id_t(id));
+    vector<id_version> parse_ids;
+    const string &str = itr->second;
 
-          } else {
-            // simulate rails_port behaviour - things that we can't parse are
-            // treated as zero.
-            myids.push_back(0);
-          }
-        }
-      } catch (const bad_lexical_cast &) {
-        // note: this is pretty silly, and may change when the rails_port
-        // changes to more sensible behaviour... but for the moment we emulate
-        // the ruby behaviour; which is that something non-numeric results in a
-        // to_i result of zero.
-        myids.push_back(0);
+    if (!str.empty()) {
+      string::const_iterator first = str.begin(), last = str.end();
+      id_version_list_parser<string::const_iterator> idv_p;
+
+      bool ok = qi::phrase_parse(
+        first, last, idv_p, boost::spirit::qi::ascii::space, parse_ids);
+
+      if (ok && (first == last)) {
+        myids.swap(parse_ids);
+      } else {
+        myids.push_back(id_version());
       }
     }
   }
 
   // ensure list of IDs is unique
   std::sort(myids.begin(), myids.end());
-  vector<osm_nwr_id_t>::iterator new_end = std::unique(myids.begin(), myids.end());
+  vector<id_version>::iterator new_end = std::unique(myids.begin(), myids.end());
   myids.erase(new_end, myids.end());
 
   return myids;

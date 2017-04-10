@@ -385,44 +385,67 @@ void check_content_body_plain(std::istream &expected, std::istream &actual) {
   }
 }
 
-/**
- * Check the response from cgimap against the expected test result
- * from the test file.
- */
-void check_response(std::istream &expected, std::istream &actual) {
-  typedef std::map<std::string, std::string> dict;
+typedef std::map<std::string, std::string> dict;
 
-  // check that, for some headers that we get, they are the same
-  // as we expect.
-  const dict expected_headers = read_headers(expected, "---");
-  const dict actual_headers = read_headers(actual, "");
+std::ostream &operator<<(std::ostream &out, const dict &d) {
+  BOOST_FOREACH(const dict::value_type &val, d) {
+    out << val.first << ": " << val.second << "\n";
+  }
+  return out;
+}
 
+void check_headers(const dict &expected_headers,
+                   const dict &actual_headers) {
   BOOST_FOREACH(const dict::value_type &val, expected_headers) {
     if ((val.first.size() > 0) && (val.first[0] == '!')) {
       dict::const_iterator itr = actual_headers.find(val.first.substr(1));
       if (itr != actual_headers.end()) {
         throw std::runtime_error(
-            (boost::format(
-                 "Expected not to find header `%1%', but it is present.") %
-             itr->first).str());
+          (boost::format(
+            "Expected not to find header `%1%', but it is present.") %
+           itr->first).str());
       }
     } else {
       dict::const_iterator itr = actual_headers.find(val.first);
       if (itr == actual_headers.end()) {
         throw std::runtime_error(
-            (boost::format("Expected header `%1%: %2%', but didn't find it in "
-                           "actual response.") %
-             val.first % val.second).str());
+          (boost::format("Expected header `%1%: %2%', but didn't find it in "
+                         "actual response.") %
+           val.first % val.second).str());
       }
       if (!val.second.empty()) {
         if (val.second != itr->second) {
           throw std::runtime_error(
-              (boost::format(
-                   "Header key `%1%'; expected `%2%' but got `%3%'.") %
-               val.first % val.second % itr->second).str());
+            (boost::format(
+              "Header key `%1%'; expected `%2%' but got `%3%'.") %
+             val.first % val.second % itr->second).str());
         }
       }
     }
+  }
+}
+
+/**
+ * Check the response from cgimap against the expected test result
+ * from the test file.
+ */
+void check_response(std::istream &expected, std::istream &actual) {
+  // check that, for some headers that we get, they are the same
+  // as we expect.
+  const dict expected_headers = read_headers(expected, "---");
+  const dict actual_headers = read_headers(actual, "");
+
+  try {
+    check_headers(expected_headers, actual_headers);
+
+  } catch (const std::runtime_error &e) {
+    std::ostringstream out;
+    out << "While comparing expected headers:\n"
+        << expected_headers << "\n"
+        << "with actual headers:\n"
+        << actual_headers << "\n"
+        << "ERROR: " << e.what();
+    throw std::runtime_error(out.str());
   }
 
   // now check the body, if there is one. we judge this by whether we expect a
@@ -430,7 +453,8 @@ void check_response(std::istream &expected, std::istream &actual) {
   if (expected_headers.count("Content-Type") > 0) {
     const std::string content_type =
         expected_headers.find("Content-Type")->second;
-    if (content_type.substr(0, 8) == "text/xml") {
+    if (content_type.substr(0, 8) == "text/xml" ||
+        content_type.substr(0, 9) == "text/html") {
       check_content_body_xml(expected, actual);
 
     } else if (content_type.substr(0, 9) == "text/json") {
@@ -456,20 +480,30 @@ void check_response(std::istream &expected, std::istream &actual) {
  */
 void run_test(fs::path test_case, rate_limiter &limiter,
               const std::string &generator, routes &route,
-              boost::shared_ptr<data_selection::factory> factory) {
+              boost::shared_ptr<data_selection::factory> factory,
+              boost::shared_ptr<oauth::store> store) {
   try {
     test_request req;
-    boost::shared_ptr<oauth::store> empty_store;
 
     // set up request headers from test case
     fs::ifstream in(test_case);
     setup_request_headers(req, in);
 
     // execute the request
-    process_request(req, limiter, generator, route, factory, empty_store);
+    process_request(req, limiter, generator, route, factory, store);
 
     // compare the result to what we're expecting
-    check_response(in, req.buffer());
+    try {
+      check_response(in, req.buffer());
+
+    } catch (const std::exception &e) {
+      if (getenv("VERBOSE") != NULL) {
+        std::cout << "ERROR: " << e.what() << "\n\n"
+                  << "Response was:\n----------------------\n"
+                  << req.buffer().str() << "\n";
+      }
+      throw;
+    }
 
     // output test case name if verbose output is requested
     if (getenv("VERBOSE") != NULL) {
@@ -482,6 +516,122 @@ void run_test(fs::path test_case, rate_limiter &limiter,
   }
 }
 
+osm_user_role_t parse_role(const std::string &str) {
+  if (str == "administrator") {
+    return osm_user_role_t::administrator;
+
+  } else if (str == "moderator") {
+    return osm_user_role_t::moderator;
+
+  } else {
+    throw std::runtime_error("Unable to parse role in config file.");
+  }
+}
+
+struct test_oauth
+  : public oauth::store {
+
+  test_oauth(const pt::ptree &config) {
+    boost::optional<const pt::ptree &> consumers =
+      config.get_child_optional("consumers");
+    if (consumers) {
+      for (const auto &entry : *consumers) {
+        std::string key = entry.first;
+        std::string data = entry.second.data();
+
+        if (!key.empty() && !data.empty()) {
+          m_consumers.emplace(key, data);
+        }
+      }
+    }
+
+    boost::optional<const pt::ptree &> tokens =
+      config.get_child_optional("tokens");
+    if (tokens) {
+      for (const auto &entry : *tokens) {
+        std::string key = entry.first;
+        osm_user_id_t user_id = entry.second.get<osm_user_id_t>("user_id");
+        std::string secret = entry.second.get<std::string>("secret");
+
+        m_tokens.emplace(key, secret);
+        m_users.emplace(key, user_id);
+      }
+    }
+
+    boost::optional<const pt::ptree &> users =
+      config.get_child_optional("users");
+    if (users) {
+      for (const auto &entry : *users) {
+        osm_user_id_t id = boost::lexical_cast<osm_user_id_t>(entry.first);
+        boost::optional<const pt::ptree &> roles =
+          entry.second.get_child_optional("roles");
+
+        std::set<osm_user_role_t> r;
+        if (roles) {
+          for (const auto &role : *roles) {
+            r.insert(parse_role(role.second.get_value<std::string>()));
+          }
+        }
+
+        m_user_roles.emplace(id, std::move(r));
+      }
+    }
+  }
+
+  virtual ~test_oauth() {}
+
+  boost::optional<std::string> consumer_secret(const std::string &consumer_key) {
+    auto itr = m_consumers.find(consumer_key);
+    if (itr != m_consumers.end()) {
+      return itr->second;
+    } else {
+      return boost::none;
+    }
+  }
+
+  boost::optional<std::string> token_secret(const std::string &token_id) {
+    auto itr = m_tokens.find(token_id);
+    if (itr != m_tokens.end()) {
+      return itr->second;
+    } else {
+      return boost::none;
+    }
+  }
+
+  bool use_nonce(const std::string &nonce, uint64_t timestamp) {
+    // pretend all nonces are new for these tests
+    return true;
+  }
+
+  bool allow_read_api(const std::string &token_id) {
+    // everyone can read the api
+    return true;
+  }
+
+  boost::optional<osm_user_id_t> get_user_id_for_token(const std::string &token_id) {
+    auto itr = m_users.find(token_id);
+    if (itr != m_users.end()) {
+      return itr->second;
+    } else {
+      return boost::none;
+    }
+  }
+
+  std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t id) {
+    std::set<osm_user_role_t> roles;
+    auto itr = m_user_roles.find(id);
+    if (itr != m_user_roles.end()) {
+      roles = itr->second;
+    }
+    return roles;
+  }
+
+private:
+  std::map<std::string, std::string> m_consumers, m_tokens;
+  std::map<std::string, osm_user_id_t> m_users;
+  std::map<osm_user_id_t, std::set<osm_user_role_t> > m_user_roles;
+};
+
 int main(int argc, char *argv[]) {
   if (argc != 2) {
     std::cerr << "Usage: " << argv[0] << " <test-directory>." << std::endl;
@@ -490,7 +640,10 @@ int main(int argc, char *argv[]) {
 
   fs::path test_directory = argv[1];
   fs::path data_file = test_directory / "data.osm";
+  fs::path oauth_file = test_directory / "oauth.json";
   std::vector<fs::path> test_cases;
+
+  boost::shared_ptr<oauth::store> store;
 
   try {
     if (fs::is_directory(test_directory) == false) {
@@ -510,6 +663,19 @@ int main(int argc, char *argv[]) {
       if (ext == ".case") {
         test_cases.push_back(filename);
       }
+    }
+
+    if (fs::is_regular_file(oauth_file)) {
+      pt::ptree config;
+
+      try {
+        pt::read_json(oauth_file.string(), config);
+      } catch (const std::exception &ex) {
+        throw std::runtime_error
+          ((boost::format("%1%, while reading expected JSON.") % ex.what()).str());
+      }
+
+      store = boost::make_shared<test_oauth>(config);
     }
 
   } catch (const std::exception &e) {
@@ -535,7 +701,7 @@ int main(int argc, char *argv[]) {
     BOOST_FOREACH(fs::path test_case, test_cases) {
       std::string generator =
           (boost::format(PACKAGE_STRING " (test %1%)") % test_case).str();
-      run_test(test_case, limiter, generator, route, factory);
+      run_test(test_case, limiter, generator, route, factory, store);
     }
 
   } catch (const std::exception &e) {

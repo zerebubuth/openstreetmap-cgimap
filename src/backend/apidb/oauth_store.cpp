@@ -102,6 +102,11 @@ oauth_store::oauth_store(const po::variables_map &opts)
     "WHERE token=$1")
     PREPARE_ARGS(("character varying"));
 
+  // return all the roles to which the user belongs.
+  m_connection.prepare("roles_for_user",
+    "SELECT role FROM user_roles WHERE user_id = $1")
+    PREPARE_ARGS(("bigint"));
+
   // clang-format on
 }
 
@@ -159,4 +164,23 @@ oauth_store::get_user_id_for_token(const std::string &token_id) {
   } else {
     return boost::none;
   }
+}
+
+std::set<osm_user_role_t>
+oauth_store::get_roles_for_user(osm_user_id_t id) {
+  std::set<osm_user_role_t> roles;
+
+  pqxx::work w(m_connection, "oauth_get_user_id_for_token");
+  pqxx::result res = w.prepared("roles_for_user")(id).exec();
+
+  for (const auto &tuple : res) {
+    auto role = tuple[0].as<std::string>();
+    if (role == "moderator") {
+      roles.insert(osm_user_role_t::moderator);
+    } else if (role == "administrator") {
+      roles.insert(osm_user_role_t::administrator);
+    }
+  }
+
+  return roles;
 }

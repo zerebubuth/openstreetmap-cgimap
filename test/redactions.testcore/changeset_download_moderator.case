@@ -1,0 +1,30 @@
+# all the elements in this changeset are redacted, but a moderator should be
+# able to see them if they ask nicely.
+Request-Method: GET
+Request-URI: /api/0.6/changeset/2/download?show_redactions=true
+Http-Host: cgimap.example.com
+Date: 2017-03-13T16:47:00Z
+Http-Authorization: OAuth realm="http://cgimap.example.com/api/0.6/changeset/2/download", oauth_consumer_key="heqfjrcolc", oauth_token="scgncknxqr", oauth_nonce="dqndteqmzduesxyjetrd", oauth_timestamp="1489423620", oauth_signature_method="HMAC-SHA1", oauth_version="1.0", oauth_signature="2KQpmh%2FAJi9xTpZvCIo82inmdho%3D"
+---
+Status: 200 OK
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition: 
+---
+<osmChange version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <modify>
+    <node id="1" version="2" changeset="2" lat="0.0000000" lon="0.0000000"
+          user="foo" uid="1" visible="true" timestamp="2017-01-15T16:53:00Z"/>
+  </modify>
+  <modify>
+    <way id="1" version="2" changeset="2" user="foo" uid="1" visible="true"
+         timestamp="2017-01-21T18:03:00Z">
+      <nd ref="1"/>
+    </way>
+  </modify>
+  <modify>
+    <relation id="1" version="2" changeset="2" user="foo" uid="1" visible="true"
+              timestamp="2017-01-21T18:07:00Z">
+      <member type="node" ref="1" role=""/>
+    </relation>
+  </modify>
+</osmChange>

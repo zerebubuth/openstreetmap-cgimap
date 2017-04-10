@@ -18,6 +18,43 @@ const char *test_database::setup_error::what() const throw() {
   return m_str.c_str();
 }
 
+namespace {
+// reads a file of SQL statements, splits on ';' and tries to
+// execute them in a transaction.
+struct file_read_transactor : public pqxx::transactor<pqxx::work> {
+  file_read_transactor(const std::string &filename) : m_filename(filename) {}
+
+  void operator()(pqxx::work &w) {
+    std::streamsize size = fs::file_size(m_filename);
+    std::string big_query(size, '\0');
+    std::ifstream in(m_filename.c_str());
+    in.read(&big_query[0], size);
+    if (in.fail() || (size != in.gcount())) {
+      throw std::runtime_error("Unable to read input SQL file.");
+    }
+    w.exec(big_query);
+  }
+
+  std::string m_filename;
+};
+
+struct truncate_all_tables : public pqxx::transactor<pqxx::work> {
+  void operator()(pqxx::work &w) {
+    w.exec("TRUNCATE TABLE users CASCADE");
+  }
+};
+
+struct sql_string : public pqxx::transactor<pqxx::work> {
+  std::string m_sql;
+  sql_string(const std::string &s) : m_sql(s) {}
+
+  void operator()(pqxx::work &w) {
+    w.exec(m_sql);
+  }
+};
+
+} // anonymous namespace
+
 /**
  * set up a test database, isolated from anything else, and fill it with
  * fake data for testing.
@@ -41,6 +78,8 @@ test_database::test_database() {
     throw setup_error(
         boost::format("Unable to set up test database due to unknown error."));
   }
+
+  m_use_readonly = false;
 }
 
 /**
@@ -50,7 +89,7 @@ test_database::test_database() {
  */
 void test_database::setup() {
   pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
-  fill_fake_data(conn);
+  setup_schema(conn);
 
   boost::shared_ptr<backend> apidb = make_apidb_backend();
 
@@ -123,54 +162,56 @@ std::string test_database::random_db_name() {
 }
 
 void test_database::run(
-    boost::function<void(boost::shared_ptr<data_selection>)> func) {
+    boost::function<void(test_database&)> func) {
   try {
-    func((*m_writeable_factory).make_selection());
+    // clear out database before using it!
+    pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
+    conn.perform(truncate_all_tables());
+
+    m_use_readonly = false;
+    func(*this);
+
   } catch (const std::exception &e) {
     throw std::runtime_error(
         (boost::format("%1%, in writeable selection") % e.what()).str());
   }
 
   try {
-    func((*m_readonly_factory).make_selection());
+    // clear out database before using it!
+    pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
+    conn.perform(truncate_all_tables());
+
+    m_use_readonly = true;
+    func(*this);
+
   } catch (const std::exception &e) {
     throw std::runtime_error(
         (boost::format("%1%, in read-only selection") % e.what()).str());
   }
 }
 
-void test_database::run(
-  boost::function<void(boost::shared_ptr<oauth::store>)> func) {
+boost::shared_ptr<data_selection> test_database::get_data_selection() {
+  if (m_use_readonly) {
+    return (*m_readonly_factory).make_selection();
+
+  } else {
+    return (*m_writeable_factory).make_selection();
+  }
+}
+
+boost::shared_ptr<oauth::store> test_database::get_oauth_store() {
   if (!m_oauth_store) {
     throw std::runtime_error("OAuth store not available.");
   }
 
-  func(m_oauth_store);
+  return m_oauth_store;
 }
 
-namespace {
-// reads a file of SQL statements, splits on ';' and tries to
-// execute them in a transaction.
-struct file_read_transactor : public pqxx::transactor<pqxx::work> {
-  file_read_transactor(const std::string &filename) : m_filename(filename) {}
+void test_database::run_sql(const std::string &sql) {
+  pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
+  conn.perform(sql_string(sql));
+}
 
-  void operator()(pqxx::work &w) {
-    std::streamsize size = fs::file_size(m_filename);
-    std::string big_query(size, '\0');
-    std::ifstream in(m_filename.c_str());
-    in.read(&big_query[0], size);
-    if (in.fail() || (size != in.gcount())) {
-      throw std::runtime_error("Unable to read input SQL file.");
-    }
-    w.exec(big_query);
-  }
-
-  std::string m_filename;
-};
-
-} // anonymous namespace
-
-void test_database::fill_fake_data(pqxx::connection &conn) {
+void test_database::setup_schema(pqxx::connection &conn) {
   conn.perform(file_read_transactor("test/structure.sql"));
-  conn.perform(file_read_transactor("test/test_apidb_backend.sql"));
 }

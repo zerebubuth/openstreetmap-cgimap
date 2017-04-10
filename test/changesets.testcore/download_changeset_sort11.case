@@ -1,0 +1,28 @@
+# this is to check that the elements are sorted by timestamp first, then
+# version.
+Request-Method: GET
+Request-URI: /api/0.6/changeset/11/download
+Date: 2017-03-13T16:32:00Z
+---
+Status: 200 OK
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition: 
+---
+<osmChange version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <create>
+    <node id="4" version="1" changeset="11" lat="0.0000000" lon="0.0000000" user="FakeUser2" uid="2" visible="true" timestamp="2017-03-13T16:32:00Z"/>
+  </create>
+  <delete>
+    <relation id="1" version="2" changeset="11" user="FakeUser2" uid="2" visible="false" timestamp="2017-03-13T16:32:01Z"/>
+  </delete>
+  <modify>
+    <node id="3" version="3" changeset="11" lat="0.0000000" lon="0.0000000" user="FakeUser2" uid="2" visible="true" timestamp="2017-03-13T16:32:01Z"/>
+  </modify>
+  <modify>
+    <way id="1" version="5" changeset="11" user="FakeUser2" uid="2" visible="true" timestamp="2017-03-13T16:32:01Z">
+      <nd ref="1"/>
+      <nd ref="2"/>
+      <nd ref="3"/>
+    </way>
+  </modify>
+</osmChange>

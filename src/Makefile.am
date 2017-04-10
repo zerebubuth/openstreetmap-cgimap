@@ -12,10 +12,19 @@ ___test_test_core_LDADD=
 
 if ENABLE_APIDB
 lib_LTLIBRARIES+=libcgimap_apidb.la
-check_PROGRAMS+=../test/test_apidb_backend
+check_PROGRAMS+=\
+	../test/test_apidb_backend_nodes \
+	../test/test_apidb_backend_oauth \
+	../test/test_apidb_backend_historic \
+	../test/test_apidb_backend_changesets \
+	../test/test_apidb_backend_changeset_downloads
 ___openstreetmap_cgimap_LDADD+=libcgimap_apidb.la
 ___test_test_core_LDADD+=libcgimap_apidb.la
-___test_test_apidb_backend_LDADD=libcgimap_core.la libcgimap_apidb.la
+___test_test_apidb_backend_nodes_LDADD=libcgimap_core.la libcgimap_apidb.la
+___test_test_apidb_backend_oauth_LDADD=libcgimap_core.la libcgimap_apidb.la
+___test_test_apidb_backend_historic_LDADD=libcgimap_core.la libcgimap_apidb.la
+___test_test_apidb_backend_changesets_LDADD=libcgimap_core.la libcgimap_apidb.la
+___test_test_apidb_backend_changeset_downloads_LDADD=libcgimap_core.la libcgimap_apidb.la
 endif
 
 if ENABLE_PGSNAPSHOT
@@ -23,7 +32,11 @@ lib_LTLIBRARIES+=libcgimap_pgsnapshot.la
 ___openstreetmap_cgimap_LDADD+=libcgimap_pgsnapshot.la
 ___test_test_core_LDADD+=libcgimap_pgsnapshot.la
 if ENABLE_APIDB
-___test_test_apidb_backend_LDADD+=libcgimap_pgsnapshot.la
+___test_test_apidb_backend_nodes_LDADD+=libcgimap_pgsnapshot.la
+___test_test_apidb_backend_oauth_LDADD+=libcgimap_pgsnapshot.la
+___test_test_apidb_backend_historic_LDADD+=libcgimap_pgsnapshot.la
+___test_test_apidb_backend_changesets_LDADD+=libcgimap_pgsnapshot.la
+___test_test_apidb_backend_changeset_downloads_LDADD+=libcgimap_pgsnapshot.la
 endif
 endif
 
@@ -31,7 +44,11 @@ lib_LTLIBRARIES+=libcgimap_staticxml.la
 ___openstreetmap_cgimap_LDADD+=libcgimap_staticxml.la
 ___test_test_core_LDADD+=libcgimap_staticxml.la
 if ENABLE_APIDB
-___test_test_apidb_backend_LDADD+=libcgimap_staticxml.la
+___test_test_apidb_backend_nodes_LDADD+=libcgimap_staticxml.la
+___test_test_apidb_backend_oauth_LDADD+=libcgimap_staticxml.la
+___test_test_apidb_backend_historic_LDADD+=libcgimap_staticxml.la
+___test_test_apidb_backend_changesets_LDADD+=libcgimap_staticxml.la
+___test_test_apidb_backend_changeset_downloads_LDADD+=libcgimap_staticxml.la
 endif
 
 ___openstreetmap_cgimap_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
@@ -43,7 +60,11 @@ ___test_test_http_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FIL
 ___test_test_parse_time_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_DATE_TIME_LIB@ @BOOST_SYSTEM_LIB@ @LIBPQXX_LIBS@
 
 if ENABLE_APIDB
-___test_test_apidb_backend_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
+___test_test_apidb_backend_nodes_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
+___test_test_apidb_backend_oauth_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
+___test_test_apidb_backend_historic_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
+___test_test_apidb_backend_changesets_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
+___test_test_apidb_backend_changeset_downloads_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
 endif
 
 ################################################################################
@@ -67,8 +88,28 @@ ___test_test_parse_time_SOURCES=\
 	../test/test_parse_time.cpp
 
 if ENABLE_APIDB
-___test_test_apidb_backend_SOURCES=\
-	../test/test_apidb_backend.cpp \
+___test_test_apidb_backend_nodes_SOURCES=\
+	../test/test_apidb_backend_nodes.cpp \
+	../test/test_formatter.cpp \
+	../test/test_database.cpp \
+	../test/test_request.cpp
+___test_test_apidb_backend_oauth_SOURCES=\
+	../test/test_apidb_backend_oauth.cpp \
+	../test/test_formatter.cpp \
+	../test/test_database.cpp \
+	../test/test_request.cpp
+___test_test_apidb_backend_historic_SOURCES=\
+	../test/test_apidb_backend_historic.cpp \
+	../test/test_formatter.cpp \
+	../test/test_database.cpp \
+	../test/test_request.cpp
+___test_test_apidb_backend_changesets_SOURCES=\
+	../test/test_apidb_backend_changesets.cpp \
+	../test/test_formatter.cpp \
+	../test/test_database.cpp \
+	../test/test_request.cpp
+___test_test_apidb_backend_changeset_downloads_SOURCES=\
+	../test/test_apidb_backend_changeset_downloads.cpp \
 	../test/test_formatter.cpp \
 	../test/test_database.cpp \
 	../test/test_request.cpp
@@ -90,6 +131,7 @@ libcgimap_core_la_SOURCES=\
 	oauth.cpp \
 	osm_responder.cpp \
 	osm_current_responder.cpp \
+	osmchange_responder.cpp \
 	output_formatter.cpp \
 	output_writer.cpp \
 	process_request.cpp \
@@ -108,14 +150,22 @@ libcgimap_core_la_SOURCES+=\
 	api06/map_handler.cpp \
 	api06/handler_utils.cpp \
 	api06/node_handler.cpp \
+	api06/node_version_handler.cpp \
+	api06/node_history_handler.cpp \
 	api06/nodes_handler.cpp \
 	api06/relation_handler.cpp \
+	api06/relation_version_handler.cpp \
 	api06/relations_handler.cpp \
+	api06/relation_history_handler.cpp \
 	api06/way_handler.cpp \
+	api06/way_version_handler.cpp \
 	api06/ways_handler.cpp \
+	api06/way_history_handler.cpp \
 	api06/relation_full_handler.cpp \
 	api06/way_full_handler.cpp \
-	api06/changeset_handler.cpp
+	api06/id_version_io.cpp \
+	api06/changeset_handler.cpp \
+	api06/changeset_download_handler.cpp
 
 if ENABLE_EXPERIMENTAL
 libcgimap_core_la_SOURCES+=\
@@ -136,9 +186,11 @@ libcgimap_apidb_la_SOURCES=\
 	backend/apidb/apidb.cpp \
 	backend/apidb/writeable_pgsql_selection.cpp \
 	backend/apidb/readonly_pgsql_selection.cpp \
+	backend/apidb/common_pgsql_selection.cpp \
 	backend/apidb/changeset.cpp \
 	backend/apidb/quad_tile.cpp \
-	backend/apidb/oauth_store.cpp
+	backend/apidb/oauth_store.cpp \
+	backend/apidb/utils.cpp
 libcgimap_apidb_la_LIBADD=libcgimap_core.la @BOOST_DATE_TIME_LIB@ @LIBPQXX_LIBS@
 endif
 

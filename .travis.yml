@@ -2,8 +2,9 @@ sudo: required
 dist: trusty
 language: cpp
 compiler: gcc
+cache: ccache
 addons:
-  postgresql: 9.1
+  postgresql: 9.4
   apt:
     packages:
       - libboost-dev
@@ -20,7 +21,7 @@ addons:
       - libxml2-dev
 script:
   - ./autogen.sh
-  - ./configure
+  - ./configure CC="ccache gcc" CXX="ccache g++"
   - make
   - make check
 after_failure:

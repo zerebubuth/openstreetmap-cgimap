@@ -185,7 +185,6 @@ acceptable_types::most_acceptable_of(const list<mime::type> &available) const {
     map<mime::type, float>::const_iterator itr = mapping.find(mime::any_type);
     if ((itr != mapping.end()) && (itr->second > score)) {
       best = available.front();
-      score = itr->second;
     }
   }
 

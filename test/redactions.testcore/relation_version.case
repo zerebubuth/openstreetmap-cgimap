@@ -1,0 +1,7 @@
+# relation/version call for a regular user should behave like the redacted version
+# does not exist.
+Request-Method: GET
+Request-URI: /api/0.6/relation/1/2
+---
+Status: 404 Not Found
+---

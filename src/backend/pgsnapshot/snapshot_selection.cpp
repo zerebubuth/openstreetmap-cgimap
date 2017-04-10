@@ -100,26 +100,21 @@ void extract_nodes(const pqxx::result &res, nodes_t &nodes) {
 }
 
 element_type type_from_name(const char *name) {
-  element_type type;
-
   switch (name[0]) {
   case 'N':
   case 'n':
-    type = element_type_node;
-    break;
+    return element_type_node;
 
   case 'W':
   case 'w':
-    type = element_type_way;
-    break;
+    return element_type_way;
 
   case 'R':
   case 'r':
-    type = element_type_relation;
-    break;
+    return element_type_relation;
   }
 
-  return type;
+  throw std::runtime_error("Unable to determine element type from name.");
 }
 
 void extract_members(const pqxx::result &res, members_t &members) {
@@ -137,6 +132,7 @@ void extract_members(const pqxx::result &res, members_t &members) {
 } // anonymous namespace
 
 snapshot_selection::snapshot_selection(pqxx::connection &conn) : w(conn) {
+  w.set_variable("default_transaction_read_only", "false");
   w.exec("CREATE TEMPORARY TABLE tmp_nodes ("
          "id bigint NOT NULL PRIMARY KEY,"
          "version integer NOT NULL,"
@@ -164,6 +160,7 @@ snapshot_selection::snapshot_selection(pqxx::connection &conn) : w(conn) {
          "tstamp timestamp without time zone NOT NULL, "
          "changeset_id bigint NOT NULL, "
          "tags hstore)");
+  w.set_variable("default_transaction_read_only", "true");
 }
 
 snapshot_selection::~snapshot_selection() {}
@@ -309,6 +306,10 @@ snapshot_selection::factory::factory(const po::variables_map &opts)
     , m_errorhandler(m_connection)
 #endif
 {
+  if (m_connection.server_version() < 90300) {
+    throw std::runtime_error("Expected Postgres version 9.3+, currently installed version "
+        + std::to_string(m_connection.server_version()));
+  }
 
   // set the connections to use the appropriate charset.
   m_connection.set_client_encoding(opts["charset"].as<std::string>());
