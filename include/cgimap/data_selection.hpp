@@ -122,6 +122,12 @@ public:
   /// false.
   virtual void set_redactions_visible(bool visible);
 
+  /// select all versions of nodes, ways and relations which were added as part
+  /// of any of the changesets with the given IDs. returns the number of
+  /// distinct (element_type, id, version) tuples selected.
+  virtual int select_historical_by_changesets(
+    const std::vector<osm_changeset_id_t> &);
+
   /****************** changeset functions **********************/
 
   /// does this data selection support changesets?

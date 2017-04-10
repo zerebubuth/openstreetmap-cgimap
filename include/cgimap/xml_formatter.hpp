@@ -23,11 +23,13 @@ public:
 
   mime::type mime_type() const;
 
-  void start_document(const std::string &generator);
+  void start_document(const std::string &generator, const std::string &root_name);
   void end_document();
   void write_bounds(const bbox &bounds);
   void start_element_type(element_type type);
   void end_element_type(element_type type);
+  void start_action(action_type type);
+  void end_action(action_type type);
   void error(const std::exception &e);
 
   void write_node(const element_info &elem, double lon, double lat,

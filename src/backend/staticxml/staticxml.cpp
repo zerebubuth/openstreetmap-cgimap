@@ -11,6 +11,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
 #include <sstream>
+#include <unordered_set>
 
 namespace po = boost::program_options;
 namespace pt = boost::posix_time;
@@ -559,6 +560,19 @@ struct static_data_selection : public data_selection {
     m_redactions_visible = visible;
   }
 
+  virtual int select_historical_by_changesets(
+    const std::vector<osm_changeset_id_t> &ids) {
+
+    std::unordered_set<osm_changeset_id_t> changesets(ids.begin(), ids.end());
+
+    int selected = 0;
+    selected += select_by_changesets<node>(m_historic_nodes, changesets);
+    selected += select_by_changesets<way>(m_historic_ways, changesets);
+    selected += select_by_changesets<relation>(m_historic_relations, changesets);
+
+    return selected;
+  }
+
   virtual bool supports_changesets() { return true; }
 
   virtual int select_changesets(const std::vector<osm_changeset_id_t> &ids) {
@@ -702,6 +716,27 @@ private:
         }
       }
     }
+    return selected;
+  }
+
+  template <typename T>
+  int select_by_changesets(
+    std::set<osm_edition_t> &found_eds,
+    const std::unordered_set<osm_changeset_id_t> &changesets) const {
+
+    int selected = 0;
+
+    for (const auto &row : map_of<T>()) {
+      const T &t = row.second;
+      if (changesets.count(t.m_info.changeset) > 0) {
+        bool is_redacted = bool(t.m_info.redaction);
+        if (!is_redacted || m_redactions_visible) {
+          found_eds.emplace(t.m_info.id, t.m_info.version);
+          selected += 1;
+        }
+      }
+    }
+
     return selected;
   }
 

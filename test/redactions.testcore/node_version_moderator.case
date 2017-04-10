@@ -11,6 +11,6 @@ Content-Type: text/xml; charset=utf-8
 ---
 <?xml version="1.0"?>
 <osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
-  <node id="1" version="2" changeset="1" lat="0.0000000" lon="0.0000000" user="foo"
+  <node id="1" version="2" changeset="2" lat="0.0000000" lon="0.0000000" user="foo"
         uid="1" visible="true" timestamp="2017-01-15T16:53:00Z"/>
 </osm>

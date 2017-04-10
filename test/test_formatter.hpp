@@ -76,11 +76,13 @@ struct test_formatter : public output_formatter {
 
   virtual ~test_formatter();
   mime::type mime_type() const;
-  void start_document(const std::string &generator);
+  void start_document(const std::string &generator, const std::string &root_name);
   void end_document();
   void write_bounds(const bbox &bounds);
   void start_element_type(element_type type);
   void end_element_type(element_type type);
+  void start_action(action_type type);
+  void end_action(action_type type);
   void write_node(const element_info &elem, double lon, double lat,
                   const tags_t &tags);
   void write_way(const element_info &elem, const nodes_t &nodes,

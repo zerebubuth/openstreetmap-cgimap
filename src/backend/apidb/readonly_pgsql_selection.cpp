@@ -130,8 +130,9 @@ struct erase_formatter
 
   mime::type mime_type() const { return m_fmt.mime_type(); }
 
-  void start_document(const std::string &generator) {
-    m_fmt.start_document(generator);
+  void start_document(
+    const std::string &generator, const std::string &root_name) {
+    m_fmt.start_document(generator, root_name);
   }
 
   void end_document() { m_fmt.end_document(); }
@@ -139,6 +140,8 @@ struct erase_formatter
   void write_bounds(const bbox &bounds) { m_fmt.write_bounds(bounds); }
   void start_element_type(element_type type) { m_fmt.start_element_type(type); }
   void end_element_type(element_type type) { m_fmt.end_element_type(type); }
+  void start_action(action_type type) { m_fmt.start_action(type); }
+  void end_action(action_type type) { m_fmt.end_action(type); }
   void flush() { m_fmt.flush(); }
   void error(const std::string &str) { m_fmt.error(str); }
 
@@ -470,6 +473,26 @@ void readonly_pgsql_selection::set_redactions_visible(bool visible) {
   m_redactions_visible = visible;
 }
 
+int readonly_pgsql_selection::select_historical_by_changesets(
+  const std::vector<osm_changeset_id_t> &ids) {
+
+  int selected = 0;
+
+  if (!ids.empty()) {
+    selected += insert_results(w.prepared("select_nodes_by_changesets")
+      (ids)(m_redactions_visible).exec(),
+      sel_historic_nodes);
+    selected += insert_results(w.prepared("select_ways_by_changesets")
+      (ids)(m_redactions_visible).exec(),
+      sel_historic_ways);
+    selected += insert_results(w.prepared("select_relations_by_changesets")
+      (ids)(m_redactions_visible).exec(),
+      sel_historic_relations);
+  }
+
+  return selected;
+}
+
 bool readonly_pgsql_selection::supports_changesets() {
   return true;
 }
@@ -793,6 +816,31 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
         ")cc ON true "
      "WHERE c.id = ANY($1)")
     PREPARE_ARGS(("bigint[]"));
+
+  // ------------------- CHANGESET DOWNLOAD QUERIES -----------------------
+  m_connection.prepare("select_nodes_by_changesets",
+      "SELECT n.node_id AS id, n.version "
+      "FROM nodes n "
+      "WHERE n.changeset_id = ANY($1) "
+        "AND (n.redaction_id IS NULL OR $2 = TRUE)"
+    "")
+    PREPARE_ARGS(("bigint[]")("boolean"));
+
+  m_connection.prepare("select_ways_by_changesets",
+      "SELECT w.way_id AS id, w.version "
+      "FROM ways w "
+      "WHERE w.changeset_id = ANY($1) "
+        "AND (w.redaction_id IS NULL OR $2 = TRUE)"
+    "")
+    PREPARE_ARGS(("bigint[]")("boolean"));
+
+  m_connection.prepare("select_relations_by_changesets",
+      "SELECT r.relation_id AS id, r.version "
+      "FROM relations r "
+      "WHERE r.changeset_id = ANY($1) "
+        "AND (r.redaction_id IS NULL OR $2 = TRUE)"
+    "")
+    PREPARE_ARGS(("bigint[]")("boolean"));
 
   // clang-format on
 }

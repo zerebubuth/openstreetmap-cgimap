@@ -20,6 +20,13 @@ enum element_type {
   element_type_relation
 };
 
+// TODO: document me.
+enum action_type {
+  action_type_create,
+  action_type_modify,
+  action_type_delete
+};
+
 struct element_info {
   element_info();
   element_info(const element_info &);
@@ -127,10 +134,12 @@ struct output_formatter {
   // produce.
   virtual mime::type mime_type() const = 0;
 
-  // called once to start the document - this will be the first call
-  // to this object after construction. the string passed will be
-  // used as the "generator" header attribute.
-  virtual void start_document(const std::string &generator) = 0;
+  // called once to start the document - this will be the first call to this
+  // object after construction. the first argument will be used as the
+  // "generator" header attribute, and the second will name the root element
+  // (if there is one - JSON doesn't have one), e.g: "osm" or "osmChange".
+  virtual void start_document(
+    const std::string &generator, const std::string &root_name) = 0;
 
   // called once to end the document - there will be no calls after this
   // one. this will be called, even if an error has occurred.
@@ -151,6 +160,10 @@ struct output_formatter {
 
   // end a type of element. this is called once for nodes, ways or relations
   virtual void end_element_type(element_type type) = 0;
+
+  // TODO: document me.
+  virtual void start_action(action_type type) = 0;
+  virtual void end_action(action_type type) = 0;
 
   // output a single node given that node's row and an iterator over its tags
   virtual void write_node(const element_info &elem, double lon, double lat,

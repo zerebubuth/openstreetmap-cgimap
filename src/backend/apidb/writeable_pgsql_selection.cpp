@@ -342,6 +342,30 @@ void writeable_pgsql_selection::set_redactions_visible(bool visible) {
   m_redactions_visible = visible;
 }
 
+int writeable_pgsql_selection::select_historical_by_changesets(
+  const std::vector<osm_changeset_id_t> &ids) {
+
+  int selected = 0;
+
+  if (!ids.empty()) {
+    selected += w.prepared("add_nodes_by_changesets")
+      (ids)(m_redactions_visible)
+      .exec().affected_rows();
+    selected += w.prepared("add_ways_by_changesets")
+      (ids)(m_redactions_visible)
+      .exec().affected_rows();
+    selected += w.prepared("add_relations_by_changesets")
+      (ids)(m_redactions_visible)
+      .exec().affected_rows();
+  }
+
+  if (selected > 0) {
+    m_historic_tables_empty = false;
+  }
+
+  return selected;
+}
+
 bool writeable_pgsql_selection::supports_changesets() {
   return true;
 }
@@ -759,6 +783,43 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       "WHERE r.relation_id = $1 AND t.relation_id IS NULL AND "
             "(r.redaction_id IS NULL OR $2 = TRUE)")
     PREPARE_ARGS(("bigint")("boolean"));
+
+  // ------------------- CHANGESET DOWNLOAD QUERIES -----------------------
+  m_connection.prepare("add_nodes_by_changesets",
+    "INSERT INTO tmp_historic_nodes "
+      "SELECT n.node_id, n.version "
+      "FROM nodes n "
+      "LEFT JOIN tmp_historic_nodes t "
+      "ON t.node_id = n.node_id AND t.version = n.version "
+      "WHERE n.changeset_id = ANY($1) "
+        "AND t.node_id IS NULL "
+        "AND (n.redaction_id IS NULL OR $2 = TRUE)"
+    "")
+    PREPARE_ARGS(("bigint[]")("boolean"));
+
+  m_connection.prepare("add_ways_by_changesets",
+    "INSERT INTO tmp_historic_ways "
+      "SELECT w.way_id, w.version "
+      "FROM ways w "
+      "LEFT JOIN tmp_historic_ways t "
+      "ON t.way_id = w.way_id AND t.version = w.version "
+      "WHERE w.changeset_id = ANY($1) "
+        "AND t.way_id IS NULL "
+        "AND (w.redaction_id IS NULL OR $2 = TRUE)"
+    "")
+    PREPARE_ARGS(("bigint[]")("boolean"));
+
+  m_connection.prepare("add_relations_by_changesets",
+    "INSERT INTO tmp_historic_relations "
+      "SELECT r.relation_id, r.version "
+      "FROM relations r "
+      "LEFT JOIN tmp_historic_relations t "
+      "ON t.relation_id = r.relation_id AND t.version = r.version "
+      "WHERE r.changeset_id = ANY($1) "
+        "AND t.relation_id IS NULL "
+        "AND (r.redaction_id IS NULL OR $2 = TRUE)"
+    "")
+    PREPARE_ARGS(("bigint[]")("boolean"));
 
   // clang-format on
 }

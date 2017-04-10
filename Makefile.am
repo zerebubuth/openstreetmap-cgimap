@@ -91,7 +91,8 @@ TESTS += \
 	test/test_apidb_backend_nodes \
 	test/test_apidb_backend_oauth \
 	test/test_apidb_backend_historic \
-	test/test_apidb_backend_changesets
+	test/test_apidb_backend_changesets \
+	test/test_apidb_backend_changeset_downloads
 endif
 TEST_EXTENSIONS = .testcore
 TESTCORE_LOG_COMPILER = test/test_core

@@ -36,8 +36,9 @@ xml_formatter::~xml_formatter() {}
 
 mime::type xml_formatter::mime_type() const { return mime::text_xml; }
 
-void xml_formatter::start_document(const std::string &generator) {
-  writer->start("osm");
+void xml_formatter::start_document(
+  const std::string &generator, const std::string &root_name) {
+  writer->start(root_name);
   writer->attribute("version", string("0.6"));
   writer->attribute("generator", generator);
 
@@ -68,6 +69,30 @@ void xml_formatter::start_element_type(element_type) {
 
 void xml_formatter::end_element_type(element_type) {
   // ditto - nothing needed here for XML.
+}
+
+void xml_formatter::start_action(action_type type) {
+  switch (type) {
+  case action_type_create:
+    writer->start("create");
+    break;
+  case action_type_modify:
+    writer->start("modify");
+    break;
+  case action_type_delete:
+    writer->start("delete");
+    break;
+  }
+}
+
+void xml_formatter::end_action(action_type type) {
+  switch (type) {
+  case action_type_create:
+  case action_type_modify:
+  case action_type_delete:
+    writer->end();
+    break;
+  }
 }
 
 void xml_formatter::error(const std::exception &e) {
