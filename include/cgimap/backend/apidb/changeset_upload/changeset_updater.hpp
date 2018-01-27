@@ -1,11 +1,11 @@
 #ifndef CHANGESET_UPDATER
 #define CHANGESET_UPDATER
 
+#include "types.hpp"
+#include "util.hpp"
 
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 #include "cgimap/backend/apidb/changeset_upload/transaction_manager.hpp"
-#include "types.hpp"
-#include "util.hpp"
 
 
 class Changeset_Updater {

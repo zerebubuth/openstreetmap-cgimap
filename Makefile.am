@@ -39,7 +39,10 @@ cgimap_api06_include_HEADERS = \
 	include/cgimap/api06/way_full_handler.hpp \
 	include/cgimap/api06/way_handler.hpp \
 	include/cgimap/api06/way_version_handler.hpp \
-	include/cgimap/api06/ways_handler.hpp
+	include/cgimap/api06/ways_handler.hpp \
+	include/cgimap/api06/changeset_upload/osmchange_handler.hpp \
+	include/cgimap/api06/changeset_upload/osmchange_input_format.hpp \
+	include/cgimap/api06/changeset_upload/osmchange_tracking.hpp
 
 if ENABLE_APIDB
 cgimap_apidb_includedir=$(includedir)/cgimap/backend/apidb
@@ -50,7 +53,13 @@ cgimap_apidb_include_HEADERS = \
 	include/cgimap/backend/apidb/quad_tile.hpp \
 	include/cgimap/backend/apidb/readonly_pgsql_selection.hpp \
 	include/cgimap/backend/apidb/writeable_pgsql_selection.hpp \
-	include/cgimap/backend/apidb/utils.hpp
+	include/cgimap/backend/apidb/utils.hpp \
+	include/cgimap/backend/apidb/changeset_upload/changeset_updater.hpp \
+	include/cgimap/backend/apidb/changeset_upload/node_updater.hpp \
+	include/cgimap/backend/apidb/changeset_upload/relation_updater.hpp \
+ 	include/cgimap/backend/apidb/changeset_upload/transaction_manager.hpp \
+	include/cgimap/backend/apidb/changeset_upload/way_updater.hpp
+
 endif
 
 if ENABLE_PGSNAPSHOT

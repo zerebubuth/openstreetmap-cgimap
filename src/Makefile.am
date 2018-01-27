@@ -165,7 +165,9 @@ libcgimap_core_la_SOURCES+=\
 	api06/way_full_handler.cpp \
 	api06/id_version_io.cpp \
 	api06/changeset_handler.cpp \
-	api06/changeset_download_handler.cpp
+	api06/changeset_download_handler.cpp \
+	api06/changeset_upload/osmchange_handler.cpp \
+	api06/changeset_upload/osmchange_tracking.cpp	
 
 if ENABLE_EXPERIMENTAL
 libcgimap_core_la_SOURCES+=\
@@ -190,7 +192,13 @@ libcgimap_apidb_la_SOURCES=\
 	backend/apidb/changeset.cpp \
 	backend/apidb/quad_tile.cpp \
 	backend/apidb/oauth_store.cpp \
-	backend/apidb/utils.cpp
+	backend/apidb/utils.cpp \
+	backend/apidb/changeset_upload/changeset_updater.cpp \
+	backend/apidb/changeset_upload/node_updater.cpp \
+	backend/apidb/changeset_upload/relation_updater.cpp \
+	backend/apidb/changeset_upload/transaction_manager.cpp \
+	backend/apidb/changeset_upload/way_updater.cpp	
+	
 libcgimap_apidb_la_LIBADD=libcgimap_core.la @BOOST_DATE_TIME_LIB@ @LIBPQXX_LIBS@
 endif
 
