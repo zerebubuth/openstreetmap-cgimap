@@ -89,6 +89,26 @@ public:
 };
 
 /**
+ * Indicates that the request could not be processed because of conflict
+ * in the request, such as an edit conflict between
+ * multiple simultaneous updates.
+ */
+class conflict : public exception {
+public:
+  conflict(const std::string &message);
+};
+
+/**
+ * The server does not meet one of the preconditions that
+ * the requester put on the request.
+ */
+class precondition_failed : public exception {
+public:
+  precondition_failed(const std::string &message);
+};
+
+
+/**
  * The request resource could not be found, or is not handled
  * by the server.
  */

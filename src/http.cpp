@@ -86,6 +86,12 @@ not_found::not_found(const string &uri) : exception(404, "Not Found", uri) {}
 not_acceptable::not_acceptable(const string &message)
     : exception(406, "Not Acceptable", message) {}
 
+conflict::conflict(const string &message)
+    : exception(409, "Conflict", message) {}
+
+precondition_failed::precondition_failed(const string &message)
+    : exception(412, "Precondition Failed", message) {}
+
 bandwidth_limit_exceeded::bandwidth_limit_exceeded(const string &message)
     : exception(509, "Bandwidth Limit Exceeded", message) {}
 

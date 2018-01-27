@@ -249,7 +249,7 @@ std::string Relation_Updater::item_type_to_member_type(osmium::item_type itemtyp
 	case osmium::item_type::relation:
 		return "Relation";
 	default:
-		std::runtime_error("Unexpected item type");
+		throw http::server_error("Unexpected item type");
 	}
 
 	return "";
@@ -279,7 +279,7 @@ void Relation_Updater::replace_old_ids_in_relations(std::vector<relation_t>& rel
 	{
 		auto res = map_relations.insert(std::pair <osm_nwr_signed_id_t, osm_nwr_id_t> (i.old_id, i.new_id));
 		if (!res.second)
-			throw std::runtime_error((boost::format("Duplicate relation placeholder id %1%.") % i.old_id).str());
+			throw http::bad_request((boost::format("Duplicate relation placeholder id %1%.") % i.old_id).str());
 	}
 
 	std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_ways;
@@ -287,7 +287,7 @@ void Relation_Updater::replace_old_ids_in_relations(std::vector<relation_t>& rel
 	{
 		auto res = map_ways.insert(std::pair <osm_nwr_signed_id_t, osm_nwr_id_t> (i.old_id, i.new_id));
 		if (!res.second)
-			throw std::runtime_error((boost::format("Duplicate way placeholder id %1%.") % i.old_id).str());
+			throw http::bad_request((boost::format("Duplicate way placeholder id %1%.") % i.old_id).str());
 	}
 
 	std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_nodes;
@@ -295,7 +295,7 @@ void Relation_Updater::replace_old_ids_in_relations(std::vector<relation_t>& rel
 	{
 		auto res = map_nodes.insert(std::pair <osm_nwr_signed_id_t, osm_nwr_id_t> (i.old_id, i.new_id));
 		if (!res.second)
-			throw std::runtime_error((boost::format("Duplicate node placeholder id %1%.") % i.old_id).str());
+			throw http::bad_request((boost::format("Duplicate node placeholder id %1%.") % i.old_id).str());
 	}
 
 	// replace temporary ids
@@ -306,7 +306,7 @@ void Relation_Updater::replace_old_ids_in_relations(std::vector<relation_t>& rel
 		{
 			auto entry = map_relations.find(cr.old_id);
 			if (entry == map_relations.end())
-				throw std::runtime_error((boost::format("Placeholder id not found for relation reference %1%") % cr.old_id).str());
+				throw http::bad_request((boost::format("Placeholder id not found for relation reference %1%") % cr.old_id).str());
 
 			cr.id = entry->second;
 		}
@@ -319,14 +319,14 @@ void Relation_Updater::replace_old_ids_in_relations(std::vector<relation_t>& rel
 				{
 					auto entry = map_nodes.find(mbr.old_member_id);
 					if (entry == map_nodes.end())
-						throw std::runtime_error((boost::format("Placeholder node not found for reference %1% in relation %2%") % mbr.old_member_id % cr.id).str());
+						throw http::bad_request((boost::format("Placeholder node not found for reference %1% in relation %2%") % mbr.old_member_id % cr.id).str());
 					mbr.member_id = entry->second;
 				}
 				else if (mbr.member_type == "Way")
 				{
 					auto entry = map_ways.find(mbr.old_member_id);
 					if (entry == map_ways.end())
-						throw std::runtime_error((boost::format("Placeholder way not found for reference %1% in relation %2%") % mbr.old_member_id % cr.id).str());
+						throw http::bad_request((boost::format("Placeholder way not found for reference %1% in relation %2%") % mbr.old_member_id % cr.id).str());
 					mbr.member_id = entry->second;
 
 				}
@@ -334,7 +334,7 @@ void Relation_Updater::replace_old_ids_in_relations(std::vector<relation_t>& rel
 				{
 					auto entry = map_relations.find(mbr.old_member_id);
 					if (entry == map_relations.end())
-						throw std::runtime_error((boost::format("Placeholder relation not found for reference %1% in relation %2%") % mbr.old_member_id % cr.id).str());
+						throw http::bad_request((boost::format("Placeholder relation not found for reference %1% in relation %2%") % mbr.old_member_id % cr.id).str());
 					mbr.member_id = entry->second;
 				}
 			}
@@ -369,7 +369,7 @@ void Relation_Updater::insert_new_relations_to_tmp_table(const std::vector<relat
 	pqxx::result r = m.prepared("insert_tmp_create_relations")(cs)(oldids).exec();
 
 	if (r.affected_rows() != create_relations.size())
-		throw std::runtime_error("Could not create all new relations in temporary table");
+		throw http::server_error("Could not create all new relations in temporary table");
 
 	for (auto row : r)
 		ct->created_relation_ids.push_back( { row["old_id"].as<osm_nwr_signed_id_t>(),
@@ -416,7 +416,7 @@ void Relation_Updater::lock_current_relations(const std::vector<osm_nwr_id_t>& i
 	    std::set_difference(idset.begin(), idset.end(), locked_ids.begin(), locked_ids.end(),
 	                        std::inserter(not_locked_ids, not_locked_ids.begin()));
 
-		throw std::runtime_error((boost::format("The following relation ids are unknown: %1%") % to_string(not_locked_ids)).str());
+		throw http::bad_request((boost::format("The following relation ids are unknown: %1%") % to_string(not_locked_ids)).str());
 	}
 }
 
@@ -488,7 +488,7 @@ void Relation_Updater::check_current_relation_versions(const std::vector<relatio
 
 	if (!r.empty())
 	{
-		throw std::runtime_error((boost::format("Version mismatch: Provided %1%, server had: %2% of Relation %3%")
+		throw http::conflict((boost::format("Version mismatch: Provided %1%, server had: %2% of Relation %3%")
 								  % r[0]["expected_version"].as<long>()
 								  % r[0]["actual_version"].as<long>()
 								  % r[0]["id"].as<long>()).str());
@@ -597,7 +597,7 @@ void Relation_Updater::lock_future_members(const std::vector<relation_t>& relati
 
 			auto it = absent_rel_node_ids.begin();
 
-			throw std::runtime_error((boost::format("Relation %1% requires the nodes with id in %2%, which either do not exist, or are not visible.")
+			throw http::precondition_failed((boost::format("Relation %1% requires the nodes with id in %2%, which either do not exist, or are not visible.")
 											  % it->first
 											  % to_string(it->second)).str());
 		}
@@ -630,7 +630,7 @@ void Relation_Updater::lock_future_members(const std::vector<relation_t>& relati
 
 			auto it = absent_rel_way_ids.begin();
 
-			throw std::runtime_error((boost::format("Relation %1% requires the ways with id in %2%, which either do not exist, or are not visible.")
+			throw http::precondition_failed((boost::format("Relation %1% requires the ways with id in %2%, which either do not exist, or are not visible.")
 											  % it->first
 											  % to_string(it->second)).str());
 		}
@@ -663,7 +663,7 @@ void Relation_Updater::lock_future_members(const std::vector<relation_t>& relati
 
 			auto it = absent_rel_rel_ids.begin();
 
-			throw std::runtime_error((boost::format("Relation %1% requires the relations with id in %2%, which either do not exist, or are not visible.")
+			throw http::precondition_failed((boost::format("Relation %1% requires the relations with id in %2%, which either do not exist, or are not visible.")
 											  % it->first
 											  % to_string(it->second)).str());
 		}
@@ -797,7 +797,7 @@ void Relation_Updater::update_current_relations(const std::vector<relation_t>& r
 	pqxx::result r = m.prepared("update_current_relations")(ids)(cs)(visibles)(versions).exec();
 
 	if (r.affected_rows() != relations.size())
-		throw std::runtime_error("Could not update all current relations");
+		throw http::server_error("Could not update all current relations");
 
 	// update modified/deleted relations table
 	for (auto row : r)
@@ -909,7 +909,7 @@ void Relation_Updater::save_current_relations_to_history(const std::vector<osm_n
 	pqxx::result r = m.prepared("current_relations_to_history")(ids).exec();
 
 	if (r.affected_rows() != ids.size())
-		throw std::runtime_error("Could not save current relations to history");
+		throw http::server_error("Could not save current relations to history");
 }
 
 void Relation_Updater::save_current_relation_tags_to_history(const std::vector<osm_nwr_id_t>& ids) {
@@ -1026,7 +1026,7 @@ std::vector<Relation_Updater::relation_t> Relation_Updater::is_relation_still_re
 		}
 		else
 			// Without the if-unused, such a situation would lead to an error, and the whole diff upload would fail.
-			throw std::runtime_error((boost::format("Relation %1% is still used by relations %2%.")
+			throw http::precondition_failed((boost::format("Relation %1% is still used by relations %2%.")
 									   % r[0]["member_id"].as<osm_nwr_id_t>()
 									   % friendly_name(r[0]["relation_ids"].as<std::string>())).str());
 

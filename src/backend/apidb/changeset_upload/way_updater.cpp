@@ -40,7 +40,7 @@ void Way_Updater::add_way(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t o
 		new_way.way_nodes.push_back({ (node.ref() < 0 ? 0 : static_cast<osm_nwr_id_t>(node.ref())), ++node_seq, node.ref()});
 
 	if (node_seq > WAY_MAX_NODES)
-		throw std::runtime_error ("Too many nodes in way");
+		throw http::bad_request("Too many nodes in way");
 
 	create_ways.push_back(new_way);
 
@@ -63,7 +63,7 @@ void Way_Updater::modify_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id, o
 		modify_way.way_nodes.push_back({ (node.ref() < 0 ? 0 : static_cast<osm_nwr_id_t>(node.ref())), ++node_seq, node.ref()});
 
 	if (node_seq > WAY_MAX_NODES)
-		throw std::runtime_error ("Too many nodes in way");
+		throw http::bad_request("Too many nodes in way");
 
 	modify_ways.push_back(modify_way);
 }
@@ -238,7 +238,7 @@ void Way_Updater::replace_old_ids_in_ways(std::vector<way_t>& ways,
 	{
 		auto res = map_ways.insert(std::pair <osm_nwr_signed_id_t, osm_nwr_id_t> (i.old_id, i.new_id));
 		if (!res.second)
-			throw std::runtime_error((boost::format("Duplicate way placeholder id %1%.") % i.old_id).str());
+			throw http::bad_request((boost::format("Duplicate way placeholder id %1%.") % i.old_id).str());
 	}
 
 	std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_nodes;
@@ -246,7 +246,7 @@ void Way_Updater::replace_old_ids_in_ways(std::vector<way_t>& ways,
 	{
 		auto res = map_nodes.insert(std::pair <osm_nwr_signed_id_t, osm_nwr_id_t> (i.old_id, i.new_id));
 		if (!res.second)
-			throw std::runtime_error((boost::format("Duplicate node placeholder id %1%.") % i.old_id).str());
+			throw http::bad_request((boost::format("Duplicate node placeholder id %1%.") % i.old_id).str());
 	}
 
 	for (auto& cw : ways)
@@ -256,7 +256,7 @@ void Way_Updater::replace_old_ids_in_ways(std::vector<way_t>& ways,
 		{
 			auto entry = map_ways.find(cw.old_id);
 			if (entry == map_ways.end())
-				throw std::runtime_error((boost::format("Placeholder id not found for way reference %1%") % cw.old_id).str());
+				throw http::bad_request((boost::format("Placeholder id not found for way reference %1%") % cw.old_id).str());
 			cw.id = entry->second;
 		}
 
@@ -266,7 +266,7 @@ void Way_Updater::replace_old_ids_in_ways(std::vector<way_t>& ways,
 			{
 				auto entry = map_nodes.find(wn.old_node_id);
 				if (entry == map_nodes.end())
-					throw std::runtime_error((boost::format("Placeholder node not found for reference %1% in way %2%") % wn.old_node_id % cw.id).str());
+					throw http::bad_request((boost::format("Placeholder node not found for reference %1% in way %2%") % wn.old_node_id % cw.id).str());
 				wn.node_id = entry->second;
 
 			}
@@ -302,7 +302,7 @@ void Way_Updater::insert_new_ways_to_tmp_table(const std::vector<way_t>& create_
 	pqxx::result r = m.prepared("insert_tmp_create_ways")(cs)(oldids).exec();
 
 	if (r.affected_rows() != create_ways.size())
-		throw std::runtime_error("Could not create all new way in temporary table");
+		throw http::server_error("Could not create all new way in temporary table");
 
 	for (auto row : r)
 		ct->created_way_ids.push_back( { row["old_id"].as<osm_nwr_signed_id_t>(),
@@ -381,7 +381,7 @@ void Way_Updater::lock_current_ways(const std::vector<osm_nwr_id_t>& ids) {
 	    std::set_difference(ids.begin(), ids.end(), locked_ids.begin(), locked_ids.end(),
 	                        std::inserter(not_locked_ids, not_locked_ids.begin()));
 
-		throw std::runtime_error((boost::format("The following way ids are unknown: %1%") % to_string(not_locked_ids)).str());
+		throw http::bad_request((boost::format("The following way ids are unknown: %1%") % to_string(not_locked_ids)).str());
 	}
 }
 
@@ -454,7 +454,7 @@ void Way_Updater::check_current_way_versions(const std::vector<way_t>& ways)
 
 	if (!r.empty())
 	{
-		throw std::runtime_error((boost::format("Version mismatch: Provided %1%, server had: %2% of Way %3%")
+		throw http::conflict((boost::format("Version mismatch: Provided %1%, server had: %2% of Way %3%")
 								  % r[0]["expected_version"].as<long>()
 								  % r[0]["actual_version"].as<long>()
 								  % r[0]["id"].as<long>()).str());
@@ -547,7 +547,7 @@ void Way_Updater::lock_future_nodes(const std::vector<way_t>& ways) {
 
 		auto it = absent_way_node_ids.begin();
 
-		throw std::runtime_error((boost::format("Way %1% requires the nodes with id in %2%, which either do not exist, or are not visible.")
+		throw http::precondition_failed((boost::format("Way %1% requires the nodes with id in %2%, which either do not exist, or are not visible.")
 										  % it->first
 										  % to_string(it->second)).str());
 	}
@@ -594,7 +594,7 @@ void Way_Updater::update_current_ways(const std::vector<way_t>& ways, bool visib
 	pqxx::result r = m.prepared("update_current_ways")(ids)(cs)(visibles)(versions).exec();
 
 	if (r.affected_rows() != ways.size())
-		throw std::runtime_error("Could not update all current ways");
+		throw http::server_error("Could not update all current ways");
 
 	// update modified ways table
 	for (auto row : r)
@@ -694,7 +694,7 @@ void Way_Updater::save_current_ways_to_history(const std::vector<osm_nwr_id_t>& 
 	pqxx::result r = m.prepared("current_ways_to_history")(ids).exec();
 
 	if (r.affected_rows() != ids.size())
-		throw std::runtime_error("Could not save current ways to history");
+		throw http::server_error("Could not save current ways to history");
 }
 
 void Way_Updater::save_current_way_nodes_to_history(const std::vector<osm_nwr_id_t>& ids) {
@@ -785,7 +785,7 @@ std::vector<Way_Updater::way_t> Way_Updater::is_way_still_referenced(const std::
 		}
 		else
 			// Without the if-unused, such a situation would lead to an error, and the whole diff upload would fail.
-			throw std::runtime_error((boost::format("Way %1% is still used by relations %2%.")
+			throw http::precondition_failed((boost::format("Way %1% is still used by relations %2%.")
 										% r[0]["member_id"].as<osm_nwr_id_t>()
 										% friendly_name(r[0]["relation_ids"].as<std::string>())).str());
 	}

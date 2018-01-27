@@ -30,11 +30,11 @@ void Changeset_Updater::lock_current_changeset() {
 	pqxx::result r = m.prepared("changeset_current_lock")(changeset)(uid).exec();
 
 	if (r.affected_rows() != 1)
-		throw std::runtime_error("Changeset does not exist for given user");
+		throw http::conflict("The user doesn't own that changeset");
 
 	if (r[0]["is_closed"].as<bool>()
 			|| r[0]["num_changes"].as<int>() > CHANGESET_MAX_ELEMENTS)
-		throw std::runtime_error("Changeset already closed");
+		throw http::conflict("Changeset already closed");
 
 	num_changes = r[0]["num_changes"].as<int>();
 }
@@ -42,7 +42,7 @@ void Changeset_Updater::lock_current_changeset() {
 void Changeset_Updater::update_changeset(long num_new_changes, bbox_t bbox) {
 
 	if (num_changes + num_new_changes > CHANGESET_MAX_ELEMENTS)
-		throw std::runtime_error("Too many elements in changeset");
+		throw http::conflict("Too many elements in changeset");
 
 	num_changes += num_new_changes;
 
@@ -84,7 +84,7 @@ void Changeset_Updater::update_changeset(long num_new_changes, bbox_t bbox) {
                                            (changeset).exec();
 
 		if (r.affected_rows() != 1)
-			throw std::runtime_error("Cannot update changeset");
+			throw http::server_error("Cannot update changeset");
 	}
 	else
 	{
@@ -99,7 +99,7 @@ void Changeset_Updater::update_changeset(long num_new_changes, bbox_t bbox) {
                                            (changeset).exec();
 
 		if (r.affected_rows() != 1)
-			throw std::runtime_error("Cannot update changeset");
+			throw http::server_error("Cannot update changeset");
 
 	}
 

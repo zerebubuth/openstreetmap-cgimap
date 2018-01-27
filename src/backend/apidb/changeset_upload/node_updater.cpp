@@ -213,7 +213,7 @@ void Node_Updater::replace_old_ids_in_create_nodes(std::vector<node_t>& create_n
 	{
 		auto res = map.insert(std::pair <osm_nwr_signed_id_t, osm_nwr_id_t> (i.old_id, i.new_id));
 		if (!res.second)
-			throw std::runtime_error((boost::format("Duplicate node placeholder id %1%.") % i.old_id).str());
+			throw http::bad_request((boost::format("Duplicate node placeholder id %1%.") % i.old_id).str());
 	}
 
 	for (auto& cn : create_nodes)
@@ -222,7 +222,7 @@ void Node_Updater::replace_old_ids_in_create_nodes(std::vector<node_t>& create_n
 		{
 			auto entry = map.find(cn.old_id);
 			if (entry == map.end())
-				throw std::runtime_error((boost::format("Placeholder id not found for node reference %1%") % cn.old_id).str());
+				throw http::bad_request((boost::format("Placeholder id not found for node reference %1%") % cn.old_id).str());
 			cn.id = entry->second;
 		}
 	}
@@ -266,7 +266,7 @@ void Node_Updater::insert_new_nodes_to_tmp_table(const std::vector<node_t>& crea
 	pqxx::result r = m.prepared("insert_tmp_create_nodes")(lats)(lons)(cs)(tiles)(oldids).exec();
 
 	if (r.affected_rows() != create_nodes.size())
-		throw std::runtime_error("Could not create all new nodes in temporary table");
+		throw http::server_error("Could not create all new nodes in temporary table");
 
 	for (auto row : r)
 		ct->created_node_ids.push_back( { row["old_id"].as<osm_nwr_signed_id_t>(),
@@ -314,7 +314,7 @@ void Node_Updater::lock_current_nodes(const std::vector<osm_nwr_id_t>& ids) {
 	    std::set_difference(ids.begin(), ids.end(), locked_ids.begin(), locked_ids.end(),
 	                        std::inserter(not_locked_ids, not_locked_ids.begin()));
 
-		throw std::runtime_error((boost::format("The following node ids are not known on the database: %1%") % to_string(not_locked_ids)).str());
+		throw http::bad_request((boost::format("The following node ids are not known on the database: %1%") % to_string(not_locked_ids)).str());
 	}
 }
 
@@ -386,7 +386,7 @@ void Node_Updater::check_current_node_versions(const std::vector<node_t>& nodes)
 
 	if (!r.empty())
 	{
-		throw std::runtime_error((boost::format("Version mismatch: Provided %1%, server had: %2% of Node %3%")
+		throw http::conflict((boost::format("Version mismatch: Provided %1%, server had: %2% of Node %3%")
 								  % r[0]["expected_version"].as<long>()
 								  % r[0]["actual_version"].as<long>()
 								  % r[0]["id"].as<long>()).str());
@@ -527,7 +527,7 @@ void Node_Updater::update_current_nodes(const std::vector<node_t>& nodes)
 		auto unknown_id = (*diff.begin());   // Just take first element
 		auto unknown_node = std::find_if(nodes.begin(), nodes.end(), [&](const node_t& n) { return n.id == unknown_id; });
 
-		throw std::runtime_error((boost::format("Could not update Node %1% with version %2% on the database.")
+		throw http::server_error((boost::format("Could not update Node %1% with version %2% on the database.")
 								  % (*unknown_node).id
 								  % (*unknown_node).version).str());
 
@@ -581,7 +581,7 @@ void Node_Updater::delete_current_nodes(const std::vector<node_t>& nodes)
 	pqxx::result r = m.prepared("delete_current_nodes")(ids)(cs)(versions).exec();
 
 	if (r.affected_rows() != nodes.size())
-		throw std::runtime_error("Could not delete all current nodes");
+		throw http::server_error("Could not delete all current nodes");
 
 	// update deleted nodes table
 	for (auto row : r)
@@ -629,7 +629,7 @@ void Node_Updater::insert_new_current_node_tags(const std::vector<node_t>& nodes
 	pqxx::result r = m.prepared("insert_new_current_node_tags")(ids)(ks)(vs).exec();
 
 	if (r.affected_rows() != total_tags)
-	  throw std::runtime_error("Could not create new current node tags");
+	  throw http::server_error("Could not create new current node tags");
 }
 
 
@@ -652,7 +652,7 @@ void Node_Updater::save_current_nodes_to_history(const std::vector<osm_nwr_id_t>
 	pqxx::result r = m.prepared("current_nodes_to_history")(ids).exec();
 
 	if (r.affected_rows() != ids.size())
-		throw std::runtime_error("Could not save current nodes to history");
+		throw http::server_error("Could not save current nodes to history");
 
 }
 
@@ -723,7 +723,7 @@ std::vector<Node_Updater::node_t> Node_Updater::is_node_still_referenced(const s
 			}
 			else
 				// Without the if-unused, such a situation would lead to an error, and the whole diff upload would fail.
-				throw std::runtime_error((boost::format("Node %1% is still used by ways %2%.")
+				throw http::precondition_failed((boost::format("Node %1% is still used by ways %2%.")
 										   % r[i]["node_id"].as<osm_nwr_id_t>()
 										   % friendly_name(r[i]["way_ids"].as<std::string>())).str());
 		}
@@ -753,9 +753,9 @@ std::vector<Node_Updater::node_t> Node_Updater::is_node_still_referenced(const s
 				nodes_to_exclude_from_deletion.insert(r[i]["member_id"].as<osm_nwr_id_t>());
 			else
 				// Without the if-unused, such a situation would lead to an error, and the whole diff upload would fail.
-				throw std::runtime_error((boost::format("Node %1% is still used by relations %2%.")
-										   % r[i]["member_id"].as<osm_nwr_id_t>()
-										   % friendly_name(r[i]["relation_ids"].as<std::string>())).str());
+				throw http::precondition_failed((boost::format("Node %1% is still used by relations %2%.")
+									   % r[i]["member_id"].as<osm_nwr_id_t>()
+									   % friendly_name(r[i]["relation_ids"].as<std::string>())).str());
 		}
 
 	}
@@ -790,6 +790,6 @@ void Node_Updater::delete_current_node_tags(const std::vector<osm_nwr_id_t>& ids
 unsigned int Node_Updater::get_num_changes()
 {
 	return (ct->created_node_ids.size() +
-			ct->modified_node_ids.size() +
-			ct->deleted_node_ids.size());
+		ct->modified_node_ids.size() +
+		ct->deleted_node_ids.size());
 }

@@ -1,8 +1,11 @@
 
+#include "cgimap/logger.hpp"
+#include "cgimap/http.hpp"
 
 #include "cgimap/api06/changeset_upload/osmchange_handler.hpp"
 
 
+#include <boost/format.hpp>
 
 
 
@@ -19,15 +22,15 @@ OSMChange_Handler::OSMChange_Handler(std::unique_ptr<Node_Updater> _node_updater
 void OSMChange_Handler::osm_object(const osmium::OSMObject& o) const {
 
 	if (o.changeset() != m_changeset)
-	  throw std::runtime_error("Incorrect changeset in OsmChange message");
+	  throw http::conflict((boost::format("Changeset mismatch: Provided %1% but only %2% is allowed") % o.changeset() % m_changeset).str());
 
 	for (const auto & tag : o.tags())
 	{
 		if (unicode_strlen(tag.key()) > 255)
-			throw std::runtime_error ("Key has more than 255 unicode characters");
+			throw http::bad_request("Key has more than 255 unicode characters");
 
 		if (unicode_strlen(tag.value()) > 255)
-			throw std::runtime_error ("Value has more than 255 unicode characters");
+			throw http::bad_request("Value has more than 255 unicode characters");
 	}
 
 }
@@ -93,7 +96,7 @@ void OSMChange_Handler::relation(const osmium::Relation& relation) {
 	for (const auto & m : relation.members())
 	{
 		if (unicode_strlen(m.role()) > 255)
-			throw std::runtime_error ("Relation Role has more than 255 unicode characters");
+			throw http::bad_request("Relation Role has more than 255 unicode characters");
 	}
 
 	switch (op) {
