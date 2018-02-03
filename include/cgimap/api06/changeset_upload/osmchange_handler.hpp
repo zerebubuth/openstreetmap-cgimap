@@ -9,12 +9,18 @@
 #include "util.hpp"
 #include "cgimap/backend/apidb/changeset_upload/way_updater.hpp"
 
+#include "parser_callback.hpp"
+#include "osmobject.hpp"
+#include "node.hpp"
+#include "way.hpp"
+#include "relation.hpp"
+
 #include <osmium/handler.hpp>
 
 
 
 
-class OSMChange_Handler: public osmium::handler::Handler {
+class OSMChange_Handler : public Parser_Callback {
 
 public:
 
@@ -22,13 +28,13 @@ public:
 			std::unique_ptr<Relation_Updater> _relation_updater, osm_changeset_id_t _changeset, osm_user_id_t _uid);
 
 	// checks common to all objects
-	void osm_object(const osmium::OSMObject& o) const;
+	void check_osm_object(const OSMObject& o) const;
 
-	void node(const osmium::Node& node);
+        void node(const Node& node, operation op, bool if_unused);
 
-	void way(const osmium::Way& way);
+        void way(const Way& way, operation op, bool if_unused);
 
-	void relation(const osmium::Relation& relation);
+        void relation(const Relation& relation, operation op, bool if_unused);
 
 	void finish_processing();
 
@@ -37,10 +43,6 @@ public:
 	bbox_t get_bbox();
 
 private:
-
-	enum class operation {
-		op_create = 1, op_modify = 2, op_delete = 3
-	};
 
 	enum class state {
 		st_initial,
@@ -53,8 +55,6 @@ private:
 		st_delete_node,
 		st_finished
 	};
-
-	operation get_operation(const osmium::OSMObject& o);
 
 	void handle_new_state(state new_state);
 

@@ -25,7 +25,7 @@ Way_Updater::Way_Updater(Transaction_Manager& _m, std::shared_ptr<OSMChange_Trac
 }
 
 void Way_Updater::add_way(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
-		const osmium::WayNodeList& nodes, const osmium::TagList& tags) {
+		const WayNodeList& nodes, const TagList& tags) {
 
 	way_t new_way{};
 	new_way.version = 1;
@@ -33,11 +33,11 @@ void Way_Updater::add_way(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t o
 	new_way.old_id = old_id;
 
 	for (const auto& tag : tags)
-	  new_way.tags.push_back(std::pair<std::string, std::string>(tag.key(), tag.value()));
+	  new_way.tags.push_back(std::pair<std::string, std::string>(tag.first, tag.second));
 
 	int node_seq = 0;
 	for (const auto& node : nodes)
-		new_way.way_nodes.push_back({ (node.ref() < 0 ? 0 : static_cast<osm_nwr_id_t>(node.ref())), ++node_seq, node.ref()});
+		new_way.way_nodes.push_back({ (node < 0 ? 0 : static_cast<osm_nwr_id_t>(node)), ++node_seq, node });
 
 	if (node_seq > WAY_MAX_NODES)
 		throw http::bad_request("Too many nodes in way");
@@ -47,7 +47,7 @@ void Way_Updater::add_way(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t o
 }
 
 void Way_Updater::modify_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id, osm_version_t version,
-		const osmium::WayNodeList& nodes, const osmium::TagList& tags) {
+		const WayNodeList& nodes, const TagList& tags) {
 
 	way_t modify_way{};
 	modify_way.id = id;
@@ -56,11 +56,11 @@ void Way_Updater::modify_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id, o
 	modify_way.changeset_id = changeset_id;
 
 	for (const auto& tag : tags)
-		modify_way.tags.push_back(std::pair<std::string, std::string>(tag.key(), tag.value()));
+		modify_way.tags.push_back(std::pair<std::string, std::string>(tag.first, tag.second));
 
 	int node_seq = 0;
 	for (const auto& node : nodes)
-		modify_way.way_nodes.push_back({ (node.ref() < 0 ? 0 : static_cast<osm_nwr_id_t>(node.ref())), ++node_seq, node.ref()});
+		modify_way.way_nodes.push_back({ (node < 0 ? 0 : static_cast<osm_nwr_id_t>(node)), ++node_seq, node });
 
 	if (node_seq > WAY_MAX_NODES)
 		throw http::bad_request("Too many nodes in way");

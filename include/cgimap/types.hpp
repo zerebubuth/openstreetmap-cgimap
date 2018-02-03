@@ -22,4 +22,9 @@ enum class osm_user_role_t {
   moderator
 };
 
+// OSMChange message operations
+enum class operation {
+        op_undefined = 0, op_create = 1, op_modify = 2, op_delete = 3
+};
+
 #endif /* TYPES_HPP */

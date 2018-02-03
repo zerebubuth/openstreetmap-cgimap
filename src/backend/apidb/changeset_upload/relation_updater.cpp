@@ -25,8 +25,8 @@ Relation_Updater::Relation_Updater(Transaction_Manager& _m, std::shared_ptr<OSMC
 	}
 
 void Relation_Updater::add_relation(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
-		const osmium::RelationMemberList& members,
-		const osmium::TagList& tags) {
+		const RelationMemberList& members,
+		const TagList& tags) {
 
 	relation_t new_relation{};
 
@@ -35,13 +35,13 @@ void Relation_Updater::add_relation(osm_changeset_id_t changeset_id, osm_nwr_sig
 	new_relation.old_id = old_id;
 
 	for (const auto& tag : tags)
-		new_relation.tags.emplace_back(std::pair<std::string, std::string>(tag.key(), tag.value()));
+		new_relation.tags.emplace_back(std::pair<std::string, std::string>(tag.first, tag.second));
 
 	int member_seq = 0;
 	for (const auto& member : members)
 	{
 		member_t new_member{};
-		new_member.member_type = item_type_to_member_type(member.type());
+		new_member.member_type = member.type();
 		new_member.member_role = member.role();
 		new_member.member_id = (member.ref() < 0 ? 0 : member.ref());
 		new_member.old_member_id = member.ref();
@@ -53,8 +53,8 @@ void Relation_Updater::add_relation(osm_changeset_id_t changeset_id, osm_nwr_sig
 }
 
 void Relation_Updater::modify_relation(osm_changeset_id_t changeset_id, osm_nwr_id_t id, osm_version_t version,
-		const osmium::RelationMemberList& members,
-		const osmium::TagList& tags) {
+		const RelationMemberList& members,
+		const TagList& tags) {
 
 	relation_t modify_relation{};
 
@@ -64,13 +64,13 @@ void Relation_Updater::modify_relation(osm_changeset_id_t changeset_id, osm_nwr_
 	modify_relation.changeset_id = changeset_id;
 
 	for (const auto& tag : tags)
-		modify_relation.tags.emplace_back(std::pair<std::string, std::string>(tag.key(), tag.value()));
+		modify_relation.tags.emplace_back(std::pair<std::string, std::string>(tag.first, tag.second));
 
 	int member_seq = 0;
 	for (const auto& member : members)
 	{
 		member_t modify_member{};
-		modify_member.member_type = item_type_to_member_type(member.type());
+		modify_member.member_type = member.type();
 		modify_member.member_role = member.role();
 		modify_member.member_id = (member.ref() < 0 ? 0 : member.ref());
 		modify_member.old_member_id = member.ref();
@@ -133,9 +133,9 @@ void Relation_Updater::process_modify_relations() {
 
 	// Use new_ids as a result of inserting nodes/ways in tmp table
 	replace_old_ids_in_relations(modify_relations,
-								 ct->created_node_ids,
-								 ct->created_way_ids,
-								 ct->created_relation_ids);
+                                     ct->created_node_ids,
+                                     ct->created_way_ids,
+                                     ct->created_relation_ids);
 
 	std::vector<osm_nwr_id_t> ids;
 
@@ -235,25 +235,6 @@ void Relation_Updater::process_delete_relations() {
 	delete_relations.clear();
 }
 
-
-
-
-std::string Relation_Updater::item_type_to_member_type(osmium::item_type itemtype)
-{
-	switch (itemtype) {
-
-	case osmium::item_type::node:
-		return "Node";
-	case osmium::item_type::way:
-		return "Way";
-	case osmium::item_type::relation:
-		return "Relation";
-	default:
-		throw http::server_error("Unexpected item type");
-	}
-
-	return "";
-}
 
 void Relation_Updater::truncate_temporary_tables()
 {

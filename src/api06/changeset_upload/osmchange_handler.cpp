@@ -19,53 +19,60 @@ OSMChange_Handler::OSMChange_Handler(std::unique_ptr<Node_Updater> _node_updater
 
 
 // checks common to all objects
-void OSMChange_Handler::osm_object(const osmium::OSMObject& o) const {
+void OSMChange_Handler::check_osm_object(const OSMObject& o) const {
 
 	if (o.changeset() != m_changeset)
 	  throw http::conflict((boost::format("Changeset mismatch: Provided %1% but only %2% is allowed") % o.changeset() % m_changeset).str());
 
 	for (const auto & tag : o.tags())
 	{
-		if (unicode_strlen(tag.key()) > 255)
+		if (unicode_strlen(tag.first) > 255)
 			throw http::bad_request("Key has more than 255 unicode characters");
 
-		if (unicode_strlen(tag.value()) > 255)
+		if (unicode_strlen(tag.second) > 255)
 			throw http::bad_request("Value has more than 255 unicode characters");
 	}
 
 }
 
-void OSMChange_Handler::node(const osmium::Node& node) {
-	auto op = get_operation(node);
+void OSMChange_Handler::node(const Node& node, operation op, bool if_unused) {
+
+	assert(op != operation::op_undefined);
+
+	check_osm_object(node);
 
 	switch (op) {
 	case operation::op_create:
 		handle_new_state(state::st_create_node);
-		node_updater->add_node(node.location().lat(), node.location().lon(),
+		node_updater->add_node(node.lat(), node.lon(),
 				m_changeset, node.id(), std::move(node.tags()));
 		break;
 
 	case operation::op_modify:
 		handle_new_state(state::st_modify);
-		node_updater->modify_node(node.location().lat(),
-				node.location().lon(), m_changeset, node.id(),
+		node_updater->modify_node(node.lat(),
+				node.lon(), m_changeset, node.id(),
 				node.version(), std::move(node.tags()));
 		break;
 
 	case operation::op_delete:
-		assert (1 <= node.uid() && node.uid() <= 2);
-		// workaround: non-used uid field -> if-used flag
-		bool if_unused = (node.uid() == 2 ? true : false);
-
 		handle_new_state(state::st_delete_node);
 		node_updater->delete_node(m_changeset, node.id(), node.version(), if_unused);
+		break;
+
+	default:
+		// handled by assertion
 		break;
 	}
 }
 
-void OSMChange_Handler::way(const osmium::Way& way) {
-	auto op = get_operation(way);
+void OSMChange_Handler::way(const Way& way, operation op, bool if_unused) {
 
+
+	assert(op != operation::op_undefined);
+
+	check_osm_object(way);
+	
 	switch (op) {
 	case operation::op_create:
 		handle_new_state(state::st_create_way);
@@ -80,19 +87,22 @@ void OSMChange_Handler::way(const osmium::Way& way) {
 		break;
 
 	case operation::op_delete:
-		assert (1 <= way.uid() && way.uid() <= 2);
-		// workaround: non-used uid field -> if-used flag
-		bool if_unused = (way.uid() == 2 ? true : false);
-
 		handle_new_state(state::st_delete_way);
 		way_updater->delete_way(m_changeset, way.id(), way.version(), if_unused);
+		break;
+
+	default:
+		// handled by assertion
 		break;
 	}
 }
 
-void OSMChange_Handler::relation(const osmium::Relation& relation) {
-	auto op = get_operation(relation);
+void OSMChange_Handler::relation(const Relation& relation, operation op, bool if_unused) {
 
+	assert(op != operation::op_undefined);
+
+	check_osm_object(relation);
+	
 	for (const auto & m : relation.members())
 	{
 		if (unicode_strlen(m.role()) > 255)
@@ -114,13 +124,12 @@ void OSMChange_Handler::relation(const osmium::Relation& relation) {
 		break;
 
 	case operation::op_delete:
-		assert (1 <= relation.uid() && relation.uid() <= 2);
-		// workaround: non-used uid field -> if-used flag
-		bool if_unused = (relation.uid() == 2 ? true : false);
-
 		handle_new_state(state::st_delete_relation);
 		relation_updater->delete_relation(m_changeset, relation.id(),
 				relation.version(), if_unused);
+		break;
+	default:
+		// handled by assertion
 		break;
 	}
 }
@@ -145,17 +154,6 @@ bbox_t OSMChange_Handler::get_bbox() {
 	return bbox;
 }
 
-OSMChange_Handler::operation OSMChange_Handler::get_operation(const osmium::OSMObject& o) {
-
-    // As libosmium objects don't have a dedicated field to store an osmchange operation,
-	// we set the version to 0 for objects in operation 'created' and values > 0 for
-	// all other operations. In addition, delete operation have the visible flag set to false
-
-	return (o.visible() ?
-			((o.version() == 0) ?
-					operation::op_create : operation::op_modify) :
-			operation::op_delete);
-}
 
 void OSMChange_Handler::handle_new_state(state new_state) {
 

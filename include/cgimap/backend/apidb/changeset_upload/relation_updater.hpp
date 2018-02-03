@@ -6,11 +6,14 @@
 
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 #include "cgimap/backend/apidb/changeset_upload/transaction_manager.hpp"
+#include "cgimap/api06/changeset_upload/relation.hpp"
 
 #include <set>
 
 #include <osmium/osm/relation.hpp>
 
+using RelationMemberList = std::vector<RelationMember>;
+using TagList = std::map<std::string, std::string>;
 
 class Relation_Updater {
 
@@ -19,12 +22,12 @@ public:
 	Relation_Updater(Transaction_Manager& _m, std::shared_ptr<OSMChange_Tracking> _ct);
 
 	void add_relation(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
-			const osmium::RelationMemberList& members,
-			const osmium::TagList& tags);
+			const RelationMemberList& members,
+			const TagList& tags);
 
 	void modify_relation(osm_changeset_id_t changeset_id, osm_nwr_id_t id, osm_version_t version,
-			const osmium::RelationMemberList& members,
-			const osmium::TagList& tags);
+			const RelationMemberList& members,
+			const TagList& tags);
 
 	void delete_relation(osm_changeset_id_t changeset_id, osm_nwr_id_t id, osm_version_t version, bool if_unused);
 

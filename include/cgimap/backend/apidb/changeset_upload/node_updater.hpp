@@ -12,6 +12,8 @@
 #include <osmium/osm/node.hpp>
 
 
+using TagList = std::map<std::string, std::string>;
+
 class Node_Updater {
 
 public:
@@ -19,10 +21,10 @@ public:
 	Node_Updater(Transaction_Manager& _m, std::shared_ptr<OSMChange_Tracking> _ct);
 
 	void add_node(double lat, double lon, osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
-			 const osmium::TagList& tags);
+			 const TagList& tags);
 
 	void modify_node(double lat, double lon, osm_changeset_id_t changeset_id, osm_nwr_id_t id,
-			osm_version_t version, const osmium::TagList& tags);
+			osm_version_t version, const TagList& tags);
 
 	void delete_node(osm_changeset_id_t changeset_id, osm_nwr_id_t id, osm_version_t version, bool if_unused);
 

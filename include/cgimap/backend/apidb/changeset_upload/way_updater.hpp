@@ -13,6 +13,9 @@
 
 #include <osmium/osm/way.hpp>
 
+using TagList = std::map<std::string, std::string>;
+using WayNodeList = std::vector<osm_nwr_signed_id_t>;
+
 
 /*  Way operations
  *
@@ -25,10 +28,10 @@ public:
 	Way_Updater(Transaction_Manager& _m, std::shared_ptr<OSMChange_Tracking> _ct);
 
 	void add_way(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
-			const osmium::WayNodeList& nodes, const osmium::TagList& tags);
+			const WayNodeList& nodes, const TagList& tags);
 
 	void modify_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id, osm_version_t version,
-			const osmium::WayNodeList& nodes, const osmium::TagList& tags);
+			const WayNodeList& nodes, const TagList& tags);
 
 
 	void delete_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id, osm_version_t version, bool if_unused);

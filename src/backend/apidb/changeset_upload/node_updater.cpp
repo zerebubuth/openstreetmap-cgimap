@@ -29,7 +29,7 @@ Node_Updater::Node_Updater(Transaction_Manager& _m, std::shared_ptr<OSMChange_Tr
 }
 
 void Node_Updater::add_node(double lat, double lon, osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
-		 const osmium::TagList& tags) {
+		 const TagList& tags) {
 
 	node_t new_node{};
 	new_node.version = 1;
@@ -39,12 +39,12 @@ void Node_Updater::add_node(double lat, double lon, osm_changeset_id_t changeset
 	new_node.changeset_id = changeset_id;
 	new_node.old_id = old_id;
 	for (const auto& tag : tags)
-	  new_node.tags.emplace_back(std::pair<std::string, std::string>(tag.key(), tag.value()));
+	  new_node.tags.emplace_back(std::pair<std::string, std::string>(tag.first, tag.second));
 	create_nodes.push_back(new_node);
 }
 
 void Node_Updater::modify_node(double lat, double lon, osm_changeset_id_t changeset_id, osm_nwr_id_t id,
-		osm_version_t version, const osmium::TagList& tags) {
+		osm_version_t version, const TagList& tags) {
 
 	node_t modify_node{};
 	modify_node.id = id;
@@ -55,7 +55,7 @@ void Node_Updater::modify_node(double lat, double lon, osm_changeset_id_t change
 	modify_node.changeset_id = changeset_id;
 	modify_node.old_id = 0;
 	for (const auto& tag : tags)
-		modify_node.tags.emplace_back(std::make_pair(tag.key(), tag.value()));
+		modify_node.tags.emplace_back(std::make_pair(tag.first, tag.second));
 	modify_nodes.push_back(modify_node);
 }
 
