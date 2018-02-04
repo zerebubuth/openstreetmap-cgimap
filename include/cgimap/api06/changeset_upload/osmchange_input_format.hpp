@@ -124,13 +124,11 @@ class OSMChangeXMLParser {
                   xmlInitParser();
 
                   memset(&handler, 0, sizeof(handler));
-
                   handler.initialized = XML_SAX2_MAGIC;
                   handler.startElement = &start_element_wrapper;
                   handler.endElement = &end_element_wrapper;
                   handler.warning = &warning;
-//                handler.error = &error;
-//                handler.characters = &xml_parser::characters;
+                  handler.error = &error;
                 }
 
                 XMLParser(const XMLParser&) = delete;
@@ -146,19 +144,24 @@ class OSMChangeXMLParser {
 
                 void operator()(const std::string& data) {
 
-                    ctxt = xmlCreatePushParserCtxt(&handler, m_callback_object, data.data(), data.length(), NULL);
-                    if (ctxt == NULL)
-                        throw std::runtime_error("Could not create parser context!");
-                    xmlCtxtUseOptions(ctxt,  XML_PARSE_RECOVER | XML_PARSE_NONET);
+                  if (data.size() < 4)
+                    throw std::runtime_error ("Invalid XML input");
 
-                xmlParseChunk(ctxt, data.c_str(), data.size(), 0);
+                  // provide first 4 characters of data string, according to http://xmlsoft.org/library.html
+                  ctxt = xmlCreatePushParserCtxt(&handler, m_callback_object, data.c_str(), 4, NULL);
+                  if (ctxt == NULL)
+                    throw std::runtime_error("Could not create parser context!");
 
-                // TODO: Check why this reports "Extra content at the end of the document"
-//              {
-//                  xmlErrorPtr err = xmlGetLastError();
-//                      throw std::runtime_error((boost::format("XML ERROR: %1%.") % err->message).str());
-//              }
-                xmlParseChunk(ctxt, 0, 0, 1);
+                  xmlCtxtUseOptions(ctxt,  XML_PARSE_RECOVER | XML_PARSE_NONET);
+
+                  // TODO: pass remaining characters - add while + meaningful chunk size (e.g. 1024?)
+                  if (xmlParseChunk(ctxt, data.c_str()+4, data.size()-4, 0))
+                  {
+                    xmlErrorPtr err = xmlGetLastError();
+                    throw std::runtime_error((boost::format("XML ERROR: %1%.") % err->message).str());
+                  }
+
+                  xmlParseChunk(ctxt, 0, 0, 1);
                 }
 
         }; // class XMLParser
