@@ -16,8 +16,7 @@ NOTE: This is based on a heavily modified xml_input_format.hpp version
 #include "types.hpp"
 
 
-#include <expat.h>
-#include <expat_external.h>
+#include <libxml/parser.h>
 
 #include <algorithm>
 #include <cassert>
@@ -31,22 +30,23 @@ struct xml_error : public std::runtime_error {
 
         uint64_t line = 0;
         uint64_t column = 0;
-        XML_Error error_code;
+        std::string error_code;
         std::string error_string;
 
-        explicit xml_error(const XML_Parser& parser) :
-                std::runtime_error(std::string{"XML parsing error at line "}
-                                + std::to_string(XML_GetCurrentLineNumber(parser))
-                                + ", column "
-                                + std::to_string(XML_GetCurrentColumnNumber(parser))
-                                + ": "
-                                + XML_ErrorString(XML_GetErrorCode(parser))),
-                line(XML_GetCurrentLineNumber(parser)),
-                column(XML_GetCurrentColumnNumber(parser)),
-                error_code(XML_GetErrorCode(parser)),
-                error_string(XML_ErrorString(error_code)) {
-        }
-
+//
+//      explicit xml_error(const XML_Parser& parser) :
+//              std::runtime_error(std::string{"XML parsing error at line "}
+//                              + std::to_string(XML_GetCurrentLineNumber(parser))
+//                              + ", column "
+//                              + std::to_string(XML_GetCurrentColumnNumber(parser))
+//                              + ": "
+//                              + XML_ErrorString(XML_GetErrorCode(parser))),
+//              line(XML_GetCurrentLineNumber(parser)),
+//              column(XML_GetCurrentColumnNumber(parser)),
+//              error_code(XML_GetErrorCode(parser)),
+//              error_string(XML_ErrorString(error_code)) {
+//      }
+//
         explicit xml_error(const std::string& message) :
                 std::runtime_error(message),
                 error_code(),
@@ -86,73 +86,97 @@ class OSMChangeXMLParser {
 
 
         template <typename T>
-        class ExpatXMLParser {
+        class XMLParser {
 
-                XML_Parser m_parser;
+                xmlSAXHandler handler{};
+                xmlParserCtxtPtr ctxt{};
+                T* m_callback_object;
 
-                static void XMLCALL start_element_wrapper(void* data, const XML_Char* element, const XML_Char** attrs) {
-                        static_cast<OSMChangeXMLParser*>(data)->start_element(element, attrs);
+
+                static void start_element_wrapper(void* data, const xmlChar* element, const xmlChar** attrs) {
+                        static_cast<OSMChangeXMLParser*>(data)->start_element((const char*) element, (const char**) attrs);
                 }
 
-                static void XMLCALL end_element_wrapper(void* data, const XML_Char* element) {
-                        static_cast<OSMChangeXMLParser*>(data)->end_element(element);
+                static void end_element_wrapper(void* data, const xmlChar* element) {
+                        static_cast<OSMChangeXMLParser*>(data)->end_element((const char*) element);
                 }
 
-                static void entity_declaration_handler(void*,
-                                const XML_Char*,
-                                int ,
-                                const XML_Char*,
-                                int,
-                                const XML_Char*,
-                                const XML_Char*,
-                                const XML_Char*,
-                                const XML_Char*) {
-                        throw xml_error{"XML entities are not supported"};
-                }
+
+                  static void warning(void *, const char *, ...) {
+                        // TODO
+                  }
+
+                  static void error(void *, const char *fmt, ...) {
+                        char buffer[1024];
+                        va_list arg_ptr;
+                        va_start(arg_ptr, fmt);
+                        vsnprintf(buffer, sizeof(buffer) - 1, fmt, arg_ptr);
+                        va_end(arg_ptr);
+                        throw std::runtime_error((boost::format("XML Error: %1%") % buffer).str());
+                  }
+
+
 
         public:
 
-                explicit ExpatXMLParser(T* callback_object) :
-                        m_parser(XML_ParserCreate(nullptr)) {
-                        if (!m_parser) {
-                                throw std::runtime_error{"Internal error: Can not create parser"};
-                        }
-                        XML_SetUserData(m_parser, callback_object);
-                        XML_SetElementHandler(m_parser, start_element_wrapper, end_element_wrapper);
-                        XML_SetEntityDeclHandler(m_parser, entity_declaration_handler);
+                explicit XMLParser(T* callback_object) : m_callback_object(callback_object){
+
+                  xmlInitParser();
+
+                  memset(&handler, 0, sizeof(handler));
+
+                  handler.initialized = XML_SAX2_MAGIC;
+                  handler.startElement = &start_element_wrapper;
+                  handler.endElement = &end_element_wrapper;
+                  handler.warning = &warning;
+//                handler.error = &error;
+//                handler.characters = &xml_parser::characters;
                 }
 
-                ExpatXMLParser(const ExpatXMLParser&) = delete;
-                ExpatXMLParser(ExpatXMLParser&&) = delete;
+                XMLParser(const XMLParser&) = delete;
+                XMLParser(XMLParser&&) = delete;
 
-                ExpatXMLParser& operator=(const ExpatXMLParser&) = delete;
-                ExpatXMLParser& operator=(ExpatXMLParser&&) = delete;
+                XMLParser& operator=(const XMLParser&) = delete;
+                XMLParser& operator=(XMLParser&&) = delete;
 
-                ~ExpatXMLParser() noexcept {
-                        XML_ParserFree(m_parser);
+                ~XMLParser() noexcept {
+                    xmlFreeParserCtxt(ctxt);
+                        xmlCleanupParser();
                 }
 
-                void operator()(const std::string& data, bool last) {
-                        if (XML_Parse(m_parser, data.data(), static_cast<int>(data.size()), last) == XML_STATUS_ERROR) {
-                                throw xml_error{m_parser};
-                        }
+                void operator()(const std::string& data) {
+
+                    ctxt = xmlCreatePushParserCtxt(&handler, m_callback_object, data.data(), data.length(), NULL);
+                    if (ctxt == NULL)
+                        throw std::runtime_error("Could not create parser context!");
+                    xmlCtxtUseOptions(ctxt,  XML_PARSE_RECOVER | XML_PARSE_NONET);
+
+                xmlParseChunk(ctxt, data.c_str(), data.size(), 0);
+
+                // TODO: Check why this reports "Extra content at the end of the document"
+//              {
+//                  xmlErrorPtr err = xmlGetLastError();
+//                      throw std::runtime_error((boost::format("XML ERROR: %1%.") % err->message).str());
+//              }
+                xmlParseChunk(ctxt, 0, 0, 1);
                 }
 
-        }; // class ExpatXMLParser
+        }; // class XMLParser
 
         template <typename T>
-        static void check_attributes(const XML_Char** attrs, T check) {
+        static void check_attributes(const char** attrs, T check) {
                 while (*attrs) {
                         check(attrs[0], attrs[1]);
                         attrs += 2;
                 }
         }
 
-        void init_object(OSMObject& object, const XML_Char** attrs) {
+        void init_object(OSMObject& object, const char** attrs) {
 
                 object.set_visible(m_operation != operation::op_delete);
 
-                check_attributes(attrs, [&object](const XML_Char* name, const XML_Char* value) {
+                check_attributes(attrs, [&object](const char* name, const char* value) {
+
                         if (!std::strcmp(name, "id")) {
                         object.set_id(value);
                         } else if (!std::strcmp(name, "visible")) {
@@ -182,9 +206,10 @@ class OSMChangeXMLParser {
                 }
         }
 
-        void init_node(Node& node, const XML_Char** attrs)
+        void init_node(Node& node, const char** attrs)
         {
-                check_attributes(attrs, [&node](const XML_Char* name, const XML_Char* value) {
+                check_attributes(attrs, [&node](const char* name, const char* value) {
+
                         if (!std::strcmp(name, "lon")) {
                                 node.set_lon(value);
                         } else if (!std::strcmp(name, "lat")) {
@@ -193,11 +218,12 @@ class OSMChangeXMLParser {
                 });
         }
 
-        void get_tag(OSMObject & o, const XML_Char** attrs) {
+        void get_tag(OSMObject & o, const char** attrs) {
                 const char* k = "";
                 const char* v = "";
 
-                check_attributes(attrs, [&k, &v](const XML_Char* name, const XML_Char* value) {
+                check_attributes(attrs, [&k, &v](const char* name, const char* value) {
+
                         if (name[0] == 'k' && name[1] == 0) {
                                 k = value;
                         } else if (name[0] == 'v' && name[1] == 0) {
@@ -208,7 +234,7 @@ class OSMChangeXMLParser {
                 o.add_tag(k, v);
         }
 
-        void start_element(const XML_Char* element, const XML_Char** attrs) {
+        void start_element(const char* element, const char** attrs) {
 
                 switch (m_context) {
                         case context::root:
@@ -232,7 +258,8 @@ class OSMChangeXMLParser {
                                         m_operation = operation::op_modify;
                                 } else if (!std::strcmp(element, "delete")) {
                                         m_if_unused = false;
-                                        check_attributes(attrs, [&](const XML_Char* name, const XML_Char*) {
+                                        check_attributes(attrs, [&](const char* name, const char*) {
+
                                                 if (!std::strcmp(name, "if-unused")) {
                                                         m_if_unused = true;
                                                 }
@@ -278,7 +305,7 @@ class OSMChangeXMLParser {
                                 m_last_context = context::way;
                                 m_context = context::in_object;
                                 if (!std::strcmp(element, "nd")) {
-                                        check_attributes(attrs, [&](const XML_Char* name, const XML_Char* value) {
+                                        check_attributes(attrs, [&](const char* name, const char* value) {
                                                 if (!std::strcmp(name, "ref")) {
                                                         m_way->add_way_node(value);
                                                 }
@@ -292,7 +319,7 @@ class OSMChangeXMLParser {
                                 m_context = context::in_object;
                                 if (!std::strcmp(element, "member")) {
                                         RelationMember member;
-                                        check_attributes(attrs, [&member](const XML_Char* name, const XML_Char* value) {
+                                        check_attributes(attrs, [&member](const char* name, const char* value) {
                                                 if (!std::strcmp(name, "type")) {
                                                         member.set_type(value);
                                                 } else if (!std::strcmp(name, "ref")) {
@@ -315,7 +342,7 @@ class OSMChangeXMLParser {
                 }
         }
 
-        void end_element(const XML_Char* element) {
+        void end_element(const char* element) {
 
                 switch (m_context) {
                         case context::root:
@@ -390,9 +417,9 @@ public:
 
         void process_message(std::string data) {
 
-                ExpatXMLParser<OSMChangeXMLParser> parser{this};
+                XMLParser<OSMChangeXMLParser> parser{this};
 
-                parser(data, true);
+                parser(data);
 
 // TODO: streaming
 
