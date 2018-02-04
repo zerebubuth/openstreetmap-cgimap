@@ -45,14 +45,14 @@ void OSMChange_Handler::node(const Node& node, operation op, bool if_unused) {
 	case operation::op_create:
 		handle_new_state(state::st_create_node);
 		node_updater->add_node(node.lat(), node.lon(),
-				m_changeset, node.id(), std::move(node.tags()));
+				m_changeset, node.id(), node.tags());
 		break;
 
 	case operation::op_modify:
 		handle_new_state(state::st_modify);
 		node_updater->modify_node(node.lat(),
 				node.lon(), m_changeset, node.id(),
-				node.version(), std::move(node.tags()));
+				node.version(), node.tags());
 		break;
 
 	case operation::op_delete:
@@ -119,8 +119,8 @@ void OSMChange_Handler::relation(const Relation& relation, operation op, bool if
 	case operation::op_modify:
 		handle_new_state(state::st_modify);
 		relation_updater->modify_relation(m_changeset, relation.id(),
-				relation.version(), std::move(relation.members()),
-				std::move(relation.tags()));
+				relation.version(), relation.members(),
+				relation.tags());
 		break;
 
 	case operation::op_delete:
