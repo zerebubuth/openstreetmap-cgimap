@@ -1,24 +1,23 @@
-#ifndef NODE_UPDATER
-#define NODE_UPDATER
+#ifndef APIDB_NODE_UPDATER
+#define APIDB_NODE_UPDATER
 
 #include "types.hpp"
 #include "util.hpp"
 
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
+#include "cgimap/api06/changeset_upload/node_updater.hpp"
 #include "cgimap/backend/apidb/changeset_upload/transaction_manager.hpp"
 
 #include <set>
 
-#include <osmium/osm/node.hpp>
 
-
-using TagList = std::map<std::string, std::string>;
-
-class Node_Updater {
+class ApiDB_Node_Updater : public Node_Updater {
 
 public:
 
-	Node_Updater(Transaction_Manager& _m, std::shared_ptr<OSMChange_Tracking> _ct);
+	ApiDB_Node_Updater(Transaction_Manager& _m, std::shared_ptr<OSMChange_Tracking> _ct);
+
+  virtual ~ApiDB_Node_Updater();
 
 	void add_node(double lat, double lon, osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
 			 const TagList& tags);
@@ -36,9 +35,11 @@ public:
 
 	unsigned int get_num_changes();
 
-	bbox_t bbox;
+  bbox_t bbox();
 
 private:
+
+	bbox_t m_bbox;
 
 	struct node_t {
 		osm_nwr_id_t id;
@@ -66,7 +67,7 @@ private:
 
 	void lock_current_nodes(const std::vector<osm_nwr_id_t>& ids);
 
-	std::vector< std::vector<Node_Updater::node_t> > build_packages(const std::vector<node_t>& nodes);
+	std::vector< std::vector<ApiDB_Node_Updater::node_t> > build_packages(const std::vector<node_t>& nodes);
 
 	void check_current_node_versions(const std::vector<node_t>& nodes);
 
@@ -85,7 +86,7 @@ private:
 
 	void save_current_node_tags_to_history(const std::vector<osm_nwr_id_t>& ids);
 
-	std::vector<Node_Updater::node_t> is_node_still_referenced(const std::vector<node_t>& nodes);
+	std::vector<ApiDB_Node_Updater::node_t> is_node_still_referenced(const std::vector<node_t>& nodes);
 
 	void delete_current_node_tags(const std::vector<osm_nwr_id_t>& ids);
 
@@ -98,4 +99,4 @@ private:
 
 };
 
-#endif
+#endif /* APIDB_NODE_UPDATER */

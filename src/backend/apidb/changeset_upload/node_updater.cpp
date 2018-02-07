@@ -24,11 +24,13 @@ using boost::format;
 
 
 
-Node_Updater::Node_Updater(Transaction_Manager& _m, std::shared_ptr<OSMChange_Tracking> _ct) :
-	bbox(), m(_m), ct(std::move(_ct)) {
+ApiDB_Node_Updater::ApiDB_Node_Updater(Transaction_Manager& _m, std::shared_ptr<OSMChange_Tracking> _ct) :
+	m_bbox(), m(_m), ct(std::move(_ct)) {
 }
 
-void Node_Updater::add_node(double lat, double lon, osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
+ApiDB_Node_Updater::~ApiDB_Node_Updater() {}
+
+void ApiDB_Node_Updater::add_node(double lat, double lon, osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
 		 const TagList& tags) {
 
 	node_t new_node{};
@@ -43,7 +45,7 @@ void Node_Updater::add_node(double lat, double lon, osm_changeset_id_t changeset
 	create_nodes.push_back(new_node);
 }
 
-void Node_Updater::modify_node(double lat, double lon, osm_changeset_id_t changeset_id, osm_nwr_id_t id,
+void ApiDB_Node_Updater::modify_node(double lat, double lon, osm_changeset_id_t changeset_id, osm_nwr_id_t id,
 		osm_version_t version, const TagList& tags) {
 
 	node_t modify_node{};
@@ -59,7 +61,7 @@ void Node_Updater::modify_node(double lat, double lon, osm_changeset_id_t change
 	modify_nodes.push_back(modify_node);
 }
 
-void Node_Updater::delete_node(osm_changeset_id_t changeset_id, osm_nwr_id_t id, osm_version_t version, bool if_unused) {
+void ApiDB_Node_Updater::delete_node(osm_changeset_id_t changeset_id, osm_nwr_id_t id, osm_version_t version, bool if_unused) {
 
 	node_t delete_node{};
 	delete_node.id = id;
@@ -69,7 +71,7 @@ void Node_Updater::delete_node(osm_changeset_id_t changeset_id, osm_nwr_id_t id,
 	delete_nodes.push_back(delete_node);
 }
 
-void Node_Updater::process_new_nodes() {
+void ApiDB_Node_Updater::process_new_nodes() {
 
 	std::vector<osm_nwr_id_t> ids;
 
@@ -95,12 +97,12 @@ void Node_Updater::process_new_nodes() {
 	save_current_nodes_to_history(ids);
 	save_current_node_tags_to_history(ids);
 
-	bbox.expand(calc_node_bbox(ids));
+	m_bbox.expand(calc_node_bbox(ids));
 
 	create_nodes.clear();
 }
 
-void Node_Updater::process_modify_nodes() {
+void ApiDB_Node_Updater::process_modify_nodes() {
 
 	std::vector<osm_nwr_id_t> ids;
 
@@ -130,7 +132,7 @@ void Node_Updater::process_modify_nodes() {
 
 		check_current_node_versions(modify_nodes_package);
 
-		bbox.expand(calc_node_bbox(ids_package));
+		m_bbox.expand(calc_node_bbox(ids_package));
 
 		delete_current_node_tags(ids_package);
 		update_current_nodes(modify_nodes_package);
@@ -139,13 +141,13 @@ void Node_Updater::process_modify_nodes() {
 		save_current_nodes_to_history(ids_package);
 		save_current_node_tags_to_history(ids_package);
 
-		bbox.expand(calc_node_bbox(ids_package));
+		m_bbox.expand(calc_node_bbox(ids_package));
 	}
 
 	modify_nodes.clear();
 }
 
-void Node_Updater::process_delete_nodes() {
+void ApiDB_Node_Updater::process_delete_nodes() {
 
 	std::vector<osm_nwr_id_t> ids;
 
@@ -178,7 +180,7 @@ void Node_Updater::process_delete_nodes() {
 
 	auto delete_nodes_visible_unreferenced = is_node_still_referenced(delete_nodes_visible);
 
-	bbox.expand(calc_node_bbox(ids));
+	m_bbox.expand(calc_node_bbox(ids));
 
 	delete_current_nodes(delete_nodes_visible_unreferenced);
 
@@ -193,7 +195,7 @@ void Node_Updater::process_delete_nodes() {
 }
 
 
-void Node_Updater::truncate_temporary_tables()
+void ApiDB_Node_Updater::truncate_temporary_tables()
 {
 	m.exec("TRUNCATE TABLE tmp_create_nodes");
 
@@ -204,7 +206,7 @@ void Node_Updater::truncate_temporary_tables()
  * Set id field based on old_id -> id mapping
  *
  */
-void Node_Updater::replace_old_ids_in_create_nodes(std::vector<node_t>& create_nodes,
+void ApiDB_Node_Updater::replace_old_ids_in_create_nodes(std::vector<node_t>& create_nodes,
 		const std::vector<OSMChange_Tracking::object_id_mapping_t> & created_node_id_mapping)
 {
 	std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map;
@@ -229,7 +231,7 @@ void Node_Updater::replace_old_ids_in_create_nodes(std::vector<node_t>& create_n
 }
 
 
-void Node_Updater::insert_new_nodes_to_tmp_table(const std::vector<node_t>& create_nodes) {
+void ApiDB_Node_Updater::insert_new_nodes_to_tmp_table(const std::vector<node_t>& create_nodes) {
 
 	m.prepare("insert_tmp_create_nodes",
 
@@ -273,7 +275,7 @@ void Node_Updater::insert_new_nodes_to_tmp_table(const std::vector<node_t>& crea
 										 row["id"].as<osm_nwr_id_t>(), 1 });
 }
 
-void Node_Updater::copy_tmp_create_nodes_to_current_nodes() {
+void ApiDB_Node_Updater::copy_tmp_create_nodes_to_current_nodes() {
 
 	auto r = m.exec(
 			R"(
@@ -283,13 +285,13 @@ void Node_Updater::copy_tmp_create_nodes_to_current_nodes() {
 				  )");
 }
 
-void Node_Updater::delete_tmp_create_nodes() {
+void ApiDB_Node_Updater::delete_tmp_create_nodes() {
 
 	m.exec("DELETE FROM tmp_create_nodes");
 
 }
 
-void Node_Updater::lock_current_nodes(const std::vector<osm_nwr_id_t>& ids) {
+void ApiDB_Node_Updater::lock_current_nodes(const std::vector<osm_nwr_id_t>& ids) {
 
 	if (ids.empty())
 		return;
@@ -324,10 +326,10 @@ void Node_Updater::lock_current_nodes(const std::vector<osm_nwr_id_t>& ids) {
  *
  */
 
-std::vector <std::vector< Node_Updater::node_t> > Node_Updater::build_packages(const std::vector<node_t>& nodes)
+std::vector <std::vector< ApiDB_Node_Updater::node_t> > ApiDB_Node_Updater::build_packages(const std::vector<node_t>& nodes)
 {
 
-	std::vector < std::vector < Node_Updater::node_t > > result;
+	std::vector < std::vector < ApiDB_Node_Updater::node_t > > result;
 
 	std::map<osm_nwr_id_t, unsigned int> id_to_package;
 
@@ -339,7 +341,7 @@ std::vector <std::vector< Node_Updater::node_t> > Node_Updater::build_packages(c
 			++id_to_package[node.id];
 
 		if (id_to_package[node.id] + 1 > result.size())
-  	 	  result.emplace_back(std::vector < Node_Updater::node_t >());
+  	 	  result.emplace_back(std::vector < ApiDB_Node_Updater::node_t >());
 
 		result.at(id_to_package[node.id]).emplace_back(node);
 	}
@@ -347,7 +349,7 @@ std::vector <std::vector< Node_Updater::node_t> > Node_Updater::build_packages(c
 	return result;
 }
 
-void Node_Updater::check_current_node_versions(const std::vector<node_t>& nodes)
+void ApiDB_Node_Updater::check_current_node_versions(const std::vector<node_t>& nodes)
 {
 	// Assumption: All nodes exist on database, and are already locked by lock_current_nodes
 
@@ -395,7 +397,7 @@ void Node_Updater::check_current_node_versions(const std::vector<node_t>& nodes)
 }
 
 // for if-unused - determine nodes to be excluded from deletion, regardless of their current version
-std::set<osm_nwr_id_t> Node_Updater::determine_already_deleted_nodes(const std::vector<node_t>& nodes) {
+std::set<osm_nwr_id_t> ApiDB_Node_Updater::determine_already_deleted_nodes(const std::vector<node_t>& nodes) {
 
 	std::set<osm_nwr_id_t> result;
 
@@ -432,7 +434,7 @@ std::set<osm_nwr_id_t> Node_Updater::determine_already_deleted_nodes(const std::
 }
 
 
-bbox_t Node_Updater::calc_node_bbox(const std::vector<osm_nwr_id_t>& ids) {
+bbox_t ApiDB_Node_Updater::calc_node_bbox(const std::vector<osm_nwr_id_t>& ids) {
 
 	bbox_t bbox;
 
@@ -461,7 +463,7 @@ bbox_t Node_Updater::calc_node_bbox(const std::vector<osm_nwr_id_t>& ids) {
 	return bbox;
 }
 
-void Node_Updater::update_current_nodes(const std::vector<node_t>& nodes)
+void ApiDB_Node_Updater::update_current_nodes(const std::vector<node_t>& nodes)
 {
 	if (nodes.empty())
 	  return;
@@ -541,7 +543,7 @@ void Node_Updater::update_current_nodes(const std::vector<node_t>& nodes)
 
 }
 
-void Node_Updater::delete_current_nodes(const std::vector<node_t>& nodes)
+void ApiDB_Node_Updater::delete_current_nodes(const std::vector<node_t>& nodes)
 {
 
 	if (nodes.empty())
@@ -589,7 +591,7 @@ void Node_Updater::delete_current_nodes(const std::vector<node_t>& nodes)
 
 }
 
-void Node_Updater::insert_new_current_node_tags(const std::vector<node_t>& nodes) {
+void ApiDB_Node_Updater::insert_new_current_node_tags(const std::vector<node_t>& nodes) {
 
 	if (nodes.empty())
 	  return;
@@ -633,7 +635,7 @@ void Node_Updater::insert_new_current_node_tags(const std::vector<node_t>& nodes
 }
 
 
-void Node_Updater::save_current_nodes_to_history(const std::vector<osm_nwr_id_t>& ids) {
+void ApiDB_Node_Updater::save_current_nodes_to_history(const std::vector<osm_nwr_id_t>& ids) {
 	// current_nodes -> nodes
 
 	if (ids.empty())
@@ -656,7 +658,7 @@ void Node_Updater::save_current_nodes_to_history(const std::vector<osm_nwr_id_t>
 
 }
 
-void Node_Updater::save_current_node_tags_to_history(const std::vector<osm_nwr_id_t>& ids) {
+void ApiDB_Node_Updater::save_current_node_tags_to_history(const std::vector<osm_nwr_id_t>& ids) {
 	// current_node_tags -> node_tags
 
 	if (ids.empty())
@@ -674,7 +676,7 @@ void Node_Updater::save_current_node_tags_to_history(const std::vector<osm_nwr_i
 	pqxx::result r = m.prepared("current_node_tags_to_history")(ids).exec();
 }
 
-std::vector<Node_Updater::node_t> Node_Updater::is_node_still_referenced(const std::vector<node_t>& nodes) {
+std::vector<ApiDB_Node_Updater::node_t> ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t>& nodes) {
 	// check if node id is still referenced in ways or relations
 
 	if (nodes.empty())
@@ -775,7 +777,7 @@ std::vector<Node_Updater::node_t> Node_Updater::is_node_still_referenced(const s
 	return updated_nodes;
 }
 
-void Node_Updater::delete_current_node_tags(const std::vector<osm_nwr_id_t>& ids) {
+void ApiDB_Node_Updater::delete_current_node_tags(const std::vector<osm_nwr_id_t>& ids) {
 
 	if (ids.empty())
 		return;
@@ -787,9 +789,13 @@ void Node_Updater::delete_current_node_tags(const std::vector<osm_nwr_id_t>& ids
 }
 
 
-unsigned int Node_Updater::get_num_changes()
+unsigned int ApiDB_Node_Updater::get_num_changes()
 {
 	return (ct->created_node_ids.size() +
 		ct->modified_node_ids.size() +
 		ct->deleted_node_ids.size());
+}
+
+bbox_t ApiDB_Node_Updater::bbox() {
+  return m_bbox;
 }

@@ -20,11 +20,13 @@ using boost::format;
 
 
 
-Relation_Updater::Relation_Updater(Transaction_Manager& _m, std::shared_ptr<OSMChange_Tracking> _ct) :
-		bbox(), m(_m), ct(std::move(_ct)) {
+ApiDB_Relation_Updater::ApiDB_Relation_Updater(Transaction_Manager& _m, std::shared_ptr<OSMChange_Tracking> _ct) :
+		m_bbox(), m(_m), ct(std::move(_ct)) {
 	}
 
-void Relation_Updater::add_relation(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
+ApiDB_Relation_Updater::~ApiDB_Relation_Updater() {}
+
+void ApiDB_Relation_Updater::add_relation(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
 		const RelationMemberList& members,
 		const TagList& tags) {
 
@@ -52,7 +54,7 @@ void Relation_Updater::add_relation(osm_changeset_id_t changeset_id, osm_nwr_sig
 	create_relations.push_back(new_relation);
 }
 
-void Relation_Updater::modify_relation(osm_changeset_id_t changeset_id, osm_nwr_id_t id, osm_version_t version,
+void ApiDB_Relation_Updater::modify_relation(osm_changeset_id_t changeset_id, osm_nwr_id_t id, osm_version_t version,
 		const RelationMemberList& members,
 		const TagList& tags) {
 
@@ -81,7 +83,7 @@ void Relation_Updater::modify_relation(osm_changeset_id_t changeset_id, osm_nwr_
 	modify_relations.push_back(modify_relation);
 }
 
-void Relation_Updater::delete_relation(osm_changeset_id_t changeset_id, osm_nwr_id_t id, osm_version_t version, bool if_unused) {
+void ApiDB_Relation_Updater::delete_relation(osm_changeset_id_t changeset_id, osm_nwr_id_t id, osm_version_t version, bool if_unused) {
 
 	relation_t delete_relation{};
 	delete_relation.id = id;
@@ -91,7 +93,7 @@ void Relation_Updater::delete_relation(osm_changeset_id_t changeset_id, osm_nwr_
 	delete_relations.push_back(delete_relation);
 }
 
-void Relation_Updater::process_new_relations() {
+void ApiDB_Relation_Updater::process_new_relations() {
 
 	truncate_temporary_tables();
 
@@ -124,12 +126,12 @@ void Relation_Updater::process_new_relations() {
 	save_current_relation_tags_to_history(ids);
 	save_current_relation_members_to_history(ids);
 
-	bbox.expand(calc_relation_bbox(ids));
+	m_bbox.expand(calc_relation_bbox(ids));
 
 	create_relations.clear();
 }
 
-void Relation_Updater::process_modify_relations() {
+void ApiDB_Relation_Updater::process_modify_relations() {
 
 	// Use new_ids as a result of inserting nodes/ways in tmp table
 	replace_old_ids_in_relations(modify_relations,
@@ -167,7 +169,7 @@ void Relation_Updater::process_modify_relations() {
 
 		check_current_relation_versions(modify_relations_package);
 
-		bbox.expand(calc_relation_bbox(ids_package));
+		m_bbox.expand(calc_relation_bbox(ids_package));
 
 		delete_current_relation_tags(ids_package);
 		delete_current_relation_members(ids_package);
@@ -180,13 +182,13 @@ void Relation_Updater::process_modify_relations() {
 		save_current_relation_tags_to_history(ids_package);
 		save_current_relation_members_to_history(ids_package);
 
-		bbox.expand(calc_relation_bbox(ids_package));
+		m_bbox.expand(calc_relation_bbox(ids_package));
 	}
 
 	modify_relations.clear();
 }
 
-void Relation_Updater::process_delete_relations() {
+void ApiDB_Relation_Updater::process_delete_relations() {
 
 	std::vector<osm_nwr_id_t> ids;
 
@@ -219,7 +221,7 @@ void Relation_Updater::process_delete_relations() {
 
 	auto delete_relations_visible_unreferenced = is_relation_still_referenced(delete_relations_visible);
 
-	bbox.expand(calc_relation_bbox(ids));
+	m_bbox.expand(calc_relation_bbox(ids));
 
 	update_current_relations(delete_relations_visible_unreferenced, false);
 
@@ -236,7 +238,7 @@ void Relation_Updater::process_delete_relations() {
 }
 
 
-void Relation_Updater::truncate_temporary_tables()
+void ApiDB_Relation_Updater::truncate_temporary_tables()
 {
 	m.exec("TRUNCATE TABLE tmp_create_relations");
 
@@ -248,7 +250,7 @@ void Relation_Updater::truncate_temporary_tables()
  * Set id field based on old_id -> id mapping
  *
  */
-void Relation_Updater::replace_old_ids_in_relations(std::vector<relation_t>& relations,
+void ApiDB_Relation_Updater::replace_old_ids_in_relations(std::vector<relation_t>& relations,
 		const std::vector<OSMChange_Tracking::object_id_mapping_t> & created_node_id_mapping,
 		const std::vector<OSMChange_Tracking::object_id_mapping_t> & created_way_id_mapping,
 		const std::vector<OSMChange_Tracking::object_id_mapping_t> & created_relation_id_mapping)
@@ -323,7 +325,7 @@ void Relation_Updater::replace_old_ids_in_relations(std::vector<relation_t>& rel
 	}
 }
 
-void Relation_Updater::insert_new_relations_to_tmp_table(const std::vector<relation_t>& create_relations) {
+void ApiDB_Relation_Updater::insert_new_relations_to_tmp_table(const std::vector<relation_t>& create_relations) {
 
 	m.prepare("insert_tmp_create_relations", R"(
 	
@@ -357,7 +359,7 @@ void Relation_Updater::insert_new_relations_to_tmp_table(const std::vector<relat
 		row["id"].as<osm_nwr_id_t>(), 1 });
 }
 
-void Relation_Updater::copy_tmp_create_relations_to_current_relations() {
+void ApiDB_Relation_Updater::copy_tmp_create_relations_to_current_relations() {
 
 	m.exec(
 			R"(
@@ -367,13 +369,13 @@ void Relation_Updater::copy_tmp_create_relations_to_current_relations() {
 
 }
 
-void Relation_Updater::delete_tmp_create_relations() {
+void ApiDB_Relation_Updater::delete_tmp_create_relations() {
 
 	m.exec("DELETE FROM tmp_create_relations");
 
 }
 
-void Relation_Updater::lock_current_relations(const std::vector<osm_nwr_id_t>& ids) {
+void ApiDB_Relation_Updater::lock_current_relations(const std::vector<osm_nwr_id_t>& ids) {
 
 	if (ids.empty())
 		return;
@@ -407,10 +409,10 @@ void Relation_Updater::lock_current_relations(const std::vector<osm_nwr_id_t>& i
  *
  */
 
-std::vector<std::vector< Relation_Updater::relation_t> > Relation_Updater::build_packages(const std::vector<relation_t>& relations)
+std::vector<std::vector< ApiDB_Relation_Updater::relation_t> > ApiDB_Relation_Updater::build_packages(const std::vector<relation_t>& relations)
 {
 
-	std::vector< std::vector < Relation_Updater::relation_t > > result;
+	std::vector< std::vector < ApiDB_Relation_Updater::relation_t > > result;
 
 	std::map<osm_nwr_id_t, unsigned int> id_to_package;
 
@@ -422,7 +424,7 @@ std::vector<std::vector< Relation_Updater::relation_t> > Relation_Updater::build
 			++id_to_package[relation.id];
 
 		if (id_to_package[relation.id] + 1 > result.size())
-  	 	  result.emplace_back(std::vector < Relation_Updater::relation_t >());
+  	 	  result.emplace_back(std::vector < ApiDB_Relation_Updater::relation_t >());
 
 		result.at(id_to_package[relation.id]).emplace_back(relation);
 	}
@@ -430,7 +432,7 @@ std::vector<std::vector< Relation_Updater::relation_t> > Relation_Updater::build
 	return result;
 }
 
-void Relation_Updater::check_current_relation_versions(const std::vector<relation_t>& relations)
+void ApiDB_Relation_Updater::check_current_relation_versions(const std::vector<relation_t>& relations)
 {
 	// Assumption: All nodes exist on database, and are already locked by lock_current_nodes
 
@@ -478,7 +480,7 @@ void Relation_Updater::check_current_relation_versions(const std::vector<relatio
 }
 
 // for if-unused - determine ways to be excluded from deletion, regardless of their current version
-std::set<osm_nwr_id_t> Relation_Updater::determine_already_deleted_relations(const std::vector<relation_t>& relations) {
+std::set<osm_nwr_id_t> ApiDB_Relation_Updater::determine_already_deleted_relations(const std::vector<relation_t>& relations) {
 
 	std::set<osm_nwr_id_t> result;
 
@@ -513,7 +515,7 @@ std::set<osm_nwr_id_t> Relation_Updater::determine_already_deleted_relations(con
 	return result;
 }
 
-void Relation_Updater::lock_future_members(const std::vector<relation_t>& relations) {
+void ApiDB_Relation_Updater::lock_future_members(const std::vector<relation_t>& relations) {
 
 	// Ids for Shared Locking
 	std::vector<osm_nwr_id_t> node_ids;
@@ -651,7 +653,7 @@ void Relation_Updater::lock_future_members(const std::vector<relation_t>& relati
 	}
 }
 
-bbox_t Relation_Updater::calc_relation_bbox(const std::vector<osm_nwr_id_t>& ids) {
+bbox_t ApiDB_Relation_Updater::calc_relation_bbox(const std::vector<osm_nwr_id_t>& ids) {
 
 	bbox_t bbox;
 
@@ -736,7 +738,7 @@ bbox_t Relation_Updater::calc_relation_bbox(const std::vector<osm_nwr_id_t>& ids
 	return bbox;
 }
 
-void Relation_Updater::update_current_relations(const std::vector<relation_t>& relations, bool visible)
+void ApiDB_Relation_Updater::update_current_relations(const std::vector<relation_t>& relations, bool visible)
 {
 	if (relations.empty())
 	  return;
@@ -797,7 +799,7 @@ void Relation_Updater::update_current_relations(const std::vector<relation_t>& r
 
 }
 
-void Relation_Updater::insert_new_current_relation_tags(const std::vector<relation_t>& relations) {
+void ApiDB_Relation_Updater::insert_new_current_relation_tags(const std::vector<relation_t>& relations) {
 
 	if (relations.empty())
 	  return;
@@ -831,7 +833,7 @@ void Relation_Updater::insert_new_current_relation_tags(const std::vector<relati
 	pqxx::result r = m.prepared("insert_new_current_relation_tags")(ids)(ks)(vs).exec();
 }
 
-void Relation_Updater::insert_new_current_relation_members(const std::vector<relation_t>& relations) {
+void ApiDB_Relation_Updater::insert_new_current_relation_members(const std::vector<relation_t>& relations) {
 
 	if (relations.empty())
 	  return;
@@ -875,7 +877,7 @@ void Relation_Updater::insert_new_current_relation_members(const std::vector<rel
 }
 
 
-void Relation_Updater::save_current_relations_to_history(const std::vector<osm_nwr_id_t>& ids) {
+void ApiDB_Relation_Updater::save_current_relations_to_history(const std::vector<osm_nwr_id_t>& ids) {
 
 	if (ids.empty())
 		return;
@@ -893,7 +895,7 @@ void Relation_Updater::save_current_relations_to_history(const std::vector<osm_n
 		throw http::server_error("Could not save current relations to history");
 }
 
-void Relation_Updater::save_current_relation_tags_to_history(const std::vector<osm_nwr_id_t>& ids) {
+void ApiDB_Relation_Updater::save_current_relation_tags_to_history(const std::vector<osm_nwr_id_t>& ids) {
 	if (ids.empty())
 		return;
 
@@ -908,7 +910,7 @@ void Relation_Updater::save_current_relation_tags_to_history(const std::vector<o
 	pqxx::result r = m.prepared("current_relation_tags_to_history")(ids).exec();
 }
 
-void Relation_Updater::save_current_relation_members_to_history(const std::vector<osm_nwr_id_t>& ids) {
+void ApiDB_Relation_Updater::save_current_relation_members_to_history(const std::vector<osm_nwr_id_t>& ids) {
 
 	if (ids.empty())
 		return;
@@ -927,7 +929,7 @@ void Relation_Updater::save_current_relation_members_to_history(const std::vecto
 	pqxx::result r = m.prepared("current_relation_members_to_history")(ids).exec();
 }
 
-std::vector<Relation_Updater::relation_t> Relation_Updater::is_relation_still_referenced(const std::vector<relation_t>& relations) {
+std::vector<ApiDB_Relation_Updater::relation_t> ApiDB_Relation_Updater::is_relation_still_referenced(const std::vector<relation_t>& relations) {
 
 	/*
 	 * Check if relation id is still referenced by "outside" relations,
@@ -1032,7 +1034,7 @@ std::vector<Relation_Updater::relation_t> Relation_Updater::is_relation_still_re
 
 }
 
-void Relation_Updater::delete_current_relation_members(const std::vector<osm_nwr_id_t>& ids) {
+void ApiDB_Relation_Updater::delete_current_relation_members(const std::vector<osm_nwr_id_t>& ids) {
 
 	if (ids.empty())
 		return;
@@ -1044,7 +1046,7 @@ void Relation_Updater::delete_current_relation_members(const std::vector<osm_nwr
 
 }
 
-void Relation_Updater::delete_current_relation_tags(const std::vector<osm_nwr_id_t>& ids) {
+void ApiDB_Relation_Updater::delete_current_relation_tags(const std::vector<osm_nwr_id_t>& ids) {
 	if (ids.empty())
 		return;
 
@@ -1055,9 +1057,13 @@ void Relation_Updater::delete_current_relation_tags(const std::vector<osm_nwr_id
 }
 
 
-unsigned int Relation_Updater::get_num_changes()
+unsigned int ApiDB_Relation_Updater::get_num_changes()
 {
 	return (ct->created_relation_ids.size() +
 			ct->modified_relation_ids.size() +
 			ct->deleted_relation_ids.size());
+}
+
+bbox_t ApiDB_Relation_Updater::bbox() {
+  return m_bbox;
 }

@@ -1,31 +1,28 @@
-#ifndef WAY_UPDATER
-#define WAY_UPDATER
+#ifndef APIDB_WAY_UPDATER
+#define APIDB_WAY_UPDATER
 
 
 #include "types.hpp"
 
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
+#include "cgimap/api06/changeset_upload/way_updater.hpp"
 #include "cgimap/backend/apidb/changeset_upload/transaction_manager.hpp"
 #include "types.hpp"
 #include "util.hpp"
 
 #include <set>
 
-#include <osmium/osm/way.hpp>
-
-using TagList = std::map<std::string, std::string>;
-using WayNodeList = std::vector<osm_nwr_signed_id_t>;
-
-
 /*  Way operations
  *
  */
 
-class Way_Updater {
+class ApiDB_Way_Updater {
 
 public:
 
-	Way_Updater(Transaction_Manager& _m, std::shared_ptr<OSMChange_Tracking> _ct);
+	ApiDB_Way_Updater(Transaction_Manager& _m, std::shared_ptr<OSMChange_Tracking> _ct);
+
+  virtual ~ApiDB_Way_Updater();
 
 	void add_way(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
 			const WayNodeList& nodes, const TagList& tags);
@@ -44,9 +41,11 @@ public:
 
 	unsigned int get_num_changes();
 
-	bbox_t bbox;
+  bbox_t bbox();
 
 private:
+
+	bbox_t m_bbox;
 
 	struct way_node_t {
 		osm_nwr_id_t node_id;
@@ -85,7 +84,7 @@ private:
 
 	void lock_current_ways(const std::vector<osm_nwr_id_t>& ids);
 
-	std::vector< std::vector<Way_Updater::way_t> > build_packages(const std::vector<way_t>& ways);
+	std::vector< std::vector<ApiDB_Way_Updater::way_t> > build_packages(const std::vector<way_t>& ways);
 
 	void check_current_way_versions(const std::vector<way_t>& ways);
 
@@ -106,7 +105,7 @@ private:
 
 	void save_current_way_tags_to_history(const std::vector<osm_nwr_id_t>& ids);
 
-	std::vector<Way_Updater::way_t> is_way_still_referenced(const std::vector<way_t>& ways);
+	std::vector<ApiDB_Way_Updater::way_t> is_way_still_referenced(const std::vector<way_t>& ways);
 
 	void delete_current_way_tags(const std::vector<osm_nwr_id_t>& ids);
 
@@ -122,4 +121,4 @@ private:
 };
 
 
-#endif
+#endif /* APIDB_WAY_UPDATER */

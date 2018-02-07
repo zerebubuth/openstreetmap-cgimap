@@ -3,21 +3,18 @@
 
 
 // TODO: Include only abstract base class, no direct references to backend!
-#include "cgimap/backend/apidb/changeset_upload/node_updater.hpp"
-#include "cgimap/backend/apidb/changeset_upload/relation_updater.hpp"
+#include "cgimap/api06/changeset_upload/node_updater.hpp"
+#include "cgimap/api06/changeset_upload/relation_updater.hpp"
+#include "cgimap/api06/changeset_upload/way_updater.hpp"
+
 #include "types.hpp"
 #include "util.hpp"
-#include "cgimap/backend/apidb/changeset_upload/way_updater.hpp"
 
 #include "parser_callback.hpp"
 #include "osmobject.hpp"
 #include "node.hpp"
 #include "way.hpp"
 #include "relation.hpp"
-
-#include <osmium/handler.hpp>
-
-
 
 
 class OSMChange_Handler : public Parser_Callback {

@@ -20,11 +20,13 @@
 using boost::format;
 
 
-Way_Updater::Way_Updater(Transaction_Manager& _m, std::shared_ptr<OSMChange_Tracking> _ct) :
-	bbox(), m(_m), ct(_ct)  {
+ApiDB_Way_Updater::ApiDB_Way_Updater(Transaction_Manager& _m, std::shared_ptr<OSMChange_Tracking> _ct) :
+	m_bbox(), m(_m), ct(_ct)  {
 }
 
-void Way_Updater::add_way(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
+ApiDB_Way_Updater::~ApiDB_Way_Updater() {}
+
+void ApiDB_Way_Updater::add_way(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
 		const WayNodeList& nodes, const TagList& tags) {
 
 	way_t new_way{};
@@ -46,7 +48,7 @@ void Way_Updater::add_way(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t o
 
 }
 
-void Way_Updater::modify_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id, osm_version_t version,
+void ApiDB_Way_Updater::modify_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id, osm_version_t version,
 		const WayNodeList& nodes, const TagList& tags) {
 
 	way_t modify_way{};
@@ -68,7 +70,7 @@ void Way_Updater::modify_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id, o
 	modify_ways.push_back(modify_way);
 }
 
-void Way_Updater::delete_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id, osm_version_t version, bool if_unused) {
+void ApiDB_Way_Updater::delete_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id, osm_version_t version, bool if_unused) {
 
 	way_t delete_way{};
 	delete_way.id = id;
@@ -79,7 +81,7 @@ void Way_Updater::delete_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id, o
 	delete_ways.push_back(delete_way);
 }
 
-void Way_Updater::process_new_ways() {
+void ApiDB_Way_Updater::process_new_ways() {
 
 	std::vector<osm_nwr_id_t> ids;
 
@@ -109,12 +111,12 @@ void Way_Updater::process_new_ways() {
 	save_current_way_tags_to_history(ids);
 	save_current_way_nodes_to_history(ids);
 
-	bbox.expand(calc_way_bbox(ids));
+	m_bbox.expand(calc_way_bbox(ids));
 
 	create_ways.clear();
 }
 
-void Way_Updater::process_modify_ways() {
+void ApiDB_Way_Updater::process_modify_ways() {
 
 	std::vector<osm_nwr_id_t> ids;
 
@@ -149,7 +151,7 @@ void Way_Updater::process_modify_ways() {
 
 		check_current_way_versions(modify_ways_package);
 
-		bbox.expand(calc_way_bbox(ids_package));
+		m_bbox.expand(calc_way_bbox(ids_package));
 
 		delete_current_way_tags(ids_package);
 		delete_current_way_nodes(ids_package);
@@ -162,13 +164,13 @@ void Way_Updater::process_modify_ways() {
 		save_current_way_tags_to_history(ids_package);
 		save_current_way_nodes_to_history(ids_package);
 
-		bbox.expand(calc_way_bbox(ids));
+		m_bbox.expand(calc_way_bbox(ids));
 	}
 
 	modify_ways.clear();
 }
 
-void Way_Updater::process_delete_ways() {
+void ApiDB_Way_Updater::process_delete_ways() {
 
 	std::vector<osm_nwr_id_t> ids;
 
@@ -201,7 +203,7 @@ void Way_Updater::process_delete_ways() {
 
 	auto delete_ways_visible_unreferenced = is_way_still_referenced(delete_ways_visible);
 
-	bbox.expand(calc_way_bbox(ids));
+	m_bbox.expand(calc_way_bbox(ids));
 
 	update_current_ways(delete_ways_visible_unreferenced, false);
 
@@ -218,7 +220,7 @@ void Way_Updater::process_delete_ways() {
 }
 
 
-void Way_Updater::truncate_temporary_tables()
+void ApiDB_Way_Updater::truncate_temporary_tables()
 {
 	m.exec("TRUNCATE TABLE tmp_create_ways");
 
@@ -229,7 +231,7 @@ void Way_Updater::truncate_temporary_tables()
  * Set id field based on old_id -> id mapping
  *
  */
-void Way_Updater::replace_old_ids_in_ways(std::vector<way_t>& ways,
+void ApiDB_Way_Updater::replace_old_ids_in_ways(std::vector<way_t>& ways,
 		const std::vector<OSMChange_Tracking::object_id_mapping_t> & created_node_id_mapping,
 		const std::vector<OSMChange_Tracking::object_id_mapping_t> & created_way_id_mapping)
 {
@@ -275,7 +277,7 @@ void Way_Updater::replace_old_ids_in_ways(std::vector<way_t>& ways,
 }
 
 
-void Way_Updater::insert_new_ways_to_tmp_table(const std::vector<way_t>& create_ways) {
+void ApiDB_Way_Updater::insert_new_ways_to_tmp_table(const std::vector<way_t>& create_ways) {
 
 	m.prepare("insert_tmp_create_ways", R"(
 
@@ -309,7 +311,7 @@ void Way_Updater::insert_new_ways_to_tmp_table(const std::vector<way_t>& create_
 										row["id"].as<osm_nwr_id_t>(), 1 });
 }
 
-void Way_Updater::copy_tmp_create_ways_to_current_ways() {
+void ApiDB_Way_Updater::copy_tmp_create_ways_to_current_ways() {
 
 	m.exec(
 			R"( INSERT INTO current_ways 
@@ -317,13 +319,13 @@ void Way_Updater::copy_tmp_create_ways_to_current_ways() {
 			  )");
 }
 
-void Way_Updater::delete_tmp_create_ways() {
+void ApiDB_Way_Updater::delete_tmp_create_ways() {
 
 	m.exec("DELETE FROM tmp_create_ways");
 
 }
 
-bbox_t Way_Updater::calc_way_bbox(const std::vector<osm_nwr_id_t>& ids) {
+bbox_t ApiDB_Way_Updater::calc_way_bbox(const std::vector<osm_nwr_id_t>& ids) {
 
 	bbox_t bbox;
 
@@ -357,7 +359,7 @@ bbox_t Way_Updater::calc_way_bbox(const std::vector<osm_nwr_id_t>& ids) {
 	return bbox;
 }
 
-void Way_Updater::lock_current_ways(const std::vector<osm_nwr_id_t>& ids) {
+void ApiDB_Way_Updater::lock_current_ways(const std::vector<osm_nwr_id_t>& ids) {
 
 	if (ids.empty())
 		return;
@@ -391,10 +393,10 @@ void Way_Updater::lock_current_ways(const std::vector<osm_nwr_id_t>& ids) {
  *
  */
 
-std::vector< std::vector<Way_Updater::way_t> > Way_Updater::build_packages(const std::vector<way_t>& ways)
+std::vector< std::vector<ApiDB_Way_Updater::way_t> > ApiDB_Way_Updater::build_packages(const std::vector<way_t>& ways)
 {
 
-	std::vector< std::vector< Way_Updater::way_t > > result;
+	std::vector< std::vector< ApiDB_Way_Updater::way_t > > result;
 
 	std::map<osm_nwr_id_t, unsigned int> id_to_package;
 
@@ -406,7 +408,7 @@ std::vector< std::vector<Way_Updater::way_t> > Way_Updater::build_packages(const
 			++id_to_package[way.id];
 
 		if (id_to_package[way.id] + 1 > result.size())
-  	 	  result.emplace_back(std::vector < Way_Updater::way_t >());
+  	 	  result.emplace_back(std::vector < ApiDB_Way_Updater::way_t >());
 
 		result.at(id_to_package[way.id]).emplace_back(way);
 	}
@@ -415,7 +417,7 @@ std::vector< std::vector<Way_Updater::way_t> > Way_Updater::build_packages(const
 }
 
 
-void Way_Updater::check_current_way_versions(const std::vector<way_t>& ways)
+void ApiDB_Way_Updater::check_current_way_versions(const std::vector<way_t>& ways)
 {
 	// Assumption: All ways exist on database, and are already locked by lock_current_ways
 
@@ -463,7 +465,7 @@ void Way_Updater::check_current_way_versions(const std::vector<way_t>& ways)
 }
 
 // for if-unused - determine ways to be excluded from deletion, regardless of their current version
-std::set<osm_nwr_id_t> Way_Updater::determine_already_deleted_ways(const std::vector<way_t>& ways) {
+std::set<osm_nwr_id_t> ApiDB_Way_Updater::determine_already_deleted_ways(const std::vector<way_t>& ways) {
 
 	std::set<osm_nwr_id_t> result;
 
@@ -499,7 +501,7 @@ std::set<osm_nwr_id_t> Way_Updater::determine_already_deleted_ways(const std::ve
 }
 
 
-void Way_Updater::lock_future_nodes(const std::vector<way_t>& ways) {
+void ApiDB_Way_Updater::lock_future_nodes(const std::vector<way_t>& ways) {
 
 	// Acquire a shared lock on all node ids we want to include in a future current_way_nodes entry
 	// All nodes have to be visible to be locked. Deleted nodes trigger an exception
@@ -553,7 +555,7 @@ void Way_Updater::lock_future_nodes(const std::vector<way_t>& ways) {
 	}
 }
 
-void Way_Updater::update_current_ways(const std::vector<way_t>& ways, bool visible)
+void ApiDB_Way_Updater::update_current_ways(const std::vector<way_t>& ways, bool visible)
 {
 	if (ways.empty())
 		return;
@@ -608,7 +610,7 @@ void Way_Updater::update_current_ways(const std::vector<way_t>& ways, bool visib
 	}
 }
 
-void Way_Updater::insert_new_current_way_tags(const std::vector<way_t>& ways) {
+void ApiDB_Way_Updater::insert_new_current_way_tags(const std::vector<way_t>& ways) {
 
 	if (ways.empty())
 	  return;
@@ -642,7 +644,7 @@ void Way_Updater::insert_new_current_way_tags(const std::vector<way_t>& ways) {
 	pqxx::result r = m.prepared("insert_new_current_way_tags")(ids)(ks)(vs).exec();
 }
 
-void Way_Updater::insert_new_current_way_nodes(const std::vector<way_t>& ways) {
+void ApiDB_Way_Updater::insert_new_current_way_nodes(const std::vector<way_t>& ways) {
 
 	if (ways.empty())
 	  return;
@@ -676,7 +678,7 @@ void Way_Updater::insert_new_current_way_nodes(const std::vector<way_t>& ways) {
 	pqxx::result r = m.prepared("insert_new_current_way_nodes")(ids)(nodeids)(sequenceids).exec();
 }
 
-void Way_Updater::save_current_ways_to_history(const std::vector<osm_nwr_id_t>& ids) {
+void ApiDB_Way_Updater::save_current_ways_to_history(const std::vector<osm_nwr_id_t>& ids) {
 	// current_ways -> ways
 
 	if (ids.empty())
@@ -697,7 +699,7 @@ void Way_Updater::save_current_ways_to_history(const std::vector<osm_nwr_id_t>& 
 		throw http::server_error("Could not save current ways to history");
 }
 
-void Way_Updater::save_current_way_nodes_to_history(const std::vector<osm_nwr_id_t>& ids) {
+void ApiDB_Way_Updater::save_current_way_nodes_to_history(const std::vector<osm_nwr_id_t>& ids) {
 	// current_way_nodes -> way_nodes
 
 	if (ids.empty())
@@ -716,7 +718,7 @@ void Way_Updater::save_current_way_nodes_to_history(const std::vector<osm_nwr_id
 
 }
 
-void Way_Updater::save_current_way_tags_to_history(const std::vector<osm_nwr_id_t>& ids) {
+void ApiDB_Way_Updater::save_current_way_tags_to_history(const std::vector<osm_nwr_id_t>& ids) {
 	// current_way_tags -> way_tags
 
 	if (ids.empty())
@@ -736,7 +738,7 @@ void Way_Updater::save_current_way_tags_to_history(const std::vector<osm_nwr_id_
 	pqxx::result r = m.prepared("current_way_tags_to_history")(ids).exec();
 }
 
-std::vector<Way_Updater::way_t> Way_Updater::is_way_still_referenced(const std::vector<way_t>& ways) {
+std::vector<ApiDB_Way_Updater::way_t> ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t>& ways) {
 	// check if way id is still referenced in relations
 
 	if (ways.empty())
@@ -807,7 +809,7 @@ std::vector<Way_Updater::way_t> Way_Updater::is_way_still_referenced(const std::
 	return updated_ways;
 }
 
-void Way_Updater::delete_current_way_tags(const std::vector<osm_nwr_id_t>& ids) {
+void ApiDB_Way_Updater::delete_current_way_tags(const std::vector<osm_nwr_id_t>& ids) {
 
 	if (ids.empty())
 		return;
@@ -818,7 +820,7 @@ void Way_Updater::delete_current_way_tags(const std::vector<osm_nwr_id_t>& ids) 
 	pqxx::result r = m.prepared("delete_current_way_tags")(ids).exec();
 }
 
-void Way_Updater::delete_current_way_nodes(std::vector<osm_nwr_id_t> ids) {
+void ApiDB_Way_Updater::delete_current_way_nodes(std::vector<osm_nwr_id_t> ids) {
 
 	if (ids.empty())
 		return;
@@ -829,9 +831,13 @@ void Way_Updater::delete_current_way_nodes(std::vector<osm_nwr_id_t> ids) {
 	pqxx::result r = m.prepared("delete_current_way_nodes")(ids).exec();
 }
 
-unsigned int Way_Updater::get_num_changes()
+unsigned int ApiDB_Way_Updater::get_num_changes()
 {
 	return (ct->created_way_ids.size() +
 			ct->modified_way_ids.size() +
 			ct->deleted_way_ids.size());
+}
+
+bbox_t ApiDB_Way_Updater::bbox() {
+  return m_bbox;
 }

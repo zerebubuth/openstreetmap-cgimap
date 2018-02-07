@@ -1,25 +1,26 @@
-#ifndef RELATION_UPDATER
-#define RELATION_UPDATER
+#ifndef APIDB_RELATION_UPDATER
+#define APIDB_RELATION_UPDATER
 
 #include "types.hpp"
 #include "util.hpp"
 
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
+#include "cgimap/api06/changeset_upload/relation_updater.hpp"
 #include "cgimap/backend/apidb/changeset_upload/transaction_manager.hpp"
 #include "cgimap/api06/changeset_upload/relation.hpp"
 
 #include <set>
 
-#include <osmium/osm/relation.hpp>
-
 using RelationMemberList = std::vector<RelationMember>;
 using TagList = std::map<std::string, std::string>;
 
-class Relation_Updater {
+class ApiDB_Relation_Updater {
 
 public:
 
-	Relation_Updater(Transaction_Manager& _m, std::shared_ptr<OSMChange_Tracking> _ct);
+	ApiDB_Relation_Updater(Transaction_Manager& _m, std::shared_ptr<OSMChange_Tracking> _ct);
+
+  virtual ~ApiDB_Relation_Updater();
 
 	void add_relation(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
 			const RelationMemberList& members,
@@ -39,9 +40,11 @@ public:
 
 	unsigned int get_num_changes();
 
-	bbox_t bbox;
+  bbox_t bbox();
 
 private:
+
+	bbox_t m_bbox;
 
 	struct member_t {
 		std::string member_type;
@@ -60,8 +63,6 @@ private:
 		std::vector< member_t > members;
 		bool if_unused;
 	};
-
-	std::string item_type_to_member_type(osmium::item_type itemtype);
 
 	void truncate_temporary_tables();
 
@@ -82,7 +83,7 @@ private:
 
 	void lock_current_relations(const std::vector<osm_nwr_id_t>& ids);
 
-	std::vector<std::vector< Relation_Updater::relation_t> > build_packages(const std::vector<relation_t>& relations);
+	std::vector<std::vector< ApiDB_Relation_Updater::relation_t> > build_packages(const std::vector<relation_t>& relations);
 
 	void check_current_relation_versions(const std::vector<relation_t>& relations);
 
@@ -105,7 +106,7 @@ private:
 
 	void save_current_relation_members_to_history(const std::vector<osm_nwr_id_t>& ids);
 
-	std::vector<Relation_Updater::relation_t> is_relation_still_referenced(const std::vector<relation_t>& relations);
+	std::vector<ApiDB_Relation_Updater::relation_t> is_relation_still_referenced(const std::vector<relation_t>& relations);
 
 	void delete_current_relation_members(const std::vector<osm_nwr_id_t>& ids);
 

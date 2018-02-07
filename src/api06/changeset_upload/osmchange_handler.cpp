@@ -147,9 +147,9 @@ unsigned int OSMChange_Handler::get_num_changes() {
 bbox_t OSMChange_Handler::get_bbox() {
 	bbox_t bbox;
 
-	bbox.expand(node_updater->bbox);
-	bbox.expand(way_updater->bbox);
-	bbox.expand(relation_updater->bbox);
+	bbox.expand(node_updater->bbox());
+	bbox.expand(way_updater->bbox());
+	bbox.expand(relation_updater->bbox());
 
 	return bbox;
 }
