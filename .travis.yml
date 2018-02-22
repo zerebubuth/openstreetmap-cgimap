@@ -6,6 +6,8 @@ cache: ccache
 addons:
   postgresql: 9.4
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
     packages:
       - libboost-dev
       - libboost-date-time-dev
@@ -19,9 +21,10 @@ addons:
       - libmemcached-dev
       - libpqxx-dev
       - libxml2-dev
+      - gcc-5
 script:
   - ./autogen.sh
-  - ./configure CC="ccache gcc" CXX="ccache g++"
+  - ./configure CC="ccache gcc-5" CXX="ccache g++-5"
   - make
   - make check
 after_failure:
