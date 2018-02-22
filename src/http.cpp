@@ -214,4 +214,49 @@ shared_ptr<encoding> choose_encoding(const string &accept_encoding) {
                                "identity and gzip are supported.");
   }
 }
+
+namespace {
+
+const std::map<method, std::string> METHODS = {
+  {method::GET,     "GET"},
+  {method::POST,    "POST"},
+  {method::HEAD,    "HEAD"},
+  {method::OPTIONS, "OPTIONS"}
+};
+
+} // anonymous namespace
+
+std::string list_methods(method m) {
+  std::ostringstream result;
+
+  bool first = true;
+  for (auto const &pair : METHODS) {
+    if ((m & pair.first) == pair.first) {
+      if (first) { first = false; } else { result << ", "; }
+      result << pair.second;
+    }
+  }
+
+  return result.str();
 }
+
+boost::optional<method> parse_method(const std::string &s) {
+  boost::optional<method> result;
+
+  for (auto const &pair : METHODS) {
+    if (pair.second == s) {
+      result = pair.first;
+      break;
+    }
+  }
+
+  return result;
+}
+
+std::ostream &operator<<(std::ostream &out, method m) {
+  std::string s = list_methods(m);
+  out << "methods{" << s << "}";
+  return out;
+}
+
+} // namespace http

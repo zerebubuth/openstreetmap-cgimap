@@ -3,8 +3,11 @@
 
 #include <string>
 #include <vector>
+#include <bitset>
 #include <stdexcept>
 #include <boost/shared_ptr.hpp>
+#include <boost/optional.hpp>
+#include <ostream>
 #include "cgimap/config.hpp"
 
 #ifdef HAVE_LIBZ
@@ -222,6 +225,30 @@ public:
  */
 boost::shared_ptr<http::encoding>
 choose_encoding(const std::string &accept_encoding);
+
+enum class method : uint8_t {
+  GET     = 0b0001,
+  POST    = 0b0010,
+  HEAD    = 0b0100,
+  OPTIONS = 0b1000
+};
+
+// allow bitset-like operators on methods
+inline method operator|(method a, method b) {
+  return static_cast<method>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
+}
+inline method operator&(method a, method b) {
+  return static_cast<method>(static_cast<uint8_t>(a) & static_cast<uint8_t>(b));
+}
+
+// return a comma-delimited string describing the methods.
+std::string list_methods(method m);
+
+// parse a single method string into a http::method enum, or return boost::none
+// if it's not a known value.
+boost::optional<method> parse_method(const std::string &);
+
+std::ostream &operator<<(std::ostream &, method);
 
 } // namespace http
 

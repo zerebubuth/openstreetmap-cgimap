@@ -5,8 +5,10 @@
 #include "cgimap/output_formatter.hpp"
 #include "cgimap/mime_types.hpp"
 #include "cgimap/data_selection.hpp"
+#include "cgimap/http.hpp"
 
 #include <list>
+#include <set>
 #include <string>
 #include <memory>
 #include <boost/shared_ptr.hpp>
@@ -43,15 +45,27 @@ typedef boost::shared_ptr<responder> responder_ptr_t;
  */
 class handler {
 public:
-  handler(mime::type default_type = mime::unspecified_type);
+  handler(mime::type default_type = mime::unspecified_type,
+    http::method methods = http::method::GET | http::method::HEAD | http::method::OPTIONS);
   virtual ~handler();
   virtual std::string log_name() const = 0;
   virtual responder_ptr_t responder(data_selection_ptr &) const = 0;
 
   void set_resource_type(mime::type);
 
+  // returns true if the given method is allowed on this handler.
+  inline bool allows_method(http::method m) const {
+    return (m & m_allowed_methods) == m;
+  }
+
+  // returns the set of methods which are allowed on this handler.
+  inline http::method allowed_methods() const {
+    return m_allowed_methods;
+  }
+
 protected:
   mime::type mime_type;
+  http::method m_allowed_methods;
 };
 
 typedef boost::shared_ptr<handler> handler_ptr_t;

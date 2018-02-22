@@ -17,6 +17,7 @@
 #include <boost/make_shared.hpp>
 #include <boost/tuple/tuple.hpp>
 
+/*
 // START DEMO
 #include "cgimap/backend/apidb/changeset_upload/changeset_updater.hpp"
 #include "cgimap/infix_ostream_iterator.hpp"
@@ -31,6 +32,7 @@
 #include "cgimap/api06/changeset_upload/osmchange_input_format.hpp"
 
 // END DEMO
+*/
 
 using std::runtime_error;
 using std::string;
@@ -47,7 +49,7 @@ namespace po = boost::program_options;
  *  DEMO ONLY
  *
  */
-
+/*
 void create_temporary_tables(Transaction_Manager& m) {
 
         // old id with unique constraint!
@@ -145,7 +147,7 @@ int demo()
     }
 
 }
-
+*/
 
 
 
@@ -203,9 +205,10 @@ void respond_error(const http::exception &e, request &r) {
 /**
  * Return a 405 error.
  */
-void process_not_allowed(request &req) {
+void process_not_allowed(request &req, handler_ptr_t handler) {
   req.status(405);
-  req.add_header("Allow", "GET, POST, HEAD, OPTIONS");
+  std::string methods = http::list_methods(handler->allowed_methods());
+  req.add_header("Allow", methods);
   req.add_header("Content-Type", "text/html");
   req.add_header("Content-Length", "0");
   req.add_header("Cache-Control", "no-cache");
@@ -216,12 +219,9 @@ void process_not_allowed(request &req) {
  * process a GET request.
  */
 boost::tuple<string, size_t>
-process_get_request(request &req, routes &route,
+process_get_request(request &req, handler_ptr_t handler,
                     data_selection_ptr selection,
                     const string &ip, const string &generator) {
-  // figure how to handle the request
-  handler_ptr_t handler = route(req);
-
   // request start logging
   string request_name = handler->log_name();
   logger::message(format("Started request for %1% from %2%") % request_name %
@@ -284,12 +284,9 @@ process_get_request(request &req, routes &route,
  * process a POST request.
  */
 boost::tuple<string, size_t>
-process_post_request(request &req, routes &route,
+process_post_request(request &req, handler_ptr_t handler,
                     boost::optional<osm_user_id_t> user_id,
                     const string &ip, const string &generator) {
-  // figure how to handle the request
-  handler_ptr_t handler = route(req);
-
   // request start logging
   string request_name = handler->log_name();
   logger::message(format("Started request for %1% from %2%") % request_name %
@@ -325,7 +322,7 @@ process_post_request(request &req, routes &route,
 //    // call to write the response
 //    responder->write(o_formatter, generator, req.get_current_time());
 
-    demo();
+    //demo();
 
     // ensure the request is finished
     req.finish();
@@ -356,12 +353,9 @@ process_post_request(request &req, routes &route,
  * process a HEAD request.
  */
 boost::tuple<string, size_t>
-process_head_request(request &req, routes &route,
+process_head_request(request &req, handler_ptr_t handler,
                      data_selection_ptr selection,
                      const string &ip) {
-  // figure how to handle the request
-  handler_ptr_t handler = route(req);
-
   // request start logging
   string request_name = handler->log_name();
   logger::message(format("Started HEAD request for %1% from %2%") %
@@ -399,14 +393,16 @@ process_head_request(request &req, routes &route,
 /**
  * process an OPTIONS request.
  */
-boost::tuple<string, size_t> process_options_request(request &req) {
+boost::tuple<string, size_t> process_options_request(
+  request &req, handler_ptr_t handler) {
+
   static const string request_name = "OPTIONS";
   const char *origin = req.get_param("HTTP_ORIGIN");
   const char *method = req.get_param("HTTP_ACCESS_CONTROL_REQUEST_METHOD");
 
-  if (origin && method &&
-      (strcasecmp(method, "GET") == 0 || strcasecmp(method, "POST") == 0 ||
-       strcasecmp(method, "HEAD") == 0)) {
+  // NOTE: we don't echo back the method - the handler already lists all
+  // the methods it understands.
+  if (origin && method) {
 
     // write the response
     req.status(200);
@@ -422,7 +418,7 @@ boost::tuple<string, size_t> process_options_request(request &req) {
     req.finish();
 
   } else {
-    process_not_allowed(req);
+    process_not_allowed(req, handler);
   }
   return boost::make_tuple(request_name, 0);
 }
@@ -541,8 +537,27 @@ void process_request(request &req, rate_limiter &limiter,
                                            "data. Please try again later.");
     }
 
-    // get the request method
-    string method = fcgi_get_env(req, "REQUEST_METHOD");
+    // fetch and parse the request method
+    boost::optional<http::method> maybe_method =
+      http::parse_method(fcgi_get_env(req, "REQUEST_METHOD"));
+
+    // data returned from request methods
+    string request_name;
+    size_t bytes_written = 0;
+
+    // figure how to handle the request
+    handler_ptr_t handler = route(req);
+
+    // if handler doesn't accept this method, then return method not
+    // allowed.
+    if (!maybe_method || !handler->allows_method(*maybe_method)) {
+      process_not_allowed(req, handler);
+      return;
+    }
+    http::method method = *maybe_method;
+
+    // override the default access control allow methods header
+    req.set_default_methods(handler->allowed_methods());
 
     // create a data selection for the request
     auto selection = factory->make_selection();
@@ -552,28 +567,25 @@ void process_request(request &req, rate_limiter &limiter,
       selection->set_redactions_visible(true);
     }
 
-    // data returned from request methods
-    string request_name;
-    size_t bytes_written = 0;
-
     // process request
-    if (method == "GET") {
+    if (method == http::method::GET) {
       boost::tie(request_name, bytes_written) =
-        process_get_request(req, route, selection, ip, generator);
+        process_get_request(req, handler, selection, ip, generator);
 
-    } else if (method == "POST") {
+    } else if (method == http::method::POST) {
       boost::tie(request_name, bytes_written) =
-          process_post_request(req, route, user_id, ip, generator);
+          process_post_request(req, handler, user_id, ip, generator);
 
-    } else if (method == "HEAD") {
+    } else if (method == http::method::HEAD) {
       boost::tie(request_name, bytes_written) =
-          process_head_request(req, route, selection, ip);
+          process_head_request(req, handler, selection, ip);
 
-    } else if (method == "OPTIONS") {
-      boost::tie(request_name, bytes_written) = process_options_request(req);
+    } else if (method == http::method::OPTIONS) {
+      boost::tie(request_name, bytes_written) =
+        process_options_request(req, handler);
 
     } else {
-      process_not_allowed(req);
+      process_not_allowed(req, handler);
     }
 
     // update the rate limiter, if anything was written

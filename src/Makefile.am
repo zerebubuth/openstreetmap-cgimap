@@ -166,6 +166,7 @@ libcgimap_core_la_SOURCES+=\
 	api06/id_version_io.cpp \
 	api06/changeset_handler.cpp \
 	api06/changeset_download_handler.cpp \
+	api06/changeset_upload_handler.cpp \
 	api06/changeset_upload/osmchange_handler.cpp \
 	api06/changeset_upload/osmchange_tracking.cpp \
 	api06/changeset_upload/node_updater.cpp \
