@@ -21,10 +21,11 @@ addons:
       - libmemcached-dev
       - libpqxx-dev
       - libxml2-dev
-      - gcc-5
+      - gcc-7
 script:
+  - ccache gcc-7 --version
   - ./autogen.sh
-  - ./configure CC="ccache gcc-5" CXX="ccache g++-5"
+  - ./configure CC="ccache gcc-7" CXX="ccache g++-7"
   - make
   - make check
 after_failure:
