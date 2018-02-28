@@ -773,7 +773,7 @@ void ApiDB_Relation_Updater::update_current_relations(const std::vector<relation
 	{
 	   ids.emplace_back(relation.id);
 	   cs.emplace_back(relation.changeset_id);
-	   visibles.emplace_back(visible);
+	   visibles.push_back(visible);
 	   versions.emplace_back(relation.version);
 	}
 

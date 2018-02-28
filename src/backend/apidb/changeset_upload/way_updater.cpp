@@ -589,7 +589,7 @@ void ApiDB_Way_Updater::update_current_ways(const std::vector<way_t>& ways, bool
 	{
 	   ids.emplace_back(way.id);
 	   cs.emplace_back(way.changeset_id);
-	   visibles.emplace_back(visible);
+	   visibles.push_back(visible);
 	   versions.emplace_back(way.version);
 	}
 
