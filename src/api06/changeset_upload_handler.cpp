@@ -1,4 +1,3 @@
-#include <backend/apidb/changeset_upload/changeset_updater.hpp>
 #include "cgimap/api06/changeset_upload_handler.hpp"
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/http.hpp"
@@ -22,6 +21,10 @@
 
 using std::stringstream;
 using std::vector;
+using std::list;
+using boost::shared_ptr;
+namespace pt = boost::posix_time;
+
 
 namespace api06 {
 
@@ -38,8 +41,7 @@ changeset_upload_responder::changeset_upload_responder(
 
   Transaction_Manager m { "dbname=openstreetmap" };
 
-  std::shared_ptr<OSMChange_Tracking> change_tracking(std::make_shared<OSMChange_Tracking>());
-
+  change_tracking = std::make_shared<OSMChange_Tracking>();
 
   // TODO: we're still in api06 code, don't use ApiDB_*_Updater here!!
 
@@ -64,9 +66,100 @@ changeset_upload_responder::changeset_upload_responder(
 
   m.commit();
 
-  // Result: change_tracking->get_xml_diff_result();
+}
+
+void changeset_upload_responder::write(shared_ptr<output_formatter> formatter,
+                                  const std::string &generator,
+                                  const pt::ptime &now) {
+  // TODO: is it possible that formatter can be null?
+  output_formatter &fmt = *formatter;
+
+  try {
+    fmt.start_document(generator, "diffResult");
+
+    for (const auto& id : change_tracking->created_node_ids) {
+      // "  <node old_id=\"" << id.old_id << "\" new_id=\""
+      //                                      << id.new_id << "\" new_version=\"" << id.new_version
+      //                                      << "\"/>" << std::endl;
+    }
+
+//    // write all selected changesets
+//    fmt.start_element_type(element_type_changeset);
+//    sel->write_changesets(fmt, now);
+//    fmt.end_element_type(element_type_changeset);
+//
+
+    //
+    //      {
+    //              for (auto id : created_node_ids)
+    //                      os << "  <node old_id=\"" << id.old_id << "\" new_id=\""
+    //                                      << id.new_id << "\" new_version=\"" << id.new_version
+    //                                      << "\"/>" << std::endl;
+    //
+    //              for (auto id : modified_node_ids)
+    //                      os << "  <node old_id=\"" << id.old_id << "\" new_id=\""
+    //                                      << id.new_id << "\" new_version=\"" << id.new_version
+    //                                      << "\"/>" << std::endl;
+    //
+    //              for (auto id : already_deleted_node_ids)
+    //                      os << "  <node old_id=\"" << id.old_id << "\" new_id=\""
+    //                                      << id.new_id << "\" new_version=\"" << id.new_version
+    //                                      << "\"/>" << std::endl;
+    //
+    //              for (auto id : deleted_node_ids)
+    //                      os << "  <node old_id=\"" << id << "\"/>" << std::endl;
+    //
+    //      }
+    //
+    //      {
+    //              for (auto id : created_way_ids)
+    //                      os << "  <way old_id=\"" << id.old_id << "\" new_id=\""
+    //                                      << id.new_id << "\" new_version=\"" << id.new_version
+    //                                      << "\"/>" << std::endl;
+    //
+    //              for (auto id : modified_way_ids)
+    //                      os << "  <way old_id=\"" << id.old_id << "\" new_id=\""
+    //                                      << id.new_id << "\" new_version=\"" << id.new_version
+    //                                      << "\"/>" << std::endl;
+    //
+    //              for (auto id : already_deleted_way_ids)
+    //                      os << "  <way old_id=\"" << id.old_id << "\" new_id=\""
+    //                                      << id.new_id << "\" new_version=\"" << id.new_version
+    //                                      << "\"/>" << std::endl;
+    //
+    //              for (auto id : deleted_way_ids)
+    //                      os << "  <way old_id=\"" << id << "\"/>" << std::endl;
+    //
+    //      }
+    //
+    //      {
+    //              for (auto id : created_relation_ids)
+    //                      os << "  <relation old_id=\"" << id.old_id << "\" new_id=\""
+    //                                      << id.new_id << "\" new_version=\"" << id.new_version
+    //                                      << "\"/>" << std::endl;
+    //
+    //              for (auto id : modified_relation_ids)
+    //                      os << "  <relation old_id=\"" << id.old_id << "\" new_id=\""
+    //                                      << id.new_id << "\" new_version=\"" << id.new_version
+    //                                      << "\"/>" << std::endl;
+    //
+    //              for (auto id : already_deleted_relation_ids)
+    //                      os << "  <relation old_id=\"" << id.old_id << "\" new_id=\""
+    //                                      << id.new_id << "\" new_version=\"" << id.new_version
+    //                                      << "\"/>" << std::endl;
+    //
+    //              for (auto id : deleted_relation_ids)
+    //                      os << "  <relation old_id=\"" << id << "\"/>" << std::endl;
+    //
+    //      }
+    //
 
 
+  } catch (const std::exception &e) {
+    fmt.error(e);
+  }
+
+  fmt.end_document();
 }
 
 changeset_upload_responder::~changeset_upload_responder() {}

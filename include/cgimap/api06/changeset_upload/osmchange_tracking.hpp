@@ -20,8 +20,6 @@ public:
 
 	OSMChange_Tracking();
 
-	std::string get_xml_diff_result();
-
 	// created objects are kept separately for id replacement purposes
 	std::vector<object_id_mapping_t> created_node_ids;
 	std::vector<object_id_mapping_t> created_way_ids;
