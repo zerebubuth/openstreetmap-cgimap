@@ -1,4 +1,5 @@
 
+
 #include "cgimap/logger.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/backend/apidb/changeset_upload/changeset_updater.hpp"
@@ -13,12 +14,14 @@ using boost::format;
 
 
 
-Changeset_Updater::Changeset_Updater(Transaction_Manager & _m, osm_changeset_id_t _changeset,
+ApiDB_Changeset_Updater::ApiDB_Changeset_Updater(Transaction_Manager & _m, osm_changeset_id_t _changeset,
 		osm_user_id_t _uid) :
 		m(_m), num_changes(0), changeset(_changeset), uid(_uid) {
 }
 
-void Changeset_Updater::lock_current_changeset() {
+ApiDB_Changeset_Updater::~ApiDB_Changeset_Updater() {}
+
+void ApiDB_Changeset_Updater::lock_current_changeset() {
 
 	m.prepare("changeset_current_lock",
 			R"( SELECT id, user_id, closed_at, num_changes, closed_at, 
@@ -39,7 +42,7 @@ void Changeset_Updater::lock_current_changeset() {
 	num_changes = r[0]["num_changes"].as<int>();
 }
 
-void Changeset_Updater::update_changeset(long num_new_changes, bbox_t bbox) {
+void ApiDB_Changeset_Updater::update_changeset(long num_new_changes, bbox_t bbox) {
 
 	if (num_changes + num_new_changes > CHANGESET_MAX_ELEMENTS)
 		throw http::conflict("Too many elements in changeset");

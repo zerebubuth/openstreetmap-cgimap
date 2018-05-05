@@ -1,14 +1,15 @@
+#include <backend/apidb/changeset_upload/changeset_updater.hpp>
 #include "cgimap/api06/changeset_upload_handler.hpp"
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/config.hpp"
 
-#include "cgimap/backend/apidb/changeset_upload/changeset_updater.hpp"
 #include "cgimap/infix_ostream_iterator.hpp"
 #include "cgimap/backend/apidb/changeset_upload/node_updater.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_handler.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_input_format.hpp"
+#include "cgimap/backend/apidb/changeset_upload/changeset_updater.hpp"
 #include "cgimap/backend/apidb/changeset_upload/relation_updater.hpp"
 #include "cgimap/backend/apidb/changeset_upload/transaction_manager.hpp"
 #include "cgimap/backend/apidb/changeset_upload/way_updater.hpp"
@@ -42,7 +43,7 @@ changeset_upload_responder::changeset_upload_responder(
 
   // TODO: we're still in api06 code, don't use ApiDB_*_Updater here!!
 
-  std::unique_ptr<Changeset_Updater> changeset_updater(new Changeset_Updater(m, changeset, uid));
+  std::unique_ptr<Changeset_Updater> changeset_updater(new ApiDB_Changeset_Updater(m, changeset, uid));
   std::unique_ptr<Node_Updater> node_updater(new ApiDB_Node_Updater(m, change_tracking));
   std::unique_ptr<Way_Updater> way_updater(new ApiDB_Way_Updater(m, change_tracking));
   std::unique_ptr<Relation_Updater> relation_updater(new ApiDB_Relation_Updater(m, change_tracking));
