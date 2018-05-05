@@ -115,6 +115,11 @@ class OSMChangeXMLParser {
                         throw std::runtime_error((boost::format("XML Error: %1%") % buffer).str());
                   }
 
+                  // Don't load any external entities provided in the XML document
+                  static xmlParserInputPtr xmlCustomExternalEntityLoader(const char *, const char *, xmlParserCtxtPtr) {
+                          throw xml_error{std::string{"XML external entities not supported"}};
+                  }
+
 
 
         public:
@@ -122,6 +127,8 @@ class OSMChangeXMLParser {
                 explicit XMLParser(T* callback_object) : m_callback_object(callback_object){
 
                   xmlInitParser();
+
+                  xmlSetExternalEntityLoader(xmlCustomExternalEntityLoader);
 
                   memset(&handler, 0, sizeof(handler));
                   handler.initialized = XML_SAX2_MAGIC;
@@ -168,6 +175,9 @@ class OSMChangeXMLParser {
 
         template <typename T>
         static void check_attributes(const char** attrs, T check) {
+                if (attrs == NULL)
+                  return;
+
                 while (*attrs) {
                         check(attrs[0], attrs[1]);
                         attrs += 2;
