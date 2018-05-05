@@ -17,23 +17,6 @@
 #include <boost/make_shared.hpp>
 #include <boost/tuple/tuple.hpp>
 
-/*
-// START DEMO
-#include "cgimap/backend/apidb/changeset_upload/changeset_updater.hpp"
-#include "cgimap/infix_ostream_iterator.hpp"
-#include "cgimap/backend/apidb/changeset_upload/node_updater.hpp"
-#include "cgimap/api06/changeset_upload/osmchange_handler.hpp"
-#include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
-#include "cgimap/backend/apidb/changeset_upload/relation_updater.hpp"
-#include "cgimap/backend/apidb/changeset_upload/transaction_manager.hpp"
-#include "types.hpp"
-#include "util.hpp"
-#include "cgimap/backend/apidb/changeset_upload/way_updater.hpp"
-#include "cgimap/api06/changeset_upload/osmchange_input_format.hpp"
-
-// END DEMO
-*/
-
 using std::runtime_error;
 using std::string;
 using std::ostringstream;
@@ -276,8 +259,6 @@ process_post_request(request &req, handler_ptr_t handler,
   try {
 //    // call to write the response
 //    responder->write(o_formatter, generator, req.get_current_time());
-
-    //demo();
 
     // ensure the request is finished
     req.finish();

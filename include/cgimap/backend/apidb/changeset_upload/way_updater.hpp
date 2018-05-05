@@ -16,7 +16,7 @@
  *
  */
 
-class ApiDB_Way_Updater {
+class ApiDB_Way_Updater : public Way_Updater{
 
 public:
 

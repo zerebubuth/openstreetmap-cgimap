@@ -1,21 +1,16 @@
 #ifndef OSMCHANGE_INPUT_FORMAT_HPP
 #define OSMCHANGE_INPUT_FORMAT_HPP
 
-/*
 
 
-NOTE: This is based on a heavily modified xml_input_format.hpp version
+#include "cgimap/api06/changeset_upload/parser_callback.hpp"
+#include "cgimap/api06/changeset_upload/osmobject.hpp"
+#include "cgimap/api06/changeset_upload/node.hpp"
+#include "cgimap/api06/changeset_upload/way.hpp"
+#include "cgimap/api06/changeset_upload/relation.hpp"
+#include "cgimap/types.hpp"
 
-*/
-
-#include "parser_callback.hpp"
-#include "osmobject.hpp"
-#include "node.hpp"
-#include "way.hpp"
-#include "relation.hpp"
-#include "types.hpp"
-
-
+#include <boost/format.hpp>
 #include <libxml/parser.h>
 
 #include <algorithm>

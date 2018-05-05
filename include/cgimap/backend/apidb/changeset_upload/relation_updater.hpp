@@ -14,7 +14,7 @@
 using RelationMemberList = std::vector<RelationMember>;
 using TagList = std::map<std::string, std::string>;
 
-class ApiDB_Relation_Updater {
+class ApiDB_Relation_Updater : public Relation_Updater {
 
 public:
 
