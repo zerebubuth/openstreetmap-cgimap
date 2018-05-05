@@ -175,6 +175,20 @@ struct erase_formatter
     m_fmt.write_changeset(elem, tags, include_comments, comments, now);
   }
 
+  void write_diffresult_create_modify(const element_type elem,
+                                              const osm_nwr_signed_id_t old_id,
+                                              const osm_nwr_id_t new_id,
+                                              const osm_version_t new_version) {
+
+    throw std::runtime_error("erase_formatter::write_diffresult_create_modify unimplemented");
+  }
+
+
+  void write_diffresult_delete(const element_type elem,
+                               const osm_nwr_id_t old_id) {
+    throw std::runtime_error("erase_formatter::write_diffresult_delete unimplemented");
+  }
+
 private:
   output_formatter &m_fmt;
   std::set<osm_edition_t> &m_sel_historic_nodes, &m_sel_historic_ways,

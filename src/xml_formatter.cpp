@@ -224,6 +224,29 @@ void xml_formatter::write_changeset(const changeset_info &elem,
   writer->end();
 }
 
+void xml_formatter::write_diffresult_create_modify(const element_type elem,
+                                            const osm_nwr_signed_id_t old_id,
+                                            const osm_nwr_id_t new_id,
+                                            const osm_version_t new_version)
+{
+  writer->start(element_type_name(elem));
+  writer->attribute("old_id", old_id);
+  writer->attribute("new_id", new_id);
+  writer->attribute("new_version", new_version);
+  writer->end();
+}
+
+
+void xml_formatter::write_diffresult_delete(const element_type elem,
+                                            const osm_nwr_id_t old_id)
+{
+  writer->start(element_type_name(elem));
+  writer->attribute("old_id", old_id);
+  writer->end();
+}
+
+
+
 void xml_formatter::flush() { writer->flush(); }
 
 void xml_formatter::error(const std::string &s) { writer->error(s); }

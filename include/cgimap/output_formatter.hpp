@@ -184,6 +184,16 @@ struct output_formatter {
                                const comments_t &comments,
                                const boost::posix_time::ptime &now) = 0;
 
+  // output an entry of a diffResult with 3 parameters: old_id, new_id and new_version
+  virtual void write_diffresult_create_modify(const element_type elem,
+                                              const osm_nwr_signed_id_t old_id,
+                                              const osm_nwr_id_t new_id,
+                                              const osm_version_t new_version) = 0;
+
+  // output an entry of a diffResult with 1 parameter: old_id
+  virtual void write_diffresult_delete(const element_type elem,
+                                       const osm_nwr_id_t old_id) = 0;
+
   // flush the current state
   virtual void flush() = 0;
 

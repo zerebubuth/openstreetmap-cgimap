@@ -77,82 +77,49 @@ void changeset_upload_responder::write(shared_ptr<output_formatter> formatter,
   try {
     fmt.start_document(generator, "diffResult");
 
-    for (const auto& id : change_tracking->created_node_ids) {
-      // "  <node old_id=\"" << id.old_id << "\" new_id=\""
-      //                                      << id.new_id << "\" new_version=\"" << id.new_version
-      //                                      << "\"/>" << std::endl;
-    }
+    // Nodes
 
-//    // write all selected changesets
-//    fmt.start_element_type(element_type_changeset);
-//    sel->write_changesets(fmt, now);
-//    fmt.end_element_type(element_type_changeset);
-//
+    for (const auto& id : change_tracking->created_node_ids)
+      fmt.write_diffresult_create_modify(element_type_node, id.old_id, id.new_id, id.new_version);
 
-    //
-    //      {
-    //              for (auto id : created_node_ids)
-    //                      os << "  <node old_id=\"" << id.old_id << "\" new_id=\""
-    //                                      << id.new_id << "\" new_version=\"" << id.new_version
-    //                                      << "\"/>" << std::endl;
-    //
-    //              for (auto id : modified_node_ids)
-    //                      os << "  <node old_id=\"" << id.old_id << "\" new_id=\""
-    //                                      << id.new_id << "\" new_version=\"" << id.new_version
-    //                                      << "\"/>" << std::endl;
-    //
-    //              for (auto id : already_deleted_node_ids)
-    //                      os << "  <node old_id=\"" << id.old_id << "\" new_id=\""
-    //                                      << id.new_id << "\" new_version=\"" << id.new_version
-    //                                      << "\"/>" << std::endl;
-    //
-    //              for (auto id : deleted_node_ids)
-    //                      os << "  <node old_id=\"" << id << "\"/>" << std::endl;
-    //
-    //      }
-    //
-    //      {
-    //              for (auto id : created_way_ids)
-    //                      os << "  <way old_id=\"" << id.old_id << "\" new_id=\""
-    //                                      << id.new_id << "\" new_version=\"" << id.new_version
-    //                                      << "\"/>" << std::endl;
-    //
-    //              for (auto id : modified_way_ids)
-    //                      os << "  <way old_id=\"" << id.old_id << "\" new_id=\""
-    //                                      << id.new_id << "\" new_version=\"" << id.new_version
-    //                                      << "\"/>" << std::endl;
-    //
-    //              for (auto id : already_deleted_way_ids)
-    //                      os << "  <way old_id=\"" << id.old_id << "\" new_id=\""
-    //                                      << id.new_id << "\" new_version=\"" << id.new_version
-    //                                      << "\"/>" << std::endl;
-    //
-    //              for (auto id : deleted_way_ids)
-    //                      os << "  <way old_id=\"" << id << "\"/>" << std::endl;
-    //
-    //      }
-    //
-    //      {
-    //              for (auto id : created_relation_ids)
-    //                      os << "  <relation old_id=\"" << id.old_id << "\" new_id=\""
-    //                                      << id.new_id << "\" new_version=\"" << id.new_version
-    //                                      << "\"/>" << std::endl;
-    //
-    //              for (auto id : modified_relation_ids)
-    //                      os << "  <relation old_id=\"" << id.old_id << "\" new_id=\""
-    //                                      << id.new_id << "\" new_version=\"" << id.new_version
-    //                                      << "\"/>" << std::endl;
-    //
-    //              for (auto id : already_deleted_relation_ids)
-    //                      os << "  <relation old_id=\"" << id.old_id << "\" new_id=\""
-    //                                      << id.new_id << "\" new_version=\"" << id.new_version
-    //                                      << "\"/>" << std::endl;
-    //
-    //              for (auto id : deleted_relation_ids)
-    //                      os << "  <relation old_id=\"" << id << "\"/>" << std::endl;
-    //
-    //      }
-    //
+    for (const auto& id : change_tracking->modified_node_ids)
+      fmt.write_diffresult_create_modify(element_type_node, id.old_id, id.new_id, id.new_version);
+
+    for (const auto& id : change_tracking->already_deleted_node_ids)
+      fmt.write_diffresult_create_modify(element_type_node, id.old_id, id.new_id, id.new_version);
+
+    for (const auto& id : change_tracking->deleted_node_ids)
+      fmt.write_diffresult_delete(element_type_node, id);
+
+
+    // Ways
+
+    for (const auto& id : change_tracking->created_way_ids)
+      fmt.write_diffresult_create_modify(element_type_way, id.old_id, id.new_id, id.new_version);
+
+    for (const auto& id : change_tracking->modified_way_ids)
+      fmt.write_diffresult_create_modify(element_type_way, id.old_id, id.new_id, id.new_version);
+
+    for (const auto& id : change_tracking->already_deleted_way_ids)
+      fmt.write_diffresult_create_modify(element_type_way, id.old_id, id.new_id, id.new_version);
+
+    for (const auto& id : change_tracking->deleted_way_ids)
+      fmt.write_diffresult_delete(element_type_way, id);
+
+
+    // Relations
+
+    for (const auto& id : change_tracking->created_relation_ids)
+      fmt.write_diffresult_create_modify(element_type_relation, id.old_id, id.new_id, id.new_version);
+
+    for (const auto& id : change_tracking->modified_relation_ids)
+      fmt.write_diffresult_create_modify(element_type_relation, id.old_id, id.new_id, id.new_version);
+
+    for (const auto& id : change_tracking->already_deleted_relation_ids)
+      fmt.write_diffresult_create_modify(element_type_relation, id.old_id, id.new_id, id.new_version);
+
+    for (const auto& id : change_tracking->deleted_relation_ids)
+      fmt.write_diffresult_delete(element_type_relation, id);
 
 
   } catch (const std::exception &e) {
