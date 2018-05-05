@@ -59,7 +59,6 @@ cgimap_apidb_include_HEADERS = \
 	include/cgimap/backend/apidb/changeset_upload/relation_updater.hpp \
  	include/cgimap/backend/apidb/changeset_upload/transaction_manager.hpp \
 	include/cgimap/backend/apidb/changeset_upload/way_updater.hpp
-
 endif
 
 if ENABLE_PGSNAPSHOT
