@@ -146,6 +146,8 @@ class OSMChangeXMLParser {
 
                 void operator()(const std::string& data) {
 
+                  const size_t MAX_CHUNKSIZE = 131072;
+
                   if (data.size() < 4)
                     throw std::runtime_error ("Invalid XML input");
 
@@ -156,11 +158,19 @@ class OSMChangeXMLParser {
 
                   xmlCtxtUseOptions(ctxt,  XML_PARSE_RECOVER | XML_PARSE_NONET);
 
-                  // TODO: pass remaining characters - add while + meaningful chunk size (e.g. 1024?)
-                  if (xmlParseChunk(ctxt, data.c_str()+4, data.size()-4, 0))
-                  {
-                    xmlErrorPtr err = xmlGetLastError();
-                    throw std::runtime_error((boost::format("XML ERROR: %1%.") % err->message).str());
+                  unsigned int offset = 4;
+
+                  while(offset < data.size()) {
+
+                    unsigned int current_chunksize = std::min(data.size() - offset, MAX_CHUNKSIZE);
+
+                    if (xmlParseChunk(ctxt, data.c_str() + offset, current_chunksize, 0))
+                    {
+                      xmlErrorPtr err = xmlGetLastError();
+                      throw std::runtime_error((boost::format("XML ERROR: %1%.") % err->message).str());
+                    }
+
+                    offset += current_chunksize;
                   }
 
                   xmlParseChunk(ctxt, 0, 0, 1);
