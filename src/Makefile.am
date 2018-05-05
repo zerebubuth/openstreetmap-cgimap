@@ -131,6 +131,7 @@ libcgimap_core_la_SOURCES=\
 	oauth.cpp \
 	osm_responder.cpp \
 	osm_current_responder.cpp \
+	osm_diffresult_responder.cpp \
 	osmchange_responder.cpp \
 	output_formatter.cpp \
 	output_writer.cpp \

@@ -2,7 +2,6 @@
 #define OSMCHANGE_HANDLER_HPP
 
 
-// TODO: Include only abstract base class, no direct references to backend!
 #include "cgimap/api06/changeset_upload/node_updater.hpp"
 #include "cgimap/api06/changeset_upload/relation_updater.hpp"
 #include "cgimap/api06/changeset_upload/way_updater.hpp"

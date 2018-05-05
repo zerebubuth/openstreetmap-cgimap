@@ -12,7 +12,7 @@
 #include "cgimap/backend/apidb/changeset_upload/relation_updater.hpp"
 #include "cgimap/backend/apidb/changeset_upload/transaction_manager.hpp"
 #include "cgimap/backend/apidb/changeset_upload/way_updater.hpp"
-//#include "cgimap/api06/changeset_upload/osmchange_input_format.hpp"
+
 
 #include "types.hpp"
 #include "util.hpp"
@@ -29,8 +29,8 @@ namespace pt = boost::posix_time;
 namespace api06 {
 
 changeset_upload_responder::changeset_upload_responder(
-  mime::type mt, osm_changeset_id_t id_, data_selection_ptr &w_)
-  : osmchange_responder(mt, w_), id(id_) {
+  mime::type mt, osm_changeset_id_t id_)
+  : osm_diffresult_responder(mt), id(id_) {
 
  // throw http::server_error("unimplemented");
 
@@ -68,66 +68,6 @@ changeset_upload_responder::changeset_upload_responder(
 
 }
 
-void changeset_upload_responder::write(shared_ptr<output_formatter> formatter,
-                                  const std::string &generator,
-                                  const pt::ptime &now) {
-  // TODO: is it possible that formatter can be null?
-  output_formatter &fmt = *formatter;
-
-  try {
-    fmt.start_document(generator, "diffResult");
-
-    // Nodes
-
-    for (const auto& id : change_tracking->created_node_ids)
-      fmt.write_diffresult_create_modify(element_type_node, id.old_id, id.new_id, id.new_version);
-
-    for (const auto& id : change_tracking->modified_node_ids)
-      fmt.write_diffresult_create_modify(element_type_node, id.old_id, id.new_id, id.new_version);
-
-    for (const auto& id : change_tracking->already_deleted_node_ids)
-      fmt.write_diffresult_create_modify(element_type_node, id.old_id, id.new_id, id.new_version);
-
-    for (const auto& id : change_tracking->deleted_node_ids)
-      fmt.write_diffresult_delete(element_type_node, id);
-
-
-    // Ways
-
-    for (const auto& id : change_tracking->created_way_ids)
-      fmt.write_diffresult_create_modify(element_type_way, id.old_id, id.new_id, id.new_version);
-
-    for (const auto& id : change_tracking->modified_way_ids)
-      fmt.write_diffresult_create_modify(element_type_way, id.old_id, id.new_id, id.new_version);
-
-    for (const auto& id : change_tracking->already_deleted_way_ids)
-      fmt.write_diffresult_create_modify(element_type_way, id.old_id, id.new_id, id.new_version);
-
-    for (const auto& id : change_tracking->deleted_way_ids)
-      fmt.write_diffresult_delete(element_type_way, id);
-
-
-    // Relations
-
-    for (const auto& id : change_tracking->created_relation_ids)
-      fmt.write_diffresult_create_modify(element_type_relation, id.old_id, id.new_id, id.new_version);
-
-    for (const auto& id : change_tracking->modified_relation_ids)
-      fmt.write_diffresult_create_modify(element_type_relation, id.old_id, id.new_id, id.new_version);
-
-    for (const auto& id : change_tracking->already_deleted_relation_ids)
-      fmt.write_diffresult_create_modify(element_type_relation, id.old_id, id.new_id, id.new_version);
-
-    for (const auto& id : change_tracking->deleted_relation_ids)
-      fmt.write_diffresult_delete(element_type_relation, id);
-
-
-  } catch (const std::exception &e) {
-    fmt.error(e);
-  }
-
-  fmt.end_document();
-}
 
 changeset_upload_responder::~changeset_upload_responder() {}
 
@@ -141,7 +81,7 @@ changeset_upload_handler::~changeset_upload_handler() {}
 std::string changeset_upload_handler::log_name() const { return "changeset/upload"; }
 
 responder_ptr_t changeset_upload_handler::responder(data_selection_ptr &w) const {
-  return responder_ptr_t(new changeset_upload_responder(mime_type, id, w));
+  return responder_ptr_t(new changeset_upload_responder(mime_type, id));
 }
 
 } // namespace api06

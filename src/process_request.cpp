@@ -231,7 +231,7 @@ process_post_request(request &req, handler_ptr_t handler,
                   ip);
 
 //  // constructor of responder handles dynamic validation (i.e: with db access).
-//  responder_ptr_t responder = handler->responder(selection);
+  //responder_ptr_t responder = handler->responder();
 
   // get encoding to use
   shared_ptr<http::encoding> encoding = get_encoding(req);
