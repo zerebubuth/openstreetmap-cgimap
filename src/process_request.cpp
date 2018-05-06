@@ -28,67 +28,6 @@ namespace pt = boost::posix_time;
 namespace po = boost::program_options;
 
 
-/*
- *  DEMO ONLY
- *
- */
-/*
-
-
-int demo()
-{
-
-  // Read file
-
-    std::ifstream ifs("/tmp/demo");
-    std::string data((std::istreambuf_iterator<char>(ifs)),
-                                       (std::istreambuf_iterator<char>()));
-
-    try {
-    int changeset = 1234;
-    int uid = 1;
-
-    Transaction_Manager m { "dbname=openstreetmap" };
-
-    std::shared_ptr<OSMChange_Tracking> change_tracking(std::make_shared<OSMChange_Tracking>());
-
-    std::unique_ptr<Changeset_Updater> changeset_updater(new Changeset_Updater(m, changeset, uid));
-    std::unique_ptr<Node_Updater> node_updater(new Node_Updater(m, change_tracking));
-    std::unique_ptr<Way_Updater> way_updater(new Way_Updater(m, change_tracking));
-    std::unique_ptr<Relation_Updater> relation_updater(new Relation_Updater(m, change_tracking));
-
-
-    changeset_updater->lock_current_changeset();
-
-    OSMChange_Handler handler(std::move(node_updater), std::move(way_updater), std::move(relation_updater),
-                    changeset, uid);
-
-    OSMChangeXMLParser parser(&handler);
-
-    parser.process_message(data);
-
-    handler.finish_processing();
-
-    changeset_updater->update_changeset(handler.get_num_changes(), handler.get_bbox());
-
-    m.commit();
-
-    std::cout << change_tracking->get_xml_diff_result();
-
-    } catch (const pqxx::sql_error &e) {
-            std::cerr << "SQL error: " << e.what() << std::endl;
-            std::cerr << "Query was: " << e.query() << std::endl;
-            return 2;
-    } catch (const std::exception &e) {
-            std::cerr << "Error: " << e.what() << std::endl;
-            return 1;
-    }
-
-}
-*/
-
-
-
 
 namespace {
 
@@ -510,11 +449,8 @@ void process_request(request &req, rate_limiter &limiter,
         process_get_request(req, handler, selection, ip, generator);
 
     } else if (method == http::method::POST) {
-      // fetch and parse the content length
-      unsigned long content_length =
-        http::parse_content_length(fcgi_get_env(req, "CONTENT_LENGTH", "0"));
 
-      std::string payload({});
+      std::string payload = req.get_payload();
 
       boost::tie(request_name, bytes_written) =
           process_post_request(req, handler, payload, user_id, ip, generator);

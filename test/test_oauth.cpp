@@ -53,6 +53,8 @@ struct test_request : public request {
   virtual ~test_request();
 
   const char *get_param(const char *key);
+  const std::string get_payload();
+
   void dispose();
 
   boost::posix_time::ptime get_current_time() const;
@@ -107,6 +109,10 @@ const char *test_request::get_param(const char *key) {
   } else {
     return NULL;
   }
+}
+
+const std::string test_request::get_payload() {
+  return "";
 }
 
 void test_request::dispose() {

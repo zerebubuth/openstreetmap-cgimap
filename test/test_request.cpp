@@ -41,6 +41,10 @@ const char *test_request::get_param(const char *key) {
   }
 }
 
+const std::string test_request::get_payload() {
+  return "";
+}
+
 void test_request::dispose() {}
 
 void test_request::set_header(const std::string &k, const std::string &v) {

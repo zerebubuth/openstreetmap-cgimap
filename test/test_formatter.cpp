@@ -178,6 +178,18 @@ void test_formatter::write_changeset(const changeset_info &elem, const tags_t &t
   m_changesets.push_back(changeset_t(elem, tags, include_comments, comments, time));
 }
 
+void test_formatter::write_diffresult_create_modify(const element_type elem,
+                                            const osm_nwr_signed_id_t old_id,
+                                            const osm_nwr_id_t new_id,
+                                            const osm_version_t new_version) {
+
+}
+
+void test_formatter::write_diffresult_delete(const element_type elem,
+                                     const osm_nwr_id_t old_id) {
+
+}
+
 void test_formatter::flush() {}
 
 void test_formatter::error(const std::exception &e) {

@@ -23,6 +23,10 @@ struct test_request : public request {
     }
   }
 
+  const std::string get_payload() {
+    return "";
+  }
+
   virtual void dispose() {}
 
   /// getters and setters for the input headers and output response

@@ -35,6 +35,10 @@ struct request {
   // get the current time of the request.
   virtual boost::posix_time::ptime get_current_time() const = 0;
 
+  // get payload provided for the request. this is useful in particular
+  // for HTTP POST and PUT requests.
+  virtual const std::string get_payload() = 0;
+
   /********************** RESPONSE HEADER FUNCTIONS **************************/
 
   // set the status for the response. by default, the status is 500 and the user

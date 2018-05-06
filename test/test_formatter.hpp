@@ -92,6 +92,15 @@ struct test_formatter : public output_formatter {
   void write_changeset(const changeset_info &elem, const tags_t &tags,
                        bool include_comments, const comments_t &comments,
                        const boost::posix_time::ptime &time);
+
+  void write_diffresult_create_modify(const element_type elem,
+                                              const osm_nwr_signed_id_t old_id,
+                                              const osm_nwr_id_t new_id,
+                                              const osm_version_t new_version);
+
+  void write_diffresult_delete(const element_type elem,
+                                       const osm_nwr_id_t old_id);
+
   void flush();
 
   void error(const std::exception &e);

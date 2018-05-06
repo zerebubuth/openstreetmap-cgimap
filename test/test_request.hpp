@@ -31,6 +31,7 @@ struct test_request : public request {
   /// implementation of request interface
   virtual ~test_request();
   virtual const char *get_param(const char *key);
+  virtual const std::string get_payload();
 
   virtual void dispose();
 
