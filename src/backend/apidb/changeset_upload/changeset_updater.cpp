@@ -37,7 +37,7 @@ void ApiDB_Changeset_Updater::lock_current_changeset() {
 
 	if (r[0]["is_closed"].as<bool>()
 			|| r[0]["num_changes"].as<int>() > CHANGESET_MAX_ELEMENTS)
-		throw http::conflict("Changeset already closed");
+	  throw http::conflict((boost::format("The changeset %1% was closed at %2%.") % changeset % r[0]["closed_at"].as<std::string>()).str());  // TODO: check closed_at timestmap
 
 	num_changes = r[0]["num_changes"].as<int>();
 }
@@ -45,7 +45,7 @@ void ApiDB_Changeset_Updater::lock_current_changeset() {
 void ApiDB_Changeset_Updater::update_changeset(long num_new_changes, bbox_t bbox) {
 
 	if (num_changes + num_new_changes > CHANGESET_MAX_ELEMENTS)
-		throw http::conflict("Too many elements in changeset");
+		throw http::conflict((boost::format("The changeset %1% was closed at %2%.") % changeset % "now").str());   // TODO: propoer timestamp instead of now
 
 	num_changes += num_new_changes;
 
