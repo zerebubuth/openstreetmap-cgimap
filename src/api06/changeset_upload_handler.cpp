@@ -1,10 +1,11 @@
-#include "cgimap/api06/changeset_upload_handler.hpp"
+#include "cgimap/logger.hpp"
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/config.hpp"
 
 #include "cgimap/infix_ostream_iterator.hpp"
 #include "cgimap/backend/apidb/changeset_upload/node_updater.hpp"
+#include "cgimap/api06/changeset_upload_handler.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_handler.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_input_format.hpp"
@@ -31,8 +32,6 @@ namespace api06 {
 changeset_upload_responder::changeset_upload_responder(
   mime::type mt, osm_changeset_id_t id_, const std::string & payload, boost::optional<osm_user_id_t> user_id)
   : osm_diffresult_responder(mt), id(id_) {
-
- // throw http::server_error("unimplemented");
 
   if (!user_id)
     throw http::unauthorized("User is not authorized to upload changeset");

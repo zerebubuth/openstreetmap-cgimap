@@ -1,5 +1,6 @@
 #include "cgimap/fcgi_request.hpp"
 #include "cgimap/http.hpp"
+#include "cgimap/logger.hpp"
 #include "cgimap/output_buffer.hpp"
 #include "cgimap/request_helpers.hpp"
 #include <boost/foreach.hpp>
@@ -65,22 +66,21 @@ const char *fcgi_request::get_param(const char *key) {
 const std::string fcgi_request::get_payload() {
 
   // fetch and parse the content length
-  unsigned long content_length =
-    http::parse_content_length(fcgi_get_env(*this, "CONTENT_LENGTH", "0"));
+  char * content_length_str = FCGX_GetParam("CONTENT_LENGTH", m_impl->req.envp);
+
+  if (!content_length_str)
+    throw http::bad_request("HTTP header 'Content-Length' missing");
+
+  unsigned long content_length = http::parse_content_length(content_length_str);
 
   if (content_length == 0)
     return "";
 
+  // TODO: check http://chriswu.me/blog/getting-request-uri-and-content-in-c-plus-plus-fcgi/
+
   char * content_buffer = new char[content_length];
-  std::cin.read(content_buffer, content_length);
-  content_length = std::cin.gcount();
-
-  // Chew up any remaining stdin - this shouldn't be necessary
-  // but is because mod_fastcgi doesn't handle it correctly.
-
-  // ignore() doesn't set the eof bit in some versions of glibc++
-  // so use gcount() instead of eof()...
-  do std::cin.ignore(1024); while (std::cin.gcount() == 1024);
+  if (FCGX_GetStr(content_buffer, content_length, m_impl->req.in) < content_length)
+    throw http::server_error("Changeset upload: could not read payload");
 
   std::string content(content_buffer, content_length);
   delete [] content_buffer;
