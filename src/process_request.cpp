@@ -509,6 +509,10 @@ void process_request(request &req, rate_limiter &limiter,
         process_get_request(req, handler, selection, ip, generator);
 
     } else if (method == http::method::POST) {
+      // fetch and parse the content length
+      unsigned long content_length =
+        http::parse_content_length(fcgi_get_env(req, "CONTENT_LENGTH", "0"));
+
       boost::tie(request_name, bytes_written) =
           process_post_request(req, handler, user_id, ip, generator);
 

@@ -2,10 +2,12 @@
 #include "cgimap/http.hpp"
 #include <vector>
 #include <boost/foreach.hpp>
+#include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
 #include <iterator> // for distance
 #include <cctype>   // for toupper, isxdigit
+#include <cstdlib>
 #include <sstream>
 
 namespace al = boost::algorithm;
@@ -91,6 +93,9 @@ conflict::conflict(const string &message)
 
 precondition_failed::precondition_failed(const string &message)
     : exception(412, "Precondition Failed", message) {}
+
+payload_too_large::payload_too_large(const string &message)
+    : exception(413, "Payload Too Large", message) {}
 
 bandwidth_limit_exceeded::bandwidth_limit_exceeded(const string &message)
     : exception(509, "Bandwidth Limit Exceeded", message) {}
@@ -217,6 +222,9 @@ shared_ptr<encoding> choose_encoding(const string &accept_encoding) {
 
 namespace {
 
+// Maximum bytes
+const unsigned long STDIN_MAX = 50000000;    // TODO: configurable parameter?
+
 const std::map<method, std::string> METHODS = {
   {method::GET,     "GET"},
   {method::POST,    "POST"},
@@ -251,6 +259,24 @@ boost::optional<method> parse_method(const std::string &s) {
   }
 
   return result;
+}
+
+unsigned long parse_content_length(const std::string &content_length_str) {
+
+  char *end;
+
+  const long length = strtol(content_length_str.c_str(), &end, 10);
+
+  if (end == content_length_str) {
+    throw http::bad_request("CONTENT_LENGTH not a decimal number");
+  } else if ('\0' != *end) {
+    throw http::bad_request("CONTENT_LENGTH: extra characters at end of input");
+  } else if (length < 0) {
+    throw http::bad_request("CONTENT_LENGTH: invalid value");
+  } else if (length > STDIN_MAX)
+    throw http::payload_too_large((boost::format("CONTENT_LENGTH exceeds limit of %1% bytes") % STDIN_MAX).str());
+
+  return length;
 }
 
 std::ostream &operator<<(std::ostream &out, method m) {
