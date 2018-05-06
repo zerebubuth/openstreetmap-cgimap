@@ -423,9 +423,7 @@ class OSMChangeXMLParser {
 
 public:
 
-        explicit OSMChangeXMLParser(Parser_Callback* callback)  : m_callback(callback){
-
-        }
+        explicit OSMChangeXMLParser(Parser_Callback* callback)  : m_callback(callback) { }
 
         OSMChangeXMLParser(const OSMChangeXMLParser&) = delete;
         OSMChangeXMLParser& operator=(const OSMChangeXMLParser&) = delete;
@@ -433,19 +431,11 @@ public:
         OSMChangeXMLParser(OSMChangeXMLParser&&) = delete;
         OSMChangeXMLParser& operator=(OSMChangeXMLParser&&) = delete;
 
-        void process_message(std::string data) {
+        void process_message(const std::string& data) {
 
                 XMLParser<OSMChangeXMLParser> parser{this};
 
-                parser(data);
-
-// TODO: streaming
-
-//              while (!input_done()) {
-//                      const std::string data{get_input()};
-//                      parser(data, input_done());
-//              }
-
+                parser(data);  // TODO: streaming
         }
 };
 

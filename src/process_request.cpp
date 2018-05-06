@@ -170,14 +170,18 @@ process_post_request(request &req, handler_ptr_t handler,
   logger::message(format("Started request for %1% from %2%") % request_name %
                   ip);
 
-//  // constructor of responder handles dynamic validation (i.e: with db access).
-  //responder_ptr_t responder = handler->responder();
+  boost::shared_ptr< payload_enabled_handler > pe_handler = boost::static_pointer_cast< payload_enabled_handler >(handler);
+
+  if (pe_handler == nullptr)
+    throw http::server_error("HTTP POST method is not payload enabled");
+
+  responder_ptr_t responder = pe_handler->responder(payload, user_id);
 
   // get encoding to use
   shared_ptr<http::encoding> encoding = get_encoding(req);
 
 //  // figure out best mime type
-//  mime::type best_mime_type = choose_best_mime_type(req, responder);
+  //mime::type best_mime_type = choose_best_mime_type(req, responder);
 
   mime::type best_mime_type = mime::type::text_xml;
 
@@ -198,7 +202,7 @@ process_post_request(request &req, handler_ptr_t handler,
 
   try {
 //    // call to write the response
-//    responder->write(o_formatter, generator, req.get_current_time());
+    responder->write(o_formatter, generator, req.get_current_time());
 
     // ensure the request is finished
     req.finish();

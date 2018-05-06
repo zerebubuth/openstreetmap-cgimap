@@ -28,3 +28,8 @@ handler::handler(
 handler::~handler() {}
 
 void handler::set_resource_type(mime::type mt) { mime_type = mt; }
+
+
+payload_enabled_handler::payload_enabled_handler(
+    mime::type default_type,
+    http::method methods) : handler(default_type, methods) {}

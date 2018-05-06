@@ -70,4 +70,13 @@ protected:
 
 typedef boost::shared_ptr<handler> handler_ptr_t;
 
+
+class payload_enabled_handler : public handler {
+public:
+  payload_enabled_handler(mime::type default_type = mime::unspecified_type,
+    http::method methods = http::method::POST | http::method::OPTIONS);
+
+  virtual responder_ptr_t responder(const std::string & payload, boost::optional<osm_user_id_t> user_id) const = 0;
+};
+
 #endif /* HANDLER_HPP */

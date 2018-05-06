@@ -29,15 +29,16 @@ namespace pt = boost::posix_time;
 namespace api06 {
 
 changeset_upload_responder::changeset_upload_responder(
-  mime::type mt, osm_changeset_id_t id_)
+  mime::type mt, osm_changeset_id_t id_, const std::string & payload, boost::optional<osm_user_id_t> user_id)
   : osm_diffresult_responder(mt), id(id_) {
 
  // throw http::server_error("unimplemented");
 
-  int changeset = id_;
-  int uid = 1;
+  if (!user_id)
+    throw http::unauthorized("User is not authorized to upload changeset");
 
-  std::string data = "";
+  int changeset = id_;
+  int uid = *user_id;
 
   Transaction_Manager m { "dbname=openstreetmap" };
 
@@ -58,21 +59,20 @@ changeset_upload_responder::changeset_upload_responder(
 
   OSMChangeXMLParser parser(&handler);
 
-  parser.process_message(data);
+  parser.process_message(payload);
 
   handler.finish_processing();
 
   changeset_updater->update_changeset(handler.get_num_changes(), handler.get_bbox());
 
   m.commit();
-
 }
 
 
 changeset_upload_responder::~changeset_upload_responder() {}
 
 changeset_upload_handler::changeset_upload_handler(request &req, osm_changeset_id_t id_)
-  : handler(mime::unspecified_type, http::method::POST | http::method::OPTIONS)
+  : payload_enabled_handler(mime::unspecified_type, http::method::POST | http::method::OPTIONS)
   , id(id_) {
 }
 
@@ -81,7 +81,12 @@ changeset_upload_handler::~changeset_upload_handler() {}
 std::string changeset_upload_handler::log_name() const { return "changeset/upload"; }
 
 responder_ptr_t changeset_upload_handler::responder(data_selection_ptr &w) const {
-  return responder_ptr_t(new changeset_upload_responder(mime_type, id));
+  throw http::server_error("changeset_upload_handler: data_selection unsupported");
+}
+
+responder_ptr_t changeset_upload_handler::responder(const std::string & payload,
+                              boost::optional<osm_user_id_t> user_id) const {
+  return responder_ptr_t(new changeset_upload_responder(mime_type, id, payload, user_id));
 }
 
 } // namespace api06
