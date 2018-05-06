@@ -223,6 +223,7 @@ process_get_request(request &req, handler_ptr_t handler,
  */
 boost::tuple<string, size_t>
 process_post_request(request &req, handler_ptr_t handler,
+                    const string &payload,
                     boost::optional<osm_user_id_t> user_id,
                     const string &ip, const string &generator) {
   // request start logging
@@ -513,8 +514,10 @@ void process_request(request &req, rate_limiter &limiter,
       unsigned long content_length =
         http::parse_content_length(fcgi_get_env(req, "CONTENT_LENGTH", "0"));
 
+      std::string payload({});
+
       boost::tie(request_name, bytes_written) =
-          process_post_request(req, handler, user_id, ip, generator);
+          process_post_request(req, handler, payload, user_id, ip, generator);
 
     } else if (method == http::method::HEAD) {
       boost::tie(request_name, bytes_written) =
