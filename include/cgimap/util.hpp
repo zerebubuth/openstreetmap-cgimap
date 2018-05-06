@@ -2,14 +2,19 @@
 #define UTIL_HPP
 
 #include "infix_ostream_iterator.hpp"
+#include "cgimap/http.hpp"
+#include "cgimap/logger.hpp"
 
 #include <algorithm>
+#include <clocale>
 #include <cmath>
 #include <cstdlib>
+#include <cwchar>
 #include <iostream>
 #include <set>
 #include <sstream>
 #include <string>
+
 
 
 const int CHANGESET_MAX_ELEMENTS = 10000;
@@ -23,13 +28,18 @@ const std::string IDLE_TIMEOUT = "1 hour";
 
 inline size_t unicode_strlen(const std::string & s)
 {
-   size_t len = std::mbstowcs(nullptr, s.c_str(), s.size());
+   const char* mbstr = s.c_str();
 
-   if (len == static_cast<std::size_t> (-1))
-	   throw std::runtime_error("Invalid UTF-8 string encountered");
+   std::setlocale(LC_ALL, "en_GB.utf8");          // TODO: check location for setlocale
+
+   std::mbstate_t state = std::mbstate_t();
+   std::size_t len = std::mbsrtowcs(NULL, &mbstr, 0, &state);
+
+   if (len == static_cast<std::size_t> (-1)) {
+     throw http::bad_request("Invalid UTF-8 string encountered");
+   }
 
    return len;
-
 }
 
 
