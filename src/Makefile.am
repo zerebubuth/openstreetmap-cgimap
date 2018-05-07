@@ -52,12 +52,12 @@ ___test_test_apidb_backend_changeset_downloads_LDADD+=libcgimap_staticxml.la
 endif
 
 ___openstreetmap_cgimap_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
-___test_test_core_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @CRYPTOPP_LIBS@
+___test_test_core_LDADD+=libcgimap_core.la libcgimap_apidb.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @CRYPTOPP_LIBS@
 check_PROGRAMS+=../test/test_parse_id_list ../test/test_oauth ../test/test_http ../test/test_parse_time
-___test_test_parse_id_list_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
-___test_test_oauth_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
-___test_test_http_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
-___test_test_parse_time_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_DATE_TIME_LIB@ @BOOST_SYSTEM_LIB@ @LIBPQXX_LIBS@
+___test_test_parse_id_list_LDADD=libcgimap_core.la libcgimap_apidb.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
+___test_test_oauth_LDADD=libcgimap_core.la libcgimap_apidb.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
+___test_test_http_LDADD=libcgimap_core.la libcgimap_apidb.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
+___test_test_parse_time_LDADD=libcgimap_core.la libcgimap_apidb.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_DATE_TIME_LIB@ @BOOST_SYSTEM_LIB@ @LIBPQXX_LIBS@
 
 if ENABLE_APIDB
 ___test_test_apidb_backend_nodes_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
