@@ -28,7 +28,7 @@ void osm_diffresult_responder::write(shared_ptr<output_formatter> formatter,
     for (const auto& id : change_tracking->modified_node_ids)
       fmt.write_diffresult_create_modify(element_type_node, id.old_id, id.new_id, id.new_version);
 
-    for (const auto& id : change_tracking->already_deleted_node_ids)
+    for (const auto& id : change_tracking->skip_deleted_node_ids)
       fmt.write_diffresult_create_modify(element_type_node, id.old_id, id.new_id, id.new_version);
 
     for (const auto& id : change_tracking->deleted_node_ids)
@@ -43,7 +43,7 @@ void osm_diffresult_responder::write(shared_ptr<output_formatter> formatter,
     for (const auto& id : change_tracking->modified_way_ids)
       fmt.write_diffresult_create_modify(element_type_way, id.old_id, id.new_id, id.new_version);
 
-    for (const auto& id : change_tracking->already_deleted_way_ids)
+    for (const auto& id : change_tracking->skip_deleted_way_ids)
       fmt.write_diffresult_create_modify(element_type_way, id.old_id, id.new_id, id.new_version);
 
     for (const auto& id : change_tracking->deleted_way_ids)
@@ -58,7 +58,7 @@ void osm_diffresult_responder::write(shared_ptr<output_formatter> formatter,
     for (const auto& id : change_tracking->modified_relation_ids)
       fmt.write_diffresult_create_modify(element_type_relation, id.old_id, id.new_id, id.new_version);
 
-    for (const auto& id : change_tracking->already_deleted_relation_ids)
+    for (const auto& id : change_tracking->skip_deleted_relation_ids)
       fmt.write_diffresult_create_modify(element_type_relation, id.old_id, id.new_id, id.new_version);
 
     for (const auto& id : change_tracking->deleted_relation_ids)

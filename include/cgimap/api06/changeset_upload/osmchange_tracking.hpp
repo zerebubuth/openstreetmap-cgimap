@@ -33,9 +33,13 @@ public:
 	std::vector<osm_nwr_id_t> deleted_way_ids;
 	std::vector<osm_nwr_id_t> deleted_relation_ids;
 
-	std::vector<object_id_mapping_t> already_deleted_node_ids;
-	std::vector<object_id_mapping_t> already_deleted_way_ids;
-	std::vector<object_id_mapping_t> already_deleted_relation_ids;
+	// in case the caller has provided an "if-unused" flag and requests
+	// deletion for objects which are either (a) already deleted or
+	// (b) still in used by another object, we have to return
+	// old_id, new_id and version instead of raising an error message
+	std::vector<object_id_mapping_t> skip_deleted_node_ids;
+	std::vector<object_id_mapping_t> skip_deleted_way_ids;
+	std::vector<object_id_mapping_t> skip_deleted_relation_ids;
 
 };
 

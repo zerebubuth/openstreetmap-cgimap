@@ -492,9 +492,9 @@ std::set<osm_nwr_id_t> ApiDB_Way_Updater::determine_already_deleted_ways(const s
 
 		// We have identified a way that is already deleted on the server. The only thing left
 		// to do in this scenario is to return old_id, new_id and the current version to the caller
-		ct->already_deleted_way_ids.push_back( { row["id"].as<long>(),
-									            row["id"].as<osm_nwr_id_t>(),
-									            row["version"].as<osm_version_t>() });
+		ct->skip_deleted_way_ids.push_back( { row["id"].as<long>(),
+						      row["id"].as<osm_nwr_id_t>(),
+						      row["version"].as<osm_version_t>() });
 	}
 
 	return result;
@@ -796,6 +796,8 @@ std::vector<ApiDB_Way_Updater::way_t> ApiDB_Way_Updater::is_way_still_referenced
 	// We will simply skip those nodes from now on
 
 	if (!ways_to_exclude_from_deletion.empty())
+	{
+
 		updated_ways.erase(
 				 std::remove_if(updated_ways.begin(),
 								updated_ways.end(),
@@ -804,7 +806,33 @@ std::vector<ApiDB_Way_Updater::way_t> ApiDB_Way_Updater::is_way_still_referenced
 											  ways_to_exclude_from_deletion.end();
 								 }), updated_ways.end());
 
+                // Return old_id, new_id and current version to the caller in case of if-unused,
+                // so it's clear that the delete operation was *not* executed, but simply skipped
 
+                m.prepare("still_referenced_ways",
+                                "SELECT id, version FROM current_ways WHERE id = ANY($1)");
+
+                pqxx::result r = m.prepared("still_referenced_ways")(ways_to_exclude_from_deletion).exec();
+
+                if (r.affected_rows() != ways_to_exclude_from_deletion.size())
+                        throw http::server_error("Could not get details about still referenced ways");
+
+                std::set<osm_nwr_id_t> result;
+
+                for (auto row : r)
+                {
+                        result.insert(row["id"].as<osm_nwr_id_t>());
+
+                        // We have identified a node that is still used in a way or relation. However,
+                        // the caller has indicated via if-unused flag that deletion should not lead to
+                        // an error. All we can do now is to return old_id, new_id and the current version
+                        // to the caller
+
+                        ct->skip_deleted_way_ids.push_back( { row["id"].as<long>(),
+                                                              row["id"].as<osm_nwr_id_t>(),
+                                                              row["version"].as<osm_version_t>() });
+                }
+	}
 
 	return updated_ways;
 }

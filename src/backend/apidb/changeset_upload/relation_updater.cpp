@@ -507,9 +507,9 @@ std::set<osm_nwr_id_t> ApiDB_Relation_Updater::determine_already_deleted_relatio
 
 		// We have identified a relation that is already deleted on the server. The only thing left
 		// to do in this scenario is to return old_id, new_id and the current version to the caller
-		ct->already_deleted_relation_ids.push_back( { row["id"].as<long>(),
-							        		         row["id"].as<osm_nwr_id_t>(),
-									                 row["version"].as<osm_version_t>() });
+		ct->skip_deleted_relation_ids.push_back( { row["id"].as<long>(),
+			        		         row["id"].as<osm_nwr_id_t>(),
+			        		         row["version"].as<osm_version_t>() });
 	}
 
 	return result;
@@ -1020,6 +1020,7 @@ std::vector<ApiDB_Relation_Updater::relation_t> ApiDB_Relation_Updater::is_relat
 	// We will simply skip those nodes from now on
 
 	if (!relations_to_exclude_from_deletion.empty())
+	{
 		updated_relations.erase(
 				 std::remove_if(updated_relations.begin(),
 						 updated_relations.end(),
@@ -1028,7 +1029,34 @@ std::vector<ApiDB_Relation_Updater::relation_t> ApiDB_Relation_Updater::is_relat
 											   relations_to_exclude_from_deletion.end();
 								 }), updated_relations.end());
 
+                // Return old_id, new_id and current version to the caller in case of if-unused,
+                // so it's clear that the delete operation was *not* executed, but simply skipped
 
+                m.prepare("still_referenced_relations",
+                                "SELECT id, version FROM current_relations WHERE id = ANY($1)");
+
+                pqxx::result r = m.prepared("still_referenced_relations")(relations_to_exclude_from_deletion).exec();
+
+                if (r.affected_rows() != relations_to_exclude_from_deletion.size())
+                        throw http::server_error("Could not get details about still referenced relations");
+
+                std::set<osm_nwr_id_t> result;
+
+                for (auto row : r)
+                {
+                        result.insert(row["id"].as<osm_nwr_id_t>());
+
+                        // We have identified a node that is still used in a way or relation. However,
+                        // the caller has indicated via if-unused flag that deletion should not lead to
+                        // an error. All we can do now is to return old_id, new_id and the current version
+                        // to the caller
+
+                        ct->skip_deleted_relation_ids.push_back( { row["id"].as<long>(),
+                                                                   row["id"].as<osm_nwr_id_t>(),
+                                                                   row["version"].as<osm_version_t>() });
+                }
+
+	}
 
 	return updated_relations;
 
