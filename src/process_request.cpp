@@ -400,12 +400,6 @@ void process_request(request &req, rate_limiter &limiter,
       } else {
         boost::apply_visitor(oauth_status_response(), oauth_valid);
 
-        // TODO: DEBUG ONLY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//        if (!user_id)
-//          user_id = 1;
-        // TODO: DEBUG ONLY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
         // if we got here then oauth_status_response didn't throw, which means
         // the request must have been unsigned.
         client_key = addr_prefix + ip;
