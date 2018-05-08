@@ -107,7 +107,7 @@ class OSMChangeXMLParser {
                         va_start(arg_ptr, fmt);
                         vsnprintf(buffer, sizeof(buffer) - 1, fmt, arg_ptr);
                         va_end(arg_ptr);
-                        throw std::runtime_error((boost::format("XML Error: %1%") % buffer).str());
+                        throw http::bad_request((boost::format("XML Error: %1%") % buffer).str());
                   }
 
                   // Don't load any external entities provided in the XML document
@@ -149,7 +149,7 @@ class OSMChangeXMLParser {
                   const size_t MAX_CHUNKSIZE = 131072;
 
                   if (data.size() < 4)
-                    throw std::runtime_error ("Invalid XML input");
+                    throw http::bad_request("Invalid XML input");
 
                   // provide first 4 characters of data string, according to http://xmlsoft.org/library.html
                   ctxt = xmlCreatePushParserCtxt(&handler, m_callback_object, data.c_str(), 4, NULL);
@@ -286,7 +286,7 @@ class OSMChangeXMLParser {
                                         m_operation_context = context::in_delete;
                                         m_operation = operation::op_delete;
                                 } else {
-                                        throw xml_error{std::string{"Unknown operation: "} + element};
+                                        throw xml_error{ (boost::format("Unknown action %1%, choices are create, modify, delete") % element).str() };
                                 }
                                 break;
 
@@ -393,7 +393,7 @@ class OSMChangeXMLParser {
                         case context::node:
                                 assert(!std::strcmp(element, "node"));
                                 if (!m_node->is_valid(m_operation))
-                                        throw std::runtime_error ("Node does not include all mandatory fields");
+                                        throw http::bad_request("Node does not include all mandatory fields");
                                 m_callback->node(*m_node, m_operation, m_if_unused);
                                 m_node.reset(new Node{});
                                 m_context = m_operation_context;
@@ -401,7 +401,7 @@ class OSMChangeXMLParser {
                         case context::way:
                                 assert(!std::strcmp(element, "way"));
                                 if (!m_way->is_valid())
-                                        throw std::runtime_error ("Way does not include all mandatory fields");
+                                        throw http::bad_request("Way does not include all mandatory fields");
                                 m_callback->way(*m_way, m_operation, m_if_unused);
                                 m_way.reset(new Way{});
                                 m_context = m_operation_context;
@@ -409,7 +409,7 @@ class OSMChangeXMLParser {
                         case context::relation:
                                 assert(!std::strcmp(element, "relation"));
                                 if (!m_relation->is_valid())
-                                        throw std::runtime_error ("Relation does not include all mandatory fields");
+                                        throw http::bad_request("Relation does not include all mandatory fields");
                                 m_callback->relation(*m_relation, m_operation, m_if_unused);
                                 m_relation.reset(new Relation{});
                                 m_context = m_operation_context;

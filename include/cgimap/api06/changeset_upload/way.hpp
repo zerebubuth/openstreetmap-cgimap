@@ -27,6 +27,8 @@ public:
 		return m_way_nodes;
 	}
 
+        std::string get_type_name() { return "Way"; }
+
 private:
 
 	std::vector< osm_nwr_signed_id_t > m_way_nodes;

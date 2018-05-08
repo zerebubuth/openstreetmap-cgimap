@@ -23,7 +23,7 @@ public:
 		else if (boost::iequals(t, "Relation"))
 			m_type = "Relation";
 		else
-			throw std::runtime_error("Invalid type in member relation");
+			throw http::bad_request((boost::format("Invalid type %1 in member relation") % type).str());
 	}
 
 	void set_role(const char* role) {
@@ -53,6 +53,7 @@ public:
 		return *m_ref;
 	}
 
+
 private:
 	boost::optional< std::string >         m_role;
 	boost::optional< osm_nwr_signed_id_t > m_ref;
@@ -68,7 +69,7 @@ public:
 
 	void add_member(RelationMember& member) {
 		if (!member.is_valid())
-			throw std::runtime_error ("Relation member does not include all mandatory fields");
+			throw http::bad_request("Relation member does not include all mandatory fields");
 		m_relation_member.emplace_back(member);
 	}
 
@@ -81,6 +82,8 @@ public:
 
 		return (OSMObject::is_valid());
 	}
+
+        std::string get_type_name() { return "Relation"; }
 
 
 private:

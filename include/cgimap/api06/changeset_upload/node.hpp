@@ -39,14 +39,14 @@ public:
 	void set_lat(double lat)
 	{
 		if (lat < -90 || lat > 90)
-			throw std::runtime_error ("Latitude outside of valid range");
+			throw http::bad_request("Latitude outside of valid range");
 		m_lat = lat;
 	}
 
 	void set_lon(double lon)
 	{
 		if (lon < -180 || lon > 180)
-			throw std::runtime_error ("Longitude outside of valid range");
+			throw http::bad_request("Longitude outside of valid range");
 		m_lon = lon;
 	}
 
@@ -60,6 +60,8 @@ public:
 			return (OSMObject::is_valid() && m_lat && m_lon);
 		}
 	}
+
+	std::string get_type_name() { return "Node"; }
 
 private:
 	boost::optional< double > m_lat;

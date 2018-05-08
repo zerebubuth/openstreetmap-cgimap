@@ -4,6 +4,7 @@
 
 #include "types.hpp"
 
+#include <boost/format.hpp>
 #include <boost/optional.hpp>
 #include <map>
 
@@ -82,18 +83,24 @@ public:
 
 		if (!(m_tags.insert(std::pair<std::string, std::string>(key, value))).second)
 		{
-			throw std::runtime_error ("Duplicate key");
+			throw http::bad_request((boost::format("Element %1%/%2% has duplicate tags with key %3%")
+			                          % get_type_name() % ((m_id) ? *m_id : 0) % key).str());
 		}
 
 	}
 
 	bool is_valid() const {
 		// check if all mandatory fields have been set
+	        if (!m_changeset)
+	          throw http::bad_request("You need to supply a changeset to be able to make a change");
+
 		return (m_changeset &&
 				m_id &&
 				m_version &&
 				m_visible);
 	}
+
+	virtual std::string get_type_name() = 0;
 
 
 private:
