@@ -12,7 +12,7 @@ class OSMObject {
 public:
   OSMObject(){};
 
-  virtual ~OSMObject() {};
+  virtual ~OSMObject(){};
 
   void set_changeset(osm_changeset_id_t changeset) { m_changeset = changeset; }
 

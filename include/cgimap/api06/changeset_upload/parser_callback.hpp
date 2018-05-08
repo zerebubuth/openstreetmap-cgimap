@@ -16,7 +16,7 @@ public:
 
   virtual void relation(const Relation &, operation op, bool if_unused) = 0;
 
-  virtual ~Parser_Callback() {};
+  virtual ~Parser_Callback(){};
 };
 
 #endif

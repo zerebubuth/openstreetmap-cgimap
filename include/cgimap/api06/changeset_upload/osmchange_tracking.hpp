@@ -15,7 +15,7 @@ public:
     osm_version_t new_version;
   };
 
-  OSMChange_Tracking();
+  OSMChange_Tracking() {};
 
   // created objects are kept separately for id replacement purposes
   std::vector<object_id_mapping_t> created_node_ids;

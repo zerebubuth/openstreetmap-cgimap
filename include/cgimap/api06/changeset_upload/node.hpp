@@ -11,7 +11,7 @@ class Node : public OSMObject {
 public:
   Node() : OSMObject(){};
 
-  virtual ~Node() {};
+  virtual ~Node(){};
 
   double lat() const { return *m_lat; }
 

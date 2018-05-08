@@ -7,7 +7,7 @@
 class Changeset_Updater {
 
 public:
-  virtual ~Changeset_Updater();
+  virtual ~Changeset_Updater() {};
 
   virtual void lock_current_changeset() = 0;
 
