@@ -26,22 +26,6 @@ struct xml_error : public std::runtime_error {
   std::string error_code;
   std::string error_string;
 
-  //
-  //      explicit xml_error(const XML_Parser& parser) :
-  //              std::runtime_error(std::string{"XML parsing error at line "}
-  //                              +
-  //                              std::to_string(XML_GetCurrentLineNumber(parser))
-  //                              + ", column "
-  //                              +
-  //                              std::to_string(XML_GetCurrentColumnNumber(parser))
-  //                              + ": "
-  //                              + XML_ErrorString(XML_GetErrorCode(parser))),
-  //              line(XML_GetCurrentLineNumber(parser)),
-  //              column(XML_GetCurrentColumnNumber(parser)),
-  //              error_code(XML_GetErrorCode(parser)),
-  //              error_string(XML_ErrorString(error_code)) {
-  //      }
-  //
   explicit xml_error(const std::string &message)
       : std::runtime_error(message), error_code(), error_string(message) {}
 };
