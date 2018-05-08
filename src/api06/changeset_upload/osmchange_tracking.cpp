@@ -4,10 +4,6 @@
 
 #include <sstream>
 
-
-
-
-
 /* OSMChange_Tracking
  *
  * - Keeps track of old_id->new_id mappings in case of new objects
@@ -15,5 +11,3 @@
  */
 
 OSMChange_Tracking::OSMChange_Tracking() {}
-
-

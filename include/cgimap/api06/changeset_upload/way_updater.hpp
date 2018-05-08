@@ -6,8 +6,8 @@
 
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 
-#include <set>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -20,29 +20,28 @@ using WayNodeList = std::vector<osm_nwr_signed_id_t>;
 class Way_Updater {
 
 public:
+  virtual ~Way_Updater();
 
-	virtual ~Way_Updater();
+  virtual void add_way(osm_changeset_id_t changeset_id,
+                       osm_nwr_signed_id_t old_id, const WayNodeList &nodes,
+                       const TagList &tags) = 0;
 
-	virtual void add_way(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
-			const WayNodeList& nodes, const TagList& tags) = 0;
+  virtual void modify_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id,
+                          osm_version_t version, const WayNodeList &nodes,
+                          const TagList &tags) = 0;
 
-	virtual void modify_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id, osm_version_t version,
-			const WayNodeList& nodes, const TagList& tags) = 0;
+  virtual void delete_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id,
+                          osm_version_t version, bool if_unused) = 0;
 
+  virtual void process_new_ways() = 0;
 
-	virtual void delete_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id, osm_version_t version, bool if_unused) = 0;
+  virtual void process_modify_ways() = 0;
 
-	virtual void process_new_ways() = 0;
+  virtual void process_delete_ways() = 0;
 
-	virtual void process_modify_ways() = 0;
-
-	virtual void process_delete_ways() = 0;
-
-	virtual unsigned int get_num_changes() = 0;
+  virtual unsigned int get_num_changes() = 0;
 
   virtual bbox_t bbox() = 0;
-
 };
-
 
 #endif /* API06_CHANGESET_UPLOAD_WAY_UPDATER */
