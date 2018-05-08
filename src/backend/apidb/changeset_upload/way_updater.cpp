@@ -42,7 +42,8 @@ void ApiDB_Way_Updater::add_way(osm_changeset_id_t changeset_id, osm_nwr_signed_
 		new_way.way_nodes.push_back({ (node < 0 ? 0 : static_cast<osm_nwr_id_t>(node)), ++node_seq, node });
 
 	if (node_seq > WAY_MAX_NODES)
-		throw http::bad_request("Too many nodes in way");
+		throw http::bad_request((boost::format("You tried to add %1% nodes to way %2%, however only %3% are allowed")
+	                               % node_seq % new_way.old_id % WAY_MAX_NODES).str());
 
 	create_ways.push_back(new_way);
 
@@ -65,7 +66,8 @@ void ApiDB_Way_Updater::modify_way(osm_changeset_id_t changeset_id, osm_nwr_id_t
 		modify_way.way_nodes.push_back({ (node < 0 ? 0 : static_cast<osm_nwr_id_t>(node)), ++node_seq, node });
 
 	if (node_seq > WAY_MAX_NODES)
-		throw http::bad_request("Too many nodes in way");
+          throw http::bad_request((boost::format("You tried to add %1% nodes to way %2%, however only %3% are allowed")
+                                 % node_seq % modify_way.old_id % WAY_MAX_NODES).str());
 
 	modify_ways.push_back(modify_way);
 }
