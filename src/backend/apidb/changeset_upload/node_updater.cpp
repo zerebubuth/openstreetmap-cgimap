@@ -276,7 +276,7 @@ void ApiDB_Node_Updater::insert_new_nodes_to_tmp_table(
     throw http::server_error(
         "Could not create all new nodes in temporary table");
 
-  for (auto row : r)
+  for (const auto &row : r)
     ct->created_node_ids.push_back({ row["old_id"].as<osm_nwr_signed_id_t>(),
                                      row["id"].as<osm_nwr_id_t>(), 1 });
 }
@@ -309,7 +309,7 @@ void ApiDB_Node_Updater::lock_current_nodes(
 
   std::vector<osm_nwr_id_t> locked_ids;
 
-  for (auto row : r)
+  for (const auto &row : r)
     locked_ids.push_back(row["id"].as<osm_nwr_id_t>());
 
   if (ids.size() != locked_ids.size()) {
@@ -428,7 +428,7 @@ std::set<osm_nwr_id_t> ApiDB_Node_Updater::determine_already_deleted_nodes(
 
   pqxx::result r = m.prepared("already_deleted_nodes")(ids_if_unused).exec();
 
-  for (auto row : r) {
+  for (const auto &row : r) {
     result.insert(row["id"].as<osm_nwr_id_t>());
 
     // We have identified a node that is already deleted on the server. The only
@@ -528,7 +528,7 @@ void ApiDB_Node_Updater::update_current_nodes(
     std::set<osm_nwr_id_t> ids_set(ids.begin(), ids.end());
     std::set<osm_nwr_id_t> processed_ids;
 
-    for (auto row : r)
+    for (const auto &row : r)
       processed_ids.insert(row["id"].as<osm_nwr_id_t>());
 
     std::set<osm_nwr_id_t> diff;
@@ -597,7 +597,7 @@ void ApiDB_Node_Updater::delete_current_nodes(
     throw http::server_error("Could not delete all current nodes");
 
   // update deleted nodes table
-  for (auto row : r)
+  for (const auto &row : r)
     ct->deleted_node_ids.push_back({ row["id"].as<osm_nwr_id_t>() });
 }
 
@@ -720,8 +720,8 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
 
     pqxx::result r = m.prepared("node_still_referenced_by_way")(ids).exec();
 
-    for (unsigned int i = 0; i < r.size(); i++) {
-      auto node_id = r[0]["node_id"].as<osm_nwr_id_t>();
+    for (const auto &row : r) {
+      auto node_id = row["node_id"].as<osm_nwr_id_t>();
 
       if (if_unused_ids.find(node_id) != if_unused_ids.end()) {
         /* a <delete> block in the OsmChange document may have an if-unused
@@ -732,15 +732,15 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
          * is not used by another object.  */
 
         nodes_to_exclude_from_deletion.insert(
-            r[i]["node_id"].as<osm_nwr_id_t>());
+            row["node_id"].as<osm_nwr_id_t>());
 
       } else
         // Without the if-unused, such a situation would lead to an error, and
         // the whole diff upload would fail.
         throw http::precondition_failed(
             (boost::format("Node %1% is still used by ways %2%.") %
-             r[i]["node_id"].as<osm_nwr_id_t>() %
-             friendly_name(r[i]["way_ids"].as<std::string>()))
+             row["node_id"].as<osm_nwr_id_t>() %
+             friendly_name(row["way_ids"].as<std::string>()))
                 .str());
     }
   }
@@ -761,19 +761,19 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
     pqxx::result r =
         m.prepared("node_still_referenced_by_relation")(ids).exec();
 
-    for (unsigned int i = 0; i < r.size(); i++) {
-      auto node_id = r[0]["member_id"].as<osm_nwr_id_t>();
+    for (const auto &row : r) {
+      auto node_id = row["member_id"].as<osm_nwr_id_t>();
 
       if (if_unused_ids.find(node_id) != if_unused_ids.end())
         nodes_to_exclude_from_deletion.insert(
-            r[i]["member_id"].as<osm_nwr_id_t>());
+            row["member_id"].as<osm_nwr_id_t>());
       else
         // Without the if-unused, such a situation would lead to an error, and
         // the whole diff upload would fail.
         throw http::precondition_failed(
             (boost::format("Node %1% is still used by relations %2%.") %
-             r[i]["member_id"].as<osm_nwr_id_t>() %
-             friendly_name(r[i]["relation_ids"].as<std::string>()))
+             row["member_id"].as<osm_nwr_id_t>() %
+             friendly_name(row["relation_ids"].as<std::string>()))
                 .str());
     }
   }
@@ -809,7 +809,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
 
     std::set<osm_nwr_id_t> result;
 
-    for (auto row : r) {
+    for (const auto &row : r) {
       result.insert(row["id"].as<osm_nwr_id_t>());
 
       // We have identified a node that is still used in a way or relation.
