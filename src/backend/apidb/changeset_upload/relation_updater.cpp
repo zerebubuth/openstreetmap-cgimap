@@ -771,10 +771,9 @@ ApiDB_Relation_Updater::relations_with_new_relation_members(
           LEFT OUTER JOIN current_relation_members m
             ON t.relation_id = m.relation_id
            AND t.member_id   = m.member_id
+           AND m.member_type = 'Relation'
           WHERE m.member_id IS NULL
-            AND m.member_type = 'Relation'
           GROUP BY t.relation_id
-
      )");
 
   pqxx::result r = m.prepared("relations_with_new_relation_members")(
@@ -829,21 +828,24 @@ ApiDB_Relation_Updater::relations_with_changed_relation_tags(
                 FROM   tmp_relation_tags t
                   LEFT OUTER JOIN current_relation_tags c
                      ON t.relation_id = c.relation_id
-                    AND t.k   = c.k
-                    AND t.v   = c.v
+                    AND t.k = c.k
+                    AND t.v = c.v
                  WHERE c.k IS NULL
+                   AND c.v IS NULL
               UNION ALL
                 /* existing tag was removed in tmp */
                 SELECT c.relation_id
                    FROM current_relation_tags c
+                   INNER JOIN tmp_relation_tags t1
+                     ON c.relation_id = t1.relation_id
                    LEFT OUTER JOIN tmp_relation_tags t
                       ON c.relation_id = t.relation_id
                      AND c.k = t.k
                      AND c.v = t.v
                 WHERE t.k IS NULL
+                  AND t.v IS NULL
             ) AS all_relations
             GROUP BY all_relations.relation_id
-
          )");
 
   pqxx::result r =
@@ -906,6 +908,8 @@ ApiDB_Relation_Updater::relations_with_changed_way_node_members(
             /* existing member was removed in tmp */
             SELECT cm.member_type, cm.member_id, false as new_member
                FROM current_relation_members cm
+               INNER JOIN tmp_member t1
+                  ON cm.relation_id = t1.relation_id
                LEFT OUTER JOIN tmp_member tm
                   ON cm.relation_id = tm.relation_id
                  AND cm.member_type = tm.member_type
