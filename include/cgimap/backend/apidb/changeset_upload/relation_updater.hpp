@@ -103,6 +103,9 @@ private:
   std::set<osm_nwr_id_t>
   relations_with_new_relation_members(const std::vector<relation_t> &relations);
 
+  std::set<osm_nwr_id_t> relations_with_changed_relation_tags(
+      const std::vector<relation_t> &relations);
+
   bbox_t calc_relation_bbox(const std::vector<osm_nwr_id_t> &ids);
 
   void update_current_relations(const std::vector<relation_t> &relations,

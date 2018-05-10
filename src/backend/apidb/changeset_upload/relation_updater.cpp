@@ -733,6 +733,69 @@ ApiDB_Relation_Updater::relations_with_new_relation_members(const std::vector<re
   return result;
 }
 
+// Helper for bbox calculation: Changing tag value causes all node and
+// way members to be added to the bounding box.
+
+std::set<osm_nwr_id_t>
+ApiDB_Relation_Updater::relations_with_changed_relation_tags(
+    const std::vector<relation_t> &relations) {
+
+  std::set<osm_nwr_id_t> result;
+
+  if (relations.empty())
+    return result;
+
+  std::vector<osm_nwr_id_t> ids;
+  std::vector<std::string> ks;
+
+  for (const auto &relation : relations)
+    for (const auto &tag : relation.tags) {
+      ids.emplace_back(relation.id);
+      ks.emplace_back(escape(tag.first));
+    }
+
+  m.prepare("relations_with_changed_relation_tags",
+            R"(  
+            WITH tmp_relation_tags(relation_id, k) AS
+                         ( SELECT * FROM
+                              UNNEST( CAST($1 as bigint[]),
+                                      CAST($2 AS character varying[])
+                         )
+            )
+            SELECT all_relations.relation_id FROM (
+              /* new tag was added in tmp */
+              SELECT t.relation_id
+                FROM   tmp_relation_tags t
+                  LEFT OUTER JOIN current_relation_tags c
+                     ON t.relation_id = c.relation_id
+                    AND t.k   = c.k
+                 WHERE c.k IS NULL
+              UNION ALL
+                /* existing tag was removed in tmp */
+                SELECT c.relation_id
+                   FROM current_relation_tags c
+                   LEFT OUTER JOIN tmp_relation_tags t
+                      ON c.relation_id = t.relation_id
+                     AND c.k = t.k
+                WHERE t.k IS NULL
+            ) AS all_relations
+            GROUP BY all_relations.relation_id
+
+	 )");
+
+  pqxx::result r =
+      m.prepared("relations_with_changed_relation_tags")(ids)(ks).exec();
+
+  for (const auto &row : r) {
+    result.insert(row["relation_id"].as<osm_nwr_id_t>());
+  }
+
+  return result;
+}
+
+
+
+
 bbox_t ApiDB_Relation_Updater::calc_relation_bbox(
     const std::vector<osm_nwr_id_t> &ids) {
 
