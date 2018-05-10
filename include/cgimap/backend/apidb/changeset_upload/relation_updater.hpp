@@ -58,7 +58,7 @@ private:
     osm_version_t version;
     osm_changeset_id_t changeset_id;
     osm_nwr_signed_id_t old_id;
-    std::vector<std::pair<std::string, std::string> > tags;
+    std::vector<std::pair<std::string, std::string>> tags;
     std::vector<member_t> members;
     bool if_unused;
   };
@@ -87,7 +87,7 @@ private:
 
   void lock_current_relations(const std::vector<osm_nwr_id_t> &ids);
 
-  std::vector<std::vector<ApiDB_Relation_Updater::relation_t> >
+  std::vector<std::vector<ApiDB_Relation_Updater::relation_t>>
   build_packages(const std::vector<relation_t> &relations);
 
   void
@@ -99,6 +99,9 @@ private:
   determine_already_deleted_relations(const std::vector<relation_t> &relations);
 
   void lock_future_members(const std::vector<relation_t> &relations);
+
+  std::set<osm_nwr_id_t>
+  relations_with_new_relation_members(const std::vector<relation_t> &relations);
 
   bbox_t calc_relation_bbox(const std::vector<osm_nwr_id_t> &ids);
 

@@ -682,6 +682,57 @@ void ApiDB_Relation_Updater::lock_future_members(
   }
 }
 
+// Helper for bbox calculation: Adding a relation member causes all node and
+// way members to be added to the bounding box.
+
+std::set<osm_nwr_id_t>
+ApiDB_Relation_Updater::relations_with_new_relation_members(const std::vector<relation_t> &relations)
+{
+  std::set<osm_nwr_id_t> result;
+
+  if (relations.empty())
+    return result;
+
+  std::vector<osm_nwr_id_t> relation_ids;
+  std::vector<osm_nwr_id_t> member_ids;
+
+  for (const auto &r : relations) {
+      for (const auto &rm : r.members) {
+	  relation_ids.push_back(r.id);
+	  member_ids.push_back(rm.member_id);
+
+      }
+  }
+
+  m.prepare("relations_with_new_relation_members",
+            R"(  
+	      WITH tmp_relation_members(relation_id, member_id) AS
+			   ( SELECT * FROM
+				UNNEST( CAST($1 as bigint[]),
+					CAST($2 as bigint[])
+			   )
+	      )
+	      SELECT t.relation_id
+	      FROM   tmp_relation_members t
+	      LEFT OUTER JOIN current_relation_members m
+		ON t.relation_id = m.relation_id
+	       AND t.member_id   = m.member_id
+	      WHERE m.member_id IS NULL
+		AND m.member_type = 'Relation'
+	      GROUP BY t.relation_id
+
+	 )");
+
+  pqxx::result r =
+      m.prepared("relations_with_new_relation_members")(relation_ids)(member_ids).exec();
+
+  for (const auto &row : r) {
+    result.insert(row["relation_id"].as<osm_nwr_id_t>());
+  }
+
+  return result;
+}
+
 bbox_t ApiDB_Relation_Updater::calc_relation_bbox(
     const std::vector<osm_nwr_id_t> &ids) {
 
