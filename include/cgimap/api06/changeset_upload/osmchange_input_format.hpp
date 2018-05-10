@@ -189,7 +189,10 @@ class OSMChangeXMLParser {
 
     if (m_operation == operation::op_delete) {
       if (object.visible()) {
-        throw xml_error{ "Deleted object cannot be set to visible" };
+        throw xml_error{ (boost::format(
+                              "Deleted object %1% cannot be set to visible") %
+                          object.to_string())
+                             .str() };
       }
     }
 
@@ -201,7 +204,9 @@ class OSMChangeXMLParser {
                m_operation == operation::op_modify) {
       // objects for other operations must have a positive version number
       if (object.version() < 1) {
-        throw xml_error{ "Invalid version number " };
+        throw xml_error{ (boost::format("Invalid version number %1% in %2%") %
+                          object.version() % object.to_string())
+                             .str() };
       }
     }
   }
@@ -218,8 +223,9 @@ class OSMChangeXMLParser {
   }
 
   void get_tag(OSMObject &o, const char **attrs) {
-    const char *k = "";
-    const char *v = "";
+
+    boost::optional<std::string> k;
+    boost::optional<std::string> v;
 
     check_attributes(attrs, [&k, &v](const char *name, const char *value) {
 
@@ -230,7 +236,17 @@ class OSMChangeXMLParser {
       }
     });
 
-    o.add_tag(k, v);
+    if (!k)
+      throw xml_error{ (boost::format("Mandatory field k missing in tag element for %1%") %
+                        o.to_string())
+                           .str() };
+
+    if (!v)
+      throw xml_error{ (boost::format("Mandatory field v missing in tag element for %1%") %
+                        o.to_string())
+                           .str() };
+
+    o.add_tag(*k, *v);
   }
 
   void start_element(const char *element, const char **attrs) {
@@ -241,8 +257,9 @@ class OSMChangeXMLParser {
 
       } else {
         throw xml_error{
-          std::string{ "Unknown top-level element, expecting osmChange: " } +
-          element
+          (boost::format("Unknown top-level element %1%, expecting osmChange") %
+           element)
+              .str()
         };
       }
       m_context = context::top;
@@ -298,8 +315,10 @@ class OSMChangeXMLParser {
         m_context = context::relation;
       } else {
         throw new xml_error{
-          std::string{ "Unknown element, expecting node, way or relation: " } +
-          element
+          (boost::format(
+               "Unknown element %1%, expecting node, way or relation") %
+           element)
+              .str()
         };
       }
       break;
@@ -339,7 +358,10 @@ class OSMChangeXMLParser {
           }
         });
         if (!member.is_valid()) {
-          throw xml_error{ "Missing ref on relation member" };
+          throw xml_error{ (boost::format(
+                                "Missing ref on relation member in %1%") %
+                            m_relation->to_string())
+                               .str() };
         }
         m_relation->add_member(member);
       } else if (!std::strcmp(element, "tag")) {
@@ -384,25 +406,40 @@ class OSMChangeXMLParser {
       break;
     case context::node:
       assert(!std::strcmp(element, "node"));
-      if (!m_node->is_valid(m_operation))
-        throw http::bad_request("Node does not include all mandatory fields");
+      if (!m_node->is_valid(m_operation)) {
+        throw xml_error{
+          (boost::format("Object %1% does not include all mandatory fields") %
+           m_node->to_string())
+              .str()
+        };
+      }
       m_callback->node(*m_node, m_operation, m_if_unused);
       m_node.reset(new Node{});
       m_context = m_operation_context;
       break;
     case context::way:
       assert(!std::strcmp(element, "way"));
-      if (!m_way->is_valid())
-        throw http::bad_request("Way does not include all mandatory fields");
+      if (!m_way->is_valid()) {
+        throw xml_error{
+          (boost::format("Object %1% does not include all mandatory fields") %
+           m_way->to_string())
+              .str()
+        };
+      }
+
       m_callback->way(*m_way, m_operation, m_if_unused);
       m_way.reset(new Way{});
       m_context = m_operation_context;
       break;
     case context::relation:
       assert(!std::strcmp(element, "relation"));
-      if (!m_relation->is_valid())
-        throw http::bad_request(
-            "Relation does not include all mandatory fields");
+      if (!m_relation->is_valid()) {
+        throw xml_error{
+          (boost::format("Object %1% does not include all mandatory fields") %
+           m_relation->to_string())
+              .str()
+        };
+      }
       m_callback->relation(*m_relation, m_operation, m_if_unused);
       m_relation.reset(new Relation{});
       m_context = m_operation_context;

@@ -28,14 +28,6 @@ void OSMChange_Handler::check_osm_object(const OSMObject &o) const {
              "Changeset mismatch: Provided %1% but only %2% is allowed") %
          o.changeset() % m_changeset)
             .str());
-
-  for (const auto &tag : o.tags()) {
-    if (unicode_strlen(tag.first) > 255)
-      throw http::bad_request("Key has more than 255 unicode characters");
-
-    if (unicode_strlen(tag.second) > 255)
-      throw http::bad_request("Value has more than 255 unicode characters");
-  }
 }
 
 void OSMChange_Handler::node(const Node &node, operation op, bool if_unused) {
