@@ -684,10 +684,13 @@ void ApiDB_Relation_Updater::lock_future_members(
 
 // Helper for bbox calculation: Adding a relation member causes all node and
 // way members to be added to the bounding box.
+// Note: This method has to be run BEFORE updating the current_relation tables,
+// as it compares the future state in a temporary structure with the state
+// before the database update
 
 std::set<osm_nwr_id_t>
-ApiDB_Relation_Updater::relations_with_new_relation_members(const std::vector<relation_t> &relations)
-{
+ApiDB_Relation_Updater::relations_with_new_relation_members(
+    const std::vector<relation_t> &relations) {
   std::set<osm_nwr_id_t> result;
 
   if (relations.empty())
@@ -697,11 +700,10 @@ ApiDB_Relation_Updater::relations_with_new_relation_members(const std::vector<re
   std::vector<osm_nwr_id_t> member_ids;
 
   for (const auto &r : relations) {
-      for (const auto &rm : r.members) {
-	  relation_ids.push_back(r.id);
-	  member_ids.push_back(rm.member_id);
-
-      }
+    for (const auto &rm : r.members) {
+      relation_ids.push_back(r.id);
+      member_ids.push_back(rm.member_id);
+    }
   }
 
   m.prepare("relations_with_new_relation_members",
@@ -723,8 +725,9 @@ ApiDB_Relation_Updater::relations_with_new_relation_members(const std::vector<re
 
 	 )");
 
-  pqxx::result r =
-      m.prepared("relations_with_new_relation_members")(relation_ids)(member_ids).exec();
+  pqxx::result r = m.prepared("relations_with_new_relation_members")(
+                        relation_ids)(member_ids)
+                       .exec();
 
   for (const auto &row : r) {
     result.insert(row["relation_id"].as<osm_nwr_id_t>());
@@ -735,6 +738,9 @@ ApiDB_Relation_Updater::relations_with_new_relation_members(const std::vector<re
 
 // Helper for bbox calculation: Changing tag value causes all node and
 // way members to be added to the bounding box.
+// Note: This method has to be run BEFORE updating the current_relation tables,
+// as it compares the future state in a temporary structure with the state
+// before the database update
 
 std::set<osm_nwr_id_t>
 ApiDB_Relation_Updater::relations_with_changed_relation_tags(
@@ -793,8 +799,77 @@ ApiDB_Relation_Updater::relations_with_changed_relation_tags(
   return result;
 }
 
+// Helper for bbox calculation: Adding or removing nodes or ways from a relation
+// causes them to be added to the changeset bounding box.
+// Note: This method has to be run BEFORE updating the current_relation tables,
+// as it compares the future state in a temporary structure with the state
+// before the database update
 
+std::set<osm_nwr_id_t>
+ApiDB_Relation_Updater::relations_with_changed_way_node_members(
+    const std::vector<relation_t> &relations) {
 
+  std::set<osm_nwr_id_t> result;
+
+  if (relations.empty())
+    return result;
+
+  std::vector<osm_nwr_id_t> ids;
+  std::vector<std::string> membertypes;
+  std::vector<osm_nwr_id_t> memberids;
+
+  for (const auto &relation : relations)
+    for (const auto &member : relation.members) {
+      if (member.member_type == "Node" || member.member_type == "Way") {
+
+        ids.emplace_back(relation.id);
+        membertypes.emplace_back(member.member_type);
+        memberids.emplace_back(member.member_id);
+      }
+    }
+
+  m.prepare("relations_with_changed_way_node_members",
+            R"(  
+	    WITH tmp_member(relation_id, member_type, member_id) AS (
+		 SELECT * FROM
+		 UNNEST( CAST($1 as bigint[]),
+			 CAST($2 as nwr_enum[]),
+			 CAST($3 as bigint[])
+		 )
+  	    )
+            /* new member was added in tmp */
+            SELECT tm.member_type, tm.member_id, true as member_added
+                   FROM   tmp_member tm
+                   LEFT OUTER JOIN current_relation_members cm
+                     ON tm.relation_id = cm.relation_id
+                    AND tm.member_type = cm.member_type
+                    AND tm.member_id   = cm.member_id
+                 WHERE cm.member_id IS NULL
+	    UNION 
+	    /* existing member was removed in tmp */
+	    SELECT cm.member_type, cm.member_id, false as member_added
+	       FROM current_relation_members cm
+	       LEFT OUTER JOIN tmp_member tm
+		  ON cm.relation_id = tm.relation_id
+		 AND cm.member_type = tm.member_type
+		 AND cm.member_id   = tm.member_id
+	    WHERE tm.member_id IS NULL
+
+	 )");
+
+  pqxx::result r = m.prepared("relations_with_changed_way_node_members")(ids)(
+                        membertypes)(memberids)
+                       .exec();
+
+  // TODO: BBox for ways and nodes with member_added == true have to be determined
+  // after current_relations have been updated, member_added == false before the update
+
+  //  for (const auto &row : r) {
+  //    result.insert(row["relation_id"].as<osm_nwr_id_t>());
+  //  }
+
+  return result;
+}
 
 bbox_t ApiDB_Relation_Updater::calc_relation_bbox(
     const std::vector<osm_nwr_id_t> &ids) {
