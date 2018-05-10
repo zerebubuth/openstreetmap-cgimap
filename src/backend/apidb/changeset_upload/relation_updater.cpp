@@ -758,8 +758,8 @@ ApiDB_Relation_Updater::relations_with_changed_relation_tags(
 
   for (const auto &relation : relations)
     for (const auto &tag : relation.tags) {
-      ids.emplace_back(relation.id);
-      ks.emplace_back(escape(tag.first));
+      ids.push_back(relation.id);
+      ks.push_back(escape(tag.first));
     }
 
   m.prepare("relations_with_changed_relation_tags",
@@ -807,11 +807,11 @@ ApiDB_Relation_Updater::relations_with_changed_relation_tags(
 // as it compares the future state in a temporary structure with the state
 // before the database update
 
-std::set<osm_nwr_id_t>
+std::vector<ApiDB_Relation_Updater::rel_member_difference_t>
 ApiDB_Relation_Updater::relations_with_changed_way_node_members(
     const std::vector<relation_t> &relations) {
 
-  std::set<osm_nwr_id_t> result;
+  std::vector<rel_member_difference_t> result;
 
   if (relations.empty())
     return result;
@@ -824,9 +824,9 @@ ApiDB_Relation_Updater::relations_with_changed_way_node_members(
     for (const auto &member : relation.members) {
       if (member.member_type == "Node" || member.member_type == "Way") {
 
-        ids.emplace_back(relation.id);
-        membertypes.emplace_back(member.member_type);
-        memberids.emplace_back(member.member_id);
+        ids.push_back(relation.id);
+        membertypes.push_back(member.member_type);
+        memberids.push_back(member.member_id);
       }
     }
 
@@ -840,7 +840,7 @@ ApiDB_Relation_Updater::relations_with_changed_way_node_members(
                  )
               )
             /* new member was added in tmp */
-            SELECT tm.member_type, tm.member_id, true as member_added
+            SELECT tm.member_type, tm.member_id, true as new_member
                    FROM   tmp_member tm
                    LEFT OUTER JOIN current_relation_members cm
                      ON tm.relation_id = cm.relation_id
@@ -849,7 +849,7 @@ ApiDB_Relation_Updater::relations_with_changed_way_node_members(
                  WHERE cm.member_id IS NULL
             UNION 
             /* existing member was removed in tmp */
-            SELECT cm.member_type, cm.member_id, false as member_added
+            SELECT cm.member_type, cm.member_id, false as new_member
                FROM current_relation_members cm
                LEFT OUTER JOIN tmp_member tm
                   ON cm.relation_id = tm.relation_id
@@ -863,14 +863,92 @@ ApiDB_Relation_Updater::relations_with_changed_way_node_members(
                         membertypes)(memberids)
                        .exec();
 
-  // TODO: BBox for ways and nodes with member_added == true have to be
-  // determined
-  // after current_relations have been updated, member_added == false before the
-  // update
+  for (const auto &row : r) {
+    rel_member_difference_t diff;
+    diff.member_type = row["member_type"].as<osm_nwr_id_t>();
+    diff.member_id = row["member_id"].as<osm_nwr_id_t>();
+    diff.new_member = row["new_member"].as<bool>();
+    result.push_back(diff);
+  }
 
-  //  for (const auto &row : r) {
-  //    result.insert(row["relation_id"].as<osm_nwr_id_t>());
-  //  }
+  return result;
+}
+
+bbox_t ApiDB_Relation_Updater::calc_rel_member_difference_bbox(
+    std::vector<ApiDB_Relation_Updater::rel_member_difference_t> &diff,
+    bool process_new_elements) {
+
+  bbox_t result;
+
+  if (diff.empty())
+    return result;
+
+  std::vector<osm_nwr_id_t> node_ids;
+  std::vector<osm_nwr_id_t> way_ids;
+
+  for (const auto &d : diff) {
+    if (d.new_member == process_new_elements) {
+      if (d.member_type == "Node")
+        node_ids.push_back(d.member_id);
+      else if (d.member_type == "Way")
+        way_ids.push_back(d.member_id);
+    }
+  }
+
+  if (!node_ids.empty()) {
+
+    bbox_t bbox_nodes;
+
+    m.prepare("calc_node_bbox_rel_member",
+              R"(
+		SELECT MIN(latitude)  AS minlat,
+			   MIN(longitude) AS minlon, 
+			   MAX(latitude)  AS maxlat, 
+			   MAX(longitude) AS maxlon  
+		FROM current_nodes WHERE id = ANY($1)
+	    )");
+
+    pqxx::result r = m.prepared("calc_node_bbox_rel_member")(node_ids).exec();
+
+    if (!(r.empty() || r[0]["minlat"].is_null())) {
+      bbox_nodes.minlat = r[0]["minlat"].as<long>();
+      bbox_nodes.minlon = r[0]["minlon"].as<long>();
+      bbox_nodes.maxlat = r[0]["maxlat"].as<long>();
+      bbox_nodes.maxlon = r[0]["maxlon"].as<long>();
+    }
+
+    result.expand(bbox_nodes);
+  }
+
+  if (!way_ids.empty()) {
+
+    bbox_t bbox_ways;
+
+    m.prepare("calc_way_bbox_rel_member",
+              R"(
+		SELECT MIN(latitude)  AS minlat,
+			   MIN(longitude) AS minlon, 
+			   MAX(latitude)  AS maxlat, 
+			   MAX(longitude) AS maxlon  
+		FROM current_nodes cn
+		INNER JOIN current_way_nodes wn
+		  ON cn.id = wn.node_id
+		INNER JOIN current_ways w
+		  ON wn.way_id = w.id
+		WHERE w.id = ANY($1)
+	    )");
+
+    pqxx::result r = m.prepared("calc_way_bbox_rel_member")(way_ids).exec();
+
+    if (!(r.empty() || r[0]["minlat"].is_null())) {
+      bbox_ways.minlat = r[0]["minlat"].as<long>();
+      bbox_ways.minlon = r[0]["minlon"].as<long>();
+      bbox_ways.maxlat = r[0]["maxlat"].as<long>();
+      bbox_ways.maxlon = r[0]["maxlon"].as<long>();
+    }
+
+    result.expand(bbox_ways);
+  }
 
   return result;
 }
@@ -881,22 +959,19 @@ bbox_t ApiDB_Relation_Updater::calc_relation_bbox(
   bbox_t bbox;
 
   /*
-   * TODO: Rework Relation BBOX logic according to wiki:
-   * https://wiki.openstreetmap.org/wiki/API_v0.6#Bounding_box_computation
    *
-   *      Relations:
+   *  Relations:
    *
-   *      - Adding or removing nodes or ways from a relation causes them to be
+   *  - Adding or removing nodes or ways from a relation causes them to be
    * added to the changeset bounding box.
    *
-   *      - Adding a relation member or changing tag values causes all node and
+   *  - Adding a relation member or changing tag values causes all node and
    * way members to be added to the bounding box.
    *
    *
-   *      this is similar to how the map call does things and is reasonable on
-   * the assumption that adding
-   *      or removing members doesn't materially change the rest of the
-   * relation.
+   *  This is similar to how the map call does things and is reasonable on
+   *  the assumption that adding or removing members doesn't materially
+   *   change the rest of the relation.
    *
    */
 

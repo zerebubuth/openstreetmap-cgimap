@@ -63,6 +63,12 @@ private:
     bool if_unused;
   };
 
+  struct rel_member_difference_t {
+    std::string member_type;
+    osm_nwr_id_t member_id;
+    bool new_member;
+  };
+
   void truncate_temporary_tables();
 
   /*
@@ -106,8 +112,13 @@ private:
   std::set<osm_nwr_id_t> relations_with_changed_relation_tags(
       const std::vector<relation_t> &relations);
 
-  std::set<osm_nwr_id_t> relations_with_changed_way_node_members(
+  std::vector<ApiDB_Relation_Updater::rel_member_difference_t>
+  relations_with_changed_way_node_members(
       const std::vector<relation_t> &relations);
+
+  bbox_t calc_rel_member_difference_bbox(
+      std::vector<ApiDB_Relation_Updater::rel_member_difference_t> &diff,
+      bool process_new_elements);
 
   bbox_t calc_relation_bbox(const std::vector<osm_nwr_id_t> &ids);
 
