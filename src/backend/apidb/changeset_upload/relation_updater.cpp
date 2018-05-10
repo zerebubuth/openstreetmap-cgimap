@@ -46,7 +46,7 @@ void ApiDB_Relation_Updater::add_relation(osm_changeset_id_t changeset_id,
     new_member.member_role = member.role();
     new_member.member_id = (member.ref() < 0 ? 0 : member.ref());
     new_member.old_member_id = member.ref();
-    new_member.sequence_id = ++member_seq;
+    new_member.sequence_id = member_seq++;
     new_relation.members.push_back(new_member);
   }
 
@@ -77,7 +77,7 @@ void ApiDB_Relation_Updater::modify_relation(osm_changeset_id_t changeset_id,
     modify_member.member_role = member.role();
     modify_member.member_id = (member.ref() < 0 ? 0 : member.ref());
     modify_member.old_member_id = member.ref();
-    modify_member.sequence_id = ++member_seq;
+    modify_member.sequence_id = member_seq++;
     modify_relation.members.push_back(modify_member);
   }
 
