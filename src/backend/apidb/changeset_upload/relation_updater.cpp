@@ -169,7 +169,49 @@ void ApiDB_Relation_Updater::process_modify_relations() {
 
     check_current_relation_versions(modify_relations_package);
 
-    m_bbox.expand(calc_relation_bbox(ids_package));
+    // Analyse required updates to the bbox before applying changes to the
+    // database
+
+    /* rel_ids_bbox_update_full contains all relation ids in the current package
+     * where all node & way elements are counted towards a bbox update.
+     *
+     * According to the Rails port and Wiki, this logic applies in case of:
+     *
+     * "Adding a relation member or changing tag values causes all node and
+     * way members to be added to the bounding box."
+     *
+     */
+
+    std::vector<osm_nwr_id_t> rel_ids_bbox_update_full;
+
+    {
+      auto new_members =
+          relations_with_new_relation_members(modify_relations_package);
+
+      auto changed_tags =
+          relations_with_changed_relation_tags(modify_relations_package);
+
+      auto rel_full_update_ids = new_members;
+      rel_full_update_ids.insert(changed_tags.begin(), changed_tags.end());
+      rel_ids_bbox_update_full.assign(rel_full_update_ids.begin(),
+                                      rel_full_update_ids.end());
+    }
+
+    m_bbox.expand(calc_relation_bbox(rel_ids_bbox_update_full));
+
+    /* The second use case for bbox updates assumes:
+     *
+     * "Adding or removing nodes or ways from a relation causes them to be
+     * added to the changeset bounding box."
+     */
+
+    auto rel_ids_bbox_update_partial =
+        relations_with_changed_way_node_members(modify_relations_package);
+
+    m_bbox.expand(
+        calc_rel_member_difference_bbox(rel_ids_bbox_update_partial, false));
+
+    // We'll continue with the actual database updates
 
     delete_current_relation_tags(ids_package);
     delete_current_relation_members(ids_package);
@@ -182,7 +224,13 @@ void ApiDB_Relation_Updater::process_modify_relations() {
     save_current_relation_tags_to_history(ids_package);
     save_current_relation_members_to_history(ids_package);
 
-    m_bbox.expand(calc_relation_bbox(ids_package));
+    /* After the database changes are done, check the updated
+     * "current_relation_*" tables again for further bbox updates
+     */
+
+    m_bbox.expand(calc_relation_bbox(rel_ids_bbox_update_full));
+    m_bbox.expand(
+        calc_rel_member_difference_bbox(rel_ids_bbox_update_partial, true));
   }
 
   modify_relations.clear();
@@ -703,8 +751,10 @@ ApiDB_Relation_Updater::relations_with_new_relation_members(
 
   for (const auto &r : relations) {
     for (const auto &rm : r.members) {
-      relation_ids.push_back(r.id);
-      member_ids.push_back(rm.member_id);
+      if (rm.member_type == "Relation") {
+        relation_ids.push_back(r.id);
+        member_ids.push_back(rm.member_id);
+      }
     }
   }
 
@@ -755,19 +805,22 @@ ApiDB_Relation_Updater::relations_with_changed_relation_tags(
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<std::string> ks;
+  std::vector<std::string> vs;
 
   for (const auto &relation : relations)
     for (const auto &tag : relation.tags) {
       ids.push_back(relation.id);
       ks.push_back(escape(tag.first));
+      vs.push_back(escape(tag.second));
     }
 
   m.prepare("relations_with_changed_relation_tags",
             R"(  
-            WITH tmp_relation_tags(relation_id, k) AS
+            WITH tmp_relation_tags(relation_id, k, v) AS
                  ( SELECT * FROM
                       UNNEST( CAST($1 as bigint[]),
-                              CAST($2 AS character varying[])
+                              CAST($2 AS character varying[]),
+                              CAST($3 AS character varying[])
                  )
             )
             SELECT all_relations.relation_id FROM (
@@ -777,6 +830,7 @@ ApiDB_Relation_Updater::relations_with_changed_relation_tags(
                   LEFT OUTER JOIN current_relation_tags c
                      ON t.relation_id = c.relation_id
                     AND t.k   = c.k
+                    AND t.v   = c.v
                  WHERE c.k IS NULL
               UNION ALL
                 /* existing tag was removed in tmp */
@@ -785,6 +839,7 @@ ApiDB_Relation_Updater::relations_with_changed_relation_tags(
                    LEFT OUTER JOIN tmp_relation_tags t
                       ON c.relation_id = t.relation_id
                      AND c.k = t.k
+                     AND c.v = t.v
                 WHERE t.k IS NULL
             ) AS all_relations
             GROUP BY all_relations.relation_id
@@ -792,7 +847,7 @@ ApiDB_Relation_Updater::relations_with_changed_relation_tags(
          )");
 
   pqxx::result r =
-      m.prepared("relations_with_changed_relation_tags")(ids)(ks).exec();
+      m.prepared("relations_with_changed_relation_tags")(ids)(ks)(vs).exec();
 
   for (const auto &row : r) {
     result.insert(row["relation_id"].as<osm_nwr_id_t>());
@@ -865,7 +920,7 @@ ApiDB_Relation_Updater::relations_with_changed_way_node_members(
 
   for (const auto &row : r) {
     rel_member_difference_t diff;
-    diff.member_type = row["member_type"].as<osm_nwr_id_t>();
+    diff.member_type = row["member_type"].as<std::string>();
     diff.member_id = row["member_id"].as<osm_nwr_id_t>();
     diff.new_member = row["new_member"].as<bool>();
     result.push_back(diff);
