@@ -97,12 +97,6 @@ void OSMChange_Handler::relation(const Relation &relation, operation op,
 
   check_osm_object(relation);
 
-  for (const auto &m : relation.members()) {
-    if (unicode_strlen(m.role()) > 255)
-      throw http::bad_request(
-          "Relation Role has more than 255 unicode characters");
-  }
-
   switch (op) {
   case operation::op_create:
     handle_new_state(state::st_create_relation);

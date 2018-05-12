@@ -461,7 +461,7 @@ void ApiDB_Relation_Updater::lock_current_relations(
                         locked_ids.end(),
                         std::inserter(not_locked_ids, not_locked_ids.begin()));
 
-    throw http::bad_request(
+    throw http::not_found(
         (boost::format("The following relation ids are unknown: %1%") %
          to_string(not_locked_ids))
             .str());
@@ -555,13 +555,20 @@ ApiDB_Relation_Updater::determine_already_deleted_relations(
   if (relations.empty())
     return result;
 
-  std::vector<osm_nwr_id_t> ids_if_unused; // delete with if-used flag set
+  std::set<osm_nwr_id_t> ids_to_be_deleted; // all relation ids to be deleted
+  std::set<osm_nwr_id_t> ids_if_unused;     // delete with if-used flag set
+  std::set<osm_nwr_id_t> ids_without_if_unused; // node ids without if-used flag
 
-  for (const auto &relation : relations)
-    if (relation.if_unused)
-      ids_if_unused.push_back(relation.id);
+  for (const auto &relation : relations) {
+    ids_to_be_deleted.insert(relation.id);
+    if (relation.if_unused) {
+      ids_if_unused.insert(relation.id);
+    } else {
+      ids_without_if_unused.insert(relation.id);
+    }
+  }
 
-  if (ids_if_unused.empty())
+  if (ids_to_be_deleted.empty())
     return result;
 
   m.prepare("already_deleted_relations", "SELECT id, version FROM "
@@ -569,18 +576,32 @@ ApiDB_Relation_Updater::determine_already_deleted_relations(
                                          "AND visible = false");
 
   pqxx::result r =
-      m.prepared("already_deleted_relations")(ids_if_unused).exec();
+      m.prepared("already_deleted_relations")(ids_to_be_deleted).exec();
 
   for (const auto &row : r) {
-    result.insert(row["id"].as<osm_nwr_id_t>());
+    osm_nwr_id_t id = row["id"].as<osm_nwr_id_t>();
+
+    // OsmChange documents wants to delete a relation that is already deleted,
+    // and the if-unused flag hasn't been set!
+    if (ids_without_if_unused.find(id) != ids_without_if_unused.end()) {
+      throw http::gone(
+          (boost::format(
+               "The relation with the id %1% has already been deleted") %
+           id).str());
+    }
+
+    result.insert(id);
 
     // We have identified a relation that is already deleted on the server. The
-    // only thing left
-    // to do in this scenario is to return old_id, new_id and the current
-    // version to the caller
-    ct->skip_deleted_relation_ids.push_back(
-        { row["id"].as<long>(), row["id"].as<osm_nwr_id_t>(),
-          row["version"].as<osm_version_t>() });
+    // only thing left to do in this scenario is to return old_id, new_id and
+    // the current version to the caller
+
+    if (ids_if_unused.find(id) != ids_if_unused.end()) {
+
+      ct->skip_deleted_relation_ids.push_back(
+          { row["id"].as<long>(), row["id"].as<osm_nwr_id_t>(),
+            row["version"].as<osm_version_t>() });
+    }
   }
 
   return result;

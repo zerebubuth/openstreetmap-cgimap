@@ -321,7 +321,7 @@ void ApiDB_Node_Updater::lock_current_nodes(
                         locked_ids.end(),
                         std::inserter(not_locked_ids, not_locked_ids.begin()));
 
-    throw http::bad_request(
+    throw http::not_found(
         (boost::format(
              "The following node ids are not known on the database: %1%") %
          to_string(not_locked_ids))
@@ -414,31 +414,54 @@ std::set<osm_nwr_id_t> ApiDB_Node_Updater::determine_already_deleted_nodes(
   if (nodes.empty())
     return result;
 
-  std::vector<osm_nwr_id_t> ids_if_unused; // delete with if-used flag set
+  std::set<osm_nwr_id_t> ids_to_be_deleted; // all node ids to be deleted
+  std::set<osm_nwr_id_t> ids_if_unused; // node ids where if-used flag is set
+  std::set<osm_nwr_id_t> ids_without_if_unused; // node ids without if-used flag
 
-  for (const auto &node : nodes)
-    if (node.if_unused)
-      ids_if_unused.push_back(node.id);
+  for (const auto &node : nodes) {
+    ids_to_be_deleted.insert(node.id);
+    if (node.if_unused) {
+      ids_if_unused.insert(node.id);
+    } else {
+      ids_without_if_unused.insert(node.id);
+    }
+  }
 
-  if (ids_if_unused.empty())
+  if (ids_to_be_deleted.empty())
     return result;
 
   m.prepare("already_deleted_nodes", "SELECT id, version FROM current_nodes "
                                      "WHERE id = ANY($1) AND visible = false");
 
-  pqxx::result r = m.prepared("already_deleted_nodes")(ids_if_unused).exec();
+  pqxx::result r =
+      m.prepared("already_deleted_nodes")(ids_to_be_deleted).exec();
 
   for (const auto &row : r) {
-    result.insert(row["id"].as<osm_nwr_id_t>());
 
+    osm_nwr_id_t id = row["id"].as<osm_nwr_id_t>();
+
+    // OsmChange documents wants to delete a node that is already deleted,
+    // and the if-unused flag hasn't been set!
+    if (ids_without_if_unused.find(id) != ids_without_if_unused.end()) {
+
+      throw http::gone(
+          (boost::format("The node with the id %1% has already been deleted") %
+           id).str());
+    }
+
+    result.insert(id);
+
+    // if-used flag is set:
     // We have identified a node that is already deleted on the server. The only
-    // thing left
-    // to do in this scenario is to return old_id, new_id and the current
-    // version to the caller
+    // thing left to do in this scenario is to return old_id, new_id and the
+    // current version to the caller
 
-    ct->skip_deleted_node_ids.push_back({ row["id"].as<long>(),
-                                          row["id"].as<osm_nwr_id_t>(),
-                                          row["version"].as<osm_version_t>() });
+    if (ids_if_unused.find(id) != ids_if_unused.end()) {
+
+      ct->skip_deleted_node_ids.push_back(
+          { row["id"].as<long>(), row["id"].as<osm_nwr_id_t>(),
+            row["version"].as<osm_version_t>() });
+    }
   }
 
   return result;

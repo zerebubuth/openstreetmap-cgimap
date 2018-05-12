@@ -2,6 +2,9 @@
 #define RELATION_HPP
 
 #include "osmobject.hpp"
+#include "types.hpp"
+#include "util.hpp"
+
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/optional.hpp>
@@ -26,7 +29,14 @@ public:
           (boost::format("Invalid type %1 in member relation") % type).str());
   }
 
-  void set_role(const char *role) { m_role = std::string(role); }
+  void set_role(const char *role) {
+
+    if (unicode_strlen(role) > 255) {
+      throw http::bad_request("Relation Role has more than 255 unicode characters");
+    }
+
+    m_role = std::string(role);
+  }
 
   void set_ref(const char *ref) { m_ref = std::stol(ref); }
 

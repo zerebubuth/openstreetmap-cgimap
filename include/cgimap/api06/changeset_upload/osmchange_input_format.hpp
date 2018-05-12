@@ -19,7 +19,7 @@
 #include <sstream>
 #include <string>
 
-struct xml_error : public std::runtime_error {
+struct xml_error : public http::bad_request {
 
   uint64_t line = 0;
   uint64_t column = 0;
@@ -27,7 +27,7 @@ struct xml_error : public std::runtime_error {
   std::string error_string;
 
   explicit xml_error(const std::string &message)
-      : std::runtime_error(message), error_code(), error_string(message) {}
+      : http::bad_request(message), error_code(), error_string(message) {}
 };
 
 class OSMChangeXMLParser {
@@ -172,14 +172,10 @@ class OSMChangeXMLParser {
 
   void init_object(OSMObject &object, const char **attrs) {
 
-    object.set_visible(m_operation != operation::op_delete);
-
     check_attributes(attrs, [&object](const char *name, const char *value) {
 
       if (!std::strcmp(name, "id")) {
         object.set_id(value);
-      } else if (!std::strcmp(name, "visible")) {
-        object.set_visible(value);
       } else if (!std::strcmp(name, "changeset")) {
         object.set_changeset(value);
       } else if (!std::strcmp(name, "version")) {
@@ -187,13 +183,10 @@ class OSMChangeXMLParser {
       } // don't parse any other attributes here
     });
 
-    if (m_operation == operation::op_delete) {
-      if (object.visible()) {
-        throw xml_error{ (boost::format(
-                              "Deleted object %1% cannot be set to visible") %
-                          object.to_string())
+    if (!object.has_changeset()) {
+        throw xml_error{ (boost::format("Changeset id is missing for %1%") %
+                          object.version() % object.to_string())
                              .str() };
-      }
     }
 
     if (m_operation == operation::op_create) {
@@ -203,6 +196,11 @@ class OSMChangeXMLParser {
     } else if (m_operation == operation::op_delete ||
                m_operation == operation::op_modify) {
       // objects for other operations must have a positive version number
+      if (!object.has_version()) {
+	        throw xml_error{ (boost::format("Version is required when updating %1%") %
+	                          object.to_string())
+	                             .str() };
+      }
       if (object.version() < 1) {
         throw xml_error{ (boost::format("Invalid version number %1% in %2%") %
                           object.version() % object.to_string())

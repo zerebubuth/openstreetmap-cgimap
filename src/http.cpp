@@ -100,7 +100,8 @@ payload_too_large::payload_too_large(const string &message)
 bandwidth_limit_exceeded::bandwidth_limit_exceeded(const string &message)
     : exception(509, "Bandwidth Limit Exceeded", message) {}
 
-gone::gone() : exception(410, "Gone", "") {}
+gone::gone(const string &message)
+    : exception(410, "Gone", message) {}
 
 unauthorized::unauthorized(const std::string &message)
   : exception(401, "Unauthorized", message) {}

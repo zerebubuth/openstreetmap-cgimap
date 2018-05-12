@@ -401,7 +401,7 @@ void ApiDB_Way_Updater::lock_current_ways(
                         locked_ids.end(),
                         std::inserter(not_locked_ids, not_locked_ids.begin()));
 
-    throw http::bad_request(
+    throw http::not_found(
         (boost::format("The following way ids are unknown: %1%") %
          to_string(not_locked_ids))
             .str());
@@ -493,30 +493,50 @@ std::set<osm_nwr_id_t> ApiDB_Way_Updater::determine_already_deleted_ways(
   if (ways.empty())
     return result;
 
-  std::vector<osm_nwr_id_t> ids_if_unused; // delete with if-used flag set
+  std::set<osm_nwr_id_t> ids_to_be_deleted;     // all way ids to be deleted
+  std::set<osm_nwr_id_t> ids_if_unused;         // delete with if-used flag set
+  std::set<osm_nwr_id_t> ids_without_if_unused; // node ids without if-used flag
 
-  for (const auto &way : ways)
-    if (way.if_unused)
-      ids_if_unused.push_back(way.id);
+  for (const auto &way : ways) {
+    ids_to_be_deleted.insert(way.id);
+    if (way.if_unused) {
+      ids_if_unused.insert(way.id);
+    } else {
+      ids_without_if_unused.insert(way.id);
+    }
+  }
 
-  if (ids_if_unused.empty())
+  if (ids_to_be_deleted.empty())
     return result;
 
   m.prepare("already_deleted_ways", "SELECT id, version FROM current_ways "
                                     "WHERE id = ANY($1) AND visible = false");
 
-  pqxx::result r = m.prepared("already_deleted_ways")(ids_if_unused).exec();
+  pqxx::result r = m.prepared("already_deleted_ways")(ids_to_be_deleted).exec();
 
   for (const auto &row : r) {
-    result.insert(row["id"].as<osm_nwr_id_t>());
+
+    osm_nwr_id_t id = row["id"].as<osm_nwr_id_t>();
+
+    // OsmChange documents wants to delete a way that is already deleted,
+    // and the if-unused flag hasn't been set!
+    if (ids_if_unused.find(id) == ids_if_unused.end()) {
+      throw http::gone(
+          (boost::format("The way with the id %1% has already been deleted") %
+           id).str());
+    }
+
+    result.insert(id);
 
     // We have identified a way that is already deleted on the server. The only
-    // thing left
-    // to do in this scenario is to return old_id, new_id and the current
-    // version to the caller
-    ct->skip_deleted_way_ids.push_back({ row["id"].as<long>(),
-                                         row["id"].as<osm_nwr_id_t>(),
-                                         row["version"].as<osm_version_t>() });
+    // thing left to do in this scenario is to return old_id, new_id and the
+    // current version to the caller
+    if (ids_if_unused.find(id) != ids_if_unused.end()) {
+
+      ct->skip_deleted_way_ids.push_back(
+          { row["id"].as<long>(), row["id"].as<osm_nwr_id_t>(),
+            row["version"].as<osm_version_t>() });
+    }
   }
 
   return result;

@@ -144,7 +144,7 @@ public:
 class gone : public exception {
 public:
   // TODO: fix up so that error message is meaningful
-  gone();
+  gone(const std::string &message = "");
 };
 
 /**

@@ -21,8 +21,6 @@ public:
 
   void set_id(osm_nwr_signed_id_t id) { m_id = id; }
 
-  void set_visible(bool visible) { m_visible = visible; }
-
   // Setters with string conversions
 
   void set_changeset(const char *changeset) {
@@ -40,7 +38,10 @@ public:
 
   osm_nwr_signed_id_t id() const { return *m_id; }
 
-  bool visible() const { return *m_visible; }
+  bool has_changeset() const {  return ((m_changeset) ? true : false); }
+  bool has_id() const { return ((m_id) ? true : false); };
+  bool has_version() const { return ((m_version) ? true : false); }
+
 
   std::map<std::string, std::string> tags() const { return m_tags; }
 
@@ -83,7 +84,7 @@ public:
       throw http::bad_request(
           "You need to supply a changeset to be able to make a change");
 
-    return (m_changeset && m_id && m_version && m_visible);
+    return (m_changeset && m_id && m_version);
   }
 
   virtual std::string get_type_name() = 0;
@@ -98,7 +99,6 @@ private:
   boost::optional<osm_changeset_id_t> m_changeset;
   boost::optional<osm_nwr_signed_id_t> m_id;
   boost::optional<osm_version_t> m_version;
-  boost::optional<bool> m_visible;
 
   std::map<std::string, std::string> m_tags;
 };
