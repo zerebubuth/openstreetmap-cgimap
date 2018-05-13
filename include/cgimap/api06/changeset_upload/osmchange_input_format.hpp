@@ -21,8 +21,6 @@
 
 struct xml_error : public http::bad_request {
 
-  uint64_t line = 0;
-  uint64_t column = 0;
   std::string error_code;
   std::string error_string;
 
@@ -75,9 +73,7 @@ class OSMChangeXMLParser {
           (const char *)element);
     }
 
-    static void warning(void *, const char *, ...) {
-      // TODO
-    }
+    static void warning(void *, const char *, ...) {}
 
     static void error(void *, const char *fmt, ...) {
       char buffer[1024];
@@ -184,9 +180,9 @@ class OSMChangeXMLParser {
     });
 
     if (!object.has_changeset()) {
-        throw xml_error{ (boost::format("Changeset id is missing for %1%") %
-                          object.version() % object.to_string())
-                             .str() };
+      throw xml_error{ (boost::format("Changeset id is missing for %1%") %
+                        object.version() % object.to_string())
+                           .str() };
     }
 
     if (m_operation == operation::op_create) {
@@ -197,9 +193,10 @@ class OSMChangeXMLParser {
                m_operation == operation::op_modify) {
       // objects for other operations must have a positive version number
       if (!object.has_version()) {
-	        throw xml_error{ (boost::format("Version is required when updating %1%") %
-	                          object.to_string())
-	                             .str() };
+        throw xml_error{ (boost::format(
+                              "Version is required when updating %1%") %
+                          object.to_string())
+                             .str() };
       }
       if (object.version() < 1) {
         throw xml_error{ (boost::format("Invalid version number %1% in %2%") %
@@ -235,14 +232,18 @@ class OSMChangeXMLParser {
     });
 
     if (!k)
-      throw xml_error{ (boost::format("Mandatory field k missing in tag element for %1%") %
-                        o.to_string())
-                           .str() };
+      throw xml_error{
+        (boost::format("Mandatory field k missing in tag element for %1%") %
+         o.to_string())
+            .str()
+      };
 
     if (!v)
-      throw xml_error{ (boost::format("Mandatory field v missing in tag element for %1%") %
-                        o.to_string())
-                           .str() };
+      throw xml_error{
+        (boost::format("Mandatory field v missing in tag element for %1%") %
+         o.to_string())
+            .str()
+      };
 
     o.add_tag(*k, *v);
   }
@@ -252,7 +253,7 @@ class OSMChangeXMLParser {
     switch (m_context) {
     case context::root:
       if (!std::strcmp(element, "osmChange")) {
-
+        m_callback->start_document();
       } else {
         throw xml_error{
           (boost::format("Unknown top-level element %1%, expecting osmChange") %
@@ -382,6 +383,7 @@ class OSMChangeXMLParser {
       assert(!std::strcmp(element, "osmChange"));
       m_context = context::root;
       m_operation = operation::op_undefined;
+      m_callback->end_document();
       break;
     case context::in_create:
       assert(!std::strcmp(element, "create"));
@@ -411,7 +413,7 @@ class OSMChangeXMLParser {
               .str()
         };
       }
-      m_callback->node(*m_node, m_operation, m_if_unused);
+      m_callback->process_node(*m_node, m_operation, m_if_unused);
       m_node.reset(new Node{});
       m_context = m_operation_context;
       break;
@@ -425,7 +427,7 @@ class OSMChangeXMLParser {
         };
       }
 
-      m_callback->way(*m_way, m_operation, m_if_unused);
+      m_callback->process_way(*m_way, m_operation, m_if_unused);
       m_way.reset(new Way{});
       m_context = m_operation_context;
       break;
@@ -438,7 +440,7 @@ class OSMChangeXMLParser {
               .str()
         };
       }
-      m_callback->relation(*m_relation, m_operation, m_if_unused);
+      m_callback->process_relation(*m_relation, m_operation, m_if_unused);
       m_relation.reset(new Relation{});
       m_context = m_operation_context;
       break;
@@ -462,7 +464,7 @@ public:
 
     XMLParser<OSMChangeXMLParser> parser{ this };
 
-    parser(data); // TODO: streaming
+    parser(data);
   }
 };
 

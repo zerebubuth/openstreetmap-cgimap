@@ -27,13 +27,15 @@ public:
   // checks common to all objects
   void check_osm_object(const OSMObject &o) const;
 
-  void node(const Node &node, operation op, bool if_unused);
+  void start_document();
 
-  void way(const Way &way, operation op, bool if_unused);
+  void end_document();
 
-  void relation(const Relation &relation, operation op, bool if_unused);
+  void process_node(const Node &node, operation op, bool if_unused);
 
-  void finish_processing();
+  void process_way(const Way &way, operation op, bool if_unused);
+
+  void process_relation(const Relation &relation, operation op, bool if_unused);
 
   unsigned int get_num_changes();
 
@@ -53,6 +55,8 @@ private:
   };
 
   void handle_new_state(state new_state);
+
+  void finish_processing();
 
   state current_state{ state::st_initial };
 

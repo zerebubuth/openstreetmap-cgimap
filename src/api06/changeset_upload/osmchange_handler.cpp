@@ -19,6 +19,10 @@ OSMChange_Handler::OSMChange_Handler(
 
 {}
 
+void OSMChange_Handler::start_document() {}
+
+void OSMChange_Handler::end_document() { finish_processing(); }
+
 // checks common to all objects
 void OSMChange_Handler::check_osm_object(const OSMObject &o) const {
 
@@ -30,7 +34,8 @@ void OSMChange_Handler::check_osm_object(const OSMObject &o) const {
             .str());
 }
 
-void OSMChange_Handler::node(const Node &node, operation op, bool if_unused) {
+void OSMChange_Handler::process_node(const Node &node, operation op,
+                                     bool if_unused) {
 
   assert(op != operation::op_undefined);
 
@@ -61,7 +66,8 @@ void OSMChange_Handler::node(const Node &node, operation op, bool if_unused) {
   }
 }
 
-void OSMChange_Handler::way(const Way &way, operation op, bool if_unused) {
+void OSMChange_Handler::process_way(const Way &way, operation op,
+                                    bool if_unused) {
 
   assert(op != operation::op_undefined);
 
@@ -90,8 +96,8 @@ void OSMChange_Handler::way(const Way &way, operation op, bool if_unused) {
   }
 }
 
-void OSMChange_Handler::relation(const Relation &relation, operation op,
-                                 bool if_unused) {
+void OSMChange_Handler::process_relation(const Relation &relation, operation op,
+                                         bool if_unused) {
 
   assert(op != operation::op_undefined);
 

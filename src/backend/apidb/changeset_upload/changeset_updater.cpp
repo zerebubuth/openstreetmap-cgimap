@@ -27,7 +27,7 @@ void ApiDB_Changeset_Updater::lock_current_changeset() {
                        num_changes, 
                        to_char(closed_at,'YYYY-MM-DD HH24:MM:SS "UTC"') as closed_at, 
                        ((now() at time zone 'utc') > closed_at) as is_closed,
-                       to_char((now() at time zone 'utc'),'YYYY-MM-DD HH24:MM:SS "UTC"') as current_time,
+                       to_char((now() at time zone 'utc'),'YYYY-MM-DD HH24:MM:SS "UTC"') as current_time
                 FROM changesets WHERE id = $1 AND user_id = $2 
                 FOR UPDATE 
              )");

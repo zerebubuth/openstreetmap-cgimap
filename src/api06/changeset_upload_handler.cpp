@@ -107,8 +107,6 @@ changeset_upload_responder::changeset_upload_responder(
 
   parser.process_message(payload);
 
-  handler.finish_processing();
-
   changeset_updater->update_changeset(handler.get_num_changes(),
                                       handler.get_bbox());
 
