@@ -240,19 +240,19 @@ void ApiDB_Node_Updater::insert_new_nodes_to_tmp_table(
   m.prepare("insert_tmp_create_nodes",
 
             R"(
-		WITH tmp_node(latitude, longitude, changeset_id, tile, old_id) AS (
-			SELECT * FROM
-			UNNEST( CAST($1 as integer[]),
-					CAST($2 as integer[]),
-					CAST($3 as bigint[]),
-					CAST($4 as bigint[]),
-					CAST($5 as bigint[])
-				  )
-		)
-		INSERT INTO tmp_create_nodes (latitude, longitude, changeset_id, tile, old_id)
-		SELECT * FROM tmp_node
-		RETURNING id, old_id
-			)");
+      WITH tmp_node(latitude, longitude, changeset_id, tile, old_id) AS (
+         SELECT * FROM
+         UNNEST( CAST($1 as integer[]),
+                 CAST($2 as integer[]),
+                 CAST($3 as bigint[]),
+                 CAST($4 as bigint[]),
+                 CAST($5 as bigint[])
+               )
+      )
+      INSERT INTO tmp_create_nodes (latitude, longitude, changeset_id, tile, old_id)
+      SELECT * FROM tmp_node
+      RETURNING id, old_id
+         )");
 
   std::vector<long> lats;
   std::vector<long> lons;
@@ -285,10 +285,10 @@ void ApiDB_Node_Updater::copy_tmp_create_nodes_to_current_nodes() {
 
   auto r = m.exec(
       R"(
-	     INSERT INTO current_nodes ( 
-		       SELECT id, latitude, longitude, changeset_id, visible, 
-				      timestamp, tile, version from tmp_create_nodes )
-				  )");
+        INSERT INTO current_nodes ( 
+             SELECT id, latitude, longitude, changeset_id, visible, 
+                  timestamp, tile, version from tmp_create_nodes )
+              )");
 }
 
 void ApiDB_Node_Updater::delete_tmp_create_nodes() {
@@ -375,21 +375,23 @@ void ApiDB_Node_Updater::check_current_node_versions(
   }
 
   m.prepare("check_current_node_versions",
-            R"(   WITH tmp_node_versions(id, version) AS (
-		     SELECT * FROM
-			   UNNEST( CAST($1 as bigint[]),
-					   CAST($2 as bigint[])
-		     )
-		  )
-		  SELECT t.id, 
-			     t.version                  AS expected_version, 
-			     current_nodes.version      AS actual_version
-		  FROM tmp_node_versions t
-		  INNER JOIN current_nodes
-		     ON t.id = current_nodes.id
-		  WHERE t.version <> current_nodes.version
-		  LIMIT 1
-	       )");
+            R"(  
+
+        WITH tmp_node_versions(id, version) AS (
+            SELECT * FROM
+            UNNEST( CAST($1 as bigint[]),
+                    CAST($2 as bigint[])
+           )
+        )
+        SELECT t.id, 
+              t.version                  AS expected_version, 
+              current_nodes.version      AS actual_version
+        FROM tmp_node_versions t
+        INNER JOIN current_nodes
+           ON t.id = current_nodes.id
+        WHERE t.version <> current_nodes.version
+        LIMIT 1
+          )");
 
   pqxx::result r =
       m.prepared("check_current_node_versions")(ids)(versions).exec();
@@ -477,12 +479,12 @@ ApiDB_Node_Updater::calc_node_bbox(const std::vector<osm_nwr_id_t> &ids) {
 
   m.prepare("calc_node_bbox",
             R"(
-		SELECT MIN(latitude)  AS minlat,
-			   MIN(longitude) AS minlon, 
-			   MAX(latitude)  AS maxlat, 
-			   MAX(longitude) AS maxlon  
-		FROM current_nodes WHERE id = ANY($1)
-	    )");
+      SELECT MIN(latitude)  AS minlat,
+             MIN(longitude) AS minlon, 
+             MAX(latitude)  AS maxlat, 
+             MAX(longitude) AS maxlon  
+      FROM current_nodes WHERE id = ANY($1)
+       )");
 
   pqxx::result r = m.prepared("calc_node_bbox")(ids).exec();
 
@@ -503,29 +505,29 @@ void ApiDB_Node_Updater::update_current_nodes(
 
   m.prepare("update_current_nodes",
             R"(   
-	    WITH u(id, latitude, longitude, changeset_id, tile, version) AS (
-	       SELECT * FROM
-	       UNNEST( CAST($1 as bigint[]),
-			       CAST($2 as integer[]),
-			       CAST($3 as integer[]),
-			       CAST($4 as bigint[]),
-			       CAST($5 as bigint[]),
-			       CAST($6 as bigint[])
-			     )
-	    )
-	    UPDATE current_nodes AS n
-	    SET latitude = u.latitude,
-		    longitude = u.longitude,
-		    changeset_id = u.changeset_id,
-		    visible = true,
-		    timestamp = (now() at time zone 'utc'),
-		    tile = u.tile,
-		    version = u.version + 1
-		    FROM u
-	     WHERE n.id = u.id
-	     AND   n.version = u.version
-	     RETURNING n.id, n.version
-		 )");
+       WITH u(id, latitude, longitude, changeset_id, tile, version) AS (
+          SELECT * FROM
+          UNNEST( CAST($1 as bigint[]),
+                  CAST($2 as integer[]),
+                  CAST($3 as integer[]),
+                  CAST($4 as bigint[]),
+                  CAST($5 as bigint[]),
+                  CAST($6 as bigint[])
+                )
+       )
+       UPDATE current_nodes AS n
+       SET latitude = u.latitude,
+          longitude = u.longitude,
+          changeset_id = u.changeset_id,
+          visible = true,
+          timestamp = (now() at time zone 'utc'),
+          tile = u.tile,
+          version = u.version + 1
+          FROM u
+        WHERE n.id = u.id
+        AND   n.version = u.version
+        RETURNING n.id, n.version
+       )");
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<long> lats;
@@ -586,23 +588,23 @@ void ApiDB_Node_Updater::delete_current_nodes(
 
   m.prepare("delete_current_nodes", R"(   
 
-			WITH u(id, changeset_id, version) AS (
-			   SELECT * FROM
-			   UNNEST( CAST($1 as bigint[]),
-					   CAST($2 as bigint[]),
-					   CAST($3 as bigint[])
-					 )
-			)
-			UPDATE current_nodes AS n
-			SET changeset_id = u.changeset_id,
-				visible = false,
-				timestamp = (now() at time zone 'utc'),
-				version = u.version + 1
-				FROM u
-		   WHERE n.id = u.id
-		   AND   n.version = u.version
-		   RETURNING n.id, n.version 
-	)");
+         WITH u(id, changeset_id, version) AS (
+            SELECT * FROM
+            UNNEST( CAST($1 as bigint[]),
+                    CAST($2 as bigint[]),
+                    CAST($3 as bigint[])
+                )
+         )
+         UPDATE current_nodes AS n
+         SET changeset_id = u.changeset_id,
+            visible = false,
+            timestamp = (now() at time zone 'utc'),
+            version = u.version + 1
+            FROM u
+         WHERE n.id = u.id
+         AND   n.version = u.version
+         RETURNING n.id, n.version 
+   )");
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<osm_changeset_id_t> cs;
@@ -633,16 +635,16 @@ void ApiDB_Node_Updater::insert_new_current_node_tags(
   m.prepare("insert_new_current_node_tags",
 
             R"(
-		WITH tmp_tag(node_id, k, v) AS (
-		   SELECT * FROM
-		   UNNEST( CAST($1 AS bigint[]),
-				   CAST($2 AS character varying[]),
-				   CAST($3 AS character varying[])
-		   )
-		)
-		INSERT INTO current_node_tags(node_id, k, v)
-		SELECT * FROM tmp_tag
-	      )");
+      WITH tmp_tag(node_id, k, v) AS (
+         SELECT * FROM
+         UNNEST( CAST($1 AS bigint[]),
+                 CAST($2 AS character varying[]),
+                 CAST($3 AS character varying[])
+         )
+      )
+      INSERT INTO current_node_tags(node_id, k, v)
+      SELECT * FROM tmp_tag
+         )");
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<std::string> ks;
@@ -677,13 +679,13 @@ void ApiDB_Node_Updater::save_current_nodes_to_history(
 
   m.prepare("current_nodes_to_history",
             R"(   
-	      INSERT INTO nodes 
-			    (SELECT id AS node_id, latitude, longitude,
-					    changeset_id, visible, timestamp, tile, version
-			     FROM current_nodes
-			     WHERE id = ANY($1) 
-			    )
-	    )");
+         INSERT INTO nodes 
+             (SELECT id AS node_id, latitude, longitude,
+                   changeset_id, visible, timestamp, tile, version
+              FROM current_nodes
+              WHERE id = ANY($1) 
+             )
+       )");
 
   pqxx::result r = m.prepared("current_nodes_to_history")(ids).exec();
 
@@ -700,12 +702,13 @@ void ApiDB_Node_Updater::save_current_node_tags_to_history(
 
   m.prepare("current_node_tags_to_history",
             R"(   
-				INSERT INTO node_tags ( 
-					 SELECT node_id, version, k, v FROM current_node_tags t
-					 INNER JOIN current_nodes n
-					 ON t.node_id = n.id 
-					 WHERE id = ANY($1) )
-			  )");
+            INSERT INTO node_tags ( 
+                SELECT node_id, version, k, v 
+                FROM current_node_tags t
+                  INNER JOIN current_nodes n
+                     ON t.node_id = n.id 
+                WHERE id = ANY($1) )
+           )");
 
   pqxx::result r = m.prepared("current_node_tags_to_history")(ids).exec();
 }
@@ -718,12 +721,16 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
     return nodes;
 
   std::vector<osm_nwr_id_t> ids;
-  std::set<osm_nwr_id_t> if_unused_ids;
+  std::set<osm_nwr_id_t> ids_if_unused; // node ids where if-used flag is set
+  std::set<osm_nwr_id_t> ids_without_if_unused; // node ids without if-used flag
 
   for (const auto &id : nodes) {
     ids.push_back(id.id);
-    if (id.if_unused)
-      if_unused_ids.insert(id.id);
+    if (id.if_unused) {
+      ids_if_unused.insert(id.id);
+    } else {
+      ids_without_if_unused.insert(id.id);
+    }
   }
 
   std::vector<node_t> updated_nodes = nodes;
@@ -732,21 +739,34 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
   {
     m.prepare("node_still_referenced_by_way",
               R"(   
-				SELECT current_way_nodes.node_id, array_agg(current_ways.id) AS way_ids
-					FROM current_ways 
-					  INNER JOIN current_way_nodes
-						 ON current_way_nodes.way_id = current_ways.id
-					WHERE current_ways.visible = true
-					  AND current_way_nodes.node_id = ANY($1)
-					GROUP BY current_way_nodes.node_id
-				)");
+            SELECT current_way_nodes.node_id, array_agg(current_ways.id) AS way_ids
+               FROM current_ways 
+                 INNER JOIN current_way_nodes
+                   ON current_way_nodes.way_id = current_ways.id
+               WHERE current_ways.visible = true
+                 AND current_way_nodes.node_id = ANY($1)
+               GROUP BY current_way_nodes.node_id
+            )");
 
     pqxx::result r = m.prepared("node_still_referenced_by_way")(ids).exec();
 
     for (const auto &row : r) {
       auto node_id = row["node_id"].as<osm_nwr_id_t>();
 
-      if (if_unused_ids.find(node_id) != if_unused_ids.end()) {
+      // OsmChange documents wants to delete a node that is still referenced,
+      // and the if-unused flag hasn't been set!
+      if (ids_without_if_unused.find(node_id) != ids_without_if_unused.end()) {
+
+        // Without the if-unused, such a situation would lead to an error, and
+        // the whole diff upload would fail.
+        throw http::precondition_failed(
+            (boost::format("Node %1% is still used by ways %2%.") %
+             row["node_id"].as<osm_nwr_id_t>() %
+             friendly_name(row["way_ids"].as<std::string>()))
+                .str());
+      }
+
+      if (ids_if_unused.find(node_id) != ids_if_unused.end()) {
         /* a <delete> block in the OsmChange document may have an if-unused
          * attribute
          * If this attribute is present, then the delete operation(s) in this
@@ -756,30 +776,22 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
 
         nodes_to_exclude_from_deletion.insert(
             row["node_id"].as<osm_nwr_id_t>());
-
-      } else
-        // Without the if-unused, such a situation would lead to an error, and
-        // the whole diff upload would fail.
-        throw http::precondition_failed(
-            (boost::format("Node %1% is still used by ways %2%.") %
-             row["node_id"].as<osm_nwr_id_t>() %
-             friendly_name(row["way_ids"].as<std::string>()))
-                .str());
+      }
     }
   }
 
   {
     m.prepare("node_still_referenced_by_relation",
               R"(   
-				SELECT current_relation_members.member_id, array_agg(current_relations.id) AS relation_ids 
-					FROM current_relations 
-					  INNER JOIN current_relation_members
-						ON current_relation_members.relation_id = current_relations.id
-					WHERE current_relations.visible = true
-					  AND current_relation_members.member_type = 'Node'
-					  AND current_relation_members.member_id = ANY($1)
-					GROUP BY current_relation_members.member_id
-				  )");
+             SELECT current_relation_members.member_id, array_agg(current_relations.id) AS relation_ids 
+                    FROM current_relations 
+                      INNER JOIN current_relation_members
+                        ON current_relation_members.relation_id = current_relations.id
+                    WHERE current_relations.visible = true
+                      AND current_relation_members.member_type = 'Node'
+                      AND current_relation_members.member_id = ANY($1)
+                    GROUP BY current_relation_members.member_id
+             )");
 
     pqxx::result r =
         m.prepared("node_still_referenced_by_relation")(ids).exec();
@@ -787,10 +799,10 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
     for (const auto &row : r) {
       auto node_id = row["member_id"].as<osm_nwr_id_t>();
 
-      if (if_unused_ids.find(node_id) != if_unused_ids.end())
-        nodes_to_exclude_from_deletion.insert(
-            row["member_id"].as<osm_nwr_id_t>());
-      else
+      // OsmChange documents wants to delete a node that is still referenced,
+      // and the if-unused flag hasn't been set!
+      if (ids_without_if_unused.find(node_id) != ids_without_if_unused.end()) {
+
         // Without the if-unused, such a situation would lead to an error, and
         // the whole diff upload would fail.
         throw http::precondition_failed(
@@ -798,6 +810,11 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
              row["member_id"].as<osm_nwr_id_t>() %
              friendly_name(row["relation_ids"].as<std::string>()))
                 .str());
+      }
+
+      if (ids_if_unused.find(node_id) != ids_if_unused.end())
+        nodes_to_exclude_from_deletion.insert(
+            row["member_id"].as<osm_nwr_id_t>());
     }
   }
 
@@ -815,9 +832,8 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
         updated_nodes.end());
 
     // Return old_id, new_id and current version to the caller in case of
-    // if-unused,
-    // so it's clear that the delete operation was *not* executed, but simply
-    // skipped
+    // if-unused, so it's clear that the delete operation was *not* executed,
+    // but simply skipped
 
     m.prepare("still_referenced_nodes",
               "SELECT id, version FROM current_nodes WHERE id = ANY($1)");
@@ -836,12 +852,9 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
       result.insert(row["id"].as<osm_nwr_id_t>());
 
       // We have identified a node that is still used in a way or relation.
-      // However,
-      // the caller has indicated via if-unused flag that deletion should not
-      // lead to
-      // an error. All we can do now is to return old_id, new_id and the current
-      // version
-      // to the caller
+      // However, the caller has indicated via if-unused flag that deletion
+      // should not lead to an error. All we can do now is to return old_id,
+      // new_id and the current version to the caller
 
       ct->skip_deleted_node_ids.push_back(
           { row["id"].as<long>(), row["id"].as<osm_nwr_id_t>(),

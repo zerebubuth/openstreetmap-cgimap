@@ -298,16 +298,16 @@ void ApiDB_Way_Updater::insert_new_ways_to_tmp_table(
 
   m.prepare("insert_tmp_create_ways", R"(
 
-		   WITH tmp_way(changeset_id, old_id) AS (
-		   SELECT * FROM
-		   UNNEST( CAST($1 AS bigint[]),
-				   CAST($2 AS bigint[])
-				 )
-		   )
-		   INSERT INTO tmp_create_ways (changeset_id, old_id)
-		   SELECT * FROM tmp_way
-		   RETURNING id, old_id
-	   )");
+         WITH tmp_way(changeset_id, old_id) AS (
+         SELECT * FROM
+         UNNEST( CAST($1 AS bigint[]),
+                 CAST($2 AS bigint[])
+             )
+         )
+         INSERT INTO tmp_create_ways (changeset_id, old_id)
+         SELECT * FROM tmp_way
+         RETURNING id, old_id
+      )");
 
   std::vector<osm_changeset_id_t> cs;
   std::vector<osm_nwr_signed_id_t> oldids;
@@ -331,8 +331,8 @@ void ApiDB_Way_Updater::copy_tmp_create_ways_to_current_ways() {
 
   m.exec(
       R"( INSERT INTO current_ways 
-				 (SELECT id, changeset_id, timestamp, visible, version from tmp_create_ways)
-			  )");
+             (SELECT id, changeset_id, timestamp, visible, version from tmp_create_ways)
+           )");
 }
 
 void ApiDB_Way_Updater::delete_tmp_create_ways() {
@@ -349,17 +349,17 @@ bbox_t ApiDB_Way_Updater::calc_way_bbox(const std::vector<osm_nwr_id_t> &ids) {
 
   m.prepare("calc_way_bbox",
             R"(
-		SELECT MIN(latitude)  AS minlat,
-			   MIN(longitude) AS minlon, 
-			   MAX(latitude)  AS maxlat, 
-			   MAX(longitude) AS maxlon  
-		FROM current_nodes cn
-		INNER JOIN current_way_nodes wn
-		  ON cn.id = wn.node_id
-		INNER JOIN current_ways w
-		  ON wn.way_id = w.id
-		WHERE w.id = ANY($1)
-	    )");
+      SELECT MIN(latitude)  AS minlat,
+             MIN(longitude) AS minlon, 
+             MAX(latitude)  AS maxlat, 
+             MAX(longitude) AS maxlon  
+      FROM current_nodes cn
+      INNER JOIN current_way_nodes wn
+        ON cn.id = wn.node_id
+      INNER JOIN current_ways w
+        ON wn.way_id = w.id
+      WHERE w.id = ANY($1)
+       )");
 
   pqxx::result r = m.prepared("calc_way_bbox")(ids).exec();
 
@@ -451,21 +451,22 @@ void ApiDB_Way_Updater::check_current_way_versions(
   }
 
   m.prepare("check_current_way_versions",
-            R"(   WITH tmp_way_versions(id, version) AS (
-		     SELECT * FROM
-			   UNNEST( CAST($1 as bigint[]),
-					   CAST($2 as bigint[])
-		     )
-		  )
-		  SELECT t.id, 
-			     t.version                 AS expected_version, 
-			     current_ways.version      AS actual_version
-		  FROM tmp_way_versions t
-		  INNER JOIN current_ways
-		     ON t.id = current_ways.id
-		  WHERE t.version <> current_ways.version
-		  LIMIT 1
-	   )");
+            R"(  
+         WITH tmp_way_versions(id, version) AS (
+           SELECT * FROM
+             UNNEST( CAST($1 as bigint[]),
+                     CAST($2 as bigint[])
+           )
+        )
+        SELECT t.id, 
+              t.version                 AS expected_version, 
+              current_ways.version      AS actual_version
+        FROM tmp_way_versions t
+        INNER JOIN current_ways
+           ON t.id = current_ways.id
+        WHERE t.version <> current_ways.version
+        LIMIT 1
+      )");
 
   pqxx::result r =
       m.prepared("check_current_way_versions")(ids)(versions).exec();
@@ -565,11 +566,11 @@ void ApiDB_Way_Updater::lock_future_nodes(const std::vector<way_t> &ways) {
 
   m.prepare("lock_future_nodes_in_ways",
             R"( 
-		SELECT id
-			FROM current_nodes
-			WHERE visible = true 
-			AND id = ANY($1) FOR SHARE 
-	   )");
+      SELECT id
+         FROM current_nodes
+         WHERE visible = true 
+         AND id = ANY($1) FOR SHARE 
+      )");
 
   pqxx::result r = m.prepared("lock_future_nodes_in_ways")(node_ids).exec();
 
@@ -602,24 +603,24 @@ void ApiDB_Way_Updater::update_current_ways(const std::vector<way_t> &ways,
     return;
 
   m.prepare("update_current_ways", R"(
-		WITH u(id, changeset_id, visible, version) AS (
-			SELECT * FROM
-			UNNEST( CAST($1 AS bigint[]),
-					CAST($2 AS bigint[]),
-					CAST($3 AS boolean[]),
-					CAST($4 AS bigint[])
-				  )
-		)
-		UPDATE current_ways AS w
-		SET changeset_id = u.changeset_id,
-			visible = u.visible,
-			timestamp = (now() at time zone 'utc'),
-			version = u.version + 1
-			FROM u
-		WHERE w.id = u.id
-		AND   w.version = u.version
-		RETURNING w.id, w.version 
-	  )");
+      WITH u(id, changeset_id, visible, version) AS (
+         SELECT * FROM
+         UNNEST( CAST($1 AS bigint[]),
+                 CAST($2 AS bigint[]),
+                 CAST($3 AS boolean[]),
+                 CAST($4 AS bigint[])
+              )
+      )
+      UPDATE current_ways AS w
+      SET changeset_id = u.changeset_id,
+         visible = u.visible,
+         timestamp = (now() at time zone 'utc'),
+         version = u.version + 1
+         FROM u
+      WHERE w.id = u.id
+      AND   w.version = u.version
+      RETURNING w.id, w.version 
+     )");
 
   std::vector<osm_nwr_signed_id_t> ids;
   std::vector<osm_changeset_id_t> cs;
@@ -659,16 +660,16 @@ void ApiDB_Way_Updater::insert_new_current_way_tags(
   m.prepare("insert_new_current_way_tags",
 
             R"(
-		WITH tmp_tag(way_id, k, v) AS (
-		   SELECT * FROM
-		   UNNEST( CAST($1 AS bigint[]),
-				   CAST($2 AS character varying[]),
-				   CAST($3 AS character varying[])
-		   )
-		)
-		INSERT INTO current_way_tags(way_id, k, v)
-		SELECT * FROM tmp_tag
-	  )");
+      WITH tmp_tag(way_id, k, v) AS (
+         SELECT * FROM
+         UNNEST( CAST($1 AS bigint[]),
+                 CAST($2 AS character varying[]),
+                 CAST($3 AS character varying[])
+         )
+      )
+      INSERT INTO current_way_tags(way_id, k, v)
+      SELECT * FROM tmp_tag
+     )");
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<std::string> ks;
@@ -694,16 +695,16 @@ void ApiDB_Way_Updater::insert_new_current_way_nodes(
   m.prepare("insert_new_current_way_nodes",
 
             R"(
-		WITH new_way_nodes(way_id, node_id, sequence_id) AS (
-			SELECT * FROM
-			UNNEST( CAST($1 AS bigint[]),
-					CAST($2 AS bigint[]),
-					CAST($3 AS bigint[])
-				  )
-		)
-		INSERT INTO current_way_nodes
-		SELECT * FROM new_way_nodes
-	    )");
+      WITH new_way_nodes(way_id, node_id, sequence_id) AS (
+         SELECT * FROM
+         UNNEST( CAST($1 AS bigint[]),
+                 CAST($2 AS bigint[]),
+                 CAST($3 AS bigint[])
+              )
+      )
+      INSERT INTO current_way_nodes
+      SELECT * FROM new_way_nodes
+       )");
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<osm_nwr_id_t> nodeids;
@@ -730,12 +731,12 @@ void ApiDB_Way_Updater::save_current_ways_to_history(
 
   m.prepare("current_ways_to_history",
             R"(   
-	      INSERT INTO ways 
-		  ( SELECT id AS way_id, changeset_id, timestamp, version, visible
-		    FROM current_ways
-		    WHERE id = ANY($1) 
-		  )
-	      )");
+       INSERT INTO ways 
+        ( SELECT id AS way_id, changeset_id, timestamp, version, visible
+          FROM current_ways
+          WHERE id = ANY($1) 
+        )
+    )");
 
   pqxx::result r = m.prepared("current_ways_to_history")(ids).exec();
 
@@ -752,12 +753,12 @@ void ApiDB_Way_Updater::save_current_way_nodes_to_history(
 
   m.prepare("current_way_nodes_to_history",
             R"(   
-	INSERT INTO way_nodes ( 
-		 SELECT  way_id, node_id, version, sequence_id 
-		 FROM current_way_nodes wn
-		 INNER JOIN current_ways w
-		 ON wn.way_id = w.id
-		 WHERE id = ANY($1) ) )");
+   INSERT INTO way_nodes ( 
+       SELECT  way_id, node_id, version, sequence_id 
+       FROM current_way_nodes wn
+       INNER JOIN current_ways w
+       ON wn.way_id = w.id
+       WHERE id = ANY($1) ) )");
 
   pqxx::result r = m.prepared("current_way_nodes_to_history")(ids).exec();
 }
@@ -771,14 +772,14 @@ void ApiDB_Way_Updater::save_current_way_tags_to_history(
 
   m.prepare("current_way_tags_to_history",
             R"(   
-	      INSERT INTO way_tags ( 
-		       SELECT way_id, k, v, version 
-		       FROM current_way_tags wt
-			 INNER JOIN current_ways w 
-			       ON wt.way_id = w.id 
-		       WHERE id = ANY($1)
-	      ) 
-	  )");
+         INSERT INTO way_tags ( 
+             SELECT way_id, k, v, version 
+             FROM current_way_tags wt
+             INNER JOIN current_ways w 
+                ON wt.way_id = w.id 
+             WHERE id = ANY($1)
+         ) 
+     )");
 
   pqxx::result r = m.prepared("current_way_tags_to_history")(ids).exec();
 }
@@ -791,12 +792,16 @@ ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t> &ways) {
     return ways;
 
   std::vector<osm_nwr_id_t> ids;
-  std::set<osm_nwr_id_t> if_unused_ids;
+  std::set<osm_nwr_id_t> ids_if_unused; // way ids where if-used flag is set
+  std::set<osm_nwr_id_t> ids_without_if_unused; // way ids without if-used flag
 
   for (const auto &id : ways) {
     ids.push_back(id.id);
-    if (id.if_unused)
-      if_unused_ids.insert(id.id);
+    if (id.if_unused) {
+      ids_if_unused.insert(id.id);
+    } else {
+      ids_without_if_unused.insert(id.id);
+    }
   }
 
   std::vector<way_t> updated_ways = ways;
@@ -804,32 +809,26 @@ ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t> &ways) {
 
   m.prepare("way_still_referenced_by_relation",
             R"(   
-		SELECT current_relation_members.member_id, array_agg(current_relations.id) AS relation_ids 
-			FROM current_relations 
-			  INNER JOIN current_relation_members
-				ON current_relation_members.relation_id = current_relations.id
-			WHERE current_relations.visible = true
-			  AND current_relation_members.member_type = 'Way'
-			  AND current_relation_members.member_id = ANY($1)
-			GROUP BY current_relation_members.member_id
-	   )");
+      SELECT current_relation_members.member_id,
+             array_agg(current_relations.id) AS relation_ids 
+         FROM current_relations 
+           INNER JOIN current_relation_members
+            ON current_relation_members.relation_id = current_relations.id
+         WHERE current_relations.visible = true
+           AND current_relation_members.member_type = 'Way'
+           AND current_relation_members.member_id = ANY($1)
+         GROUP BY current_relation_members.member_id
+      )");
 
   pqxx::result r = m.prepared("way_still_referenced_by_relation")(ids).exec();
 
   for (const auto &row : r) {
     auto way_id = row["member_id"].as<osm_nwr_id_t>();
 
-    if (if_unused_ids.find(way_id) != if_unused_ids.end()) {
-      /* a <delete> block in the OsmChange document may have an if-unused
-       * attribute
-       * If this attribute is present, then the delete operation(s) in this
-       * block
-       * are conditional and will only be executed if the object to be deleted
-       * is not used by another object.  */
+    // OsmChange documents wants to delete a way that is still referenced,
+    // and the if-unused flag hasn't been set!
+    if (ids_without_if_unused.find(way_id) != ids_without_if_unused.end()) {
 
-      ways_to_exclude_from_deletion.insert(row["member_id"].as<osm_nwr_id_t>());
-
-    } else
       // Without the if-unused, such a situation would lead to an error, and the
       // whole diff upload would fail.
       throw http::precondition_failed(
@@ -837,6 +836,18 @@ ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t> &ways) {
            row["member_id"].as<osm_nwr_id_t>() %
            friendly_name(row["relation_ids"].as<std::string>()))
               .str());
+    }
+
+    if (ids_if_unused.find(way_id) != ids_if_unused.end()) {
+      /* a <delete> block in the OsmChange document may have an if-unused
+       * attribute
+       * If this attribute is present, then the delete operation(s) in this
+       * block are conditional and will only be executed if the object to be
+       * deleted is not used by another object.
+       */
+
+      ways_to_exclude_from_deletion.insert(row["member_id"].as<osm_nwr_id_t>());
+    }
   }
 
   // Prepare updated list of ways, which no longer contains object that are
@@ -854,9 +865,8 @@ ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t> &ways) {
         updated_ways.end());
 
     // Return old_id, new_id and current version to the caller in case of
-    // if-unused,
-    // so it's clear that the delete operation was *not* executed, but simply
-    // skipped
+    // if-unused, so it's clear that the delete operation was *not* executed,
+    // but simply skipped
 
     m.prepare("still_referenced_ways",
               "SELECT id, version FROM current_ways WHERE id = ANY($1)");
@@ -875,12 +885,9 @@ ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t> &ways) {
       result.insert(row["id"].as<osm_nwr_id_t>());
 
       // We have identified a node that is still used in a way or relation.
-      // However,
-      // the caller has indicated via if-unused flag that deletion should not
-      // lead to
-      // an error. All we can do now is to return old_id, new_id and the current
-      // version
-      // to the caller
+      // However, the caller has indicated via if-unused flag that deletion
+      // should not lead to an error. All we can do now is to return old_id,
+      // new_id and the current version to the caller
 
       ct->skip_deleted_way_ids.push_back(
           { row["id"].as<long>(), row["id"].as<osm_nwr_id_t>(),

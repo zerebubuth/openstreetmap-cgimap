@@ -981,12 +981,12 @@ bbox_t ApiDB_Relation_Updater::calc_rel_member_difference_bbox(
 
     m.prepare("calc_node_bbox_rel_member",
               R"(
-		SELECT MIN(latitude)  AS minlat,
-			   MIN(longitude) AS minlon, 
-			   MAX(latitude)  AS maxlat, 
-			   MAX(longitude) AS maxlon  
-		FROM current_nodes WHERE id = ANY($1)
-	    )");
+      SELECT MIN(latitude)  AS minlat,
+             MIN(longitude) AS minlon, 
+             MAX(latitude)  AS maxlat, 
+             MAX(longitude) AS maxlon  
+      FROM current_nodes WHERE id = ANY($1)
+       )");
 
     pqxx::result r = m.prepared("calc_node_bbox_rel_member")(node_ids).exec();
 
@@ -1006,17 +1006,17 @@ bbox_t ApiDB_Relation_Updater::calc_rel_member_difference_bbox(
 
     m.prepare("calc_way_bbox_rel_member",
               R"(
-		SELECT MIN(latitude)  AS minlat,
-			   MIN(longitude) AS minlon, 
-			   MAX(latitude)  AS maxlat, 
-			   MAX(longitude) AS maxlon  
-		FROM current_nodes cn
-		INNER JOIN current_way_nodes wn
-		  ON cn.id = wn.node_id
-		INNER JOIN current_ways w
-		  ON wn.way_id = w.id
-		WHERE w.id = ANY($1)
-	    )");
+      SELECT MIN(latitude)  AS minlat,
+             MIN(longitude) AS minlon, 
+             MAX(latitude)  AS maxlat, 
+             MAX(longitude) AS maxlon  
+      FROM current_nodes cn
+      INNER JOIN current_way_nodes wn
+        ON cn.id = wn.node_id
+      INNER JOIN current_ways w
+        ON wn.way_id = w.id
+      WHERE w.id = ANY($1)
+       )");
 
     pqxx::result r = m.prepared("calc_way_bbox_rel_member")(way_ids).exec();
 
@@ -1134,14 +1134,14 @@ void ApiDB_Relation_Updater::update_current_relations(
                       )
         )
         UPDATE current_relations AS r
-         SET changeset_id = u.changeset_id,
-                 visible = u.visible,
-                 timestamp = (now() at time zone 'utc'),
-                 version = u.version + 1
-         FROM u
-         WHERE r.id = u.id
-         AND   r.version = u.version
-         RETURNING r.id, r.version 
+        SET changeset_id = u.changeset_id,
+            visible = u.visible,
+            timestamp = (now() at time zone 'utc'),
+            version = u.version + 1
+        FROM u
+        WHERE r.id = u.id
+          AND r.version = u.version
+        RETURNING r.id, r.version 
     )");
 
   std::vector<osm_nwr_signed_id_t> ids;
@@ -1341,12 +1341,18 @@ ApiDB_Relation_Updater::is_relation_still_referenced(
     return relations;
 
   std::vector<osm_nwr_id_t> ids;
-  std::set<osm_nwr_id_t> if_unused_ids;
+  std::set<osm_nwr_id_t>
+      ids_if_unused; // relation ids where if-used flag is set
+  std::set<osm_nwr_id_t>
+      ids_without_if_unused; // relation ids without if-used flag
 
   for (const auto &id : relations) {
     ids.push_back(id.id);
-    if (id.if_unused)
-      if_unused_ids.insert(id.id);
+    if (id.if_unused) {
+      ids_if_unused.insert(id.id);
+    } else {
+      ids_without_if_unused.insert(id.id);
+    }
   }
 
   std::vector<relation_t> updated_relations = relations;
@@ -1358,7 +1364,8 @@ ApiDB_Relation_Updater::is_relation_still_referenced(
                SELECT * FROM
                   UNNEST( CAST($1 AS bigint[]) )
            )
-           SELECT current_relation_members.member_id, array_agg(current_relations.id) AS relation_ids 
+           SELECT current_relation_members.member_id, 
+                  array_agg(current_relations.id) AS relation_ids 
            FROM current_relations 
              INNER JOIN current_relation_members
                     ON current_relation_members.relation_id = current_relations.id
@@ -1376,9 +1383,22 @@ ApiDB_Relation_Updater::is_relation_still_referenced(
       m.prepared("relation_still_referenced_by_relation")(ids).exec();
 
   for (const auto &row : r) {
-    auto way_id = row["member_id"].as<osm_nwr_id_t>();
+    auto rel_id = row["member_id"].as<osm_nwr_id_t>();
 
-    if (if_unused_ids.find(way_id) != if_unused_ids.end()) {
+    // OsmChange documents wants to delete a relation that is still referenced,
+    // and the if-unused flag hasn't been set!
+    if (ids_without_if_unused.find(rel_id) != ids_without_if_unused.end()) {
+
+      // Without the if-unused, such a situation would lead to an error, and the
+      // whole diff upload would fail.
+      throw http::precondition_failed(
+          (boost::format("Relation %1% is still used by relations %2%.") %
+           row["member_id"].as<osm_nwr_id_t>() %
+           friendly_name(row["relation_ids"].as<std::string>()))
+              .str());
+    }
+
+    if (ids_if_unused.find(rel_id) != ids_if_unused.end()) {
       /* a <delete> block in the OsmChange document may have an if-unused
        * attribute. If this attribute is present, then the delete operation(s)
        * in this block are conditional and will only be executed if the object
@@ -1387,15 +1407,7 @@ ApiDB_Relation_Updater::is_relation_still_referenced(
 
       relations_to_exclude_from_deletion.insert(
           row["member_id"].as<osm_nwr_id_t>());
-
-    } else
-      // Without the if-unused, such a situation would lead to an error, and the
-      // whole diff upload would fail.
-      throw http::precondition_failed(
-          (boost::format("Relation %1% is still used by relations %2%.") %
-           row["member_id"].as<osm_nwr_id_t>() %
-           friendly_name(row["relation_ids"].as<std::string>()))
-              .str());
+    }
   }
 
   // Prepare updated list of ways, which no longer contains object that are
@@ -1412,8 +1424,8 @@ ApiDB_Relation_Updater::is_relation_still_referenced(
         updated_relations.end());
 
     // Return old_id, new_id and current version to the caller in case of
-    // if-unused,so it's clear that the delete operation was *not* executed, but
-    // simplys skipped
+    // if-unused, so it's clear that the delete operation was *not* executed,
+    // but simply skipped
 
     m.prepare("still_referenced_relations",
               "SELECT id, version FROM current_relations WHERE id = ANY($1)");
