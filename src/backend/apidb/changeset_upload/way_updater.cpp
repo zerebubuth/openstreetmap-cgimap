@@ -7,6 +7,7 @@
 #include "cgimap/logger.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <iterator>
 #include <map>
 #include <stdexcept>
@@ -37,17 +38,15 @@ void ApiDB_Way_Updater::add_way(osm_changeset_id_t changeset_id,
     new_way.tags.push_back(
         std::pair<std::string, std::string>(tag.first, tag.second));
 
+  // If the following conditions are still not met, although our XML parser
+  // raised an exception for it, it's clearly a programming error.
+  assert(nodes.size() > 0);
+  assert(nodes.size() <= WAY_MAX_NODES);
+
   int node_seq = 0;
   for (const auto &node : nodes)
     new_way.way_nodes.push_back(
         { (node < 0 ? 0 : static_cast<osm_nwr_id_t>(node)), ++node_seq, node });
-
-  if (node_seq > WAY_MAX_NODES)
-    throw http::bad_request(
-        (boost::format("You tried to add %1% nodes to way %2%, however only "
-                       "%3% are allowed") %
-         node_seq % new_way.old_id % WAY_MAX_NODES)
-            .str());
 
   create_ways.push_back(new_way);
 }
@@ -67,17 +66,15 @@ void ApiDB_Way_Updater::modify_way(osm_changeset_id_t changeset_id,
     modify_way.tags.push_back(
         std::pair<std::string, std::string>(tag.first, tag.second));
 
+  // If the following conditions are still not met, although our XML parser
+  // raised an exception for it, it's clearly a programming error.
+  assert(nodes.size() > 0);
+  assert(nodes.size() <= WAY_MAX_NODES);
+
   int node_seq = 0;
   for (const auto &node : nodes)
     modify_way.way_nodes.push_back(
         { (node < 0 ? 0 : static_cast<osm_nwr_id_t>(node)), ++node_seq, node });
-
-  if (node_seq > WAY_MAX_NODES)
-    throw http::bad_request(
-        (boost::format("You tried to add %1% nodes to way %2%, however only "
-                       "%3% are allowed") %
-         node_seq % modify_way.old_id % WAY_MAX_NODES)
-            .str());
 
   modify_ways.push_back(modify_way);
 }

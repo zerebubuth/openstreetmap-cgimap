@@ -27,10 +27,21 @@ public:
 
     case operation::op_delete:
       return (OSMObject::is_valid());
+
     default:
       if (m_way_nodes.empty()) {
         throw http::precondition_failed(
-            (boost::format("Way %1% must have at least one node") % (has_id() ? id() : 0))
+            (boost::format("Way %1% must have at least one node") %
+             (has_id() ? id() : 0))
+                .str());
+      }
+
+      if (m_way_nodes.size() > WAY_MAX_NODES) {
+        throw http::bad_request(
+            (boost::format(
+                 "You tried to add %1% nodes to way %2%, however only "
+                 "%3% are allowed") %
+             m_way_nodes.size() % (has_id() ? id() : 0) % WAY_MAX_NODES)
                 .str());
       }
 
