@@ -21,6 +21,23 @@ public:
 
   const std::vector<osm_nwr_signed_id_t> &nodes() const { return m_way_nodes; }
 
+  bool is_valid(operation op) const {
+
+    switch (op) {
+
+    case operation::op_delete:
+      return (OSMObject::is_valid());
+    default:
+      if (m_way_nodes.empty()) {
+        throw http::precondition_failed(
+            (boost::format("Way %1% must have at least one node") % (has_id() ? id() : 0))
+                .str());
+      }
+
+      return (OSMObject::is_valid());
+    }
+  }
+
   std::string get_type_name() { return "Way"; }
 
 private:

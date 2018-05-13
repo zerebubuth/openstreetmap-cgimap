@@ -78,7 +78,7 @@ public:
     }
   }
 
-  bool is_valid() const {
+  virtual bool is_valid() const {
     // check if all mandatory fields have been set
     if (!m_changeset)
       throw http::bad_request(

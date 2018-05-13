@@ -419,7 +419,7 @@ class OSMChangeXMLParser {
       break;
     case context::way:
       assert(!std::strcmp(element, "way"));
-      if (!m_way->is_valid()) {
+      if (!m_way->is_valid(m_operation)) {
         throw xml_error{
           (boost::format("Object %1% does not include all mandatory fields") %
            m_way->to_string())
