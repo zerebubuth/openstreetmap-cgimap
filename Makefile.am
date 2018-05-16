@@ -88,6 +88,7 @@ TESTS += test/empty.testcore test/way_full.testcore test/relation_full.testcore
 TESTS += test/test_parse_id_list test/test_oauth test/test_http test/test_parse_time
 TESTS += test/changesets.testcore test/message.testcore test/routes.testcore
 TESTS += test/redactions.testcore
+TESTS += test/test_parse_osmchange_input
 if ENABLE_EXPERIMENTAL
 TESTS += test/node_ways.testcore
 endif
