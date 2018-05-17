@@ -179,9 +179,13 @@ class OSMChangeXMLParser {
       } // don't parse any other attributes here
     });
 
+    if (!object.has_id()) {
+	throw xml_error{ "Mandatory field id missing in object" };
+    }
+
     if (!object.has_changeset()) {
       throw xml_error{ (boost::format("Changeset id is missing for %1%") %
-                        object.version() % object.to_string())
+                        object.to_string())
                            .str() };
     }
 
@@ -313,7 +317,7 @@ class OSMChangeXMLParser {
         init_object(*m_relation, attrs);
         m_context = context::relation;
       } else {
-        throw new xml_error{
+        throw xml_error{
           (boost::format(
                "Unknown element %1%, expecting node, way or relation") %
            element)
