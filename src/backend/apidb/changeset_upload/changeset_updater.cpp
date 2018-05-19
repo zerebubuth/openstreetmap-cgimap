@@ -14,7 +14,7 @@ using boost::format;
 ApiDB_Changeset_Updater::ApiDB_Changeset_Updater(Transaction_Manager &_m,
                                                  osm_changeset_id_t _changeset,
                                                  osm_user_id_t _uid)
-    : m(_m), num_changes(0), changeset(_changeset), uid(_uid) {}
+    : m(_m), cs_num_changes(0), changeset(_changeset), uid(_uid) {}
 
 ApiDB_Changeset_Updater::~ApiDB_Changeset_Updater() {}
 
@@ -24,6 +24,10 @@ void ApiDB_Changeset_Updater::lock_current_changeset() {
             R"( SELECT id, 
                        user_id,
                        created_at,
+                       min_lat,
+                       max_lat,
+                       min_lon,
+                       max_lon,
                        num_changes, 
                        to_char(closed_at,'YYYY-MM-DD HH24:MM:SS "UTC"') as closed_at, 
                        ((now() at time zone 'utc') > closed_at) as is_closed,
@@ -46,22 +50,32 @@ void ApiDB_Changeset_Updater::lock_current_changeset() {
                           changeset % r[0]["current_time"].as<std::string>())
                              .str());
 
-  num_changes = r[0]["num_changes"].as<int>();
+  cs_num_changes = r[0]["num_changes"].as<int>();
+
+  if (!(r.empty() || r[0]["min_lat"].is_null())) {
+    cs_bbox.minlat = r[0]["min_lat"].as<long>();
+    cs_bbox.minlon = r[0]["min_lon"].as<long>();
+    cs_bbox.maxlat = r[0]["max_lat"].as<long>();
+    cs_bbox.maxlon = r[0]["max_lon"].as<long>();
+  }
 }
 
-void ApiDB_Changeset_Updater::update_changeset(long num_new_changes,
-                                               bbox_t bbox) {
+void ApiDB_Changeset_Updater::update_changeset(const long num_new_changes,
+                                               const bbox_t bbox) {
 
-  if (num_changes + num_new_changes > CHANGESET_MAX_ELEMENTS)
+  if (cs_num_changes + num_new_changes > CHANGESET_MAX_ELEMENTS)
     throw http::conflict((boost::format("The changeset %1% was closed at %2%") %
                           changeset % "now")
                              .str()); // TODO: proper timestamp instead of now
 
-  num_changes += num_new_changes;
+  cs_num_changes += num_new_changes;
 
-  bbox_t initial;
+  bbox_t undefined_bbox;   // bounding box with default value outside valid lat/lon range
 
-  bool valid_bbox = !(bbox == initial);
+  // Update current changeset bounding box with new bounds
+  cs_bbox.expand(bbox);
+
+  bool valid_bbox = !(cs_bbox == undefined_bbox);
 
   /*
    update for closed_at according to logic in update_closed_at in
@@ -94,14 +108,14 @@ void ApiDB_Changeset_Updater::update_changeset(long num_new_changes,
 
   if (valid_bbox) {
     pqxx::result r =
-        m.prepared("changeset_update")(num_changes)(bbox.minlat)(bbox.minlon)(
-             bbox.maxlat)(bbox.maxlon)(MAX_TIME_OPEN)(IDLE_TIMEOUT)(changeset)
+        m.prepared("changeset_update")(cs_num_changes)(cs_bbox.minlat)(cs_bbox.minlon)(
+            cs_bbox.maxlat)(cs_bbox.maxlon)(MAX_TIME_OPEN)(IDLE_TIMEOUT)(changeset)
             .exec();
 
     if (r.affected_rows() != 1)
       throw http::server_error("Cannot update changeset");
   } else {
-    pqxx::result r = m.prepared("changeset_update")(num_changes)()()()()(
+    pqxx::result r = m.prepared("changeset_update")(cs_num_changes)()()()()(
                           MAX_TIME_OPEN)(IDLE_TIMEOUT)(changeset)
                          .exec();
 
