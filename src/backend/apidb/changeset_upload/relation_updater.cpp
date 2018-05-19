@@ -90,6 +90,7 @@ void ApiDB_Relation_Updater::delete_relation(osm_changeset_id_t changeset_id,
                                              bool if_unused) {
 
   relation_t delete_relation{};
+  delete_relation.old_id = id;
   delete_relation.id = id;
   delete_relation.version = version;
   delete_relation.changeset_id = changeset_id;
@@ -137,7 +138,7 @@ void ApiDB_Relation_Updater::process_new_relations() {
 
 void ApiDB_Relation_Updater::process_modify_relations() {
 
-  // Use new_ids as a result of inserting nodes/ways in tmp table
+  // Use new_ids as a result of inserting nodes/ways/relations in tmp table
   replace_old_ids_in_relations(modify_relations, ct->created_node_ids,
                                ct->created_way_ids, ct->created_relation_ids);
 
@@ -245,6 +246,10 @@ void ApiDB_Relation_Updater::process_delete_relations() {
   std::vector<relation_t> delete_relations_visible;
   std::vector<osm_nwr_id_t> ids_visible;
   std::vector<osm_nwr_id_t> ids_visible_unreferenced;
+
+  // Use new_ids as a result of inserting nodes/ways/relations in tmp table
+  replace_old_ids_in_relations(delete_relations, ct->created_node_ids,
+                               ct->created_way_ids, ct->created_relation_ids);
 
   for (const auto &id : delete_relations)
     ids.push_back(id.id);
@@ -388,13 +393,15 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
   }
 }
 
-void ApiDB_Relation_Updater::check_unique_placeholder_ids(const std::vector<relation_t> &create_relations) {
+void ApiDB_Relation_Updater::check_unique_placeholder_ids(
+    const std::vector<relation_t> &create_relations) {
 
   for (const auto &create_relation : create_relations) {
-      auto res = create_placedholder_ids.insert(create_relation.old_id);
+    auto res = create_placedholder_ids.insert(create_relation.old_id);
 
-      if (!res.second)
-        throw http::bad_request("Placeholder IDs must be unique for created elements.");
+    if (!res.second)
+      throw http::bad_request(
+          "Placeholder IDs must be unique for created elements.");
   }
 }
 

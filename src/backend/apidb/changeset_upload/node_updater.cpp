@@ -52,12 +52,12 @@ void ApiDB_Node_Updater::modify_node(double lat, double lon,
 
   node_t modify_node{};
   modify_node.id = id;
+  modify_node.old_id = id;
   modify_node.version = version;
   modify_node.lat = round(lat * SCALE);
   modify_node.lon = round(lon * SCALE);
   modify_node.tile = xy2tile(lon2x(lon), lat2y(lat));
   modify_node.changeset_id = changeset_id;
-  modify_node.old_id = 0;
   for (const auto &tag : tags)
     modify_node.tags.emplace_back(std::make_pair(tag.first, tag.second));
   modify_nodes.push_back(modify_node);
@@ -69,6 +69,7 @@ void ApiDB_Node_Updater::delete_node(osm_changeset_id_t changeset_id,
 
   node_t delete_node{};
   delete_node.id = id;
+  delete_node.old_id = id;
   delete_node.version = version;
   delete_node.changeset_id = changeset_id;
   delete_node.if_unused = if_unused;
@@ -88,7 +89,7 @@ void ApiDB_Node_Updater::process_new_nodes() {
   delete_tmp_create_nodes();
 
   // Use new_ids as a result of inserting nodes in tmp table
-  replace_old_ids_in_create_nodes(create_nodes, ct->created_node_ids);
+  replace_old_ids_in_nodes(create_nodes, ct->created_node_ids);
 
   for (const auto &id : create_nodes)
     ids.push_back(id.id);
@@ -111,6 +112,9 @@ void ApiDB_Node_Updater::process_new_nodes() {
 void ApiDB_Node_Updater::process_modify_nodes() {
 
   std::vector<osm_nwr_id_t> ids;
+
+  // Use new_ids as a result of inserting nodes in tmp table
+  replace_old_ids_in_nodes(modify_nodes, ct->created_node_ids);
 
   for (const auto &id : modify_nodes)
     ids.push_back(id.id);
@@ -161,6 +165,9 @@ void ApiDB_Node_Updater::process_delete_nodes() {
   std::vector<osm_nwr_id_t> ids_visible;
   std::vector<osm_nwr_id_t> ids_visible_unreferenced;
 
+  // Use new_ids as a result of inserting nodes in tmp table
+  replace_old_ids_in_nodes(delete_nodes, ct->created_node_ids);
+
   for (const auto &node : delete_nodes)
     ids.push_back(node.id);
 
@@ -208,8 +215,8 @@ void ApiDB_Node_Updater::truncate_temporary_tables() {
  * Set id field based on old_id -> id mapping
  *
  */
-void ApiDB_Node_Updater::replace_old_ids_in_create_nodes(
-    std::vector<node_t> &create_nodes,
+void ApiDB_Node_Updater::replace_old_ids_in_nodes(
+    std::vector<node_t> &nodes,
     const std::vector<OSMChange_Tracking::object_id_mapping_t>
         &created_node_id_mapping) {
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map;
@@ -223,29 +230,30 @@ void ApiDB_Node_Updater::replace_old_ids_in_create_nodes(
               .str());
   }
 
-  for (auto &cn : create_nodes) {
-    if (cn.old_id < 0) {
-      auto entry = map.find(cn.old_id);
+  for (auto &n : nodes) {
+    if (n.old_id < 0) {
+      auto entry = map.find(n.old_id);
       if (entry == map.end())
         throw http::bad_request(
             (boost::format("Placeholder id not found for node reference %1%") %
-             cn.old_id)
+             n.old_id)
                 .str());
-      cn.id = entry->second;
+      n.id = entry->second;
     }
   }
 }
 
-void ApiDB_Node_Updater::check_unique_placeholder_ids(const std::vector<node_t> &create_nodes) {
+void ApiDB_Node_Updater::check_unique_placeholder_ids(
+    const std::vector<node_t> &create_nodes) {
 
   for (const auto &create_node : create_nodes) {
-      auto res = create_placedholder_ids.insert(create_node.old_id);
+    auto res = create_placedholder_ids.insert(create_node.old_id);
 
-      if (!res.second)
-        throw http::bad_request("Placeholder IDs must be unique for created elements.");
+    if (!res.second)
+      throw http::bad_request(
+          "Placeholder IDs must be unique for created elements.");
   }
 }
-
 
 void ApiDB_Node_Updater::insert_new_nodes_to_tmp_table(
     const std::vector<node_t> &create_nodes) {

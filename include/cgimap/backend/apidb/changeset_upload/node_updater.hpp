@@ -54,7 +54,7 @@ private:
 
   void truncate_temporary_tables();
 
-  void replace_old_ids_in_create_nodes(
+  void replace_old_ids_in_nodes(
       std::vector<node_t> &create_nodes,
       const std::vector<OSMChange_Tracking::object_id_mapping_t>
           &created_node_id_mapping);

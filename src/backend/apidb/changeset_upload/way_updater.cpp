@@ -193,6 +193,10 @@ void ApiDB_Way_Updater::process_delete_ways() {
   std::vector<osm_nwr_id_t> ids_visible;
   std::vector<osm_nwr_id_t> ids_visible_unreferenced;
 
+  // Use new_ids as a result of inserting nodes/ways in tmp table
+  replace_old_ids_in_ways(delete_ways, ct->created_node_ids,
+                          ct->created_way_ids);
+
   for (const auto &id : delete_ways)
     ids.push_back(id.id);
 
@@ -295,13 +299,15 @@ void ApiDB_Way_Updater::replace_old_ids_in_ways(
   }
 }
 
-void ApiDB_Way_Updater::check_unique_placeholder_ids(const std::vector<way_t> &create_ways) {
+void ApiDB_Way_Updater::check_unique_placeholder_ids(
+    const std::vector<way_t> &create_ways) {
 
   for (const auto &create_way : create_ways) {
-      auto res = create_placedholder_ids.insert(create_way.old_id);
+    auto res = create_placedholder_ids.insert(create_way.old_id);
 
-      if (!res.second)
-        throw http::bad_request("Placeholder IDs must be unique for created elements.");
+    if (!res.second)
+      throw http::bad_request(
+          "Placeholder IDs must be unique for created elements.");
   }
 }
 
