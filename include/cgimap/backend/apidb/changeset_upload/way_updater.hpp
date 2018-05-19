@@ -76,6 +76,8 @@ private:
       const std::vector<OSMChange_Tracking::object_id_mapping_t>
           &created_way_id_mapping);
 
+  void check_unique_placeholder_ids(const std::vector<way_t> &create_ways);
+
   void insert_new_ways_to_tmp_table(const std::vector<way_t> &create_ways);
 
   void copy_tmp_create_ways_to_current_ways();
@@ -123,6 +125,8 @@ private:
   std::vector<way_t> create_ways;
   std::vector<way_t> modify_ways;
   std::vector<way_t> delete_ways;
+
+  std::set<osm_nwr_signed_id_t> create_placedholder_ids;
 };
 
 #endif /* APIDB_WAY_UPDATER */

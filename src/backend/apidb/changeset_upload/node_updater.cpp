@@ -81,6 +81,8 @@ void ApiDB_Node_Updater::process_new_nodes() {
 
   truncate_temporary_tables();
 
+  check_unique_placeholder_ids(create_nodes);
+
   insert_new_nodes_to_tmp_table(create_nodes);
   copy_tmp_create_nodes_to_current_nodes();
   delete_tmp_create_nodes();
@@ -233,6 +235,17 @@ void ApiDB_Node_Updater::replace_old_ids_in_create_nodes(
     }
   }
 }
+
+void ApiDB_Node_Updater::check_unique_placeholder_ids(const std::vector<node_t> &create_nodes) {
+
+  for (const auto &create_node : create_nodes) {
+      auto res = create_placedholder_ids.insert(create_node.old_id);
+
+      if (!res.second)
+        throw http::bad_request("Placeholder IDs must be unique for created elements.");
+  }
+}
+
 
 void ApiDB_Node_Updater::insert_new_nodes_to_tmp_table(
     const std::vector<node_t> &create_nodes) {

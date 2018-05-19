@@ -59,6 +59,8 @@ private:
       const std::vector<OSMChange_Tracking::object_id_mapping_t>
           &created_node_id_mapping);
 
+  void check_unique_placeholder_ids(const std::vector<node_t> &create_nodes);
+
   void insert_new_nodes_to_tmp_table(const std::vector<node_t> &create_nodes);
 
   void copy_tmp_create_nodes_to_current_nodes();
@@ -100,6 +102,8 @@ private:
   std::vector<node_t> create_nodes;
   std::vector<node_t> modify_nodes;
   std::vector<node_t> delete_nodes;
+
+  std::set<osm_nwr_signed_id_t> create_placedholder_ids;
 };
 
 #endif /* APIDB_NODE_UPDATER */

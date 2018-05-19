@@ -101,6 +101,8 @@ void ApiDB_Relation_Updater::process_new_relations() {
 
   truncate_temporary_tables();
 
+  check_unique_placeholder_ids(create_relations);
+
   insert_new_relations_to_tmp_table(create_relations);
   copy_tmp_create_relations_to_current_relations();
   delete_tmp_create_relations();
@@ -383,6 +385,16 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
         }
       }
     }
+  }
+}
+
+void ApiDB_Relation_Updater::check_unique_placeholder_ids(const std::vector<relation_t> &create_relations) {
+
+  for (const auto &create_relation : create_relations) {
+      auto res = create_placedholder_ids.insert(create_relation.old_id);
+
+      if (!res.second)
+        throw http::bad_request("Placeholder IDs must be unique for created elements.");
   }
 }
 

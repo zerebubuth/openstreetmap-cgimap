@@ -98,6 +98,8 @@ void ApiDB_Way_Updater::process_new_ways() {
 
   truncate_temporary_tables();
 
+  check_unique_placeholder_ids(create_ways);
+
   insert_new_ways_to_tmp_table(create_ways);
   copy_tmp_create_ways_to_current_ways();
   delete_tmp_create_ways();
@@ -290,6 +292,16 @@ void ApiDB_Way_Updater::replace_old_ids_in_ways(
         wn.node_id = entry->second;
       }
     }
+  }
+}
+
+void ApiDB_Way_Updater::check_unique_placeholder_ids(const std::vector<way_t> &create_ways) {
+
+  for (const auto &create_way : create_ways) {
+      auto res = create_placedholder_ids.insert(create_way.old_id);
+
+      if (!res.second)
+        throw http::bad_request("Placeholder IDs must be unique for created elements.");
   }
 }
 

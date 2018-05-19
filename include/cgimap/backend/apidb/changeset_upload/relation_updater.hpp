@@ -84,6 +84,8 @@ private:
       const std::vector<OSMChange_Tracking::object_id_mapping_t>
           &created_relation_id_mapping);
 
+  void check_unique_placeholder_ids(const std::vector<relation_t> &create_relations);
+
   void insert_new_relations_to_tmp_table(
       const std::vector<relation_t> &create_relations);
 
@@ -152,6 +154,8 @@ private:
   std::vector<relation_t> create_relations;
   std::vector<relation_t> modify_relations;
   std::vector<relation_t> delete_relations;
+
+  std::set<osm_nwr_signed_id_t> create_placedholder_ids;
 };
 
 #endif
