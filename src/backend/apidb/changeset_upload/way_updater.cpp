@@ -291,7 +291,7 @@ void ApiDB_Way_Updater::replace_old_ids_in_ways(
           throw http::bad_request(
               (boost::format(
                    "Placeholder node not found for reference %1% in way %2%") %
-               wn.old_node_id % cw.id)
+               wn.old_node_id % cw.old_id)
                   .str());
         wn.node_id = entry->second;
       }
@@ -598,12 +598,12 @@ void ApiDB_Way_Updater::lock_future_nodes(const std::vector<way_t> &ways) {
     for (const auto &row : r)
       locked_nodes.insert(row["id"].as<osm_nwr_id_t>());
 
-    std::map<osm_nwr_id_t, std::set<osm_nwr_id_t>> absent_way_node_ids;
+    std::map<osm_nwr_signed_id_t, std::set<osm_nwr_id_t>> absent_way_node_ids;
 
     for (const auto &w : ways)
       for (const auto &wn : w.way_nodes)
         if (locked_nodes.find(wn.node_id) == locked_nodes.end())
-          absent_way_node_ids[w.id].insert(wn.node_id);
+          absent_way_node_ids[w.old_id].insert(wn.node_id);  // return node id in osmChange for error msg
 
     auto it = absent_way_node_ids.begin();
 

@@ -365,7 +365,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
             throw http::bad_request(
                 (boost::format("Placeholder node not found for reference %1% "
                                "in relation %2%") %
-                 mbr.old_member_id % cr.id)
+                 mbr.old_member_id % cr.old_id)
                     .str());
           mbr.member_id = entry->second;
         } else if (mbr.member_type == "Way") {
@@ -374,7 +374,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
             throw http::bad_request(
                 (boost::format("Placeholder way not found for reference %1% in "
                                "relation %2%") %
-                 mbr.old_member_id % cr.id)
+                 mbr.old_member_id % cr.old_id)
                     .str());
           mbr.member_id = entry->second;
 
@@ -384,7 +384,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
             throw http::bad_request(
                 (boost::format("Placeholder relation not found for reference "
                                "%1% in relation %2%") %
-                 mbr.old_member_id % cr.id)
+                 mbr.old_member_id % cr.old_id)
                     .str());
           mbr.member_id = entry->second;
         }
@@ -682,13 +682,13 @@ void ApiDB_Relation_Updater::lock_future_members(
       for (const auto &row : r)
         locked_nodes.insert(row["id"].as<osm_nwr_id_t>());
 
-      std::map<osm_nwr_id_t, std::set<osm_nwr_id_t>> absent_rel_node_ids;
+      std::map<osm_nwr_signed_id_t, std::set<osm_nwr_id_t>> absent_rel_node_ids;
 
       for (const auto &rel : relations)
         for (const auto &rm : rel.members)
           if (rm.member_type == "Node" &&
               locked_nodes.find(rm.member_id) == locked_nodes.end())
-            absent_rel_node_ids[rel.id].insert(rm.member_id);
+            absent_rel_node_ids[rel.old_id].insert(rm.member_id);  // return rel id in osmChange for error msg
 
       auto it = absent_rel_node_ids.begin();
 
@@ -718,13 +718,13 @@ void ApiDB_Relation_Updater::lock_future_members(
       for (const auto &row : r)
         locked_ways.insert(row["id"].as<osm_nwr_id_t>());
 
-      std::map<osm_nwr_id_t, std::set<osm_nwr_id_t>> absent_rel_way_ids;
+      std::map<osm_nwr_signed_id_t, std::set<osm_nwr_id_t>> absent_rel_way_ids;
 
       for (const auto &rel : relations)
         for (const auto &rm : rel.members)
           if (rm.member_type == "Way" &&
               locked_ways.find(rm.member_id) == locked_ways.end())
-            absent_rel_way_ids[rel.id].insert(rm.member_id);
+            absent_rel_way_ids[rel.old_id].insert(rm.member_id);   // return rel id in osmChange for error msg
 
       auto it = absent_rel_way_ids.begin();
 
@@ -753,13 +753,13 @@ void ApiDB_Relation_Updater::lock_future_members(
       for (const auto &row : r)
         locked_relations.insert(row["id"].as<osm_nwr_id_t>());
 
-      std::map<osm_nwr_id_t, std::set<osm_nwr_id_t>> absent_rel_rel_ids;
+      std::map<osm_nwr_signed_id_t, std::set<osm_nwr_id_t>> absent_rel_rel_ids;
 
       for (const auto &rel : relations)
         for (const auto &rm : rel.members)
           if (rm.member_type == "Relation" &&
               locked_relations.find(rm.member_id) == locked_relations.end())
-            absent_rel_rel_ids[rel.id].insert(rm.member_id);
+            absent_rel_rel_ids[rel.old_id].insert(rm.member_id);    // return rel id in osmChange for error msg
 
       auto it = absent_rel_rel_ids.begin();
 
