@@ -29,9 +29,9 @@ void ApiDB_Changeset_Updater::lock_current_changeset() {
                        min_lon,
                        max_lon,
                        num_changes, 
-                       to_char(closed_at,'YYYY-MM-DD HH24:MM:SS "UTC"') as closed_at, 
+                       to_char(closed_at,'YYYY-MM-DD HH24:MI:SS "UTC"') as closed_at, 
                        ((now() at time zone 'utc') > closed_at) as is_closed,
-                       to_char((now() at time zone 'utc'),'YYYY-MM-DD HH24:MM:SS "UTC"') as current_time
+                       to_char((now() at time zone 'utc'),'YYYY-MM-DD HH24:MI:SS "UTC"') as current_time
                 FROM changesets WHERE id = $1 AND user_id = $2 
                 FOR UPDATE 
              )");
@@ -63,14 +63,20 @@ void ApiDB_Changeset_Updater::lock_current_changeset() {
 void ApiDB_Changeset_Updater::update_changeset(const long num_new_changes,
                                                const bbox_t bbox) {
 
-  if (cs_num_changes + num_new_changes > CHANGESET_MAX_ELEMENTS)
+  if (cs_num_changes + num_new_changes > CHANGESET_MAX_ELEMENTS) {
+
+    auto r = m.exec(
+        R"(SELECT to_char((now() at time zone 'utc'),'YYYY-MM-DD HH24:MI:SS "UTC"') as current_time)");
+
     throw http::conflict((boost::format("The changeset %1% was closed at %2%") %
-                          changeset % "now")
-                             .str()); // TODO: proper timestamp instead of now
+                          changeset % r[0]["current_time"].as<std::string>())
+                             .str());
+  }
 
   cs_num_changes += num_new_changes;
 
-  bbox_t undefined_bbox;   // bounding box with default value outside valid lat/lon range
+  bbox_t undefined_bbox; // bounding box with default value outside valid
+                         // lat/lon range
 
   // Update current changeset bounding box with new bounds
   cs_bbox.expand(bbox);
@@ -108,8 +114,9 @@ void ApiDB_Changeset_Updater::update_changeset(const long num_new_changes,
 
   if (valid_bbox) {
     pqxx::result r =
-        m.prepared("changeset_update")(cs_num_changes)(cs_bbox.minlat)(cs_bbox.minlon)(
-            cs_bbox.maxlat)(cs_bbox.maxlon)(MAX_TIME_OPEN)(IDLE_TIMEOUT)(changeset)
+        m.prepared("changeset_update")(cs_num_changes)(cs_bbox.minlat)(
+             cs_bbox.minlon)(cs_bbox.maxlat)(cs_bbox.maxlon)(MAX_TIME_OPEN)(
+             IDLE_TIMEOUT)(changeset)
             .exec();
 
     if (r.affected_rows() != 1)
