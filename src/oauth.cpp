@@ -460,8 +460,6 @@ boost::optional<std::string> hashed_signature(request &req, secret_store &store)
   return hash;
 }
 
-} // namespace detail
-
 validity::validity is_valid_signature(
   request &req, secret_store &store,
   nonce_store &nonces, token_store &tokens) {
@@ -546,6 +544,21 @@ validity::validity is_valid_signature(
   }
 
   return validity::copacetic(*token);
+}
+
+} // namespace detail
+
+validity::validity is_valid_signature(
+  request &req, secret_store &store,
+  nonce_store &nonces, token_store &tokens) {
+
+  try {
+    return detail::is_valid_signature(req, store, nonces, tokens);
+
+  } catch (const std::exception &) {
+    // can't parse the signature - must be bad?
+    return validity::bad_request();
+  }
 }
 
 store::~store() {
