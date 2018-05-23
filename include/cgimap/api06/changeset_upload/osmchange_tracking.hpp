@@ -15,6 +15,14 @@ public:
     osm_version_t new_version;
   };
 
+  struct osmchange_t {
+    operation op;
+    object_type obj_type;
+    osm_nwr_signed_id_t orig_id;
+    osm_version_t orig_version;
+    bool if_unused;
+  };
+
   OSMChange_Tracking() {};
 
   // created objects are kept separately for id replacement purposes
@@ -37,6 +45,11 @@ public:
   std::vector<object_id_mapping_t> skip_deleted_node_ids;
   std::vector<object_id_mapping_t> skip_deleted_way_ids;
   std::vector<object_id_mapping_t> skip_deleted_relation_ids;
+
+  // Some clients might expect diffResult to reflect the original
+  // object sequence as provided in the osmChange message
+  // the following vector keeps a copy of that original sequence
+  std::vector<osmchange_t> osmchange_orig_sequence;
 };
 
 #endif

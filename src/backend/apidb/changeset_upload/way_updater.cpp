@@ -49,6 +49,10 @@ void ApiDB_Way_Updater::add_way(osm_changeset_id_t changeset_id,
         { (node < 0 ? 0 : static_cast<osm_nwr_id_t>(node)), ++node_seq, node });
 
   create_ways.push_back(new_way);
+
+  ct->osmchange_orig_sequence.push_back({ operation::op_create,
+                                          object_type::way, new_way.old_id,
+                                          new_way.version, false });
 }
 
 void ApiDB_Way_Updater::modify_way(osm_changeset_id_t changeset_id,
@@ -77,6 +81,10 @@ void ApiDB_Way_Updater::modify_way(osm_changeset_id_t changeset_id,
         { (node < 0 ? 0 : static_cast<osm_nwr_id_t>(node)), ++node_seq, node });
 
   modify_ways.push_back(modify_way);
+
+  ct->osmchange_orig_sequence.push_back({ operation::op_modify,
+                                          object_type::way, modify_way.old_id,
+                                          modify_way.version, false });
 }
 
 void ApiDB_Way_Updater::delete_way(osm_changeset_id_t changeset_id,
@@ -90,6 +98,10 @@ void ApiDB_Way_Updater::delete_way(osm_changeset_id_t changeset_id,
   delete_way.changeset_id = changeset_id;
   delete_way.if_unused = if_unused;
   delete_ways.push_back(delete_way);
+
+  ct->osmchange_orig_sequence.push_back({ operation::op_delete,
+                                          object_type::way, delete_way.old_id,
+                                          delete_way.version, if_unused });
 }
 
 void ApiDB_Way_Updater::process_new_ways() {
@@ -603,7 +615,8 @@ void ApiDB_Way_Updater::lock_future_nodes(const std::vector<way_t> &ways) {
     for (const auto &w : ways)
       for (const auto &wn : w.way_nodes)
         if (locked_nodes.find(wn.node_id) == locked_nodes.end())
-          absent_way_node_ids[w.old_id].insert(wn.node_id);  // return node id in osmChange for error msg
+          absent_way_node_ids[w.old_id].insert(
+              wn.node_id); // return node id in osmChange for error msg
 
     auto it = absent_way_node_ids.begin();
 

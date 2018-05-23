@@ -51,6 +51,10 @@ void ApiDB_Relation_Updater::add_relation(osm_changeset_id_t changeset_id,
   }
 
   create_relations.push_back(new_relation);
+
+  ct->osmchange_orig_sequence.push_back(
+      { operation::op_create, object_type::relation, new_relation.old_id,
+        new_relation.version, false });
 }
 
 void ApiDB_Relation_Updater::modify_relation(osm_changeset_id_t changeset_id,
@@ -82,6 +86,10 @@ void ApiDB_Relation_Updater::modify_relation(osm_changeset_id_t changeset_id,
   }
 
   modify_relations.push_back(modify_relation);
+
+  ct->osmchange_orig_sequence.push_back(
+      { operation::op_modify, object_type::relation, modify_relation.old_id,
+        modify_relation.version, false });
 }
 
 void ApiDB_Relation_Updater::delete_relation(osm_changeset_id_t changeset_id,
@@ -96,6 +104,10 @@ void ApiDB_Relation_Updater::delete_relation(osm_changeset_id_t changeset_id,
   delete_relation.changeset_id = changeset_id;
   delete_relation.if_unused = if_unused;
   delete_relations.push_back(delete_relation);
+
+  ct->osmchange_orig_sequence.push_back(
+      { operation::op_delete, object_type::relation, delete_relation.old_id,
+        delete_relation.version, if_unused });
 }
 
 void ApiDB_Relation_Updater::process_new_relations() {
@@ -688,7 +700,8 @@ void ApiDB_Relation_Updater::lock_future_members(
         for (const auto &rm : rel.members)
           if (rm.member_type == "Node" &&
               locked_nodes.find(rm.member_id) == locked_nodes.end())
-            absent_rel_node_ids[rel.old_id].insert(rm.member_id);  // return rel id in osmChange for error msg
+            absent_rel_node_ids[rel.old_id].insert(
+                rm.member_id); // return rel id in osmChange for error msg
 
       auto it = absent_rel_node_ids.begin();
 
@@ -724,7 +737,8 @@ void ApiDB_Relation_Updater::lock_future_members(
         for (const auto &rm : rel.members)
           if (rm.member_type == "Way" &&
               locked_ways.find(rm.member_id) == locked_ways.end())
-            absent_rel_way_ids[rel.old_id].insert(rm.member_id);   // return rel id in osmChange for error msg
+            absent_rel_way_ids[rel.old_id].insert(
+                rm.member_id); // return rel id in osmChange for error msg
 
       auto it = absent_rel_way_ids.begin();
 
@@ -759,7 +773,8 @@ void ApiDB_Relation_Updater::lock_future_members(
         for (const auto &rm : rel.members)
           if (rm.member_type == "Relation" &&
               locked_relations.find(rm.member_id) == locked_relations.end())
-            absent_rel_rel_ids[rel.old_id].insert(rm.member_id);    // return rel id in osmChange for error msg
+            absent_rel_rel_ids[rel.old_id].insert(
+                rm.member_id); // return rel id in osmChange for error msg
 
       auto it = absent_rel_rel_ids.begin();
 

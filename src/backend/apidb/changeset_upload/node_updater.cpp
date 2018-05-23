@@ -43,6 +43,10 @@ void ApiDB_Node_Updater::add_node(double lat, double lon,
     new_node.tags.emplace_back(
         std::pair<std::string, std::string>(tag.first, tag.second));
   create_nodes.push_back(new_node);
+
+  ct->osmchange_orig_sequence.push_back({ operation::op_create,
+                                          object_type::node, new_node.old_id,
+                                          new_node.version, false });
 }
 
 void ApiDB_Node_Updater::modify_node(double lat, double lon,
@@ -61,6 +65,10 @@ void ApiDB_Node_Updater::modify_node(double lat, double lon,
   for (const auto &tag : tags)
     modify_node.tags.emplace_back(std::make_pair(tag.first, tag.second));
   modify_nodes.push_back(modify_node);
+
+  ct->osmchange_orig_sequence.push_back({ operation::op_modify,
+                                          object_type::node, modify_node.old_id,
+                                          modify_node.version, false });
 }
 
 void ApiDB_Node_Updater::delete_node(osm_changeset_id_t changeset_id,
@@ -74,6 +82,10 @@ void ApiDB_Node_Updater::delete_node(osm_changeset_id_t changeset_id,
   delete_node.changeset_id = changeset_id;
   delete_node.if_unused = if_unused;
   delete_nodes.push_back(delete_node);
+
+  ct->osmchange_orig_sequence.push_back({ operation::op_delete,
+                                          object_type::node, delete_node.old_id,
+                                          delete_node.version, if_unused });
 }
 
 void ApiDB_Node_Updater::process_new_nodes() {

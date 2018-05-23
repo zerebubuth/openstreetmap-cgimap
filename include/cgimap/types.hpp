@@ -27,4 +27,9 @@ enum class operation {
         op_undefined = 0, op_create = 1, op_modify = 2, op_delete = 3
 };
 
+// OSMChange message object type
+enum class object_type {
+  node = 1, way = 2, relation = 3
+};
+
 #endif /* TYPES_HPP */
