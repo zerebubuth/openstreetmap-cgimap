@@ -221,7 +221,7 @@ class OSMChangeXMLParser {
     });
   }
 
-  void get_tag(OSMObject &o, const char **attrs) {
+  void add_tag(OSMObject &o, const char **attrs) {
 
     boost::optional<std::string> k;
     boost::optional<std::string> v;
@@ -330,7 +330,7 @@ class OSMChangeXMLParser {
       m_last_context = context::node;
       m_context = context::in_object;
       if (!std::strcmp(element, "tag")) {
-        get_tag(*m_node, attrs);
+        add_tag(*m_node, attrs);
       }
       break;
     case context::way:
@@ -343,7 +343,7 @@ class OSMChangeXMLParser {
           }
         });
       } else if (!std::strcmp(element, "tag")) {
-        get_tag(*m_way, attrs);
+        add_tag(*m_way, attrs);
       }
       break;
     case context::relation:
@@ -362,13 +362,13 @@ class OSMChangeXMLParser {
         });
         if (!member.is_valid()) {
           throw xml_error{ (boost::format(
-                                "Missing ref on relation member in %1%") %
+                                "Missing mandatory field on relation member in %1%") %
                             m_relation->to_string())
                                .str() };
         }
         m_relation->add_member(member);
       } else if (!std::strcmp(element, "tag")) {
-        get_tag(*m_relation, attrs);
+        add_tag(*m_relation, attrs);
       }
       break;
     case context::in_object:

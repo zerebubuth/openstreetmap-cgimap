@@ -40,7 +40,18 @@ public:
 
   void set_ref(const char *ref) { m_ref = std::stol(ref); }
 
-  bool is_valid() { return (m_role && m_ref && m_type); }
+  bool is_valid() {
+
+    if (!m_role)
+      throw http::bad_request("Missing 'role' attribute in Relation member");
+
+    if (!m_type)
+      throw http::bad_request("Missing 'type' attribute in Relation member");
+
+    if (!m_ref)
+      throw http::bad_request("Missing 'ref' attribute in Relation member");
+
+    return (m_role && m_ref && m_type); }
 
   std::string type() const { return *m_type; }
 
