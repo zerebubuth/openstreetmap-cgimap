@@ -43,6 +43,28 @@ void respond_404(const http::not_found &e, request &r) {
   r.put("");
 }
 
+void respond_401(const http::unauthorized &e, request &r) {
+  // According to rfc7235 we MUST send a WWW-Authenticate header field
+  logger::message(format("Returning with http error %1% with reason %2%") %
+                  e.code() % e.what());
+
+  std::string message(e.what());
+  std::ostringstream message_size;
+  message_size << message.size();
+
+  r.status(e.code());
+  r.add_header("Content-Type", "text/plain; charset=utf-8");
+//  r.add_header("WWW-Authenticate", R"(Basic realm="OpenStreetMap login required")");
+  r.add_header("WWW-Authenticate", R"(OAuth)");
+  r.add_header("Content-Length", message_size.str());
+  r.add_header("Cache-Control", "no-cache");
+
+  // output the message
+  r.put(message);
+
+  r.finish();
+}
+
 void respond_error(const http::exception &e, request &r) {
   logger::message(format("Returning with http error %1% with reason %2%") %
                   e.code() % e.what());
@@ -491,6 +513,10 @@ void process_request(request &req, rate_limiter &limiter,
     // encoded description of the error. not found errors are special - they're
     // passed back just as empty HTML documents.
     respond_404(e, req);
+
+  } catch (const http::unauthorized &e) {
+    // HTTP/401 unauthorized requires WWW-Authenticate header field
+    respond_401(e, req);
 
   } catch (const http::exception &e) {
     // errors here occur before we've started writing the response
