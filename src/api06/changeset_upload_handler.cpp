@@ -107,6 +107,8 @@ changeset_upload_responder::changeset_upload_responder(
 
   parser.process_message(payload);
 
+  change_tracking->populate_orig_sequence_mapping();
+
   changeset_updater->update_changeset(handler.get_num_changes(),
                                       handler.get_bbox());
 
