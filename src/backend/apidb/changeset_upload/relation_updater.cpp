@@ -623,6 +623,7 @@ ApiDB_Relation_Updater::determine_already_deleted_relations(
 
     result.insert(id);
 
+    // if-used flag is set:
     // We have identified a relation that is already deleted on the server. The
     // only thing left to do in this scenario is to return old_id, new_id and
     // the current version to the caller

@@ -548,7 +548,7 @@ std::set<osm_nwr_id_t> ApiDB_Way_Updater::determine_already_deleted_ways(
 
     // OsmChange documents wants to delete a way that is already deleted,
     // and the if-unused flag hasn't been set!
-    if (ids_if_unused.find(id) == ids_if_unused.end()) {
+    if (ids_without_if_unused.find(id) != ids_without_if_unused.end()) {
       throw http::gone(
           (boost::format("The way with the id %1% has already been deleted") %
            id).str());
@@ -556,6 +556,7 @@ std::set<osm_nwr_id_t> ApiDB_Way_Updater::determine_already_deleted_ways(
 
     result.insert(id);
 
+    // if-used flag is set:
     // We have identified a way that is already deleted on the server. The only
     // thing left to do in this scenario is to return old_id, new_id and the
     // current version to the caller
