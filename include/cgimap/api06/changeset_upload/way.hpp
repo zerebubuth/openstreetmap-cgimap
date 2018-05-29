@@ -17,7 +17,24 @@ public:
     m_way_nodes.emplace_back(waynode);
   }
 
-  void add_way_node(const char *waynode) { add_way_node(std::stol(waynode)); }
+  void add_way_node(const char *waynode) {
+
+    long _waynode = 0;
+
+    try {
+	_waynode = std::stol(waynode);
+    } catch (std::invalid_argument& e) {
+	throw http::bad_request("Way node is not numeric");
+    } catch (std::out_of_range& e) {
+	throw http::bad_request("Way node value is too large");
+    }
+
+    if (_waynode == 0) {
+	throw http::bad_request("Way node value may not be 0");
+    }
+
+    add_way_node(_waynode);
+  }
 
   const std::vector<osm_nwr_signed_id_t> &nodes() const { return m_way_nodes; }
 

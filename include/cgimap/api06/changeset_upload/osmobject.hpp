@@ -25,12 +25,60 @@ public:
 
   void set_changeset(const char *changeset) {
 
-    set_changeset(std::stol(changeset));
+    long _changeset = 0;
+
+    try {
+	_changeset = std::stol(changeset);
+    } catch (std::invalid_argument& e) {
+	throw http::bad_request("Changeset is not numeric");
+    } catch (std::out_of_range& e) {
+	throw http::bad_request("Changeset number is too large");
+    }
+
+    if (_changeset <= 0) {
+	throw http::bad_request("Changeset must be a positive number");
+    }
+
+    set_changeset(_changeset);
   }
 
-  void set_version(const char *version) { set_version(std::stoi(version)); }
+  void set_version(const char *version) {
 
-  void set_id(const char *id) { set_id(std::stol(id)); }
+    int _version = 0;
+
+    try {
+	_version = std::stoi(version);
+    } catch (std::invalid_argument& e) {
+	throw http::bad_request("Version is not numeric");
+    } catch (std::out_of_range& e) {
+	throw http::bad_request("Version value is too large");
+    }
+
+    if (_version <= 0) {
+	throw http::bad_request("Version must be a positive number");
+    }
+
+    set_version(_version);
+  }
+
+  void set_id(const char *id) {
+
+    long _id = 0;
+
+    try {
+	_id = std::stol(id);
+    } catch (std::invalid_argument& e) {
+	throw http::bad_request("Id is not numeric");
+    } catch (std::out_of_range& e) {
+	throw http::bad_request("Id number is too large");
+    }
+
+    if (_id == 0) {
+	throw http::bad_request("Id must be different from 0");
+    }
+
+    set_id(_id);
+  }
 
   osm_changeset_id_t changeset() const { return *m_changeset; }
 

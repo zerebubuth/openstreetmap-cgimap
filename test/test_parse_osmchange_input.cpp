@@ -337,6 +337,17 @@ void test_node() {
       throw std::runtime_error("test_node::027: Expected HTTP/400");
   }
 
+  // Invalid changeset number
+  try {
+    process_testmsg(
+        R"(<osmChange><create><node changeset="a"/></create></osmChange>)");
+    throw std::runtime_error("test_node::028: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_node::028: Expected HTTP/400");
+  }
+
+
   // Key may not be empty
   try {
     process_testmsg(
@@ -528,7 +539,90 @@ void test_way() {
   }
 }
 
-void test_relation() {}
+void test_relation() {
+
+
+
+  // Missing ref
+  try {
+    process_testmsg(
+        R"(<osmChange><create><relation changeset="972" id="-1"><member type="node" role="stop"/></relation></create></osmChange>)");
+    throw std::runtime_error("test_relation::003: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_relation::003: Expected HTTP/400");
+  }
+
+
+  // Role is optional and msy not trigger an error
+  try {
+    process_testmsg(
+        R"(<osmChange><create><relation changeset="972" id="-1"><member type="node" ref="-1"/></relation></create></osmChange>)");
+  } catch (http::exception &e) {
+      throw std::runtime_error("test_relation::003: Unexpected exception");
+  }
+
+
+  // Missing member type
+  try {
+    process_testmsg(
+        R"(<osmChange><create><relation changeset="972" id="-1"><member role="stop" ref="-1"/></relation></create></osmChange>)");
+    throw std::runtime_error("test_relation::004: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_relation::004: Expected HTTP/400");
+  }
+
+
+  // Invalid member type
+  try {
+    process_testmsg(
+        R"(<osmChange><create><relation changeset="972" id="-1"><member type="bla" role="stop" ref="-1"/></relation></create></osmChange>)");
+    throw std::runtime_error("test_relation::005: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_relation::005: Expected HTTP/400");
+  }
+
+  // Invalid ref
+  try {
+    process_testmsg(
+        R"(<osmChange><create><relation changeset="972" id="-1"><member type="node" ref="a" role="stop"/></relation></create></osmChange>)");
+    throw std::runtime_error("test_relation::005: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_relation::005: Expected HTTP/400");
+  }
+
+  // Member: role may have up to 255 unicode characters
+  for (int i = 1; i <= 256; i++) {
+    auto v = repeat("😎", i);
+
+    try {
+      process_testmsg(
+          (boost::format(
+               R"(<osmChange><create><relation changeset="858" id="-1">
+                           <member type="node" role="%1%" ref="123"/>
+                  </relation></create></osmChange>)") %
+           v).str());
+      if (i > 255)
+        throw std::runtime_error("test_relation::010: Expected exception for "
+                                 "string length > 255 unicode characters");
+    } catch (http::exception &e) {
+      if (e.code() != 400)
+        throw std::runtime_error("test_relation::010: Expected HTTP/400");
+      if (std::string(e.what()) !=
+          "Relation Role has more than 255 unicode characters")
+        throw std::runtime_error("test_relation::010: Expected Relation Role has more than "
+                                 "255 unicode characters");
+      if (i <= 255)
+        throw std::runtime_error("test_relation::010: Unexpected exception for "
+                                 "string length <= 255 characters");
+    }
+  }
+
+
+}
 
 void test_large_message() {
 

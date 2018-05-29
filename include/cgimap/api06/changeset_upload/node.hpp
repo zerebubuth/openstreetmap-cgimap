@@ -17,9 +17,35 @@ public:
 
   double lon() const { return *m_lon; }
 
-  void set_lat(const char *lat) { set_lat(std::stod(lat)); }
+  void set_lat(const char *lat) {
 
-  void set_lon(const char *lon) { set_lon(std::stod(lon)); }
+    double _lat = -200.0;
+
+    try {
+      _lat = std::stod(lat);
+    } catch (std::invalid_argument &e) {
+      throw http::bad_request("Latitude is not numeric");
+    } catch (std::out_of_range &e) {
+      throw http::bad_request("Latitude value is too large");
+    }
+
+    set_lat(_lat);
+  }
+
+  void set_lon(const char *lon) {
+
+    double _lon = -200.0;
+
+    try {
+      _lon = std::stod(lon);
+    } catch (std::invalid_argument &e) {
+      throw http::bad_request("Longitude is not numeric");
+    } catch (std::out_of_range &e) {
+      throw http::bad_request("Longitude value is too large");
+    }
+
+    set_lon(_lon);
+  }
 
   void set_lat(double lat) {
     if (lat < -90 || lat > 90)

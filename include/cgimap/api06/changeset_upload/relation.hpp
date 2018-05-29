@@ -5,14 +5,13 @@
 #include "types.hpp"
 #include "util.hpp"
 
-
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/optional.hpp>
 
 class RelationMember {
 
 public:
-  RelationMember(){};
+  RelationMember() : m_role("") {};
 
   void set_type(const char *type) {
 
@@ -26,24 +25,40 @@ public:
       m_type = "Relation";
     else
       throw http::bad_request(
-          (boost::format("Invalid type %1 in member relation") % type).str());
+          (boost::format("Invalid type %1% in member relation") % type).str());
   }
 
   void set_role(const char *role) {
 
     if (unicode_strlen(role) > 255) {
-      throw http::bad_request("Relation Role has more than 255 unicode characters");
+      throw http::bad_request(
+          "Relation Role has more than 255 unicode characters");
     }
 
     m_role = std::string(role);
   }
 
-  void set_ref(const char *ref) { m_ref = std::stol(ref); }
+  void set_ref(const char *ref) {
+
+    long _ref = 0;
+
+    try {
+      _ref = std::stol(ref);
+    } catch (std::invalid_argument &e) {
+      throw http::bad_request("Relation member 'ref' attribute is not numeric");
+    } catch (std::out_of_range &e) {
+      throw http::bad_request(
+          "Relation member 'ref' attribute value is too large");
+    }
+
+    if (_ref == 0) {
+      throw http::bad_request("Relation member 'ref' attribute may not be 0");
+    }
+
+    m_ref = _ref;
+  }
 
   bool is_valid() {
-
-    if (!m_role)
-      throw http::bad_request("Missing 'role' attribute in Relation member");
 
     if (!m_type)
       throw http::bad_request("Missing 'type' attribute in Relation member");
@@ -51,16 +66,17 @@ public:
     if (!m_ref)
       throw http::bad_request("Missing 'ref' attribute in Relation member");
 
-    return (m_role && m_ref && m_type); }
+    return (m_ref && m_type);
+  }
 
   std::string type() const { return *m_type; }
 
-  std::string role() const { return *m_role; }
+  std::string role() const { return m_role; }
 
   osm_nwr_signed_id_t ref() const { return *m_ref; }
 
 private:
-  boost::optional<std::string> m_role;
+  std::string m_role;
   boost::optional<osm_nwr_signed_id_t> m_ref;
   boost::optional<std::string> m_type;
 };
