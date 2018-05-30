@@ -172,7 +172,8 @@ libcgimap_core_la_SOURCES+=\
 	api06/changeset_handler.cpp \
 	api06/changeset_download_handler.cpp \
 	api06/changeset_upload_handler.cpp \
-	api06/changeset_upload/osmchange_handler.cpp
+	api06/changeset_upload/osmchange_handler.cpp \
+	api06/changeset_upload/osmchange_tracking.cpp
 
 if ENABLE_EXPERIMENTAL
 libcgimap_core_la_SOURCES+=\
