@@ -6,7 +6,7 @@
 
 #include "cgimap/api06/changeset_upload/node_updater.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
-#include "cgimap/backend/apidb/changeset_upload/transaction_manager.hpp"
+#include "cgimap/backend/apidb/transaction_manager.hpp"
 
 #include <set>
 

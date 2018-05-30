@@ -10,8 +10,8 @@
 #include "cgimap/backend/apidb/changeset_upload/changeset_updater.hpp"
 #include "cgimap/backend/apidb/changeset_upload/node_updater.hpp"
 #include "cgimap/backend/apidb/changeset_upload/relation_updater.hpp"
-#include "cgimap/backend/apidb/changeset_upload/transaction_manager.hpp"
 #include "cgimap/backend/apidb/changeset_upload/way_updater.hpp"
+#include "cgimap/backend/apidb/transaction_manager.hpp"
 #include "cgimap/infix_ostream_iterator.hpp"
 
 #include "types.hpp"
