@@ -4,12 +4,11 @@
 
 #include <pqxx/pqxx>
 
-Transaction_Manager::Transaction_Manager(const std::string &conn_settings)
-    : m_connection{ conn_settings }, m_txn{ m_connection } {}
+Transaction_Manager::Transaction_Manager(pqxx::connection &conn) : m_txn{ conn } {}
 
 void Transaction_Manager::prepare(const std::string &name,
                                   const std::string &definition) {
-  m_connection.prepare(name, definition);
+  m_txn.conn().prepare(name, definition);
 }
 
 pqxx::prepare::invocation

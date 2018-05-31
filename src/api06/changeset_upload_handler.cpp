@@ -28,9 +28,9 @@ namespace pt = boost::posix_time;
 namespace api06 {
 
 changeset_upload_responder::changeset_upload_responder(
-    mime::type mt, osm_changeset_id_t id_, const std::string &payload,
+    mime::type mt, data_update_ptr & upd, osm_changeset_id_t id_, const std::string &payload,
     boost::optional<osm_user_id_t> user_id)
-    : osm_diffresult_responder(mt), id(id_) {
+    : osm_diffresult_responder(mt), id(id_), upd(upd) {
 
   if (!user_id)
     throw http::unauthorized("User is not authorized to upload changeset");
@@ -38,65 +38,12 @@ changeset_upload_responder::changeset_upload_responder(
   int changeset = id_;
   int uid = *user_id;
 
-  Transaction_Manager m{ "dbname=openstreetmap" };
-
-  // ***************************************
-
-  // TODO: Creating temporary tables needs to be moved to a proper location,
-  // once it is
-  // decided where the db connection for changeset uploads is managed!
-
-  // temporary tables for changeset upload
-  m.exec(R"(CREATE TEMPORARY TABLE tmp_create_nodes 
-              (
-                id bigint NOT NULL DEFAULT nextval('current_nodes_id_seq'::regclass),  
-                latitude integer NOT NULL,
-                longitude integer NOT NULL,
-                changeset_id bigint NOT NULL,
-                visible boolean NOT NULL DEFAULT true,
-                "timestamp" timestamp without time zone NOT NULL DEFAULT (now() at time zone 'utc'),
-                tile bigint NOT NULL,
-                version bigint NOT NULL DEFAULT 1,
-                old_id bigint NOT NULL UNIQUE,
-                PRIMARY KEY (id)) 
-              )");
-
-  m.exec(R"(CREATE TEMPORARY TABLE tmp_create_ways 
-              (
-                id bigint NOT NULL DEFAULT nextval('current_ways_id_seq'::regclass),  
-                changeset_id bigint NOT NULL,
-                visible boolean NOT NULL DEFAULT true,
-                "timestamp" timestamp without time zone NOT NULL DEFAULT (now() at time zone 'utc'),
-                version bigint NOT NULL DEFAULT 1,
-                old_id bigint NOT NULL UNIQUE,
-                PRIMARY KEY (id)) 
-              )");
-
-  m.exec(R"(CREATE TEMPORARY TABLE tmp_create_relations 
-              (
-                id bigint NOT NULL DEFAULT nextval('current_relations_id_seq'::regclass),  
-                changeset_id bigint NOT NULL,
-                visible boolean NOT NULL DEFAULT true,
-                "timestamp" timestamp without time zone NOT NULL DEFAULT (now() at time zone 'utc'),
-                version bigint NOT NULL DEFAULT 1,
-                old_id bigint NOT NULL UNIQUE,
-                PRIMARY KEY (id)) 
-              )");
-
-  // ***************************************
-
   change_tracking = std::make_shared<OSMChange_Tracking>();
 
-  // TODO: we're still in api06 code, don't use ApiDB_*_Updater here!!
-
-  std::unique_ptr<Changeset_Updater> changeset_updater(
-      new ApiDB_Changeset_Updater(m, changeset, uid));
-  std::unique_ptr<Node_Updater> node_updater(
-      new ApiDB_Node_Updater(m, change_tracking));
-  std::unique_ptr<Way_Updater> way_updater(
-      new ApiDB_Way_Updater(m, change_tracking));
-  std::unique_ptr<Relation_Updater> relation_updater(
-      new ApiDB_Relation_Updater(m, change_tracking));
+  std::unique_ptr<Changeset_Updater> changeset_updater = upd->get_changeset_updater(changeset, uid);
+  std::unique_ptr<Node_Updater> node_updater = upd->get_node_updater(change_tracking);
+  std::unique_ptr<Way_Updater> way_updater = upd->get_way_updater(change_tracking);
+  std::unique_ptr<Relation_Updater> relation_updater = upd->get_relation_updater(change_tracking);
 
   changeset_updater->lock_current_changeset();
 
@@ -112,7 +59,7 @@ changeset_upload_responder::changeset_upload_responder(
   changeset_updater->update_changeset(handler.get_num_changes(),
                                       handler.get_bbox());
 
-  m.commit();
+  upd->commit();
 }
 
 changeset_upload_responder::~changeset_upload_responder() {}
@@ -136,9 +83,9 @@ changeset_upload_handler::responder(data_selection_ptr &w) const {
 }
 
 responder_ptr_t changeset_upload_handler::responder(
-    const std::string &payload, boost::optional<osm_user_id_t> user_id) const {
+    data_update_ptr & upd, const std::string &payload, boost::optional<osm_user_id_t> user_id) const {
   return responder_ptr_t(
-      new changeset_upload_responder(mime_type, id, payload, user_id));
+      new changeset_upload_responder(mime_type, upd, id, payload, user_id));
 }
 
 } // namespace api06

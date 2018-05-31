@@ -6,7 +6,7 @@
 class Transaction_Manager {
 
 public:
-  explicit Transaction_Manager(const std::string &conn_settings);
+  explicit Transaction_Manager(pqxx::connection &conn);
 
   void prepare(const std::string &name, const std::string &);
 
@@ -19,7 +19,6 @@ public:
   void commit();
 
 private:
-  pqxx::connection m_connection;
   pqxx::work m_txn;
 };
 

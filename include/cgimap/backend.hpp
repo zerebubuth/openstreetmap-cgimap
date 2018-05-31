@@ -5,6 +5,7 @@
 #include <ostream>
 #include <boost/program_options.hpp>
 #include <boost/shared_ptr.hpp>
+#include "cgimap/data_update.hpp"
 #include "cgimap/data_selection.hpp"
 #include "cgimap/oauth.hpp"
 
@@ -24,6 +25,9 @@ struct backend {
   // create a data selection factory from the arguments passed to cgimap.
   virtual boost::shared_ptr<data_selection::factory>
   create(const boost::program_options::variables_map &) = 0;
+  // create a data update factory from the arguments passed to cgimap.
+  virtual boost::shared_ptr<data_update::factory>
+  create_data_update(const boost::program_options::variables_map &) = 0;
   // create an oauth store based on arguments.
   virtual boost::shared_ptr<oauth::store>
   create_oauth_store(const boost::program_options::variables_map &) = 0;
@@ -38,6 +42,10 @@ void output_backend_options(std::ostream &);
 // singleton call to create a backend from a given set of options.
 boost::shared_ptr<data_selection::factory>
 create_backend(const boost::program_options::variables_map &);
+
+// singleton call to create a backend from a given set of options.
+boost::shared_ptr<data_update::factory>
+create_update_backend(const boost::program_options::variables_map &);
 
 // singleton call to create an OAuth store from options.
 boost::shared_ptr<oauth::store>

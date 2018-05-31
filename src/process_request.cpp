@@ -184,6 +184,7 @@ process_get_request(request &req, handler_ptr_t handler,
  */
 boost::tuple<string, size_t>
 process_post_request(request &req, handler_ptr_t handler,
+		    data_update_ptr data_update,
                     const string &payload,
                     boost::optional<osm_user_id_t> user_id,
                     const string &ip, const string &generator) {
@@ -197,7 +198,7 @@ process_post_request(request &req, handler_ptr_t handler,
   if (pe_handler == nullptr)
     throw http::server_error("HTTP POST method is not payload enabled");
 
-  responder_ptr_t responder = pe_handler->responder(payload, user_id);
+  responder_ptr_t responder = pe_handler->responder(data_update, payload, user_id);
 
   // get encoding to use
   shared_ptr<http::encoding> encoding = get_encoding(req);
@@ -382,12 +383,21 @@ bool show_redactions_requested(request &req) {
 
 } // anonymous namespace
 
+void process_request(request &req, rate_limiter &limiter,
+                     const std::string &generator, routes &route,
+                     boost::shared_ptr<data_selection::factory> factory,
+                     boost::shared_ptr<oauth::store> store)
+{ // TODO: temporary workaround only for test cases
+  process_request(req, limiter, generator, route, factory, boost::shared_ptr<data_update::factory>(nullptr), store);
+}
+
 /**
  * process a single request.
  */
 void process_request(request &req, rate_limiter &limiter,
                      const string &generator, routes &route,
                      boost::shared_ptr<data_selection::factory> factory,
+                     boost::shared_ptr<data_update::factory> update_factory,
                      boost::shared_ptr<oauth::store> store) {
   try {
     // get the client IP address
@@ -477,9 +487,10 @@ void process_request(request &req, rate_limiter &limiter,
     } else if (method == http::method::POST) {
 
       std::string payload = req.get_payload();
+      auto data_update = update_factory->make_data_update();
 
       boost::tie(request_name, bytes_written) =
-          process_post_request(req, handler, payload, user_id, ip, generator);
+          process_post_request(req, handler, data_update, payload, user_id, ip, generator);
 
     } else if (method == http::method::HEAD) {
       boost::tie(request_name, bytes_written) =
