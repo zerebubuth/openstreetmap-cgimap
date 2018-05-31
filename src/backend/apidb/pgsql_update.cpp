@@ -66,43 +66,44 @@ pgsql_update::pgsql_update(
 
 //  w.set_variable("default_transaction_read_only", "false");
 
-  m.exec("DROP TABLE IF EXISTS tmp_create_nodes, tmp_create_ways, tmp_create_relations");
-
   m.exec(R"(CREATE TEMPORARY TABLE tmp_create_nodes 
-              (
-                id bigint NOT NULL DEFAULT nextval('current_nodes_id_seq'::regclass),  
-                latitude integer NOT NULL,
-                longitude integer NOT NULL,
-                changeset_id bigint NOT NULL,
-                visible boolean NOT NULL DEFAULT true,
-                "timestamp" timestamp without time zone NOT NULL DEFAULT (now() at time zone 'utc'),
-                tile bigint NOT NULL,
-                version bigint NOT NULL DEFAULT 1,
-                old_id bigint NOT NULL UNIQUE,
-                PRIMARY KEY (id)) 
-              )");
+      (
+        id bigint NOT NULL DEFAULT nextval('current_nodes_id_seq'::regclass),
+        latitude integer NOT NULL,
+        longitude integer NOT NULL,
+        changeset_id bigint NOT NULL,
+        visible boolean NOT NULL DEFAULT true,
+        "timestamp" timestamp without time zone NOT NULL DEFAULT (now() at time zone 'utc'),
+        tile bigint NOT NULL,
+        version bigint NOT NULL DEFAULT 1,
+        old_id bigint NOT NULL UNIQUE,
+        PRIMARY KEY (id))
+        ON COMMIT DROP
+      )");
 
   m.exec(R"(CREATE TEMPORARY TABLE tmp_create_ways 
-              (
-                id bigint NOT NULL DEFAULT nextval('current_ways_id_seq'::regclass),  
-                changeset_id bigint NOT NULL,
-                visible boolean NOT NULL DEFAULT true,
-                "timestamp" timestamp without time zone NOT NULL DEFAULT (now() at time zone 'utc'),
-                version bigint NOT NULL DEFAULT 1,
-                old_id bigint NOT NULL UNIQUE,
-                PRIMARY KEY (id)) 
-              )");
+      (
+        id bigint NOT NULL DEFAULT nextval('current_ways_id_seq'::regclass),
+        changeset_id bigint NOT NULL,
+        visible boolean NOT NULL DEFAULT true,
+        "timestamp" timestamp without time zone NOT NULL DEFAULT (now() at time zone 'utc'),
+        version bigint NOT NULL DEFAULT 1,
+        old_id bigint NOT NULL UNIQUE,
+        PRIMARY KEY (id))
+        ON COMMIT DROP
+     )");
 
   m.exec(R"(CREATE TEMPORARY TABLE tmp_create_relations 
-              (
-                id bigint NOT NULL DEFAULT nextval('current_relations_id_seq'::regclass),  
-                changeset_id bigint NOT NULL,
-                visible boolean NOT NULL DEFAULT true,
-                "timestamp" timestamp without time zone NOT NULL DEFAULT (now() at time zone 'utc'),
-                version bigint NOT NULL DEFAULT 1,
-                old_id bigint NOT NULL UNIQUE,
-                PRIMARY KEY (id)) 
-              )");
+     (
+        id bigint NOT NULL DEFAULT nextval('current_relations_id_seq'::regclass),
+        changeset_id bigint NOT NULL,
+        visible boolean NOT NULL DEFAULT true,
+        "timestamp" timestamp without time zone NOT NULL DEFAULT (now() at time zone 'utc'),
+        version bigint NOT NULL DEFAULT 1,
+        old_id bigint NOT NULL UNIQUE,
+        PRIMARY KEY (id))
+        ON COMMIT DROP
+     )");
 }
 
 pgsql_update::~pgsql_update() {}
@@ -137,9 +138,7 @@ pgsql_update::get_relation_updater(std::shared_ptr<OSMChange_Tracking> _ct)
 }
 
 void pgsql_update::commit() {
-
   m.commit();
-
 }
 
 
