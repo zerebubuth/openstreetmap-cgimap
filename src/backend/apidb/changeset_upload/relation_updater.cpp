@@ -1427,7 +1427,7 @@ ApiDB_Relation_Updater::is_relation_still_referenced(
       // Without the if-unused, such a situation would lead to an error, and the
       // whole diff upload would fail.
       throw http::precondition_failed(
-          (boost::format("Relation %1% is still used by relations %2%.") %
+          (boost::format("The relation %1% is used in relations %2%.") %
            row["member_id"].as<osm_nwr_id_t>() %
            friendly_name(row["relation_ids"].as<std::string>()))
               .str());
