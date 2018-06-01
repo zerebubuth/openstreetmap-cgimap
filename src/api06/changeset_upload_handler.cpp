@@ -40,10 +40,10 @@ changeset_upload_responder::changeset_upload_responder(
 
   change_tracking = std::make_shared<OSMChange_Tracking>();
 
-  std::unique_ptr<Changeset_Updater> changeset_updater = upd->get_changeset_updater(changeset, uid);
-  std::unique_ptr<Node_Updater> node_updater = upd->get_node_updater(change_tracking);
-  std::unique_ptr<Way_Updater> way_updater = upd->get_way_updater(change_tracking);
-  std::unique_ptr<Relation_Updater> relation_updater = upd->get_relation_updater(change_tracking);
+  auto changeset_updater = upd->get_changeset_updater(changeset, uid);
+  auto node_updater = upd->get_node_updater(change_tracking);
+  auto way_updater = upd->get_way_updater(change_tracking);
+  auto relation_updater = upd->get_relation_updater(change_tracking);
 
   changeset_updater->lock_current_changeset();
 

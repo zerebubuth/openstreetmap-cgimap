@@ -64,13 +64,12 @@ class OSMChangeXMLParser {
 
     static void start_element_wrapper(void *data, const xmlChar *element,
                                       const xmlChar **attrs) {
-      static_cast<OSMChangeXMLParser *>(data)->start_element(
-          (const char *)element, (const char **)attrs);
+      static_cast<T *>(data)->start_element((const char *)element,
+					    (const char **)attrs);
     }
 
     static void end_element_wrapper(void *data, const xmlChar *element) {
-      static_cast<OSMChangeXMLParser *>(data)->end_element(
-          (const char *)element);
+      static_cast<T *>(data)->end_element((const char *)element);
     }
 
     static void warning(void *, const char *, ...) {}
@@ -88,7 +87,7 @@ class OSMChangeXMLParser {
     static xmlParserInputPtr xmlCustomExternalEntityLoader(const char *,
                                                            const char *,
                                                            xmlParserCtxtPtr) {
-      throw xml_error{ std::string{ "XML external entities not supported" } };
+      throw xml_error{ "XML external entities not supported" };
     }
 
   public:

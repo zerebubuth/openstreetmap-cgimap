@@ -57,14 +57,11 @@ std::string connect_db_str(const po::variables_map &options) {
   return ostr.str();
 }
 
-
 } // anonymous namespace
 
 pgsql_update::pgsql_update(
     pqxx::connection &conn)
     : m{ conn } {
-
-//  w.set_variable("default_transaction_read_only", "false");
 
   m.exec(R"(CREATE TEMPORARY TABLE tmp_create_nodes 
       (
@@ -109,31 +106,30 @@ pgsql_update::pgsql_update(
 pgsql_update::~pgsql_update() {}
 
 std::unique_ptr<Changeset_Updater>
-pgsql_update::get_changeset_updater(osm_changeset_id_t _changeset, osm_user_id_t _uid)
+pgsql_update::get_changeset_updater(osm_changeset_id_t changeset, osm_user_id_t uid)
 {
-  std::unique_ptr<Changeset_Updater> changeset_updater(new ApiDB_Changeset_Updater(m, _changeset, _uid));
+  std::unique_ptr<Changeset_Updater> changeset_updater(new ApiDB_Changeset_Updater(m, changeset, uid));
   return changeset_updater;
-
 }
 
 std::unique_ptr<Node_Updater>
-pgsql_update::get_node_updater(std::shared_ptr<OSMChange_Tracking> _ct)
+pgsql_update::get_node_updater(std::shared_ptr<OSMChange_Tracking> ct)
 {
-  std::unique_ptr<Node_Updater> node_updater(new ApiDB_Node_Updater(m, _ct));
+  std::unique_ptr<Node_Updater> node_updater(new ApiDB_Node_Updater(m, ct));
   return node_updater;
 }
 
 std::unique_ptr<Way_Updater>
-pgsql_update::get_way_updater(std::shared_ptr<OSMChange_Tracking> _ct)
+pgsql_update::get_way_updater(std::shared_ptr<OSMChange_Tracking> ct)
 {
-  std::unique_ptr<Way_Updater> way_updater(new ApiDB_Way_Updater(m, _ct));
+  std::unique_ptr<Way_Updater> way_updater(new ApiDB_Way_Updater(m, ct));
   return way_updater;
 }
 
 std::unique_ptr<Relation_Updater>
-pgsql_update::get_relation_updater(std::shared_ptr<OSMChange_Tracking> _ct)
+pgsql_update::get_relation_updater(std::shared_ptr<OSMChange_Tracking> ct)
 {
-  std::unique_ptr<Relation_Updater> relation_updater(new ApiDB_Relation_Updater(m, _ct));
+  std::unique_ptr<Relation_Updater> relation_updater(new ApiDB_Relation_Updater(m, ct));
   return relation_updater;
 }
 
