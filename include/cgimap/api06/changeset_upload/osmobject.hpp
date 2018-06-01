@@ -54,10 +54,6 @@ public:
 	throw http::bad_request("Version value is too large");
     }
 
-    if (_version <= 0) {
-	throw http::bad_request("Version must be a positive number");
-    }
-
     set_version(_version);
   }
 
