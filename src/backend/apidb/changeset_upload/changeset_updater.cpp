@@ -45,7 +45,11 @@ void ApiDB_Changeset_Updater::lock_current_changeset() {
     throw http::conflict((boost::format("The changeset %1% was closed at %2%") %
                           changeset % r[0]["closed_at"].as<std::string>())
                              .str());
-  if (r[0]["num_changes"].as<int>() > CHANGESET_MAX_ELEMENTS)
+
+  // Some clients try to send further changes, although the changeset already
+  // holds the maximum number of elements. As this is futile, we raise an error
+  // as early as possible.
+  if (r[0]["num_changes"].as<int>() >= CHANGESET_MAX_ELEMENTS)
     throw http::conflict((boost::format("The changeset %1% was closed at %2%") %
                           changeset % r[0]["current_time"].as<std::string>())
                              .str());
@@ -63,6 +67,7 @@ void ApiDB_Changeset_Updater::lock_current_changeset() {
 void ApiDB_Changeset_Updater::update_changeset(const long num_new_changes,
                                                const bbox_t bbox) {
 
+  // Don't raise an exception when reaching exactly CHANGESET_MAX_ELEMENTS!
   if (cs_num_changes + num_new_changes > CHANGESET_MAX_ELEMENTS) {
 
     auto r = m.exec(
