@@ -17,7 +17,8 @@ check_PROGRAMS+=\
 	../test/test_apidb_backend_oauth \
 	../test/test_apidb_backend_historic \
 	../test/test_apidb_backend_changesets \
-	../test/test_apidb_backend_changeset_downloads
+	../test/test_apidb_backend_changeset_downloads \
+	../test/test_apidb_backend_changeset_uploads
 ___openstreetmap_cgimap_LDADD+=libcgimap_apidb.la
 ___test_test_core_LDADD+=libcgimap_apidb.la
 ___test_test_apidb_backend_nodes_LDADD=libcgimap_core.la libcgimap_apidb.la
@@ -25,6 +26,7 @@ ___test_test_apidb_backend_oauth_LDADD=libcgimap_core.la libcgimap_apidb.la
 ___test_test_apidb_backend_historic_LDADD=libcgimap_core.la libcgimap_apidb.la
 ___test_test_apidb_backend_changesets_LDADD=libcgimap_core.la libcgimap_apidb.la
 ___test_test_apidb_backend_changeset_downloads_LDADD=libcgimap_core.la libcgimap_apidb.la
+___test_test_apidb_backend_changeset_uploads_LDADD=libcgimap_core.la libcgimap_apidb.la
 endif
 
 if ENABLE_PGSNAPSHOT
@@ -66,6 +68,7 @@ ___test_test_apidb_backend_oauth_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS
 ___test_test_apidb_backend_historic_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
 ___test_test_apidb_backend_changesets_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
 ___test_test_apidb_backend_changeset_downloads_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
+___test_test_apidb_backend_changeset_uploads_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
 endif
 
 ################################################################################
@@ -114,6 +117,11 @@ ___test_test_apidb_backend_changesets_SOURCES=\
 	../test/test_request.cpp
 ___test_test_apidb_backend_changeset_downloads_SOURCES=\
 	../test/test_apidb_backend_changeset_downloads.cpp \
+	../test/test_formatter.cpp \
+	../test/test_database.cpp \
+	../test/test_request.cpp
+___test_test_apidb_backend_changeset_uploads_SOURCES=\
+	../test/test_apidb_backend_changeset_uploads.cpp \
 	../test/test_formatter.cpp \
 	../test/test_database.cpp \
 	../test/test_request.cpp

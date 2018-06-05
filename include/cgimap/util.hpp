@@ -94,6 +94,9 @@ public:
 
 	bbox_t() : minlat(200 * SCALE), minlon(200 * SCALE), maxlat(-200 * SCALE), maxlon(-200 * SCALE) {};
 
+	bbox_t(double _minlat, double _minlon, double _maxlat, double _maxlon) :
+	  minlat(_minlat * SCALE), minlon(_minlon * SCALE), maxlat(_maxlat * SCALE), maxlon(_maxlon * SCALE) {};
+
 	void expand(const bbox_t& bbox)
 	{
 		minlat = std::min(minlat, bbox.minlat);

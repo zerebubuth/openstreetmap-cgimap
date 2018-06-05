@@ -101,6 +101,7 @@ void test_database::setup() {
     po::store(po::parse_command_line(argc, argv, desc), vm);
     vm.notify();
     m_writeable_factory = apidb->create(vm);
+    m_update_factory = apidb->create_data_update(vm);
     m_oauth_store = apidb->create_oauth_store(vm);
   }
 
@@ -121,6 +122,9 @@ test_database::~test_database() {
   }
   if (m_readonly_factory) {
     m_readonly_factory.reset();
+  }
+  if (m_update_factory) {
+      m_update_factory.reset();
   }
   if (m_oauth_store) {
     m_oauth_store.reset();
@@ -190,6 +194,23 @@ void test_database::run(
   }
 }
 
+void test_database::run_update(
+    boost::function<void(test_database&)> func) {
+  try {
+    // clear out database before using it!
+    pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
+    conn.perform(truncate_all_tables());
+
+    m_use_readonly = false;
+    func(*this);
+
+  } catch (const std::exception &e) {
+    throw std::runtime_error(
+        (boost::format("%1%, in update") % e.what()).str());
+  }
+}
+
+
 boost::shared_ptr<data_selection> test_database::get_data_selection() {
   if (m_use_readonly) {
     return (*m_readonly_factory).make_selection();
@@ -197,6 +218,10 @@ boost::shared_ptr<data_selection> test_database::get_data_selection() {
   } else {
     return (*m_writeable_factory).make_selection();
   }
+}
+
+boost::shared_ptr<data_update> test_database::get_data_update() {
+  return (*m_update_factory).make_data_update();
 }
 
 boost::shared_ptr<oauth::store> test_database::get_oauth_store() {
