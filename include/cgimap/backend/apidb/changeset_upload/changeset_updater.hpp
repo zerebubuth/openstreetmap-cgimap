@@ -1,8 +1,8 @@
 #ifndef APIDB_CHANGESET_UPDATER
 #define APIDB_CHANGESET_UPDATER
 
-#include "types.hpp"
-#include "util.hpp"
+#include "cgimap/types.hpp"
+#include "cgimap/util.hpp"
 
 #include "cgimap/api06/changeset_upload/changeset_updater.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"

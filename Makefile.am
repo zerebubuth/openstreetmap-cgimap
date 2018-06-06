@@ -11,10 +11,13 @@ cgimap_include_HEADERS = \
 	include/cgimap/backend.hpp \
 	include/cgimap/config.hpp \
 	include/cgimap/data_selection.hpp \
+	include/cgimap/data_update.hpp \
 	include/cgimap/handler.hpp \
 	include/cgimap/http.hpp \
+        include/cgimap/infix_ostream_iterator.hpp \
 	include/cgimap/logger.hpp \
 	include/cgimap/mime_types.hpp \
+	include/cgimap/oauth.hpp \
 	include/cgimap/output_buffer.hpp \
 	include/cgimap/output_formatter.hpp \
 	include/cgimap/process_request.hpp \
@@ -23,6 +26,7 @@ cgimap_include_HEADERS = \
 	include/cgimap/request.hpp \
 	include/cgimap/routes.hpp \
 	include/cgimap/types.hpp \
+	include/cgimap/util.hpp \
 	include/cgimap/zlib.hpp
 
 cgimap_api06_includedir=$(includedir)/cgimap/api06
@@ -39,10 +43,19 @@ cgimap_api06_include_HEADERS = \
 	include/cgimap/api06/way_full_handler.hpp \
 	include/cgimap/api06/way_handler.hpp \
 	include/cgimap/api06/way_version_handler.hpp \
-	include/cgimap/api06/ways_handler.hpp \
+	include/cgimap/api06/ways_handler.hpp
+
+cgimap_api06_changeset_upload_includedir=$(includedir)/cgimap/api06/changeset_upload
+cgimap_api06_changeset_upload_include_HEADERS = \
+        include/cgimap/api06/changeset_upload/changeset_updater.hpp \
+        include/cgimap/api06/changeset_upload/node_updater.hpp \
 	include/cgimap/api06/changeset_upload/osmchange_handler.hpp \
 	include/cgimap/api06/changeset_upload/osmchange_input_format.hpp \
-	include/cgimap/api06/changeset_upload/osmchange_tracking.hpp
+	include/cgimap/api06/changeset_upload/osmchange_tracking.hpp \
+        include/cgimap/api06/changeset_upload/osmobject.hpp \
+        include/cgimap/api06/changeset_upload/relation.hpp \
+        include/cgimap/api06/changeset_upload/relation_updater.hpp \
+        include/cgimap/api06/changeset_upload/way_updater.hpp 
 
 if ENABLE_APIDB
 cgimap_apidb_includedir=$(includedir)/cgimap/backend/apidb
@@ -54,7 +67,10 @@ cgimap_apidb_include_HEADERS = \
 	include/cgimap/backend/apidb/readonly_pgsql_selection.hpp \
 	include/cgimap/backend/apidb/writeable_pgsql_selection.hpp \
  	include/cgimap/backend/apidb/transaction_manager.hpp \
-	include/cgimap/backend/apidb/utils.hpp \
+	include/cgimap/backend/apidb/utils.hpp
+
+cgimap_apidb_changeset_upload_includedir=$(includedir)/cgimap/backend/apidb/changeset_upload
+cgimap_apidb_changeset_upload_include_HEADERS = \
 	include/cgimap/backend/apidb/changeset_upload/changeset_updater.hpp \
 	include/cgimap/backend/apidb/changeset_upload/node_updater.hpp \
 	include/cgimap/backend/apidb/changeset_upload/relation_updater.hpp \

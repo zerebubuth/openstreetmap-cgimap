@@ -4,7 +4,7 @@
 #include "node.hpp"
 #include "osmobject.hpp"
 #include "relation.hpp"
-#include "types.hpp"
+#include "cgimap/types.hpp"
 #include "way.hpp"
 
 class Parser_Callback {

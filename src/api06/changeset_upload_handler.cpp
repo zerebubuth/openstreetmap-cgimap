@@ -14,8 +14,8 @@
 #include "cgimap/backend/apidb/transaction_manager.hpp"
 #include "cgimap/infix_ostream_iterator.hpp"
 
-#include "types.hpp"
-#include "util.hpp"
+#include "cgimap/types.hpp"
+#include "cgimap/util.hpp"
 
 #include <sstream>
 

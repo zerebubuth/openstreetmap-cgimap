@@ -1,8 +1,8 @@
 #ifndef APIDB_NODE_UPDATER
 #define APIDB_NODE_UPDATER
 
-#include "types.hpp"
-#include "util.hpp"
+#include "cgimap/types.hpp"
+#include "cgimap/util.hpp"
 
 #include "cgimap/api06/changeset_upload/node_updater.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"

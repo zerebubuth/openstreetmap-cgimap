@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "types.hpp"
+#include "cgimap/types.hpp"
 
 class OSMChange_Tracking {
 

@@ -1,8 +1,8 @@
 #ifndef OSMOBJECT_HPP
 #define OSMOBJECT_HPP
 
-#include "types.hpp"
-#include "util.hpp"
+#include "cgimap/types.hpp"
+#include "cgimap/util.hpp"
 
 #include <boost/format.hpp>
 #include <boost/optional.hpp>

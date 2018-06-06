@@ -1,8 +1,8 @@
 #ifndef API06_CHANGESET_UPLOAD_CHANGESET_UPDATER
 #define API06_CHANGESET_UPLOAD_CHANGESET_UPDATER
 
-#include "types.hpp"
-#include "util.hpp"
+#include "cgimap/types.hpp"
+#include "cgimap/util.hpp"
 
 class Changeset_Updater {
 

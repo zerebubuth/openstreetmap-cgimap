@@ -1,8 +1,8 @@
 #ifndef API06_CHANGESET_UPLOAD_NODE_UPDATER
 #define API06_CHANGESET_UPLOAD_NODE_UPDATER
 
-#include "types.hpp"
-#include "util.hpp"
+#include "cgimap/types.hpp"
+#include "cgimap/util.hpp"
 
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 

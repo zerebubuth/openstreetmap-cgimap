@@ -5,8 +5,8 @@
 #include "cgimap/api06/changeset_upload/relation_updater.hpp"
 #include "cgimap/api06/changeset_upload/way_updater.hpp"
 
-#include "types.hpp"
-#include "util.hpp"
+#include "cgimap/types.hpp"
+#include "cgimap/util.hpp"
 
 #include "node.hpp"
 #include "osmobject.hpp"

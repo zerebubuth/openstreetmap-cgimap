@@ -1,13 +1,13 @@
 #ifndef APIDB_WAY_UPDATER
 #define APIDB_WAY_UPDATER
 
-#include "types.hpp"
+#include "cgimap/types.hpp"
 
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 #include "cgimap/api06/changeset_upload/way_updater.hpp"
 #include "cgimap/backend/apidb/transaction_manager.hpp"
-#include "types.hpp"
-#include "util.hpp"
+#include "cgimap/types.hpp"
+#include "cgimap/util.hpp"
 
 #include <set>
 

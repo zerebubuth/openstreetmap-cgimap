@@ -2,8 +2,8 @@
 #define RELATION_HPP
 
 #include "osmobject.hpp"
-#include "types.hpp"
-#include "util.hpp"
+#include "cgimap/types.hpp"
+#include "cgimap/util.hpp"
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/optional.hpp>
