@@ -13,6 +13,9 @@ class RelationMember {
 public:
   RelationMember() : m_role("") {};
 
+  RelationMember(std::string _m_type, osm_nwr_signed_id_t _m_ref, std::string _m_role) :
+    m_role(_m_role), m_ref(_m_ref), m_type(_m_type) {};
+
   void set_type(const char *type) {
 
     std::string t = std::string(type);
