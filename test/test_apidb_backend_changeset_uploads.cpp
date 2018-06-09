@@ -202,7 +202,7 @@ namespace {
 	 if (lat > maxlat) maxlat = lat;
 	 if (lon > maxlon) maxlon = lon;
 
-         node_updater->modify_node(lat, lon, 1, node_id, node_version++, {{"key", "value" + i}});
+         node_updater->modify_node(lat, lon, 1, node_id, node_version++, {{"key", "value" + std::to_string(i)}});
       }
       node_updater->process_modify_nodes();
       auto bbox = node_updater->bbox();
@@ -412,6 +412,24 @@ namespace {
         }
       }
 
+      // Create way with unknown placeholder ids
+      {
+	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+        auto sel = tdb.get_data_selection();
+        auto upd = tdb.get_data_update();
+        auto way_updater = upd->get_way_updater(change_tracking);
+
+        try {
+          way_updater->add_way(1, -1, {{ -1}, { -2}}, { {"highway", "path"}});
+          way_updater->process_new_ways();
+
+          throw std::runtime_error("Expected exception for unknown placeholder ids");
+        } catch (http::exception &e) {
+  	  if (e.code() != 400)
+  	    throw std::runtime_error("Expected HTTP/400 Bad request");
+        }
+      }
+
       // Change existing way
      {
 	auto change_tracking = std::make_shared<OSMChange_Tracking>();
@@ -486,6 +504,23 @@ namespace {
         } catch (http::exception &e) {
             if (e.code() != 412)
               throw std::runtime_error("Expected HTTP/412 precondition failed");
+        }
+      }
+
+      // Change existing way with unknown placeholder node id
+      {
+	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+        auto sel = tdb.get_data_selection();
+        auto upd = tdb.get_data_update();
+        auto way_updater = upd->get_way_updater(change_tracking);
+
+        try {
+           way_updater->modify_way(1, way_id, way_version, {-5}, {});
+           way_updater->process_modify_ways();
+           throw std::runtime_error("Modifying a way with unknown placeholder node id should raise http bad request");
+        } catch (http::exception &e) {
+            if (e.code() != 400)
+              throw std::runtime_error("Expected HTTP/400 bad request");
         }
       }
 
@@ -657,6 +692,11 @@ namespace {
       osm_nwr_id_t node_new_ids[2];
       osm_nwr_id_t way_new_id;
 
+      osm_nwr_id_t relation_id_1;
+      osm_version_t relation_version_1;
+      osm_nwr_id_t relation_id_2;
+      osm_version_t relation_version_2;
+
       // Create new relation with two nodes, and one way
       {
 	auto change_tracking = std::make_shared<OSMChange_Tracking>();
@@ -680,12 +720,12 @@ namespace {
         way_new_id = change_tracking->created_way_ids[0].new_id;
 
         rel_updater->add_relation(1, -1,
-				  {
-				      { "Node", static_cast<osm_nwr_signed_id_t>(node_new_ids[0]), "role1" },
-				      { "Node", static_cast<osm_nwr_signed_id_t>(node_new_ids[1]), "role2" },
-				      { "Way",  static_cast<osm_nwr_signed_id_t>(way_new_id), "" }
-				  },
-				  {{"boundary", "administrative"}});
+	  {
+	      { "Node", static_cast<osm_nwr_signed_id_t>(node_new_ids[0]), "role1" },
+	      { "Node", static_cast<osm_nwr_signed_id_t>(node_new_ids[1]), "role2" },
+	      { "Way",  static_cast<osm_nwr_signed_id_t>(way_new_id), "" }
+	  },
+	  {{"boundary", "administrative"}});
 
         rel_updater->process_new_relations();
 
@@ -734,6 +774,81 @@ namespace {
       }
 
 
+      // Create new relation with two nodes, and one way, only placeholder ids
+      {
+	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+        auto sel = tdb.get_data_selection();
+        auto upd = tdb.get_data_update();
+        auto node_updater = upd->get_node_updater(change_tracking);
+        auto way_updater = upd->get_way_updater(change_tracking);
+        auto rel_updater = upd->get_relation_updater(change_tracking);
+
+        node_updater->add_node(-25.3448570, 131.0325171, 1, -1, { {"name", "Uluṟu"} });
+        node_updater->add_node(-25.3448570, 131.2325171, 1, -2, { });
+        node_updater->process_new_nodes();
+
+        way_updater->add_way(1, -1, {{ -1}, { -2}}, { {"highway", "track"}});
+        way_updater->process_new_ways();
+
+        rel_updater->add_relation(1, -1,
+	  {
+	      { "Node", -1, "role1" },
+	      { "Node", -2, "role2" },
+	      { "Way",  -1, "" }
+	  },
+	  {{"boundary", ""}});
+
+        rel_updater->process_new_relations();
+
+        upd->commit();
+
+        if (change_tracking->created_relation_ids.size() != 1)
+  	throw std::runtime_error("Expected 1 entry in created_relation_ids");
+
+        if (change_tracking->created_relation_ids[0].new_version != 1)
+  	throw std::runtime_error("Expected new version == 1");
+
+        if (change_tracking->created_relation_ids[0].old_id != -1)
+  	throw std::runtime_error("Expected old_id == -1");
+
+        if (change_tracking->created_relation_ids[0].new_id < 1)
+  	throw std::runtime_error("Expected positive new_id");
+
+        auto r_id = change_tracking->created_relation_ids[0].new_id;
+        auto r_version = change_tracking->created_relation_ids[0].new_version;
+
+        osm_nwr_id_t n_new_ids[2];
+
+        for (const auto id : change_tracking->created_node_ids) {
+           n_new_ids[-1 * id.old_id - 1] = id.new_id;
+        }
+
+        if (sel->check_relation_visibility(r_id) != data_selection::exists) {
+  	  throw std::runtime_error("Relation should be visible, but isn't");
+        }
+
+        sel->select_relations({ r_id });
+
+        test_formatter f;
+        sel->write_relations(f);
+        assert_equal<size_t>(f.m_relations.size(), 1, "number of relations written");
+
+        // we don't want to find out about deviating timestamps here...
+        assert_equal<test_formatter::relation_t>(
+  	  test_formatter::relation_t(
+  	      element_info(r_id, 1, 1, f.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
+	      members_t(
+		  {
+		      { element_type_node, n_new_ids[0], "role1" },
+		      { element_type_node, n_new_ids[1], "role2" },
+		      { element_type_way,  change_tracking->created_way_ids[0].new_id, "" }
+		  }
+	      ),
+  	      tags_t({{"boundary", ""}})
+  	  ),
+  	  f.m_relations[0], "first relation written");
+      }
+
       // Create two relations with the same old_id
       {
 	auto change_tracking = std::make_shared<OSMChange_Tracking>();
@@ -753,8 +868,105 @@ namespace {
         }
       }
 
+      // Create two relations with references to each other
+      {
+	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+        auto sel = tdb.get_data_selection();
+        auto upd = tdb.get_data_update();
+        auto rel_updater = upd->get_relation_updater(change_tracking);
+
+        try {
+          rel_updater->add_relation(1, -1, { { "Relation", -2, "role1" }}, {{"key1", "value1"}});
+          rel_updater->add_relation(1, -2, { { "Relation", -1, "role2" }}, {{"key2", "value2"}});
+          rel_updater->process_new_relations();
+
+        } catch (http::exception& e) {
+  	  throw std::runtime_error("HTTP Exception unexpected");
+        }
+
+        upd->commit();
+
+        if (change_tracking->created_relation_ids.size() != 2)
+  	throw std::runtime_error("Expected 2 entry in created_relation_ids");
+
+        relation_id_1 = change_tracking->created_relation_ids[0].new_id;
+        relation_version_1 = change_tracking->created_relation_ids[0].new_version;
+
+        relation_id_2 = change_tracking->created_relation_ids[1].new_id;
+        relation_version_2 = change_tracking->created_relation_ids[1].new_version;
+
+        if (sel->check_relation_visibility(relation_id_1) != data_selection::exists) {
+  	  throw std::runtime_error("Relation should be visible, but isn't");
+        }
+
+        if (sel->check_relation_visibility(relation_id_2) != data_selection::exists) {
+  	  throw std::runtime_error("Relation should be visible, but isn't");
+        }
+
+        sel->select_relations({relation_id_1, relation_id_2});
+
+        test_formatter f;
+        sel->write_relations(f);
+        assert_equal<size_t>(f.m_relations.size(), 2, "number of relations written");
+
+      }
+
+      // Create relation with unknown node placeholder id
+      {
+	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+        auto sel = tdb.get_data_selection();
+        auto upd = tdb.get_data_update();
+        auto rel_updater = upd->get_relation_updater(change_tracking);
+
+        try {
+          rel_updater->add_relation(1, -1, { { "Node", -10, "role1" }}, {{"key1", "value1"}});
+          rel_updater->process_new_relations();
+
+          throw std::runtime_error("Expected exception for unknown node placeholder id");
+        } catch (http::exception &e) {
+  	  if (e.code() != 400)
+  	    throw std::runtime_error("Expected HTTP/400 Bad request");
+        }
+      }
+
+      // Create relation with unknown way placeholder id
+      {
+	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+        auto sel = tdb.get_data_selection();
+        auto upd = tdb.get_data_update();
+        auto rel_updater = upd->get_relation_updater(change_tracking);
+
+        try {
+          rel_updater->add_relation(1, -1, { { "Way", -10, "role1" }}, {{"key1", "value1"}});
+          rel_updater->process_new_relations();
+
+          throw std::runtime_error("Expected exception for unknown way placeholder id");
+        } catch (http::exception &e) {
+  	  if (e.code() != 400)
+  	    throw std::runtime_error("Expected HTTP/400 Bad request");
+        }
+      }
+
+      // Create relation with unknown relation placeholder id
+      {
+	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+        auto sel = tdb.get_data_selection();
+        auto upd = tdb.get_data_update();
+        auto rel_updater = upd->get_relation_updater(change_tracking);
+
+        try {
+          rel_updater->add_relation(1, -1, { { "Relation", -10, "role1" }}, {{"key1", "value1"}});
+          rel_updater->process_new_relations();
+
+          throw std::runtime_error("Expected exception for unknown way placeholder id");
+        } catch (http::exception &e) {
+  	  if (e.code() != 400)
+  	    throw std::runtime_error("Expected HTTP/400 Bad request");
+        }
+      }
+
       // Change existing relation
-     {
+      {
 	auto change_tracking = std::make_shared<OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
@@ -762,11 +974,11 @@ namespace {
         auto rel_updater = upd->get_relation_updater(change_tracking);
 
         rel_updater->modify_relation(1, relation_id, relation_version,
-				     {
-				      { "Node", static_cast<osm_nwr_signed_id_t>(node_new_ids[0]), "stop_position" },
-				      { "Way",  static_cast<osm_nwr_signed_id_t>(way_new_id), "outer" }
-				     },
-				     {{"admin_level", "4"}, {"boundary","administrative"}}
+	     {
+	      { "Node", static_cast<osm_nwr_signed_id_t>(node_new_ids[0]), "stop_position" },
+	      { "Way",  static_cast<osm_nwr_signed_id_t>(way_new_id), "outer" }
+	     },
+	     {{"admin_level", "4"}, {"boundary","administrative"}}
         );
         rel_updater->process_modify_relations();
         upd->commit();
@@ -854,11 +1066,87 @@ namespace {
            rel_updater->modify_relation(1, relation_id, relation_version,
 					{ {"Way", 9574853485634, ""} }, {});
            rel_updater->process_modify_relations();
-           throw std::runtime_error("Modifying a way with unknown node id should raise http precondition failed error");
+           throw std::runtime_error("Modifying a way with unknown way id should raise http precondition failed error");
         } catch (http::exception &e) {
             if (e.code() != 412)
               throw std::runtime_error("Expected HTTP/412 precondition failed");
         }
+      }
+
+      // Change existing relation with unknown relation id
+      {
+	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+        auto sel = tdb.get_data_selection();
+        auto upd = tdb.get_data_update();
+        auto rel_updater = upd->get_relation_updater(change_tracking);
+
+        try {
+           rel_updater->modify_relation(1, relation_id, relation_version,
+					{ {"Relation", 9574853485634, ""} }, {});
+           rel_updater->process_modify_relations();
+           throw std::runtime_error("Modifying a way with unknown relation id should raise http precondition failed error");
+        } catch (http::exception &e) {
+            if (e.code() != 412)
+              throw std::runtime_error("Expected HTTP/412 precondition failed");
+        }
+      }
+
+      // Change existing relation with unknown node placeholder id
+      {
+	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+        auto sel = tdb.get_data_selection();
+        auto upd = tdb.get_data_update();
+        auto way_updater = upd->get_way_updater(change_tracking);
+        auto rel_updater = upd->get_relation_updater(change_tracking);
+
+        try {
+            rel_updater->modify_relation(1, relation_id, relation_version,
+ 					{ {"Node", -10, ""} }, {});
+            rel_updater->process_modify_relations();
+
+            throw std::runtime_error("Expected exception for unknown way placeholder id");
+          } catch (http::exception &e) {
+    	  if (e.code() != 400)
+    	    throw std::runtime_error("Expected HTTP/400 Bad request");
+          }
+      }
+
+      // Change existing relation with unknown way placeholder id
+      {
+	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+        auto sel = tdb.get_data_selection();
+        auto upd = tdb.get_data_update();
+        auto rel_updater = upd->get_relation_updater(change_tracking);
+
+        try {
+           rel_updater->modify_relation(1, relation_id, relation_version,
+					{ {"Way", -10, ""} }, {});
+           rel_updater->process_modify_relations();
+
+           throw std::runtime_error("Expected exception for unknown way placeholder id");
+         } catch (http::exception &e) {
+   	  if (e.code() != 400)
+   	    throw std::runtime_error("Expected HTTP/400 Bad request");
+         }
+      }
+
+      // Change existing relation with unknown relation placeholder id
+      {
+	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+        auto sel = tdb.get_data_selection();
+        auto upd = tdb.get_data_update();
+        auto rel_updater = upd->get_relation_updater(change_tracking);
+
+        try {
+           rel_updater->modify_relation(1, relation_id, relation_version,
+					{ {"Relation", -10, ""} }, {});
+           rel_updater->process_modify_relations();
+
+           throw std::runtime_error("Expected exception for unknown relation placeholder id");
+         } catch (http::exception &e) {
+   	  if (e.code() != 400)
+   	    throw std::runtime_error("Expected HTTP/400 Bad request");
+         }
       }
 
       // TODO: Change existing relation multiple times
@@ -910,7 +1198,6 @@ namespace {
         if (change_tracking->skip_deleted_node_ids[0].new_version != 1)
   	throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_node_ids")
                                    % 1).str());
-
       }
 
       // Try to delete way which still belongs to relation, if-unused not set
@@ -950,7 +1237,45 @@ namespace {
         if (change_tracking->skip_deleted_way_ids[0].new_version != 1)
   	throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_way_ids")
                                    % 1).str());
+      }
 
+      // Try to delete relation which still belongs to relation, if-unused not set
+      {
+	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+        auto sel = tdb.get_data_selection();
+        auto upd = tdb.get_data_update();
+        auto rel_updater = upd->get_relation_updater(change_tracking);
+
+        try {
+          rel_updater->delete_relation(1, relation_id_1, relation_version_1, false);
+          rel_updater->process_delete_relations();
+	  throw std::runtime_error("Deleting a node relation is still referenced by relation should raise an exception");
+        } catch (http::exception &e) {
+  	  if (e.code() != 412)
+  	    throw std::runtime_error("Expected HTTP/412 precondition failed");
+        }
+      }
+
+      // Try to delete relation which still belongs to relation, if-unused set
+      {
+	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+        auto sel = tdb.get_data_selection();
+        auto upd = tdb.get_data_update();
+        auto rel_updater = upd->get_relation_updater(change_tracking);
+
+        try {
+          rel_updater->delete_relation(1, relation_id_1, relation_version_1, true);
+          rel_updater->process_delete_relations();
+        } catch (http::exception& e) {
+  	  throw std::runtime_error("HTTP Exception unexpected");
+        }
+
+        if (change_tracking->skip_deleted_relation_ids.size() != 1)
+  	throw std::runtime_error("Expected 1 entry in skip_deleted_relation_ids");
+
+        if (change_tracking->skip_deleted_relation_ids[0].new_version != 1)
+  	throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_relation_ids")
+                                   % 1).str());
       }
 
 
@@ -976,6 +1301,30 @@ namespace {
   	  throw std::runtime_error("Relation should be deleted, but isn't");
         }
       }
+
+      // Delete two relation with references to each other
+      {
+	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+        auto sel = tdb.get_data_selection();
+        auto upd = tdb.get_data_update();
+        auto rel_updater = upd->get_relation_updater(change_tracking);
+
+        rel_updater->delete_relation(1, relation_id_1, relation_version_1, false);
+        rel_updater->delete_relation(1, relation_id_2, relation_version_2, false);
+        rel_updater->process_delete_relations();
+        upd->commit();
+
+        if (change_tracking->deleted_relation_ids.size() != 2)
+  	throw std::runtime_error("Expected 2 entries in deleted_relation_ids");
+
+        if (sel->check_relation_visibility(relation_id_1) != data_selection::deleted) {
+  	  throw std::runtime_error("Relation should be deleted, but isn't");
+        }
+        if (sel->check_relation_visibility(relation_id_2) != data_selection::deleted) {
+  	  throw std::runtime_error("Relation should be deleted, but isn't");
+        }
+      }
+
 
       // Try to delete already deleted relation (if-unused not set)
       {

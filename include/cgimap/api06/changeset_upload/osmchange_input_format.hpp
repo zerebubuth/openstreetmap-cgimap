@@ -336,11 +336,18 @@ class OSMChangeXMLParser {
       m_last_context = context::way;
       m_context = context::in_object;
       if (!std::strcmp(element, "nd")) {
+	bool ref_found = false;
         check_attributes(attrs, [&](const char *name, const char *value) {
           if (!std::strcmp(name, "ref")) {
             m_way->add_way_node(value);
+            ref_found = true;
           }
         });
+        if (!ref_found)
+          throw xml_error{ (boost::format(
+                                "Missing mandatory ref field on way node %1%") %
+                            m_way->to_string())
+                               .str() };
       } else if (!std::strcmp(element, "tag")) {
         add_tag(*m_way, attrs);
       }

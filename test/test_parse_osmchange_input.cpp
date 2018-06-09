@@ -337,17 +337,6 @@ void test_node() {
       throw std::runtime_error("test_node::027: Expected HTTP/400");
   }
 
-  // Invalid changeset number
-  try {
-    process_testmsg(
-        R"(<osmChange><create><node changeset="a"/></create></osmChange>)");
-    throw std::runtime_error("test_node::028: Expected exception");
-  } catch (http::exception &e) {
-    if (e.code() != 400)
-      throw std::runtime_error("test_node::028: Expected HTTP/400");
-  }
-
-
   // Key may not be empty
   try {
     process_testmsg(
@@ -451,6 +440,121 @@ void test_node() {
                                  "string length <= 255 characters");
     }
   }
+
+  // INVALID ARGUMENTS, OUT OF RANGE VALUES
+
+
+  // Invalid version number
+  try {
+    process_testmsg(
+        R"(<osmChange><modify><node changeset="858" version="a" id="123"/></modify></osmChange>)");
+    throw std::runtime_error("test_node::060: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_node::060: Expected HTTP/400");
+  }
+
+  // Version too large
+  try {
+    process_testmsg(
+        R"(<osmChange><modify><node changeset="858" version="999999999999999999999999999999999999" id="123"/></modify></osmChange>)");
+    throw std::runtime_error("test_node::061: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_node::061: Expected HTTP/400");
+  }
+
+  // Invalid changeset number
+  try {
+    process_testmsg(
+        R"(<osmChange><create><node changeset="a"/></create></osmChange>)");
+    throw std::runtime_error("test_node::070: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_node::070: Expected HTTP/400");
+  }
+
+
+  // Changeset too large
+  try {
+    process_testmsg(
+        R"(<osmChange><create><node changeset="999999999999999999999999999999999999" id="-1" lat="1" lon="0"/></create></osmChange>)");
+    throw std::runtime_error("test_node::071: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_node::071: Expected HTTP/400");
+  }
+
+  // Changeset not positive
+  try {
+    process_testmsg(
+        R"(<osmChange><create><node changeset="0" id="-1" lat="1" lon="0"/></create></osmChange>)");
+    throw std::runtime_error("test_node::072: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_node::072: Expected HTTP/400");
+  }
+
+  // Changeset not positive
+  try {
+    process_testmsg(
+        R"(<osmChange><create><node changeset="-1" id="-1" lat="1" lon="0"/></create></osmChange>)");
+    throw std::runtime_error("test_node::073: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_node::073: Expected HTTP/400");
+  }
+
+  // Longitude not numeric
+  try {
+    process_testmsg(
+        R"(<osmChange><create><node changeset="858" id="-1" lat="90.00" lon="a"/></create></osmChange>)");
+    throw std::runtime_error("test_node::080: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_node::080: Expected HTTP/400");
+  }
+
+  // Latitude not numeric
+  try {
+    process_testmsg(
+        R"(<osmChange><create><node changeset="858" id="-1" lat="a" lon="0"/></create></osmChange>)");
+    throw std::runtime_error("test_node::090: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_node::090: Expected HTTP/400");
+  }
+
+  // Invalid Id number
+  try {
+    process_testmsg(
+        R"(<osmChange><create><node id="a" changeset="1"/></create></osmChange>)");
+    throw std::runtime_error("test_node::100: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_node::100: Expected HTTP/400");
+  }
+
+  // Id too large
+  try {
+    process_testmsg(
+        R"(<osmChange><create><node changeset="1" id="999999999999999999999999999999999999" lat="1" lon="0"/></create></osmChange>)");
+    throw std::runtime_error("test_node::101: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_node::101: Expected HTTP/400");
+  }
+
+  // Id not zero
+  try {
+    process_testmsg(
+        R"(<osmChange><create><node changeset="1" id="0" lat="1" lon="0"/></create></osmChange>)");
+    throw std::runtime_error("test_node::102: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_node::102: Expected HTTP/400");
+  }
+
 }
 
 void test_way() {
@@ -537,31 +641,87 @@ void test_way() {
       }
     }
   }
+
+  // Way with tags
+  try {
+    process_testmsg(
+        R"(<osmChange><create><way changeset="858" id="-1"><nd ref="-1"/><tag k="key" v="value"/></way></create></osmChange>)");
+  } catch (http::exception &e) {
+    throw std::runtime_error("test_way::025: Unexpected exception");
+  }
+
+  // ref not numeric
+  try {
+    process_testmsg(
+        R"(<osmChange><create><way changeset="858" id="-1"><nd ref="a"/><tag k="key" v="value"/></way></create></osmChange>)");
+    throw std::runtime_error("test_way::030: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_way::030: Expected HTTP/400");
+  }
+
+  // ref too large
+  try {
+    process_testmsg(
+        R"(<osmChange><create><way changeset="858" id="-1"><nd ref="999999999999999999999"/><tag k="key" v="value"/></way></create></osmChange>)");
+    throw std::runtime_error("test_way::031: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_way::031: Expected HTTP/400");
+  }
+
+  // Invalid zero ref
+  try {
+    process_testmsg(
+        R"(<osmChange><create><way changeset="858" id="-1"><nd ref="0"/><tag k="key" v="value"/></way></create></osmChange>)");
+    throw std::runtime_error("test_way::032: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_way::032: Expected HTTP/400");
+  }
+
+  // Ref missing
+  try {
+    process_testmsg(
+        R"(<osmChange><create><way changeset="858" id="-1"><nd ref="1"/><nd /><tag k="key" v="value"/></way></create></osmChange>)");
+    throw std::runtime_error("test_way::033: Expected exception");
+  } catch (http::exception &e) {
+    std::cerr << e.what() << std::endl;
+    if (e.code() != 400)
+      throw std::runtime_error("test_way::033: Expected HTTP/400");
+  }
+
 }
 
 void test_relation() {
 
-
+  // Missing id
+  try {
+    process_testmsg(
+        R"(<osmChange><create><relation changeset="972"><member type="node" ref="1" role="stop"/></relation></create></osmChange>)");
+    throw std::runtime_error("test_relation::002: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_relation::002: Expected HTTP/400");
+  }
 
   // Missing ref
   try {
     process_testmsg(
         R"(<osmChange><create><relation changeset="972" id="-1"><member type="node" role="stop"/></relation></create></osmChange>)");
-    throw std::runtime_error("test_relation::003: Expected exception");
+    throw std::runtime_error("test_relation::002: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_relation::003: Expected HTTP/400");
+      throw std::runtime_error("test_relation::002: Expected HTTP/400");
   }
 
-
-  // Role is optional and msy not trigger an error
+  // Role is optional and may not trigger an error
   try {
     process_testmsg(
         R"(<osmChange><create><relation changeset="972" id="-1"><member type="node" ref="-1"/></relation></create></osmChange>)");
   } catch (http::exception &e) {
-      throw std::runtime_error("test_relation::003: Unexpected exception");
+    throw std::runtime_error("test_relation::003: Unexpected exception");
   }
-
 
   // Missing member type
   try {
@@ -572,7 +732,6 @@ void test_relation() {
     if (e.code() != 400)
       throw std::runtime_error("test_relation::004: Expected HTTP/400");
   }
-
 
   // Invalid member type
   try {
@@ -594,6 +753,29 @@ void test_relation() {
       throw std::runtime_error("test_relation::005: Expected HTTP/400");
   }
 
+  // Invalid zero ref
+  try {
+    process_testmsg(
+        R"(<osmChange><create><relation changeset="972" id="-1"><member type="way" ref="0" role="stop"/></relation></create></osmChange>)");
+    throw std::runtime_error("test_relation::006: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_relation::006: Expected HTTP/400");
+  }
+
+  // ref too large
+  try {
+    process_testmsg(
+        R"(<osmChange><create><relation changeset="972" id="-1">
+           <member type="relation" ref="99999999999999999999999999999999" role="stop"/>
+           </relation></create></osmChange>)");
+    throw std::runtime_error("test_relation::007: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_relation::007: Expected HTTP/400");
+  }
+
+
   // Member: role may have up to 255 unicode characters
   for (int i = 1; i <= 256; i++) {
     auto v = repeat("😎", i);
@@ -613,15 +795,14 @@ void test_relation() {
         throw std::runtime_error("test_relation::010: Expected HTTP/400");
       if (std::string(e.what()) !=
           "Relation Role has more than 255 unicode characters")
-        throw std::runtime_error("test_relation::010: Expected Relation Role has more than "
-                                 "255 unicode characters");
+        throw std::runtime_error(
+            "test_relation::010: Expected Relation Role has more than "
+            "255 unicode characters");
       if (i <= 255)
         throw std::runtime_error("test_relation::010: Unexpected exception for "
                                  "string length <= 255 characters");
     }
   }
-
-
 }
 
 void test_large_message() {
@@ -655,13 +836,10 @@ void test_large_message() {
 
   s << "</osmChange>";
 
-  std::cerr << s.str() << std::endl;
-
   // Valid message
   try {
     process_testmsg(s.str());
   } catch (http::exception &e) {
-    std::cerr << e.what() << std::endl;
     throw std::runtime_error("test_large_message::001: Unexpected Exception");
   }
 }
