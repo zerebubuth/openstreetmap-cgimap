@@ -155,8 +155,6 @@ pgsql_update::factory::factory(const po::variables_map &opts)
 #if PQXX_VERSION_MAJOR < 4
   m_connection.set_noticer(
       std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
-  m_cache_connection.set_noticer(
-      std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
 #endif
 
 }

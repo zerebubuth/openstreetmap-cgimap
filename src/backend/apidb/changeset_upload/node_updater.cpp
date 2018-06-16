@@ -287,10 +287,10 @@ void ApiDB_Node_Updater::insert_new_nodes_to_tmp_table(
       RETURNING id, old_id
          )");
 
-  std::vector<long> lats;
-  std::vector<long> lons;
+  std::vector<int64_t> lats;
+  std::vector<int64_t> lons;
   std::vector<osm_changeset_id_t> cs;
-  std::vector<long> tiles;
+  std::vector<uint64_t> tiles;
   std::vector<osm_nwr_signed_id_t> oldids;
 
   for (const auto &create_node : create_nodes) {
@@ -433,8 +433,8 @@ void ApiDB_Node_Updater::check_current_node_versions(
     throw http::conflict(
         (boost::format(
              "Version mismatch: Provided %1%, server had: %2% of Node %3%") %
-         r[0]["expected_version"].as<long>() %
-         r[0]["actual_version"].as<long>() % r[0]["id"].as<long>())
+         r[0]["expected_version"].as<osm_version_t>() %
+         r[0]["actual_version"].as<osm_version_t>() % r[0]["id"].as<osm_nwr_id_t>())
             .str());
   }
 }
@@ -494,7 +494,7 @@ std::set<osm_nwr_id_t> ApiDB_Node_Updater::determine_already_deleted_nodes(
     if (ids_if_unused.find(id) != ids_if_unused.end()) {
 
       ct->skip_deleted_node_ids.push_back(
-          { row["id"].as<long>(), row["id"].as<osm_nwr_id_t>(),
+          { row["id"].as<osm_nwr_signed_id_t>(), row["id"].as<osm_nwr_id_t>(),
             row["version"].as<osm_version_t>() });
     }
   }
@@ -522,10 +522,10 @@ ApiDB_Node_Updater::calc_node_bbox(const std::vector<osm_nwr_id_t> &ids) {
   pqxx::result r = m.prepared("calc_node_bbox")(ids).exec();
 
   if (!(r.empty() || r[0]["minlat"].is_null())) {
-    bbox.minlat = r[0]["minlat"].as<long>();
-    bbox.minlon = r[0]["minlon"].as<long>();
-    bbox.maxlat = r[0]["maxlat"].as<long>();
-    bbox.maxlon = r[0]["maxlon"].as<long>();
+    bbox.minlat = r[0]["minlat"].as<int64_t>();
+    bbox.minlon = r[0]["minlon"].as<int64_t>();
+    bbox.maxlat = r[0]["maxlat"].as<int64_t>();
+    bbox.maxlon = r[0]["maxlon"].as<int64_t>();
   }
 
   return bbox;
@@ -563,10 +563,10 @@ void ApiDB_Node_Updater::update_current_nodes(
        )");
 
   std::vector<osm_nwr_id_t> ids;
-  std::vector<long> lats;
-  std::vector<long> lons;
+  std::vector<int64_t> lats;
+  std::vector<int64_t> lons;
   std::vector<osm_changeset_id_t> cs;
-  std::vector<long> tiles;
+  std::vector<uint64_t> tiles;
   std::vector<osm_version_t> versions;
 
   for (const auto &node : nodes) {
@@ -608,7 +608,7 @@ void ApiDB_Node_Updater::update_current_nodes(
 
   // update modified nodes table
   for (auto row : r)
-    ct->modified_node_ids.push_back({ row["id"].as<long>(),
+    ct->modified_node_ids.push_back({ row["id"].as<osm_nwr_signed_id_t>(),
                                       row["id"].as<osm_nwr_id_t>(),
                                       row["version"].as<osm_version_t>() });
 }
@@ -890,7 +890,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
       // new_id and the current version to the caller
 
       ct->skip_deleted_node_ids.push_back(
-          { row["id"].as<long>(), row["id"].as<osm_nwr_id_t>(),
+          { row["id"].as<osm_nwr_signed_id_t>(), row["id"].as<osm_nwr_id_t>(),
             row["version"].as<osm_version_t>() });
     }
   }
@@ -910,7 +910,7 @@ void ApiDB_Node_Updater::delete_current_node_tags(
   pqxx::result r = m.prepared("delete_current_node_tags")(ids).exec();
 }
 
-unsigned int ApiDB_Node_Updater::get_num_changes() {
+uint32_t ApiDB_Node_Updater::get_num_changes() {
   return (ct->created_node_ids.size() + ct->modified_node_ids.size() +
           ct->deleted_node_ids.size());
 }

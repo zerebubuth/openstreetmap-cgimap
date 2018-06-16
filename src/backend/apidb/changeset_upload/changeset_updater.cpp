@@ -57,14 +57,14 @@ void ApiDB_Changeset_Updater::lock_current_changeset() {
   cs_num_changes = r[0]["num_changes"].as<int>();
 
   if (!(r.empty() || r[0]["min_lat"].is_null())) {
-    cs_bbox.minlat = r[0]["min_lat"].as<long>();
-    cs_bbox.minlon = r[0]["min_lon"].as<long>();
-    cs_bbox.maxlat = r[0]["max_lat"].as<long>();
-    cs_bbox.maxlon = r[0]["max_lon"].as<long>();
+    cs_bbox.minlat = r[0]["min_lat"].as<int64_t>();
+    cs_bbox.minlon = r[0]["min_lon"].as<int64_t>();
+    cs_bbox.maxlat = r[0]["max_lat"].as<int64_t>();
+    cs_bbox.maxlon = r[0]["max_lon"].as<int64_t>();
   }
 }
 
-void ApiDB_Changeset_Updater::update_changeset(const long num_new_changes,
+void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
                                                const bbox_t bbox) {
 
   // Don't raise an exception when reaching exactly CHANGESET_MAX_ELEMENTS!

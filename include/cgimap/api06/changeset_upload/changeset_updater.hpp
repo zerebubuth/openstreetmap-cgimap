@@ -11,7 +11,7 @@ public:
 
   virtual void lock_current_changeset() = 0;
 
-  virtual void update_changeset(long num_new_changes, bbox_t bbox) = 0;
+  virtual void update_changeset(uint32_t num_new_changes, bbox_t bbox) = 0;
 };
 
 #endif

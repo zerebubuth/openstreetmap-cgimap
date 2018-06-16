@@ -12,6 +12,7 @@ typedef int64_t osm_nwr_signed_id_t;
 typedef uint32_t tile_id_t;
 typedef uint32_t osm_version_t;
 typedef uint64_t osm_redaction_id_t;
+typedef uint64_t osm_sequence_id_t;
 
 // a edition of an element is the pair of its ID and version.
 typedef std::pair<osm_nwr_id_t, osm_version_t> osm_edition_t;

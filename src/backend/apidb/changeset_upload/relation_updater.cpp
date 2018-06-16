@@ -39,7 +39,7 @@ void ApiDB_Relation_Updater::add_relation(osm_changeset_id_t changeset_id,
     new_relation.tags.emplace_back(
         std::pair<std::string, std::string>(tag.first, tag.second));
 
-  int member_seq = 0;
+  osm_sequence_id_t member_seq = 0;
   for (const auto &member : members) {
     member_t new_member{};
     new_member.member_type = member.type();
@@ -74,7 +74,7 @@ void ApiDB_Relation_Updater::modify_relation(osm_changeset_id_t changeset_id,
     modify_relation.tags.emplace_back(
         std::pair<std::string, std::string>(tag.first, tag.second));
 
-  int member_seq = 0;
+  osm_sequence_id_t member_seq = 0;
   for (const auto &member : members) {
     member_t modify_member{};
     modify_member.member_type = member.type();
@@ -568,9 +568,9 @@ void ApiDB_Relation_Updater::check_current_relation_versions(
   if (!r.empty()) {
     throw http::conflict((boost::format("Version mismatch: Provided %1%, "
                                         "server had: %2% of Relation %3%") %
-                          r[0]["expected_version"].as<long>() %
-                          r[0]["actual_version"].as<long>() %
-                          r[0]["id"].as<long>())
+                          r[0]["expected_version"].as<osm_version_t>() %
+                          r[0]["actual_version"].as<osm_version_t>() %
+                          r[0]["id"].as<osm_nwr_id_t>())
                              .str());
   }
 }
@@ -631,7 +631,7 @@ ApiDB_Relation_Updater::determine_already_deleted_relations(
     if (ids_if_unused.find(id) != ids_if_unused.end()) {
 
       ct->skip_deleted_relation_ids.push_back(
-          { row["id"].as<long>(), row["id"].as<osm_nwr_id_t>(),
+          { row["id"].as<osm_nwr_signed_id_t>(), row["id"].as<osm_nwr_id_t>(),
             row["version"].as<osm_version_t>() });
     }
   }
@@ -1026,10 +1026,10 @@ bbox_t ApiDB_Relation_Updater::calc_rel_member_difference_bbox(
     pqxx::result r = m.prepared("calc_node_bbox_rel_member")(node_ids).exec();
 
     if (!(r.empty() || r[0]["minlat"].is_null())) {
-      bbox_nodes.minlat = r[0]["minlat"].as<long>();
-      bbox_nodes.minlon = r[0]["minlon"].as<long>();
-      bbox_nodes.maxlat = r[0]["maxlat"].as<long>();
-      bbox_nodes.maxlon = r[0]["maxlon"].as<long>();
+      bbox_nodes.minlat = r[0]["minlat"].as<int64_t>();
+      bbox_nodes.minlon = r[0]["minlon"].as<int64_t>();
+      bbox_nodes.maxlat = r[0]["maxlat"].as<int64_t>();
+      bbox_nodes.maxlon = r[0]["maxlon"].as<int64_t>();
     }
 
     result.expand(bbox_nodes);
@@ -1056,10 +1056,10 @@ bbox_t ApiDB_Relation_Updater::calc_rel_member_difference_bbox(
     pqxx::result r = m.prepared("calc_way_bbox_rel_member")(way_ids).exec();
 
     if (!(r.empty() || r[0]["minlat"].is_null())) {
-      bbox_ways.minlat = r[0]["minlat"].as<long>();
-      bbox_ways.minlon = r[0]["minlon"].as<long>();
-      bbox_ways.maxlat = r[0]["maxlat"].as<long>();
-      bbox_ways.maxlon = r[0]["maxlon"].as<long>();
+      bbox_ways.minlat = r[0]["minlat"].as<int64_t>();
+      bbox_ways.minlon = r[0]["minlon"].as<int64_t>();
+      bbox_ways.maxlat = r[0]["maxlat"].as<int64_t>();
+      bbox_ways.maxlon = r[0]["maxlon"].as<int64_t>();
     }
 
     result.expand(bbox_ways);
@@ -1112,10 +1112,10 @@ bbox_t ApiDB_Relation_Updater::calc_relation_bbox(
   pqxx::result rn = m.prepared("calc_relation_bbox_nodes")(ids).exec();
 
   if (!(rn.empty() || rn[0]["minlat"].is_null())) {
-    bbox.minlat = rn[0]["minlat"].as<long>();
-    bbox.minlon = rn[0]["minlon"].as<long>();
-    bbox.maxlat = rn[0]["maxlat"].as<long>();
-    bbox.maxlon = rn[0]["maxlon"].as<long>();
+    bbox.minlat = rn[0]["minlat"].as<int64_t>();
+    bbox.minlon = rn[0]["minlon"].as<int64_t>();
+    bbox.maxlat = rn[0]["maxlat"].as<int64_t>();
+    bbox.maxlon = rn[0]["maxlon"].as<int64_t>();
   }
 
   m.prepare("calc_relation_bbox_ways",
@@ -1143,10 +1143,10 @@ bbox_t ApiDB_Relation_Updater::calc_relation_bbox(
   if (!(rw.empty() || rw[0]["minlat"].is_null())) {
     bbox_t bbox_way;
 
-    bbox_way.minlat = rw[0]["minlat"].as<long>();
-    bbox_way.minlon = rw[0]["minlon"].as<long>();
-    bbox_way.maxlat = rw[0]["maxlat"].as<long>();
-    bbox_way.maxlon = rw[0]["maxlon"].as<long>();
+    bbox_way.minlat = rw[0]["minlat"].as<int64_t>();
+    bbox_way.minlon = rw[0]["minlon"].as<int64_t>();
+    bbox_way.maxlat = rw[0]["maxlat"].as<int64_t>();
+    bbox_way.maxlon = rw[0]["maxlon"].as<int64_t>();
     bbox.expand(bbox_way);
   }
 
@@ -1202,7 +1202,7 @@ void ApiDB_Relation_Updater::update_current_relations(
   for (const auto &row : r) {
     if (visible) {
       ct->modified_relation_ids.push_back(
-          { row["id"].as<long>(), row["id"].as<osm_nwr_id_t>(),
+          { row["id"].as<osm_nwr_signed_id_t>(), row["id"].as<osm_nwr_id_t>(),
             row["version"].as<osm_version_t>() });
     } else {
       ct->deleted_relation_ids.push_back({ row["id"].as<osm_nwr_id_t>() });
@@ -1271,7 +1271,7 @@ void ApiDB_Relation_Updater::insert_new_current_relation_members(
   std::vector<std::string> membertypes;
   std::vector<osm_nwr_id_t> memberids;
   std::vector<std::string> memberroles;
-  std::vector<long> sequenceids;
+  std::vector<osm_sequence_id_t> sequenceids;
 
   for (const auto &relation : relations)
     for (const auto &member : relation.members) {
@@ -1484,7 +1484,7 @@ ApiDB_Relation_Updater::is_relation_still_referenced(
       // new_id and the current version to the caller
 
       ct->skip_deleted_relation_ids.push_back(
-          { row["id"].as<long>(), row["id"].as<osm_nwr_id_t>(),
+          { row["id"].as<osm_nwr_signed_id_t>(), row["id"].as<osm_nwr_id_t>(),
             row["version"].as<osm_version_t>() });
     }
   }
@@ -1515,7 +1515,7 @@ void ApiDB_Relation_Updater::delete_current_relation_tags(
   pqxx::result r = m.prepared("delete_current_relation_tags")(ids).exec();
 }
 
-unsigned int ApiDB_Relation_Updater::get_num_changes() {
+uint32_t ApiDB_Relation_Updater::get_num_changes() {
   return (ct->created_relation_ids.size() + ct->modified_relation_ids.size() +
           ct->deleted_relation_ids.size());
 }

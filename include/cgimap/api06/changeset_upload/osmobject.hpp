@@ -25,7 +25,7 @@ public:
 
   void set_changeset(const char *changeset) {
 
-    long _changeset = 0;
+    osm_changeset_id_t _changeset = 0;
 
     try {
 	_changeset = std::stol(changeset);
@@ -44,7 +44,7 @@ public:
 
   void set_version(const char *version) {
 
-    int _version = 0;
+    int64_t _version = 0;
 
     try {
 	_version = std::stoi(version);
@@ -54,12 +54,16 @@ public:
 	throw http::bad_request("Version value is too large");
     }
 
+    if (_version < 0) {
+	throw http::bad_request("Version may not be negative");
+    }
+
     set_version(_version);
   }
 
   void set_id(const char *id) {
 
-    long _id = 0;
+    osm_nwr_signed_id_t _id = 0;
 
     try {
 	_id = std::stol(id);

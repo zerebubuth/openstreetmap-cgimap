@@ -18,11 +18,11 @@ public:
 
   void lock_current_changeset();
 
-  void update_changeset(const long num_new_changes, const bbox_t bbox);
+  void update_changeset(const uint32_t num_new_changes, const bbox_t bbox);
 
 private:
   Transaction_Manager &m;
-  int cs_num_changes;
+  uint32_t cs_num_changes;
   osm_changeset_id_t changeset;
   osm_user_id_t uid;
   bbox_t cs_bbox;

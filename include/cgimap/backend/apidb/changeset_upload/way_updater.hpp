@@ -48,7 +48,7 @@ private:
 
   struct way_node_t {
     osm_nwr_id_t node_id;
-    long sequence_id;
+    osm_sequence_id_t sequence_id;
     osm_nwr_signed_id_t old_node_id;
   };
 

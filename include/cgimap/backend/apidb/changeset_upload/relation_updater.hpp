@@ -49,7 +49,7 @@ private:
     std::string member_type;
     osm_nwr_id_t member_id;
     std::string member_role;
-    int sequence_id;
+    osm_sequence_id_t sequence_id;
     osm_nwr_signed_id_t old_member_id;
   };
 

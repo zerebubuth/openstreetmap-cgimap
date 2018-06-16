@@ -464,6 +464,16 @@ void test_node() {
       throw std::runtime_error("test_node::061: Expected HTTP/400");
   }
 
+  // Version negative
+  try {
+    process_testmsg(
+        R"(<osmChange><modify><node changeset="858" version="-1" id="123"/></modify></osmChange>)");
+    throw std::runtime_error("test_node::062: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_node::062: Expected HTTP/400");
+  }
+
   // Invalid changeset number
   try {
     process_testmsg(
@@ -485,7 +495,7 @@ void test_node() {
       throw std::runtime_error("test_node::071: Expected HTTP/400");
   }
 
-  // Changeset not positive
+  // Changeset is zero
   try {
     process_testmsg(
         R"(<osmChange><create><node changeset="0" id="-1" lat="1" lon="0"/></create></osmChange>)");

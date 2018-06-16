@@ -43,9 +43,9 @@ private:
   struct node_t {
     osm_nwr_id_t id;
     osm_version_t version;
-    long lat;
-    long lon;
-    long tile;
+    int64_t lat;
+    int64_t lon;
+    uint64_t tile;
     osm_changeset_id_t changeset_id;
     osm_nwr_signed_id_t old_id;
     std::vector<std::pair<std::string, std::string> > tags;

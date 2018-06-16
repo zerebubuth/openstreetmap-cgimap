@@ -43,7 +43,7 @@ public:
 
   void set_ref(const char *ref) {
 
-    long _ref = 0;
+    osm_nwr_signed_id_t _ref = 0;
 
     try {
       _ref = std::stol(ref);

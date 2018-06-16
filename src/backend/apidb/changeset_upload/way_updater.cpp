@@ -43,7 +43,7 @@ void ApiDB_Way_Updater::add_way(osm_changeset_id_t changeset_id,
   assert(nodes.size() > 0);
   assert(nodes.size() <= WAY_MAX_NODES);
 
-  int node_seq = 0;
+  osm_sequence_id_t node_seq = 0;
   for (const auto &node : nodes)
     new_way.way_nodes.push_back(
         { (node < 0 ? 0 : static_cast<osm_nwr_id_t>(node)), ++node_seq, node });
@@ -75,7 +75,7 @@ void ApiDB_Way_Updater::modify_way(osm_changeset_id_t changeset_id,
   assert(nodes.size() > 0);
   assert(nodes.size() <= WAY_MAX_NODES);
 
-  int node_seq = 0;
+  osm_sequence_id_t node_seq = 0;
   for (const auto &node : nodes)
     modify_way.way_nodes.push_back(
         { (node < 0 ? 0 : static_cast<osm_nwr_id_t>(node)), ++node_seq, node });
@@ -394,10 +394,10 @@ bbox_t ApiDB_Way_Updater::calc_way_bbox(const std::vector<osm_nwr_id_t> &ids) {
   pqxx::result r = m.prepared("calc_way_bbox")(ids).exec();
 
   if (!(r.empty() || r[0]["minlat"].is_null())) {
-    bbox.minlat = r[0]["minlat"].as<long>();
-    bbox.minlon = r[0]["minlon"].as<long>();
-    bbox.maxlat = r[0]["maxlat"].as<long>();
-    bbox.maxlon = r[0]["maxlon"].as<long>();
+    bbox.minlat = r[0]["minlat"].as<int64_t>();
+    bbox.minlon = r[0]["minlon"].as<int64_t>();
+    bbox.maxlat = r[0]["maxlat"].as<int64_t>();
+    bbox.maxlon = r[0]["maxlon"].as<int64_t>();
   }
 
   return bbox;
@@ -505,8 +505,8 @@ void ApiDB_Way_Updater::check_current_way_versions(
     throw http::conflict(
         (boost::format(
              "Version mismatch: Provided %1%, server had: %2% of Way %3%") %
-         r[0]["expected_version"].as<long>() %
-         r[0]["actual_version"].as<long>() % r[0]["id"].as<long>())
+         r[0]["expected_version"].as<osm_version_t>() %
+         r[0]["actual_version"].as<osm_version_t>() % r[0]["id"].as<osm_nwr_id_t>())
             .str());
   }
 }
@@ -563,7 +563,7 @@ std::set<osm_nwr_id_t> ApiDB_Way_Updater::determine_already_deleted_ways(
     if (ids_if_unused.find(id) != ids_if_unused.end()) {
 
       ct->skip_deleted_way_ids.push_back(
-          { row["id"].as<long>(), row["id"].as<osm_nwr_id_t>(),
+          { row["id"].as<osm_nwr_signed_id_t>(), row["id"].as<osm_nwr_id_t>(),
             row["version"].as<osm_version_t>() });
     }
   }
@@ -675,7 +675,7 @@ void ApiDB_Way_Updater::update_current_ways(const std::vector<way_t> &ways,
   // update modified ways table
   for (const auto &row : r) {
     if (visible)
-      ct->modified_way_ids.push_back({ row["id"].as<long>(),
+      ct->modified_way_ids.push_back({ row["id"].as<osm_nwr_signed_id_t>(),
                                        row["id"].as<osm_nwr_id_t>(),
                                        row["version"].as<osm_version_t>() });
     else
@@ -740,7 +740,7 @@ void ApiDB_Way_Updater::insert_new_current_way_nodes(
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<osm_nwr_id_t> nodeids;
-  std::vector<long> sequenceids;
+  std::vector<osm_sequence_id_t> sequenceids;
 
   for (const auto &way : ways)
     for (const auto &wn : way.way_nodes) {
@@ -922,7 +922,7 @@ ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t> &ways) {
       // new_id and the current version to the caller
 
       ct->skip_deleted_way_ids.push_back(
-          { row["id"].as<long>(), row["id"].as<osm_nwr_id_t>(),
+          { row["id"].as<osm_nwr_signed_id_t>(), row["id"].as<osm_nwr_id_t>(),
             row["version"].as<osm_version_t>() });
     }
   }
@@ -954,7 +954,7 @@ void ApiDB_Way_Updater::delete_current_way_nodes(
   pqxx::result r = m.prepared("delete_current_way_nodes")(ids).exec();
 }
 
-unsigned int ApiDB_Way_Updater::get_num_changes() {
+uint32_t ApiDB_Way_Updater::get_num_changes() {
   return (ct->created_way_ids.size() + ct->modified_way_ids.size() +
           ct->deleted_way_ids.size());
 }

@@ -132,7 +132,7 @@ void OSMChange_Handler::finish_processing() {
   handle_new_state(state::st_finished);
 }
 
-unsigned int OSMChange_Handler::get_num_changes() {
+uint32_t OSMChange_Handler::get_num_changes() {
   return (node_updater->get_num_changes() + way_updater->get_num_changes() +
           relation_updater->get_num_changes());
 }

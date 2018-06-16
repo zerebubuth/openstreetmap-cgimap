@@ -35,8 +35,8 @@ changeset_upload_responder::changeset_upload_responder(
   if (!user_id)
     throw http::unauthorized("User is not authorized to upload changeset");
 
-  int changeset = id_;
-  int uid = *user_id;
+  osm_changeset_id_t changeset = id_;
+  osm_user_id_t uid = *user_id;
 
   change_tracking = std::make_shared<OSMChange_Tracking>();
 

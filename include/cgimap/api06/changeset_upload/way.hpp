@@ -19,7 +19,7 @@ public:
 
   void add_way_node(const char *waynode) {
 
-    long _waynode = 0;
+    osm_nwr_signed_id_t _waynode = 0;
 
     try {
 	_waynode = std::stol(waynode);

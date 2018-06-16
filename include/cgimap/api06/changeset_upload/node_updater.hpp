@@ -33,7 +33,7 @@ public:
 
   virtual void process_delete_nodes() = 0;
 
-  virtual unsigned int get_num_changes() = 0;
+  virtual uint32_t get_num_changes() = 0;
 
   virtual bbox_t bbox() = 0;
 };
