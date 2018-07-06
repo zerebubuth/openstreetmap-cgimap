@@ -15,6 +15,10 @@
 #endif
 #include "cgimap/output_buffer.hpp"
 
+// Maximum bytes
+const unsigned long STDIN_MAX = 50000000;    // TODO: configurable parameter?
+
+
 /**
  * Contains the generic HTTP methods and classes involved in the
  * application. CGI-specific stuff is elsewhere, but this stuff

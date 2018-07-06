@@ -65,26 +65,34 @@ const char *fcgi_request::get_param(const char *key) {
 
 const std::string fcgi_request::get_payload() {
 
+  const unsigned int BUFFER_LEN = 512000;
+
   // fetch and parse the content length
   char * content_length_str = FCGX_GetParam("CONTENT_LENGTH", m_impl->req.envp);
 
-  if (!content_length_str)
-    throw http::bad_request("HTTP header 'Content-Length' missing");
+  unsigned long content_length = 0;
+  unsigned long curr_content_length = 0;
 
-  unsigned long content_length = http::parse_content_length(content_length_str);
+  if (content_length_str)
+    content_length = http::parse_content_length(content_length_str);
 
-  if (content_length == 0)
-    return "";
+  char * content_buffer = new char[BUFFER_LEN];
 
-  // TODO: check http://chriswu.me/blog/getting-request-uri-and-content-in-c-plus-plus-fcgi/
+  std::string result = "";
 
-  char * content_buffer = new char[content_length];
-  if (FCGX_GetStr(content_buffer, content_length, m_impl->req.in) < content_length)
-    throw http::server_error("Changeset upload: could not read payload");
+  while ((curr_content_length = FCGX_GetStr(content_buffer, BUFFER_LEN, m_impl->req.in)) > 0)
+  {
+      std::string content(content_buffer, curr_content_length);
+      result += content;
+      if (result.length() > STDIN_MAX)
+         throw http::payload_too_large((boost::format("Payload exceeds limit of %1% bytes") % STDIN_MAX).str());
+  }
 
-  std::string content(content_buffer, content_length);
+  if (content_length > 0 && result.length() != content_length)
+    throw http::server_error("HTTP Header field 'Content-Length' differs from actual payload length");
+
   delete [] content_buffer;
-  return content;
+  return result;
 }
 
 boost::posix_time::ptime fcgi_request::get_current_time() const {

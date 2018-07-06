@@ -223,9 +223,6 @@ shared_ptr<encoding> choose_encoding(const string &accept_encoding) {
 
 namespace {
 
-// Maximum bytes
-const unsigned long STDIN_MAX = 50000000;    // TODO: configurable parameter?
-
 const std::map<method, std::string> METHODS = {
   {method::GET,     "GET"},
   {method::POST,    "POST"},
