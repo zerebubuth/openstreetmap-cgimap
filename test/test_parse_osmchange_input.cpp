@@ -441,6 +441,26 @@ void test_node() {
     }
   }
 
+  // Tag: Value with ampersand character: libxml2 parser needs XML_PARSE_NOENT option so that the &amp;
+  // character doesn't get replaced by &#38; but a proper & character. Otherwise, the string will
+  // exceed the 255 unicode character check, and an exception would be raised.
+  try {
+    process_testmsg(R"(
+     <osmChange version="0.6" generator="JOSM">
+     <create>
+       <node id='-39094' changeset='1135' lat='40.72184689864' lon='-73.99968913726'>
+         <tag k='amenity' v='cafe' />
+         <tag k='cuisine' v='coffee_shop' />
+         <tag k='description' v='&quot;Project Cozy is the latest addition to Nolita serving La Colombe coffee, specialty drinks like the Cozy Mint Coffee and Charcoal Latte, fresh &amp; made to order juices and smoothies, sandwiches, and pastries by Bibble &amp; Sip, a renowned bakery in Midtown&quot;' />
+       </node>
+     </create>
+     </osmChange>
+    )");
+  } catch (http::exception &e) {
+    throw std::runtime_error(
+        "test_node::042: Unexpected Exception");
+  }
+
   // INVALID ARGUMENTS, OUT OF RANGE VALUES
 
 

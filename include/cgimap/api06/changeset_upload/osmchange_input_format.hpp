@@ -131,7 +131,7 @@ class OSMChangeXMLParser {
       if (ctxt == NULL)
         throw std::runtime_error("Could not create parser context!");
 
-      xmlCtxtUseOptions(ctxt, XML_PARSE_RECOVER | XML_PARSE_NONET);
+      xmlCtxtUseOptions(ctxt, XML_PARSE_RECOVER | XML_PARSE_NONET | XML_PARSE_NOENT);
 
       unsigned int offset = 4;
 
