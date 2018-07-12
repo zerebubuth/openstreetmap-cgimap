@@ -115,6 +115,7 @@ void ApiDB_Relation_Updater::process_new_relations() {
   truncate_temporary_tables();
 
   check_unique_placeholder_ids(create_relations);
+  check_forward_relation_placeholders(create_relations);
 
   insert_new_relations_to_tmp_table(create_relations);
   copy_tmp_create_relations_to_current_relations();
@@ -416,6 +417,46 @@ void ApiDB_Relation_Updater::check_unique_placeholder_ids(
           "Placeholder IDs must be unique for created elements.");
   }
 }
+
+/*
+  For compatibility reasons, we don't allow forward references for relation members.
+
+  Some clients might implicitly depend on increasing relation id sequence numbers
+  for newly created relations. By forbidding forward references, child relations 
+  always have to be provided before their respective parent relations.
+
+  See https://github.com/openstreetmap/iD/issues/3208#issuecomment-281942743
+  for further discussion
+
+  By adding the current placeholder id at the end of the check, we also
+  forbid relation members, which refer to their own relation (recursive
+  relation definitions).
+
+*/
+
+void ApiDB_Relation_Updater::check_forward_relation_placeholders(
+   const std::vector<relation_t> &create_relations) {
+
+  std::set<osm_nwr_signed_id_t> placeholder_ids;
+
+  for (const auto &cr : create_relations) {
+    for (auto &mbr : cr.members) {
+      if (mbr.old_member_id < 0 && mbr.member_type == "Relation") {
+          auto entry = placeholder_ids.find(mbr.old_member_id);
+          if (entry == placeholder_ids.end())
+            throw http::bad_request(
+                (boost::format("Placeholder relation not found for reference "
+                               "%1% in relation %2%") %
+                 mbr.old_member_id % cr.old_id)
+                    .str());
+      }
+    }
+    if (cr.old_id < 0) {
+      placeholder_ids.insert(cr.old_id);
+    }
+  }
+}
+
 
 void ApiDB_Relation_Updater::insert_new_relations_to_tmp_table(
     const std::vector<relation_t> &create_relations) {

@@ -86,6 +86,8 @@ private:
 
   void check_unique_placeholder_ids(const std::vector<relation_t> &create_relations);
 
+  void check_forward_relation_placeholders(const std::vector<relation_t> &create_relations);
+
   void insert_new_relations_to_tmp_table(
       const std::vector<relation_t> &create_relations);
 

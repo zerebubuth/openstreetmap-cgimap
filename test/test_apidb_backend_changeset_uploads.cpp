@@ -868,6 +868,25 @@ namespace {
         }
       }
 
+      // Create one relation with self reference
+      {
+	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+        auto sel = tdb.get_data_selection();
+        auto upd = tdb.get_data_update();
+        auto rel_updater = upd->get_relation_updater(change_tracking);
+
+        try {
+          rel_updater->add_relation(1, -1, { { "Relation", -1, "role1" }}, {{"key1", "value1"}});
+          rel_updater->process_new_relations();
+
+          throw std::runtime_error("Expected exception for one relation w/ self reference");
+
+        } catch (http::exception& e) {
+    	  if (e.code() != 400)
+   	      throw std::runtime_error("One relation w/ self reference: expected HTTP/400 Bad request");
+        }
+      }
+
       // Create two relations with references to each other
       {
 	auto change_tracking = std::make_shared<OSMChange_Tracking>();
@@ -880,14 +899,34 @@ namespace {
           rel_updater->add_relation(1, -2, { { "Relation", -1, "role2" }}, {{"key2", "value2"}});
           rel_updater->process_new_relations();
 
-        } catch (http::exception& e) {
-  	  throw std::runtime_error("HTTP Exception unexpected");
-        }
+          throw std::runtime_error("Expected exception for Relations with reference to each other");
 
+        } catch (http::exception& e) {
+    	  if (e.code() != 400)
+   	      throw std::runtime_error("Relations with reference to each other: expected HTTP/400 Bad request");
+        }
+      }
+
+      // Create two relations with parent/child relationship
+      {
+	      auto change_tracking = std::make_shared<OSMChange_Tracking>();
+        auto sel = tdb.get_data_selection();
+        auto upd = tdb.get_data_update();
+        auto rel_updater = upd->get_relation_updater(change_tracking);
+
+        try {
+          rel_updater->add_relation(1, -1, { }, {{"key1", "value1"}});
+          rel_updater->add_relation(1, -2, { { "Relation", -1, "role2" }}, {{"key2", "value2"}});
+          rel_updater->process_new_relations();
+        } catch (http::exception& e) {
+           std::cerr << e.what() << std::endl;
+           throw std::runtime_error("Create two relations w/ parent/child: HTTP Exception unexpected");
+        }
+      
         upd->commit();
 
         if (change_tracking->created_relation_ids.size() != 2)
-  	throw std::runtime_error("Expected 2 entry in created_relation_ids");
+  	       throw std::runtime_error("Expected 2 entry in created_relation_ids");
 
         relation_id_1 = change_tracking->created_relation_ids[0].new_id;
         relation_version_1 = change_tracking->created_relation_ids[0].new_version;
@@ -896,11 +935,11 @@ namespace {
         relation_version_2 = change_tracking->created_relation_ids[1].new_version;
 
         if (sel->check_relation_visibility(relation_id_1) != data_selection::exists) {
-  	  throw std::runtime_error("Relation should be visible, but isn't");
+  	      throw std::runtime_error("Relation should be visible, but isn't");
         }
 
         if (sel->check_relation_visibility(relation_id_2) != data_selection::exists) {
-  	  throw std::runtime_error("Relation should be visible, but isn't");
+  	      throw std::runtime_error("Relation should be visible, but isn't");
         }
 
         sel->select_relations({relation_id_1, relation_id_2});
@@ -908,7 +947,6 @@ namespace {
         test_formatter f;
         sel->write_relations(f);
         assert_equal<size_t>(f.m_relations.size(), 2, "number of relations written");
-
       }
 
       // Create relation with unknown node placeholder id
@@ -1449,9 +1487,13 @@ namespace {
 
       // Test more complex examples, including XML parsing
 
+
+   // Forward relation member declarations
+	 // Example from https://github.com/openstreetmap/iD/issues/3208#issuecomment-281942743
+   
       try {
 
-	// Example in https://github.com/openstreetmap/iD/issues/3208#issuecomment-281942743
+  // Relation id -3 has a relation member with forward reference to relation id -4
 
 	process_payload(tdb, R"(<?xml version="1.0" encoding="UTF-8"?>
 	  <osmChange version="0.6" generator="iD">
@@ -1484,11 +1526,49 @@ namespace {
 	  </osmChange>
   
 	)" );
+    	 throw std::runtime_error("Forward relation definition should trigger a bad request error");
       } catch (http::exception& e) {
-	  std::cerr << e.what() << std::endl;
-	  throw std::runtime_error("HTTP Exception unexpected");
+  	  if (e.code() != 400)
+  	    throw std::runtime_error("Forward relation definition: Expected HTTP/400 Bad request");
       }
 
+  // Testing correct parent/child sequence
+  try {
+
+	process_payload(tdb, R"(<?xml version="1.0" encoding="UTF-8"?>
+	  <osmChange version="0.6" generator="iD">
+	     <create>
+		<node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1">
+		   <tag k="highway" v="bus_stop" />
+		</node>
+		<node id="-6" lon="11.62686047585252" lat="46.86730122861715" version="0" changeset="1">
+		   <tag k="highway" v="bus_stop" />
+		</node>
+		<relation id="-2" version="0" changeset="1">
+		   <member type="node" role="" ref="-5" />
+		   <tag k="type" v="route" />
+		   <tag k="name" v="AtoB" />
+		</relation>
+		<relation id="-3" version="0" changeset="1">
+		   <member type="node" role="" ref="-6" />
+		   <tag k="type" v="route" />
+		   <tag k="name" v="BtoA" />
+		</relation>    
+		<relation id="-4" version="0" changeset="1">
+		   <member type="relation" role="" ref="-2" />
+		   <member type="relation" role="" ref="-3" />
+		   <tag k="type" v="route_master" />
+		   <tag k="name" v="master" />
+		</relation>
+	     </create>
+	     <modify />
+	     <delete if-unused="true" />
+	  </osmChange>
+  
+	)" );
+      } catch (http::exception& e) {
+        throw std::runtime_error("Correct forward relation member reference should not trigger an exception");
+      }
   }
 
 } // anonymous namespace
