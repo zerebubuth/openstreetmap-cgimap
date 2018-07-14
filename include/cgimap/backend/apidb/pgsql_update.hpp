@@ -11,7 +11,7 @@
 class pgsql_update : public data_update {
 
 public:
-  pgsql_update(pqxx::connection &conn);
+  pgsql_update(pqxx::connection &conn, bool is_readonly);
 
   ~pgsql_update();
 
@@ -29,6 +29,8 @@ public:
 
   void commit();
 
+  bool is_readonly();
+
   /**
    * abstracts the creation of transactions for the
    * data updates.
@@ -41,6 +43,7 @@ public:
 
   private:
     pqxx::connection m_connection;
+    bool m_readonly;
 #if PQXX_VERSION_MAJOR >= 4
     pqxx::quiet_errorhandler m_errorhandler;
 #endif
@@ -48,6 +51,7 @@ public:
 
 private:
   Transaction_Manager m;
+  bool m_readonly;
 
 };
 

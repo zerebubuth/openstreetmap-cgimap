@@ -35,6 +35,9 @@ changeset_upload_responder::changeset_upload_responder(
   if (!user_id)
     throw http::unauthorized("User is not authorized to upload changeset");
 
+  if (upd->is_readonly())
+    throw http::bad_request("Server is currently in read only mode, changeset upload not possible at this time");
+
   osm_changeset_id_t changeset = id_;
   osm_user_id_t uid = *user_id;
 

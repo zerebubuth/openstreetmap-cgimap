@@ -60,8 +60,11 @@ std::string connect_db_str(const po::variables_map &options) {
 } // anonymous namespace
 
 pgsql_update::pgsql_update(
-    pqxx::connection &conn)
-    : m{ conn } {
+    pqxx::connection &conn, bool readonly)
+    : m{ conn }, m_readonly{ readonly } {
+
+  if (is_readonly())
+    return;
 
   m.exec(R"(CREATE TEMPORARY TABLE tmp_create_nodes 
       (
@@ -105,6 +108,10 @@ pgsql_update::pgsql_update(
 
 pgsql_update::~pgsql_update() {}
 
+bool pgsql_update::is_readonly() {
+  return m_readonly;
+}
+
 std::unique_ptr<Changeset_Updater>
 pgsql_update::get_changeset_updater(osm_changeset_id_t changeset, osm_user_id_t uid)
 {
@@ -138,9 +145,8 @@ void pgsql_update::commit() {
 }
 
 
-
 pgsql_update::factory::factory(const po::variables_map &opts)
-    : m_connection(connect_db_str(opts))
+    : m_connection(connect_db_str(opts)), m_readonly(false)
 #if PQXX_VERSION_MAJOR >= 4
       ,m_errorhandler(m_connection)
 #endif
@@ -150,6 +156,12 @@ pgsql_update::factory::factory(const po::variables_map &opts)
 
   // set the connections to use the appropriate charset.
   m_connection.set_client_encoding(opts["charset"].as<std::string>());
+
+  // set the connection to readonly transaction, if readonly flag is set
+  if (opts.count("readonly") != 0) {
+    m_readonly = true;
+    m_connection.set_variable("default_transaction_read_only", "true");
+  }
 
   // ignore notice messages
 #if PQXX_VERSION_MAJOR < 4
@@ -163,5 +175,5 @@ pgsql_update::factory::~factory() {}
 
 boost::shared_ptr<data_update>
 pgsql_update::factory::make_data_update() {
-  return boost::make_shared<pgsql_update>(boost::ref(m_connection));
+  return boost::make_shared<pgsql_update>(boost::ref(m_connection), m_readonly);
 }

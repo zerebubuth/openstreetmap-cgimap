@@ -35,6 +35,8 @@ public:
   virtual void
   commit() = 0;
 
+  virtual bool is_readonly() = 0;
+
   /**
    * factory for the creation of data updates. this abstracts away
    * the creation process of transactions, and allows some up-front
