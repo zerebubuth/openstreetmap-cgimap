@@ -424,6 +424,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
 #endif
       m_cache_tx(m_cache_connection, "changeset_cache"),
       m_cache(boost::bind(fetch_changeset, boost::ref(m_cache_tx), _1),
+              boost::bind(fetch_changesets, boost::ref(m_cache_tx), _1),
               get_or_convert_cachesize(opts)) {
 
   check_postgres_version(m_connection);
@@ -443,6 +444,10 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
   logger::message("Preparing prepared statements.");
 
   // clang-format off
+
+  m_cache_connection.prepare("extract_changeset_userdetails",
+      "SELECT c.id, u.data_public, u.display_name, u.id from users u "
+                   "join changesets c on u.id=c.user_id where c.id = ANY($1)");
 
   // select nodes with bbox
   // version which ignores any existing tmp_nodes IDs
