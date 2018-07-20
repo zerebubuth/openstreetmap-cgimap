@@ -1,3 +1,17 @@
+openstreetmap-cgimap (0.6.1-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.6.1
+  * Performance: Prefetch cache details (#142)
+  * Error handling OAuth parsing failure (#147)
+
+ -- mmd osm <mmd.osm@gmail.com>  Fri, 20 Jul 2018 20:37:12 +0000
+
+openstreetmap-cgimap (0.6.0-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.6.0
+
+ -- Matt Amos <zerebubuth@gmail.com>  Thu, 28 Jun 2018 11:07:38 +0100
+
 openstreetmap-cgimap (0.6.0-1~xenial1) xenial; urgency=medium
 
   * Released version 0.6.0
