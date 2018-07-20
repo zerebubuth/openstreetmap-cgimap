@@ -459,8 +459,9 @@ void oauth_check_almost_expired_signature() {
                           "nnch734d00sl2jdk", "pfkkdhi9sl3r4s00");
   oauth::validity::validity expected(
     oauth::validity::copacetic("nnch734d00sl2jdk"));
-  assert_equal(expected,
-               oauth::is_valid_signature(req, store, store, store));
+  assert_equal(
+    oauth::is_valid_signature(req, store, store, store),
+    expected);
 }
 
 void oauth_check_expired_signature() {
@@ -475,8 +476,25 @@ void oauth_check_expired_signature() {
                           "nnch734d00sl2jdk", "pfkkdhi9sl3r4s00");
   oauth::validity::validity expected(
     oauth::validity::unauthorized("Timestamp is too far in the past."));
-  assert_equal(expected,
-               oauth::is_valid_signature(req, store, store, store));
+  assert_equal(
+    oauth::is_valid_signature(req, store, store, store),
+    expected);
+}
+
+void oauth_check_bad_quoting() {
+  boost::optional<std::string> auth_header = std::string("OAuth %3Cdummy%20id=\"'-1'%2F%3E\", oauth_consumer_key=\"U84xxVrHBewaYHehTpaV0Rk3nGhahzRj0zntCe1N\", oauth_nonce=\"Xw1WlI\", oauth_signature=\"32gRmihzmdV47jW2juAL7mIpXkA%3D\", oauth_signature_method=\"HMAC-SHA1\", oauth_timestamp=\"1526814151\", oauth_token=\"FLfg7mbQlV6TAcBSY58YgQz39mpcWgj47J3PZPEx\"");
+  test_request req(
+    "GET",
+    "http", "localhost", "31337", "api/0.6/changeset/876/download", "",
+    1191242096,
+    auth_header);
+
+  test_secret_store store("", "", "", "");
+
+  oauth::validity::bad_request bad_request;
+  assert_equal(
+    oauth::is_valid_signature(req, store, store, store),
+    oauth::validity::validity(bad_request));
 }
 
 int main() {
@@ -496,6 +514,7 @@ int main() {
     ANNOTATE_EXCEPTION(oauth_check_valid_signature_header_2());
     ANNOTATE_EXCEPTION(oauth_check_almost_expired_signature());
     ANNOTATE_EXCEPTION(oauth_check_expired_signature());
+    ANNOTATE_EXCEPTION(oauth_check_bad_quoting());
 
   } catch (const std::exception &e) {
     std::cerr << "EXCEPTION: " << e.what() << std::endl;
