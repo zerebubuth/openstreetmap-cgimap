@@ -83,15 +83,13 @@ void json_writer::end_object() { yajl_gen_map_close(pimpl->gen); }
 
 void json_writer::entry_bool(bool b) { yajl_gen_bool(pimpl->gen, b ? 1 : 0); }
 
-void json_writer::entry_int(int i) { yajl_gen_integer(pimpl->gen, i); }
+void json_writer::entry_int(int32_t i) { yajl_gen_integer(pimpl->gen, i); }
 
-void json_writer::entry_int(unsigned long int i) {
-  yajl_gen_integer(pimpl->gen, i);
-}
+void json_writer::entry_int(int64_t i) { yajl_gen_integer(pimpl->gen, i); }
 
-void json_writer::entry_int(unsigned long long int i) {
-  yajl_gen_integer(pimpl->gen, i);
-}
+void json_writer::entry_int(uint32_t i) { yajl_gen_integer(pimpl->gen, i); }
+
+void json_writer::entry_int(uint64_t i) { yajl_gen_integer(pimpl->gen, i); }
 
 void json_writer::entry_double(double d) {
   // this is the only way, it seems, to use a fixed format for double output.
