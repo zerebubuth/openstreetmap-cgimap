@@ -19,9 +19,10 @@ addons:
       - libmemcached-dev
       - libpqxx-dev
       - libxml2-dev
+      - libyajl-dev
 script:
   - ./autogen.sh
-  - ./configure CC="ccache gcc" CXX="ccache g++"
+  - ./configure --enable-yajl CC="ccache gcc" CXX="ccache g++"
   - make
   - make check
 after_failure:
