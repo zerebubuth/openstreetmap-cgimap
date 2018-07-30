@@ -33,7 +33,7 @@ static void wrap_write(void *context, const char *str, unsigned int len) {
 }
 
 json_writer::json_writer(boost::shared_ptr<output_buffer> &out, bool indent)
-    : pimpl(new pimpl_()) {
+    : pimpl(new pimpl_()), out(out) {
 #ifdef HAVE_YAJL2
   pimpl->gen = yajl_gen_alloc(NULL);
 
@@ -71,6 +71,17 @@ json_writer::~json_writer() throw() {
   yajl_gen_clear(pimpl->gen);
   yajl_gen_free(pimpl->gen);
   delete pimpl;
+
+  if (out != nullptr) {
+      try {
+        out->close();
+      } catch (...) {
+        // don't do anything here or we risk FUBARing the entire program.
+        // it might not be possible to end the document because the output
+        // stream went away. if so, then there is nothing to do but try
+        // and reclaim the extra memory.
+      }
+  }
 }
 
 void json_writer::start_object() { yajl_gen_map_open(pimpl->gen); }

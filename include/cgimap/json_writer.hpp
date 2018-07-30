@@ -42,6 +42,7 @@ private:
   // PIMPL idiom
   struct pimpl_;
   pimpl_ *pimpl;
+  boost::shared_ptr<output_buffer> out;
 };
 
 #endif /* JSON_WRITER_HPP */
