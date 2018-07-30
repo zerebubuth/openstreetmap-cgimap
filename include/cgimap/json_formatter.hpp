@@ -12,8 +12,10 @@
 class json_formatter : public output_formatter {
 private:
   boost::scoped_ptr<json_writer> writer;
+  bool elements_header_written;
 
   void write_tags(const tags_t &tags);
+  void write_id(const element_info &elem);
   void write_common(const element_info &elem);
 
 public:

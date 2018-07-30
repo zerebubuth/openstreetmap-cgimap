@@ -11,20 +11,16 @@ Status: 200 OK
   "copyright": "***",
   "attribution": "***",
   "license": "***",
-  "changesets": [],
-  "nodes": [
-      { "id": 1,
-	"visible": true,
-	"version": 1,
-	"changeset": 1,
-	"timestamp": "2012-09-25T00:00:00Z",
-	"user": "foo",
-	"uid": 1,
+  "elements": [
+      { "type": "node",
+        "id": 1,
 	"lat": 0.0000000,
 	"lon": 0.0000000,
-	"tags": {}
+	"timestamp": "2012-09-25T00:00:00Z",
+	"version": 1,
+	"changeset": 1,
+	"user": "foo",
+	"uid": 1
       }
-  ],
-  "ways": [],
-  "relations": []
+  ]
 }
