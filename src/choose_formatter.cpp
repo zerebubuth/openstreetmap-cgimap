@@ -163,6 +163,8 @@ acceptable_types::acceptable_types(const std::string &accept_header) {
 }
 
 bool acceptable_types::is_acceptable(mime::type mt) const {
+  if (mapping.find(mime::type::any_type) != mapping.end())
+    return true;
   return mapping.find(mt) != mapping.end();
 }
 
