@@ -1,0 +1,27 @@
+# .json suffix should return JSON response, as permitted by wildcard */* accept
+Request-Method: GET
+Request-URI: /api/0.6/node/1.json
+HTTP-Accept: */*
+---
+Content-Type: text/json; charset=utf-8
+!Content-Disposition: 
+Status: 200 OK
+---
+{ "version": "0.6",
+  "generator": "***",
+  "copyright": "***",
+  "attribution": "***",
+  "license": "***",
+  "elements": [
+      { "type": "node",
+        "id": 1,
+	"lat": 0.0000000,
+	"lon": 0.0000000,
+	"timestamp": "2012-09-25T00:00:00Z",
+	"version": 1,
+	"changeset": 1,
+	"user": "foo",
+	"uid": 1
+      }
+  ]
+}
