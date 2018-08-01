@@ -192,13 +192,25 @@ namespace {
  * figures out the mime type from the path specification, e.g: a resource ending
  * in .xml should be text/xml, .json should be text/json, etc...
  */
-pair<string, mime::type> resource_mime_type(const string &path) {
-  std::size_t json_found = path.rfind(".json");
+  pair<string, mime::type> resource_mime_type(const string &path) {
 
-  if (json_found != string::npos && json_found == path.length() - 5) {
-    return make_pair(path.substr(0, json_found), mime::text_json);
-  }
-  return make_pair(path, mime::unspecified_type);
+    {
+      std::size_t json_found = path.rfind(".json");
+
+      if (json_found != string::npos && json_found == path.length() - 5) {
+	  return make_pair(path.substr(0, json_found), mime::text_json);
+      }
+    }
+
+    {
+      std::size_t xml_found = path.rfind(".xml");
+
+      if (xml_found != string::npos && xml_found == path.length() - 4) {
+	  return make_pair(path.substr(0, xml_found), mime::text_xml);
+      }
+    }
+
+    return make_pair(path, mime::unspecified_type);
 }
 
 handler_ptr_t route_resource(request &req, const string &path,
