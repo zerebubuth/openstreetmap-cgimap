@@ -28,7 +28,8 @@ const std::string &element_type_name(element_type elt) {
 
 } // anonymous namespace
 
-json_formatter::json_formatter(json_writer *w) : writer(w), elements_header_written(false) {}
+json_formatter::json_formatter(json_writer *w) : writer(w),
+    is_in_elements_array(false) {}
 
 json_formatter::~json_formatter() {}
 
@@ -79,22 +80,22 @@ void json_formatter::write_bounds(const bbox &bounds) {
 
 void json_formatter::end_document() {
 
-  writer->end_array();   // end of elements array
-  elements_header_written = false;
+  writer->end_array();            // end of elements array
+  is_in_elements_array = false;
   writer->end_object();
 }
 
 void json_formatter::start_element_type(element_type type) {
 
-  if (elements_header_written)
+  if (is_in_elements_array)
     return;
 
   writer->object_key("elements");
   writer->start_array();
-  elements_header_written = true;
+  is_in_elements_array = true;
 }
 
-void json_formatter::end_element_type(element_type) {}
+void json_formatter::end_element_type(element_type type) {}
 
 void json_formatter::start_action(action_type type) {
 }
@@ -212,7 +213,55 @@ void json_formatter::write_changeset(const changeset_info &elem,
                                      const comments_t &comments,
                                      const pt::ptime &now) {
 
- // TODO: changeset is not supported in JSON output
+  writer->start_object();
+
+  WRITE_KV("type", string, "changeset");
+
+  writer->object_key("id");
+  writer->entry_int(elem.id);
+
+  writer->object_key("created_at");
+  writer->entry_string(elem.created_at);
+
+  writer->object_key("closed_at");
+  writer->entry_string(elem.closed_at);
+
+  writer->object_key("open");
+  writer->entry_bool(elem.is_open_at(now));
+
+  if (elem.display_name && elem.uid) {
+    writer->object_key("user");
+    writer->entry_string(elem.display_name.get());
+    writer->object_key("uid");
+    writer->entry_int(elem.uid.get());
+  }
+
+  if ((elem.bounding_box))
+    write_bounds(*elem.bounding_box);
+
+  writer->object_key("comments_count");
+  writer->entry_int(elem.comments_count);
+
+  if (include_comments && !comments.empty()) {
+      writer->object_key("comments");
+      writer->start_array();
+      for (const auto & comment : comments) {
+	  writer->start_object();
+	  writer->object_key("user");
+	  writer->entry_string(comment.author_display_name);
+	  writer->object_key("uid");
+	  writer->entry_int(comment.author_id);
+	  writer->object_key("created_at");
+	  writer->entry_string(comment.created_at);
+	  writer->object_key("body");
+	  writer->entry_string(comment.body);
+	  writer->end_object();
+      }
+      writer->end_array();
+  }
+
+  write_tags(tags);
+  writer->end_object();
 }
 
 void json_formatter::flush() { writer->flush(); }
