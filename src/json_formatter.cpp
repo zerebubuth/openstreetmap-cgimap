@@ -223,44 +223,56 @@ void json_formatter::write_changeset(const changeset_info &elem,
   writer->object_key("created_at");
   writer->entry_string(elem.created_at);
 
-  writer->object_key("closed_at");
-  writer->entry_string(elem.closed_at);
+  const bool is_open = elem.is_open_at(now);
+  if (!is_open) {
+      writer->object_key("closed_at");
+      writer->entry_string(elem.closed_at);
+  }
 
   writer->object_key("open");
-  writer->entry_bool(elem.is_open_at(now));
+  writer->entry_bool(is_open);
 
-  if (elem.display_name && elem.uid) {
+  if (elem.display_name && bool(elem.uid)) {
     writer->object_key("user");
     writer->entry_string(elem.display_name.get());
     writer->object_key("uid");
     writer->entry_int(elem.uid.get());
   }
 
-  if ((elem.bounding_box))
-    write_bounds(*elem.bounding_box);
+  if (elem.bounding_box) {
+      writer->object_key("minlat");
+      writer->entry_double(elem.bounding_box->minlat);
+      writer->object_key("minlon");
+      writer->entry_double(elem.bounding_box->minlon);
+      writer->object_key("maxlat");
+      writer->entry_double(elem.bounding_box->maxlat);
+      writer->object_key("maxlon");
+      writer->entry_double(elem.bounding_box->maxlon);
+  }
 
   writer->object_key("comments_count");
   writer->entry_int(elem.comments_count);
 
+  write_tags(tags);
+
   if (include_comments && !comments.empty()) {
-      writer->object_key("comments");
+      writer->object_key("discussion");
       writer->start_array();
       for (const auto & comment : comments) {
 	  writer->start_object();
-	  writer->object_key("user");
-	  writer->entry_string(comment.author_display_name);
+	  writer->object_key("date");
+	  writer->entry_string(comment.created_at);
 	  writer->object_key("uid");
 	  writer->entry_int(comment.author_id);
-	  writer->object_key("created_at");
-	  writer->entry_string(comment.created_at);
-	  writer->object_key("body");
+	  writer->object_key("user");
+	  writer->entry_string(comment.author_display_name);
+	  writer->object_key("text");
 	  writer->entry_string(comment.body);
 	  writer->end_object();
       }
       writer->end_array();
   }
 
-  write_tags(tags);
   writer->end_object();
 }
 
