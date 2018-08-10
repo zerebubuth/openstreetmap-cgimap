@@ -194,6 +194,7 @@ namespace {
  */
   pair<string, mime::type> resource_mime_type(const string &path) {
 
+#ifdef HAVE_YAJL
     {
       std::size_t json_found = path.rfind(".json");
 
@@ -201,6 +202,7 @@ namespace {
 	  return make_pair(path.substr(0, json_found), mime::text_json);
       }
     }
+#endif
 
     {
       std::size_t xml_found = path.rfind(".xml");
