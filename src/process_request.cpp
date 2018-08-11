@@ -405,6 +405,7 @@ void process_request(request &req, rate_limiter &limiter,
     string client_key;
     boost::optional<osm_user_id_t> user_id;
     std::set<osm_user_role_t> user_roles;
+    bool allow_api_write = true;
 
     if (store) {
       oauth::validity::validity oauth_valid =
@@ -413,6 +414,7 @@ void process_request(request &req, rate_limiter &limiter,
       if (boost::apply_visitor(is_copacetic(), oauth_valid)) {
         string token = boost::apply_visitor(get_oauth_token(), oauth_valid);
         user_id = store->get_user_id_for_token(token);
+        allow_api_write = store->allow_write_api(token);
 
         if (user_id) {
           client_key = (format("%1%%2%") % user_prefix % (*user_id)).str();
@@ -485,6 +487,9 @@ void process_request(request &req, rate_limiter &limiter,
         process_get_request(req, handler, selection, ip, generator);
 
     } else if (method == http::method::POST) {
+
+      if (!allow_api_write)
+	throw http::unauthorized("You have not permitted the application write access to this facility");
 
       std::string payload = req.get_payload();
       auto data_update = update_factory->make_data_update();
