@@ -54,8 +54,9 @@ void respond_401(const http::unauthorized &e, request &r) {
 
   r.status(e.code());
   r.add_header("Content-Type", "text/plain; charset=utf-8");
-//  r.add_header("WWW-Authenticate", R"(Basic realm="OpenStreetMap login required")");
-  r.add_header("WWW-Authenticate", R"(OAuth)");
+  r.add_header("WWW-Authenticate", R"(OAuth realm="OpenStreetMap login required")");
+  // Header according to RFC 7617, section 2.1
+  r.add_header("WWW-Authenticate", R"(Basic realm="OpenStreetMap login required", charset="UTF-8")");
   r.add_header("Content-Length", message_size.str());
   r.add_header("Cache-Control", "no-cache");
 
