@@ -32,12 +32,6 @@ changeset_upload_responder::changeset_upload_responder(
     boost::optional<osm_user_id_t> user_id)
     : osm_diffresult_responder(mt), id(id_), upd(upd) {
 
-  if (!user_id)
-    throw http::unauthorized("User is not authorized to upload changeset");
-
-  if (upd->is_readonly())
-    throw http::bad_request("Server is currently in read only mode, changeset upload not possible at this time");
-
   osm_changeset_id_t changeset = id_;
   osm_user_id_t uid = *user_id;
 

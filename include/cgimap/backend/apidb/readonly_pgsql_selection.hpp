@@ -57,6 +57,10 @@ public:
   void set_redactions_visible(bool);
   int select_historical_by_changesets(const std::vector<osm_changeset_id_t> &);
 
+  bool supports_user_details();
+  bool is_user_blocked(const osm_user_id_t);
+  bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &);
+
   /**
    * a factory for the creation of read-only selections, so it
    * can set up prepared statements.

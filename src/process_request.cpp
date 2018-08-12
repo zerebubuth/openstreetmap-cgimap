@@ -488,11 +488,21 @@ void process_request(request &req, rate_limiter &limiter,
 
     } else if (method == http::method::POST) {
 
+      if (!user_id)
+        throw http::unauthorized("User is not authorized");
+
+      if (selection->supports_user_details() && selection->is_user_blocked(*user_id))
+	throw http::unauthorized("User has been blocked");
+
       if (!allow_api_write)
-	throw http::unauthorized("You have not permitted the application write access to this facility");
+	throw http::unauthorized("You have not granted the modify map permission");
+
+      auto data_update = update_factory->make_data_update();
+
+      if (data_update->is_readonly())
+        throw http::bad_request("Server is currently in read only mode, no database changes allowed at this time");
 
       std::string payload = req.get_payload();
-      auto data_update = update_factory->make_data_update();
 
       boost::tie(request_name, bytes_written) =
           process_post_request(req, handler, data_update, payload, user_id, ip, generator);
