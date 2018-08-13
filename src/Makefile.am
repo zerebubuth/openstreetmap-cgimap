@@ -84,7 +84,8 @@ ___test_test_parse_id_list_SOURCES=\
 	../test/test_parse_id_list.cpp
 
 ___test_test_basicauth_SOURCES=\
-	../test/test_basicauth.cpp
+	../test/test_basicauth.cpp \
+	../test/test_request.cpp
 
 ___test_test_oauth_SOURCES=\
 	../test/test_oauth.cpp

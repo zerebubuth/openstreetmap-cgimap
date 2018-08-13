@@ -155,7 +155,7 @@ namespace basicauth {
     auto user_exists = selection->get_user_id_pass(display_name, user_id, pass_crypt, pass_salt);
 
     if (!user_exists)
-      return boost::optional<osm_user_id_t>{};
+      throw http::unauthorized("Incorrect user or password");
 
     if (pwd_hash.check(pass_crypt, pass_salt, candidate))
       return boost::optional<osm_user_id_t>{user_id};
