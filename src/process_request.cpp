@@ -408,39 +408,48 @@ void process_request(request &req, rate_limiter &limiter,
     std::set<osm_user_role_t> user_roles;
     bool allow_api_write = true;
 
-    if (store) {
+    // create a data selection for the request
+    auto selection = factory->make_selection();
+
+    // Initially assume IP based client key
+    client_key = addr_prefix + ip;
+
+    // Try to authenticate user via Basic Auth
+    user_id = basicauth::authenticate_user(req, selection);
+
+    // Try to authenticate user via OAuth token
+    if (!user_id && store) {
       oauth::validity::validity oauth_valid =
         oauth::is_valid_signature(req, *store, *store, *store);
 
       if (boost::apply_visitor(is_copacetic(), oauth_valid)) {
         string token = boost::apply_visitor(get_oauth_token(), oauth_valid);
         user_id = store->get_user_id_for_token(token);
-        allow_api_write = store->allow_write_api(token);
-
-        if (user_id) {
-          client_key = (format("%1%%2%") % user_prefix % (*user_id)).str();
-          user_roles = store->get_roles_for_user(*user_id);
-
-        } else {
+        if (!user_id) {
           // we can get here if there's a valid OAuth signature, with an
           // authorised token matching the secret stored in the database,
           // but that's not assigned to a user ID. perhaps this can
-          // happen due to concurrent revokation? in any case, we don't
+          // happen due to concurrent revocation? in any case, we don't
           // want to go any further.
           logger::message(format("Unable to find user ID for token %1%.") %
                           token);
           throw http::server_error("Unable to find user ID for token.");
         }
+        allow_api_write = store->allow_write_api(token);
 
       } else {
         boost::apply_visitor(oauth_status_response(), oauth_valid);
-
         // if we got here then oauth_status_response didn't throw, which means
         // the request must have been unsigned.
-        client_key = addr_prefix + ip;
       }
-    } else {
-      client_key = addr_prefix + ip;
+    }
+
+    // If user has been authenticated either via Basic Auth or OAuth,
+    // set the client key and user roles accordingly
+    if (user_id) {
+        client_key = (format("%1%%2%") % user_prefix % (*user_id)).str();
+        if (store)
+          user_roles = store->get_roles_for_user(*user_id);
     }
 
     pt::ptime start_time(pt::second_clock::local_time());
@@ -474,8 +483,6 @@ void process_request(request &req, rate_limiter &limiter,
     // override the default access control allow methods header
     req.set_default_methods(handler->allowed_methods());
 
-    // create a data selection for the request
-    auto selection = factory->make_selection();
     if (selection->supports_historical_versions() &&
         show_redactions_requested(req) &&
         (user_roles.count(osm_user_role_t::moderator) > 0)) {

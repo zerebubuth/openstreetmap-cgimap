@@ -6,6 +6,7 @@
 #include "cgimap/data_update.hpp"
 #include "cgimap/data_selection.hpp"
 #include "cgimap/routes.hpp"
+#include "cgimap/basicauth.hpp"
 #include "cgimap/oauth.hpp"
 #include <string>
 #include <boost/shared_ptr.hpp>
