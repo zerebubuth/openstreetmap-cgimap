@@ -117,6 +117,45 @@ void test_allow_read_api(test_database &tdb) {
     "invalid token does not allow reading API");
 }
 
+void test_allow_write_api(test_database &tdb) {
+  tdb.run_sql(
+    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+    "VALUES "
+    "  (11, 'user_11@example.com', '', '2013-11-14T02:10:00Z', 'user_11', true); "
+
+    "INSERT INTO client_applications "
+    "  (id, name, user_id, allow_read_prefs, allow_write_api, key, secret) "
+    "VALUES "
+    "  (111, 'test_client_application111', 11, true, true, "
+    "   'x3tHSMbotPe5fBlItMbg', '1NZRJ0u2o7OilPDe60nfZsKJTC7RUZPrNfYwGBjATw'); "
+
+    "INSERT INTO oauth_tokens "
+    "  (id, user_id, client_application_id, allow_read_prefs, allow_write_api, token, secret, "
+    "   created_at, authorized_at, invalidated_at) "
+    "VALUES "
+    // write api permitted
+    "  (11, 11, 111, true, true,"
+    "   'AfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA', "
+    "   'fFCKdXsLxeHPlgrIPr5fZSpXKnDuLw0GvJTzeE99', "
+    "   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', NULL), "
+    // write api not permitted
+    "  (12, 11, 111, true, false,"
+    "   'ApNsXPhrgWl4ELPjPbhfwjjSbNk9npsKoNrMGFlC', "
+    "   'NZskvUUYlOuCsPKuMbSTz5eMpVJVI3LsyW11Z2Uq', "
+    "   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', NULL); "
+    "");
+  boost::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+
+  assert_equal<bool>(
+    true, store->allow_write_api("AfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA"),
+    "valid token and api write permitted allows writing API");
+
+  assert_equal<bool>(
+    false, store->allow_write_api("ApNsXPhrgWl4ELPjPbhfwjjSbNk9npsKoNrMGFlC"),
+    "valid token and api write not permitted does not allow writing API");
+}
+
+
 void test_get_user_id_for_token(test_database &tdb) {
   tdb.run_sql(
     "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
@@ -358,6 +397,9 @@ int main(int, char **) {
 
     tdb.run(boost::function<void(test_database&)>(
         &test_allow_read_api));
+
+    tdb.run(boost::function<void(test_database&)>(
+        &test_allow_write_api));
 
     tdb.run(boost::function<void(test_database&)>(
         &test_get_user_id_for_token));
