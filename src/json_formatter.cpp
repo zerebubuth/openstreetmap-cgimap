@@ -253,6 +253,9 @@ void json_formatter::write_changeset(const changeset_info &elem,
   writer->object_key("comments_count");
   writer->entry_int(elem.comments_count);
 
+  writer->object_key("changes_count");
+  writer->entry_int(elem.num_changes);
+
   write_tags(tags);
 
   if (include_comments && !comments.empty()) {
