@@ -27,7 +27,7 @@ int test_output_buffer::close() {
 
 void test_output_buffer::flush() {}
 
-test_request::test_request() : m_status(-1) {}
+test_request::test_request() : m_status(-1), m_payload{} {}
 
 test_request::~test_request() {}
 
@@ -42,7 +42,11 @@ const char *test_request::get_param(const char *key) {
 }
 
 const std::string test_request::get_payload() {
-  return "";
+  return m_payload;
+}
+
+void test_request::set_payload(const std::string& payload) {
+  m_payload = payload;
 }
 
 void test_request::dispose() {}

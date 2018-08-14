@@ -51,10 +51,16 @@ struct test_database : public boost::noncopyable {
   // executed exactly once only.
   void run_update(boost::function<void(test_database&)> func);
 
+  // return a data selection factory pointing at the current database
+  boost::shared_ptr<data_selection::factory> get_data_selection_factory();
+
+  // return a data update factory pointing at the current database
+  boost::shared_ptr<data_update::factory> get_data_update_factory();
+
   // return a data selection pointing at the current database
   boost::shared_ptr<data_selection> get_data_selection();
 
-  // return a data updater poiting at the current database
+  // return a data updater pointing at the current database
   boost::shared_ptr<data_update> get_data_update();
 
   // return an oauth store pointing at the current database

@@ -32,6 +32,7 @@ struct test_request : public request {
   virtual ~test_request();
   virtual const char *get_param(const char *key);
   virtual const std::string get_payload();
+  void set_payload(const std::string&);
 
   virtual void dispose();
 
@@ -54,6 +55,7 @@ private:
   std::stringstream m_output;
   std::map<std::string, std::string> m_params;
   boost::posix_time::ptime m_now;
+  std::string m_payload;
 };
 
 #endif /* TEST_TEST_REQUEST_HPP */

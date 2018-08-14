@@ -211,6 +211,21 @@ void test_database::run_update(
 }
 
 
+boost::shared_ptr<data_selection::factory> test_database::get_data_selection_factory() {
+  if (m_use_readonly) {
+    return m_readonly_factory;
+
+  } else {
+    return m_writeable_factory;
+  }
+}
+
+// return a data update factory pointing at the current database
+boost::shared_ptr<data_update::factory> test_database:: get_data_update_factory() {
+  return m_update_factory;
+}
+
+
 boost::shared_ptr<data_selection> test_database::get_data_selection() {
   if (m_use_readonly) {
     return (*m_readonly_factory).make_selection();

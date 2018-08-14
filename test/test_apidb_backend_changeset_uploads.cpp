@@ -16,6 +16,7 @@
 #include "cgimap/rate_limiter.hpp"
 #include "cgimap/routes.hpp"
 #include "cgimap/process_request.hpp"
+#include "cgimap/output_buffer.hpp"
 
 #include "cgimap/api06/changeset_upload/osmchange_handler.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_input_format.hpp"
@@ -1571,6 +1572,182 @@ namespace {
       }
   }
 
+  void test_osmchange_end_to_end(test_database &tdb) {
+
+    // Prepare users, changesets
+
+    tdb.run_sql(R"(
+	 INSERT INTO users (id, email, pass_crypt, pass_salt, creation_time, display_name, data_public, status)
+	 VALUES
+	   (1, 'demo@example.com', '3wYbPiOxk/tU0eeIDjUhdvi8aDP3AbFtwYKKxF1IhGg=',
+                                     'sha512!10000!OUQLgtM7eD8huvanFT5/WtWaCwdOdrir8QOtFwxhO0A=',
+                                     '2013-11-14T02:10:00Z', 'demo', true, 'confirmed'),
+	   (2, 'user_2@example.com', '', '', '2013-11-14T02:10:00Z', 'user_2', false, 'active');
+
+	INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes)
+	VALUES
+	  (1, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 0),
+	  (2, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 10000),
+	  (3, 1, now() at time zone 'utc' - '12 hour' ::interval,
+                 now() at time zone 'utc' - '11 hour' ::interval, 10000),
+	  (4, 2, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 0),
+	  (5, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 0);
+        )"
+    );
+
+    const std::string baseauth = "Basic ZGVtbzpwYXNzd29yZA==";
+    const std::string generator = "Test";
+
+    auto sel_factory = tdb.get_data_selection_factory();
+    auto upd_factory = tdb.get_data_update_factory();
+
+    null_rate_limiter limiter;
+    routes route;
+
+    // Try to post a changeset, where the URL points to a different URL than the payload
+    {
+	// set up request headers from test case
+	test_request req;
+	req.set_header("REQUEST_METHOD", "POST");
+	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
+	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+	     <osmChange version="0.6" generator="iD">
+	     <create><node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="2"/></create>
+             </osmChange>)" );
+
+	// execute the request
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, boost::shared_ptr<oauth::store>(nullptr));
+
+	if (req.response_status() != 409)
+	  throw std::runtime_error("Expected HTTP/409 Conflict: Payload and URL changeset id differ");
+    }
+
+    // Try to post a changeset, where the user doesn't own the changeset
+    {
+	// set up request headers from test case
+	test_request req;
+	req.set_header("REQUEST_METHOD", "POST");
+	req.set_header("REQUEST_URI", "/api/0.6/changeset/4/upload");
+	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+	     <osmChange version="0.6" generator="iD">
+	     <create><node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="4"/></create>
+             </osmChange>)" );
+
+	// execute the request
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, boost::shared_ptr<oauth::store>(nullptr));
+
+	if (req.response_status() != 409)
+	  throw std::runtime_error("Expected HTTP/409 Conflict: User doesn't own the changeset");
+    }
+
+    // Try to add a node to a changeset that already has 10000 elements (=max)
+    {
+	// set up request headers from test case
+	test_request req;
+	req.set_header("REQUEST_METHOD", "POST");
+	req.set_header("REQUEST_URI", "/api/0.6/changeset/2/upload");
+	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+		  <osmChange version="0.6" generator="iD">
+		     <create><node id="-5" lon="11" lat="46" version="0" changeset="2"/></create>
+		  </osmChange>)" );
+
+	// execute the request
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, boost::shared_ptr<oauth::store>(nullptr));
+
+	if (req.response_status() != 409)
+	  std::runtime_error("Expected HTTP/409 Conflict: Cannot add more elements to changeset");
+    }
+
+    // Try to add a node to a changeset that is already closed
+    {
+	// set up request headers from test case
+	test_request req;
+	req.set_header("REQUEST_METHOD", "POST");
+	req.set_header("REQUEST_URI", "/api/0.6/changeset/3/upload");
+	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+		  <osmChange version="0.6" generator="iD">
+		     <create><node id="-5" lon="11" lat="46" version="0" changeset="3"/></create>
+		  </osmChange>)" );
+
+	// execute the request
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, boost::shared_ptr<oauth::store>(nullptr));
+
+	if (req.response_status() != 409)
+	  std::runtime_error("Expected HTTP/409 Conflict: Changeset already closed");
+    }
+
+    // Try to add a nodes, ways, relations to a changeset
+    {
+	// set up request headers from test case
+	test_request req;
+	req.set_header("REQUEST_METHOD", "POST");
+	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
+	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+		  <osmChange version="0.6" generator="iD">
+		  <create>
+		    <node id="-5" lon="11" lat="46" version="0" changeset="1">
+		       <tag k="highway" v="bus_stop" />
+		    </node>
+		    <node id="-6" lon="13" lat="47" version="0" changeset="1">
+		       <tag k="highway" v="bus_stop" />
+		    </node>
+		    <node id="-7" lon="-54" lat="12" version="0" changeset="1"/>
+                    <way id="-10" version="0" changeset="1">
+                      <nd ref="-5"/>
+                      <nd ref="-6"/>
+                    </way>
+                    <way id="-11" version="0" changeset="1">
+                      <nd ref="-6"/>
+                      <nd ref="-7"/>
+                    </way>
+		    <relation id="-2" version="0" changeset="1">
+		       <member type="node" role="" ref="-5" />
+		       <tag k="type" v="route" />
+		       <tag k="name" v="AtoB" />
+		    </relation>
+		    <relation id="-3" version="0" changeset="1">
+		       <member type="node" role="" ref="-6" />
+		       <tag k="type" v="route" />
+		       <tag k="name" v="BtoA" />
+		    </relation>
+		    <relation id="-4" version="0" changeset="1">
+		       <member type="relation" role="" ref="-2" />
+		       <member type="relation" role="" ref="-3" />
+		       <tag k="type" v="route_master" />
+		       <tag k="name" v="master" />
+		    </relation>
+		 </create>
+		 </osmChange>)" );
+
+	// execute the request
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, boost::shared_ptr<oauth::store>(nullptr));
+
+	if (req.response_status() != 200)
+	  std::runtime_error("Expected HTTP/200 OK: Create new node");
+    }
+
+
+    //  TODO: compare the result to what we're expecting: check_response(in, req.buffer());
+    //	std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
+
+
+  }
+
 } // anonymous namespace
 
 int main(int, char **) {
@@ -1586,6 +1763,9 @@ int main(int, char **) {
       tdb.run_update(boost::function<void(test_database&)>(&test_single_relations));
 
       tdb.run_update(boost::function<void(test_database&)>(&test_osmchange_message));
+
+      tdb.run_update(boost::function<void(test_database&)>(&test_osmchange_end_to_end));
+
 
   } catch (const test_database::setup_error &e) {
       std::cout << "Unable to set up test database: " << e.what() << std::endl;
