@@ -6,7 +6,7 @@
 #include <sstream>
 #include <stdexcept>
 
-class Test_Parser_Callback : public Parser_Callback {
+class Test_Parser_Callback : public api06::Parser_Callback {
 
 public:
   Test_Parser_Callback() : start_executed(false), end_executed(false) {}
@@ -15,11 +15,11 @@ public:
 
   void end_document() { end_executed = true; }
 
-  void process_node(const Node &, operation op, bool if_unused) {}
+  void process_node(const api06::Node &, operation op, bool if_unused) {}
 
-  void process_way(const Way &, operation op, bool if_unused) {}
+  void process_way(const api06::Way &, operation op, bool if_unused) {}
 
-  void process_relation(const Relation &, operation op, bool if_unused) {}
+  void process_relation(const api06::Relation &, operation op, bool if_unused) {}
 
   bool start_executed;
   bool end_executed;
@@ -34,7 +34,7 @@ std::string repeat(const std::string &input, size_t num) {
 void process_testmsg(const std::string &payload) {
 
   Test_Parser_Callback cb;
-  OSMChangeXMLParser parser(&cb);
+  api06::OSMChangeXMLParser parser(&cb);
   parser.process_message(payload);
 }
 

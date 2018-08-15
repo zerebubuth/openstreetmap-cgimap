@@ -15,20 +15,20 @@
  *
  */
 
-class ApiDB_Way_Updater : public Way_Updater {
+class ApiDB_Way_Updater : public api06::Way_Updater {
 
 public:
   ApiDB_Way_Updater(Transaction_Manager &_m,
-                    std::shared_ptr<OSMChange_Tracking> _ct);
+                    std::shared_ptr<api06::OSMChange_Tracking> _ct);
 
   virtual ~ApiDB_Way_Updater();
 
   void add_way(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
-               const WayNodeList &nodes, const TagList &tags);
+               const api06::WayNodeList &nodes, const api06::TagList &tags);
 
   void modify_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id,
-                  osm_version_t version, const WayNodeList &nodes,
-                  const TagList &tags);
+                  osm_version_t version, const api06::WayNodeList &nodes,
+                  const api06::TagList &tags);
 
   void delete_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id,
                   osm_version_t version, bool if_unused);
@@ -71,9 +71,9 @@ private:
 
   void replace_old_ids_in_ways(
       std::vector<way_t> &ways,
-      const std::vector<OSMChange_Tracking::object_id_mapping_t>
+      const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
           &created_node_id_mapping,
-      const std::vector<OSMChange_Tracking::object_id_mapping_t>
+      const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
           &created_way_id_mapping);
 
   void check_unique_placeholder_ids(const std::vector<way_t> &create_ways);
@@ -120,7 +120,7 @@ private:
   void delete_current_way_nodes(std::vector<osm_nwr_id_t> ids);
 
   Transaction_Manager &m;
-  std::shared_ptr<OSMChange_Tracking> ct;
+  std::shared_ptr<api06::OSMChange_Tracking> ct;
 
   std::vector<way_t> create_ways;
   std::vector<way_t> modify_ways;

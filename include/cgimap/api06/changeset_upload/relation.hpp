@@ -8,6 +8,8 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/optional.hpp>
 
+namespace api06 {
+
 class RelationMember {
 
 public:
@@ -108,5 +110,7 @@ public:
 private:
   std::vector<RelationMember> m_relation_member;
 };
+
+} // namespace api06
 
 #endif

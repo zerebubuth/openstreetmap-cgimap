@@ -6,6 +6,8 @@
 #include <boost/optional.hpp>
 #include <iostream>
 
+namespace api06 {
+
 class Node : public OSMObject {
 
 public:
@@ -76,5 +78,7 @@ private:
   boost::optional<double> m_lat;
   boost::optional<double> m_lon;
 };
+
+} // namespace api06
 
 #endif

@@ -8,6 +8,8 @@
 #include <boost/optional.hpp>
 #include <map>
 
+namespace api06 {
+
 class OSMObject {
 
 public:
@@ -150,5 +152,7 @@ private:
 
   std::map<std::string, std::string> m_tags;
 };
+
+} // namespace api06
 
 #endif

@@ -4,6 +4,8 @@
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
 
+namespace api06 {
+
 class Changeset_Updater {
 
 public:
@@ -13,5 +15,7 @@ public:
 
   virtual void update_changeset(uint32_t num_new_changes, bbox_t bbox) = 0;
 };
+
+} // namespace api06
 
 #endif

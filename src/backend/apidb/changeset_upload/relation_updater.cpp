@@ -19,7 +19,7 @@
 using boost::format;
 
 ApiDB_Relation_Updater::ApiDB_Relation_Updater(
-    Transaction_Manager &_m, std::shared_ptr<OSMChange_Tracking> _ct)
+    Transaction_Manager &_m, std::shared_ptr<api06::OSMChange_Tracking> _ct)
     : m_bbox(), m(_m), ct(std::move(_ct)) {}
 
 ApiDB_Relation_Updater::~ApiDB_Relation_Updater() {}
@@ -317,11 +317,11 @@ void ApiDB_Relation_Updater::truncate_temporary_tables() {
  */
 void ApiDB_Relation_Updater::replace_old_ids_in_relations(
     std::vector<relation_t> &relations,
-    const std::vector<OSMChange_Tracking::object_id_mapping_t>
+    const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
         &created_node_id_mapping,
-    const std::vector<OSMChange_Tracking::object_id_mapping_t>
+    const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
         &created_way_id_mapping,
-    const std::vector<OSMChange_Tracking::object_id_mapping_t>
+    const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
         &created_relation_id_mapping) {
 
   // Prepare mapping tables

@@ -19,6 +19,8 @@
 #include <sstream>
 #include <string>
 
+namespace api06 {
+
 struct xml_error : public http::bad_request {
 
   std::string error_code;
@@ -477,5 +479,7 @@ public:
     parser(data);
   }
 };
+
+} // namespace api06
 
 #endif // OSMCHANGE_INPUT_FORMAT_HPP

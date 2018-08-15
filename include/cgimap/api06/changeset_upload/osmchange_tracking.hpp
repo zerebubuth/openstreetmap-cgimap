@@ -8,6 +8,8 @@
 
 #include "cgimap/types.hpp"
 
+namespace api06 {
+
 class OSMChange_Tracking {
 
 public:
@@ -60,5 +62,7 @@ public:
   // the following vector keeps a copy of that original sequence
   std::vector<osmchange_t> osmchange_orig_sequence;
 };
+
+} // namespace api06
 
 #endif

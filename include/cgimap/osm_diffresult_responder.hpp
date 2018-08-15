@@ -21,7 +21,7 @@ public:
              const boost::posix_time::ptime &now);
 
 protected:
-  std::shared_ptr<OSMChange_Tracking> change_tracking;
+  std::shared_ptr<api06::OSMChange_Tracking> change_tracking;
 };
 
 #endif /* OSM_DIFFRESULT_RESPONDER_HPP */

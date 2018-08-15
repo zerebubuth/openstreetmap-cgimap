@@ -112,31 +112,31 @@ bool pgsql_update::is_readonly() {
   return m_readonly;
 }
 
-std::unique_ptr<Changeset_Updater>
+std::unique_ptr<api06::Changeset_Updater>
 pgsql_update::get_changeset_updater(osm_changeset_id_t changeset, osm_user_id_t uid)
 {
-  std::unique_ptr<Changeset_Updater> changeset_updater(new ApiDB_Changeset_Updater(m, changeset, uid));
+  std::unique_ptr<api06::Changeset_Updater> changeset_updater(new ApiDB_Changeset_Updater(m, changeset, uid));
   return changeset_updater;
 }
 
-std::unique_ptr<Node_Updater>
-pgsql_update::get_node_updater(std::shared_ptr<OSMChange_Tracking> ct)
+std::unique_ptr<api06::Node_Updater>
+pgsql_update::get_node_updater(std::shared_ptr<api06::OSMChange_Tracking> ct)
 {
-  std::unique_ptr<Node_Updater> node_updater(new ApiDB_Node_Updater(m, ct));
+  std::unique_ptr<api06::Node_Updater> node_updater(new ApiDB_Node_Updater(m, ct));
   return node_updater;
 }
 
-std::unique_ptr<Way_Updater>
-pgsql_update::get_way_updater(std::shared_ptr<OSMChange_Tracking> ct)
+std::unique_ptr<api06::Way_Updater>
+pgsql_update::get_way_updater(std::shared_ptr<api06::OSMChange_Tracking> ct)
 {
-  std::unique_ptr<Way_Updater> way_updater(new ApiDB_Way_Updater(m, ct));
+  std::unique_ptr<api06::Way_Updater> way_updater(new ApiDB_Way_Updater(m, ct));
   return way_updater;
 }
 
-std::unique_ptr<Relation_Updater>
-pgsql_update::get_relation_updater(std::shared_ptr<OSMChange_Tracking> ct)
+std::unique_ptr<api06::Relation_Updater>
+pgsql_update::get_relation_updater(std::shared_ptr<api06::OSMChange_Tracking> ct)
 {
-  std::unique_ptr<Relation_Updater> relation_updater(new ApiDB_Relation_Updater(m, ct));
+  std::unique_ptr<api06::Relation_Updater> relation_updater(new ApiDB_Relation_Updater(m, ct));
   return relation_updater;
 }
 

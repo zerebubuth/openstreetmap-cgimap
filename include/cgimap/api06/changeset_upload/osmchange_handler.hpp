@@ -14,6 +14,8 @@
 #include "relation.hpp"
 #include "way.hpp"
 
+namespace api06 {
+
 class OSMChange_Handler : public Parser_Callback {
 
 public:
@@ -67,5 +69,7 @@ private:
   osm_changeset_id_t m_changeset;
   osm_user_id_t m_uid;
 };
+
+} // namespace api06
 
 #endif

@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+namespace api06 {
+
 class Way : public OSMObject {
 
 public:
@@ -71,5 +73,7 @@ public:
 private:
   std::vector<osm_nwr_signed_id_t> m_way_nodes;
 };
+
+} // namespace api06
 
 #endif

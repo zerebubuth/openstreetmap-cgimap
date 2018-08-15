@@ -10,6 +10,9 @@
 #include <set>
 #include <string>
 
+
+namespace api06 {
+
 using TagList = std::map<std::string, std::string>;
 
 class Node_Updater {
@@ -37,5 +40,7 @@ public:
 
   virtual bbox_t bbox() = 0;
 };
+
+} // namespace api06
 
 #endif /* API06_CHANGESET_UPLOAD_NODE_UPDATER */

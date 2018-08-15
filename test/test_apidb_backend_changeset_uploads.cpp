@@ -56,7 +56,7 @@ namespace {
 
     // Create new node
     {
-      auto change_tracking = std::make_shared<OSMChange_Tracking>();
+      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
       auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
@@ -105,7 +105,7 @@ namespace {
 
     // Create two nodes with the same old_id
     {
-      auto change_tracking = std::make_shared<OSMChange_Tracking>();
+      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
       auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
@@ -123,7 +123,7 @@ namespace {
 
     // Change existing node
     {
-      auto change_tracking = std::make_shared<OSMChange_Tracking>();
+      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
       auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
@@ -164,7 +164,7 @@ namespace {
 
     // Change existing node with incorrect version number
     {
-      auto change_tracking = std::make_shared<OSMChange_Tracking>();
+      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
       auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
@@ -181,7 +181,7 @@ namespace {
 
     // Change existing node multiple times
     {
-      auto change_tracking = std::make_shared<OSMChange_Tracking>();
+      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
       auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
@@ -217,7 +217,7 @@ namespace {
 
     // Delete existing node
     {
-      auto change_tracking = std::make_shared<OSMChange_Tracking>();
+      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
       auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
@@ -240,7 +240,7 @@ namespace {
 
     // Try to delete already deleted node (if-unused not set)
     {
-      auto change_tracking = std::make_shared<OSMChange_Tracking>();
+      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
       auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
@@ -257,7 +257,7 @@ namespace {
 
     // Try to delete already deleted node (if-unused set)
     {
-      auto change_tracking = std::make_shared<OSMChange_Tracking>();
+      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
       auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
@@ -279,7 +279,7 @@ namespace {
 
     // Delete non-existing node
     {
-      auto change_tracking = std::make_shared<OSMChange_Tracking>();
+      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
       auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
@@ -296,7 +296,7 @@ namespace {
 
     // Modify non-existing node
     {
-      auto change_tracking = std::make_shared<OSMChange_Tracking>();
+      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
       auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
@@ -333,7 +333,7 @@ namespace {
 
       // Create new way with two nodes
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto node_updater = upd->get_node_updater(change_tracking);
@@ -391,7 +391,7 @@ namespace {
 
       // Create two ways with the same old_id
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto node_updater = upd->get_node_updater(change_tracking);
@@ -415,7 +415,7 @@ namespace {
 
       // Create way with unknown placeholder ids
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -433,7 +433,7 @@ namespace {
 
       // Change existing way
      {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -476,7 +476,7 @@ namespace {
 
       // Change existing way with incorrect version number
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -493,7 +493,7 @@ namespace {
 
       // Change existing way with unknown node id
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -510,7 +510,7 @@ namespace {
 
       // Change existing way with unknown placeholder node id
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -527,7 +527,7 @@ namespace {
 
       // TODO: Change existing way multiple times
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -539,7 +539,7 @@ namespace {
 
       // Try to delete node which still belongs to way, if-unused not set
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto node_updater = upd->get_node_updater(change_tracking);
@@ -556,7 +556,7 @@ namespace {
 
       // Try to delete node which still belongs to way, if-unused set
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto node_updater = upd->get_node_updater(change_tracking);
@@ -579,7 +579,7 @@ namespace {
 
       // Delete existing way
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -602,7 +602,7 @@ namespace {
 
       // Try to delete already deleted node (if-unused not set)
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -619,7 +619,7 @@ namespace {
 
       // Try to delete already deleted node (if-unused set)
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -641,7 +641,7 @@ namespace {
 
       // Delete non-existing way
       {
-        auto change_tracking = std::make_shared<OSMChange_Tracking>();
+        auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -658,7 +658,7 @@ namespace {
 
       // Modify non-existing way
       {
-        auto change_tracking = std::make_shared<OSMChange_Tracking>();
+        auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -700,7 +700,7 @@ namespace {
 
       // Create new relation with two nodes, and one way
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto node_updater = upd->get_node_updater(change_tracking);
@@ -777,7 +777,7 @@ namespace {
 
       // Create new relation with two nodes, and one way, only placeholder ids
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto node_updater = upd->get_node_updater(change_tracking);
@@ -852,7 +852,7 @@ namespace {
 
       // Create two relations with the same old_id
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -871,7 +871,7 @@ namespace {
 
       // Create one relation with self reference
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -890,7 +890,7 @@ namespace {
 
       // Create two relations with references to each other
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -910,7 +910,7 @@ namespace {
 
       // Create two relations with parent/child relationship
       {
-	      auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -952,7 +952,7 @@ namespace {
 
       // Create relation with unknown node placeholder id
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -970,7 +970,7 @@ namespace {
 
       // Create relation with unknown way placeholder id
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -988,7 +988,7 @@ namespace {
 
       // Create relation with unknown relation placeholder id
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1006,7 +1006,7 @@ namespace {
 
       // Change existing relation
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -1059,7 +1059,7 @@ namespace {
 
       // Change existing relation with incorrect version number
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1077,7 +1077,7 @@ namespace {
 
       // Change existing relation with unknown node id
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -1096,7 +1096,7 @@ namespace {
 
       // Change existing relation with unknown way id
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1114,7 +1114,7 @@ namespace {
 
       // Change existing relation with unknown relation id
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1132,7 +1132,7 @@ namespace {
 
       // Change existing relation with unknown node placeholder id
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -1152,7 +1152,7 @@ namespace {
 
       // Change existing relation with unknown way placeholder id
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1171,7 +1171,7 @@ namespace {
 
       // Change existing relation with unknown relation placeholder id
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1190,7 +1190,7 @@ namespace {
 
       // TODO: Change existing relation multiple times
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -1202,7 +1202,7 @@ namespace {
 
       // Try to delete node which still belongs to relation, if-unused not set
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto node_updater = upd->get_node_updater(change_tracking);
@@ -1219,7 +1219,7 @@ namespace {
 
       // Try to delete node which still belongs to relation, if-unused set
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto node_updater = upd->get_node_updater(change_tracking);
@@ -1241,7 +1241,7 @@ namespace {
 
       // Try to delete way which still belongs to relation, if-unused not set
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -1258,7 +1258,7 @@ namespace {
 
       // Try to delete way which still belongs to relation, if-unused set
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -1280,7 +1280,7 @@ namespace {
 
       // Try to delete relation which still belongs to relation, if-unused not set
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1297,7 +1297,7 @@ namespace {
 
       // Try to delete relation which still belongs to relation, if-unused set
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1320,7 +1320,7 @@ namespace {
 
       // Delete existing relation
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1343,7 +1343,7 @@ namespace {
 
       // Delete two relation with references to each other
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1367,7 +1367,7 @@ namespace {
 
       // Try to delete already deleted relation (if-unused not set)
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1384,7 +1384,7 @@ namespace {
 
       // Try to delete already deleted relation (if-unused set)
       {
-	auto change_tracking = std::make_shared<OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1406,7 +1406,7 @@ namespace {
 
       // Delete non-existing relation
       {
-        auto change_tracking = std::make_shared<OSMChange_Tracking>();
+        auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1423,7 +1423,7 @@ namespace {
 
       // Modify non-existing relation
       {
-        auto change_tracking = std::make_shared<OSMChange_Tracking>();
+        auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1447,7 +1447,7 @@ namespace {
     auto changeset = 1;
     auto uid = 1;
 
-    auto change_tracking = std::make_shared<OSMChange_Tracking>();
+    auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
 
     auto changeset_updater = upd->get_changeset_updater(changeset, uid);
     auto node_updater = upd->get_node_updater(change_tracking);
@@ -1456,10 +1456,10 @@ namespace {
 
     changeset_updater->lock_current_changeset();
 
-    OSMChange_Handler handler(std::move(node_updater), std::move(way_updater),
-                              std::move(relation_updater), changeset, uid);
+    api06::OSMChange_Handler handler(std::move(node_updater), std::move(way_updater),
+                                     std::move(relation_updater), changeset, uid);
 
-    OSMChangeXMLParser parser(&handler);
+    api06::OSMChangeXMLParser parser(&handler);
 
     parser.process_message(payload);
 

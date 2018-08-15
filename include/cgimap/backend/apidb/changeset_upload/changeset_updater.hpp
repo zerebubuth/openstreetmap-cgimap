@@ -8,7 +8,7 @@
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 #include "cgimap/backend/apidb/transaction_manager.hpp"
 
-class ApiDB_Changeset_Updater : public Changeset_Updater {
+class ApiDB_Changeset_Updater : public api06::Changeset_Updater {
 
 public:
   ApiDB_Changeset_Updater(Transaction_Manager &_m,

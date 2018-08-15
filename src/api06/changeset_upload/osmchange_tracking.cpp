@@ -3,6 +3,7 @@
 
 #include <boost/format.hpp>
 
+namespace api06 {
 
 void OSMChange_Tracking::populate_orig_sequence_mapping() {
 
@@ -130,3 +131,5 @@ void OSMChange_Tracking::populate_orig_sequence_mapping() {
       }
   }
 }
+
+} // namespace api06

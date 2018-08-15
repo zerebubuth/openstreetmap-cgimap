@@ -11,6 +11,10 @@
 #include <string>
 #include <vector>
 
+
+
+namespace api06 {
+
 using TagList = std::map<std::string, std::string>;
 using WayNodeList = std::vector<osm_nwr_signed_id_t>;
 
@@ -43,5 +47,7 @@ public:
 
   virtual bbox_t bbox() = 0;
 };
+
+} // namespace api06
 
 #endif /* API06_CHANGESET_UPLOAD_WAY_UPDATER */

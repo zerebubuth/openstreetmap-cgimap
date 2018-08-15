@@ -22,7 +22,7 @@
 using boost::format;
 
 ApiDB_Node_Updater::ApiDB_Node_Updater(Transaction_Manager &_m,
-                                       std::shared_ptr<OSMChange_Tracking> _ct)
+                                       std::shared_ptr<api06::OSMChange_Tracking> _ct)
     : m_bbox(), m(_m), ct(std::move(_ct)) {}
 
 ApiDB_Node_Updater::~ApiDB_Node_Updater() {}
@@ -30,7 +30,7 @@ ApiDB_Node_Updater::~ApiDB_Node_Updater() {}
 void ApiDB_Node_Updater::add_node(double lat, double lon,
                                   osm_changeset_id_t changeset_id,
                                   osm_nwr_signed_id_t old_id,
-                                  const TagList &tags) {
+                                  const api06::TagList &tags) {
 
   node_t new_node{};
   new_node.version = 1;
@@ -52,7 +52,7 @@ void ApiDB_Node_Updater::add_node(double lat, double lon,
 void ApiDB_Node_Updater::modify_node(double lat, double lon,
                                      osm_changeset_id_t changeset_id,
                                      osm_nwr_id_t id, osm_version_t version,
-                                     const TagList &tags) {
+                                     const api06::TagList &tags) {
 
   node_t modify_node{};
   modify_node.id = id;
@@ -229,7 +229,7 @@ void ApiDB_Node_Updater::truncate_temporary_tables() {
  */
 void ApiDB_Node_Updater::replace_old_ids_in_nodes(
     std::vector<node_t> &nodes,
-    const std::vector<OSMChange_Tracking::object_id_mapping_t>
+    const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
         &created_node_id_mapping) {
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map;
 

@@ -6,6 +6,8 @@
 
 #include <boost/format.hpp>
 
+namespace api06 {
+
 OSMChange_Handler::OSMChange_Handler(
     std::unique_ptr<Node_Updater> _node_updater,
     std::unique_ptr<Way_Updater> _way_updater,
@@ -199,3 +201,5 @@ void OSMChange_Handler::handle_new_state(state new_state) {
   // complete transition to new state
   current_state = new_state;
 }
+
+} // namespace api06

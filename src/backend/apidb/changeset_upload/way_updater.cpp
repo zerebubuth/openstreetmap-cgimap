@@ -20,14 +20,15 @@
 using boost::format;
 
 ApiDB_Way_Updater::ApiDB_Way_Updater(Transaction_Manager &_m,
-                                     std::shared_ptr<OSMChange_Tracking> _ct)
+                                     std::shared_ptr<api06::OSMChange_Tracking> _ct)
     : m_bbox(), m(_m), ct(_ct) {}
 
 ApiDB_Way_Updater::~ApiDB_Way_Updater() {}
 
 void ApiDB_Way_Updater::add_way(osm_changeset_id_t changeset_id,
                                 osm_nwr_signed_id_t old_id,
-                                const WayNodeList &nodes, const TagList &tags) {
+                                const api06::WayNodeList &nodes,
+				const api06::TagList &tags) {
 
   way_t new_way{};
   new_way.version = 1;
@@ -57,8 +58,8 @@ void ApiDB_Way_Updater::add_way(osm_changeset_id_t changeset_id,
 
 void ApiDB_Way_Updater::modify_way(osm_changeset_id_t changeset_id,
                                    osm_nwr_id_t id, osm_version_t version,
-                                   const WayNodeList &nodes,
-                                   const TagList &tags) {
+                                   const api06::WayNodeList &nodes,
+                                   const api06::TagList &tags) {
 
   way_t modify_way{};
   modify_way.id = id;
@@ -260,9 +261,9 @@ void ApiDB_Way_Updater::truncate_temporary_tables() {
  */
 void ApiDB_Way_Updater::replace_old_ids_in_ways(
     std::vector<way_t> &ways,
-    const std::vector<OSMChange_Tracking::object_id_mapping_t>
+    const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
         &created_node_id_mapping,
-    const std::vector<OSMChange_Tracking::object_id_mapping_t>
+    const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
         &created_way_id_mapping) {
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_ways;
   for (auto i : created_way_id_mapping) {

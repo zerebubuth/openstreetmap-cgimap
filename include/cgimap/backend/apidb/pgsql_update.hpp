@@ -15,17 +15,17 @@ public:
 
   ~pgsql_update();
 
-  std::unique_ptr<Changeset_Updater>
+  std::unique_ptr<api06::Changeset_Updater>
   get_changeset_updater(osm_changeset_id_t _changeset, osm_user_id_t _uid);
 
-  std::unique_ptr<Node_Updater>
-  get_node_updater(std::shared_ptr<OSMChange_Tracking> _ct);
+  std::unique_ptr<api06::Node_Updater>
+  get_node_updater(std::shared_ptr<api06::OSMChange_Tracking> _ct);
 
-  std::unique_ptr<Way_Updater>
-  get_way_updater(std::shared_ptr<OSMChange_Tracking> _ct);
+  std::unique_ptr<api06::Way_Updater>
+  get_way_updater(std::shared_ptr<api06::OSMChange_Tracking> _ct);
 
-  std::unique_ptr<Relation_Updater>
-  get_relation_updater(std::shared_ptr<OSMChange_Tracking> _ct);
+  std::unique_ptr<api06::Relation_Updater>
+  get_relation_updater(std::shared_ptr<api06::OSMChange_Tracking> _ct);
 
   void commit();
 

@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+namespace api06 {
+
 using RelationMemberList = std::vector<RelationMember>;
 using TagList = std::map<std::string, std::string>;
 
@@ -43,5 +45,7 @@ public:
 
   virtual bbox_t bbox() = 0;
 };
+
+} // namespace api06
 
 #endif /* API06_CHANGESET_UPLOAD_RELATION_UPDATER */

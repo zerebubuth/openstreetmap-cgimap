@@ -11,14 +11,14 @@
 
 #include <set>
 
-using RelationMemberList = std::vector<RelationMember>;
+using RelationMemberList = std::vector<api06::RelationMember>;
 using TagList = std::map<std::string, std::string>;
 
-class ApiDB_Relation_Updater : public Relation_Updater {
+class ApiDB_Relation_Updater : public api06::Relation_Updater {
 
 public:
   ApiDB_Relation_Updater(Transaction_Manager &_m,
-                         std::shared_ptr<OSMChange_Tracking> _ct);
+                         std::shared_ptr<api06::OSMChange_Tracking> _ct);
 
   virtual ~ApiDB_Relation_Updater();
 
@@ -77,11 +77,11 @@ private:
    */
   void replace_old_ids_in_relations(
       std::vector<relation_t> &relations,
-      const std::vector<OSMChange_Tracking::object_id_mapping_t>
+      const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
           &created_node_id_mapping,
-      const std::vector<OSMChange_Tracking::object_id_mapping_t>
+      const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
           &created_way_id_mapping,
-      const std::vector<OSMChange_Tracking::object_id_mapping_t>
+      const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
           &created_relation_id_mapping);
 
   void check_unique_placeholder_ids(const std::vector<relation_t> &create_relations);
@@ -151,7 +151,7 @@ private:
   void delete_current_relation_tags(const std::vector<osm_nwr_id_t> &ids);
 
   Transaction_Manager &m;
-  std::shared_ptr<OSMChange_Tracking> ct;
+  std::shared_ptr<api06::OSMChange_Tracking> ct;
 
   std::vector<relation_t> create_relations;
   std::vector<relation_t> modify_relations;

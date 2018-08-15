@@ -7,6 +7,9 @@
 #include "cgimap/types.hpp"
 #include "way.hpp"
 
+
+namespace api06 {
+
 class Parser_Callback {
 
 public:
@@ -23,5 +26,7 @@ public:
 
   virtual ~Parser_Callback(){};
 };
+
+} // namespace api06
 
 #endif
