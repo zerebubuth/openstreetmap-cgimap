@@ -1690,6 +1690,14 @@ namespace {
 
     // Try to add a nodes, ways, relations to a changeset
     {
+
+        // Set sequences to new start values
+
+        tdb.run_sql(R"(  SELECT setval('current_nodes_id_seq', 12000000000, false);
+                         SELECT setval('current_ways_id_seq', 14000000000, false);
+                         SELECT setval('current_relations_id_seq', 18000000000, false);
+                     )");
+
 	// set up request headers from test case
 	test_request req;
 	req.set_header("REQUEST_METHOD", "POST");
@@ -1737,10 +1745,67 @@ namespace {
 	// execute the request
 	process_request(req, limiter, generator, route, sel_factory, upd_factory, boost::shared_ptr<oauth::store>(nullptr));
 
+	// std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
+
 	if (req.response_status() != 200)
 	  std::runtime_error("Expected HTTP/200 OK: Create new node");
     }
 
+    // Try to add, modify and delete nodes, ways, relations in changeset
+    {
+	// set up request headers from test case
+	test_request req;
+	req.set_header("REQUEST_METHOD", "POST");
+	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
+	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+		  <osmChange version="0.6" generator="iD">
+                  <create>
+		    <node id="-15" lon="4" lat="2" version="0" changeset="1"/>
+		    <node id="-16" lon="3" lat="7" version="0" changeset="1"/>
+                  </create>
+		  <modify>
+		    <node id="12000000000" lon="-11" lat="-46" version="1" changeset="1">
+		       <tag k="highway" v="bus_stop" />
+                       <tag k="name" v="Repubblica" />
+		    </node>
+                    <way id="14000000000" version="1" changeset="1">
+                      <tag k="highway" v="residential"/>
+                      <nd ref="-15"/>
+                      <nd ref="-16"/>
+                    </way>
+		    <relation id="18000000000" version="1" changeset="1">
+		       <tag k="type" v="route" />
+		    </relation>
+		    <relation id="18000000001" version="1" changeset="1">
+		       <member type="way" role="test" ref="14000000000" />
+                       <member type="node" role="" ref="12000000001" />
+                       <member type="relation" role="bla" ref="18000000000" />
+		       <tag k="type" v="route" />
+		    </relation>
+		 </modify>
+                  <delete>
+		    <relation id="18000000002" version="1" changeset="1"/>
+                    <way id="14000000001" version="1" changeset="1"/>
+		    <node id="12000000002" version="1" changeset="1"/>
+                  </delete>
+                  <delete if-unused="true">
+		    <node id="12000000001" version="1" changeset="1"/>
+                    <way id="14000000000" version="2" changeset="1"/>
+                    <relation id="18000000000" version="2" changeset="1"/>
+                  </delete>
+		 </osmChange>)" );
+
+	// execute the request
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, boost::shared_ptr<oauth::store>(nullptr));
+
+	// std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
+
+	if (req.response_status() != 200)
+	  std::runtime_error("Expected HTTP/200 OK: Create new node");
+    }
 
     //  TODO: compare the result to what we're expecting: check_response(in, req.buffer());
     //	std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
