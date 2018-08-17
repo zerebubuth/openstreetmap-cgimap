@@ -40,20 +40,28 @@ namespace {
 std::string connect_db_str(const po::variables_map &options) {
   // build the connection string.
   std::ostringstream ostr;
-  ostr << "dbname=" << options["dbname"].as<std::string>();
-  if (options.count("host")) {
-    ostr << " host=" << options["host"].as<std::string>();
-  }
-  if (options.count("username")) {
-    ostr << " user=" << options["username"].as<std::string>();
-  }
-  if (options.count("password")) {
-    ostr << " password=" << options["password"].as<std::string>();
-  }
-  if (options.count("dbport")) {
-    ostr << " port=" << options["dbport"].as<std::string>();
+
+  if (options.count("dbname") == 0 &&
+      options.count("update-dbname") == 0) {
+    throw std::runtime_error("Must provide either one of --dbname or "
+                             "--update-dbname to configure database "
+                             "name for update (API write) connections.");
   }
 
+#define CONNOPT(a,b)                                                    \
+  if (options.count("update-" a)) {                                     \
+    ostr << " " << (b "=") << options["update-" a].as<std::string>();   \
+  } else if (options.count(a)) {                                        \
+    ostr << " " << (b "=") << options[a].as<std::string>();             \
+  }
+
+  CONNOPT("dbname", "dbname");
+  CONNOPT("host", "host");
+  CONNOPT("username", "user");
+  CONNOPT("password", "password");
+  CONNOPT("dbport", "port");
+
+#undef CONNOPT
   return ostr.str();
 }
 
@@ -155,7 +163,11 @@ pgsql_update::factory::factory(const po::variables_map &opts)
   check_postgres_version(m_connection);
 
   // set the connections to use the appropriate charset.
-  m_connection.set_client_encoding(opts["charset"].as<std::string>());
+  std::string db_charset = opts["charset"].as<std::string>();
+  if (opts.count("update-charset")) {
+     db_charset = opts["update-charset"].as<std::string>();
+  }
+  m_connection.set_client_encoding(db_charset);
 
   // set the connection to readonly transaction, if readonly flag is set
   if (opts.count("readonly") != 0) {

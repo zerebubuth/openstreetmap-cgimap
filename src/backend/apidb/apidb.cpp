@@ -41,7 +41,19 @@ struct apidb_backend : public backend {
       ("oauth-charset", po::value<string>(),
        "database character set for OAuth, if different from --charset")
       ("oauth-dbport", po::value<string>(),
-       "database port for OAuth, if different from --dbport");
+       "database port for OAuth, if different from --dbport")
+      ("update-dbname", po::value<string>(),
+       "database name to use for API write operations, if different from --dbname")
+      ("update-host", po::value<string>(),
+       "database server host for API write operations, if different from --host")
+      ("update-username", po::value<string>(),
+       "database user name for API write operations, if different from --username")
+      ("update-password", po::value<string>(),
+       "database password for API write operations, if different from --password")
+      ("update-charset", po::value<string>(),
+       "database character set for API write operations, if different from --charset")
+      ("update-dbport", po::value<string>(),
+       "database port for API write operations, if different from --dbport");
     // clang-format on
   }
   virtual ~apidb_backend() {}
