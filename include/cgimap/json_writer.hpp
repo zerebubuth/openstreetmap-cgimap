@@ -27,9 +27,10 @@ public:
   void end_array();
 
   void entry_bool(bool b);
-  void entry_int(int i);
-  void entry_int(unsigned long int i);
-  void entry_int(unsigned long long int i);
+  void entry_int(int32_t i);
+  void entry_int(int64_t i);
+  void entry_int(uint32_t i);
+  void entry_int(uint64_t i);
   void entry_double(double d);
   void entry_string(const std::string &s);
 
@@ -41,6 +42,7 @@ private:
   // PIMPL idiom
   struct pimpl_;
   pimpl_ *pimpl;
+  boost::shared_ptr<output_buffer> out;
 };
 
 #endif /* JSON_WRITER_HPP */

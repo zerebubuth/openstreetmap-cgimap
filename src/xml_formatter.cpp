@@ -202,6 +202,7 @@ void xml_formatter::write_changeset(const changeset_info &elem,
   }
 
   writer->attribute("comments_count", elem.comments_count);
+  writer->attribute("changes_count", elem.num_changes);
 
   write_tags(tags);
 
