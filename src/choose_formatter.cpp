@@ -163,6 +163,8 @@ acceptable_types::acceptable_types(const std::string &accept_header) {
 }
 
 bool acceptable_types::is_acceptable(mime::type mt) const {
+  if (mapping.find(mime::type::any_type) != mapping.end())
+    return true;
   return mapping.find(mt) != mapping.end();
 }
 
@@ -200,6 +202,23 @@ acceptable_types header_mime_type(request &req) {
   string accept_header = fcgi_get_env(req, "HTTP_ACCEPT", "*/*");
   return acceptable_types(accept_header);
 }
+
+std::string mime_types_to_string(const std::list<mime::type> mime_types)
+{
+
+  bool first = true;
+  std::string result = "";
+
+  for (const auto& m : mime_types)
+    {
+      if (!first)
+	result += ", ";
+      result += mime::to_string(m);
+      first = false;
+    }
+  return result;
+}
+
 }
 
 mime::type choose_best_mime_type(request &req, responder_ptr_t hptr) {
@@ -213,15 +232,17 @@ mime::type choose_best_mime_type(request &req, responder_ptr_t hptr) {
   if (best_type != mime::unspecified_type) {
     // check that this doesn't conflict with anything in the Accept header.
     if (!hptr->is_available(best_type) || !types.is_acceptable(best_type)) {
-      // TODO: include types_available in response.
-      throw http::not_acceptable(get_request_path(req));
+      throw http::not_acceptable((boost::format("Acceptable formats for %1% are: %2%")
+                                % get_request_path(req)
+				% mime_types_to_string({best_type})).str());
     }
   } else {
     best_type = types.most_acceptable_of(types_available);
     // if none were acceptable then...
     if (best_type == mime::unspecified_type) {
-      // TODO: include types_available in response.
-      throw http::not_acceptable(get_request_path(req));
+	      throw http::not_acceptable((boost::format("Acceptable formats for %1% are: %2%")
+	                                % get_request_path(req)
+					% mime_types_to_string(types_available)).str());
     } else if (best_type == mime::any_type) {
       // choose the first of the available types if nothing is preferred.
       best_type = *(hptr->types_available().begin());
@@ -256,3 +277,5 @@ shared_ptr<output_formatter> create_formatter(request &req,
 
   return o_formatter;
 }
+
+

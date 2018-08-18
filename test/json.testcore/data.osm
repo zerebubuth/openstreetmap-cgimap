@@ -1,11 +1,98 @@
+<?xml version='1.0' encoding='UTF-8'?>
 <osm version="0.6" generator="by hand">
-  <node id="1" version="1" changeset="1" lat="0.0" lon="0.0" user="foo" uid="1" visible="true" timestamp="2012-09-25T00:00:00Z"/>
-  <node id="2" version="8" changeset="3" lat="1.0" lon="1.0" user="foo" uid="1" visible="true" timestamp="2012-10-01T00:00:00Z">
-    <tag k="foo" v="bar1"/>
-    <tag k="bar" v="bar2"/>
-    <tag k="baz" v="bar3"/>
+  <node visible="true" id='1' timestamp='2012-09-25T00:00:00Z' uid='1' user='foo' version='1' changeset='1' lat='0.0' lon='0.0' />
+  <node visible="true" id='2' timestamp='2012-10-01T00:00:00Z' uid='1' user='foo' version='8' changeset='3' lat='1.0' lon='1.0'>
+    <tag k='bar' v='bar2' />
+    <tag k='baz' v='bar3' />
+    <tag k='foo' v='bar1' />
   </node>
-  <node id="3" version="2" changeset="3" lat="0.0" lon="0.0" user="foo" uid="1" visible="false" timestamp="2012-09-25T00:01:00Z"/>
-  <node id="8589934592" visible="true" version="1" changeset="4" timestamp="2013-10-20T00:00:00Z" user="user_4" uid="4" lat="3" lon="3"/>
-  <node id="9223372036854775807" visible="true" version="1" changeset="4" timestamp="2013-10-20T00:00:00Z" user="user_4" uid="4" lat="3" lon="3"/>
+  <node visible="true" id='3' timestamp='2012-09-25T00:01:00Z' uid='1' user='foo' version='2' changeset='3' lat='0.0' lon='0.0' />
+  <node visible="true" id='40050' timestamp='2012-09-25T00:00:01Z' uid='1' user='foo' version='1' changeset='1' lat='0.99587530072' lon='1.15459870878' />
+  <node visible="true" id='40051' timestamp='2012-09-25T00:00:02Z' uid='1' user='foo' version='1' changeset='1' lat='0.99684898006' lon='1.15459552634' />
+  <node visible="true" id='40053' timestamp='2012-09-25T00:00:03Z' uid='1' user='foo' version='1' changeset='1' lat='0.99657533165' lon='1.15587486714'>
+    <tag k='board_type' v='history' />
+    <tag k='information' v='board' />
+    <tag k='tourism' v='information' />
+  </node>
+  <node visible="true" id='40055' timestamp='2012-09-25T00:00:04Z' uid='1' user='foo' version='1' changeset='1' lat='0.99586257288' lon='1.15558526512' />
+  <node visible="true" id='40075' timestamp='2012-09-25T00:00:05Z' uid='1' user='foo' version='1' changeset='1' lat='0.99691261923' lon='1.15496787179' />
+  <node visible="true" id='40105' timestamp='2012-09-25T00:00:06Z' uid='1' user='foo' version='1' changeset='1' lat='0.99701762384' lon='1.15540386605' />
+  <node visible="true" id='40131' timestamp='2012-09-25T00:00:07Z' uid='1' user='foo' version='1' changeset='1' lat='0.99609485589' lon='1.15594806326' />
+  <node visible="true" id='40159' timestamp='2012-09-25T00:00:08Z' uid='1' user='foo' version='1' changeset='1' lat='0.99619667857' lon='1.15514608842'>
+    <tag k='direction' v='NNE-S' />
+    <tag k='hiking' v='yes' />
+    <tag k='information' v='map' />
+    <tag k='map_type' v='scheme' />
+    <tag k='tourism' v='information' />
+  </node>
+  <node visible="true" id='40164' timestamp='2012-09-25T00:00:09Z' uid='1' user='foo' version='1' changeset='1' lat='0.99547755581' lon='1.15488512836' />
+  <node visible="true" id='40165' timestamp='2012-09-25T00:00:10Z' uid='1' user='foo' version='1' changeset='1' lat='0.99564938162' lon='1.15513972354' />
+  <node visible="true" id='40169' timestamp='2012-09-25T00:00:11Z' uid='1' user='foo' version='1' changeset='1' lat='0.99644805331' lon='1.15644134143' />
+  <node visible="true" id='40228' timestamp='2012-09-25T00:00:12Z' uid='1' user='foo' version='1' changeset='1' lat='0.99662942494' lon='1.1551683655' />
+  <node visible="true" id='40248' timestamp='2012-09-25T00:00:13Z' uid='1' user='foo' version='1' changeset='1' lat='0.9968235244' lon='1.1559194213' />
+  <node visible="true" id='40251' timestamp='2012-09-25T00:00:14Z' uid='1' user='foo' version='1' changeset='1' lat='0.99647350898' lon='1.15531475773' />
+  <node visible="true" id='8589934592' timestamp='2013-10-20T00:00:00Z' uid='4' user='user_4' version='1' changeset='4' lat='3.0' lon='3.0' />
+  <node visible="true" id='9223372036854775807' timestamp='2013-10-20T00:00:00Z' uid='4' user='user_4' version='1' changeset='4' lat='3.0' lon='3.0' />
+  <way visible="true" id='40052' timestamp='2012-09-25T00:01:00Z' uid='1' user='foo' version='1' changeset='1' >
+    <nd ref='40050' />
+    <nd ref='40051' />
+  </way>
+  <way visible="true" id='40054' timestamp='2012-09-25T00:01:00Z' uid='1' user='foo' version='1' changeset='1'>
+    <nd ref='40053' />
+    <nd ref='40248' />
+    <nd ref='40105' />
+    <nd ref='40228' />
+    <nd ref='40075' />
+    <nd ref='40051' />
+  </way>
+  <way visible="true" id='40056' timestamp='2012-09-25T00:01:00Z' uid='15' user='user_15' version='1' changeset='11'>
+    <nd ref='40055' />
+    <nd ref='40159' />
+    <nd ref='40050' />
+  </way>
+  <way visible="true" id='40058' timestamp='2012-09-25T00:01:00Z' uid='1' user='foo' version='1' changeset='1'>
+    <nd ref='40053' />
+    <nd ref='40131' />
+  </way>
+  <way visible="true" id='40166' timestamp='2012-09-25T00:01:00Z' uid='1' user='foo' version='1' changeset='1'>
+    <nd ref='40164' />
+    <nd ref='40165' />
+    <nd ref='40055' />
+    <nd ref='40131' />
+    <nd ref='40169' />
+    <tag k='highway' v='path' />
+    <tag k='smoothness' v='intermediate' />
+    <tag k='surface' v='gravel' />
+  </way>
+  <way visible="true" id='40191' timestamp='2012-09-25T00:01:00Z' uid='14' user='user_14' version='1' changeset='12'>
+    <nd ref='40131' />
+    <nd ref='40055' />
+  </way>
+  <relation visible="true" id='40069' timestamp='2012-09-25T02:00:00Z' uid='5' user='user_5' version='2' changeset='42'>
+    <member type='node' ref='40251' role='admin_centre' />
+    <member type='way' ref='40054' role='outer2' />
+    <member type='way' ref='40052' role='outer' />
+    <member type='way' ref='40056' role='outer' />
+    <member type='way' ref='40191' role='outer' />
+    <member type='way' ref='40058' role='outer' />
+    <tag k='admin_level' v='10' />
+    <tag k='boundary' v='administrative' />
+    <tag k='type' v='multipolygon' />
+  </relation>
+  <relation visible="true" id='40269' timestamp='2012-09-25T02:00:00Z' uid='5' user='user_5' version='2' changeset='42'>
+    <tag k='admin_level' v='10' />
+    <tag k='boundary' v='administrative' />
+    <tag k='type' v='multipolygon' />
+  </relation>
+  <relation visible="true" id='40369' timestamp='2012-09-25T02:00:00Z' uid='5' user='user_5' version='2' changeset='42'>
+    <tag k='admin_level' v='10' />
+    <tag k='boundary' v='administrative' />
+    <tag k='type' v='multipolygon' />
+  </relation>
+  <relation visible="true" id='43361' timestamp='2012-09-25T02:00:00Z' uid='5' user='user_5' version='2' changeset='42'>
+    <member type='way' ref='40052' role='outer' />
+    <member type='way' ref='40056' role='outer' />
+    <member type='way' ref='40191' role='outer' />
+    <member type='way' ref='40058' role='outer' />
+  </relation>
 </osm>
