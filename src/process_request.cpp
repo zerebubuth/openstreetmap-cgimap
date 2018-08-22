@@ -66,6 +66,33 @@ void respond_401(const http::unauthorized &e, request &r) {
   r.finish();
 }
 
+void response_415(const http::unsupported_media_type&e, request &r) {
+
+  // According to rfc7694
+  logger::message(format("Returning with http error %1% with reason %2%") %
+                  e.code() % e.what());
+
+  std::string message(e.what());
+  std::ostringstream message_size;
+  message_size << message.size();
+
+  r.status(e.code());
+  r.add_header("Content-Type", "text/plain; charset=utf-8");
+#ifdef HAVE_LIBZ
+  r.add_header("Accept-Encoding", "gzip, deflate");
+#else
+  r.add_header("Accept-Encoding", "identity");
+#endif
+  r.add_header("Content-Length", message_size.str());
+  r.add_header("Cache-Control", "no-cache");
+
+  // output the message
+  r.put(message);
+
+  r.finish();
+
+}
+
 void respond_error(const http::exception &e, request &r) {
   logger::message(format("Returning with http error %1% with reason %2%") %
                   e.code() % e.what());
@@ -549,8 +576,12 @@ void process_request(request &req, rate_limiter &limiter,
     respond_404(e, req);
 
   } catch (const http::unauthorized &e) {
-    // HTTP/401 unauthorized requires WWW-Authenticate header field
+    // HTTP 401 unauthorized requires WWW-Authenticate header field
     respond_401(e, req);
+
+  } catch (const http::unsupported_media_type &e) {
+    // HTTP 415 unsupported media type returns list of accepted encodings
+    response_415(e, req);
 
   } catch (const http::exception &e) {
     // errors here occur before we've started writing the response

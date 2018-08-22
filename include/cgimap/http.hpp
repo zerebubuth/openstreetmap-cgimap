@@ -160,6 +160,15 @@ public:
 };
 
 /**
+ * The origin server is refusing to service the request because the payload
+ * is in a format not supported by this method on the target resource.
+ */
+class unsupported_media_type : public exception {
+public:
+  unsupported_media_type(const std::string &message);
+};
+
+/**
  * Decodes a url-encoded string.
  */
 std::string urldecode(const std::string &s);
@@ -239,6 +248,9 @@ public:
  */
 boost::shared_ptr<http::encoding>
 choose_encoding(const std::string &accept_encoding);
+
+boost::shared_ptr<ZLibBaseDecompressor>
+get_content_encoding_handler(const std::string &content_encoding);
 
 enum class method : uint8_t {
   GET     = 0b0001,
