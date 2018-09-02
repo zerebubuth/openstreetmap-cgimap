@@ -6,6 +6,7 @@
 #include "cgimap/output_formatter.hpp"
 #include "cgimap/output_writer.hpp"
 
+#include <chrono>
 #include <sstream>
 
 #include <boost/date_time.hpp>
@@ -452,7 +453,7 @@ void process_request(request &req, rate_limiter &limiter,
           user_roles = store->get_roles_for_user(*user_id);
     }
 
-    pt::ptime start_time(pt::second_clock::local_time());
+    auto start_time = std::chrono::high_resolution_clock::now();
 
     // check whether the client is being rate limited
     if (!limiter.check(client_key)) {
@@ -534,11 +535,12 @@ void process_request(request &req, rate_limiter &limiter,
 
     // log the completion time (note: this comes last to avoid
     // logging twice when an error is thrown.)
-    pt::ptime end_time(pt::second_clock::local_time());
+    auto end_time = std::chrono::high_resolution_clock::now();;
+    auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
     logger::message(format("Completed request for %1% from %2% in %3% ms "
                            "returning %4% bytes") %
                     request_name % ip %
-                    (end_time - start_time).total_milliseconds() %
+		    delta %
                     bytes_written);
 
   } catch (const http::not_found &e) {
