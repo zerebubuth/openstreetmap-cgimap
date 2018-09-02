@@ -233,7 +233,7 @@ void test_authenticate_user() {
     } catch (http::exception &e) {
       if (e.code() != 401)
         throw std::runtime_error(
-            "Known user / incorrect password: Expected HTTP/401");
+            "Known user / incorrect password: Expected HTTP 401");
     }
   }
 
@@ -248,7 +248,7 @@ void test_authenticate_user() {
     } catch (http::exception &e) {
       if (e.code() != 401)
         throw std::runtime_error(
-            "Unknown user / incorrect password: Expected HTTP/401");
+            "Unknown user / incorrect password: Expected HTTP 401");
     }
   }
 

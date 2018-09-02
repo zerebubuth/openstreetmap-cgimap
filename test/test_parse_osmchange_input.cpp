@@ -47,7 +47,7 @@ void test_osmchange_structure() {
         "test_osmchange_structure::001: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400) {
-      std::runtime_error("test_osmchange_structure::001: Expected HTTP/400");
+      std::runtime_error("test_osmchange_structure::001: Expected HTTP 400");
     }
   }
 
@@ -58,7 +58,7 @@ void test_osmchange_structure() {
         "test_osmchange_structure::002: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400) {
-      std::runtime_error("test_osmchange_structure::002: Expected HTTP/400");
+      std::runtime_error("test_osmchange_structure::002: Expected HTTP 400");
     }
   }
 
@@ -86,11 +86,12 @@ void test_osmchange_structure() {
   } catch (http::exception &e) {
     if (e.code() != 400)
       throw std::runtime_error(
-          "test_osmchange_structure::005: Expected HTTP/400");
-    if (std::string(e.what()) !=
-        "Unknown action dummy, choices are create, modify, delete at line 1, column 18")
+          "test_osmchange_structure::005: Expected HTTP 400");
+    const std::string expected = "Unknown action dummy, choices are create, modify, delete";
+    const std::string actual = std::string(e.what()).substr(0, expected.size());
+    if (actual != expected)
       throw std::runtime_error(
-          "test_osmchange_structure::005: Expected unknown action error, got: " + std::string(e.what()));
+          "test_osmchange_structure::005: Expected " + expected + ", got: " + actual);
   }
 
   // Create action
@@ -125,11 +126,12 @@ void test_osmchange_structure() {
   } catch (http::exception &e) {
     if (e.code() != 400)
       throw std::runtime_error(
-          "test_osmchange_structure::009: Expected HTTP/400");
-    if (std::string(e.what()) !=
-        "Unknown element bla, expecting node, way or relation at line 1, column 24")
+          "test_osmchange_structure::009: Expected HTTP 400");
+    const std::string expected = "Unknown element bla, expecting node, way or relation";
+    const std::string actual = std::string(e.what()).substr(0, expected.size());
+    if (actual != expected)
       throw std::runtime_error(
-          "test_osmchange_structure::009: Expected unknown action error, got: " + std::string(e.what()));
+          "test_osmchange_structure::009: Expected " + expected +", got: " + actual);
   }
 }
 
@@ -141,7 +143,7 @@ void test_node() {
     throw std::runtime_error("test_node::001: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::001: Expected HTTP/400");
+      throw std::runtime_error("test_node::001: Expected HTTP 400");
     //      if (std::string(e.what()) != "Changeset id is missing for Node/0")
     //	throw std::runtime_error("test_node::001: Expected unknown action
     // error");
@@ -154,7 +156,7 @@ void test_node() {
     throw std::runtime_error("test_node::002: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::002: Expected HTTP/400");
+      throw std::runtime_error("test_node::002: Expected HTTP 400");
   }
 
   // Both latitude and longitude missing
@@ -164,7 +166,7 @@ void test_node() {
     throw std::runtime_error("test_node::003: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::003: Expected HTTP/400");
+      throw std::runtime_error("test_node::003: Expected HTTP 400");
   }
 
   // Latitude missing
@@ -174,7 +176,7 @@ void test_node() {
     throw std::runtime_error("test_node::004: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::004: Expected HTTP/400");
+      throw std::runtime_error("test_node::004: Expected HTTP 400");
   }
 
   // Longitude missing
@@ -184,7 +186,7 @@ void test_node() {
     throw std::runtime_error("test_node::005: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::005: Expected HTTP/400");
+      throw std::runtime_error("test_node::005: Expected HTTP 400");
   }
 
   // Latitude outside valid range
@@ -194,7 +196,7 @@ void test_node() {
     throw std::runtime_error("test_node::006: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::006: Expected HTTP/400");
+      throw std::runtime_error("test_node::006: Expected HTTP 400");
   }
 
   // Latitude outside valid range
@@ -204,7 +206,7 @@ void test_node() {
     throw std::runtime_error("test_node::007: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::007: Expected HTTP/400");
+      throw std::runtime_error("test_node::007: Expected HTTP 400");
   }
 
   // Latitude outside valid range
@@ -214,7 +216,7 @@ void test_node() {
     throw std::runtime_error("test_node::008: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::008: Expected HTTP/400");
+      throw std::runtime_error("test_node::008: Expected HTTP 400");
   }
 
   // Longitude outside valid range
@@ -224,7 +226,7 @@ void test_node() {
     throw std::runtime_error("test_node::009: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::009: Expected HTTP/400");
+      throw std::runtime_error("test_node::009: Expected HTTP 400");
   }
 
   // Longitude outside valid range
@@ -234,7 +236,7 @@ void test_node() {
     throw std::runtime_error("test_node::010: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::010: Expected HTTP/400");
+      throw std::runtime_error("test_node::010: Expected HTTP 400");
   }
 
   // Changeset missing
@@ -244,10 +246,12 @@ void test_node() {
     throw std::runtime_error("test_node::011: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::011: Expected HTTP/400");
-    if (std::string(e.what()) != "Changeset id is missing for Node -1 at line 1, column 60")
+      throw std::runtime_error("test_node::011: Expected HTTP 400");
+    const std::string expected = "Changeset id is missing for Node -1";
+    const std::string actual = std::string(e.what()).substr(0,expected.size());
+    if (actual != expected)
       throw std::runtime_error(
-          "test_node::011: Expected Changeset id is missing for Node -1, got: " + std::string(e.what()));
+          "test_node::011: Expected " + expected + ", got: " + actual);
   }
 
   // Redefined lat attribute
@@ -257,7 +261,7 @@ void test_node() {
     throw std::runtime_error("test_node::012: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::012: Expected HTTP/400");
+      throw std::runtime_error("test_node::012: Expected HTTP 400");
   }
 
   // Valid create node
@@ -283,7 +287,7 @@ void test_node() {
     throw std::runtime_error("test_node::022: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::022: Expected HTTP/400");
+      throw std::runtime_error("test_node::022: Expected HTTP 400");
   }
 
   // Modify node with invalid version
@@ -293,7 +297,7 @@ void test_node() {
     throw std::runtime_error("test_node::023: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::023: Expected HTTP/400");
+      throw std::runtime_error("test_node::023: Expected HTTP 400");
   }
 
   // Delete node without version
@@ -303,7 +307,7 @@ void test_node() {
     throw std::runtime_error("test_node::024: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::024: Expected HTTP/400");
+      throw std::runtime_error("test_node::024: Expected HTTP 400");
   }
 
   // Delete node without id
@@ -313,7 +317,7 @@ void test_node() {
     throw std::runtime_error("test_node::025: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::025: Expected HTTP/400");
+      throw std::runtime_error("test_node::025: Expected HTTP 400");
   }
 
   // Delete node with invalid version
@@ -323,7 +327,7 @@ void test_node() {
     throw std::runtime_error("test_node::026: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::026: Expected HTTP/400");
+      throw std::runtime_error("test_node::026: Expected HTTP 400");
   }
 
   // xml message nested too deep
@@ -334,7 +338,7 @@ void test_node() {
     throw std::runtime_error("test_node::027: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::027: Expected HTTP/400");
+      throw std::runtime_error("test_node::027: Expected HTTP 400");
   }
 
   // Key may not be empty
@@ -345,7 +349,7 @@ void test_node() {
     throw std::runtime_error("test_node::030: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::030: Expected HTTP/400");
+      throw std::runtime_error("test_node::030: Expected HTTP 400");
   }
 
   // Duplicate key dup1
@@ -360,11 +364,12 @@ void test_node() {
     throw std::runtime_error("test_node::031: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::031: Expected HTTP/400");
-    if (std::string(e.what()) !=
-        "Node -1 has duplicate tags with key dup1 at line 4, column 48")
+      throw std::runtime_error("test_node::031: Expected HTTP 400");
+    const std::string expected = "Node -1 has duplicate tags with key dup1";
+    const std::string actual = std::string(e.what()).substr(0, expected.size());
+    if (actual != expected)
       throw std::runtime_error(
-          "test_node::018: Expected has duplicate tags with key dup1, got: " + std::string(e.what()));
+          "test_node::018: Expected " + expected + ", got: " + actual);
   }
 
   // Tag: Key without value
@@ -375,7 +380,7 @@ void test_node() {
     throw std::runtime_error("test_node::032: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::032: Expected HTTP/400");
+      throw std::runtime_error("test_node::032: Expected HTTP 400");
   }
 
   // Tag: Value without key
@@ -386,7 +391,7 @@ void test_node() {
     throw std::runtime_error("test_node::033: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::033: Expected HTTP/400");
+      throw std::runtime_error("test_node::033: Expected HTTP 400");
   }
 
   // Tag: Value with max 255 unicode characters
@@ -404,11 +409,12 @@ void test_node() {
                                  "string length > 255 unicode characters");
     } catch (http::exception &e) {
       if (e.code() != 400)
-        throw std::runtime_error("test_node::040: Expected HTTP/400");
-      if (std::string(e.what()) !=
-          "Value has more than 255 unicode characters in Node -1 at line 2, column 301")
+        throw std::runtime_error("test_node::040: Expected HTTP 400");
+      const std::string expected = "Value has more than 255 unicode characters in Node -1";
+      const std::string actual = std::string(e.what()).substr(0, expected.size());
+      if (actual != expected)
         throw std::runtime_error("test_node::040: Expected Value has more than "
-                                 "255 unicode characters, got: " + std::string(e.what()));
+                                 "255 unicode characters, got: " + actual);
       if (i <= 255)
         throw std::runtime_error("test_node::040: Unexpected exception for "
                                  "string length <= 255 characters");
@@ -430,11 +436,11 @@ void test_node() {
                                  "string length > 255 unicode characters");
     } catch (http::exception &e) {
       if (e.code() != 400)
-        throw std::runtime_error("test_node::041: Expected HTTP/400");
-      if (std::string(e.what()) !=
-          "Key has more than 255 unicode characters in Node -1 at line 2, column 303")
-        throw std::runtime_error("test_node::041: Expected Key has more than "
-                                 "255 unicode characters, got: " + std::string(e.what()));
+        throw std::runtime_error("test_node::041: Expected HTTP 400");
+      const std::string expected = "Key has more than 255 unicode characters in Node -1";
+      const std::string actual = std::string(e.what()).substr(0, expected.size());
+      if (actual != expected)
+        throw std::runtime_error("test_node::041: Expected " + expected + ", got: " + actual);
       if (i <= 255)
         throw std::runtime_error("test_node::041: Unexpected exception for "
                                  "string length <= 255 characters");
@@ -471,7 +477,7 @@ void test_node() {
     throw std::runtime_error("test_node::060: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::060: Expected HTTP/400");
+      throw std::runtime_error("test_node::060: Expected HTTP 400");
   }
 
   // Version too large
@@ -481,7 +487,7 @@ void test_node() {
     throw std::runtime_error("test_node::061: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::061: Expected HTTP/400");
+      throw std::runtime_error("test_node::061: Expected HTTP 400");
   }
 
   // Version negative
@@ -491,7 +497,7 @@ void test_node() {
     throw std::runtime_error("test_node::062: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::062: Expected HTTP/400");
+      throw std::runtime_error("test_node::062: Expected HTTP 400");
   }
 
   // Invalid changeset number
@@ -501,7 +507,7 @@ void test_node() {
     throw std::runtime_error("test_node::070: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::070: Expected HTTP/400");
+      throw std::runtime_error("test_node::070: Expected HTTP 400");
   }
 
 
@@ -512,7 +518,7 @@ void test_node() {
     throw std::runtime_error("test_node::071: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::071: Expected HTTP/400");
+      throw std::runtime_error("test_node::071: Expected HTTP 400");
   }
 
   // Changeset is zero
@@ -522,7 +528,7 @@ void test_node() {
     throw std::runtime_error("test_node::072: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::072: Expected HTTP/400");
+      throw std::runtime_error("test_node::072: Expected HTTP 400");
   }
 
   // Changeset not positive
@@ -532,7 +538,7 @@ void test_node() {
     throw std::runtime_error("test_node::073: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::073: Expected HTTP/400");
+      throw std::runtime_error("test_node::073: Expected HTTP 400");
   }
 
   // Longitude not numeric
@@ -542,7 +548,7 @@ void test_node() {
     throw std::runtime_error("test_node::080: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::080: Expected HTTP/400");
+      throw std::runtime_error("test_node::080: Expected HTTP 400");
   }
 
   // Latitude not numeric
@@ -552,7 +558,7 @@ void test_node() {
     throw std::runtime_error("test_node::090: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::090: Expected HTTP/400");
+      throw std::runtime_error("test_node::090: Expected HTTP 400");
   }
 
   // Invalid Id number
@@ -562,7 +568,7 @@ void test_node() {
     throw std::runtime_error("test_node::100: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::100: Expected HTTP/400");
+      throw std::runtime_error("test_node::100: Expected HTTP 400");
   }
 
   // Id too large
@@ -572,7 +578,7 @@ void test_node() {
     throw std::runtime_error("test_node::101: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::101: Expected HTTP/400");
+      throw std::runtime_error("test_node::101: Expected HTTP 400");
   }
 
   // Id not zero
@@ -582,7 +588,7 @@ void test_node() {
     throw std::runtime_error("test_node::102: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_node::102: Expected HTTP/400");
+      throw std::runtime_error("test_node::102: Expected HTTP 400");
   }
 
 }
@@ -595,7 +601,7 @@ void test_way() {
     throw std::runtime_error("test_way::001: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_way::001: Expected HTTP/400");
+      throw std::runtime_error("test_way::001: Expected HTTP 400");
     //      if (std::string(e.what()) != "Changeset id is missing for Node/0")
     //	throw std::runtime_error("test_node::001: Expected unknown action
     // error");
@@ -608,7 +614,7 @@ void test_way() {
     throw std::runtime_error("test_way::002: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_way::002: Expected HTTP/400");
+      throw std::runtime_error("test_way::002: Expected HTTP 400");
   }
 
   // Changeset missing
@@ -618,10 +624,12 @@ void test_way() {
     throw std::runtime_error("test_way::003: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_way::003: Expected HTTP/400");
-    if (std::string(e.what()) != "Changeset id is missing for Way -1 at line 1, column 32")
+      throw std::runtime_error("test_way::003: Expected HTTP 400");
+    const std::string expected = "Changeset id is missing for Way -1";
+    const std::string actual = std::string(e.what()).substr(0, expected.size());
+    if (actual != expected)
       throw std::runtime_error(
-          "test_way::003: Expected Changeset id is missing for Way -1, got: " + std::string(e.what()));
+          "test_way::003: Expected Changeset id is missing for Way -1, got: " + actual);
   }
 
   // Node ref missing
@@ -631,10 +639,12 @@ void test_way() {
     throw std::runtime_error("test_way::010: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 412)
-      throw std::runtime_error("test_way::010: Expected HTTP/412");
-    if (std::string(e.what()) != "Way -1 must have at least one node at line 1, column 50")
+      throw std::runtime_error("test_way::010: Expected HTTP 412");
+    const std::string expected = "Way -1 must have at least one node";
+    const std::string actual = std::string(e.what()).substr(0, expected.size());
+    if (actual != expected)
       throw std::runtime_error(
-          "test_way::010: Expected Way -1 must have at least one node, got: " + std::string(e.what()));
+          "test_way::010: Expected Way -1 must have at least one node, got: " + actual);
   }
 
   // Test node refs up to max number of nodes per way
@@ -655,15 +665,14 @@ void test_way() {
               "test_way::020: Expected exception for way max nodes exceeded");
       } catch (http::exception &e) {
         if (e.code() != 400)
-          throw std::runtime_error("test_way::020: Expected HTTP/400");
-        if (std::string(e.what()) !=
-            (boost::format(
-                 "You tried to add %1% nodes to way %2%, however only "
-                 "%3% are allowed at line 1, column 32965") %
-             i % -1 % WAY_MAX_NODES)
-                .str())
+          throw std::runtime_error("test_way::020: Expected HTTP 400");
+        const std::string expected = (boost::format(
+            "You tried to add %1% nodes to way %2%, however only "
+            "%3% are allowed") % i % -1 % WAY_MAX_NODES).str();
+        const std::string actual = std::string(e.what()).substr(0, expected.size());
+        if (actual != expected)
           throw std::runtime_error(
-              "test_node::040: Expected: you tried to add x nodes to way, got: " + std::string(e.what()));
+              "test_node::040: Expected: you tried to add x nodes to way, got: " + actual);
         if (i <= WAY_MAX_NODES)
           throw std::runtime_error(
               "test_way::020: Unexpected exception for way "
@@ -687,7 +696,7 @@ void test_way() {
     throw std::runtime_error("test_way::030: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_way::030: Expected HTTP/400");
+      throw std::runtime_error("test_way::030: Expected HTTP 400");
   }
 
   // ref too large
@@ -697,7 +706,7 @@ void test_way() {
     throw std::runtime_error("test_way::031: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_way::031: Expected HTTP/400");
+      throw std::runtime_error("test_way::031: Expected HTTP 400");
   }
 
   // Invalid zero ref
@@ -707,7 +716,7 @@ void test_way() {
     throw std::runtime_error("test_way::032: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_way::032: Expected HTTP/400");
+      throw std::runtime_error("test_way::032: Expected HTTP 400");
   }
 
   // Ref missing
@@ -718,7 +727,7 @@ void test_way() {
   } catch (http::exception &e) {
 //    std::cerr << e.what() << std::endl;
     if (e.code() != 400)
-      throw std::runtime_error("test_way::033: Expected HTTP/400");
+      throw std::runtime_error("test_way::033: Expected HTTP 400");
   }
 
 }
@@ -732,7 +741,7 @@ void test_relation() {
     throw std::runtime_error("test_relation::002: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_relation::002: Expected HTTP/400");
+      throw std::runtime_error("test_relation::002: Expected HTTP 400");
   }
 
   // Missing ref
@@ -742,7 +751,7 @@ void test_relation() {
     throw std::runtime_error("test_relation::002: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_relation::002: Expected HTTP/400");
+      throw std::runtime_error("test_relation::002: Expected HTTP 400");
   }
 
   // Role is optional and may not trigger an error
@@ -760,7 +769,7 @@ void test_relation() {
     throw std::runtime_error("test_relation::004: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_relation::004: Expected HTTP/400");
+      throw std::runtime_error("test_relation::004: Expected HTTP 400");
   }
 
   // Invalid member type
@@ -770,7 +779,7 @@ void test_relation() {
     throw std::runtime_error("test_relation::005: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_relation::005: Expected HTTP/400");
+      throw std::runtime_error("test_relation::005: Expected HTTP 400");
   }
 
   // Invalid ref
@@ -780,7 +789,7 @@ void test_relation() {
     throw std::runtime_error("test_relation::005: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_relation::005: Expected HTTP/400");
+      throw std::runtime_error("test_relation::005: Expected HTTP 400");
   }
 
   // Invalid zero ref
@@ -790,7 +799,7 @@ void test_relation() {
     throw std::runtime_error("test_relation::006: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_relation::006: Expected HTTP/400");
+      throw std::runtime_error("test_relation::006: Expected HTTP 400");
   }
 
   // ref too large
@@ -802,7 +811,7 @@ void test_relation() {
     throw std::runtime_error("test_relation::007: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400)
-      throw std::runtime_error("test_relation::007: Expected HTTP/400");
+      throw std::runtime_error("test_relation::007: Expected HTTP 400");
   }
 
 
@@ -822,9 +831,9 @@ void test_relation() {
                                  "string length > 255 unicode characters");
     } catch (http::exception &e) {
       if (e.code() != 400)
-        throw std::runtime_error("test_relation::010: Expected HTTP/400");
-      if (std::string(e.what()) !=
-          "Relation Role has more than 255 unicode characters at line 2, column 321")
+        throw std::runtime_error("test_relation::010: Expected HTTP 400");
+      const std::string expected = "Relation Role has more than 255 unicode characters";
+      if (std::string(e.what()).substr(0, expected.size()) != expected)
         throw std::runtime_error(
             "test_relation::010: Expected Relation Role has more than "
             "255 unicode characters, got: " + std::string(e.what()));

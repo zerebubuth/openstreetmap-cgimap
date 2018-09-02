@@ -117,7 +117,7 @@ namespace {
         throw std::runtime_error("Expected exception for duplicate old_ids");
       } catch (http::exception &e) {
 	  if (e.code() != 400)
-	    throw std::runtime_error("Expected HTTP/400 Bad request");
+	    throw std::runtime_error("Expected HTTP 400 Bad request");
       }
     }
 
@@ -175,7 +175,7 @@ namespace {
 	 throw std::runtime_error("Modifying a node with wrong version should raise http conflict error");
       } catch (http::exception &e) {
 	  if (e.code() != 409)
-	    throw std::runtime_error("Expected HTTP/409 Conflict");
+	    throw std::runtime_error("Expected HTTP 409 Conflict");
       }
     }
 
@@ -251,7 +251,7 @@ namespace {
 	  throw std::runtime_error("Deleting a deleted node should raise an http gone error");
       } catch (http::exception &e) {
 	  if (e.code() != 410)
-	    throw std::runtime_error("Expected HTTP/410 Gone");
+	    throw std::runtime_error("Expected HTTP 410 Gone");
       }
     }
 
@@ -290,7 +290,7 @@ namespace {
 	  throw std::runtime_error("Deleting a non-existing node should raise an http not found error");
       } catch (http::exception &e) {
 	  if (e.code() != 404)
-	    throw std::runtime_error("Expected HTTP/404 Not found");
+	    throw std::runtime_error("Expected HTTP 404 Not found");
       }
     }
 
@@ -307,7 +307,7 @@ namespace {
 	 throw std::runtime_error("Modifying a non-existing node should trigger a not found error");
       } catch (http::exception &e) {
 	  if (e.code() != 404)
-	    throw std::runtime_error("Expected HTTP/404 Not found");
+	    throw std::runtime_error("Expected HTTP 404 Not found");
       }
     }
 
@@ -409,7 +409,7 @@ namespace {
           throw std::runtime_error("Expected exception for duplicate old_ids");
         } catch (http::exception &e) {
   	  if (e.code() != 400)
-  	    throw std::runtime_error("Expected HTTP/400 Bad request");
+  	    throw std::runtime_error("Expected HTTP 400 Bad request");
         }
       }
 
@@ -427,7 +427,7 @@ namespace {
           throw std::runtime_error("Expected exception for unknown placeholder ids");
         } catch (http::exception &e) {
   	  if (e.code() != 400)
-  	    throw std::runtime_error("Expected HTTP/400 Bad request");
+  	    throw std::runtime_error("Expected HTTP 400 Bad request");
         }
       }
 
@@ -487,7 +487,7 @@ namespace {
   	 throw std::runtime_error("Modifying a way with wrong version should raise http conflict error");
         } catch (http::exception &e) {
   	  if (e.code() != 409)
-  	    throw std::runtime_error("Expected HTTP/409 Conflict");
+  	    throw std::runtime_error("Expected HTTP 409 Conflict");
         }
       }
 
@@ -504,7 +504,7 @@ namespace {
            throw std::runtime_error("Modifying a way with unknown node id should raise http precondition failed error");
         } catch (http::exception &e) {
             if (e.code() != 412)
-              throw std::runtime_error("Expected HTTP/412 precondition failed");
+              throw std::runtime_error("Expected HTTP 412 precondition failed");
         }
       }
 
@@ -521,7 +521,7 @@ namespace {
            throw std::runtime_error("Modifying a way with unknown placeholder node id should raise http bad request");
         } catch (http::exception &e) {
             if (e.code() != 400)
-              throw std::runtime_error("Expected HTTP/400 bad request");
+              throw std::runtime_error("Expected HTTP 400 bad request");
         }
       }
 
@@ -550,7 +550,7 @@ namespace {
 	  throw std::runtime_error("Deleting a node that is still referenced by way should raise an exception");
         } catch (http::exception &e) {
   	  if (e.code() != 412)
-  	    throw std::runtime_error("Expected HTTP/412 precondition failed");
+  	    throw std::runtime_error("Expected HTTP 412 precondition failed");
         }
       }
 
@@ -613,7 +613,7 @@ namespace {
   	  throw std::runtime_error("Deleting a non-existing way should raise an http gone error");
         } catch (http::exception &e) {
   	  if (e.code() != 410)
-  	    throw std::runtime_error("Expected HTTP/410 Gone");
+  	    throw std::runtime_error("Expected HTTP 410 Gone");
         }
       }
 
@@ -652,7 +652,7 @@ namespace {
   	  throw std::runtime_error("Deleting a non-existing way should raise an http not found error");
         } catch (http::exception &e) {
   	  if (e.code() != 404)
-  	    throw std::runtime_error("Expected HTTP/404 Not found");
+  	    throw std::runtime_error("Expected HTTP 404 Not found");
         }
       }
 
@@ -669,7 +669,7 @@ namespace {
   	 throw std::runtime_error("Modifying a non-existing way should trigger a not found error");
         } catch (http::exception &e) {
   	  if (e.code() != 404)
-  	    throw std::runtime_error("Expected HTTP/404 Not found");
+  	    throw std::runtime_error("Expected HTTP 404 Not found");
         }
       }
     }
@@ -865,7 +865,7 @@ namespace {
           throw std::runtime_error("Expected exception for duplicate old_ids");
         } catch (http::exception &e) {
   	  if (e.code() != 400)
-  	    throw std::runtime_error("Expected HTTP/400 Bad request");
+  	    throw std::runtime_error("Expected HTTP 400 Bad request");
         }
       }
 
@@ -884,7 +884,7 @@ namespace {
 
         } catch (http::exception& e) {
     	  if (e.code() != 400)
-   	      throw std::runtime_error("One relation w/ self reference: expected HTTP/400 Bad request");
+   	      throw std::runtime_error("One relation w/ self reference: Expected HTTP 400 Bad request");
         }
       }
 
@@ -904,7 +904,7 @@ namespace {
 
         } catch (http::exception& e) {
     	  if (e.code() != 400)
-   	      throw std::runtime_error("Relations with reference to each other: expected HTTP/400 Bad request");
+   	      throw std::runtime_error("Relations with reference to each other: Expected HTTP 400 Bad request");
         }
       }
 
@@ -964,7 +964,7 @@ namespace {
           throw std::runtime_error("Expected exception for unknown node placeholder id");
         } catch (http::exception &e) {
   	  if (e.code() != 400)
-  	    throw std::runtime_error("Expected HTTP/400 Bad request");
+  	    throw std::runtime_error("Expected HTTP 400 Bad request");
         }
       }
 
@@ -982,7 +982,7 @@ namespace {
           throw std::runtime_error("Expected exception for unknown way placeholder id");
         } catch (http::exception &e) {
   	  if (e.code() != 400)
-  	    throw std::runtime_error("Expected HTTP/400 Bad request");
+  	    throw std::runtime_error("Expected HTTP 400 Bad request");
         }
       }
 
@@ -1000,7 +1000,7 @@ namespace {
           throw std::runtime_error("Expected exception for unknown way placeholder id");
         } catch (http::exception &e) {
   	  if (e.code() != 400)
-  	    throw std::runtime_error("Expected HTTP/400 Bad request");
+  	    throw std::runtime_error("Expected HTTP 400 Bad request");
         }
       }
 
@@ -1071,7 +1071,7 @@ namespace {
   	 throw std::runtime_error("Modifying a way with wrong version should raise http conflict error");
         } catch (http::exception &e) {
   	  if (e.code() != 409)
-  	    throw std::runtime_error("Expected HTTP/409 Conflict");
+  	    throw std::runtime_error("Expected HTTP 409 Conflict");
         }
       }
 
@@ -1090,7 +1090,7 @@ namespace {
            throw std::runtime_error("Modifying a relation with unknown node id should raise http precondition failed error");
         } catch (http::exception &e) {
             if (e.code() != 412)
-              throw std::runtime_error("Expected HTTP/412 precondition failed");
+              throw std::runtime_error("Expected HTTP 412 precondition failed");
         }
       }
 
@@ -1108,7 +1108,7 @@ namespace {
            throw std::runtime_error("Modifying a way with unknown way id should raise http precondition failed error");
         } catch (http::exception &e) {
             if (e.code() != 412)
-              throw std::runtime_error("Expected HTTP/412 precondition failed");
+              throw std::runtime_error("Expected HTTP 412 precondition failed");
         }
       }
 
@@ -1126,7 +1126,7 @@ namespace {
            throw std::runtime_error("Modifying a way with unknown relation id should raise http precondition failed error");
         } catch (http::exception &e) {
             if (e.code() != 412)
-              throw std::runtime_error("Expected HTTP/412 precondition failed");
+              throw std::runtime_error("Expected HTTP 412 precondition failed");
         }
       }
 
@@ -1146,7 +1146,7 @@ namespace {
             throw std::runtime_error("Expected exception for unknown way placeholder id");
           } catch (http::exception &e) {
     	  if (e.code() != 400)
-    	    throw std::runtime_error("Expected HTTP/400 Bad request");
+    	    throw std::runtime_error("Expected HTTP 400 Bad request");
           }
       }
 
@@ -1165,7 +1165,7 @@ namespace {
            throw std::runtime_error("Expected exception for unknown way placeholder id");
          } catch (http::exception &e) {
    	  if (e.code() != 400)
-   	    throw std::runtime_error("Expected HTTP/400 Bad request");
+   	    throw std::runtime_error("Expected HTTP 400 Bad request");
          }
       }
 
@@ -1184,7 +1184,7 @@ namespace {
            throw std::runtime_error("Expected exception for unknown relation placeholder id");
          } catch (http::exception &e) {
    	  if (e.code() != 400)
-   	    throw std::runtime_error("Expected HTTP/400 Bad request");
+   	    throw std::runtime_error("Expected HTTP 400 Bad request");
          }
       }
 
@@ -1213,7 +1213,7 @@ namespace {
 	  throw std::runtime_error("Deleting a node that is still referenced by relation should raise an exception");
         } catch (http::exception &e) {
   	  if (e.code() != 412)
-  	    throw std::runtime_error("Expected HTTP/412 precondition failed");
+  	    throw std::runtime_error("Expected HTTP 412 precondition failed");
         }
       }
 
@@ -1252,7 +1252,7 @@ namespace {
 	  throw std::runtime_error("Deleting a way that is still referenced by relation should raise an exception");
         } catch (http::exception &e) {
   	  if (e.code() != 412)
-  	    throw std::runtime_error("Expected HTTP/412 precondition failed");
+  	    throw std::runtime_error("Expected HTTP 412 precondition failed");
         }
       }
 
@@ -1291,7 +1291,7 @@ namespace {
 	  throw std::runtime_error("Deleting a node relation is still referenced by relation should raise an exception");
         } catch (http::exception &e) {
   	  if (e.code() != 412)
-  	    throw std::runtime_error("Expected HTTP/412 precondition failed");
+  	    throw std::runtime_error("Expected HTTP 412 precondition failed");
         }
       }
 
@@ -1378,7 +1378,7 @@ namespace {
   	  throw std::runtime_error("Deleting a non-existing relation should raise an http gone error");
         } catch (http::exception &e) {
   	  if (e.code() != 410)
-  	    throw std::runtime_error("Expected HTTP/410 Gone");
+  	    throw std::runtime_error("Expected HTTP 410 Gone");
         }
       }
 
@@ -1417,7 +1417,7 @@ namespace {
   	  throw std::runtime_error("Deleting a non-existing relation should raise an http not found error");
         } catch (http::exception &e) {
   	  if (e.code() != 404)
-  	    throw std::runtime_error("Expected HTTP/404 Not found");
+  	    throw std::runtime_error("Expected HTTP 404 Not found");
         }
       }
 
@@ -1434,7 +1434,7 @@ namespace {
   	 throw std::runtime_error("Modifying a non-existing relation should trigger a not found error");
         } catch (http::exception &e) {
   	  if (e.code() != 404)
-  	    throw std::runtime_error("Expected HTTP/404 Not found");
+  	    throw std::runtime_error("Expected HTTP 404 Not found");
         }
       }
     }
@@ -1530,7 +1530,7 @@ namespace {
     	 throw std::runtime_error("Forward relation definition should trigger a bad request error");
       } catch (http::exception& e) {
   	  if (e.code() != 400)
-  	    throw std::runtime_error("Forward relation definition: Expected HTTP/400 Bad request");
+  	    throw std::runtime_error("Forward relation definition: Expected HTTP 400 Bad request");
       }
 
   // Testing correct parent/child sequence
@@ -1622,7 +1622,7 @@ namespace {
 	process_request(req, limiter, generator, route, sel_factory, upd_factory, boost::shared_ptr<oauth::store>(nullptr));
 
 	if (req.response_status() != 409)
-	  throw std::runtime_error("Expected HTTP/409 Conflict: Payload and URL changeset id differ");
+	  throw std::runtime_error("Expected HTTP 409 Conflict: Payload and URL changeset id differ");
     }
 
     // Try to post a changeset, where the user doesn't own the changeset
@@ -1643,7 +1643,7 @@ namespace {
 	process_request(req, limiter, generator, route, sel_factory, upd_factory, boost::shared_ptr<oauth::store>(nullptr));
 
 	if (req.response_status() != 409)
-	  throw std::runtime_error("Expected HTTP/409 Conflict: User doesn't own the changeset");
+	  throw std::runtime_error("Expected HTTP 409 Conflict: User doesn't own the changeset");
     }
 
     // Try to add a node to a changeset that already has 10000 elements (=max)
@@ -1664,7 +1664,7 @@ namespace {
 	process_request(req, limiter, generator, route, sel_factory, upd_factory, boost::shared_ptr<oauth::store>(nullptr));
 
 	if (req.response_status() != 409)
-	  std::runtime_error("Expected HTTP/409 Conflict: Cannot add more elements to changeset");
+	  std::runtime_error("Expected HTTP 409 Conflict: Cannot add more elements to changeset");
     }
 
     // Try to add a node to a changeset that is already closed
@@ -1685,7 +1685,7 @@ namespace {
 	process_request(req, limiter, generator, route, sel_factory, upd_factory, boost::shared_ptr<oauth::store>(nullptr));
 
 	if (req.response_status() != 409)
-	  std::runtime_error("Expected HTTP/409 Conflict: Changeset already closed");
+	  std::runtime_error("Expected HTTP 409 Conflict: Changeset already closed");
     }
 
     // Try to add a nodes, ways, relations to a changeset
@@ -1748,7 +1748,7 @@ namespace {
 	// std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
 
 	if (req.response_status() != 200)
-	  std::runtime_error("Expected HTTP/200 OK: Create new node");
+	  std::runtime_error("Expected HTTP 200 OK: Create new node");
     }
 
     // Try to add, modify and delete nodes, ways, relations in changeset
@@ -1804,7 +1804,7 @@ namespace {
 	// std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
 
 	if (req.response_status() != 200)
-	  std::runtime_error("Expected HTTP/200 OK: Create new node");
+	  std::runtime_error("Expected HTTP 200 OK: Create new node");
     }
 
     //  TODO: compare the result to what we're expecting: check_response(in, req.buffer());
