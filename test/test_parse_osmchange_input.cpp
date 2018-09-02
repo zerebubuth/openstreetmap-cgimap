@@ -88,9 +88,9 @@ void test_osmchange_structure() {
       throw std::runtime_error(
           "test_osmchange_structure::005: Expected HTTP/400");
     if (std::string(e.what()) !=
-        "Unknown action dummy, choices are create, modify, delete")
+        "Unknown action dummy, choices are create, modify, delete at line 1, column 18")
       throw std::runtime_error(
-          "test_osmchange_structure::005: Expected unknown action error");
+          "test_osmchange_structure::005: Expected unknown action error, got: " + std::string(e.what()));
   }
 
   // Create action
@@ -127,9 +127,9 @@ void test_osmchange_structure() {
       throw std::runtime_error(
           "test_osmchange_structure::009: Expected HTTP/400");
     if (std::string(e.what()) !=
-        "Unknown element bla, expecting node, way or relation")
+        "Unknown element bla, expecting node, way or relation at line 1, column 24")
       throw std::runtime_error(
-          "test_osmchange_structure::009: Expected unknown action error");
+          "test_osmchange_structure::009: Expected unknown action error, got: " + std::string(e.what()));
   }
 }
 
@@ -245,9 +245,9 @@ void test_node() {
   } catch (http::exception &e) {
     if (e.code() != 400)
       throw std::runtime_error("test_node::011: Expected HTTP/400");
-    if (std::string(e.what()) != "Changeset id is missing for Node/-1")
+    if (std::string(e.what()) != "Changeset id is missing for Node -1 at line 1, column 60")
       throw std::runtime_error(
-          "test_node::018: Expected Changeset id is missing for Node/-1");
+          "test_node::011: Expected Changeset id is missing for Node -1, got: " + std::string(e.what()));
   }
 
   // Redefined lat attribute
@@ -362,9 +362,9 @@ void test_node() {
     if (e.code() != 400)
       throw std::runtime_error("test_node::031: Expected HTTP/400");
     if (std::string(e.what()) !=
-        "Element Node/-1 has duplicate tags with key dup1")
+        "Node -1 has duplicate tags with key dup1 at line 4, column 48")
       throw std::runtime_error(
-          "test_node::018: Expected has duplicate tags with key dup1");
+          "test_node::018: Expected has duplicate tags with key dup1, got: " + std::string(e.what()));
   }
 
   // Tag: Key without value
@@ -406,9 +406,9 @@ void test_node() {
       if (e.code() != 400)
         throw std::runtime_error("test_node::040: Expected HTTP/400");
       if (std::string(e.what()) !=
-          "Value has more than 255 unicode characters in object Node/-1")
+          "Value has more than 255 unicode characters in Node -1 at line 2, column 301")
         throw std::runtime_error("test_node::040: Expected Value has more than "
-                                 "255 unicode characters");
+                                 "255 unicode characters, got: " + std::string(e.what()));
       if (i <= 255)
         throw std::runtime_error("test_node::040: Unexpected exception for "
                                  "string length <= 255 characters");
@@ -432,9 +432,9 @@ void test_node() {
       if (e.code() != 400)
         throw std::runtime_error("test_node::041: Expected HTTP/400");
       if (std::string(e.what()) !=
-          "Key has more than 255 unicode characters in object Node/-1")
+          "Key has more than 255 unicode characters in Node -1 at line 2, column 303")
         throw std::runtime_error("test_node::041: Expected Key has more than "
-                                 "255 unicode characters");
+                                 "255 unicode characters, got: " + std::string(e.what()));
       if (i <= 255)
         throw std::runtime_error("test_node::041: Unexpected exception for "
                                  "string length <= 255 characters");
@@ -619,9 +619,9 @@ void test_way() {
   } catch (http::exception &e) {
     if (e.code() != 400)
       throw std::runtime_error("test_way::003: Expected HTTP/400");
-    if (std::string(e.what()) != "Changeset id is missing for Way/-1")
+    if (std::string(e.what()) != "Changeset id is missing for Way -1 at line 1, column 32")
       throw std::runtime_error(
-          "test_way::003: Expected Changeset id is missing for Way/-1");
+          "test_way::003: Expected Changeset id is missing for Way -1, got: " + std::string(e.what()));
   }
 
   // Node ref missing
@@ -632,9 +632,9 @@ void test_way() {
   } catch (http::exception &e) {
     if (e.code() != 412)
       throw std::runtime_error("test_way::010: Expected HTTP/412");
-    if (std::string(e.what()) != "Way -1 must have at least one node")
+    if (std::string(e.what()) != "Way -1 must have at least one node at line 1, column 50")
       throw std::runtime_error(
-          "test_way::010: Expected Way -1 must have at least one node");
+          "test_way::010: Expected Way -1 must have at least one node, got: " + std::string(e.what()));
   }
 
   // Test node refs up to max number of nodes per way
@@ -659,11 +659,11 @@ void test_way() {
         if (std::string(e.what()) !=
             (boost::format(
                  "You tried to add %1% nodes to way %2%, however only "
-                 "%3% are allowed") %
+                 "%3% are allowed at line 1, column 32965") %
              i % -1 % WAY_MAX_NODES)
                 .str())
           throw std::runtime_error(
-              "test_node::040: Expected: you tried to add x nodes to way");
+              "test_node::040: Expected: you tried to add x nodes to way, got: " + std::string(e.what()));
         if (i <= WAY_MAX_NODES)
           throw std::runtime_error(
               "test_way::020: Unexpected exception for way "
@@ -716,7 +716,7 @@ void test_way() {
         R"(<osmChange><create><way changeset="858" id="-1"><nd ref="1"/><nd /><tag k="key" v="value"/></way></create></osmChange>)");
     throw std::runtime_error("test_way::033: Expected exception");
   } catch (http::exception &e) {
-    std::cerr << e.what() << std::endl;
+//    std::cerr << e.what() << std::endl;
     if (e.code() != 400)
       throw std::runtime_error("test_way::033: Expected HTTP/400");
   }
@@ -824,10 +824,10 @@ void test_relation() {
       if (e.code() != 400)
         throw std::runtime_error("test_relation::010: Expected HTTP/400");
       if (std::string(e.what()) !=
-          "Relation Role has more than 255 unicode characters")
+          "Relation Role has more than 255 unicode characters at line 2, column 321")
         throw std::runtime_error(
             "test_relation::010: Expected Relation Role has more than "
-            "255 unicode characters");
+            "255 unicode characters, got: " + std::string(e.what()));
       if (i <= 255)
         throw std::runtime_error("test_relation::010: Unexpected exception for "
                                  "string length <= 255 characters");

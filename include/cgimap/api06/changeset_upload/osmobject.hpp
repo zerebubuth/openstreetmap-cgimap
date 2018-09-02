@@ -99,14 +99,14 @@ public:
 
     if (key.empty()) {
       throw http::bad_request(
-          (boost::format("Key may not be empty in object %1%") % to_string())
+          (boost::format("Key may not be empty in %1%") % to_string())
               .str());
     }
 
     if (unicode_strlen(key) > 255) {
       throw http::bad_request(
           (boost::format(
-               "Key has more than 255 unicode characters in object %1%") %
+               "Key has more than 255 unicode characters in %1%") %
            to_string())
               .str());
     }
@@ -114,7 +114,7 @@ public:
     if (unicode_strlen(value) > 255) {
       throw http::bad_request(
           (boost::format(
-               "Value has more than 255 unicode characters in object %1%") %
+               "Value has more than 255 unicode characters in %1%") %
            to_string())
               .str());
     }
@@ -122,7 +122,7 @@ public:
     if (!(m_tags.insert(std::pair<std::string, std::string>(key, value)))
              .second) {
       throw http::bad_request(
-          (boost::format("Element %1% has duplicate tags with key %2%") %
+          (boost::format("%1% has duplicate tags with key %2%") %
            to_string() % key)
               .str());
     }
@@ -141,7 +141,7 @@ public:
 
   virtual std::string to_string() {
 
-    return (boost::format("%1%/%2%") % get_type_name() % ((m_id) ? *m_id : 0))
+    return (boost::format("%1% %2%") % get_type_name() % ((m_id) ? *m_id : 0))
         .str();
   }
 

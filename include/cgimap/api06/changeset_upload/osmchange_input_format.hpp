@@ -15,6 +15,7 @@
 #include <cassert>
 #include <cstdint>
 #include <cstring>
+#include <functional>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -64,14 +65,49 @@ class OSMChangeXMLParser {
     xmlParserCtxtPtr ctxt{};
     T *m_callback_object;
 
+    struct user_data_t {
+       T *callback;
+       std::function<std::pair<int, int>(void)> current_location;
+    };
+
+    // Include XML message location information where error occurred in exception
+    template <typename TEx>
+    static void throw_with_context(void *data, TEx& e) {
+      auto location = static_cast<user_data_t *>(data)->current_location();
+
+      // Location unknown
+      if (location.first == 0 && location.second == 0)
+	throw e;
+
+      throw TEx{ (boost::format("%1% at line %2%, column %3%") %
+	  e.what() %
+	  location.first %
+	  location.second )
+	.str() };
+    }
+
     static void start_element_wrapper(void *data, const xmlChar *element,
-                                      const xmlChar **attrs) {
-      static_cast<T *>(data)->start_element((const char *)element,
-					    (const char **)attrs);
+				      const xmlChar **attrs) {
+      try {
+	  static_cast<user_data_t *>(data)->callback->
+	                          start_element((const char *)element,
+						(const char **)attrs);
+      } catch (http::bad_request& e) {
+	 throw_with_context(data, e);
+      } catch (http::precondition_failed& e) {
+	 throw_with_context(data, e);
+      }
     }
 
     static void end_element_wrapper(void *data, const xmlChar *element) {
-      static_cast<T *>(data)->end_element((const char *)element);
+      try {
+	  static_cast<user_data_t *>(data)->callback->
+	                             end_element((const char *)element);
+      } catch (http::bad_request& e) {
+	 throw_with_context(data, e);
+      } catch (http::precondition_failed& e) {
+	 throw_with_context(data, e);
+      }
     }
 
     static void warning(void *, const char *, ...) {}
@@ -126,9 +162,13 @@ class OSMChangeXMLParser {
       if (data.size() < 4)
         throw http::bad_request("Invalid XML input");
 
+      user_data_t user_data;
+      user_data.callback = m_callback_object;
+      user_data.current_location = std::bind(&XMLParser::get_current_location, this);
+
       // provide first 4 characters of data string, according to
       // http://xmlsoft.org/library.html
-      ctxt = xmlCreatePushParserCtxt(&handler, m_callback_object, data.c_str(),
+      ctxt = xmlCreatePushParserCtxt(&handler, &user_data, data.c_str(),
                                      4, NULL);
       if (ctxt == NULL)
         throw std::runtime_error("Could not create parser context!");
@@ -152,6 +192,14 @@ class OSMChangeXMLParser {
       }
 
       xmlParseChunk(ctxt, 0, 0, 1);
+    }
+
+  private:
+
+    std::pair<int, int> get_current_location() {
+      if (ctxt->input == nullptr)
+	return {};
+      return { ctxt->input->line, ctxt->input->col };
     }
 
   }; // class XMLParser
@@ -420,7 +468,7 @@ class OSMChangeXMLParser {
       assert(!std::strcmp(element, "node"));
       if (!m_node->is_valid(m_operation)) {
         throw xml_error{
-          (boost::format("Object %1% does not include all mandatory fields") %
+          (boost::format("%1% does not include all mandatory fields") %
            m_node->to_string())
               .str()
         };
@@ -433,7 +481,7 @@ class OSMChangeXMLParser {
       assert(!std::strcmp(element, "way"));
       if (!m_way->is_valid(m_operation)) {
         throw xml_error{
-          (boost::format("Object %1% does not include all mandatory fields") %
+          (boost::format("%1% does not include all mandatory fields") %
            m_way->to_string())
               .str()
         };
@@ -447,7 +495,7 @@ class OSMChangeXMLParser {
       assert(!std::strcmp(element, "relation"));
       if (!m_relation->is_valid()) {
         throw xml_error{
-          (boost::format("Object %1% does not include all mandatory fields") %
+          (boost::format("%1% does not include all mandatory fields") %
            m_relation->to_string())
               .str()
         };
