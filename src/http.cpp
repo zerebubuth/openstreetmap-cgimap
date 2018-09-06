@@ -103,6 +103,9 @@ bandwidth_limit_exceeded::bandwidth_limit_exceeded(const string &message)
 gone::gone(const string &message)
     : exception(410, "Gone", message) {}
 
+unsupported_media_type::unsupported_media_type(const string &message)
+    : exception(415, "Unsupported Media Type", message) {}
+
 unauthorized::unauthorized(const std::string &message)
   : exception(401, "Unauthorized", message) {}
 
@@ -219,6 +222,25 @@ shared_ptr<encoding> choose_encoding(const string &accept_encoding) {
     throw http::not_acceptable("No acceptable content encoding found. Only "
                                "identity and gzip are supported.");
   }
+}
+
+shared_ptr<ZLibBaseDecompressor> get_content_encoding_handler(const std::string &content_encoding) {
+
+  if (content_encoding.empty())
+    return shared_ptr<IdentityDecompressor>(new IdentityDecompressor());
+
+  if (content_encoding == "identity")
+      return shared_ptr<IdentityDecompressor>(new IdentityDecompressor());
+#ifdef HAVE_LIBZ
+  else if (content_encoding == "gzip")
+    return shared_ptr<GZipDecompressor>(new GZipDecompressor());
+  else if (content_encoding == "deflate")
+    return shared_ptr<ZLibDecompressor>(new ZLibDecompressor());
+  throw http::unsupported_media_type("Supported Content-Encodings include 'gzip' and 'deflate'");
+
+#else
+  throw http::unsupported_media_type("Supported Content-Encodings are 'identity'");
+#endif
 }
 
 namespace {
