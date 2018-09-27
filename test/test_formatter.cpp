@@ -186,7 +186,7 @@ void test_formatter::write_diffresult_create_modify(const element_type elem,
 }
 
 void test_formatter::write_diffresult_delete(const element_type elem,
-                                     const osm_nwr_id_t old_id) {
+                                     const osm_nwr_signed_id_t old_id) {
 
 }
 
