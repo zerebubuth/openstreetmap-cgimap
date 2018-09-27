@@ -192,7 +192,7 @@ struct output_formatter {
 
   // output an entry of a diffResult with 1 parameter: old_id
   virtual void write_diffresult_delete(const element_type elem,
-                                       const osm_nwr_id_t old_id) = 0;
+                                       const osm_nwr_signed_id_t old_id) = 0;
 
   // flush the current state
   virtual void flush() = 0;

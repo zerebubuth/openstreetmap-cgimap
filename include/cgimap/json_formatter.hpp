@@ -50,7 +50,7 @@ public:
 				      const osm_nwr_id_t new_id,
 				      const osm_version_t new_version);
   void write_diffresult_delete(const element_type elem,
-			       const osm_nwr_id_t old_id);
+			       const osm_nwr_signed_id_t old_id);
 
   void flush();
   void error(const std::string &);

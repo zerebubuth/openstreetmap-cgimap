@@ -45,9 +45,9 @@ public:
   std::vector<object_id_mapping_t> modified_way_ids;
   std::vector<object_id_mapping_t> modified_relation_ids;
 
-  std::vector<osm_nwr_id_t> deleted_node_ids;
-  std::vector<osm_nwr_id_t> deleted_way_ids;
-  std::vector<osm_nwr_id_t> deleted_relation_ids;
+  std::vector<osm_nwr_signed_id_t> deleted_node_ids;
+  std::vector<osm_nwr_signed_id_t> deleted_way_ids;
+  std::vector<osm_nwr_signed_id_t> deleted_relation_ids;
 
   // in case the caller has provided an "if-unused" flag and requests
   // deletion for objects which are either (a) already deleted or

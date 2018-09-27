@@ -211,7 +211,7 @@ void json_formatter::write_diffresult_create_modify(const element_type elem,
 
 
 void json_formatter::write_diffresult_delete(const element_type elem,
-                                            const osm_nwr_id_t old_id)
+                                            const osm_nwr_signed_id_t old_id)
 {
 //  writer->start_object();
 //  writer->object_key("type");

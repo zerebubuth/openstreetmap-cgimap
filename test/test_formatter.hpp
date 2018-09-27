@@ -99,7 +99,7 @@ struct test_formatter : public output_formatter {
                                               const osm_version_t new_version);
 
   void write_diffresult_delete(const element_type elem,
-                                       const osm_nwr_id_t old_id);
+                                       const osm_nwr_signed_id_t old_id);
 
   void flush();
 

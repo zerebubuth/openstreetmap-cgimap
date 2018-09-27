@@ -238,7 +238,7 @@ void xml_formatter::write_diffresult_create_modify(const element_type elem,
 
 
 void xml_formatter::write_diffresult_delete(const element_type elem,
-                                            const osm_nwr_id_t old_id)
+                                            const osm_nwr_signed_id_t old_id)
 {
   writer->start(element_type_name(elem));
   writer->attribute("old_id", old_id);

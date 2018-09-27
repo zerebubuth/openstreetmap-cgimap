@@ -1804,14 +1804,47 @@ namespace {
 	// std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
 
 	if (req.response_status() != 200)
-	  std::runtime_error("Expected HTTP 200 OK: Create new node");
+	  std::runtime_error("Expected HTTP 200 OK: add, modify and delete nodes, ways, relations in changeset");
     }
 
-    //  TODO: compare the result to what we're expecting: check_response(in, req.buffer());
-    //	std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
+    // Multiple operations on the same node id -1
+    {
+	// set up request headers from test case
+	test_request req;
+	req.set_header("REQUEST_METHOD", "POST");
+	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
+	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("REMOTE_ADDR", "127.0.0.1");
 
+	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+                    <osmChange version="0.6" generator="iD">
+                    <create>
+                       <node id="-1" lon="11.625506992810122" lat="46.866699181636555"  changeset="1">
+                         <tag k="highway" v="bus_stop" />
+                       </node>
+                    </create>
+                    <delete>
+                       <node id="-1"  version="1" changeset="1" />
+                    </delete>
+                    <modify>
+                       <node id="-1" lon="11.12" lat="46.13" version="2" changeset="1"/>
+                    </modify>
+                    <delete>
+                        <node id="-1"  version="3" changeset="1" />
+                    </delete>
+                   </osmChange>)" );
+
+	// execute the request
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, boost::shared_ptr<oauth::store>(nullptr));
+
+	// std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
+
+	if (req.response_status() != 200)
+	  std::runtime_error("Expected HTTP 200 OK: Multiple operations on the same node id -1");
 
   }
+
+}
 
 } // anonymous namespace
 

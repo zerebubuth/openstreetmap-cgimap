@@ -185,7 +185,7 @@ struct erase_formatter
 
 
   void write_diffresult_delete(const element_type elem,
-                               const osm_nwr_id_t old_id) {
+                               const osm_nwr_signed_id_t old_id) {
     throw std::runtime_error("erase_formatter::write_diffresult_delete unimplemented");
   }
 

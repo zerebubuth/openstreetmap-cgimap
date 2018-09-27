@@ -525,6 +525,7 @@ std::set<osm_nwr_id_t> ApiDB_Way_Updater::determine_already_deleted_ways(
   std::set<osm_nwr_id_t> ids_to_be_deleted;     // all way ids to be deleted
   std::set<osm_nwr_id_t> ids_if_unused;         // delete with if-used flag set
   std::set<osm_nwr_id_t> ids_without_if_unused; // node ids without if-used flag
+  std::map<osm_nwr_id_t, osm_nwr_signed_id_t> id_to_old_id;
 
   for (const auto &way : ways) {
     ids_to_be_deleted.insert(way.id);
@@ -533,6 +534,7 @@ std::set<osm_nwr_id_t> ApiDB_Way_Updater::determine_already_deleted_ways(
     } else {
       ids_without_if_unused.insert(way.id);
     }
+    id_to_old_id[way.id] = way.old_id;
   }
 
   if (ids_to_be_deleted.empty())
@@ -564,7 +566,8 @@ std::set<osm_nwr_id_t> ApiDB_Way_Updater::determine_already_deleted_ways(
     if (ids_if_unused.find(id) != ids_if_unused.end()) {
 
       ct->skip_deleted_way_ids.push_back(
-          { row["id"].as<osm_nwr_signed_id_t>(), row["id"].as<osm_nwr_id_t>(),
+          { id_to_old_id[row["id"].as<osm_nwr_id_t>()],
+	    row["id"].as<osm_nwr_id_t>(),
             row["version"].as<osm_version_t>() });
     }
   }
@@ -659,12 +662,14 @@ void ApiDB_Way_Updater::update_current_ways(const std::vector<way_t> &ways,
   std::vector<osm_changeset_id_t> cs;
   std::vector<bool> visibles;
   std::vector<osm_version_t> versions;
+  std::map<osm_nwr_id_t, osm_nwr_signed_id_t> id_to_old_id;
 
   for (const auto &way : ways) {
     ids.emplace_back(way.id);
     cs.emplace_back(way.changeset_id);
     visibles.push_back(visible);
     versions.emplace_back(way.version);
+    id_to_old_id[way.id] = way.old_id;
   }
 
   pqxx::result r =
@@ -676,11 +681,11 @@ void ApiDB_Way_Updater::update_current_ways(const std::vector<way_t> &ways,
   // update modified ways table
   for (const auto &row : r) {
     if (visible)
-      ct->modified_way_ids.push_back({ row["id"].as<osm_nwr_signed_id_t>(),
+      ct->modified_way_ids.push_back({ id_to_old_id[row["id"].as<osm_nwr_id_t>()],
                                        row["id"].as<osm_nwr_id_t>(),
                                        row["version"].as<osm_version_t>() });
     else
-      ct->deleted_way_ids.push_back({ row["id"].as<osm_nwr_id_t>() });
+      ct->deleted_way_ids.push_back({ id_to_old_id[row["id"].as<osm_nwr_id_t>()] });
   }
 }
 
@@ -827,14 +832,16 @@ ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t> &ways) {
   std::vector<osm_nwr_id_t> ids;
   std::set<osm_nwr_id_t> ids_if_unused; // way ids where if-used flag is set
   std::set<osm_nwr_id_t> ids_without_if_unused; // way ids without if-used flag
+  std::map<osm_nwr_id_t, osm_nwr_signed_id_t> id_to_old_id;
 
-  for (const auto &id : ways) {
-    ids.push_back(id.id);
-    if (id.if_unused) {
-      ids_if_unused.insert(id.id);
+  for (const auto &way : ways) {
+    ids.push_back(way.id);
+    if (way.if_unused) {
+      ids_if_unused.insert(way.id);
     } else {
-      ids_without_if_unused.insert(id.id);
+      ids_without_if_unused.insert(way.id);
     }
+    id_to_old_id[way.id] = way.old_id;
   }
 
   std::vector<way_t> updated_ways = ways;
@@ -923,7 +930,8 @@ ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t> &ways) {
       // new_id and the current version to the caller
 
       ct->skip_deleted_way_ids.push_back(
-          { row["id"].as<osm_nwr_signed_id_t>(), row["id"].as<osm_nwr_id_t>(),
+          { id_to_old_id[row["id"].as<osm_nwr_id_t>()],
+	    row["id"].as<osm_nwr_id_t>(),
             row["version"].as<osm_version_t>() });
     }
   }

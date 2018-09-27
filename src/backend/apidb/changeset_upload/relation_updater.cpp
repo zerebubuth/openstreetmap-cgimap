@@ -630,6 +630,7 @@ ApiDB_Relation_Updater::determine_already_deleted_relations(
   std::set<osm_nwr_id_t> ids_to_be_deleted; // all relation ids to be deleted
   std::set<osm_nwr_id_t> ids_if_unused;     // delete with if-used flag set
   std::set<osm_nwr_id_t> ids_without_if_unused; // node ids without if-used flag
+  std::map<osm_nwr_id_t, osm_nwr_signed_id_t> id_to_old_id;
 
   for (const auto &relation : relations) {
     ids_to_be_deleted.insert(relation.id);
@@ -638,6 +639,7 @@ ApiDB_Relation_Updater::determine_already_deleted_relations(
     } else {
       ids_without_if_unused.insert(relation.id);
     }
+    id_to_old_id[relation.id] = relation.old_id;
   }
 
   if (ids_to_be_deleted.empty())
@@ -672,7 +674,8 @@ ApiDB_Relation_Updater::determine_already_deleted_relations(
     if (ids_if_unused.find(id) != ids_if_unused.end()) {
 
       ct->skip_deleted_relation_ids.push_back(
-          { row["id"].as<osm_nwr_signed_id_t>(), row["id"].as<osm_nwr_id_t>(),
+          { id_to_old_id[row["id"].as<osm_nwr_id_t>()],
+	    row["id"].as<osm_nwr_id_t>(),
             row["version"].as<osm_version_t>() });
     }
   }
@@ -1224,12 +1227,14 @@ void ApiDB_Relation_Updater::update_current_relations(
   std::vector<osm_changeset_id_t> cs;
   std::vector<bool> visibles;
   std::vector<osm_version_t> versions;
+  std::map<osm_nwr_id_t, osm_nwr_signed_id_t> id_to_old_id;
 
   for (const auto &relation : relations) {
     ids.emplace_back(relation.id);
     cs.emplace_back(relation.changeset_id);
     visibles.push_back(visible);
     versions.emplace_back(relation.version);
+    id_to_old_id[relation.id] = relation.old_id;
   }
 
   pqxx::result r =
@@ -1243,10 +1248,11 @@ void ApiDB_Relation_Updater::update_current_relations(
   for (const auto &row : r) {
     if (visible) {
       ct->modified_relation_ids.push_back(
-          { row["id"].as<osm_nwr_signed_id_t>(), row["id"].as<osm_nwr_id_t>(),
+          { id_to_old_id[row["id"].as<osm_nwr_id_t>()],
+	    row["id"].as<osm_nwr_id_t>(),
             row["version"].as<osm_version_t>() });
     } else {
-      ct->deleted_relation_ids.push_back({ row["id"].as<osm_nwr_id_t>() });
+      ct->deleted_relation_ids.push_back({ id_to_old_id[row["id"].as<osm_nwr_id_t>()] });
     }
   }
 }
@@ -1421,14 +1427,16 @@ ApiDB_Relation_Updater::is_relation_still_referenced(
       ids_if_unused; // relation ids where if-used flag is set
   std::set<osm_nwr_id_t>
       ids_without_if_unused; // relation ids without if-used flag
+  std::map<osm_nwr_id_t, osm_nwr_signed_id_t> id_to_old_id;
 
-  for (const auto &id : relations) {
-    ids.push_back(id.id);
-    if (id.if_unused) {
-      ids_if_unused.insert(id.id);
+  for (const auto &rel : relations) {
+    ids.push_back(rel.id);
+    if (rel.if_unused) {
+      ids_if_unused.insert(rel.id);
     } else {
-      ids_without_if_unused.insert(id.id);
+      ids_without_if_unused.insert(rel.id);
     }
+    id_to_old_id[rel.id] = rel.old_id;
   }
 
   std::vector<relation_t> updated_relations = relations;
@@ -1525,7 +1533,8 @@ ApiDB_Relation_Updater::is_relation_still_referenced(
       // new_id and the current version to the caller
 
       ct->skip_deleted_relation_ids.push_back(
-          { row["id"].as<osm_nwr_signed_id_t>(), row["id"].as<osm_nwr_id_t>(),
+          { id_to_old_id[row["id"].as<osm_nwr_id_t>()],
+	    row["id"].as<osm_nwr_id_t>(),
             row["version"].as<osm_version_t>() });
     }
   }

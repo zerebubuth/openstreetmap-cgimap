@@ -234,8 +234,7 @@ void ApiDB_Node_Updater::replace_old_ids_in_nodes(
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map;
 
   for (auto i : created_node_id_mapping) {
-    auto res = map.insert(
-        std::pair<osm_nwr_signed_id_t, osm_nwr_id_t>(i.old_id, i.new_id));
+    auto res = map.insert( { i.old_id, i.new_id } );
     if (!res.second)
       throw http::bad_request(
           (boost::format("Duplicate node placeholder id %1%.") % i.old_id)
@@ -452,6 +451,7 @@ std::set<osm_nwr_id_t> ApiDB_Node_Updater::determine_already_deleted_nodes(
   std::set<osm_nwr_id_t> ids_to_be_deleted; // all node ids to be deleted
   std::set<osm_nwr_id_t> ids_if_unused; // node ids where if-used flag is set
   std::set<osm_nwr_id_t> ids_without_if_unused; // node ids without if-used flag
+  std::map<osm_nwr_id_t, osm_nwr_signed_id_t> id_to_old_id;
 
   for (const auto &node : nodes) {
     ids_to_be_deleted.insert(node.id);
@@ -460,6 +460,7 @@ std::set<osm_nwr_id_t> ApiDB_Node_Updater::determine_already_deleted_nodes(
     } else {
       ids_without_if_unused.insert(node.id);
     }
+    id_to_old_id[node.id] = node.old_id;
   }
 
   if (ids_to_be_deleted.empty())
@@ -494,7 +495,8 @@ std::set<osm_nwr_id_t> ApiDB_Node_Updater::determine_already_deleted_nodes(
     if (ids_if_unused.find(id) != ids_if_unused.end()) {
 
       ct->skip_deleted_node_ids.push_back(
-          { row["id"].as<osm_nwr_signed_id_t>(), row["id"].as<osm_nwr_id_t>(),
+          { id_to_old_id[ row["id"].as<osm_nwr_id_t>() ],
+	    row["id"].as<osm_nwr_id_t>(),
             row["version"].as<osm_version_t>() });
     }
   }
@@ -568,6 +570,7 @@ void ApiDB_Node_Updater::update_current_nodes(
   std::vector<osm_changeset_id_t> cs;
   std::vector<uint64_t> tiles;
   std::vector<osm_version_t> versions;
+  std::map<osm_nwr_id_t, osm_nwr_signed_id_t> id_to_old_id;
 
   for (const auto &node : nodes) {
     ids.emplace_back(node.id);
@@ -576,6 +579,7 @@ void ApiDB_Node_Updater::update_current_nodes(
     cs.emplace_back(node.changeset_id);
     tiles.emplace_back(node.tile);
     versions.emplace_back(node.version);
+    id_to_old_id[node.id] = node.old_id;
   }
 
   pqxx::result r =
@@ -608,7 +612,7 @@ void ApiDB_Node_Updater::update_current_nodes(
 
   // update modified nodes table
   for (auto row : r)
-    ct->modified_node_ids.push_back({ row["id"].as<osm_nwr_signed_id_t>(),
+    ct->modified_node_ids.push_back({ id_to_old_id[row["id"].as<osm_nwr_id_t>()],
                                       row["id"].as<osm_nwr_id_t>(),
                                       row["version"].as<osm_version_t>() });
 }
@@ -642,11 +646,13 @@ void ApiDB_Node_Updater::delete_current_nodes(
   std::vector<osm_nwr_id_t> ids;
   std::vector<osm_changeset_id_t> cs;
   std::vector<osm_version_t> versions;
+  std::map<osm_nwr_id_t, osm_nwr_signed_id_t> id_to_old_id;
 
   for (const auto &node : nodes) {
     ids.emplace_back(node.id);
     cs.emplace_back(node.changeset_id);
     versions.emplace_back(node.version);
+    id_to_old_id[node.id] = node.old_id;
   }
 
   pqxx::result r = m.prepared("delete_current_nodes")(ids)(cs)(versions).exec();
@@ -656,7 +662,7 @@ void ApiDB_Node_Updater::delete_current_nodes(
 
   // update deleted nodes table
   for (const auto &row : r)
-    ct->deleted_node_ids.push_back({ row["id"].as<osm_nwr_id_t>() });
+    ct->deleted_node_ids.push_back({ id_to_old_id[row["id"].as<osm_nwr_id_t>()] });
 }
 
 void ApiDB_Node_Updater::insert_new_current_node_tags(
@@ -756,14 +762,16 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
   std::vector<osm_nwr_id_t> ids;
   std::set<osm_nwr_id_t> ids_if_unused; // node ids where if-used flag is set
   std::set<osm_nwr_id_t> ids_without_if_unused; // node ids without if-used flag
+  std::map<osm_nwr_id_t, osm_nwr_signed_id_t> id_to_old_id;
 
-  for (const auto &id : nodes) {
-    ids.push_back(id.id);
-    if (id.if_unused) {
-      ids_if_unused.insert(id.id);
+  for (const auto &node : nodes) {
+    ids.push_back(node.id);
+    if (node.if_unused) {
+      ids_if_unused.insert(node.id);
     } else {
-      ids_without_if_unused.insert(id.id);
+      ids_without_if_unused.insert(node.id);
     }
+    id_to_old_id[node.id] = node.old_id;
   }
 
   std::vector<node_t> updated_nodes = nodes;
@@ -890,7 +898,8 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
       // new_id and the current version to the caller
 
       ct->skip_deleted_node_ids.push_back(
-          { row["id"].as<osm_nwr_signed_id_t>(), row["id"].as<osm_nwr_id_t>(),
+          { id_to_old_id[row["id"].as<osm_nwr_id_t>()],
+	    row["id"].as<osm_nwr_id_t>(),
             row["version"].as<osm_version_t>() });
     }
   }
