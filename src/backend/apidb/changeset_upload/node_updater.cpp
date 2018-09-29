@@ -780,13 +780,11 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
   {
     m.prepare("node_still_referenced_by_way",
               R"(   
-            SELECT current_way_nodes.node_id, array_agg(current_ways.id) AS way_ids
-               FROM current_ways 
-                 INNER JOIN current_way_nodes
-                   ON current_way_nodes.way_id = current_ways.id
-               WHERE current_ways.visible = true
-                 AND current_way_nodes.node_id = ANY($1)
-               GROUP BY current_way_nodes.node_id
+            SELECT current_way_nodes.node_id,
+                   array_agg(distinct current_way_nodes.way_id) AS way_ids
+                   FROM current_way_nodes
+                   WHERE current_way_nodes.node_id = ANY($1)
+                   GROUP BY current_way_nodes.node_id
             )");
 
     pqxx::result r = m.prepared("node_still_referenced_by_way")(ids).exec();
@@ -824,12 +822,10 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
   {
     m.prepare("node_still_referenced_by_relation",
               R"(   
-             SELECT current_relation_members.member_id, array_agg(current_relations.id) AS relation_ids 
-                    FROM current_relations 
-                      INNER JOIN current_relation_members
-                        ON current_relation_members.relation_id = current_relations.id
-                    WHERE current_relations.visible = true
-                      AND current_relation_members.member_type = 'Node'
+             SELECT current_relation_members.member_id,
+                    array_agg(distinct current_relation_members.relation_id) AS relation_ids
+                    FROM current_relation_members
+                    WHERE current_relation_members.member_type = 'Node'
                       AND current_relation_members.member_id = ANY($1)
                     GROUP BY current_relation_members.member_id
              )");

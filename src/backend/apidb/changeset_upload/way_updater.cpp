@@ -850,12 +850,9 @@ ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t> &ways) {
   m.prepare("way_still_referenced_by_relation",
             R"(   
       SELECT current_relation_members.member_id,
-             array_agg(current_relations.id) AS relation_ids 
-         FROM current_relations 
-           INNER JOIN current_relation_members
-            ON current_relation_members.relation_id = current_relations.id
-         WHERE current_relations.visible = true
-           AND current_relation_members.member_type = 'Way'
+             array_agg(distinct current_relation_members.relation_id) AS relation_ids
+         FROM current_relation_members
+         WHERE current_relation_members.member_type = 'Way'
            AND current_relation_members.member_id = ANY($1)
          GROUP BY current_relation_members.member_id
       )");
