@@ -26,13 +26,13 @@ public:
     try {
 	_waynode = std::stol(waynode);
     } catch (std::invalid_argument& e) {
-	throw http::bad_request("Way node is not numeric");
+	throw xml_error("Way node is not numeric");
     } catch (std::out_of_range& e) {
-	throw http::bad_request("Way node value is too large");
+	throw xml_error("Way node value is too large");
     }
 
     if (_waynode == 0) {
-	throw http::bad_request("Way node value may not be 0");
+	throw xml_error("Way node value may not be 0");
     }
 
     add_way_node(_waynode);

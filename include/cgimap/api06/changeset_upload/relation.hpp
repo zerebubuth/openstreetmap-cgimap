@@ -29,14 +29,14 @@ public:
     else if (boost::iequals(t, "Relation"))
       m_type = "Relation";
     else
-      throw http::bad_request(
+      throw xml_error(
           (boost::format("Invalid type %1% in member relation") % type).str());
   }
 
   void set_role(const char *role) {
 
     if (unicode_strlen(role) > 255) {
-      throw http::bad_request(
+      throw xml_error(
           "Relation Role has more than 255 unicode characters");
     }
 
@@ -50,14 +50,14 @@ public:
     try {
       _ref = std::stol(ref);
     } catch (std::invalid_argument &e) {
-      throw http::bad_request("Relation member 'ref' attribute is not numeric");
+      throw xml_error("Relation member 'ref' attribute is not numeric");
     } catch (std::out_of_range &e) {
-      throw http::bad_request(
+      throw xml_error(
           "Relation member 'ref' attribute value is too large");
     }
 
     if (_ref == 0) {
-      throw http::bad_request("Relation member 'ref' attribute may not be 0");
+      throw xml_error("Relation member 'ref' attribute may not be 0");
     }
 
     m_ref = _ref;
@@ -66,10 +66,10 @@ public:
   bool is_valid() {
 
     if (!m_type)
-      throw http::bad_request("Missing 'type' attribute in Relation member");
+      throw xml_error("Missing 'type' attribute in Relation member");
 
     if (!m_ref)
-      throw http::bad_request("Missing 'ref' attribute in Relation member");
+      throw xml_error("Missing 'ref' attribute in Relation member");
 
     return (m_ref && m_type);
   }
@@ -94,7 +94,7 @@ public:
 
   void add_member(RelationMember &member) {
     if (!member.is_valid())
-      throw http::bad_request(
+      throw xml_error(
           "Relation member does not include all mandatory fields");
     m_relation_member.emplace_back(member);
   }

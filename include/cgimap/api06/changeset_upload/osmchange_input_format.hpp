@@ -22,15 +22,6 @@
 
 namespace api06 {
 
-struct xml_error : public http::bad_request {
-
-  std::string error_code;
-  std::string error_string;
-
-  explicit xml_error(const std::string &message)
-      : http::bad_request(message), error_code(), error_string(message) {}
-};
-
 class OSMChangeXMLParser {
 
   enum class context {
@@ -92,9 +83,7 @@ class OSMChangeXMLParser {
 	  static_cast<user_data_t *>(data)->callback->
 	                          start_element((const char *)element,
 						(const char **)attrs);
-      } catch (http::bad_request& e) {
-	 throw_with_context(data, e);
-      } catch (http::precondition_failed& e) {
+      } catch (xml_error& e) {
 	 throw_with_context(data, e);
       }
     }
@@ -103,9 +92,7 @@ class OSMChangeXMLParser {
       try {
 	  static_cast<user_data_t *>(data)->callback->
 	                             end_element((const char *)element);
-      } catch (http::bad_request& e) {
-	 throw_with_context(data, e);
-      } catch (http::precondition_failed& e) {
+      } catch (xml_error& e) {
 	 throw_with_context(data, e);
       }
     }
