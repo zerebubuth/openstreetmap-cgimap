@@ -16,7 +16,7 @@ public:
 private:
   osm_nwr_id_t id;
 
-  void check_visibility();
+  bool is_visible();
 };
 
 class node_ways_handler : public handler {

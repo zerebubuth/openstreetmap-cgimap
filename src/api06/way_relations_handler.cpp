@@ -11,14 +11,8 @@ namespace api06 {
 way_relations_responder::way_relations_responder(mime::type mt, osm_nwr_id_t id_,
                                          data_selection_ptr &w_)
     : osm_current_responder(mt, w_), id(id_) {
-  vector<osm_nwr_id_t> ids;
-  ids.push_back(id);
 
-  if (sel->select_ways(ids) == 0) {
-    std::ostringstream error;
-    error << "Way " << id << " was not found.";
-    throw http::not_found(error.str());
-  } else {
+  if (sel->select_ways({id}) > 0 && is_visible()) {
     sel->select_relations_from_ways();
   }
 }
@@ -33,6 +27,10 @@ std::string way_relations_handler::log_name() const { return "way/relations"; }
 
 responder_ptr_t way_relations_handler::responder(data_selection_ptr &x) const {
   return responder_ptr_t(new way_relations_responder(mime_type, id, x));
+}
+
+bool way_relations_responder::is_visible() {
+  return (!sel->check_way_visibility(id) == data_selection::deleted);
 }
 
 } // namespace api06

@@ -11,14 +11,8 @@ namespace api06 {
 relation_relations_responder::relation_relations_responder(mime::type mt, osm_nwr_id_t id_,
                                          data_selection_ptr &w_)
     : osm_current_responder(mt, w_), id(id_) {
-  vector<osm_nwr_id_t> ids;
-  ids.push_back(id);
 
-  if (sel->select_relations(ids) == 0) {
-    std::ostringstream error;
-    error << "Relation " << id << " was not found.";
-    throw http::not_found(error.str());
-  } else {
+  if (sel->select_relations({id}) > 0 && is_visible()) {
     sel->select_relations_from_relations();
   }
 }
@@ -33,6 +27,10 @@ std::string relation_relations_handler::log_name() const { return "relation/rela
 
 responder_ptr_t relation_relations_handler::responder(data_selection_ptr &x) const {
   return responder_ptr_t(new relation_relations_responder(mime_type, id, x));
+}
+
+bool relation_relations_responder::is_visible() {
+  return (!sel->check_relation_visibility(id) == data_selection::deleted);
 }
 
 } // namespace api06

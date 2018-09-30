@@ -15,6 +15,8 @@ public:
 
 private:
   osm_nwr_id_t id;
+
+  bool is_visible();
 };
 
 class node_relations_handler : public handler {
