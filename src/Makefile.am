@@ -169,7 +169,10 @@ libcgimap_core_la_SOURCES+=\
 
 if ENABLE_EXPERIMENTAL
 libcgimap_core_la_SOURCES+=\
-	api06/node_ways_handler.cpp
+	api06/node_ways_handler.cpp \
+        api06/node_relations_handler.cpp \
+        api06/way_relations_handler.cpp \
+        api06/relation_relations_handler.cpp
 endif
 
 if ENABLE_API07
