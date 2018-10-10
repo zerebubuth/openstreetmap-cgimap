@@ -1140,17 +1140,14 @@ bbox_t ApiDB_Relation_Updater::calc_relation_bbox(
   m.prepare("calc_relation_bbox_nodes",
             R"(
                 SELECT MIN(latitude)  AS minlat,
-                        MIN(longitude) AS minlon, 
-                        MAX(latitude)  AS maxlat, 
-                        MAX(longitude) AS maxlon  
+                       MIN(longitude) AS minlon,
+                       MAX(latitude)  AS maxlat,
+                       MAX(longitude) AS maxlon
                 FROM current_nodes
                 INNER JOIN current_relation_members
                         ON current_relation_members.member_id = current_nodes.id
-                INNER JOIN current_relations
-                        ON current_relations.id = current_relation_members.relation_id
-                 WHERE current_relations.visible = true
-                   AND current_relation_members.member_type = 'Node'
-                   AND current_relations.id = ANY($1)
+                 WHERE current_relation_members.member_type = 'Node'
+                   AND current_relation_members.relation_id = ANY($1)
             )");
 
   pqxx::result rn = m.prepared("calc_relation_bbox_nodes")(ids).exec();
@@ -1165,9 +1162,9 @@ bbox_t ApiDB_Relation_Updater::calc_relation_bbox(
   m.prepare("calc_relation_bbox_ways",
             R"(
                 SELECT MIN(latitude)  AS minlat,
-                        MIN(longitude) AS minlon, 
-                        MAX(latitude)  AS maxlat, 
-                        MAX(longitude) AS maxlon  
+                       MIN(longitude) AS minlon,
+                       MAX(latitude)  AS maxlat,
+                       MAX(longitude) AS maxlon
                 FROM current_nodes cn
                 INNER JOIN current_way_nodes wn
                   ON cn.id = wn.node_id
@@ -1175,11 +1172,8 @@ bbox_t ApiDB_Relation_Updater::calc_relation_bbox(
                   ON wn.way_id = w.id
                 INNER JOIN current_relation_members
                         ON current_relation_members.member_id = w.id
-                INNER JOIN current_relations
-                        ON current_relations.id = current_relation_members.relation_id
-                 WHERE current_relations.visible = true
-                   AND current_relation_members.member_type = 'Way'
-                   AND current_relations.id = ANY($1)
+                 WHERE current_relation_members.member_type = 'Way'
+                   AND current_relation_members.relation_id = ANY($1)
               )");
 
   pqxx::result rw = m.prepared("calc_relation_bbox_ways")(ids).exec();
