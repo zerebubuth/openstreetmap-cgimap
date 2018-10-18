@@ -1,6 +1,8 @@
 #ifndef REQUEST_HPP
 #define REQUEST_HPP
 
+#include "cgimap/http.hpp"
+
 #include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
@@ -32,6 +34,10 @@ struct request {
 
   // get the current time of the request.
   virtual boost::posix_time::ptime get_current_time() const = 0;
+
+  // get payload provided for the request. this is useful in particular
+  // for HTTP POST and PUT requests.
+  virtual const std::string get_payload() = 0;
 
   /********************** RESPONSE HEADER FUNCTIONS **************************/
 
@@ -71,6 +77,11 @@ struct request {
   // dispose of any resources allocated to the request.
   virtual void dispose() = 0;
 
+  /******************** RANDOM FUDGE FUNCTION *******************************/
+
+  void set_default_methods(http::method);
+  http::method methods() const;
+
 protected:
   typedef std::vector<std::pair<std::string, std::string> > headers_t;
 
@@ -106,6 +117,9 @@ private:
 
   // the headers to be written in the response
   headers_t m_headers;
+
+  // allowed methods, to be returned to the client in the CORS headers.
+  http::method m_methods;
 };
 
 #endif /* REQUEST_HPP */

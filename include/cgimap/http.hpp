@@ -3,14 +3,21 @@
 
 #include <string>
 #include <vector>
+#include <bitset>
 #include <stdexcept>
 #include <boost/shared_ptr.hpp>
+#include <boost/optional.hpp>
+#include <ostream>
 #include "cgimap/config.hpp"
 
 #ifdef HAVE_LIBZ
 #include "cgimap/zlib.hpp"
 #endif
 #include "cgimap/output_buffer.hpp"
+
+// Maximum bytes
+const unsigned long STDIN_MAX = 50000000;    // TODO: configurable parameter?
+
 
 /**
  * Contains the generic HTTP methods and classes involved in the
@@ -89,6 +96,36 @@ public:
 };
 
 /**
+ * Indicates that the request could not be processed because of conflict
+ * in the request, such as an edit conflict between
+ * multiple simultaneous updates.
+ */
+class conflict : public exception {
+public:
+  conflict(const std::string &message);
+};
+
+/**
+ * The server does not meet one of the preconditions that
+ * the requester put on the request.
+ */
+class precondition_failed : public exception {
+public:
+  precondition_failed(const std::string &message);
+};
+
+/**
+ * The request is larger than the server is willing or able to process.
+ * Previously called "Request Entity Too Large"
+ */
+
+class payload_too_large : public exception {
+public:
+  payload_too_large(const std::string &message);
+};
+
+
+/**
  * The request resource could not be found, or is not handled
  * by the server.
  */
@@ -111,7 +148,7 @@ public:
 class gone : public exception {
 public:
   // TODO: fix up so that error message is meaningful
-  gone();
+  gone(const std::string &message = "");
 };
 
 /**
@@ -120,6 +157,15 @@ public:
 class unauthorized : public exception {
 public:
   unauthorized(const std::string &message);
+};
+
+/**
+ * The origin server is refusing to service the request because the payload
+ * is in a format not supported by this method on the target resource.
+ */
+class unsupported_media_type : public exception {
+public:
+  unsupported_media_type(const std::string &message);
 };
 
 /**
@@ -202,6 +248,36 @@ public:
  */
 boost::shared_ptr<http::encoding>
 choose_encoding(const std::string &accept_encoding);
+
+boost::shared_ptr<ZLibBaseDecompressor>
+get_content_encoding_handler(const std::string &content_encoding);
+
+enum class method : uint8_t {
+  GET     = 0b0001,
+  POST    = 0b0010,
+  HEAD    = 0b0100,
+  OPTIONS = 0b1000
+};
+
+// allow bitset-like operators on methods
+inline method operator|(method a, method b) {
+  return static_cast<method>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
+}
+inline method operator&(method a, method b) {
+  return static_cast<method>(static_cast<uint8_t>(a) & static_cast<uint8_t>(b));
+}
+
+// return a comma-delimited string describing the methods.
+std::string list_methods(method m);
+
+// parse a single method string into a http::method enum, or return boost::none
+// if it's not a known value.
+boost::optional<method> parse_method(const std::string &);
+
+// parse CONTENT_LENGTH HTTP header
+unsigned long parse_content_length(const std::string &);
+
+std::ostream &operator<<(std::ostream &, method);
 
 } // namespace http
 

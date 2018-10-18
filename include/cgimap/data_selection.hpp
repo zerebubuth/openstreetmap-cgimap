@@ -142,6 +142,17 @@ public:
   /// if this is called then discussions will be included.
   virtual void select_changeset_discussions();
 
+  /****************** user functions **********************/
+
+  // does this data selection support user details?
+  virtual bool supports_user_details();
+
+  // is user currently blocked?
+  virtual bool is_user_blocked(const osm_user_id_t);
+
+  virtual bool get_user_id_pass(const std::string& display_name, osm_user_id_t &,
+				std::string & pass_crypt, std::string & pass_salt);
+
   /**
    * factory for the creation of data selections. this abstracts away
    * the creation process of transactions, and allows some up-front

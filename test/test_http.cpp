@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <sstream>
+#include <boost/optional/optional_io.hpp>
 
 namespace {
 
@@ -60,6 +61,25 @@ void http_check_parse_params() {
   assert_eq(params[5].first, "c2");   assert_eq(params[5].second, "");
 }
 
+void http_check_list_methods() {
+  assert_eq(http::list_methods(http::method::GET), "GET");
+  assert_eq(http::list_methods(http::method::POST), "POST");
+  assert_eq(http::list_methods(http::method::HEAD), "HEAD");
+  assert_eq(http::list_methods(http::method::OPTIONS), "OPTIONS");
+  assert_eq(
+    http::list_methods(http::method::GET | http::method::OPTIONS),
+    "GET, OPTIONS");
+}
+
+void http_check_parse_methods() {
+  auto assert_eql = assert_equal<boost::optional<http::method>>;
+  assert_eql(http::parse_method("GET"), http::method::GET);
+  assert_eql(http::parse_method("POST"), http::method::POST);
+  assert_eql(http::parse_method("HEAD"), http::method::HEAD);
+  assert_eql(http::parse_method("OPTIONS"), http::method::OPTIONS);
+  assert_eql(http::parse_method(""), boost::none);
+}
+
 } // anonymous namespace
 
 int main() {
@@ -67,6 +87,8 @@ int main() {
     http_check_urlencoding();
     http_check_urldecoding();
     http_check_parse_params();
+    http_check_list_methods();
+    http_check_parse_methods();
 
   } catch (const std::exception &e) {
     std::cerr << "EXCEPTION: " << e.what() << std::endl;

@@ -16,6 +16,7 @@ public:
   boost::optional<std::string> token_secret(const std::string &token_id);
   bool use_nonce(const std::string &nonce, uint64_t timestamp);
   bool allow_read_api(const std::string &token_id);
+  bool allow_write_api(const std::string &token_id);
   boost::optional<osm_user_id_t> get_user_id_for_token(const std::string &token_id);
   std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t id);
 

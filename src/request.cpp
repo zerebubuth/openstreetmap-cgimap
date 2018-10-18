@@ -11,7 +11,7 @@ void set_default_headers(request &req) {
   const char *origin = req.get_param("HTTP_ORIGIN");
   if (origin) {
     req.add_header("Access-Control-Allow-Credentials", "true");
-    req.add_header("Access-Control-Allow-Methods", "GET");
+    req.add_header("Access-Control-Allow-Methods", http::list_methods(req.methods()));
     req.add_header("Access-Control-Allow-Origin", std::string(origin));
     req.add_header("Access-Control-Max-Age", "1728000");
   }
@@ -19,7 +19,8 @@ void set_default_headers(request &req) {
 } // anonymous namespace
 
 request::request()
-    : m_workflow_status(status_NONE), m_status(500), m_headers() {}
+  : m_workflow_status(status_NONE), m_status(500), m_headers()
+  , m_methods(http::method::GET | http::method::HEAD | http::method::OPTIONS) {}
 
 request::~request() {}
 
@@ -84,4 +85,12 @@ void request::reset() {
   m_workflow_status = status_NONE;
   m_status = 500;
   m_headers.clear();
+}
+
+void request::set_default_methods(http::method m) {
+  m_methods = m;
+}
+
+http::method request::methods() const {
+  return m_methods;
 }

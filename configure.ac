@@ -15,7 +15,7 @@ AC_PROG_CXX
 # C++11 support is apparently required now due to recent memcached
 # headers including <cinttypes> rather than <tr1/cinttypes> without
 # itself checking for C++11 support.
-AX_CXX_COMPILE_STDCXX_11([],[mandatory])
+AX_CXX_COMPILE_STDCXX([11],[],[mandatory])
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 

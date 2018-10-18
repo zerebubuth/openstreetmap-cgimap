@@ -1,6 +1,7 @@
 #include "cgimap/backend/apidb/apidb.hpp"
 #include "cgimap/backend/apidb/writeable_pgsql_selection.hpp"
 #include "cgimap/backend/apidb/readonly_pgsql_selection.hpp"
+#include "cgimap/backend/apidb/pgsql_update.hpp"
 #include "cgimap/backend/apidb/oauth_store.hpp"
 #include "cgimap/backend.hpp"
 
@@ -40,7 +41,19 @@ struct apidb_backend : public backend {
       ("oauth-charset", po::value<string>(),
        "database character set for OAuth, if different from --charset")
       ("oauth-dbport", po::value<string>(),
-       "database port for OAuth, if different from --dbport");
+       "database port for OAuth, if different from --dbport")
+      ("update-dbname", po::value<string>(),
+       "database name to use for API write operations, if different from --dbname")
+      ("update-host", po::value<string>(),
+       "database server host for API write operations, if different from --host")
+      ("update-username", po::value<string>(),
+       "database user name for API write operations, if different from --username")
+      ("update-password", po::value<string>(),
+       "database password for API write operations, if different from --password")
+      ("update-charset", po::value<string>(),
+       "database character set for API write operations, if different from --charset")
+      ("update-dbport", po::value<string>(),
+       "database port for API write operations, if different from --dbport");
     // clang-format on
   }
   virtual ~apidb_backend() {}
@@ -65,6 +78,16 @@ struct apidb_backend : public backend {
 
     return factory;
   }
+
+  shared_ptr<data_update::factory> create_data_update(const po::variables_map &opts) {
+
+    if (opts.count("dbname") == 0) {
+      throw std::runtime_error("database name not specified");
+    }
+
+    return boost::make_shared<pgsql_update::factory>(opts);
+  }
+
 
   boost::shared_ptr<oauth::store> create_oauth_store(
     const po::variables_map &opts) {

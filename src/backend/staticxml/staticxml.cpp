@@ -792,6 +792,11 @@ struct staticxml_backend : public backend {
     return boost::make_shared<factory>(file);
   }
 
+  shared_ptr<data_update::factory> create_data_update(const po::variables_map &opts) {
+    return nullptr;   // TODO: not implemented
+  }
+
+
   boost::shared_ptr<oauth::store> create_oauth_store(
     const po::variables_map &opts) {
     return boost::shared_ptr<oauth::store>();

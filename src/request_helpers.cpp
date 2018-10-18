@@ -1,4 +1,5 @@
 #include "cgimap/request_helpers.hpp"
+#include "cgimap/zlib.hpp"
 #include <sstream>
 #include <cstring>
 
@@ -103,7 +104,11 @@ const char *http_message_status_401 = "Unauthorized";
 const char *http_message_status_404 = "Not Found";
 const char *http_message_status_405 = "Method Not Allowed";
 const char *http_message_status_406 = "Not Acceptable";
+const char *http_message_status_409 = "Conflict";
 const char *http_message_status_410 = "Gone";
+const char *http_message_status_412 = "Precondition Failed";
+const char *http_message_status_413 = "Payload Too Large";
+const char *http_message_status_415 = "Unsupported Media Type";
 const char *http_message_status_509 = "Bandwidth Limit Exceeded";
 const char *http_message_status_500 = "Internal Server Error";
 } // anonymous namespace
@@ -130,8 +135,20 @@ const char *status_message(int code) {
   case 406:
     msg = http_message_status_406;
     break;
+  case 409:
+    msg = http_message_status_409;
+    break;
   case 410:
     msg = http_message_status_410;
+    break;
+  case 412:
+    msg = http_message_status_412;
+    break;
+  case 413:
+    msg = http_message_status_413;
+    break;
+  case 415:
+    msg = http_message_status_415;
     break;
   case 509:
     msg = http_message_status_509;

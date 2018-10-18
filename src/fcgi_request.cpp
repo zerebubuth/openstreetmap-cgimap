@@ -1,7 +1,10 @@
 #include "cgimap/fcgi_request.hpp"
+#include "cgimap/http.hpp"
+#include "cgimap/logger.hpp"
 #include "cgimap/output_buffer.hpp"
 #include "cgimap/request_helpers.hpp"
 #include <boost/foreach.hpp>
+#include <iostream>
 #include <stdexcept>
 #include <sstream>
 #include <fcgiapp.h>
@@ -58,6 +61,54 @@ fcgi_request::~fcgi_request() { FCGX_Free(&m_impl->req, true); }
 
 const char *fcgi_request::get_param(const char *key) {
   return FCGX_GetParam(key, m_impl->req.envp);
+}
+
+const std::string fcgi_request::get_payload() {
+
+  const unsigned int BUFFER_LEN = 512000;
+
+  // fetch and parse the content length
+  const char *content_length_str = FCGX_GetParam("CONTENT_LENGTH", m_impl->req.envp);
+  const char *content_encoding = FCGX_GetParam("HTTP_CONTENT_ENCODING",  m_impl->req.envp);
+
+  auto content_encoding_handler = http::get_content_encoding_handler(
+         std::string(content_encoding == nullptr ? "" : content_encoding));
+
+  unsigned long content_length = 0;
+  unsigned long curr_content_length = 0;
+  unsigned long result_length = 0;
+
+  if (content_length_str)
+    content_length = http::parse_content_length(content_length_str);
+
+  char * content_buffer = new char[BUFFER_LEN];
+
+  std::string result = "";
+
+  while ((curr_content_length = FCGX_GetStr(content_buffer, BUFFER_LEN, m_impl->req.in)) > 0)
+  {
+      std::string content(content_buffer, curr_content_length);
+      result_length += content.length();
+
+      // Decompression according to Content-Encoding header (null op, if header is not set)
+      try {
+        std::string content_decompressed = content_encoding_handler->decompress(content);
+        result += content_decompressed;
+      } catch (std::bad_alloc& e) {
+	  throw http::server_error("Decompression failed due to memory issue");
+      } catch (std::runtime_error& e) {
+	  throw http::bad_request("Payload cannot be decompressed according to Content-Encoding");
+      }
+
+      if (result.length() > STDIN_MAX)
+         throw http::payload_too_large((boost::format("Payload exceeds limit of %1% bytes") % STDIN_MAX).str());
+  }
+
+  if (content_length > 0 && result_length != content_length)
+    throw http::server_error("HTTP Header field 'Content-Length' differs from actual payload length");
+
+  delete [] content_buffer;
+  return result;
 }
 
 boost::posix_time::ptime fcgi_request::get_current_time() const {
