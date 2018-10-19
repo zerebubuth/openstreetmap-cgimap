@@ -200,7 +200,15 @@ void extract(
   typename T::extra_info extra;
   tags_t tags;
 
+  std::set<osm_changeset_id_t> changeset_ids;
+
+  for (const auto &row : rows)
+    changeset_ids.insert(row["changeset_id"].as<osm_changeset_id_t>());
+
+  cc.prefetch(changeset_ids);
+
   for (const auto &row : rows) {
+
     extract_elem(row, elem, cc);
     extra.extract(row);
     extract_tags(row, tags);

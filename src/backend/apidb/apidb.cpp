@@ -12,7 +12,7 @@ namespace po = boost::program_options;
 using boost::shared_ptr;
 using std::string;
 
-#define CACHE_SIZE 1000
+#define CACHE_SIZE 100000
 
 namespace {
 struct apidb_backend : public backend {

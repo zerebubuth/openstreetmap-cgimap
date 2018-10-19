@@ -28,18 +28,23 @@ const std::string &element_type_name(element_type elt) {
 
 } // anonymous namespace
 
-json_formatter::json_formatter(json_writer *w) : writer(w) {}
+json_formatter::json_formatter(json_writer *w) : writer(w),
+    is_in_elements_array(false) {}
 
 json_formatter::~json_formatter() {}
 
 mime::type json_formatter::mime_type() const { return mime::text_json; }
 
 void json_formatter::write_tags(const tags_t &tags) {
+
+  if (tags.empty())
+    return;
+
   writer->object_key("tags");
   writer->start_object();
-  for (tags_t::const_iterator itr = tags.begin(); itr != tags.end(); ++itr) {
-    writer->object_key(itr->first);
-    writer->entry_string(itr->second);
+  for (const auto& tag : tags) {
+    writer->object_key(tag.first);
+    writer->entry_string(tag.second);
   }
   writer->end_object();
 }
@@ -73,22 +78,24 @@ void json_formatter::write_bounds(const bbox &bounds) {
   writer->end_object();
 }
 
-void json_formatter::end_document() { writer->end_object(); }
+void json_formatter::end_document() {
 
-void json_formatter::start_element_type(element_type type) {
-  if (type == element_type_changeset) {
-    writer->object_key("changesets");
-  } else if (type == element_type_node) {
-    writer->object_key("nodes");
-  } else if (type == element_type_way) {
-    writer->object_key("ways");
-  } else {
-    writer->object_key("relations");
-  }
-  writer->start_array();
+  writer->end_array();            // end of elements array
+  is_in_elements_array = false;
+  writer->end_object();
 }
 
-void json_formatter::end_element_type(element_type) { writer->end_array(); }
+void json_formatter::start_element_type(element_type type) {
+
+  if (is_in_elements_array)
+    return;
+
+  writer->object_key("elements");
+  writer->start_array();
+  is_in_elements_array = true;
+}
+
+void json_formatter::end_element_type(element_type type) {}
 
 void json_formatter::start_action(action_type type) {
 }
@@ -103,22 +110,30 @@ void json_formatter::error(const std::exception &e) {
   writer->end_object();
 }
 
-void json_formatter::write_common(const element_info &elem) {
+void json_formatter::write_id(const element_info &elem) {
   writer->object_key("id");
   writer->entry_int(elem.id);
-  writer->object_key("visible");
-  writer->entry_bool(elem.visible);
+}
+
+
+void json_formatter::write_common(const element_info &elem) {
+  writer->object_key("timestamp");
+  writer->entry_string(elem.timestamp);
   writer->object_key("version");
   writer->entry_int(elem.version);
   writer->object_key("changeset");
   writer->entry_int(elem.changeset);
-  writer->object_key("timestamp");
-  writer->entry_string(elem.timestamp);
   if (elem.display_name && elem.uid) {
     writer->object_key("user");
     writer->entry_string(elem.display_name.get());
     writer->object_key("uid");
     writer->entry_int(elem.uid.get());
+  }
+  // At this itme, only the map call is really supported for JSON output,
+  // where all elements are expected to be visible.
+  if (!elem.visible) {
+    writer->object_key("visible");
+    writer->entry_bool(elem.visible);
   }
 }
 
@@ -126,13 +141,16 @@ void json_formatter::write_node(const element_info &elem, double lon,
                                 double lat, const tags_t &tags) {
   writer->start_object();
 
-  write_common(elem);
+  WRITE_KV("type", string, "node");
+
+  write_id(elem);
   if (elem.visible) {
     writer->object_key("lat");
     writer->entry_double(lat);
     writer->object_key("lon");
     writer->entry_double(lon);
   }
+  write_common(elem);
   write_tags(tags);
 
   writer->end_object();
@@ -142,11 +160,14 @@ void json_formatter::write_way(const element_info &elem, const nodes_t &nodes,
                                const tags_t &tags) {
   writer->start_object();
 
+  WRITE_KV("type", string, "way");
+
+  write_id(elem);
   write_common(elem);
-  writer->object_key("nds");
+  writer->object_key("nodes");
   writer->start_array();
-  for (nodes_t::const_iterator itr = nodes.begin(); itr != nodes.end(); ++itr) {
-    writer->entry_int(*itr);
+  for (const auto &node : nodes) {
+    writer->entry_int(node);
   }
   writer->end_array();
 
@@ -160,21 +181,26 @@ void json_formatter::write_relation(const element_info &elem,
                                     const tags_t &tags) {
   writer->start_object();
 
+  WRITE_KV("type", string, "relation");
+
+  write_id(elem);
   write_common(elem);
-  writer->object_key("members");
-  writer->start_array();
-  for (members_t::const_iterator itr = members.begin(); itr != members.end();
-       ++itr) {
-    writer->start_object();
-    writer->object_key("type");
-    writer->entry_string(element_type_name(itr->type));
-    writer->object_key("ref");
-    writer->entry_int(itr->ref);
-    writer->object_key("role");
-    writer->entry_string(itr->role);
-    writer->end_object();
+
+  if (!members.empty()) {
+      writer->object_key("members");
+      writer->start_array();
+      for (const auto & member : members) {
+	  writer->start_object();
+	  writer->object_key("type");
+	  writer->entry_string(element_type_name(member.type));
+	  writer->object_key("ref");
+	  writer->entry_int(member.ref);
+	  writer->object_key("role");
+	  writer->entry_string(member.role);
+	  writer->end_object();
+      }
+      writer->end_array();
   }
-  writer->end_array();
 
   write_tags(tags);
 
@@ -186,8 +212,70 @@ void json_formatter::write_changeset(const changeset_info &elem,
                                      bool include_comments,
                                      const comments_t &comments,
                                      const pt::ptime &now) {
+
   writer->start_object();
+
+  WRITE_KV("type", string, "changeset");
+
+  writer->object_key("id");
+  writer->entry_int(elem.id);
+
+  writer->object_key("created_at");
+  writer->entry_string(elem.created_at);
+
+  const bool is_open = elem.is_open_at(now);
+  if (!is_open) {
+      writer->object_key("closed_at");
+      writer->entry_string(elem.closed_at);
+  }
+
+  writer->object_key("open");
+  writer->entry_bool(is_open);
+
+  if (elem.display_name && bool(elem.uid)) {
+    writer->object_key("user");
+    writer->entry_string(elem.display_name.get());
+    writer->object_key("uid");
+    writer->entry_int(elem.uid.get());
+  }
+
+  if (elem.bounding_box) {
+      writer->object_key("minlat");
+      writer->entry_double(elem.bounding_box->minlat);
+      writer->object_key("minlon");
+      writer->entry_double(elem.bounding_box->minlon);
+      writer->object_key("maxlat");
+      writer->entry_double(elem.bounding_box->maxlat);
+      writer->object_key("maxlon");
+      writer->entry_double(elem.bounding_box->maxlon);
+  }
+
+  writer->object_key("comments_count");
+  writer->entry_int(elem.comments_count);
+
+  writer->object_key("changes_count");
+  writer->entry_int(elem.num_changes);
+
   write_tags(tags);
+
+  if (include_comments && !comments.empty()) {
+      writer->object_key("discussion");
+      writer->start_array();
+      for (const auto & comment : comments) {
+	  writer->start_object();
+	  writer->object_key("date");
+	  writer->entry_string(comment.created_at);
+	  writer->object_key("uid");
+	  writer->entry_int(comment.author_id);
+	  writer->object_key("user");
+	  writer->entry_string(comment.author_display_name);
+	  writer->object_key("text");
+	  writer->entry_string(comment.body);
+	  writer->end_object();
+      }
+      writer->end_array();
+  }
+
   writer->end_object();
 }
 
