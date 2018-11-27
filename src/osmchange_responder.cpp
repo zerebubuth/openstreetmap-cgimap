@@ -204,6 +204,12 @@ osmchange_responder::osmchange_responder(
 osmchange_responder::~osmchange_responder() {
 }
 
+list<mime::type> osmchange_responder::types_available() const {
+  list<mime::type> types;
+  types.push_back(mime::text_xml);
+  return types;
+}
+
 void osmchange_responder::write(
   shared_ptr<output_formatter> formatter,
   const std::string &generator, const pt::ptime &now) {
