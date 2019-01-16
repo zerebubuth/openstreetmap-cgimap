@@ -1,0 +1,357 @@
+Request-Method: GET
+Request-URI: /api/0.6/map?bbox=1.1463021,0.9924642,1.1633345,1.0044411
+HTTP-Accept: text/json
+---
+Content-Type: text/json; charset=utf-8
+Status: 200 OK
+---
+{ "version": "0.6",
+  "generator": "***",
+  "copyright": "***",
+  "attribution": "***",
+  "license": "***",
+  "bounds": {
+  "minlat": 0.9924642,
+  "minlon": 1.1463021,
+  "maxlat": 1.0044411,
+  "maxlon": 1.1633345
+ },
+ "elements": [
+  {
+   "type": "node",
+   "id": 40050,
+   "lat": 0.9958753,
+   "lon": 1.1545987,
+   "timestamp": "2012-09-25T00:00:01Z",
+   "version": 1,
+   "changeset": 1,
+   "user": "foo",
+   "uid": 1
+  },
+  {
+   "type": "node",
+   "id": 40051,
+   "lat": 0.9968490,
+   "lon": 1.1545955,
+   "timestamp": "2012-09-25T00:00:02Z",
+   "version": 1,
+   "changeset": 1,
+   "user": "foo",
+   "uid": 1
+  },
+  {
+   "type": "node",
+   "id": 40053,
+   "lat": 0.9965753,
+   "lon": 1.1558749,
+   "timestamp": "2012-09-25T00:00:03Z",
+   "version": 1,
+   "changeset": 1,
+   "user": "foo",
+   "uid": 1,
+   "tags": {
+    "board_type": "history",
+    "information": "board",
+    "tourism": "information"
+   }
+  },
+  {
+   "type": "node",
+   "id": 40055,
+   "lat": 0.9958626,
+   "lon": 1.1555853,
+   "timestamp": "2012-09-25T00:00:04Z",
+   "version": 1,
+   "changeset": 1,
+   "user": "foo",
+   "uid": 1
+  },
+  {
+   "type": "node",
+   "id": 40075,
+   "lat": 0.9969126,
+   "lon": 1.1549679,
+   "timestamp": "2012-09-25T00:00:05Z",
+   "version": 1,
+   "changeset": 1,
+   "user": "foo",
+   "uid": 1
+  },
+  {
+   "type": "node",
+   "id": 40105,
+   "lat": 0.9970176,
+   "lon": 1.1554039,
+   "timestamp": "2012-09-25T00:00:06Z",
+   "version": 1,
+   "changeset": 1,
+   "user": "foo",
+   "uid": 1
+  },
+  {
+   "type": "node",
+   "id": 40131,
+   "lat": 0.9960949,
+   "lon": 1.1559481,
+   "timestamp": "2012-09-25T00:00:07Z",
+   "version": 1,
+   "changeset": 1,
+   "user": "foo",
+   "uid": 1
+  },
+  {
+   "type": "node",
+   "id": 40159,
+   "lat": 0.9961967,
+   "lon": 1.1551461,
+   "timestamp": "2012-09-25T00:00:08Z",
+   "version": 1,
+   "changeset": 1,
+   "user": "foo",
+   "uid": 1,
+   "tags": {
+    "direction": "NNE-S",
+    "hiking": "yes",
+    "information": "map",
+    "map_type": "scheme",
+    "tourism": "information"
+   }
+  },
+  {
+   "type": "node",
+   "id": 40164,
+   "lat": 0.9954776,
+   "lon": 1.1548851,
+   "timestamp": "2012-09-25T00:00:09Z",
+   "version": 1,
+   "changeset": 1,
+   "user": "foo",
+   "uid": 1
+  },
+  {
+   "type": "node",
+   "id": 40165,
+   "lat": 0.9956494,
+   "lon": 1.1551397,
+   "timestamp": "2012-09-25T00:00:10Z",
+   "version": 1,
+   "changeset": 1,
+   "user": "foo",
+   "uid": 1
+  },
+  {
+   "type": "node",
+   "id": 40169,
+   "lat": 0.9964481,
+   "lon": 1.1564413,
+   "timestamp": "2012-09-25T00:00:11Z",
+   "version": 1,
+   "changeset": 1,
+   "user": "foo",
+   "uid": 1
+  },
+  {
+   "type": "node",
+   "id": 40228,
+   "lat": 0.9966294,
+   "lon": 1.1551684,
+   "timestamp": "2012-09-25T00:00:12Z",
+   "version": 1,
+   "changeset": 1,
+   "user": "foo",
+   "uid": 1
+  },
+  {
+   "type": "node",
+   "id": 40248,
+   "lat": 0.9968235,
+   "lon": 1.1559194,
+   "timestamp": "2012-09-25T00:00:13Z",
+   "version": 1,
+   "changeset": 1,
+   "user": "foo",
+   "uid": 1
+  },
+  {
+   "type": "node",
+   "id": 40251,
+   "lat": 0.9964735,
+   "lon": 1.1553148,
+   "timestamp": "2012-09-25T00:00:14Z",
+   "version": 1,
+   "changeset": 1,
+   "user": "foo",
+   "uid": 1
+  },
+  {
+   "type": "way",
+   "id": 40052,
+   "timestamp": "2012-09-25T00:01:00Z",
+   "version": 1,
+   "changeset": 1,
+   "user": "foo",
+   "uid": 1,
+   "nodes": [
+    40050,
+    40051
+   ]
+  },
+  {
+   "type": "way",
+   "id": 40054,
+   "timestamp": "2012-09-25T00:01:00Z",
+   "version": 1,
+   "changeset": 1,
+   "user": "foo",
+   "uid": 1,
+   "nodes": [
+    40053,
+    40248,
+    40105,
+    40228,
+    40075,
+    40051
+   ]
+  },
+  {
+   "type": "way",
+   "id": 40056,
+   "timestamp": "2012-09-25T00:01:00Z",
+   "version": 1,
+   "changeset": 11,
+   "user": "user_15",
+   "uid": 15,
+   "nodes": [
+    40055,
+    40159,
+    40050
+   ]
+  },
+  {
+   "type": "way",
+   "id": 40058,
+   "timestamp": "2012-09-25T00:01:00Z",
+   "version": 1,
+   "changeset": 1,
+   "user": "foo",
+   "uid": 1,
+   "nodes": [
+    40053,
+    40131
+   ]
+  },
+  {
+   "type": "way",
+   "id": 40166,
+   "timestamp": "2012-09-25T00:01:00Z",
+   "version": 1,
+   "changeset": 1,
+   "user": "foo",
+   "uid": 1,
+   "nodes": [
+    40164,
+    40165,
+    40055,
+    40131,
+    40169
+   ],
+   "tags": {
+    "highway": "path",
+    "smoothness": "intermediate",
+    "surface": "gravel"
+   }
+  },
+  {
+   "type": "way",
+   "id": 40191,
+   "timestamp": "2012-09-25T00:01:00Z",
+   "version": 1,
+   "changeset": 12,
+   "user": "user_14",
+   "uid": 14,
+   "nodes": [
+    40131,
+    40055
+   ]
+  },
+  {
+   "type": "relation",
+   "id": 40069,
+   "timestamp": "2012-09-25T02:00:00Z",
+   "version": 2,
+   "changeset": 42,
+   "user": "user_5",
+   "uid": 5,
+   "members": [
+    {
+     "type": "node",
+     "ref": 40251,
+     "role": "admin_centre"
+    },
+    {
+     "type": "way",
+     "ref": 40054,
+     "role": "outer2"
+    },
+    {
+     "type": "way",
+     "ref": 40052,
+     "role": "outer"
+    },
+    {
+     "type": "way",
+     "ref": 40056,
+     "role": "outer"
+    },
+    {
+     "type": "way",
+     "ref": 40191,
+     "role": "outer"
+    },
+    {
+     "type": "way",
+     "ref": 40058,
+     "role": "outer"
+    }
+   ],
+   "tags": {
+    "admin_level": "10",
+    "boundary": "administrative",
+    "type": "multipolygon"
+   }
+  },
+  {
+   "type": "relation",
+   "id": 43361,
+   "timestamp": "2012-09-25T02:00:00Z",
+   "version": 2,
+   "changeset": 42,
+   "user": "user_5",
+   "uid": 5,
+   "members": [
+    {
+     "type": "way",
+     "ref": 40052,
+     "role": "outer"
+    },
+    {
+     "type": "way",
+     "ref": 40056,
+     "role": "outer"
+    },
+    {
+     "type": "way",
+     "ref": 40191,
+     "role": "outer"
+    },
+    {
+     "type": "way",
+     "ref": 40058,
+     "role": "outer"
+    }
+   ]
+  }
+ ]
+}
+
+
