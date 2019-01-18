@@ -175,6 +175,20 @@ struct erase_formatter
     m_fmt.write_changeset(elem, tags, include_comments, comments, now);
   }
 
+  void write_diffresult_create_modify(const element_type elem,
+                                              const osm_nwr_signed_id_t old_id,
+                                              const osm_nwr_id_t new_id,
+                                              const osm_version_t new_version) {
+
+    throw std::runtime_error("erase_formatter::write_diffresult_create_modify unimplemented");
+  }
+
+
+  void write_diffresult_delete(const element_type elem,
+                               const osm_nwr_signed_id_t old_id) {
+    throw std::runtime_error("erase_formatter::write_diffresult_delete unimplemented");
+  }
+
 private:
   output_formatter &m_fmt;
   std::set<osm_edition_t> &m_sel_historic_nodes, &m_sel_historic_ways,
@@ -507,6 +521,30 @@ int readonly_pgsql_selection::select_changesets(const std::vector<osm_changeset_
 
 void readonly_pgsql_selection::select_changeset_discussions() {
   include_changeset_discussions = true;
+}
+
+bool readonly_pgsql_selection::supports_user_details() {
+  return true;
+}
+
+bool readonly_pgsql_selection::is_user_blocked(const osm_user_id_t id) {
+  auto res = w.prepared("check_user_blocked")(id).exec();
+  return !res.empty();
+}
+
+bool readonly_pgsql_selection::get_user_id_pass(const std::string& display_name, osm_user_id_t & id,
+						 std::string & pass_crypt, std::string & pass_salt) {
+  auto res = w.prepared("get_user_id_pass")(display_name).exec();
+
+  if (res.empty())
+    return false;
+
+  auto row = res[0];
+  id = row["id"].as<osm_user_id_t>();
+  pass_crypt = row["pass_crypt"].as<std::string>();
+  pass_salt = row["pass_salt"].as<std::string>();
+
+  return true;
 }
 
 readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
@@ -847,6 +885,22 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
         "AND (r.redaction_id IS NULL OR $2 = TRUE)"
     "")
     PREPARE_ARGS(("bigint[]")("boolean"));
+
+  // ------------------- USER QUERIES -----------------------
+
+  m_connection.prepare("check_user_blocked",
+    R"(SELECT id FROM "user_blocks" 
+          WHERE "user_blocks"."user_id" = $1 
+            AND (needs_view or ends_at > (now() at time zone 'utc')) LIMIT 1 )"
+    "")
+    PREPARE_ARGS(("character varying"));
+
+  m_connection.prepare("get_user_id_pass",
+    R"(SELECT id, pass_crypt, pass_salt FROM users 
+           WHERE display_name = $1 
+             AND (status = 'active' or status = 'confirmed') )"
+    "")
+    PREPARE_ARGS(("bigint"));
 
   // clang-format on
 }

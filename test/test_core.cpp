@@ -608,6 +608,11 @@ struct test_oauth
     return true;
   }
 
+  bool allow_write_api(const std::string &token_id) {
+    // everyone can write the api for the moment
+    return true;
+  }
+
   boost::optional<osm_user_id_t> get_user_id_for_token(const std::string &token_id) {
     auto itr = m_users.find(token_id);
     if (itr != m_users.end()) {

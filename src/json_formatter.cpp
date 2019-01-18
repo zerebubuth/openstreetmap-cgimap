@@ -279,6 +279,36 @@ void json_formatter::write_changeset(const changeset_info &elem,
   writer->end_object();
 }
 
+void json_formatter::write_diffresult_create_modify(const element_type elem,
+                                            const osm_nwr_signed_id_t old_id,
+                                            const osm_nwr_id_t new_id,
+                                            const osm_version_t new_version)
+{
+
+//  writer->start_object();
+//  writer->object_key("type");
+//  writer->entry_string(element_type_name(elem));
+//  writer->object_key("old_id");
+//  writer->entry_int(old_id);
+//  writer->object_key("new_id");
+//  writer->entry_int(new_id);
+//  writer->object_key("new_version");
+//  writer->entry_int(new_version);
+//  writer->end_object();
+}
+
+
+void json_formatter::write_diffresult_delete(const element_type elem,
+                                            const osm_nwr_signed_id_t old_id)
+{
+//  writer->start_object();
+//  writer->object_key("type");
+//  writer->entry_string(element_type_name(elem));
+//  writer->object_key("old_id");
+//  writer->entry_int(old_id);
+//  writer->end_object();
+}
+
 void json_formatter::flush() { writer->flush(); }
 
 void json_formatter::error(const std::string &s) { writer->error(s); }

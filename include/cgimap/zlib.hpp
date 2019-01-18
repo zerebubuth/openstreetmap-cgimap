@@ -7,6 +7,8 @@
 #error This file should not be included when zlib is not available.
 #endif
 
+const unsigned int ZLIB_COMPLETE_CHUNK = 16384;
+
 #include <boost/shared_ptr.hpp>
 
 #include <zlib.h>
@@ -42,6 +44,54 @@ private:
   size_t bytes_in;
   z_stream stream;
   char outbuf[4096];
+};
+
+/*******************************************************************************/
+
+// parts adopted from https://github.com/rudi-cilibrasi/zlibcomplete
+
+class ZLibBaseDecompressor {
+public:
+  /**
+  * @brief Decompression function for gzip using std::string.
+  *
+  * Accepts a std::string of any size containing compressed data.  Returns
+  * as much gzip uncompressed data as possible.  Call this function over
+  * and over with all the compressed data in a stream in order to decompress
+  * the entire stream.
+  * @param input Any amount of data to decompress.
+  * @retval std::string containing the decompressed data.
+  */
+  virtual std::string decompress(const std::string& input);
+
+protected:
+  ZLibBaseDecompressor();
+  ZLibBaseDecompressor(int windowBits);
+  ~ZLibBaseDecompressor(void);
+
+private:
+  char inbuf[ZLIB_COMPLETE_CHUNK];
+  char outbuf[ZLIB_COMPLETE_CHUNK];
+  z_stream stream;
+  bool use_decompression;
+};
+
+class ZLibDecompressor : public ZLibBaseDecompressor {
+public:
+  ZLibDecompressor(void);
+  virtual ~ZLibDecompressor(void);
+};
+
+class GZipDecompressor : public ZLibBaseDecompressor {
+public:
+  GZipDecompressor(void);
+  virtual ~GZipDecompressor(void);
+};
+
+class IdentityDecompressor : public ZLibBaseDecompressor {
+public:
+  IdentityDecompressor(void);
+  virtual ~IdentityDecompressor(void);
 };
 
 #endif /* ZLIB_HPP */

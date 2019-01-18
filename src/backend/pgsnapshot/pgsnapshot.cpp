@@ -36,6 +36,11 @@ struct pgsnapshot_backend : public backend {
     return factory;
   }
 
+  shared_ptr<data_update::factory> create_data_update(const po::variables_map &opts) {
+
+    return nullptr;   // TODO: not implemented
+  }
+
   boost::shared_ptr<oauth::store> create_oauth_store(
     const po::variables_map &opts) {
     return boost::shared_ptr<oauth::store>();

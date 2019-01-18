@@ -231,11 +231,14 @@ mime::type choose_best_mime_type(request &req, responder_ptr_t hptr) {
   // types.
   if (best_type != mime::unspecified_type) {
     // check that this doesn't conflict with anything in the Accept header.
-    if (!hptr->is_available(best_type) || !types.is_acceptable(best_type)) {
+    if (!hptr->is_available(best_type))
       throw http::not_acceptable((boost::format("Acceptable formats for %1% are: %2%")
                                 % get_request_path(req)
+				% mime_types_to_string(types_available)).str());
+    else if (!types.is_acceptable(best_type))
+      throw http::not_acceptable((boost::format("Acceptable formats for %1% are: %2%")
+				% get_request_path(req)
 				% mime_types_to_string({best_type})).str());
-    }
   } else {
     best_type = types.most_acceptable_of(types_available);
     // if none were acceptable then...

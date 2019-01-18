@@ -1,0 +1,15 @@
+Request-Method: OPTIONS
+Request-URI: /api/0.6/changeset/1/upload
+HTTP-Access-Control-Request-Method: POST
+HTTP-Access-Control-Request-Headers: X-First-Header, X-Second-Header
+HTTP-Accept: *
+HTTP-Origin: http://localhost
+---
+Content-Type: text/plain
+Access-Control-Allow-Headers: X-First-Header, X-Second-Header
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Methods: POST, OPTIONS
+Access-Control-Allow-Origin: http://localhost
+Access-Control-Max-Age: 1728000
+Status: 200 OK
+---

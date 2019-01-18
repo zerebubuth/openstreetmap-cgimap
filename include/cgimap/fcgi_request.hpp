@@ -8,6 +8,7 @@ struct fcgi_request : public request {
   fcgi_request(int socket, const boost::posix_time::ptime &now);
   virtual ~fcgi_request();
   const char *get_param(const char *key);
+  const std::string get_payload();
 
   // getting and setting the current time
   boost::posix_time::ptime get_current_time() const;

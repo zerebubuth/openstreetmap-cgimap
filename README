@@ -26,7 +26,8 @@ Currently, CGImap implements:
 * single node, way and relation history calls,
 * single node, way and relation specific version fetches,
 * multiple node, way and relation specific version fetches,
-* changeset downloads.
+* changeset downloads,
+* changeset uploads.
 
 Note that changeset metadata isn't the same thing as the changeset
 download (i.e: `osmChange` data).
