@@ -1,5 +1,7 @@
 #include <assert.h>
 #include <algorithm>
+#include <cstring>
+
 
 #include "cgimap/zlib.hpp"
 #include "cgimap/output_writer.hpp"
@@ -105,3 +107,88 @@ void zlib_output_buffer::flush_output(void) {
 }
 
 void zlib_output_buffer::flush() { flush_output(); }
+
+/*******************************************************************************/
+
+// parts adopted from https://github.com/rudi-cilibrasi/zlibcomplete
+
+ZLibBaseDecompressor::ZLibBaseDecompressor(int windowBits) {
+  int retval;
+  stream.zalloc = Z_NULL;
+  stream.zfree = Z_NULL;
+  stream.opaque = Z_NULL;
+  stream.avail_in = 0;
+  stream.next_in = Z_NULL;
+  retval = inflateInit2(&stream, windowBits);
+  if (retval != Z_OK) {
+    throw std::bad_alloc();
+  }
+  use_decompression = true;
+}
+
+ZLibBaseDecompressor::ZLibBaseDecompressor() : use_decompression(false) { }
+
+ZLibBaseDecompressor::~ZLibBaseDecompressor() {
+  if (use_decompression)
+    inflateEnd(&stream);
+}
+
+std::string ZLibBaseDecompressor::decompress(const std::string& input) {
+
+  int ret;
+  std::string result;
+
+  if (!use_decompression)
+    return input;
+
+  for (auto offset = 0; offset < input.length(); offset += ZLIB_COMPLETE_CHUNK) {
+
+    unsigned int bytes_left = input.length() - offset;
+    unsigned int bytes_wanted = std::min(ZLIB_COMPLETE_CHUNK, bytes_left);
+
+    std::memcpy(inbuf, input.data() + offset, bytes_wanted);
+
+    stream.avail_in = bytes_wanted;
+    stream.next_in = (Bytef *) inbuf;
+
+    if (stream.avail_in == 0) {
+      break;
+    }
+
+    do {
+      unsigned int have;
+      stream.avail_out = ZLIB_COMPLETE_CHUNK;
+      stream.next_out = (Bytef *) outbuf;
+      ret = inflate(&stream, Z_NO_FLUSH);
+      assert(ret != Z_STREAM_ERROR);  /* state not clobbered */
+      switch (ret) {
+      case Z_NEED_DICT:
+          ret = Z_DATA_ERROR;
+          /* no break */
+      case Z_DATA_ERROR:
+      case Z_MEM_ERROR:
+          inflateEnd(&stream);
+          throw std::runtime_error("Zlib decompression failed");
+      }
+
+      have = ZLIB_COMPLETE_CHUNK - stream.avail_out;
+      result += std::string(outbuf, have);
+    } while (stream.avail_out == 0);
+  }
+  return result;
+}
+
+GZipDecompressor::GZipDecompressor() : ZLibBaseDecompressor(15+16) { }
+
+GZipDecompressor::~GZipDecompressor() { }
+
+ZLibDecompressor::ZLibDecompressor() : ZLibBaseDecompressor(15) { }
+
+ZLibDecompressor::~ZLibDecompressor() { }
+
+IdentityDecompressor::IdentityDecompressor() : ZLibBaseDecompressor() { }
+
+IdentityDecompressor::~IdentityDecompressor() {}
+
+
+

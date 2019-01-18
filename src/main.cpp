@@ -163,6 +163,8 @@ static void process_requests(int socket, const po::variables_map &options) {
   // getting at data.
   boost::shared_ptr<data_selection::factory> factory = create_backend(options);
 
+  boost::shared_ptr<data_update::factory> update_factory = create_update_backend(options);
+
   boost::shared_ptr<oauth::store> oauth_store = create_oauth_store(options);
 
   logger::message("Initialised");
@@ -182,7 +184,7 @@ static void process_requests(int socket, const po::variables_map &options) {
     if (req.accept_r() >= 0) {
       pt::ptime now(pt::second_clock::local_time());
       req.set_current_time(now);
-      process_request(req, limiter, generator, route, factory, oauth_store);
+      process_request(req, limiter, generator, route, factory, update_factory, oauth_store);
     }
   }
 

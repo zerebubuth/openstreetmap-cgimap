@@ -90,6 +90,12 @@ oauth_store::oauth_store(const po::variables_map &opts)
     "WHERE token=$1")
     PREPARE_ARGS(("character varying"));
 
+  // return a row with allow_write_api boolean status of the given token ID
+  m_connection.prepare("token_allow_write_api",
+    "SELECT allow_write_api FROM oauth_tokens "
+    "WHERE token=$1")
+    PREPARE_ARGS(("character varying"));
+
   // return a row with the consumer secret for a given consumer key.
   m_connection.prepare("consumer_secret_for_key",
     "SELECT secret FROM client_applications "
@@ -150,6 +156,13 @@ oauth_store::allow_read_api(const std::string &token_id) {
   pqxx::work w(m_connection, "oauth_check_allow_read_api");
   pqxx::result res = w.prepared("token_is_valid")(token_id).exec();
   return res.affected_rows() > 0;
+}
+
+bool
+oauth_store::allow_write_api(const std::string &token_id) {
+  pqxx::work w(m_connection, "oauth_check_allow_write_api");
+  pqxx::result res = w.prepared("token_allow_write_api")(token_id).exec();
+  return res.affected_rows() > 0 && res[0][0].as<bool>();
 }
 
 boost::optional<osm_user_id_t>

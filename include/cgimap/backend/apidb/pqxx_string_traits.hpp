@@ -46,6 +46,8 @@ PQXX_ARRAY_STRING_TRAITS(std::set<osm_nwr_id_t>);
 PQXX_ARRAY_STRING_TRAITS(std::vector<tile_id_t>);
 PQXX_ARRAY_STRING_TRAITS(std::vector<osm_changeset_id_t>);
 PQXX_ARRAY_STRING_TRAITS(std::set<osm_changeset_id_t>);
+PQXX_ARRAY_STRING_TRAITS(std::vector<std::string>);
+PQXX_ARRAY_STRING_TRAITS(std::vector<bool>);
 
 } // namespace pqxx
 
