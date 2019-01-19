@@ -6,12 +6,11 @@
 #include <iostream>
 #include <sstream>
 #include <set>
+#include <tuple>
 
 #include <boost/date_time/posix_time/conversion.hpp>
 #include <boost/optional.hpp>
 #include <boost/optional/optional_io.hpp>
-#include <boost/tuple/tuple.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
 
 #define ANNOTATE_EXCEPTION(stmt)                \
   {                                             \
@@ -253,8 +252,8 @@ struct test_secret_store
 
   bool use_nonce(const std::string &nonce,
                  uint64_t timestamp) {
-    boost::tuple<std::string, uint64_t> tuple =
-      boost::make_tuple(nonce, timestamp);
+    std::tuple<std::string, uint64_t> tuple =
+      std::make_tuple(nonce, timestamp);
     if (m_nonces.count(tuple) > 0) {
       return false;
     }
@@ -280,7 +279,7 @@ struct test_secret_store
 
 private:
   std::string m_consumer_key, m_consumer_secret, m_token_id, m_token_secret;
-  std::set<boost::tuple<std::string, uint64_t> > m_nonces;
+  std::set<std::tuple<std::string, uint64_t> > m_nonces;
 };
 
 void oauth_check_base64() {
