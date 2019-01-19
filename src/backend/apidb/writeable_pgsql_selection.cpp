@@ -13,7 +13,6 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/ref.hpp>
 #include <boost/bind.hpp>
-#include <boost/foreach.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
 #if PQXX_VERSION_MAJOR >= 4
@@ -254,7 +253,7 @@ int writeable_pgsql_selection::select_historical_nodes(
   m_historic_tables_empty = false;
 
   size_t selected = 0;
-  BOOST_FOREACH(osm_edition_t ed, eds) {
+  for (osm_edition_t ed : eds) {
     selected += w.prepared("add_historic_node")
       (ed.first)(ed.second)(m_redactions_visible)
       .exec().affected_rows();
@@ -269,7 +268,7 @@ int writeable_pgsql_selection::select_historical_ways(
   m_historic_tables_empty = false;
 
   size_t selected = 0;
-  BOOST_FOREACH(osm_edition_t ed, eds) {
+  for (osm_edition_t ed : eds) {
     selected += w.prepared("add_historic_way")
       (ed.first)(ed.second)(m_redactions_visible)
       .exec().affected_rows();
@@ -284,7 +283,7 @@ int writeable_pgsql_selection::select_historical_relations(
   m_historic_tables_empty = false;
 
   size_t selected = 0;
-  BOOST_FOREACH(osm_edition_t ed, eds) {
+  for (osm_edition_t ed : eds) {
     selected += w.prepared("add_historic_relation")
       (ed.first)(ed.second)(m_redactions_visible)
       .exec().affected_rows();
@@ -298,7 +297,7 @@ int writeable_pgsql_selection::select_nodes_with_history(
   const std::vector<osm_nwr_id_t> &ids) {
   m_historic_tables_empty = false;
   size_t selected = 0;
-  BOOST_FOREACH(osm_nwr_id_t id, ids) {
+  for (osm_nwr_id_t id : ids) {
     selected += w.prepared("add_all_versions_of_node")
       (id)(m_redactions_visible)
       .exec().affected_rows();
@@ -312,7 +311,7 @@ int writeable_pgsql_selection::select_ways_with_history(
   const std::vector<osm_nwr_id_t> &ids) {
   m_historic_tables_empty = false;
   size_t selected = 0;
-  BOOST_FOREACH(osm_nwr_id_t id, ids) {
+  for (osm_nwr_id_t id : ids) {
     selected += w.prepared("add_all_versions_of_way")
       (id)(m_redactions_visible)
       .exec().affected_rows();
@@ -326,7 +325,7 @@ int writeable_pgsql_selection::select_relations_with_history(
   const std::vector<osm_nwr_id_t> &ids) {
   m_historic_tables_empty = false;
   size_t selected = 0;
-  BOOST_FOREACH(osm_nwr_id_t id, ids) {
+  for (osm_nwr_id_t id : ids) {
     selected += w.prepared("add_all_versions_of_relation")
       (id)(m_redactions_visible)
       .exec().affected_rows();

@@ -1,7 +1,6 @@
 #include <iostream>
 #include <stdexcept>
 #include <boost/format.hpp>
-#include <boost/foreach.hpp>
 #include <boost/optional/optional_io.hpp>
 #include <boost/program_options.hpp>
 

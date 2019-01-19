@@ -25,7 +25,6 @@
 #include <boost/spirit/include/phoenix_statement.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
 #include <boost/spirit/include/qi.hpp>
-#include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
 
@@ -136,7 +135,7 @@ acceptable_types::acceptable_types(const std::string &accept_header) {
   bool status = phrase_parse(itr, end, g, blank, ranges);
 
   if (status && (itr == end)) {
-    BOOST_FOREACH(media_range range, ranges) {
+    for (media_range range : ranges) {
       // figure out the mime::type from the string.
       mime::type mime_type = mime::parse_from(range.mime_type);
       if (mime_type == mime::unspecified_type) {
@@ -172,7 +171,7 @@ mime::type
 acceptable_types::most_acceptable_of(const list<mime::type> &available) const {
   mime::type best = mime::unspecified_type;
   float score = numeric_limits<float>::min();
-  BOOST_FOREACH(mime::type type, available) {
+  for (mime::type type : available) {
     map<mime::type, float>::const_iterator itr = mapping.find(type);
     if ((itr != mapping.end()) && (itr->second > score)) {
       best = itr->first;

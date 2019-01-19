@@ -2,7 +2,6 @@
 #include "cgimap/config.hpp"
 #include <boost/thread.hpp>
 #include <boost/format.hpp>
-#include <boost/foreach.hpp>
 #include <stdexcept>
 
 namespace po = boost::program_options;
@@ -73,7 +72,7 @@ void registry::setup_options(int argc, char *argv[],
 
   std::ostringstream all_backends;
   bool first = true;
-  BOOST_FOREACH(const backend_map_t::value_type &val, backends) {
+  for (const backend_map_t::value_type &val : backends) {
     if (first) {
       first = false;
     } else {
@@ -110,7 +109,7 @@ void registry::setup_options(int argc, char *argv[],
 }
 
 void registry::output_options(std::ostream &out) {
-  BOOST_FOREACH(const backend_map_t::value_type &val, backends) {
+  for (const backend_map_t::value_type &val : backends) {
     out << val.second->options() << std::endl;
   }
 }

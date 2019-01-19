@@ -1,7 +1,6 @@
 #include "test_request.hpp"
 #include "cgimap/request_helpers.hpp"
 
-#include <boost/foreach.hpp>
 
 namespace bt = boost::posix_time;
 
@@ -71,7 +70,7 @@ void test_request::write_header_info(int status, const headers_t &headers) {
   assert(m_output.tellp() == 0);
   m_status = status;
   m_output << "Status: " << status << " " << status_message(status) << "\r\n";
-  BOOST_FOREACH(const request::headers_t::value_type &header, headers) {
+  for (const request::headers_t::value_type &header : headers) {
     m_output << header.first << ": " << header.second << "\r\n";
   }
   m_output << "\r\n";

@@ -3,7 +3,6 @@
 #include "cgimap/logger.hpp"
 #include "cgimap/output_buffer.hpp"
 #include "cgimap/request_helpers.hpp"
-#include <boost/foreach.hpp>
 #include <iostream>
 #include <stdexcept>
 #include <sstream>
@@ -123,7 +122,7 @@ void fcgi_request::write_header_info(int status,
                                      const request::headers_t &headers) {
   std::ostringstream ostr;
   ostr << "Status: " << status << " " << status_message(status) << "\r\n";
-  BOOST_FOREACH(const request::headers_t::value_type &header, headers) {
+  for (const request::headers_t::value_type &header : headers) {
     ostr << header.first << ": " << header.second << "\r\n";
   }
   ostr << "\r\n";

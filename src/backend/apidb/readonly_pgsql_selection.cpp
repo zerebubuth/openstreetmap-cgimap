@@ -11,7 +11,6 @@
 #include <vector>
 #include <boost/ref.hpp>
 #include <boost/bind.hpp>
-#include <boost/foreach.hpp>
 
 #if PQXX_VERSION_MAJOR >= 4
 #define PREPARE_ARGS(args)

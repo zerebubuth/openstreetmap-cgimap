@@ -18,7 +18,6 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/ref.hpp>
 #include <boost/bind.hpp>
-#include <boost/foreach.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
 #if PQXX_VERSION_MAJOR >= 4

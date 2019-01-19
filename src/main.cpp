@@ -7,7 +7,6 @@
 #include <boost/function.hpp>
 #include <boost/date_time.hpp>
 #include <boost/program_options.hpp>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/tuple/tuple.hpp>
@@ -334,14 +333,14 @@ int main(int argc, char **argv) {
 
         // pass on any termination request to our children
         if (terminate_requested && !children_terminated) {
-          BOOST_FOREACH(pid, children) { kill(pid, SIGTERM); }
+          for (auto pid : children) { kill(pid, SIGTERM); }
 
           children_terminated = true;
         }
 
         // pass on any reload request to our children
         if (reload_requested) {
-          BOOST_FOREACH(pid, children) { kill(pid, SIGHUP); }
+          for (auto pid : children) { kill(pid, SIGHUP); }
 
           reload_requested = false;
         }
