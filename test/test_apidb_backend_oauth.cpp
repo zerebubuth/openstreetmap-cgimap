@@ -389,22 +389,22 @@ int main(int, char **) {
     test_database tdb;
     tdb.setup();
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_nonce_store));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_allow_read_api));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_allow_write_api));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_get_user_id_for_token));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_oauth_end_to_end));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_oauth_get_roles_for_user));
 
   } catch (const test_database::setup_error &e) {

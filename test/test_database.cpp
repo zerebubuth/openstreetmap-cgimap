@@ -166,7 +166,7 @@ std::string test_database::random_db_name() {
 }
 
 void test_database::run(
-    boost::function<void(test_database&)> func) {
+    std::function<void(test_database&)> func) {
   try {
     // clear out database before using it!
     pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
@@ -195,7 +195,7 @@ void test_database::run(
 }
 
 void test_database::run_update(
-    boost::function<void(test_database&)> func) {
+    std::function<void(test_database&)> func) {
   try {
     // clear out database before using it!
     pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());

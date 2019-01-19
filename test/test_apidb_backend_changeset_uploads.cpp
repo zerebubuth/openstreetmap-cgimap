@@ -1851,15 +1851,15 @@ int main(int, char **) {
       test_database tdb;
       tdb.setup();
 
-      tdb.run_update(boost::function<void(test_database&)>(&test_single_nodes));
+      tdb.run_update(std::function<void(test_database&)>(&test_single_nodes));
 
-      tdb.run_update(boost::function<void(test_database&)>(&test_single_ways));
+      tdb.run_update(std::function<void(test_database&)>(&test_single_ways));
 
-      tdb.run_update(boost::function<void(test_database&)>(&test_single_relations));
+      tdb.run_update(std::function<void(test_database&)>(&test_single_relations));
 
-      tdb.run_update(boost::function<void(test_database&)>(&test_osmchange_message));
+      tdb.run_update(std::function<void(test_database&)>(&test_osmchange_message));
 
-      tdb.run_update(boost::function<void(test_database&)>(&test_osmchange_end_to_end));
+      tdb.run_update(std::function<void(test_database&)>(&test_osmchange_end_to_end));
 
 
   } catch (const test_database::setup_error &e) {

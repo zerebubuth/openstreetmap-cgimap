@@ -271,16 +271,16 @@ int main(int, char **) {
     test_database tdb;
     tdb.setup();
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_changeset_select_node));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_changeset_select_way));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_changeset_select_relation));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_changeset_redacted));
 
   } catch (const test_database::setup_error &e) {

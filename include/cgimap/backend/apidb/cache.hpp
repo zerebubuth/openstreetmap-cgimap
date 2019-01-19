@@ -32,6 +32,7 @@ DEALINGS IN THE SOFTWARE.
 #ifndef CACHE_HPP
 #define CACHE_HPP
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <list>
@@ -39,7 +40,6 @@ DEALINGS IN THE SOFTWARE.
 #include <stdexcept>
 #include <string>
 #include <boost/config.hpp>
-#include <boost/function.hpp>
 
 template <class Key, class Object> class cache {
 public:
@@ -49,8 +49,8 @@ public:
   typedef std::map<Key, list_iterator> map_type;
   typedef typename map_type::iterator map_iterator;
   typedef typename list_type::size_type size_type;
-  typedef boost::function<Object *(Key)> function_type_fetch;
-  typedef boost::function< std::map< Key, Object* >(std::set<Key>) > function_type_prefetch;
+  typedef std::function<Object *(Key)> function_type_fetch;
+  typedef std::function< std::map< Key, Object* >(std::set<Key>) > function_type_prefetch;
 
   cache(function_type_fetch f, size_type m);
   cache(function_type_fetch f, function_type_prefetch p, size_type m);

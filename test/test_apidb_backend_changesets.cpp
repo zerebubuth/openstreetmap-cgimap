@@ -328,19 +328,19 @@ int main(int, char **) {
     test_database tdb;
     tdb.setup();
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
               &test_negative_changeset_ids));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
               &test_changeset));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
               &test_nonpublic_changeset));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
               &test_changeset_with_tags));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
               &test_changeset_with_comments));
 
   } catch (const test_database::setup_error &e) {

@@ -4,7 +4,6 @@
 #include <boost/bind.hpp>
 #include <boost/ref.hpp>
 #include <boost/lambda/lambda.hpp>
-#include <boost/function.hpp>
 #include <boost/date_time.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>

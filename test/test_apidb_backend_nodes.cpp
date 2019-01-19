@@ -214,10 +214,10 @@ int main(int, char **) {
 
     test_psql_array_to_vector();
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_single_nodes));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_dup_nodes));
 
   } catch (const test_database::setup_error &e) {

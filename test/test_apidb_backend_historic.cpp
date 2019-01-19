@@ -1127,46 +1127,46 @@ int main(int, char **) {
     test_database tdb;
     tdb.setup();
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_historic_elements));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_historic_dup));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_historic_dup_way));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_historic_dup_relation));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_node_history));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_way_history));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_relation_history));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_node_with_history_redacted));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_historical_nodes_redacted));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_way_with_history_redacted));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_historical_ways_redacted));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_relation_with_history_redacted));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_historical_relations_redacted));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_historic_way_node_order));
 
   } catch (const test_database::setup_error &e) {
