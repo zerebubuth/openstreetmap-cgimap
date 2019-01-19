@@ -1,9 +1,9 @@
 #ifndef WRITER_HPP
 #define WRITER_HPP
 
+#include <memory>
 #include <string>
 #include <stdexcept>
-#include <boost/shared_ptr.hpp>
 #include "cgimap/output_buffer.hpp"
 #include "cgimap/output_writer.hpp"
 #include <inttypes.h>
@@ -18,7 +18,7 @@ public:
   xml_writer(const std::string &file_name, bool indent = false);
 
   // create a new XML writer using writer callback functions
-  xml_writer(boost::shared_ptr<output_buffer> &out, bool indent = false);
+  xml_writer(std::shared_ptr<output_buffer> &out, bool indent = false);
 
   // closes and flushes the XML writer
   ~xml_writer() throw();

@@ -6,12 +6,10 @@
 #include <boost/lambda/lambda.hpp>
 #include <boost/function.hpp>
 #include <boost/date_time.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/program_options.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <cmath>
 #include <stdexcept>
@@ -53,7 +51,7 @@ using std::string;
 using std::map;
 using std::ostringstream;
 using std::auto_ptr;
-using boost::shared_ptr;
+using std::shared_ptr;
 using boost::format;
 
 namespace al = boost::algorithm;
@@ -161,11 +159,11 @@ static void process_requests(int socket, const po::variables_map &options) {
 
   // create a factory for data selections - the mechanism for actually
   // getting at data.
-  boost::shared_ptr<data_selection::factory> factory = create_backend(options);
+  std::shared_ptr<data_selection::factory> factory = create_backend(options);
 
-  boost::shared_ptr<data_update::factory> update_factory = create_update_backend(options);
+  std::shared_ptr<data_update::factory> update_factory = create_update_backend(options);
 
-  boost::shared_ptr<oauth::store> oauth_store = create_oauth_store(options);
+  std::shared_ptr<oauth::store> oauth_store = create_oauth_store(options);
 
   logger::message("Initialised");
 

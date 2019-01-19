@@ -1,11 +1,10 @@
 #include "cgimap/xml_formatter.hpp"
 #include "cgimap/config.hpp"
 #include <string>
-#include <boost/shared_ptr.hpp>
 #include <stdexcept>
 
 using std::string;
-using boost::shared_ptr;
+using std::shared_ptr;
 using std::transform;
 namespace pt = boost::posix_time;
 

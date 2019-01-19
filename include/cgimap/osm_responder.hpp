@@ -6,7 +6,6 @@
 #include "cgimap/data_selection.hpp"
 
 #include <boost/optional.hpp>
-#include <boost/shared_ptr.hpp>
 #include <sstream>
 
 /**

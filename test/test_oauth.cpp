@@ -62,7 +62,7 @@ struct test_request : public request {
 protected:
   void write_header_info(int status, const headers_t &headers);
 
-  boost::shared_ptr<output_buffer> get_buffer_internal();
+  std::shared_ptr<output_buffer> get_buffer_internal();
   void finish_internal();
 
 private:
@@ -122,7 +122,7 @@ void test_request::write_header_info(int status, const headers_t &headers) {
   throw std::runtime_error("test_request::write_header_info unimplemented.");
 }
 
-boost::shared_ptr<output_buffer> test_request::get_buffer_internal() {
+std::shared_ptr<output_buffer> test_request::get_buffer_internal() {
   throw std::runtime_error("test_request::get_buffer_internal unimplemented.");
 }
 

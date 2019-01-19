@@ -4,7 +4,6 @@
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <boost/optional/optional_io.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
@@ -54,7 +53,7 @@ void test_historic_elements(test_database &tdb) {
     "  (3, 0, 0, 2, true,  '2015-03-02T18:27:00Z', 3221225472, 1, NULL), "
     "  (3, 0, 0, 2, false, '2015-03-02T18:27:00Z', 3221225472, 2, NULL); "
     "");
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<bool>(
     sel->supports_historical_versions(), true,
@@ -109,7 +108,7 @@ void test_historic_dup(test_database &tdb) {
     "  (3, 0, 0, 2, true,  '2015-03-02T18:27:00Z', 3221225472, 1, NULL), "
     "  (3, 0, 0, 2, false, '2015-03-02T18:27:00Z', 3221225472, 2, NULL); "
     "");
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<bool>(
     sel->supports_historical_versions(), true,
@@ -175,7 +174,7 @@ void test_historic_dup_way(test_database &tdb) {
     "  (1, 1, 3, 1), "
     "  (1, 1, 2, 2); "
     "");
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<bool>(
     sel->supports_historical_versions(), true,
@@ -246,7 +245,7 @@ void test_historic_dup_relation(test_database &tdb) {
     "  (1, 'Node', 3, 'foo', 1, 2), "
     "  (1, 'Node', 3, 'bar', 1, 1); "
     "");
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<bool>(
     sel->supports_historical_versions(), true,
@@ -301,7 +300,7 @@ void test_node_history(test_database &tdb) {
     "  (3, 0, 0, 2, true,  '2015-03-02T18:27:00Z', 3221225472, 1, NULL), "
     "  (3, 0, 0, 2, false, '2015-03-02T18:27:00Z', 3221225472, 2, NULL); "
     "");
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<bool>(
     sel->supports_historical_versions(), true,
@@ -369,7 +368,7 @@ void test_way_history(test_database &tdb) {
     "  (1, 1, 3, 1), "
     "  (1, 1, 2, 2); "
     "");
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<bool>(
     sel->supports_historical_versions(), true,
@@ -439,7 +438,7 @@ void test_relation_history(test_database &tdb) {
     "  (1, 'Node', 3, 'foo', 1, 2), "
     "  (1, 'Node', 3, 'bar', 1, 1); "
     "");
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<bool>(
     sel->supports_historical_versions(), true,
@@ -501,7 +500,7 @@ void test_node_with_history_redacted(test_database &tdb) {
     "  (3, 0, 0, 2, true, '2017-02-04T16:56:00Z', 3221225472, 1, 1), "
     "  (3, 0, 0, 2, true, '2017-02-04T16:57:00Z', 3221225472, 2, NULL); "
     "");
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<bool>(
     sel->supports_historical_versions(), true,
@@ -587,7 +586,7 @@ void test_historical_nodes_redacted(test_database &tdb) {
     "  (3, 0, 0, 2, true, '2017-02-04T16:56:00Z', 3221225472, 1, 1), "
     "  (3, 0, 0, 2, true, '2017-02-04T16:57:00Z', 3221225472, 2, NULL); "
     "");
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<bool>(
     sel->supports_historical_versions(), true,
@@ -672,7 +671,7 @@ void test_way_with_history_redacted(test_database &tdb) {
     "  (1, 1, 3, 1), "
     "  (1, 1, 2, 2); "
     "");
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<bool>(
     sel->supports_historical_versions(), true,
@@ -771,7 +770,7 @@ void test_historical_ways_redacted(test_database &tdb) {
     "  (1, 1, 3, 1), "
     "  (1, 1, 2, 2); "
     "");
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<bool>(
     sel->supports_historical_versions(), true,
@@ -857,7 +856,7 @@ void test_relation_with_history_redacted(test_database &tdb) {
     "  (1, 'Node', 3, 'foo', 1, 2), "
     "  (1, 'Node', 3, 'bar', 1, 1); "
     "");
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<bool>(
     sel->supports_historical_versions(), true,
@@ -965,7 +964,7 @@ void test_historical_relations_redacted(test_database &tdb) {
     "  (1, 'Node', 3, 'foo', 1, 2), "
     "  (1, 'Node', 3, 'bar', 1, 1); "
     "");
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<bool>(
     sel->supports_historical_versions(), true,
@@ -1087,7 +1086,7 @@ void test_historic_way_node_order(test_database &tdb) {
     "  (1, 2,  9,  7), "
     "  (1, 2, 10,  8); "
     "");
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<bool>(
     sel->supports_historical_versions(), true,

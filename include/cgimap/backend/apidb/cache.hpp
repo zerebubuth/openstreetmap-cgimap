@@ -33,17 +33,17 @@ DEALINGS IN THE SOFTWARE.
 #define CACHE_HPP
 
 #include <map>
+#include <memory>
 #include <list>
 #include <set>
 #include <stdexcept>
 #include <string>
 #include <boost/config.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 
 template <class Key, class Object> class cache {
 public:
-  typedef std::pair< ::boost::shared_ptr<Object const>, Key const *> value_type;
+  typedef std::pair< ::std::shared_ptr<Object const>, Key const *> value_type;
   typedef std::list<value_type> list_type;
   typedef typename list_type::iterator list_iterator;
   typedef std::map<Key, list_iterator> map_type;
@@ -55,7 +55,7 @@ public:
   cache(function_type_fetch f, size_type m);
   cache(function_type_fetch f, function_type_prefetch p, size_type m);
 
-  boost::shared_ptr<Object const> get(const Key &k);
+  std::shared_ptr<Object const> get(const Key &k);
   void prefetch(const std::set<Key> & k);
 
 private:
@@ -80,7 +80,7 @@ private:
   friend struct data;
 
   inline object_data * sdata();
-  void insert_into_cache(const Key &k, boost::shared_ptr<Object const> result);
+  void insert_into_cache(const Key &k, std::shared_ptr<Object const> result);
   bool is_in_cache(const Key &k);
 };
 
@@ -108,7 +108,7 @@ void cache<Key, Object>::prefetch(const std::set<Key> & keys) {
   std::map<Key, Object* > result(f_prefetch(new_keys));
 
   for (const auto& r : result) {
-    boost::shared_ptr<Object const> result(r.second);
+    std::shared_ptr<Object const> result(r.second);
     insert_into_cache(r.first, result);
   }
 
@@ -129,7 +129,7 @@ bool cache<Key, Object>::is_in_cache(const Key &k) {
 }
 
 template <class Key, class Object>
-boost::shared_ptr<Object const> cache<Key, Object>::get(const Key &k) {
+std::shared_ptr<Object const> cache<Key, Object>::get(const Key &k) {
 
   //
   // see if the object is already in the cache:
@@ -158,7 +158,7 @@ boost::shared_ptr<Object const> cache<Key, Object>::get(const Key &k) {
   // if we get here then the item is not in the cache,
   // so create it:
   //
-  boost::shared_ptr<Object const> result(f_fetch(k));
+  std::shared_ptr<Object const> result(f_fetch(k));
 
   insert_into_cache(k, result);
 
@@ -166,7 +166,7 @@ boost::shared_ptr<Object const> cache<Key, Object>::get(const Key &k) {
 }
 
 template <class Key, class Object>
-void cache<Key, Object>::insert_into_cache(const Key &k, boost::shared_ptr<Object const> result) {
+void cache<Key, Object>::insert_into_cache(const Key &k, std::shared_ptr<Object const> result) {
 
   typedef typename map_type::size_type map_size_type;
 

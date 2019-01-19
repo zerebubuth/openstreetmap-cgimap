@@ -18,7 +18,7 @@ public:
 
   // writes whatever is in the tmp_nodes/ways/relations tables to the given
   // formatter.
-  void write(boost::shared_ptr<output_formatter> f,
+  void write(std::shared_ptr<output_formatter> f,
              const std::string &generator,
              const boost::posix_time::ptime &now);
 

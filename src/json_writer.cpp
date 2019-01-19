@@ -32,7 +32,7 @@ static void wrap_write(void *context, const char *str, unsigned int len) {
   }
 }
 
-json_writer::json_writer(boost::shared_ptr<output_buffer> &out, bool indent)
+json_writer::json_writer(std::shared_ptr<output_buffer> &out, bool indent)
     : pimpl(new pimpl_()), out(out) {
 #ifdef HAVE_YAJL2
   pimpl->gen = yajl_gen_alloc(NULL);

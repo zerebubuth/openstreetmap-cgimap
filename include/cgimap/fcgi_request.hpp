@@ -2,6 +2,7 @@
 #define FCGI_REQUEST_HPP
 
 #include "cgimap/request.hpp"
+#include <memory>
 #include <boost/scoped_ptr.hpp>
 
 struct fcgi_request : public request {
@@ -23,13 +24,13 @@ struct fcgi_request : public request {
 
 protected:
   void write_header_info(int status, const request::headers_t &headers);
-  boost::shared_ptr<output_buffer> get_buffer_internal();
+  std::shared_ptr<output_buffer> get_buffer_internal();
   void finish_internal();
 
 private:
   struct pimpl;
   boost::scoped_ptr<pimpl> m_impl;
-  boost::shared_ptr<output_buffer> m_buffer;
+  std::shared_ptr<output_buffer> m_buffer;
 };
 
 #endif /* FCGI_REQUEST_HPP */

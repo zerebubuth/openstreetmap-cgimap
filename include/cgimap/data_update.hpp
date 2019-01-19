@@ -11,7 +11,7 @@
 #include "cgimap/api06/changeset_upload/way_updater.hpp"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <vector>
 
 /**
@@ -48,11 +48,11 @@ public:
 
     /// get a handle to a selection which can be used to build up
     /// a working set of data.
-    virtual boost::shared_ptr<data_update> make_data_update() = 0;
+    virtual std::shared_ptr<data_update> make_data_update() = 0;
   };
 };
 
-typedef boost::shared_ptr<data_update::factory> factory_update_ptr;
-typedef boost::shared_ptr<data_update> data_update_ptr;
+typedef std::shared_ptr<data_update::factory> factory_update_ptr;
+typedef std::shared_ptr<data_update> data_update_ptr;
 
 #endif /* DATA_UPDATE_HPP */

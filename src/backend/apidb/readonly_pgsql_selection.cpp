@@ -9,9 +9,7 @@
 #include <sstream>
 #include <list>
 #include <vector>
-#include <boost/make_shared.hpp>
 #include <boost/ref.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
 
@@ -27,7 +25,7 @@ using std::set;
 using std::stringstream;
 using std::list;
 using std::vector;
-using boost::shared_ptr;
+using std::shared_ptr;
 
 // number of nodes to chunk together
 #define STRIDE (1000)
@@ -907,8 +905,8 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
 
 readonly_pgsql_selection::factory::~factory() {}
 
-boost::shared_ptr<data_selection>
+std::shared_ptr<data_selection>
 readonly_pgsql_selection::factory::make_selection() {
-  return boost::make_shared<readonly_pgsql_selection>(boost::ref(m_connection),
+  return std::make_shared<readonly_pgsql_selection>(boost::ref(m_connection),
                                                       boost::ref(m_cache));
 }

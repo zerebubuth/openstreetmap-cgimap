@@ -4,7 +4,6 @@
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <boost/optional/optional_io.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
@@ -49,7 +48,7 @@ void test_negative_changeset_ids(test_database &tdb) {
     "  (6, 90000000, 90000000,  0, true,  '2016-04-16T15:09:00Z', 3229120632, 1), "
     "  (7, 90000000, 90000000, -1, true,  '2016-04-16T15:09:00Z', 3229120632, 1); "
     );
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<data_selection::visibility_t>(
     sel->check_node_visibility(6), data_selection::exists,
@@ -94,7 +93,7 @@ void test_changeset(test_database &tdb) {
     "VALUES "
     "  (1, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 2);"
     );
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<bool>(sel->supports_changesets(), true,
                      "apidb should support changesets.");
@@ -141,7 +140,7 @@ void test_nonpublic_changeset(test_database &tdb) {
     "VALUES "
     "  (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 1);"
     );
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<bool>(sel->supports_changesets(), true,
                      "apidb should support changesets.");
@@ -193,7 +192,7 @@ void test_changeset_with_tags(test_database &tdb) {
     "  (2, 'test_key', 'test_value'), "
     "  (2, 'test_key2', 'test_value2'); "
     );
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<bool>(sel->supports_changesets(), true,
                      "apidb should support changesets.");
@@ -234,7 +233,7 @@ void test_changeset_with_tags(test_database &tdb) {
 }
 
 void check_changeset_with_comments_impl(
-  boost::shared_ptr<data_selection> sel,
+  std::shared_ptr<data_selection> sel,
   bool include_discussion) {
 
   assert_equal<bool>(sel->supports_changesets(), true,
@@ -304,7 +303,7 @@ void test_changeset_with_comments(test_database &tdb) {
     );
 
   try {
-    boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+    std::shared_ptr<data_selection> sel = tdb.get_data_selection();
     check_changeset_with_comments_impl(sel, false);
 
   } catch (const std::exception &e) {
@@ -314,7 +313,7 @@ void test_changeset_with_comments(test_database &tdb) {
   }
 
   try {
-    boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+    std::shared_ptr<data_selection> sel = tdb.get_data_selection();
     check_changeset_with_comments_impl(sel, true);
 
   } catch (const std::exception &e) {

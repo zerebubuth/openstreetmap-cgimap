@@ -52,19 +52,19 @@ struct test_database : public boost::noncopyable {
   void run_update(boost::function<void(test_database&)> func);
 
   // return a data selection factory pointing at the current database
-  boost::shared_ptr<data_selection::factory> get_data_selection_factory();
+  std::shared_ptr<data_selection::factory> get_data_selection_factory();
 
   // return a data update factory pointing at the current database
-  boost::shared_ptr<data_update::factory> get_data_update_factory();
+  std::shared_ptr<data_update::factory> get_data_update_factory();
 
   // return a data selection pointing at the current database
-  boost::shared_ptr<data_selection> get_data_selection();
+  std::shared_ptr<data_selection> get_data_selection();
 
   // return a data updater pointing at the current database
-  boost::shared_ptr<data_update> get_data_update();
+  std::shared_ptr<data_update> get_data_update();
 
   // return an oauth store pointing at the current database
-  boost::shared_ptr<oauth::store> get_oauth_store();
+  std::shared_ptr<oauth::store> get_oauth_store();
 
   // run a (possible set of) SQL strings against the database.
   // intended for setting up data that the test needs.
@@ -82,13 +82,13 @@ private:
 
   // factories using the test database which produce writeable and
   // read-only data selections.
-  boost::shared_ptr<data_selection::factory> m_writeable_factory,
+  std::shared_ptr<data_selection::factory> m_writeable_factory,
       m_readonly_factory;
 
-  boost::shared_ptr<data_update::factory> m_update_factory;
+  std::shared_ptr<data_update::factory> m_update_factory;
 
   // oauth store based on the writeable connection.
-  boost::shared_ptr<oauth::store> m_oauth_store;
+  std::shared_ptr<oauth::store> m_oauth_store;
 
   // whether to use read-only code (true) or writeable code (false)
   bool m_use_readonly;

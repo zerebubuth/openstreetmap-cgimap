@@ -2,7 +2,7 @@
 #include "cgimap/backend/apidb/apidb.hpp"
 
 namespace pt = boost::posix_time;
-using boost::shared_ptr;
+using std::shared_ptr;
 
 namespace {
 

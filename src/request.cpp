@@ -34,7 +34,7 @@ void request::add_header(const std::string &key, const std::string &value) {
   m_headers.push_back(std::make_pair(key, value));
 }
 
-boost::shared_ptr<output_buffer> request::get_buffer() {
+std::shared_ptr<output_buffer> request::get_buffer() {
   check_workflow(status_BODY);
   return get_buffer_internal();
 }

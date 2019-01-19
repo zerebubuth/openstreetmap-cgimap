@@ -6,7 +6,7 @@
 #include <stdexcept>
 
 namespace po = boost::program_options;
-using boost::shared_ptr;
+using std::shared_ptr;
 
 namespace {
 
@@ -146,7 +146,7 @@ registry::create_data_update(const po::variables_map &options) {
 }
 
 
-boost::shared_ptr<oauth::store>
+std::shared_ptr<oauth::store>
 registry::create_oauth_store(const boost::program_options::variables_map &options) {
   shared_ptr<backend> ptr = default_backend;
 
@@ -216,7 +216,7 @@ create_update_backend(const po::variables_map &options) {
   return registry_ptr->create_data_update(options);
 }
 
-boost::shared_ptr<oauth::store>
+std::shared_ptr<oauth::store>
 create_oauth_store(const po::variables_map &options) {
   boost::unique_lock<boost::mutex> lock(registry_mut);
   if (registry_ptr == NULL) {

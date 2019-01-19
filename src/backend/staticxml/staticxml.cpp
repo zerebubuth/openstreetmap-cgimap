@@ -6,7 +6,6 @@
 #include <libxml/parser.h>
 
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/foreach.hpp>
@@ -15,7 +14,7 @@
 
 namespace po = boost::program_options;
 namespace pt = boost::posix_time;
-using boost::shared_ptr;
+using std::shared_ptr;
 using std::string;
 using api06::id_version;
 
@@ -287,7 +286,7 @@ struct xml_parser {
   bool m_in_text;
 };
 
-boost::shared_ptr<database> parse_xml(const char *filename) {
+std::shared_ptr<database> parse_xml(const char *filename) {
   xmlSAXHandler handler;
   memset(&handler, 0, sizeof(handler));
 
@@ -298,7 +297,7 @@ boost::shared_ptr<database> parse_xml(const char *filename) {
   handler.error = &xml_parser::error;
   handler.characters = &xml_parser::characters;
 
-  boost::shared_ptr<database> db = boost::make_shared<database>();
+  std::shared_ptr<database> db = std::make_shared<database>();
   xml_parser parser(db.get());
   int status = xmlSAXUserParseFile(&handler, &parser, filename);
   if (status != 0) {
@@ -331,7 +330,7 @@ inline void write_element<relation>(const relation &r, output_formatter &formatt
 }
 
 struct static_data_selection : public data_selection {
-  explicit static_data_selection(boost::shared_ptr<database> db)
+  explicit static_data_selection(std::shared_ptr<database> db)
     : m_db(db)
     , m_include_changeset_comments(false)
     , m_redactions_visible(false) {}
@@ -740,7 +739,7 @@ private:
     return selected;
   }
 
-  boost::shared_ptr<database> m_db;
+  std::shared_ptr<database> m_db;
   std::set<osm_changeset_id_t> m_changesets;
   std::set<osm_nwr_id_t> m_nodes, m_ways, m_relations;
   std::set<osm_edition_t> m_historic_nodes, m_historic_ways, m_historic_relations;
@@ -768,12 +767,12 @@ struct factory : public data_selection::factory {
 
   virtual ~factory() {}
 
-  virtual boost::shared_ptr<data_selection> make_selection() {
-    return boost::make_shared<static_data_selection>(m_database);
+  virtual std::shared_ptr<data_selection> make_selection() {
+    return std::make_shared<static_data_selection>(m_database);
   }
 
 private:
-  boost::shared_ptr<database> m_database;
+  std::shared_ptr<database> m_database;
 };
 
 struct staticxml_backend : public backend {
@@ -789,7 +788,7 @@ struct staticxml_backend : public backend {
 
   shared_ptr<data_selection::factory> create(const po::variables_map &opts) {
     std::string file = opts["file"].as<std::string>();
-    return boost::make_shared<factory>(file);
+    return std::make_shared<factory>(file);
   }
 
   shared_ptr<data_update::factory> create_data_update(const po::variables_map &opts) {
@@ -797,9 +796,9 @@ struct staticxml_backend : public backend {
   }
 
 
-  boost::shared_ptr<oauth::store> create_oauth_store(
+  std::shared_ptr<oauth::store> create_oauth_store(
     const po::variables_map &opts) {
-    return boost::shared_ptr<oauth::store>();
+    return std::shared_ptr<oauth::store>();
   }
 
 private:
@@ -809,6 +808,6 @@ private:
 
 } // anonymous namespace
 
-boost::shared_ptr<backend> make_staticxml_backend() {
-  return boost::make_shared<staticxml_backend>();
+std::shared_ptr<backend> make_staticxml_backend() {
+  return std::make_shared<staticxml_backend>();
 }

@@ -5,7 +5,6 @@
 #include <set>
 #include <sstream>
 #include <list>
-#include <boost/make_shared.hpp>
 #include <boost/ref.hpp>
 
 #if PQXX_VERSION_MAJOR >= 4
@@ -483,7 +482,7 @@ snapshot_selection::factory::factory(const po::variables_map &opts)
 
 snapshot_selection::factory::~factory() {}
 
-boost::shared_ptr<data_selection>
+std::shared_ptr<data_selection>
 snapshot_selection::factory::make_selection() {
-  return boost::make_shared<snapshot_selection>(boost::ref(m_connection));
+  return std::make_shared<snapshot_selection>(boost::ref(m_connection));
 }

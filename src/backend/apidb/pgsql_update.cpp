@@ -16,9 +16,7 @@
 #include <list>
 #include <vector>
 #include <boost/lexical_cast.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/ref.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
 #include <boost/iterator/transform_iterator.hpp>
@@ -34,7 +32,7 @@ namespace pt = boost::posix_time;
 using std::set;
 using std::list;
 using std::vector;
-using boost::shared_ptr;
+using std::shared_ptr;
 
 namespace {
 std::string connect_db_str(const po::variables_map &options) {
@@ -185,7 +183,7 @@ pgsql_update::factory::factory(const po::variables_map &opts)
 
 pgsql_update::factory::~factory() {}
 
-boost::shared_ptr<data_update>
+std::shared_ptr<data_update>
 pgsql_update::factory::make_data_update() {
-  return boost::make_shared<pgsql_update>(boost::ref(m_connection), m_readonly);
+  return std::make_shared<pgsql_update>(boost::ref(m_connection), m_readonly);
 }

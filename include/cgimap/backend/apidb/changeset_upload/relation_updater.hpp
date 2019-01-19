@@ -9,6 +9,7 @@
 #include "cgimap/api06/changeset_upload/relation_updater.hpp"
 #include "cgimap/backend/apidb/transaction_manager.hpp"
 
+#include <memory>
 #include <set>
 
 using RelationMemberList = std::vector<api06::RelationMember>;

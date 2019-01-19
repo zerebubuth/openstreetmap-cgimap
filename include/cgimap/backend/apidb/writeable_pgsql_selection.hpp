@@ -4,6 +4,7 @@
 #include "cgimap/data_selection.hpp"
 #include "cgimap/backend/apidb/changeset.hpp"
 #include "cgimap/backend/apidb/cache.hpp"
+#include <memory>
 #include <pqxx/pqxx>
 #include <boost/program_options.hpp>
 
@@ -66,7 +67,7 @@ public:
   public:
     factory(const boost::program_options::variables_map &);
     virtual ~factory();
-    virtual boost::shared_ptr<data_selection> make_selection();
+    virtual std::shared_ptr<data_selection> make_selection();
 
   private:
     pqxx::connection m_connection, m_cache_connection;

@@ -7,21 +7,20 @@
 #include "cgimap/output_writer.hpp"
 
 #include <chrono>
+#include <memory>
 #include <sstream>
 
 #include <boost/date_time.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/program_options.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/tuple/tuple.hpp>
 
 using std::runtime_error;
 using std::string;
 using std::ostringstream;
-using boost::shared_ptr;
+using std::shared_ptr;
 using boost::format;
 
 namespace al = boost::algorithm;
@@ -222,7 +221,7 @@ process_post_request(request &req, handler_ptr_t handler,
   logger::message(format("Started request for %1% from %2%") % request_name %
                   ip);
 
-  boost::shared_ptr< payload_enabled_handler > pe_handler = boost::static_pointer_cast< payload_enabled_handler >(handler);
+  std::shared_ptr< payload_enabled_handler > pe_handler = std::static_pointer_cast< payload_enabled_handler >(handler);
 
   if (pe_handler == nullptr)
     throw http::server_error("HTTP POST method is not payload enabled");
@@ -414,10 +413,10 @@ bool show_redactions_requested(request &req) {
 
 void process_request(request &req, rate_limiter &limiter,
                      const std::string &generator, routes &route,
-                     boost::shared_ptr<data_selection::factory> factory,
-                     boost::shared_ptr<oauth::store> store)
+                     std::shared_ptr<data_selection::factory> factory,
+                     std::shared_ptr<oauth::store> store)
 { // TODO: temporary workaround only for test cases
-  process_request(req, limiter, generator, route, factory, boost::shared_ptr<data_update::factory>(nullptr), store);
+  process_request(req, limiter, generator, route, factory, std::shared_ptr<data_update::factory>(nullptr), store);
 }
 
 /**
@@ -425,9 +424,9 @@ void process_request(request &req, rate_limiter &limiter,
  */
 void process_request(request &req, rate_limiter &limiter,
                      const string &generator, routes &route,
-                     boost::shared_ptr<data_selection::factory> factory,
-                     boost::shared_ptr<data_update::factory> update_factory,
-                     boost::shared_ptr<oauth::store> store) {
+                     std::shared_ptr<data_selection::factory> factory,
+                     std::shared_ptr<data_update::factory> update_factory,
+                     std::shared_ptr<oauth::store> store) {
   try {
     // get the client IP address
     string ip = fcgi_get_env(req, "REMOTE_ADDR");

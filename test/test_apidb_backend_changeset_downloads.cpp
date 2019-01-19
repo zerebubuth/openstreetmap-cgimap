@@ -4,7 +4,6 @@
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <boost/optional/optional_io.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
@@ -52,7 +51,7 @@ void test_changeset_select_node(test_database &tdb) {
     "VALUES "
     "  (1, 90000000, 90000000, 1, true,  '2017-03-19T19:13:00Z', 3229120632, 1, NULL);"
     );
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<bool>(sel->supports_changesets(), true,
     "apidb should support changesets.");
@@ -109,7 +108,7 @@ void test_changeset_select_way(test_database &tdb) {
     "  (1, 2, 1, 1), "
     "  (1, 1, 1, 1); "
     );
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<bool>(sel->supports_changesets(), true,
     "apidb should support changesets.");
@@ -172,7 +171,7 @@ void test_changeset_select_relation(test_database &tdb) {
     "VALUES "
     "  (1, 'Node', 1, 'foo', 1, 1); "
     );
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<bool>(sel->supports_changesets(), true,
     "apidb should support changesets.");
@@ -225,7 +224,7 @@ void test_changeset_redacted(test_database &tdb) {
     "  (1, 0, 0, 2, true,  '2017-03-19T20:18:00Z', 3221225472, 2, 1),"
     "  (1, 0, 0, 3, true,  '2017-03-19T20:18:00Z', 3221225472, 3, NULL);"
     );
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   assert_equal<bool>(sel->supports_changesets(), true,
     "apidb should support changesets.");

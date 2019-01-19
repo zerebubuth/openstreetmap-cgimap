@@ -1,8 +1,7 @@
 #ifndef BASICAUTH_HPP
 #define BASICAUTH_HPP
 
-#include <boost/shared_ptr.hpp>
-
+#include <memory>
 #include <string>
 
 #include "cgimap/data_selection.hpp"
@@ -28,7 +27,7 @@ class PasswordHash {
 };
 
 namespace basicauth {
-  boost::optional<osm_user_id_t> authenticate_user(request &req, boost::shared_ptr<data_selection>& selection);
+  boost::optional<osm_user_id_t> authenticate_user(request &req, std::shared_ptr<data_selection>& selection);
 
 }
 

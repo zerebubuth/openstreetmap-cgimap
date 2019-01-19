@@ -42,7 +42,7 @@ static int wrap_close(void *context) {
 }
 
 // create a new XML writer using writer callback functions
-xml_writer::xml_writer(boost::shared_ptr<output_buffer> &out, bool indent)
+xml_writer::xml_writer(std::shared_ptr<output_buffer> &out, bool indent)
     : pimpl(new pimpl_()) {
   xmlOutputBufferPtr output_buffer =
       xmlOutputBufferCreateIO(wrap_write, wrap_close, out.get(), NULL);

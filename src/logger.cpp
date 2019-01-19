@@ -1,6 +1,5 @@
 #include <iostream>
 #include <boost/date_time.hpp>
-#include <boost/shared_ptr.hpp>
 
 #include "cgimap/logger.hpp"
 
@@ -11,7 +10,7 @@ using boost::format;
 using boost::posix_time::ptime;
 using boost::posix_time::to_iso_extended_string;
 using boost::posix_time::second_clock;
-using boost::shared_ptr;
+using std::shared_ptr;
 
 namespace logger {
 

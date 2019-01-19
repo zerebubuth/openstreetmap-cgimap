@@ -4,7 +4,6 @@
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <boost/optional/optional_io.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
@@ -53,7 +52,7 @@ void test_single_nodes(test_database &tdb) {
     "  (3,       0,       0, 2, false, '2015-03-02T18:27:00Z', 3221225472, 2), "
     "  (4,       0,       0, 4, true,  '2015-03-02T19:25:00Z', 3221225472, 1);"
     );
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   if (sel->check_node_visibility(1) != data_selection::exists) {
     throw std::runtime_error("Node 1 should be visible, but isn't");
@@ -138,7 +137,7 @@ void test_dup_nodes(test_database &tdb) {
     "  (1,       0,       0, 1, true,  '2013-11-14T02:10:00Z', 3221225472, 1);"
     );
 
-  boost::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
   if (sel->check_node_visibility(1) != data_selection::exists) {
     throw std::runtime_error("Node 1 should be visible, but isn't");

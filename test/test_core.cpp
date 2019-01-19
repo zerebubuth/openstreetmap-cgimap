@@ -10,7 +10,6 @@
 #include <boost/program_options.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
@@ -480,8 +479,8 @@ void check_response(std::istream &expected, std::istream &actual) {
  */
 void run_test(fs::path test_case, rate_limiter &limiter,
               const std::string &generator, routes &route,
-              boost::shared_ptr<data_selection::factory> factory,
-              boost::shared_ptr<oauth::store> store) {
+              std::shared_ptr<data_selection::factory> factory,
+              std::shared_ptr<oauth::store> store) {
   try {
     test_request req;
 
@@ -648,7 +647,7 @@ int main(int argc, char *argv[]) {
   fs::path oauth_file = test_directory / "oauth.json";
   std::vector<fs::path> test_cases;
 
-  boost::shared_ptr<oauth::store> store;
+  std::shared_ptr<oauth::store> store;
 
   try {
     if (fs::is_directory(test_directory) == false) {
@@ -680,7 +679,7 @@ int main(int argc, char *argv[]) {
           ((boost::format("%1%, while reading expected JSON.") % ex.what()).str());
       }
 
-      store = boost::make_shared<test_oauth>(config);
+      store = std::make_shared<test_oauth>(config);
     }
 
   } catch (const std::exception &e) {
@@ -697,8 +696,8 @@ int main(int argc, char *argv[]) {
     vm.insert(std::make_pair(std::string("file"),
                              po::variable_value(data_file.native(), false)));
 
-    boost::shared_ptr<backend> data_backend = make_staticxml_backend();
-    boost::shared_ptr<data_selection::factory> factory =
+    std::shared_ptr<backend> data_backend = make_staticxml_backend();
+    std::shared_ptr<data_selection::factory> factory =
         data_backend->create(vm);
     null_rate_limiter limiter;
     routes route;

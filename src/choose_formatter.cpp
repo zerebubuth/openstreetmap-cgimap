@@ -37,7 +37,7 @@ using std::map;
 using std::numeric_limits;
 using std::make_pair;
 using boost::optional;
-using boost::shared_ptr;
+using std::shared_ptr;
 using boost::lexical_cast;
 using std::string;
 using std::vector;

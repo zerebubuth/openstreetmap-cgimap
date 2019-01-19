@@ -81,8 +81,8 @@ int test_request::response_status() const {
   return m_status;
 }
 
-boost::shared_ptr<output_buffer> test_request::get_buffer_internal() {
-  return boost::shared_ptr<output_buffer>(new test_output_buffer(m_output));
+std::shared_ptr<output_buffer> test_request::get_buffer_internal() {
+  return std::shared_ptr<output_buffer>(new test_output_buffer(m_output));
 }
 
 void test_request::finish_internal() {}

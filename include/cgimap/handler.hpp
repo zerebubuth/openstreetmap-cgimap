@@ -12,7 +12,6 @@
 #include <set>
 #include <string>
 #include <memory>
-#include <boost/shared_ptr.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 /**
@@ -22,7 +21,7 @@ class responder {
 public:
   responder(mime::type);
   virtual ~responder();
-  virtual void write(boost::shared_ptr<output_formatter> f,
+  virtual void write(std::shared_ptr<output_formatter> f,
                      const std::string &generator,
                      const boost::posix_time::ptime &now) = 0;
 
@@ -38,7 +37,7 @@ private:
   mime::type mime_type;
 };
 
-typedef boost::shared_ptr<responder> responder_ptr_t;
+typedef std::shared_ptr<responder> responder_ptr_t;
 
 /**
  * object which is able to validate and create responders from
@@ -69,7 +68,7 @@ protected:
   http::method m_allowed_methods;
 };
 
-typedef boost::shared_ptr<handler> handler_ptr_t;
+typedef std::shared_ptr<handler> handler_ptr_t;
 
 
 class payload_enabled_handler : public handler {

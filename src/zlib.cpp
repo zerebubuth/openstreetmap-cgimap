@@ -6,7 +6,7 @@
 #include "cgimap/zlib.hpp"
 #include "cgimap/output_writer.hpp"
 
-zlib_output_buffer::zlib_output_buffer(boost::shared_ptr<output_buffer> o,
+zlib_output_buffer::zlib_output_buffer(std::shared_ptr<output_buffer> o,
                                        zlib_output_buffer::mode m)
     : out(o), bytes_in(0) {
   int windowBits;

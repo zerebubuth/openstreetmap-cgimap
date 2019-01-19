@@ -14,7 +14,7 @@ namespace al = boost::algorithm;
 using std::string;
 using std::vector;
 using std::pair;
-using boost::shared_ptr;
+using std::shared_ptr;
 
 namespace {
 /**
