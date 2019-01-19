@@ -1,6 +1,5 @@
 #include <iostream>
 #include <stdexcept>
-#include <boost/noncopyable.hpp>
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <boost/optional/optional_io.hpp>

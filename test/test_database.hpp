@@ -4,7 +4,6 @@
 #include <stdexcept>
 #include <string>
 
-#include <boost/noncopyable.hpp>
 #include <boost/function.hpp>
 #include <boost/format.hpp>
 
@@ -19,7 +18,7 @@
  * populated with fake data to allow the apidb data selection process to
  * be tested in isolation.
  */
-struct test_database : public boost::noncopyable {
+struct test_database {
   // simple error type - we distinguish this from a programming error and
   // allow the test to be skipped, as people might not have or want an
   // apidb database set up on their local machines.
@@ -31,6 +30,11 @@ struct test_database : public boost::noncopyable {
   private:
     const std::string m_str;
   };
+
+  test_database(const test_database &) = delete;
+  test_database& operator=(const test_database &) = delete;
+  test_database(test_database &&) = default;
+  test_database& operator=(test_database &&) = default;
 
   // set up a unique test database.
   test_database();

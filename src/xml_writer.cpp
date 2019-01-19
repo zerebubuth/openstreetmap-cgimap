@@ -1,7 +1,9 @@
 #include <libxml/encoding.h>
 #include <libxml/xmlwriter.h>
+#include <memory>
 #include <stdexcept>
 #include <iostream>
+#include <utility>
 #include "cgimap/xml_writer.hpp"
 
 struct xml_writer::pimpl_ {
@@ -9,7 +11,7 @@ struct xml_writer::pimpl_ {
 };
 
 xml_writer::xml_writer(const std::string &file_name, bool indent)
-    : pimpl(new pimpl_()) {
+    : pimpl{make_unique<pimpl_>()} {
   // allocate the text writer "object"
   pimpl->writer = xmlNewTextWriterFilename(file_name.c_str(), 0);
 
@@ -43,7 +45,7 @@ static int wrap_close(void *context) {
 
 // create a new XML writer using writer callback functions
 xml_writer::xml_writer(std::shared_ptr<output_buffer> &out, bool indent)
-    : pimpl(new pimpl_()) {
+    : pimpl{make_unique<pimpl_>()} {
   xmlOutputBufferPtr output_buffer =
       xmlOutputBufferCreateIO(wrap_write, wrap_close, out.get(), NULL);
 
@@ -86,9 +88,6 @@ xml_writer::~xml_writer() throw() {
     // and reclaim the extra memory.
   }
   xmlFreeTextWriter(pimpl->writer);
-
-  // finally, delete the PIMPL object
-  delete pimpl;
 }
 
 void xml_writer::start(const std::string &name) {

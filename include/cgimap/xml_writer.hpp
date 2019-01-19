@@ -13,6 +13,11 @@
  */
 class xml_writer : public output_writer {
 public:
+  xml_writer(const xml_writer &) = delete;
+  xml_writer& operator=(const xml_writer &) = delete;
+  xml_writer(xml_writer &&) = default;
+  xml_writer& operator=(xml_writer &&) = default;
+
   // create a new XML writer writing to file_name, which can be
   // "-" for stdout.
   xml_writer(const std::string &file_name, bool indent = false);
@@ -57,7 +62,7 @@ private:
 
   // PIMPL ideom
   struct pimpl_;
-  pimpl_ *pimpl;
+  std::unique_ptr<pimpl_> pimpl;
 };
 
 #endif /* WRITER_HPP */

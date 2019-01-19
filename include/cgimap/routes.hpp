@@ -3,7 +3,6 @@
 
 #include "cgimap/handler.hpp"
 #include "cgimap/request.hpp"
-#include <boost/noncopyable.hpp>
 #include "cgimap/config.hpp"
 
 // internal implementation of the routes
@@ -13,10 +12,15 @@ struct router;
  * encapsulates routing (URL to handler mapping) information, similar in
  * intent, if not form, to rails' routes.rb.
  */
-class routes : public boost::noncopyable {
+class routes {
 public:
   routes();
   ~routes();
+
+  routes(const routes &) = delete;
+  routes& operator=(const routes &) = delete;
+  routes(routes &&) = default;
+  routes& operator=(routes &&) = default;
 
   /**
          * returns the handler which matches a request, or throws a 404 error.
