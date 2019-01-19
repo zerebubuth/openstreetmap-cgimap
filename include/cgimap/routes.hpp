@@ -3,7 +3,6 @@
 
 #include "cgimap/handler.hpp"
 #include "cgimap/request.hpp"
-#include <boost/scoped_ptr.hpp>
 #include <boost/noncopyable.hpp>
 #include "cgimap/config.hpp"
 
@@ -29,14 +28,14 @@ private:
   std::string common_prefix;
 
   // object which actually does the routing.
-  boost::scoped_ptr<router> r;
+  std::unique_ptr<router> r;
 
 #ifdef ENABLE_API07
   // common prefix of API 0.7 routes.
   std::string experimental_prefix;
 
   // and an API 0.7 router object
-  boost::scoped_ptr<router> r_experimental;
+  std::unique_ptr<router> r_experimental;
 #endif /* ENABLE_API07 */
 };
 

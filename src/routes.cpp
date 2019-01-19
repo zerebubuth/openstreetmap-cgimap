@@ -48,7 +48,7 @@ using std::list;
 using std::string;
 using std::pair;
 using std::shared_ptr;
-using boost::scoped_ptr;
+using std::unique_ptr;
 using boost::optional;
 using boost::fusion::make_cons;
 using boost::fusion::invoke;
@@ -218,7 +218,7 @@ namespace {
 }
 
 handler_ptr_t route_resource(request &req, const string &path,
-                             const scoped_ptr<router> &r) {
+                             const unique_ptr<router> &r) {
   // strip off the format-spec, if there is one
   pair<string, mime::type> resource = resource_mime_type(path);
 

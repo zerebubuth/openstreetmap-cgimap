@@ -3,7 +3,6 @@
 
 #include "cgimap/output_formatter.hpp"
 #include "cgimap/xml_writer.hpp"
-#include <boost/scoped_ptr.hpp>
 
 /**
  * Outputs an XML-formatted document, i.e: the OSM document type we all know

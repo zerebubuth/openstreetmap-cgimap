@@ -3,7 +3,6 @@
 
 #include "cgimap/request.hpp"
 #include <memory>
-#include <boost/scoped_ptr.hpp>
 
 struct fcgi_request : public request {
   fcgi_request(int socket, const boost::posix_time::ptime &now);
@@ -29,7 +28,7 @@ protected:
 
 private:
   struct pimpl;
-  boost::scoped_ptr<pimpl> m_impl;
+  std::unique_ptr<pimpl> m_impl;
   std::shared_ptr<output_buffer> m_buffer;
 };
 
