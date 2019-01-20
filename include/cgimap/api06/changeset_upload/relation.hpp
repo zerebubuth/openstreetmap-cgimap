@@ -103,8 +103,6 @@ public:
     return m_relation_member;
   }
 
-  bool is_valid() const { return (OSMObject::is_valid()); }
-
   std::string get_type_name() { return "Relation"; }
 
 private:

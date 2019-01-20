@@ -66,9 +66,9 @@ public:
     switch (op) {
 
     case operation::op_delete:
-      return (OSMObject::is_valid());
+      return (is_valid());
     default:
-      return (OSMObject::is_valid() && m_lat && m_lon);
+      return (is_valid() && m_lat && m_lon);
     }
   }
 
@@ -77,6 +77,7 @@ public:
 private:
   boost::optional<double> m_lat;
   boost::optional<double> m_lon;
+  using OSMObject::is_valid;
 };
 
 } // namespace api06
