@@ -3,6 +3,8 @@
 #include "cgimap/logger.hpp"
 #include "cgimap/output_buffer.hpp"
 #include "cgimap/request_helpers.hpp"
+
+#include <array>
 #include <iostream>
 #include <stdexcept>
 #include <sstream>
@@ -80,13 +82,13 @@ const std::string fcgi_request::get_payload() {
   if (content_length_str)
     content_length = http::parse_content_length(content_length_str);
 
-  char * content_buffer = new char[BUFFER_LEN];
+  std::array<char, BUFFER_LEN> content_buffer{};
 
   std::string result = "";
 
-  while ((curr_content_length = FCGX_GetStr(content_buffer, BUFFER_LEN, m_impl->req.in)) > 0)
+  while ((curr_content_length = FCGX_GetStr(content_buffer.data(), BUFFER_LEN, m_impl->req.in)) > 0)
   {
-      std::string content(content_buffer, curr_content_length);
+      std::string content(content_buffer.data(), curr_content_length);
       result_length += content.length();
 
       // Decompression according to Content-Encoding header (null op, if header is not set)
@@ -106,7 +108,6 @@ const std::string fcgi_request::get_payload() {
   if (content_length > 0 && result_length != content_length)
     throw http::server_error("HTTP Header field 'Content-Length' differs from actual payload length");
 
-  delete [] content_buffer;
   return result;
 }
 
