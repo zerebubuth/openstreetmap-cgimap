@@ -45,7 +45,7 @@ public:
     switch (op) {
 
     case operation::op_delete:
-      return (OSMObject::is_valid());
+      return (is_valid());
 
     default:
       if (m_way_nodes.empty()) {
@@ -64,7 +64,7 @@ public:
                 .str());
       }
 
-      return (OSMObject::is_valid());
+      return (is_valid());
     }
   }
 
@@ -72,6 +72,7 @@ public:
 
 private:
   std::vector<osm_nwr_signed_id_t> m_way_nodes;
+  using OSMObject::is_valid;
 };
 
 } // namespace api06
