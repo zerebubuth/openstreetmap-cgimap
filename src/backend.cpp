@@ -1,8 +1,9 @@
 #include "cgimap/backend.hpp"
 #include "cgimap/config.hpp"
-#include <boost/thread.hpp>
+
 #include <boost/format.hpp>
 #include <stdexcept>
+#include <mutex>
 
 namespace po = boost::program_options;
 using std::shared_ptr;
@@ -161,14 +162,14 @@ registry::create_oauth_store(const boost::program_options::variables_map &option
 }
 
 registry *registry_ptr = NULL;
-boost::mutex registry_mut;
+std::mutex registry_mut;
 
 } // anonymous namespace
 
 backend::~backend() {}
 
 bool register_backend(shared_ptr<backend> ptr) {
-  boost::unique_lock<boost::mutex> lock(registry_mut);
+  std::unique_lock<std::mutex> lock(registry_mut);
   if (registry_ptr == NULL) {
     registry_ptr = new registry;
   }
@@ -178,7 +179,7 @@ bool register_backend(shared_ptr<backend> ptr) {
 
 void setup_backend_options(int argc, char *argv[],
                            po::options_description &desc) {
-  boost::unique_lock<boost::mutex> lock(registry_mut);
+  std::unique_lock<std::mutex> lock(registry_mut);
   if (registry_ptr == NULL) {
     registry_ptr = new registry;
   }
@@ -187,7 +188,7 @@ void setup_backend_options(int argc, char *argv[],
 }
 
 void output_backend_options(std::ostream &out) {
-  boost::unique_lock<boost::mutex> lock(registry_mut);
+  std::unique_lock<std::mutex> lock(registry_mut);
   if (registry_ptr == NULL) {
     registry_ptr = new registry;
   }
@@ -197,7 +198,7 @@ void output_backend_options(std::ostream &out) {
 
 shared_ptr<data_selection::factory>
 create_backend(const po::variables_map &options) {
-  boost::unique_lock<boost::mutex> lock(registry_mut);
+  std::unique_lock<std::mutex> lock(registry_mut);
   if (registry_ptr == NULL) {
     registry_ptr = new registry;
   }
@@ -207,7 +208,7 @@ create_backend(const po::variables_map &options) {
 
 shared_ptr<data_update::factory>
 create_update_backend(const po::variables_map &options) {
-  boost::unique_lock<boost::mutex> lock(registry_mut);
+  std::unique_lock<std::mutex> lock(registry_mut);
   if (registry_ptr == NULL) {
     registry_ptr = new registry;
   }
@@ -217,7 +218,7 @@ create_update_backend(const po::variables_map &options) {
 
 std::shared_ptr<oauth::store>
 create_oauth_store(const po::variables_map &options) {
-  boost::unique_lock<boost::mutex> lock(registry_mut);
+  std::unique_lock<std::mutex> lock(registry_mut);
   if (registry_ptr == NULL) {
     registry_ptr = new registry;
   }
