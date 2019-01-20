@@ -6,13 +6,14 @@
 #include "cgimap/infix_ostream_iterator.hpp"
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
 #include "cgimap/backend/apidb/utils.hpp"
+
+#include <functional>
 #include <set>
 #include <sstream>
 #include <list>
 #include <vector>
+
 #include <boost/lexical_cast.hpp>
-#include <boost/ref.hpp>
-#include <boost/bind.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
 #if PQXX_VERSION_MAJOR >= 4
@@ -446,8 +447,8 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       m_cache_errorhandler(m_cache_connection),
 #endif
       m_cache_tx(m_cache_connection, "changeset_cache"),
-      m_cache(boost::bind(fetch_changeset, boost::ref(m_cache_tx), _1),
-              boost::bind(fetch_changesets, boost::ref(m_cache_tx), _1),
+      m_cache(std::bind(fetch_changeset, std::ref(m_cache_tx), std::placeholders::_1),
+              std::bind(fetch_changesets, std::ref(m_cache_tx), std::placeholders::_1),
               get_or_convert_cachesize(opts)) {
 
   check_postgres_version(m_connection);
@@ -872,6 +873,6 @@ writeable_pgsql_selection::factory::~factory() {}
 
 std::shared_ptr<data_selection>
 writeable_pgsql_selection::factory::make_selection() {
-  return std::make_shared<writeable_pgsql_selection>(boost::ref(m_connection),
-                                                       boost::ref(m_cache));
+  return std::make_shared<writeable_pgsql_selection>(std::ref(m_connection),
+						     std::ref(m_cache));
 }

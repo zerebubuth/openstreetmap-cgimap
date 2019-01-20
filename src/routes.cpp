@@ -43,7 +43,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/optional.hpp>
 
-using std::auto_ptr;
 using std::list;
 using std::string;
 using std::pair;
@@ -52,7 +51,7 @@ using std::unique_ptr;
 using boost::optional;
 using boost::fusion::make_cons;
 using boost::fusion::invoke;
-using boost::ref;
+
 namespace al = boost::algorithm;
 
 /**
@@ -90,7 +89,7 @@ struct router {
         if(begin!=parts.end())
           throw match::error();
         ptr.reset(
-            invoke(func, make_cons(ref(params), sequence)));
+            invoke(func, make_cons(std::ref(params), sequence)));
         return true;
       } catch (const match::error &e) {
         return false;

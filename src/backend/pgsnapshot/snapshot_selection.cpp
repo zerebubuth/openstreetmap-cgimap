@@ -2,10 +2,10 @@
 #include "cgimap/logger.hpp"
 #include "cgimap/infix_ostream_iterator.hpp"
 
+#include <functional>
 #include <set>
 #include <sstream>
 #include <list>
-#include <boost/ref.hpp>
 
 #if PQXX_VERSION_MAJOR >= 4
 #define PREPARE_ARGS(args)
@@ -484,5 +484,5 @@ snapshot_selection::factory::~factory() {}
 
 std::shared_ptr<data_selection>
 snapshot_selection::factory::make_selection() {
-  return std::make_shared<snapshot_selection>(boost::ref(m_connection));
+  return std::make_shared<snapshot_selection>(std::ref(m_connection));
 }

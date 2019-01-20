@@ -11,13 +11,12 @@
 #include "cgimap/backend/apidb/changeset_upload/relation_updater.hpp"
 #include "cgimap/backend/apidb/changeset_upload/way_updater.hpp"
 
+#include <functional>
 #include <set>
 #include <sstream>
 #include <list>
 #include <vector>
 #include <boost/lexical_cast.hpp>
-#include <boost/ref.hpp>
-#include <boost/bind.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
 #if PQXX_VERSION_MAJOR >= 4
@@ -184,5 +183,5 @@ pgsql_update::factory::~factory() {}
 
 std::shared_ptr<data_update>
 pgsql_update::factory::make_data_update() {
-  return std::make_shared<pgsql_update>(boost::ref(m_connection), m_readonly);
+  return std::make_shared<pgsql_update>(std::ref(m_connection), m_readonly);
 }

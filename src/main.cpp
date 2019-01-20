@@ -1,14 +1,13 @@
 #include <pqxx/pqxx>
 #include <iostream>
 #include <sstream>
-#include <boost/bind.hpp>
-#include <boost/ref.hpp>
+
 #include <boost/lambda/lambda.hpp>
 #include <boost/date_time.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/tuple/tuple.hpp>
+
 #include <cmath>
 #include <stdexcept>
 #include <vector>
@@ -48,7 +47,6 @@ using std::vector;
 using std::string;
 using std::map;
 using std::ostringstream;
-using std::auto_ptr;
 using std::shared_ptr;
 using boost::format;
 
