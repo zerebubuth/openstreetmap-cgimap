@@ -97,7 +97,7 @@ std::string PasswordHash::base64decode(const std::string& s) {
 
 namespace basicauth {
 
-  boost::optional<osm_user_id_t> authenticate_user(request &req, boost::shared_ptr<data_selection>& selection)
+  boost::optional<osm_user_id_t> authenticate_user(request &req, std::shared_ptr<data_selection>& selection)
   {
     PasswordHash pwd_hash;
 

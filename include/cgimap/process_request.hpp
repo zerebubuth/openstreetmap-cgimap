@@ -9,21 +9,20 @@
 #include "cgimap/basicauth.hpp"
 #include "cgimap/oauth.hpp"
 #include <string>
-#include <boost/shared_ptr.hpp>
 
 /**
  * process a single request.
  */
 void process_request(request &req, rate_limiter &limiter,
                      const std::string &generator, routes &route,
-                     boost::shared_ptr<data_selection::factory> factory,
-                     boost::shared_ptr<data_update::factory> update_factory,
-                     boost::shared_ptr<oauth::store> store);
+                     std::shared_ptr<data_selection::factory> factory,
+                     std::shared_ptr<data_update::factory> update_factory,
+                     std::shared_ptr<oauth::store> store);
 
 // TODO: temporary workaround only for test cases
 void process_request(request &req, rate_limiter &limiter,
                      const std::string &generator, routes &route,
-                     boost::shared_ptr<data_selection::factory> factory,
-                     boost::shared_ptr<oauth::store> store);
+                     std::shared_ptr<data_selection::factory> factory,
+                     std::shared_ptr<oauth::store> store);
 
 #endif /* PROCESS_REQUEST_HPP */

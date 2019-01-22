@@ -7,21 +7,20 @@
 #include "cgimap/output_writer.hpp"
 
 #include <chrono>
+#include <memory>
 #include <sstream>
+#include <tuple>
 
 #include <boost/date_time.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/program_options.hpp>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/tuple/tuple.hpp>
+
 
 using std::runtime_error;
 using std::string;
 using std::ostringstream;
-using boost::shared_ptr;
+using std::shared_ptr;
 using boost::format;
 
 namespace al = boost::algorithm;
@@ -146,7 +145,7 @@ void process_not_allowed(request &req, handler_ptr_t handler) {
 /**
  * process a GET request.
  */
-boost::tuple<string, size_t>
+std::tuple<string, size_t>
 process_get_request(request &req, handler_ptr_t handler,
                     data_selection_ptr selection,
                     const string &ip, const string &generator) {
@@ -204,14 +203,14 @@ process_get_request(request &req, handler_ptr_t handler,
     o_formatter->error(e.what());
   }
 
-  return boost::make_tuple(request_name, out->written());
+  return std::make_tuple(request_name, out->written());
 }
 
 
 /**
  * process a POST request.
  */
-boost::tuple<string, size_t>
+std::tuple<string, size_t>
 process_post_request(request &req, handler_ptr_t handler,
 		    data_update_ptr data_update,
                     const string &payload,
@@ -222,7 +221,7 @@ process_post_request(request &req, handler_ptr_t handler,
   logger::message(format("Started request for %1% from %2%") % request_name %
                   ip);
 
-  boost::shared_ptr< payload_enabled_handler > pe_handler = boost::static_pointer_cast< payload_enabled_handler >(handler);
+  std::shared_ptr< payload_enabled_handler > pe_handler = std::static_pointer_cast< payload_enabled_handler >(handler);
 
   if (pe_handler == nullptr)
     throw http::server_error("HTTP POST method is not payload enabled");
@@ -277,14 +276,14 @@ process_post_request(request &req, handler_ptr_t handler,
     o_formatter->error(e.what());
   }
 
-  return boost::make_tuple(request_name, out->written());
+  return std::make_tuple(request_name, out->written());
 }
 
 
 /**
  * process a HEAD request.
  */
-boost::tuple<string, size_t>
+std::tuple<string, size_t>
 process_head_request(request &req, handler_ptr_t handler,
                      data_selection_ptr selection,
                      const string &ip) {
@@ -319,13 +318,13 @@ process_head_request(request &req, handler_ptr_t handler,
   // ensure the request is finished
   req.finish();
 
-  return boost::make_tuple(request_name, 0);
+  return std::make_tuple(request_name, 0);
 }
 
 /**
  * process an OPTIONS request.
  */
-boost::tuple<string, size_t> process_options_request(
+std::tuple<string, size_t> process_options_request(
   request &req, handler_ptr_t handler) {
 
   static const string request_name = "OPTIONS";
@@ -352,7 +351,7 @@ boost::tuple<string, size_t> process_options_request(
   } else {
     process_not_allowed(req, handler);
   }
-  return boost::make_tuple(request_name, 0);
+  return std::make_tuple(request_name, 0);
 }
 
 const std::string addr_prefix("addr:");
@@ -414,10 +413,10 @@ bool show_redactions_requested(request &req) {
 
 void process_request(request &req, rate_limiter &limiter,
                      const std::string &generator, routes &route,
-                     boost::shared_ptr<data_selection::factory> factory,
-                     boost::shared_ptr<oauth::store> store)
+                     std::shared_ptr<data_selection::factory> factory,
+                     std::shared_ptr<oauth::store> store)
 { // TODO: temporary workaround only for test cases
-  process_request(req, limiter, generator, route, factory, boost::shared_ptr<data_update::factory>(nullptr), store);
+  process_request(req, limiter, generator, route, factory, std::shared_ptr<data_update::factory>(nullptr), store);
 }
 
 /**
@@ -425,9 +424,9 @@ void process_request(request &req, rate_limiter &limiter,
  */
 void process_request(request &req, rate_limiter &limiter,
                      const string &generator, routes &route,
-                     boost::shared_ptr<data_selection::factory> factory,
-                     boost::shared_ptr<data_update::factory> update_factory,
-                     boost::shared_ptr<oauth::store> store) {
+                     std::shared_ptr<data_selection::factory> factory,
+                     std::shared_ptr<data_update::factory> update_factory,
+                     std::shared_ptr<oauth::store> store) {
   try {
     // get the client IP address
     string ip = fcgi_get_env(req, "REMOTE_ADDR");
@@ -519,7 +518,7 @@ void process_request(request &req, rate_limiter &limiter,
 
     // process request
     if (method == http::method::GET) {
-      boost::tie(request_name, bytes_written) =
+      std::tie(request_name, bytes_written) =
         process_get_request(req, handler, selection, ip, generator);
 
     } else if (method == http::method::POST) {
@@ -540,15 +539,15 @@ void process_request(request &req, rate_limiter &limiter,
 
       std::string payload = req.get_payload();
 
-      boost::tie(request_name, bytes_written) =
+      std::tie(request_name, bytes_written) =
           process_post_request(req, handler, data_update, payload, user_id, ip, generator);
 
     } else if (method == http::method::HEAD) {
-      boost::tie(request_name, bytes_written) =
+      std::tie(request_name, bytes_written) =
           process_head_request(req, handler, selection, ip);
 
     } else if (method == http::method::OPTIONS) {
-      boost::tie(request_name, bytes_written) =
+      std::tie(request_name, bytes_written) =
         process_options_request(req, handler);
 
     } else {

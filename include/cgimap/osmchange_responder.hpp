@@ -23,7 +23,7 @@ public:
   // timestamp, then wraps them in <create>/<modify>/<delete> to create an
   // approximation of a diff. the reliance on timestamp means it's entirely
   // likely that some documents may be poorly formed.
-  void write(boost::shared_ptr<output_formatter> f,
+  void write(std::shared_ptr<output_formatter> f,
              const std::string &generator,
              const boost::posix_time::ptime &now);
 

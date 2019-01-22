@@ -1,6 +1,8 @@
 #include <yajl/yajl_gen.h>
+#include <memory>
 #include <stdio.h>
 #include <string.h>
+#include <utility>
 
 #include "cgimap/json_writer.hpp"
 #include "cgimap/config.hpp"
@@ -32,8 +34,8 @@ static void wrap_write(void *context, const char *str, unsigned int len) {
   }
 }
 
-json_writer::json_writer(boost::shared_ptr<output_buffer> &out, bool indent)
-    : pimpl(new pimpl_()), out(out) {
+json_writer::json_writer(std::shared_ptr<output_buffer> &out, bool indent)
+    : pimpl{make_unique<pimpl_>()}, out(out) {
 #ifdef HAVE_YAJL2
   pimpl->gen = yajl_gen_alloc(NULL);
 
@@ -70,7 +72,6 @@ json_writer::json_writer(boost::shared_ptr<output_buffer> &out, bool indent)
 json_writer::~json_writer() throw() {
   yajl_gen_clear(pimpl->gen);
   yajl_gen_free(pimpl->gen);
-  delete pimpl;
 
   if (out != nullptr) {
       try {

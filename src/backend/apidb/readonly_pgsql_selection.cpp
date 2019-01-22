@@ -6,14 +6,10 @@
 #include "cgimap/backend/apidb/quad_tile.hpp"
 #include "cgimap/infix_ostream_iterator.hpp"
 
+#include <functional>
 #include <sstream>
 #include <list>
 #include <vector>
-#include <boost/make_shared.hpp>
-#include <boost/ref.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/bind.hpp>
-#include <boost/foreach.hpp>
 
 #if PQXX_VERSION_MAJOR >= 4
 #define PREPARE_ARGS(args)
@@ -27,7 +23,7 @@ using std::set;
 using std::stringstream;
 using std::list;
 using std::vector;
-using boost::shared_ptr;
+using std::shared_ptr;
 
 // number of nodes to chunk together
 #define STRIDE (1000)
@@ -555,8 +551,8 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
       m_cache_errorhandler(m_cache_connection),
 #endif
       m_cache_tx(m_cache_connection, "changeset_cache"),
-      m_cache(boost::bind(fetch_changeset, boost::ref(m_cache_tx), _1),
-              boost::bind(fetch_changesets, boost::ref(m_cache_tx), _1),
+      m_cache(std::bind(fetch_changeset, std::ref(m_cache_tx), std::placeholders::_1),
+              std::bind(fetch_changesets, std::ref(m_cache_tx), std::placeholders::_1),
               opts["cachesize"].as<size_t>()) {
 
   if (m_connection.server_version() < 90300) {
@@ -907,8 +903,8 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
 
 readonly_pgsql_selection::factory::~factory() {}
 
-boost::shared_ptr<data_selection>
+std::shared_ptr<data_selection>
 readonly_pgsql_selection::factory::make_selection() {
-  return boost::make_shared<readonly_pgsql_selection>(boost::ref(m_connection),
-                                                      boost::ref(m_cache));
+  return std::make_shared<readonly_pgsql_selection>(std::ref(m_connection),
+						    std::ref(m_cache));
 }

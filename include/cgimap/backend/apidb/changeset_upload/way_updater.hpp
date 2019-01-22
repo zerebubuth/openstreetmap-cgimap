@@ -9,6 +9,7 @@
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
 
+#include <memory>
 #include <set>
 
 /*  Way operations

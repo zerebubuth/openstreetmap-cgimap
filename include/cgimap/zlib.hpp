@@ -9,8 +9,7 @@
 
 const unsigned int ZLIB_COMPLETE_CHUNK = 16384;
 
-#include <boost/shared_ptr.hpp>
-
+#include <memory>
 #include <zlib.h>
 #include "cgimap/output_buffer.hpp"
 
@@ -27,7 +26,7 @@ public:
   /**
    * Methods.
    */
-  zlib_output_buffer(boost::shared_ptr<output_buffer> o, mode m);
+  zlib_output_buffer(std::shared_ptr<output_buffer> o, mode m);
   zlib_output_buffer(const zlib_output_buffer &old);
   virtual ~zlib_output_buffer(void);
   virtual int write(const char *buffer, int len);
@@ -38,7 +37,7 @@ public:
 private:
   void flush_output(void);
 
-  boost::shared_ptr<output_buffer> out;
+  std::shared_ptr<output_buffer> out;
   // keep track of bytes written because the z_stream struct doesn't seem to
   // update unless its flushed.
   size_t bytes_in;

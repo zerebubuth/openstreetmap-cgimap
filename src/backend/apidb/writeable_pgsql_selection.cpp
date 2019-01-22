@@ -6,16 +6,14 @@
 #include "cgimap/infix_ostream_iterator.hpp"
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
 #include "cgimap/backend/apidb/utils.hpp"
+
+#include <functional>
 #include <set>
 #include <sstream>
 #include <list>
 #include <vector>
+
 #include <boost/lexical_cast.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/ref.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/bind.hpp>
-#include <boost/foreach.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
 #if PQXX_VERSION_MAJOR >= 4
@@ -29,7 +27,7 @@ namespace pt = boost::posix_time;
 using std::set;
 using std::list;
 using std::vector;
-using boost::shared_ptr;
+using std::shared_ptr;
 
 namespace {
 std::string connect_db_str(const po::variables_map &options) {
@@ -256,7 +254,7 @@ int writeable_pgsql_selection::select_historical_nodes(
   m_historic_tables_empty = false;
 
   size_t selected = 0;
-  BOOST_FOREACH(osm_edition_t ed, eds) {
+  for (osm_edition_t ed : eds) {
     selected += w.prepared("add_historic_node")
       (ed.first)(ed.second)(m_redactions_visible)
       .exec().affected_rows();
@@ -271,7 +269,7 @@ int writeable_pgsql_selection::select_historical_ways(
   m_historic_tables_empty = false;
 
   size_t selected = 0;
-  BOOST_FOREACH(osm_edition_t ed, eds) {
+  for (osm_edition_t ed : eds) {
     selected += w.prepared("add_historic_way")
       (ed.first)(ed.second)(m_redactions_visible)
       .exec().affected_rows();
@@ -286,7 +284,7 @@ int writeable_pgsql_selection::select_historical_relations(
   m_historic_tables_empty = false;
 
   size_t selected = 0;
-  BOOST_FOREACH(osm_edition_t ed, eds) {
+  for (osm_edition_t ed : eds) {
     selected += w.prepared("add_historic_relation")
       (ed.first)(ed.second)(m_redactions_visible)
       .exec().affected_rows();
@@ -300,7 +298,7 @@ int writeable_pgsql_selection::select_nodes_with_history(
   const std::vector<osm_nwr_id_t> &ids) {
   m_historic_tables_empty = false;
   size_t selected = 0;
-  BOOST_FOREACH(osm_nwr_id_t id, ids) {
+  for (osm_nwr_id_t id : ids) {
     selected += w.prepared("add_all_versions_of_node")
       (id)(m_redactions_visible)
       .exec().affected_rows();
@@ -314,7 +312,7 @@ int writeable_pgsql_selection::select_ways_with_history(
   const std::vector<osm_nwr_id_t> &ids) {
   m_historic_tables_empty = false;
   size_t selected = 0;
-  BOOST_FOREACH(osm_nwr_id_t id, ids) {
+  for (osm_nwr_id_t id : ids) {
     selected += w.prepared("add_all_versions_of_way")
       (id)(m_redactions_visible)
       .exec().affected_rows();
@@ -328,7 +326,7 @@ int writeable_pgsql_selection::select_relations_with_history(
   const std::vector<osm_nwr_id_t> &ids) {
   m_historic_tables_empty = false;
   size_t selected = 0;
-  BOOST_FOREACH(osm_nwr_id_t id, ids) {
+  for (osm_nwr_id_t id : ids) {
     selected += w.prepared("add_all_versions_of_relation")
       (id)(m_redactions_visible)
       .exec().affected_rows();
@@ -449,8 +447,8 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       m_cache_errorhandler(m_cache_connection),
 #endif
       m_cache_tx(m_cache_connection, "changeset_cache"),
-      m_cache(boost::bind(fetch_changeset, boost::ref(m_cache_tx), _1),
-              boost::bind(fetch_changesets, boost::ref(m_cache_tx), _1),
+      m_cache(std::bind(fetch_changeset, std::ref(m_cache_tx), std::placeholders::_1),
+              std::bind(fetch_changesets, std::ref(m_cache_tx), std::placeholders::_1),
               get_or_convert_cachesize(opts)) {
 
   check_postgres_version(m_connection);
@@ -873,8 +871,8 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
 
 writeable_pgsql_selection::factory::~factory() {}
 
-boost::shared_ptr<data_selection>
+std::shared_ptr<data_selection>
 writeable_pgsql_selection::factory::make_selection() {
-  return boost::make_shared<writeable_pgsql_selection>(boost::ref(m_connection),
-                                                       boost::ref(m_cache));
+  return std::make_shared<writeable_pgsql_selection>(std::ref(m_connection),
+						     std::ref(m_cache));
 }

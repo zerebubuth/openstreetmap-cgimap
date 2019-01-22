@@ -3,7 +3,7 @@
 #include "cgimap/logger.hpp"
 #include "cgimap/output_buffer.hpp"
 #include "cgimap/request_helpers.hpp"
-#include <boost/foreach.hpp>
+
 #include <array>
 #include <iostream>
 #include <stdexcept>
@@ -55,7 +55,7 @@ fcgi_request::fcgi_request(int socket, const boost::posix_time::ptime &now) : m_
     throw runtime_error("Couldn't initialise FCGX request structure.");
   }
   m_impl->now = now;
-  m_buffer = boost::shared_ptr<output_buffer>(new fcgi_buffer(m_impl->req));
+  m_buffer = std::shared_ptr<output_buffer>(new fcgi_buffer(m_impl->req));
 }
 
 fcgi_request::~fcgi_request() { FCGX_Free(&m_impl->req, true); }
@@ -123,7 +123,7 @@ void fcgi_request::write_header_info(int status,
                                      const request::headers_t &headers) {
   std::ostringstream ostr;
   ostr << "Status: " << status << " " << status_message(status) << "\r\n";
-  BOOST_FOREACH(const request::headers_t::value_type &header, headers) {
+  for (const request::headers_t::value_type &header : headers) {
     ostr << header.first << ": " << header.second << "\r\n";
   }
   ostr << "\r\n";
@@ -131,7 +131,7 @@ void fcgi_request::write_header_info(int status,
   m_buffer->write(&data[0], data.size());
 }
 
-boost::shared_ptr<output_buffer> fcgi_request::get_buffer_internal() {
+std::shared_ptr<output_buffer> fcgi_request::get_buffer_internal() {
   return m_buffer;
 }
 
@@ -168,7 +168,7 @@ int fcgi_request::accept_r() {
 
   // swap out the output buffer for a new one referencing the new
   // request.
-  boost::shared_ptr<output_buffer> new_buffer(new fcgi_buffer(m_impl->req));
+  std::shared_ptr<output_buffer> new_buffer(new fcgi_buffer(m_impl->req));
   m_buffer.swap(new_buffer);
 
   return status;

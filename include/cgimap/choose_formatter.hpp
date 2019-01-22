@@ -7,7 +7,6 @@
 #include "cgimap/request.hpp"
 
 #include <memory>
-#include <boost/shared_ptr.hpp>
 
 /**
  * chooses and returns the best available mime type for a given request and
@@ -19,8 +18,8 @@ mime::type choose_best_mime_type(request &req, responder_ptr_t hptr);
  * creates and initialises an output formatter which matches the MIME type
  * passed in as an argument.
  */
-boost::shared_ptr<output_formatter>
+std::shared_ptr<output_formatter>
 create_formatter(request &req, mime::type best_type,
-                 boost::shared_ptr<output_buffer>);
+                 std::shared_ptr<output_buffer>);
 
 #endif /* CHOOSE_FORMATTER_HPP */

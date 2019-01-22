@@ -1,11 +1,11 @@
 #ifndef HTTP_HPP
 #define HTTP_HPP
 
+#include <memory>
 #include <string>
 #include <vector>
 #include <bitset>
 #include <stdexcept>
-#include <boost/shared_ptr.hpp>
 #include <boost/optional.hpp>
 #include <ostream>
 #include "cgimap/config.hpp"
@@ -209,8 +209,8 @@ public:
   encoding(const std::string &name) : name_(name){};
   virtual ~encoding(void){};
   const std::string &name(void) const { return name_; };
-  virtual boost::shared_ptr<output_buffer>
-  buffer(boost::shared_ptr<output_buffer> out) {
+  virtual std::shared_ptr<output_buffer>
+  buffer(std::shared_ptr<output_buffer> out) {
     return out;
   }
 };
@@ -224,9 +224,9 @@ public:
 class deflate : public encoding {
 public:
   deflate(void) : encoding("deflate"){};
-  virtual boost::shared_ptr<output_buffer>
-  buffer(boost::shared_ptr<output_buffer> out) {
-    return boost::shared_ptr<zlib_output_buffer>(
+  virtual std::shared_ptr<output_buffer>
+  buffer(std::shared_ptr<output_buffer> out) {
+    return std::shared_ptr<zlib_output_buffer>(
         new zlib_output_buffer(out, zlib_output_buffer::zlib));
   }
 };
@@ -234,9 +234,9 @@ public:
 class gzip : public encoding {
 public:
   gzip(void) : encoding("gzip"){};
-  virtual boost::shared_ptr<output_buffer>
-  buffer(boost::shared_ptr<output_buffer> out) {
-    return boost::shared_ptr<zlib_output_buffer>(
+  virtual std::shared_ptr<output_buffer>
+  buffer(std::shared_ptr<output_buffer> out) {
+    return std::shared_ptr<zlib_output_buffer>(
         new zlib_output_buffer(out, zlib_output_buffer::gzip));
   }
 };
@@ -246,10 +246,10 @@ public:
  * Parses an Accept-Encoding header and returns the chosen
  * encoding.
  */
-boost::shared_ptr<http::encoding>
+std::shared_ptr<http::encoding>
 choose_encoding(const std::string &accept_encoding);
 
-boost::shared_ptr<ZLibBaseDecompressor>
+std::shared_ptr<ZLibBaseDecompressor>
 get_content_encoding_handler(const std::string &content_encoding);
 
 enum class method : uint8_t {

@@ -1,7 +1,6 @@
 #include "cgimap/config.hpp"
 #include "cgimap/http.hpp"
 #include <vector>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
@@ -14,7 +13,7 @@ namespace al = boost::algorithm;
 using std::string;
 using std::vector;
 using std::pair;
-using boost::shared_ptr;
+using std::shared_ptr;
 
 namespace {
 /**
@@ -116,7 +115,7 @@ string urlencode(const string &s) {
                               '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
   std::ostringstream ostr;
 
-  BOOST_FOREACH(char c, s) {
+  for (char c : s) {
     if (((c >= 'a') && (c <= 'z')) ||
         ((c >= 'A') && (c <= 'Z')) ||
         ((c >= '0') && (c <= '9')) ||
@@ -143,7 +142,7 @@ vector<pair<string, string> > parse_params(const string &p) {
     vector<string> temp;
     al::split(temp, p, al::is_any_of("&"));
 
-    BOOST_FOREACH(const string &kvPair, temp) {
+    for (const string &kvPair : temp) {
       vector<string> kvTemp;
       al::split(kvTemp, kvPair, al::is_any_of("="));
 
@@ -167,7 +166,7 @@ shared_ptr<encoding> choose_encoding(const string &accept_encoding) {
   float deflate_quality = 0.000;
   float gzip_quality = 0.000;
 
-  BOOST_FOREACH(const string &encoding, encodings) {
+  for (const string &encoding : encodings) {
     boost::smatch what;
     string name;
     float quality;

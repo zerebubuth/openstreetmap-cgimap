@@ -43,16 +43,15 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/optional.hpp>
 
-using std::auto_ptr;
 using std::list;
 using std::string;
 using std::pair;
-using boost::shared_ptr;
-using boost::scoped_ptr;
+using std::shared_ptr;
+using std::unique_ptr;
 using boost::optional;
 using boost::fusion::make_cons;
 using boost::fusion::invoke;
-using boost::ref;
+
 namespace al = boost::algorithm;
 
 /**
@@ -68,7 +67,7 @@ struct router {
                            handler_ptr_t &) = 0;
   };
 
-  typedef boost::shared_ptr<rule_base> rule_ptr;
+  typedef std::shared_ptr<rule_base> rule_ptr;
 
   // concrete rule match / constructor class
   template <typename rule_t, typename func_t> struct rule : public rule_base {
@@ -90,7 +89,7 @@ struct router {
         if(begin!=parts.end())
           throw match::error();
         ptr.reset(
-            invoke(func, make_cons(ref(params), sequence)));
+            invoke(func, make_cons(std::ref(params), sequence)));
         return true;
       } catch (const match::error &e) {
         return false;
@@ -218,7 +217,7 @@ namespace {
 }
 
 handler_ptr_t route_resource(request &req, const string &path,
-                             const scoped_ptr<router> &r) {
+                             const unique_ptr<router> &r) {
   // strip off the format-spec, if there is one
   pair<string, mime::type> resource = resource_mime_type(path);
 

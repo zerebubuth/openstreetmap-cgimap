@@ -22,7 +22,7 @@
 using std::stringstream;
 using std::vector;
 using std::list;
-using boost::shared_ptr;
+using std::shared_ptr;
 namespace pt = boost::posix_time;
 
 namespace api06 {

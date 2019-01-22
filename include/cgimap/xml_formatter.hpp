@@ -3,7 +3,6 @@
 
 #include "cgimap/output_formatter.hpp"
 #include "cgimap/xml_writer.hpp"
-#include <boost/scoped_ptr.hpp>
 
 /**
  * Outputs an XML-formatted document, i.e: the OSM document type we all know
@@ -11,7 +10,7 @@
  */
 class xml_formatter : public output_formatter {
 private:
-  boost::shared_ptr<xml_writer> writer;
+  std::shared_ptr<xml_writer> writer;
 
   void write_tags(const tags_t &tags);
   void write_common(const element_info &elem);

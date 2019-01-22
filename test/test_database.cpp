@@ -91,7 +91,7 @@ void test_database::setup() {
   pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
   setup_schema(conn);
 
-  boost::shared_ptr<backend> apidb = make_apidb_backend();
+  std::shared_ptr<backend> apidb = make_apidb_backend();
 
   {
     po::options_description desc = apidb->options();
@@ -166,7 +166,7 @@ std::string test_database::random_db_name() {
 }
 
 void test_database::run(
-    boost::function<void(test_database&)> func) {
+    std::function<void(test_database&)> func) {
   try {
     // clear out database before using it!
     pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
@@ -195,7 +195,7 @@ void test_database::run(
 }
 
 void test_database::run_update(
-    boost::function<void(test_database&)> func) {
+    std::function<void(test_database&)> func) {
   try {
     // clear out database before using it!
     pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
@@ -211,7 +211,7 @@ void test_database::run_update(
 }
 
 
-boost::shared_ptr<data_selection::factory> test_database::get_data_selection_factory() {
+std::shared_ptr<data_selection::factory> test_database::get_data_selection_factory() {
   if (m_use_readonly) {
     return m_readonly_factory;
 
@@ -221,12 +221,12 @@ boost::shared_ptr<data_selection::factory> test_database::get_data_selection_fac
 }
 
 // return a data update factory pointing at the current database
-boost::shared_ptr<data_update::factory> test_database:: get_data_update_factory() {
+std::shared_ptr<data_update::factory> test_database:: get_data_update_factory() {
   return m_update_factory;
 }
 
 
-boost::shared_ptr<data_selection> test_database::get_data_selection() {
+std::shared_ptr<data_selection> test_database::get_data_selection() {
   if (m_use_readonly) {
     return (*m_readonly_factory).make_selection();
 
@@ -235,11 +235,11 @@ boost::shared_ptr<data_selection> test_database::get_data_selection() {
   }
 }
 
-boost::shared_ptr<data_update> test_database::get_data_update() {
+std::shared_ptr<data_update> test_database::get_data_update() {
   return (*m_update_factory).make_data_update();
 }
 
-boost::shared_ptr<oauth::store> test_database::get_oauth_store() {
+std::shared_ptr<oauth::store> test_database::get_oauth_store() {
   if (!m_oauth_store) {
     throw std::runtime_error("OAuth store not available.");
   }

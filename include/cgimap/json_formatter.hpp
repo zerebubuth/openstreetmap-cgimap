@@ -3,7 +3,6 @@
 
 #include "cgimap/output_formatter.hpp"
 #include "cgimap/json_writer.hpp"
-#include <boost/scoped_ptr.hpp>
 
 /**
  * Outputs a JSON-formatted document, which might be useful for javascript
@@ -11,7 +10,7 @@
  */
 class json_formatter : public output_formatter {
 private:
-  boost::scoped_ptr<json_writer> writer;
+  std::unique_ptr<json_writer> writer;
   bool is_in_elements_array;
 
   void write_tags(const tags_t &tags);

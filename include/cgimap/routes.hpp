@@ -3,8 +3,6 @@
 
 #include "cgimap/handler.hpp"
 #include "cgimap/request.hpp"
-#include <boost/scoped_ptr.hpp>
-#include <boost/noncopyable.hpp>
 #include "cgimap/config.hpp"
 
 // internal implementation of the routes
@@ -14,10 +12,15 @@ struct router;
  * encapsulates routing (URL to handler mapping) information, similar in
  * intent, if not form, to rails' routes.rb.
  */
-class routes : public boost::noncopyable {
+class routes {
 public:
   routes();
   ~routes();
+
+  routes(const routes &) = delete;
+  routes& operator=(const routes &) = delete;
+  routes(routes &&) = default;
+  routes& operator=(routes &&) = default;
 
   /**
          * returns the handler which matches a request, or throws a 404 error.
@@ -29,14 +32,14 @@ private:
   std::string common_prefix;
 
   // object which actually does the routing.
-  boost::scoped_ptr<router> r;
+  std::unique_ptr<router> r;
 
 #ifdef ENABLE_API07
   // common prefix of API 0.7 routes.
   std::string experimental_prefix;
 
   // and an API 0.7 router object
-  boost::scoped_ptr<router> r_experimental;
+  std::unique_ptr<router> r_experimental;
 #endif /* ENABLE_API07 */
 };
 
