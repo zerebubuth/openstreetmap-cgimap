@@ -1,9 +1,10 @@
 #include "cgimap/osm_diffresult_responder.hpp"
 #include "cgimap/config.hpp"
 
+#include <chrono>
+
 using std::list;
 using std::shared_ptr;
-namespace pt = boost::posix_time;
 
 element_type as_elem_type(object_type o) {
 
@@ -25,7 +26,7 @@ osm_diffresult_responder::~osm_diffresult_responder() {}
 
 void osm_diffresult_responder::write(shared_ptr<output_formatter> formatter,
                                      const std::string &generator,
-                                     const pt::ptime &now) {
+                                     const std::chrono::system_clock::time_point &now) {
 
   // TODO: is it possible that formatter can be null?
   output_formatter &fmt = *formatter;

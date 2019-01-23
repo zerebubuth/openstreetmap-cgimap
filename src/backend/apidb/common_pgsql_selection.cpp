@@ -1,7 +1,8 @@
 #include "cgimap/backend/apidb/common_pgsql_selection.hpp"
 #include "cgimap/backend/apidb/apidb.hpp"
 
-namespace pt = boost::posix_time;
+#include <chrono>
+
 using std::shared_ptr;
 
 namespace {
@@ -240,7 +241,7 @@ void extract_relations(
 
 void extract_changesets(
   const pqxx::result &rows, output_formatter &formatter,
-  cache<osm_changeset_id_t, changeset> &cc, const pt::ptime &now,
+  cache<osm_changeset_id_t, changeset> &cc, const std::chrono::system_clock::time_point &now,
   bool include_changeset_discussions) {
 
   changeset_info elem;

@@ -2,8 +2,6 @@
 #include "cgimap/request_helpers.hpp"
 
 
-namespace bt = boost::posix_time;
-
 test_output_buffer::test_output_buffer(std::ostream &out)
   : m_out(out), m_written(0) {
 }
@@ -58,11 +56,11 @@ std::stringstream &test_request::buffer() {
   return m_output;
 }
 
-bt::ptime test_request::get_current_time() const {
+std::chrono::system_clock::time_point test_request::get_current_time() const {
   return m_now;
 }
 
-void test_request::set_current_time(const bt::ptime &now) {
+void test_request::set_current_time(const std::chrono::system_clock::time_point &now) {
   m_now = now;
 }
 

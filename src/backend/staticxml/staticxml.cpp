@@ -5,14 +5,12 @@
 
 #include <libxml/parser.h>
 
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <sstream>
 #include <unordered_set>
 
 namespace po = boost::program_options;
-namespace pt = boost::posix_time;
 using std::shared_ptr;
 using std::string;
 using api06::id_version;
@@ -348,7 +346,7 @@ struct static_data_selection : public data_selection {
   }
 
   virtual void write_changesets(output_formatter &formatter,
-                                const pt::ptime &now) {
+                                const std::chrono::system_clock::time_point &now) {
     for (osm_changeset_id_t id : m_changesets) {
       std::map<osm_changeset_id_t, changeset>::iterator itr = m_db->m_changesets.find(id);
       if (itr != m_db->m_changesets.end()) {

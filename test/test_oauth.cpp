@@ -56,7 +56,7 @@ struct test_request : public request {
 
   void dispose();
 
-  boost::posix_time::ptime get_current_time() const;
+  std::chrono::system_clock::time_point get_current_time() const;
 
 protected:
   void write_header_info(int status, const headers_t &headers);
@@ -66,7 +66,7 @@ protected:
 
 private:
   std::string method, scheme, authority, port, path, get_params;
-  boost::posix_time::ptime timestamp;
+  std::chrono::system_clock::time_point timestamp;
   boost::optional<std::string> auth_header;
 };
 
@@ -81,7 +81,7 @@ test_request::test_request(const std::string &method_,
   : method(method_), scheme(scheme_), authority(authority_), port(port_),
     path(path_), get_params(get_params_), auth_header(auth_header_) {
   if (bool(timestamp_)) {
-    timestamp = boost::posix_time::from_time_t(*timestamp_);
+    timestamp = std::chrono::system_clock::from_time_t(*timestamp_);
   }
 }
 
@@ -129,7 +129,7 @@ void test_request::finish_internal() {
   throw std::runtime_error("test_request::finish_internal unimplemented.");
 }
 
-boost::posix_time::ptime test_request::get_current_time() const {
+std::chrono::system_clock::time_point test_request::get_current_time() const {
   return timestamp;
 }
 

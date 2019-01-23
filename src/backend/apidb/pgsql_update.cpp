@@ -26,7 +26,6 @@
 #endif
 
 namespace po = boost::program_options;
-namespace pt = boost::posix_time;
 using std::set;
 using std::list;
 using std::vector;

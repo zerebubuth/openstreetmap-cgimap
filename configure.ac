@@ -34,7 +34,6 @@ AC_SUBST(LIBPQXX_LIBS)
 #m4_include([aclocal/ax_boost_regex.m4])
 #m4_include([aclocal/ax_boost_system.m4])
 #m4_include([aclocal/ax_boost_program_options.m4])
-#m4_include([aclocal/ax_boost_date_time.m4])
 #m4_include([aclocal/ax_check_zlib.m4])
 
 PKG_CHECK_MODULES(LIBMEMCACHED, libmemcached >= 0.31)
@@ -45,7 +44,6 @@ AX_BOOST_BASE([1.43], , [AC_MSG_ERROR([Boost libraries are required for building
 AX_BOOST_REGEX
 AX_BOOST_SYSTEM
 AX_BOOST_PROGRAM_OPTIONS
-AX_BOOST_DATE_TIME
 AX_BOOST_FILESYSTEM
 AX_BOOST_LOCALE
 
@@ -58,8 +56,7 @@ AS_IF([test "x$BOOST_SYSTEM_LIB" == "x"],
       [AC_MSG_ERROR([Boost::System library not detected, please install libboost-system-dev.])],)
 AS_IF([test "x$BOOST_PROGRAM_OPTIONS_LIB" == "x"],
       [AC_MSG_ERROR([Boost::ProgramOptions library not detected, please install libboost-program-options-dev.])],)
-AS_IF([test "x$BOOST_DATE_TIME_LIB" == "x"],
-      [AC_MSG_ERROR([Boost::DateTime library not detected, please install libboost-date-time-dev.])],)
+
 ## travis-ci doesn't have a boost with locale yet (grumble,
 ## grumble), so put up with not having this lib available.
 #

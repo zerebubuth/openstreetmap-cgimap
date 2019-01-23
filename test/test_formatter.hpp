@@ -54,13 +54,13 @@ struct test_formatter : public output_formatter {
     tags_t m_tags;
     bool m_include_comments;
     comments_t m_comments;
-    boost::posix_time::ptime m_time;
+    std::chrono::system_clock::time_point m_time;
 
     changeset_t(const changeset_info &info,
                 const tags_t &tags,
                 bool include_comments,
                 const comments_t &comments,
-                const boost::posix_time::ptime &time);
+                const std::chrono::system_clock::time_point &time);
 
     inline bool operator!=(const changeset_t &other) const {
       return !operator==(other);
@@ -91,7 +91,7 @@ struct test_formatter : public output_formatter {
                       const members_t &members, const tags_t &tags);
   void write_changeset(const changeset_info &elem, const tags_t &tags,
                        bool include_comments, const comments_t &comments,
-                       const boost::posix_time::ptime &time);
+                       const std::chrono::system_clock::time_point &time);
 
   void write_diffresult_create_modify(const element_type elem,
                                               const osm_nwr_signed_id_t old_id,

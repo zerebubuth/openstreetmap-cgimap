@@ -3,7 +3,6 @@
 
 using std::list;
 using std::shared_ptr;
-namespace pt = boost::posix_time;
 
 osm_current_responder::osm_current_responder(mime::type mt, data_selection_ptr &s,
                                              boost::optional<bbox> b)
@@ -13,7 +12,7 @@ osm_current_responder::~osm_current_responder() {}
 
 void osm_current_responder::write(shared_ptr<output_formatter> formatter,
                                   const std::string &generator,
-                                  const pt::ptime &now) {
+                                  const std::chrono::system_clock::time_point &now) {
   // TODO: is it possible that formatter can be null?
   output_formatter &fmt = *formatter;
 

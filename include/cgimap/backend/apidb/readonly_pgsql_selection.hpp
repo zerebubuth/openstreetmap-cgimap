@@ -6,6 +6,7 @@
 #include "cgimap/backend/apidb/cache.hpp"
 #include <pqxx/pqxx>
 #include <boost/program_options.hpp>
+#include <chrono>
 #include <memory>
 #include <set>
 
@@ -25,7 +26,7 @@ public:
   void write_nodes(output_formatter &formatter);
   void write_ways(output_formatter &formatter);
   void write_relations(output_formatter &formatter);
-  void write_changesets(output_formatter &formatter, const boost::posix_time::ptime &now);
+  void write_changesets(output_formatter &formatter, const std::chrono::system_clock::time_point &now);
 
   visibility_t check_node_visibility(osm_nwr_id_t id);
   visibility_t check_way_visibility(osm_nwr_id_t id);

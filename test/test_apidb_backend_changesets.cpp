@@ -101,7 +101,7 @@ void test_changeset(test_database &tdb) {
   int num = sel->select_changesets(ids);
   assert_equal<int>(num, 1, "should have selected one changeset.");
 
-  boost::posix_time::ptime t = parse_time("2015-09-05T17:15:33Z");
+  std::chrono::system_clock::time_point t = parse_time("2015-09-05T17:15:33Z");
 
   test_formatter f;
   sel->write_changesets(f, t);
@@ -148,7 +148,7 @@ void test_nonpublic_changeset(test_database &tdb) {
   int num = sel->select_changesets(ids);
   assert_equal<int>(num, 1, "should have selected one changeset.");
 
-  boost::posix_time::ptime t = parse_time("2015-09-05T20:13:23Z");
+  std::chrono::system_clock::time_point t = parse_time("2015-09-05T20:13:23Z");
 
   test_formatter f;
   sel->write_changesets(f, t);
@@ -200,7 +200,7 @@ void test_changeset_with_tags(test_database &tdb) {
   int num = sel->select_changesets(ids);
   assert_equal<int>(num, 1, "should have selected one changeset.");
 
-  boost::posix_time::ptime t = parse_time("2015-09-05T20:33:00Z");
+  std::chrono::system_clock::time_point t = parse_time("2015-09-05T20:33:00Z");
 
   test_formatter f;
   sel->write_changesets(f, t);
@@ -246,7 +246,7 @@ void check_changeset_with_comments_impl(
     sel->select_changeset_discussions();
   }
 
-  boost::posix_time::ptime t = parse_time("2015-09-05T20:38:00Z");
+  std::chrono::system_clock::time_point t = parse_time("2015-09-05T20:38:00Z");
 
   test_formatter f;
   sel->write_changesets(f, t);

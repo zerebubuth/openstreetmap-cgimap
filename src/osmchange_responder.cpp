@@ -1,9 +1,10 @@
 #include "cgimap/config.hpp"
 #include "cgimap/osmchange_responder.hpp"
 
+#include <chrono>
+
 using std::list;
 using std::shared_ptr;
-namespace pt = boost::posix_time;
 
 namespace {
 
@@ -129,7 +130,7 @@ struct sorting_formatter
     const tags_t &tags,
     bool include_comments,
     const comments_t &comments,
-    const boost::posix_time::ptime &now) {
+    const std::chrono::system_clock::time_point &now) {
 
     throw std::runtime_error("sorting_formatter::write_changeset unimplemented");
   }
@@ -226,7 +227,7 @@ list<mime::type> osmchange_responder::types_available() const {
 
 void osmchange_responder::write(
   shared_ptr<output_formatter> formatter,
-  const std::string &generator, const pt::ptime &now) {
+  const std::string &generator, const std::chrono::system_clock::time_point &now) {
 
   // TODO: is it possible that formatter can be null?
   output_formatter &fmt = *formatter;

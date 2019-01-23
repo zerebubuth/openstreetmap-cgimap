@@ -7,6 +7,7 @@
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
 #include "cgimap/backend/apidb/utils.hpp"
 
+#include <chrono>
 #include <functional>
 #include <set>
 #include <sstream>
@@ -23,7 +24,6 @@
 #endif
 
 namespace po = boost::program_options;
-namespace pt = boost::posix_time;
 using std::set;
 using std::list;
 using std::vector;
@@ -143,7 +143,7 @@ void writeable_pgsql_selection::write_relations(output_formatter &formatter) {
 }
 
 void writeable_pgsql_selection::write_changesets(output_formatter &formatter,
-                                                 const pt::ptime &now) {
+                                                 const std::chrono::system_clock::time_point &now) {
   pqxx::result changesets = w.prepared("extract_changesets").exec();
   extract_changesets(changesets, formatter, cc, now, include_changeset_discussions);
 }

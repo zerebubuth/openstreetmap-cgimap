@@ -2,6 +2,8 @@
 #include "test_database.hpp"
 
 #include <fstream>
+#include <time.h>
+#include <sys/time.h>
 
 #include <boost/filesystem.hpp>
 

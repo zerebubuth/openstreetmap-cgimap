@@ -42,7 +42,7 @@ public:
                        const tags_t &tags,
                        bool include_comments,
                        const comments_t &comments,
-                       const boost::posix_time::ptime &now);
+                       const std::chrono::system_clock::time_point &now);
 
   void write_diffresult_create_modify(const element_type elem,
                                       const osm_nwr_signed_id_t old_id,
