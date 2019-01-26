@@ -53,7 +53,7 @@ changeset_handler::changeset_handler(request &req, osm_changeset_id_t id_)
 
   string decoded = http::urldecode(get_query_string(req));
   const vector<pair<string, string> > params = http::parse_params(decoded);
-  vector<pair<string, string> >::const_iterator itr =
+  auto itr =
     std::find_if(params.begin(), params.end(), discussion_header_finder());
 
   include_discussion = (itr != params.end());

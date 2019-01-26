@@ -156,7 +156,7 @@ std::string test_database::random_db_name() {
 
   // try to make something that has a reasonable chance of being
   // unique on this machine, in case we clash with anything else.
-  unsigned int hash = (unsigned int)getpid();
+  auto hash = (unsigned int)getpid();
   struct timeval tv;
   gettimeofday(&tv, NULL);
   hash ^= (unsigned int)((tv.tv_usec & 0xffffu) << 16);

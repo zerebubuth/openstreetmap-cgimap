@@ -79,8 +79,8 @@ osm_changeset_id_t id_of<osm_changeset_id_t>(const pqxx::tuple &row) {
 
 template <>
 osm_edition_t id_of<osm_edition_t>(const pqxx::tuple &row) {
-  osm_nwr_id_t id = row["id"].as<osm_nwr_id_t>();
-  osm_version_t ver = row["version"].as<osm_version_t>();
+  auto id = row["id"].as<osm_nwr_id_t>();
+  auto ver = row["version"].as<osm_version_t>();
   return osm_edition_t(id, ver);
 }
 

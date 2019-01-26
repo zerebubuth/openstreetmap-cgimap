@@ -20,7 +20,7 @@ struct json_writer::pimpl_ {
 };
 
 static void wrap_write(void *context, const char *str, unsigned int len) {
-  output_buffer *out = static_cast<output_buffer *>(context);
+  auto *out = static_cast<output_buffer *>(context);
   if (out == 0) {
     throw output_writer::write_error(
         "Output buffer was NULL in json_writer wrap_write().");

@@ -415,21 +415,21 @@ size_t get_or_convert_cachesize(const po::variables_map &opts) {
   const boost::any &val = opts["cachesize"].value();
 
   {
-    const size_t *v = boost::any_cast<size_t>(&val);
+    const auto *v = boost::any_cast<size_t>(&val);
     if (v) {
       return *v;
     }
   }
 
   {
-    const int *v = boost::any_cast<int>(&val);
+    const auto *v = boost::any_cast<int>(&val);
     if (v) {
       return *v;
     }
   }
 
   {
-    const std::string *v = boost::any_cast<std::string>(&val);
+    const auto *v = boost::any_cast<std::string>(&val);
     if (v) {
       return boost::lexical_cast<size_t>(*v);
     }

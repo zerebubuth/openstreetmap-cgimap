@@ -126,7 +126,7 @@ string urlencode(const string &s) {
       ostr << c;
 
     } else {
-      unsigned char idx = (unsigned char)(c);
+      auto idx = (unsigned char)(c);
       ostr << "%" << hex[idx >> 4] << hex[idx & 0xf];
     }
   }

@@ -6,9 +6,8 @@ responder::~responder() = default;
 
 bool responder::is_available(mime::type mt) const {
   std::list<mime::type> types = types_available();
-  for (std::list<mime::type>::iterator itr = types.begin(); itr != types.end();
-       ++itr) {
-    if (*itr == mt) {
+  for (auto & itr : types) {
+    if (itr == mt) {
       return true;
     }
   }

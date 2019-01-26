@@ -84,7 +84,7 @@ struct router {
     bool invoke_if(const list<string> &parts, request &params,
                    handler_ptr_t &ptr) {
       try {
-        list<string>::const_iterator begin = parts.begin();
+        auto begin = parts.begin();
         auto sequence = r.match(begin, parts.end());
         if(begin!=parts.end())
           throw match::error();
@@ -120,9 +120,7 @@ struct router {
     // it probably isn't necessary to have any more sophisticated data structure
     // than a list at this point. also means the semantics for rule matching are
     // pretty clear - the first match wins.
-    for (list<rule_ptr>::iterator itr = rules.begin(); itr != rules.end();
-         ++itr) {
-      rule_ptr rptr = *itr;
+    for (auto rptr : rules) {
       if (rptr->invoke_if(p, params, hptr)) {
         break;
       }

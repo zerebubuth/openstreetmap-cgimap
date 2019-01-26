@@ -72,7 +72,7 @@ bool is_bbox(const pair<string, string> &p) {
 bbox map_handler::validate_request(request &req) {
   string decoded = http::urldecode(get_query_string(req));
   const vector<pair<string, string> > params = http::parse_params(decoded);
-  vector<pair<string, string> >::const_iterator itr =
+  auto itr =
     std::find_if(params.begin(), params.end(), is_bbox);
 
   bbox bounds;

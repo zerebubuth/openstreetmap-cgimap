@@ -142,7 +142,7 @@ struct xml_parser {
 
   static void start_element(void *ctx, const xmlChar *name,
                             const xmlChar **attributes) {
-    xml_parser *parser = static_cast<xml_parser *>(ctx);
+    auto *parser = static_cast<xml_parser *>(ctx);
 
     if (strncmp((const char *)name, "node", 5) == 0) {
       node n;
@@ -251,12 +251,12 @@ struct xml_parser {
   }
 
   static void end_element(void *ctx, const xmlChar *) {
-    xml_parser *parser = static_cast<xml_parser *>(ctx);
+    auto *parser = static_cast<xml_parser *>(ctx);
     parser->m_in_text = false;
   }
 
   static void characters(void *ctx, const xmlChar *str, int len) {
-    xml_parser *parser = static_cast<xml_parser *>(ctx);
+    auto *parser = static_cast<xml_parser *>(ctx);
 
     if (parser->m_in_text) {
       parser->m_cur_changeset->m_comments.back().body.append((const char *)str, len);
@@ -350,7 +350,7 @@ struct static_data_selection : public data_selection {
   virtual void write_changesets(output_formatter &formatter,
                                 const pt::ptime &now) {
     for (osm_changeset_id_t id : m_changesets) {
-      std::map<osm_changeset_id_t, changeset>::iterator itr = m_db->m_changesets.find(id);
+      auto itr = m_db->m_changesets.find(id);
       if (itr != m_db->m_changesets.end()) {
         const changeset &c = itr->second;
         formatter.write_changeset(
@@ -390,7 +390,7 @@ struct static_data_selection : public data_selection {
     const node_map_t::const_iterator end = m_db->m_nodes.end();
     for (node_map_t::const_iterator itr = m_db->m_nodes.begin();
          itr != end; ++itr) {
-      node_map_t::const_iterator next = itr; ++next;
+      auto next = itr; ++next;
       const node &n = itr->second;
       if ((next == end || next->second.m_info.id != n.m_info.id) &&
           (n.m_lon >= bounds.minlon) && (n.m_lon <= bounds.maxlon) &&
@@ -425,7 +425,7 @@ struct static_data_selection : public data_selection {
     const way_map_t::const_iterator end = m_db->m_ways.end();
     for (way_map_t::const_iterator itr = m_db->m_ways.begin();
          itr != end; ++itr) {
-      way_map_t::const_iterator next = itr; ++next;
+      auto next = itr; ++next;
       const way &w = itr->second;
       if (next == end || next->second.m_info.id != w.m_info.id) {
         for (osm_nwr_id_t node_id : w.m_nodes) {
@@ -456,7 +456,7 @@ struct static_data_selection : public data_selection {
     const relation_map_t::const_iterator end = m_db->m_relations.end();
     for (relation_map_t::const_iterator itr = m_db->m_relations.begin();
          itr != end; ++itr) {
-      relation_map_t::const_iterator next = itr; ++next;
+      auto next = itr; ++next;
       const relation &r = itr->second;
       if (next == end || next->second.m_info.id != r.m_info.id) {
         for (const member_info &m : r.m_members) {
@@ -483,7 +483,7 @@ struct static_data_selection : public data_selection {
     const relation_map_t::const_iterator end = m_db->m_relations.end();
     for (relation_map_t::const_iterator itr = m_db->m_relations.begin();
          itr != end; ++itr) {
-      relation_map_t::const_iterator next = itr; ++next;
+      auto next = itr; ++next;
       const relation &r = itr->second;
       for (const member_info &m : r.m_members) {
         if ((m.type == element_type_node) && (m_nodes.count(m.ref) > 0)) {
@@ -500,7 +500,7 @@ struct static_data_selection : public data_selection {
     const relation_map_t::const_iterator end = m_db->m_relations.end();
     for (relation_map_t::const_iterator itr = m_db->m_relations.begin();
          itr != end; ++itr) {
-      relation_map_t::const_iterator next = itr; ++next;
+      auto next = itr; ++next;
       const relation &r = itr->second;
       for (const member_info &m : r.m_members) {
         if ((m.type == element_type_relation) &&
@@ -576,7 +576,7 @@ struct static_data_selection : public data_selection {
   virtual int select_changesets(const std::vector<osm_changeset_id_t> &ids) {
     int selected = 0;
     for (osm_changeset_id_t id : ids) {
-      std::map<osm_changeset_id_t, changeset>::iterator itr = m_db->m_changesets.find(id);
+      auto itr = m_db->m_changesets.find(id);
       if (itr != m_db->m_changesets.end()) {
         m_changesets.insert(id);
         ++selected;
@@ -599,7 +599,7 @@ private:
     id_version idv(id);
     const element_map_t &m = map_of<T>();
     if (!m.empty()) {
-      typename element_map_t::const_iterator itr = m.upper_bound(idv);
+      auto itr = m.upper_bound(idv);
       if (itr != m.begin()) {
         --itr;
         if (itr->first.id == id) {
@@ -616,7 +616,7 @@ private:
     id_version idv(edition.first, edition.second);
     const element_map_t &m = map_of<T>();
     if (!m.empty()) {
-      typename element_map_t::const_iterator itr = m.find(idv);
+      auto itr = m.find(idv);
       if (itr != m.end()) {
         return itr->second;
       }
@@ -682,7 +682,7 @@ private:
     for (osm_edition_t ed : select_eds) {
       boost::optional<const T &> t = find<T>(ed);
       if (t) {
-        bool is_redacted = bool(t->m_info.redaction);
+        auto is_redacted = bool(t->m_info.redaction);
         if (!is_redacted || m_redactions_visible) {
           found_eds.insert(ed);
           ++selected;
@@ -701,12 +701,12 @@ private:
       id_version idv_start(id, 0), idv_end(id+1, 0);
       const element_map_t &m = map_of<T>();
       if (!m.empty()) {
-        typename element_map_t::const_iterator itr = m.lower_bound(idv_start);
-        typename element_map_t::const_iterator end = m.lower_bound(idv_end);
+        auto itr = m.lower_bound(idv_start);
+        auto end = m.lower_bound(idv_end);
 
         for (; itr != end; ++itr) {
           osm_edition_t ed(id, *itr->first.version);
-          bool is_redacted = bool(itr->second.m_info.redaction);
+          auto is_redacted = bool(itr->second.m_info.redaction);
           if (!is_redacted || m_redactions_visible) {
             found_eds.insert(ed);
             ++selected;
@@ -727,7 +727,7 @@ private:
     for (const auto &row : map_of<T>()) {
       const T &t = row.second;
       if (changesets.count(t.m_info.changeset) > 0) {
-        bool is_redacted = bool(t.m_info.redaction);
+        auto is_redacted = bool(t.m_info.redaction);
         if (!is_redacted || m_redactions_visible) {
           found_eds.emplace(t.m_info.id, t.m_info.version);
           selected += 1;
