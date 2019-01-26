@@ -1,7 +1,7 @@
 #ifndef TYPES_HPP
 #define TYPES_HPP
 
-#include <stdint.h>
+#include <cstdint>
 #include <cassert>
 #include <utility>
 

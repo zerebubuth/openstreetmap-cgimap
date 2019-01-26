@@ -75,7 +75,7 @@ void xml_writer::init(bool indent) {
   }
 }
 
-xml_writer::~xml_writer() throw() {
+xml_writer::~xml_writer() noexcept {
   // close and flush the xml writer object. note - if this fails then
   // there isn't much we can do, as this object is going to be deleted
   // anyway.

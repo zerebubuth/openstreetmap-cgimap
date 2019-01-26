@@ -48,11 +48,11 @@ protected:
   exception(unsigned int c, const std::string &h, const std::string &m);
 
 public:
-  virtual ~exception() throw();
+  virtual ~exception() noexcept;
 
   unsigned int code() const;
   const std::string &header() const;
-  const char *what() const throw();
+  const char *what() const noexcept;
 };
 
 /**
@@ -217,13 +217,13 @@ public:
 
 class identity : public encoding {
 public:
-  identity(void) : encoding("identity"){};
+  identity() : encoding("identity"){};
 };
 
 #ifdef HAVE_LIBZ
 class deflate : public encoding {
 public:
-  deflate(void) : encoding("deflate"){};
+  deflate() : encoding("deflate"){};
   virtual std::shared_ptr<output_buffer>
   buffer(std::shared_ptr<output_buffer> out) {
     return std::shared_ptr<zlib_output_buffer>(
@@ -233,7 +233,7 @@ public:
 
 class gzip : public encoding {
 public:
-  gzip(void) : encoding("gzip"){};
+  gzip() : encoding("gzip"){};
   virtual std::shared_ptr<output_buffer>
   buffer(std::shared_ptr<output_buffer> out) {
     return std::shared_ptr<zlib_output_buffer>(

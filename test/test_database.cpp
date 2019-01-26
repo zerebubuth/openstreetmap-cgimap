@@ -12,9 +12,9 @@ test_database::setup_error::setup_error(const boost::format &fmt)
   : m_str(fmt.str()) {
 }
 
-test_database::setup_error::~setup_error() throw() = default;
+test_database::setup_error::~setup_error() noexcept = default;
 
-const char *test_database::setup_error::what() const throw() {
+const char *test_database::setup_error::what() const noexcept {
   return m_str.c_str();
 }
 

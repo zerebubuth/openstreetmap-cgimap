@@ -9,8 +9,8 @@
 #include <stdexcept>
 #include <sstream>
 #include <fcgiapp.h>
-#include <errno.h>
-#include <string.h>
+#include <cerrno>
+#include <cstring>
 
 using std::runtime_error;
 

@@ -1,4 +1,4 @@
-#include <assert.h>
+#include <cassert>
 #include <algorithm>
 #include <cstring>
 
@@ -74,7 +74,7 @@ int zlib_output_buffer::write(const char *buffer, int len) {
   return len;
 }
 
-int zlib_output_buffer::close(void) {
+int zlib_output_buffer::close() {
   int status;
 
   assert(stream.avail_in == 0);
@@ -97,9 +97,9 @@ int zlib_output_buffer::close(void) {
   return out->close();
 }
 
-int zlib_output_buffer::written(void) { return bytes_in; }
+int zlib_output_buffer::written() { return bytes_in; }
 
-void zlib_output_buffer::flush_output(void) {
+void zlib_output_buffer::flush_output() {
   out->write(outbuf, sizeof(outbuf) - stream.avail_out);
 
   stream.next_out = (Bytef *)outbuf;

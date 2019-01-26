@@ -1,7 +1,7 @@
 #include <yajl/yajl_gen.h>
 #include <memory>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <utility>
 
 #include "cgimap/json_writer.hpp"
@@ -69,7 +69,7 @@ json_writer::json_writer(std::shared_ptr<output_buffer> &out, bool indent)
 #endif /* HAVE_YAJL2 */
 }
 
-json_writer::~json_writer() throw() {
+json_writer::~json_writer() noexcept {
   yajl_gen_clear(pimpl->gen);
   yajl_gen_free(pimpl->gen);
 

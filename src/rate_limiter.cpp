@@ -51,7 +51,7 @@ memcached_rate_limiter::memcached_rate_limiter(
   }
 }
 
-memcached_rate_limiter::~memcached_rate_limiter(void) {
+memcached_rate_limiter::~memcached_rate_limiter() {
   if (ptr)
     memcached_free(ptr);
 }
