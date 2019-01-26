@@ -163,7 +163,7 @@ struct oauth_authorization_grammar
     // looks like realm is special, see the OAuth spec for details
     // http://oauth.net/core/1.0a/#rfc.section.5.4.1
     kvpair
-      = (ascii::string("realm") >> lit("=\"") > quoted_string > lit("\""))
+      = ((ascii::string("realm") >> (lit("=\"")) > quoted_string) > lit("\""))
       | (key >> lit("=\"") > escaped > lit("\""));
 
     // definitions from http://oauth.net/core/1.0a/#rfc.section.5.4.1
@@ -560,7 +560,6 @@ validity::validity is_valid_signature(
   }
 }
 
-store::~store() {
-}
+store::~store() = default;
 
 } // namespace oauth

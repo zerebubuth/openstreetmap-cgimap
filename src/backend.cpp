@@ -48,7 +48,7 @@ private:
   shared_ptr<backend> default_backend;
 };
 
-registry::registry() {}
+registry::registry() = default;
 
 bool registry::add(shared_ptr<backend> ptr) {
   if (default_backend) {
@@ -166,7 +166,7 @@ std::mutex registry_mut;
 
 } // anonymous namespace
 
-backend::~backend() {}
+backend::~backend() = default;
 
 bool register_backend(shared_ptr<backend> ptr) {
   std::unique_lock<std::mutex> lock(registry_mut);

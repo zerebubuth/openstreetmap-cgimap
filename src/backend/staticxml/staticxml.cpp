@@ -26,7 +26,7 @@ namespace {
 // http://stackoverflow.com/questions/4452136/how-do-i-use-boostlexical-cast-and-stdboolalpha-i-e-boostlexical-cast-b
 struct bool_alpha {
   bool data;
-  bool_alpha() {}
+  bool_alpha() = default;
   bool_alpha(bool data) : data(data) {}
   operator bool() const { return data; }
   friend std::ostream &operator<<(std::ostream &out, bool_alpha b) {
@@ -333,7 +333,7 @@ struct static_data_selection : public data_selection {
     : m_db(db)
     , m_include_changeset_comments(false)
     , m_redactions_visible(false) {}
-  virtual ~static_data_selection() {}
+  virtual ~static_data_selection() = default;
 
   virtual void write_nodes(output_formatter &formatter) {
     write_elements<node>(m_historic_nodes, m_nodes, formatter);
@@ -764,7 +764,7 @@ struct factory : public data_selection::factory {
   factory(const std::string &file)
     : m_database(parse_xml(file.c_str())) {}
 
-  virtual ~factory() {}
+  virtual ~factory() = default;
 
   virtual std::shared_ptr<data_selection> make_selection() {
     return std::make_shared<static_data_selection>(m_database);
@@ -780,7 +780,7 @@ struct staticxml_backend : public backend {
     m_options.add_options()("file", po::value<string>(),
                             "file to load static OSM XML from.");
   }
-  virtual ~staticxml_backend() {}
+  virtual ~staticxml_backend() = default;
 
   const string &name() const { return m_name; }
   const po::options_description &options() const { return m_options; }

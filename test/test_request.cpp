@@ -8,7 +8,7 @@ test_output_buffer::test_output_buffer(std::ostream &out)
   : m_out(out), m_written(0) {
 }
 
-test_output_buffer::~test_output_buffer() {}
+test_output_buffer::~test_output_buffer() = default;
 
 int test_output_buffer::write(const char *buffer, int len) {
   m_out.write(buffer, len);
@@ -28,7 +28,7 @@ void test_output_buffer::flush() {}
 
 test_request::test_request() : m_status(-1), m_payload{} {}
 
-test_request::~test_request() {}
+test_request::~test_request() = default;
 
 const char *test_request::get_param(const char *key) {
   std::string key_str(key);

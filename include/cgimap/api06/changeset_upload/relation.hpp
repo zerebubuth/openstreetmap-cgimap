@@ -88,9 +88,9 @@ private:
 
 class Relation : public OSMObject {
 public:
-  Relation() : OSMObject(){};
+  Relation() : OSMObject() {};
 
-  virtual ~Relation(){};
+  virtual ~Relation() = default;
 
   void add_member(RelationMember &member) {
     if (!member.is_valid())

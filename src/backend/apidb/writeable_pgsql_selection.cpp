@@ -90,7 +90,7 @@ writeable_pgsql_selection::writeable_pgsql_selection(
   m_historic_tables_empty = true;
 }
 
-writeable_pgsql_selection::~writeable_pgsql_selection() {}
+writeable_pgsql_selection::~writeable_pgsql_selection() = default;
 
 void writeable_pgsql_selection::write_nodes(output_formatter &formatter) {
   // get all nodes - they already contain their own tags, so
@@ -869,7 +869,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
   // clang-format on
 }
 
-writeable_pgsql_selection::factory::~factory() {}
+writeable_pgsql_selection::factory::~factory() = default;
 
 std::shared_ptr<data_selection>
 writeable_pgsql_selection::factory::make_selection() {

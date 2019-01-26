@@ -85,8 +85,7 @@ test_request::test_request(const std::string &method_,
   }
 }
 
-test_request::~test_request() {
-}
+test_request::~test_request() = default;
 
 const char *test_request::get_param(const char *key) {
   if (std::strncmp(key, "HTTP_AUTHORIZATION", 19) == 0) {

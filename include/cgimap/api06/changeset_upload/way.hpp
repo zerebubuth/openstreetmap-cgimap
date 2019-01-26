@@ -11,9 +11,9 @@ namespace api06 {
 class Way : public OSMObject {
 
 public:
-  Way() : OSMObject(){};
+  Way() : OSMObject() {};
 
-  virtual ~Way(){};
+  virtual ~Way() = default;
 
   void add_way_node(osm_nwr_signed_id_t waynode) {
     m_way_nodes.emplace_back(waynode);

@@ -576,7 +576,7 @@ struct test_oauth
     }
   }
 
-  virtual ~test_oauth() {}
+  virtual ~test_oauth() = default;
 
   boost::optional<std::string> consumer_secret(const std::string &consumer_key) {
     auto itr = m_consumers.find(consumer_key);

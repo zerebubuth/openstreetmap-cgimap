@@ -31,7 +31,7 @@ const std::string &element_type_name(element_type elt) {
 
 xml_formatter::xml_formatter(xml_writer *w) : writer(w) {}
 
-xml_formatter::~xml_formatter() {}
+xml_formatter::~xml_formatter() = default;
 
 mime::type xml_formatter::mime_type() const { return mime::text_xml; }
 

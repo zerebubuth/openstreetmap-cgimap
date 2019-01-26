@@ -110,7 +110,7 @@ pgsql_update::pgsql_update(
      )");
 }
 
-pgsql_update::~pgsql_update() {}
+pgsql_update::~pgsql_update() = default;
 
 bool pgsql_update::is_readonly() {
   return m_readonly;
@@ -179,7 +179,7 @@ pgsql_update::factory::factory(const po::variables_map &opts)
 
 }
 
-pgsql_update::factory::~factory() {}
+pgsql_update::factory::~factory() = default;
 
 std::shared_ptr<data_update>
 pgsql_update::factory::make_data_update() {

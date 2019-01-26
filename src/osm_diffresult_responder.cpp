@@ -21,7 +21,7 @@ element_type as_elem_type(object_type o) {
 osm_diffresult_responder::osm_diffresult_responder(mime::type mt)
     : osm_responder(mt) {}
 
-osm_diffresult_responder::~osm_diffresult_responder() {}
+osm_diffresult_responder::~osm_diffresult_responder() = default;
 
 void osm_diffresult_responder::write(shared_ptr<output_formatter> formatter,
                                      const std::string &generator,

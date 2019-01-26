@@ -43,11 +43,11 @@ nodes_responder::nodes_responder(mime::type mt, vector<id_version> ids_,
   }
 }
 
-nodes_responder::~nodes_responder() {}
+nodes_responder::~nodes_responder() = default;
 
 nodes_handler::nodes_handler(request &req) : ids(validate_request(req)) {}
 
-nodes_handler::~nodes_handler() {}
+nodes_handler::~nodes_handler() = default;
 
 std::string nodes_handler::log_name() const {
   stringstream msg;

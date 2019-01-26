@@ -187,7 +187,7 @@ void xml_writer::error(const std::string &s) {
 }
 
 // TODO: move this to its own file
-output_buffer::~output_buffer() {}
+output_buffer::~output_buffer() = default;
 
 xml_writer::write_error::write_error(const char *message)
     : std::runtime_error(message) {}

@@ -62,7 +62,7 @@ namespace al = boost::algorithm;
 struct router {
   // interface through which all matches and constructions are performed.
   struct rule_base {
-    virtual ~rule_base() {}
+    virtual ~rule_base() = default;
     virtual bool invoke_if(const list<string> &, request &,
                            handler_ptr_t &) = 0;
   };
@@ -186,7 +186,7 @@ routes::routes()
 #endif /* ENABLE_API07 */
 }
 
-routes::~routes() {}
+routes::~routes() = default;
 
 namespace {
 /**

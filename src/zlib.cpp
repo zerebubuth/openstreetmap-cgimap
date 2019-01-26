@@ -43,7 +43,7 @@ zlib_output_buffer::zlib_output_buffer(const zlib_output_buffer &old)
   stream.next_out = (Bytef *)outbuf + (sizeof(outbuf) - stream.avail_out);
 }
 
-zlib_output_buffer::~zlib_output_buffer(void) {}
+zlib_output_buffer::~zlib_output_buffer(void) = default;
 
 int zlib_output_buffer::write(const char *buffer, int len) {
   assert(stream.avail_in == 0);
@@ -180,15 +180,15 @@ std::string ZLibBaseDecompressor::decompress(const std::string& input) {
 
 GZipDecompressor::GZipDecompressor() : ZLibBaseDecompressor(15+16) { }
 
-GZipDecompressor::~GZipDecompressor() { }
+GZipDecompressor::~GZipDecompressor() = default;
 
 ZLibDecompressor::ZLibDecompressor() : ZLibBaseDecompressor(15) { }
 
-ZLibDecompressor::~ZLibDecompressor() { }
+ZLibDecompressor::~ZLibDecompressor() = default;
 
 IdentityDecompressor::IdentityDecompressor() : ZLibBaseDecompressor() { }
 
-IdentityDecompressor::~IdentityDecompressor() {}
+IdentityDecompressor::~IdentityDecompressor() = default;
 
 
 

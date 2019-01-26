@@ -56,7 +56,7 @@ struct apidb_backend : public backend {
        "database port for API write operations, if different from --dbport");
     // clang-format on
   }
-  virtual ~apidb_backend() {}
+  virtual ~apidb_backend() = default;
 
   const string &name() const { return m_name; }
   const po::options_description &options() const { return m_options; }

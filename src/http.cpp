@@ -68,7 +68,7 @@ namespace http {
 exception::exception(unsigned int c, const string &h, const string &m)
     : code_(c), header_(h), message_(m) {}
 
-exception::~exception() throw() {}
+exception::~exception() throw() = default;
 
 unsigned int exception::code() const { return code_; }
 

@@ -18,11 +18,11 @@ way_history_responder::way_history_responder(mime::type mt, osm_nwr_id_t id_, da
   }
 }
 
-way_history_responder::~way_history_responder() {}
+way_history_responder::~way_history_responder() = default;
 
 way_history_handler::way_history_handler(request &, osm_nwr_id_t id_) : id(id_) {}
 
-way_history_handler::~way_history_handler() {}
+way_history_handler::~way_history_handler() = default;
 
 std::string way_history_handler::log_name() const { return "way/history"; }
 

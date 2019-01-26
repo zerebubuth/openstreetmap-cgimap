@@ -122,7 +122,7 @@ struct erase_formatter
     , m_sel_historic_ways(sel_historic_ways)
     , m_sel_historic_relations(sel_historic_relations) {
   }
-  virtual ~erase_formatter() {}
+  virtual ~erase_formatter() = default;
 
   mime::type mime_type() const { return m_fmt.mime_type(); }
 
@@ -199,7 +199,7 @@ readonly_pgsql_selection::readonly_pgsql_selection(
     , include_changeset_discussions(false)
     , m_redactions_visible(false) {}
 
-readonly_pgsql_selection::~readonly_pgsql_selection() {}
+readonly_pgsql_selection::~readonly_pgsql_selection() = default;
 
 void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
   // get all nodes - they already contain their own tags, so
@@ -901,7 +901,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
   // clang-format on
 }
 
-readonly_pgsql_selection::factory::~factory() {}
+readonly_pgsql_selection::factory::~factory() = default;
 
 std::shared_ptr<data_selection>
 readonly_pgsql_selection::factory::make_selection() {

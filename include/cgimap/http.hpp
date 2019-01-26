@@ -207,8 +207,8 @@ private:
 
 public:
   encoding(const std::string &name) : name_(name){};
-  virtual ~encoding(void){};
-  const std::string &name(void) const { return name_; };
+  virtual ~encoding() = default;
+  const std::string &name() const { return name_; };
   virtual std::shared_ptr<output_buffer>
   buffer(std::shared_ptr<output_buffer> out) {
     return out;

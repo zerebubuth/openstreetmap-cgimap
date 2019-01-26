@@ -33,7 +33,7 @@ changeset_responder::changeset_responder(mime::type mt, osm_changeset_id_t id_,
   }
 }
 
-changeset_responder::~changeset_responder() {}
+changeset_responder::~changeset_responder() = default;
 
 namespace {
 // functor to use in find_if to locate the "include_discussion" header
@@ -59,7 +59,7 @@ changeset_handler::changeset_handler(request &req, osm_changeset_id_t id_)
   include_discussion = (itr != params.end());
 }
 
-changeset_handler::~changeset_handler() {}
+changeset_handler::~changeset_handler() = default;
 
 std::string changeset_handler::log_name() const { return "changeset"; }
 
