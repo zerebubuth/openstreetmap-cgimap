@@ -90,7 +90,7 @@ writeable_pgsql_selection::writeable_pgsql_selection(
   m_historic_tables_empty = true;
 }
 
-writeable_pgsql_selection::~writeable_pgsql_selection() {}
+writeable_pgsql_selection::~writeable_pgsql_selection() = default;
 
 void writeable_pgsql_selection::write_nodes(output_formatter &formatter) {
   // get all nodes - they already contain their own tags, so
@@ -415,21 +415,21 @@ size_t get_or_convert_cachesize(const po::variables_map &opts) {
   const boost::any &val = opts["cachesize"].value();
 
   {
-    const size_t *v = boost::any_cast<size_t>(&val);
+    const auto *v = boost::any_cast<size_t>(&val);
     if (v) {
       return *v;
     }
   }
 
   {
-    const int *v = boost::any_cast<int>(&val);
+    const auto *v = boost::any_cast<int>(&val);
     if (v) {
       return *v;
     }
   }
 
   {
-    const std::string *v = boost::any_cast<std::string>(&val);
+    const auto *v = boost::any_cast<std::string>(&val);
     if (v) {
       return boost::lexical_cast<size_t>(*v);
     }
@@ -869,7 +869,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
   // clang-format on
 }
 
-writeable_pgsql_selection::factory::~factory() {}
+writeable_pgsql_selection::factory::~factory() = default;
 
 std::shared_ptr<data_selection>
 writeable_pgsql_selection::factory::make_selection() {

@@ -16,7 +16,7 @@ ApiDB_Changeset_Updater::ApiDB_Changeset_Updater(Transaction_Manager &_m,
                                                  osm_user_id_t _uid)
     : m(_m), cs_num_changes(0), changeset(_changeset), uid(_uid) {}
 
-ApiDB_Changeset_Updater::~ApiDB_Changeset_Updater() {}
+ApiDB_Changeset_Updater::~ApiDB_Changeset_Updater() = default;
 
 void ApiDB_Changeset_Updater::lock_current_changeset() {
 

@@ -9,8 +9,8 @@
 #include <stdexcept>
 #include <sstream>
 #include <fcgiapp.h>
-#include <errno.h>
-#include <string.h>
+#include <cerrno>
+#include <cstring>
 
 using std::runtime_error;
 
@@ -19,7 +19,7 @@ struct fcgi_buffer : public output_buffer {
 
   explicit fcgi_buffer(FCGX_Request req) : m_req(req), m_written(0) {}
 
-  virtual ~fcgi_buffer() {}
+  virtual ~fcgi_buffer() = default;
 
   int write(const char *buffer, int len) {
     int bytes = FCGX_PutStr(buffer, len, m_req.out);

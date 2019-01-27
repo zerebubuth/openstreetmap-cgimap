@@ -1,6 +1,6 @@
 #include "cgimap/data_selection.hpp"
 
-data_selection::~data_selection() {}
+data_selection::~data_selection() = default;
 
 bool data_selection::supports_historical_versions() {
   return false;
@@ -68,7 +68,7 @@ bool data_selection::get_user_id_pass(const std::string&, osm_user_id_t &, std::
 }
 
 
-data_selection::factory::~factory() {}
+data_selection::factory::~factory() = default;
 
 
 std::vector<std::string> psql_array_to_vector(std::string str) {

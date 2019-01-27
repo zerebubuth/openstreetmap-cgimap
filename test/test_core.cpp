@@ -396,7 +396,7 @@ void check_headers(const dict &expected_headers,
                    const dict &actual_headers) {
   for (const dict::value_type &val : expected_headers) {
     if ((val.first.size() > 0) && (val.first[0] == '!')) {
-      dict::const_iterator itr = actual_headers.find(val.first.substr(1));
+      auto itr = actual_headers.find(val.first.substr(1));
       if (itr != actual_headers.end()) {
         throw std::runtime_error(
           (boost::format(
@@ -404,7 +404,7 @@ void check_headers(const dict &expected_headers,
            itr->first).str());
       }
     } else {
-      dict::const_iterator itr = actual_headers.find(val.first);
+      auto itr = actual_headers.find(val.first);
       if (itr == actual_headers.end()) {
         throw std::runtime_error(
           (boost::format("Expected header `%1%: %2%', but didn't find it in "
@@ -548,7 +548,7 @@ struct test_oauth
     if (tokens) {
       for (const auto &entry : *tokens) {
         std::string key = entry.first;
-        osm_user_id_t user_id = entry.second.get<osm_user_id_t>("user_id");
+        auto user_id = entry.second.get<osm_user_id_t>("user_id");
         std::string secret = entry.second.get<std::string>("secret");
 
         m_tokens.emplace(key, secret);
@@ -560,7 +560,7 @@ struct test_oauth
       config.get_child_optional("users");
     if (users) {
       for (const auto &entry : *users) {
-        osm_user_id_t id = boost::lexical_cast<osm_user_id_t>(entry.first);
+        auto id = boost::lexical_cast<osm_user_id_t>(entry.first);
         boost::optional<const pt::ptree &> roles =
           entry.second.get_child_optional("roles");
 
@@ -576,7 +576,7 @@ struct test_oauth
     }
   }
 
-  virtual ~test_oauth() {}
+  virtual ~test_oauth() = default;
 
   boost::optional<std::string> consumer_secret(const std::string &consumer_key) {
     auto itr = m_consumers.find(consumer_key);

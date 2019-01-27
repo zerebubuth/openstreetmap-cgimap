@@ -106,7 +106,7 @@ struct member_info {
   osm_nwr_id_t ref;
   std::string role;
 
-  member_info() {}
+  member_info() = default;
   member_info(element_type type_, osm_nwr_id_t ref_, const std::string &role_)
     : type(type_), ref(ref_), role(role_) {}
 

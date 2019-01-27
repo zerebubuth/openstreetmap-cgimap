@@ -20,7 +20,7 @@ using TagList = std::map<std::string, std::string>;
 class Relation_Updater {
 
 public:
-  virtual ~Relation_Updater() {};
+  virtual ~Relation_Updater() = default;
 
   virtual void add_relation(osm_changeset_id_t changeset_id,
                             osm_nwr_signed_id_t old_id,

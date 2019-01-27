@@ -42,12 +42,12 @@ relations_responder::relations_responder(mime::type mt, vector<id_version> ids_,
   }
 }
 
-relations_responder::~relations_responder() {}
+relations_responder::~relations_responder() = default;
 
 relations_handler::relations_handler(request &req)
     : ids(validate_request(req)) {}
 
-relations_handler::~relations_handler() {}
+relations_handler::~relations_handler() = default;
 
 std::string relations_handler::log_name() const {
   stringstream msg;

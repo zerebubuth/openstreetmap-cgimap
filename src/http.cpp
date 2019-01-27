@@ -68,13 +68,13 @@ namespace http {
 exception::exception(unsigned int c, const string &h, const string &m)
     : code_(c), header_(h), message_(m) {}
 
-exception::~exception() throw() {}
+exception::~exception() noexcept = default;
 
 unsigned int exception::code() const { return code_; }
 
 const string &exception::header() const { return header_; }
 
-const char *exception::what() const throw() { return message_.c_str(); }
+const char *exception::what() const noexcept { return message_.c_str(); }
 
 server_error::server_error(const string &message)
     : exception(500, "Internal Server Error", message) {}
@@ -126,7 +126,7 @@ string urlencode(const string &s) {
       ostr << c;
 
     } else {
-      unsigned char idx = (unsigned char)(c);
+      auto idx = (unsigned char)(c);
       ostr << "%" << hex[idx >> 4] << hex[idx & 0xf];
     }
   }
@@ -180,7 +180,7 @@ shared_ptr<encoding> choose_encoding(const string &accept_encoding) {
     } else if (boost::regex_match(
                    encoding, what,
                    boost::regex(
-                       "\\s*([^()<>@,;:\\\\\"/[\\]\\\\?={} \\t]+)\\s*"))) {
+                       R"(\s*([^()<>@,;:\\"/[\]\\?={} \t]+)\s*)"))) {
       name = what[1];
       quality = 1.0;
     } else {

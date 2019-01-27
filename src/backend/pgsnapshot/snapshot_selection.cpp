@@ -162,7 +162,7 @@ snapshot_selection::snapshot_selection(pqxx::connection &conn) : w(conn) {
   w.set_variable("default_transaction_read_only", "true");
 }
 
-snapshot_selection::~snapshot_selection() {}
+snapshot_selection::~snapshot_selection() = default;
 
 void snapshot_selection::write_nodes(output_formatter &formatter) {
   // get all nodes - they already contain their own tags, so
@@ -480,7 +480,7 @@ snapshot_selection::factory::factory(const po::variables_map &opts)
   // clang-format on
 }
 
-snapshot_selection::factory::~factory() {}
+snapshot_selection::factory::~factory() = default;
 
 std::shared_ptr<data_selection>
 snapshot_selection::factory::make_selection() {

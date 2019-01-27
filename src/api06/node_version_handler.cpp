@@ -21,11 +21,11 @@ node_version_responder::node_version_responder(mime::type mt, osm_nwr_id_t id_, 
   }
 }
 
-node_version_responder::~node_version_responder() {}
+node_version_responder::~node_version_responder() = default;
 
 node_version_handler::node_version_handler(request &, osm_nwr_id_t id_, osm_version_t v_) : id(id_), v(v_) {}
 
-node_version_handler::~node_version_handler() {}
+node_version_handler::~node_version_handler() = default;
 
 std::string node_version_handler::log_name() const { return "node"; }
 

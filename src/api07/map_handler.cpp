@@ -38,13 +38,13 @@ map_responder::map_responder(mime::type mt, bbox b, data_selection_ptr &x)
   }
 }
 
-map_responder::~map_responder() {}
+map_responder::~map_responder() = default;
 
 map_handler::map_handler(request &req) : bounds(validate_request(req)) {}
 
 map_handler::map_handler(request &req, int) {}
 
-map_handler::~map_handler() {}
+map_handler::~map_handler() = default;
 
 string map_handler::log_name() const {
   return (boost::format("map(%1%,%2%,%3%,%4%)") % bounds.minlon %
@@ -56,7 +56,7 @@ responder_ptr_t map_handler::responder(data_selection_ptr &x) const {
 }
 
 namespace {
-bool is_bbox(const pair<string, string> &p) {
+bool is_bbox(const std::pair<string, string> &p) {
   return p.first == "bbox";
 }
 } // anonymous namespace
@@ -67,8 +67,8 @@ bool is_bbox(const pair<string, string> &p) {
  */
 bbox map_handler::validate_request(request &req) {
   string decoded = http::urldecode(get_query_string(req));
-  const vector<pair<string, string> > params = http::parse_params(decoded);
-  vector<pair<string, string> >::const_iterator itr =
+  const std::vector<std::pair<string, string> > params = http::parse_params(decoded);
+  auto itr =
     std::find_if(params.begin(), params.end(), is_bbox);
 
   bbox bounds;

@@ -48,7 +48,7 @@ private:
   shared_ptr<backend> default_backend;
 };
 
-registry::registry() {}
+registry::registry() = default;
 
 bool registry::add(shared_ptr<backend> ptr) {
   if (default_backend) {
@@ -98,7 +98,7 @@ void registry::setup_options(int argc, char *argv[],
     shared_ptr<backend> ptr = default_backend;
 
     if (vm.count("backend")) {
-      backend_map_t::iterator itr =
+      auto itr =
           backends.find(vm["backend"].as<std::string>());
       if (itr != backends.end()) {
         ptr = itr->second;
@@ -120,7 +120,7 @@ registry::create(const po::variables_map &options) {
   shared_ptr<backend> ptr = default_backend;
 
   if (options.count("backend")) {
-    backend_map_t::iterator itr =
+    auto itr =
         backends.find(options["backend"].as<std::string>());
     if (itr != backends.end()) {
       ptr = itr->second;
@@ -135,7 +135,7 @@ registry::create_data_update(const po::variables_map &options) {
   shared_ptr<backend> ptr = default_backend;
 
   if (options.count("backend")) {
-    backend_map_t::iterator itr =
+    auto itr =
         backends.find(options["backend"].as<std::string>());
     if (itr != backends.end()) {
       ptr = itr->second;
@@ -151,7 +151,7 @@ registry::create_oauth_store(const boost::program_options::variables_map &option
   shared_ptr<backend> ptr = default_backend;
 
   if (options.count("backend")) {
-    backend_map_t::iterator itr =
+    auto itr =
         backends.find(options["backend"].as<std::string>());
     if (itr != backends.end()) {
       ptr = itr->second;
@@ -166,7 +166,7 @@ std::mutex registry_mut;
 
 } // anonymous namespace
 
-backend::~backend() {}
+backend::~backend() = default;
 
 bool register_backend(shared_ptr<backend> ptr) {
   std::unique_lock<std::mutex> lock(registry_mut);

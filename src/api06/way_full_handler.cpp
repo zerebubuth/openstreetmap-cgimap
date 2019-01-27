@@ -26,7 +26,7 @@ way_full_responder::way_full_responder(mime::type mt_, osm_nwr_id_t id_,
   sel->select_nodes_from_way_nodes();
 }
 
-way_full_responder::~way_full_responder() {}
+way_full_responder::~way_full_responder() = default;
 
 void way_full_responder::check_visibility() {
   switch (sel->check_way_visibility(id)) {
@@ -52,7 +52,7 @@ way_full_handler::way_full_handler(request &, osm_nwr_id_t id_) : id(id_) {
       (boost::format("starting way/full handler with id = %1%") % id).str());
 }
 
-way_full_handler::~way_full_handler() {}
+way_full_handler::~way_full_handler() = default;
 
 std::string way_full_handler::log_name() const { return "way/full"; }
 

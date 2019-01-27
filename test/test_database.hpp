@@ -23,8 +23,8 @@ struct test_database {
   // apidb database set up on their local machines.
   struct setup_error : public std::exception {
     setup_error(const boost::format &fmt);
-    ~setup_error() throw();
-    virtual const char *what() const throw();
+    ~setup_error() noexcept;
+    virtual const char *what() const noexcept;
 
   private:
     const std::string m_str;

@@ -21,7 +21,7 @@ public:
   json_writer(std::shared_ptr<output_buffer> &out, bool indent = false);
 
   // closes and flushes the buffer
-  ~json_writer() throw();
+  ~json_writer() noexcept;
 
   void start_object();
   void object_key(const std::string &s);

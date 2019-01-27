@@ -15,8 +15,8 @@
 #include <string>
 #include <memory>
 #include <algorithm>
-#include <errno.h>
-#include <signal.h>
+#include <cerrno>
+#include <csignal>
 #include <sys/wait.h>
 
 #include "cgimap/bbox.hpp"
@@ -205,7 +205,7 @@ static void reload(int) {
 /**
  * make the process into a daemon by detaching from the console.
  */
-static void daemonise(void) {
+static void daemonise() {
   pid_t pid;
   struct sigaction sa;
 

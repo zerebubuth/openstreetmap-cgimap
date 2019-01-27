@@ -5,7 +5,7 @@
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
-#include <stdio.h>
+#include <cstdio>
 
 #include "cgimap/config.hpp"
 #include "cgimap/time.hpp"
@@ -195,7 +195,7 @@ void test_psql_array_to_vector() {
     throw std::runtime_error("Psql array parse failed for " + test);
   }
 
-  test = "{\"},\\\"\",\",{}}\\\\\"}";
+  test = R"({"},\"",",{}}\\"})";
   values = psql_array_to_vector(test);
   actual_values.clear();
   actual_values.push_back("},\"");

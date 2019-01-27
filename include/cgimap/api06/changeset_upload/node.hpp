@@ -11,9 +11,9 @@ namespace api06 {
 class Node : public OSMObject {
 
 public:
-  Node() : OSMObject(){};
+  Node() : OSMObject() {};
 
-  virtual ~Node(){};
+  virtual ~Node() = default;
 
   double lat() const { return *m_lat; }
 

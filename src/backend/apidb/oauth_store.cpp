@@ -116,7 +116,7 @@ oauth_store::oauth_store(const po::variables_map &opts)
   // clang-format on
 }
 
-oauth_store::~oauth_store() {}
+oauth_store::~oauth_store() = default;
 
 boost::optional<std::string>
 oauth_store::consumer_secret(const std::string &consumer_key) {
@@ -171,7 +171,7 @@ oauth_store::get_user_id_for_token(const std::string &token_id) {
   pqxx::result res = w.prepared("token_belongs_to")(token_id).exec();
 
   if (res.affected_rows() > 0) {
-    osm_user_id_t uid = res[0][0].as<osm_user_id_t>();
+    auto uid = res[0][0].as<osm_user_id_t>();
     return uid;
 
   } else {

@@ -24,7 +24,7 @@ public:
 
   output_writer() = default;
 
-  virtual ~output_writer() throw();
+  virtual ~output_writer() noexcept;
 
   /* write an error to the output. normally, we'd detect errors *before*
    * starting to write. so this is a very rare case, for example when the

@@ -129,7 +129,7 @@ bool test_formatter::changeset_t::operator==(const changeset_t &other) const {
   return std::equal(m_tags.begin(), m_tags.end(), other.m_tags.begin());
 }
 
-test_formatter::~test_formatter() {}
+test_formatter::~test_formatter() = default;
 
 mime::type test_formatter::mime_type() const {
   throw std::runtime_error("Unimplemented");

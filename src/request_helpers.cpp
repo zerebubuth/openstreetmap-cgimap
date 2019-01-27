@@ -184,7 +184,7 @@ public:
     r.flush();
   }
 
-  virtual ~fcgi_output_buffer() {}
+  virtual ~fcgi_output_buffer() = default;
 
   fcgi_output_buffer(request &req) : r(req), w(0) {}
 

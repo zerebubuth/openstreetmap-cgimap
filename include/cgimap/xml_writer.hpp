@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include "cgimap/output_buffer.hpp"
 #include "cgimap/output_writer.hpp"
-#include <inttypes.h>
+#include <cinttypes>
 
 /**
  * Writes UTF-8 output to a file or stdout.
@@ -26,7 +26,7 @@ public:
   xml_writer(std::shared_ptr<output_buffer> &out, bool indent = false);
 
   // closes and flushes the XML writer
-  ~xml_writer() throw();
+  ~xml_writer() noexcept;
 
   // begin a new element with the given name
   void start(const std::string &name);

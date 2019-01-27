@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <iostream>
 #include <stdexcept>
 #include <boost/format.hpp>
@@ -5,7 +6,6 @@
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
-#include <stdio.h>
 
 #include "cgimap/config.hpp"
 #include "cgimap/time.hpp"
