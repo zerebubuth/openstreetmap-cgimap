@@ -49,9 +49,7 @@ public:
 
   private:
     pqxx::connection m_connection;
-#if PQXX_VERSION_MAJOR >= 4
     pqxx::quiet_errorhandler m_errorhandler;
-#endif
   };
 
 private:

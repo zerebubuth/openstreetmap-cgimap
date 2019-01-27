@@ -71,9 +71,7 @@ public:
 
   private:
     pqxx::connection m_connection, m_cache_connection;
-#if PQXX_VERSION_MAJOR >= 4
     pqxx::quiet_errorhandler m_errorhandler, m_cache_errorhandler;
-#endif
     pqxx::nontransaction m_cache_tx;
     cache<osm_changeset_id_t, changeset> m_cache;
   };
