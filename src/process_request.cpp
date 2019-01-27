@@ -532,6 +532,9 @@ void process_request(request &req, rate_limiter &limiter,
       if (!allow_api_write)
 	throw http::unauthorized("You have not granted the modify map permission");
 
+      if (update_factory == nullptr)
+	throw http::bad_request("Backend does not support POST requests");
+
       auto data_update = update_factory->make_data_update();
 
       if (data_update->is_readonly())
