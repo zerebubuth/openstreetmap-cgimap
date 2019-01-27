@@ -16,12 +16,6 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
-#if PQXX_VERSION_MAJOR >= 4
-#define PREPARE_ARGS(args)
-#else
-#define PREPARE_ARGS(args) args
-#endif
-
 namespace po = boost::program_options;
 namespace pt = boost::posix_time;
 using std::set;
@@ -442,10 +436,8 @@ size_t get_or_convert_cachesize(const po::variables_map &opts) {
 writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
     : m_connection(connect_db_str(opts)),
       m_cache_connection(connect_db_str(opts)),
-#if PQXX_VERSION_MAJOR >= 4
       m_errorhandler(m_connection),
       m_cache_errorhandler(m_cache_connection),
-#endif
       m_cache_tx(m_cache_connection, "changeset_cache"),
       m_cache(std::bind(fetch_changeset, std::ref(m_cache_tx), std::placeholders::_1),
               std::bind(fetch_changesets, std::ref(m_cache_tx), std::placeholders::_1),
@@ -456,14 +448,6 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
   // set the connections to use the appropriate charset.
   m_connection.set_client_encoding(opts["charset"].as<std::string>());
   m_cache_connection.set_client_encoding(opts["charset"].as<std::string>());
-
-  // ignore notice messages
-#if PQXX_VERSION_MAJOR < 4
-  m_connection.set_noticer(
-      std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
-  m_cache_connection.set_noticer(
-      std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
-#endif
 
   logger::message("Preparing prepared statements.");
 
@@ -488,16 +472,15 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
           "AND latitude BETWEEN $2 AND $3 "
           "AND longitude BETWEEN $4 AND $5 "
           "AND visible = true "
-        "LIMIT $6")
-    PREPARE_ARGS(("bigint[]")("integer")("integer")("integer")("integer")("integer"));
+        "LIMIT $6");
 
   // selecting node, way and relation visibility information
   m_connection.prepare("visible_node",
-    "SELECT visible FROM current_nodes WHERE id = $1")PREPARE_ARGS(("bigint"));
+    "SELECT visible FROM current_nodes WHERE id = $1");
   m_connection.prepare("visible_way",
-    "SELECT visible FROM current_ways WHERE id = $1")PREPARE_ARGS(("bigint"));
+    "SELECT visible FROM current_ways WHERE id = $1");
   m_connection.prepare("visible_relation",
-    "SELECT visible FROM current_relations WHERE id = $1")PREPARE_ARGS(("bigint"));
+    "SELECT visible FROM current_relations WHERE id = $1");
 
   // extraction functions for getting the data back out when the
   // selection set has been built up.
@@ -565,29 +548,25 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
         "FROM current_nodes n "
           "LEFT JOIN tmp_nodes tn ON n.id = tn.id "
         "WHERE n.id = ANY($1) "
-          "AND tn.id IS NULL")
-    PREPARE_ARGS(("bigint[]"));
+          "AND tn.id IS NULL");
   m_connection.prepare("add_ways_list",
     "INSERT INTO tmp_ways "
       "SELECT w.id AS id "
         "FROM current_ways w "
           "LEFT JOIN tmp_ways tw ON w.id = tw.id "
         "WHERE w.id = ANY($1) "
-          "AND tw.id IS NULL")
-    PREPARE_ARGS(("bigint[]"));
+          "AND tw.id IS NULL");
   m_connection.prepare("add_relations_list",
     "INSERT INTO tmp_relations "
       "SELECT r.id AS id "
         "FROM current_relations r "
           "LEFT JOIN tmp_relations tr ON r.id = tr.id "
         "WHERE r.id = ANY($1) "
-          "AND tr.id IS NULL")
-    PREPARE_ARGS(("bigint[]"));
+          "AND tr.id IS NULL");
   m_connection.prepare("add_changesets_list",
     "INSERT INTO tmp_changesets "
       "SELECT c.id from changesets c "
-        "WHERE c.id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+        "WHERE c.id = ANY($1)");
 
   // queries for filling elements which are used as members in relations
   m_connection.prepare("nodes_from_relations",
@@ -666,8 +645,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
          "FROM nodes "
          "WHERE "
            "node_id = $1 AND version = $2 AND"
-           "(redaction_id IS NULL OR $3 = TRUE)")
-    PREPARE_ARGS(("bigint")("bigint")("boolean"));
+           "(redaction_id IS NULL OR $3 = TRUE)");
 
   m_connection.prepare("drop_current_node_versions_from_historic",
     "WITH cv AS ("
@@ -688,8 +666,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
           "ON n.node_id = t.node_id AND n.version = t.version "
       "GROUP BY n.node_id, n.version");
   m_connection.prepare("extract_historic_node_tags",
-    "SELECT k, v FROM node_tags WHERE node_id=$1 AND version=$2")
-    PREPARE_ARGS(("bigint")("bigint"));
+    "SELECT k, v FROM node_tags WHERE node_id=$1 AND version=$2");
 
   m_connection.prepare("drop_current_way_versions_from_historic",
     "WITH cv AS ("
@@ -706,8 +683,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
          "FROM ways "
          "WHERE "
            "way_id = $1 AND version = $2 AND"
-           "(redaction_id IS NULL OR $3 = TRUE)")
-    PREPARE_ARGS(("bigint")("bigint")("boolean"));
+           "(redaction_id IS NULL OR $3 = TRUE)");
 
   m_connection.prepare("extract_historic_ways",
     "SELECT w.way_id AS id, w.visible, w.version, w.changeset_id, "
@@ -726,15 +702,13 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
               "ORDER BY sequence_id) x "
           ") wn ON true ");
   m_connection.prepare("extract_historic_way_tags",
-    "SELECT k, v FROM way_tags WHERE way_id=$1 AND version=$2")
-    PREPARE_ARGS(("bigint")("bigint"));
+    "SELECT k, v FROM way_tags WHERE way_id=$1 AND version=$2");
 
   m_connection.prepare("extract_historic_way_nds",
     "SELECT node_id "
       "FROM way_nodes "
       "WHERE way_id=$1 AND version=$2"
-      "ORDER BY sequence_id ASC")
-    PREPARE_ARGS(("bigint")("bigint"));
+      "ORDER BY sequence_id ASC");
 
   m_connection.prepare("drop_current_relation_versions_from_historic",
     "WITH cv AS ("
@@ -751,8 +725,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
          "FROM relations "
          "WHERE "
            "relation_id = $1 AND version = $2 AND"
-           "(redaction_id IS NULL OR $3 = TRUE)")
-    PREPARE_ARGS(("bigint")("bigint")("boolean"));
+           "(redaction_id IS NULL OR $3 = TRUE)");
 
   m_connection.prepare("extract_historic_relations",
      "SELECT r.relation_id AS id, r.visible, r.version, r.changeset_id, "
@@ -776,14 +749,12 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
             "ORDER BY sequence_id) x"
           ") rm ON true");
   m_connection.prepare("extract_historic_relation_tags",
-    "SELECT k, v FROM relation_tags WHERE relation_id=$1 AND version=$2")
-    PREPARE_ARGS(("bigint")("bigint"));
+    "SELECT k, v FROM relation_tags WHERE relation_id=$1 AND version=$2");
   m_connection.prepare("extract_historic_relation_members",
     "SELECT member_type, member_id, member_role "
       "FROM relation_members "
       "WHERE relation_id=$1 AND version=$2 "
-      "ORDER BY sequence_id ASC")
-    PREPARE_ARGS(("bigint")("bigint"));
+      "ORDER BY sequence_id ASC");
 
   m_connection.prepare("add_all_versions_of_node",
     "INSERT INTO tmp_historic_nodes "
@@ -792,8 +763,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       "LEFT JOIN tmp_historic_nodes t "
       "ON t.node_id = n.node_id AND t.version = n.version "
       "WHERE n.node_id = $1 AND t.node_id IS NULL AND "
-            "(n.redaction_id IS NULL OR $2 = TRUE)")
-    PREPARE_ARGS(("bigint")("boolean"));
+            "(n.redaction_id IS NULL OR $2 = TRUE)");
   m_connection.prepare("add_all_versions_of_way",
     "INSERT INTO tmp_historic_ways "
       "SELECT w.way_id, w.version "
@@ -801,8 +771,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       "LEFT JOIN tmp_historic_ways t "
       "ON t.way_id = w.way_id AND t.version = w.version "
       "WHERE w.way_id = $1 AND t.way_id IS NULL AND "
-            "(w.redaction_id IS NULL OR $2 = TRUE)")
-    PREPARE_ARGS(("bigint")("boolean"));
+            "(w.redaction_id IS NULL OR $2 = TRUE)");
   m_connection.prepare("add_all_versions_of_relation",
     "INSERT INTO tmp_historic_relations "
       "SELECT r.relation_id, r.version "
@@ -810,8 +779,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       "LEFT JOIN tmp_historic_relations t "
       "ON t.relation_id = r.relation_id AND t.version = r.version "
       "WHERE r.relation_id = $1 AND t.relation_id IS NULL AND "
-            "(r.redaction_id IS NULL OR $2 = TRUE)")
-    PREPARE_ARGS(("bigint")("boolean"));
+            "(r.redaction_id IS NULL OR $2 = TRUE)");
 
   // ------------------- CHANGESET DOWNLOAD QUERIES -----------------------
   m_connection.prepare("add_nodes_by_changesets",
@@ -822,9 +790,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       "ON t.node_id = n.node_id AND t.version = n.version "
       "WHERE n.changeset_id = ANY($1) "
         "AND t.node_id IS NULL "
-        "AND (n.redaction_id IS NULL OR $2 = TRUE)"
-    "")
-    PREPARE_ARGS(("bigint[]")("boolean"));
+        "AND (n.redaction_id IS NULL OR $2 = TRUE)");
 
   m_connection.prepare("add_ways_by_changesets",
     "INSERT INTO tmp_historic_ways "
@@ -834,9 +800,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       "ON t.way_id = w.way_id AND t.version = w.version "
       "WHERE w.changeset_id = ANY($1) "
         "AND t.way_id IS NULL "
-        "AND (w.redaction_id IS NULL OR $2 = TRUE)"
-    "")
-    PREPARE_ARGS(("bigint[]")("boolean"));
+        "AND (w.redaction_id IS NULL OR $2 = TRUE)");
 
   m_connection.prepare("add_relations_by_changesets",
     "INSERT INTO tmp_historic_relations "
@@ -846,25 +810,19 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
       "ON t.relation_id = r.relation_id AND t.version = r.version "
       "WHERE r.changeset_id = ANY($1) "
         "AND t.relation_id IS NULL "
-        "AND (r.redaction_id IS NULL OR $2 = TRUE)"
-    "")
-    PREPARE_ARGS(("bigint[]")("boolean"));
+        "AND (r.redaction_id IS NULL OR $2 = TRUE)");
 
   // ------------------- USER QUERIES -----------------------
 
   m_connection.prepare("check_user_blocked",
     R"(SELECT id FROM "user_blocks" 
           WHERE "user_blocks"."user_id" = $1 
-            AND (needs_view or ends_at > (now() at time zone 'utc')) LIMIT 1 )"
-    "")
-    PREPARE_ARGS(("character varying"));
+            AND (needs_view or ends_at > (now() at time zone 'utc')) LIMIT 1 )");
 
   m_connection.prepare("get_user_id_pass",
     R"(SELECT id, pass_crypt, pass_salt FROM users 
            WHERE display_name = $1 
-             AND (status = 'active' or status = 'confirmed') )"
-    "")
-    PREPARE_ARGS(("bigint"));
+             AND (status = 'active' or status = 'confirmed') )");
 
   // clang-format on
 }
