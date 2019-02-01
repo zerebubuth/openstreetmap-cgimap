@@ -22,11 +22,11 @@ node_responder::node_responder(mime::type mt, osm_nwr_id_t id_, data_selection_p
   }
 }
 
-node_responder::~node_responder() {}
+node_responder::~node_responder() = default;
 
 node_handler::node_handler(request &, osm_nwr_id_t id_) : id(id_) {}
 
-node_handler::~node_handler() {}
+node_handler::~node_handler() = default;
 
 std::string node_handler::log_name() const { return "node"; }
 

@@ -7,7 +7,6 @@
 #include <vector>
 #include <sstream>
 
-#include <boost/foreach.hpp>
 #ifdef HAVE_BOOST_LOCALE
 #include <boost/locale.hpp>
 #else
@@ -164,7 +163,7 @@ struct oauth_authorization_grammar
     // looks like realm is special, see the OAuth spec for details
     // http://oauth.net/core/1.0a/#rfc.section.5.4.1
     kvpair
-      = (ascii::string("realm") >> lit("=\"") > quoted_string > lit("\""))
+      = ((ascii::string("realm") >> (lit("=\"")) > quoted_string) > lit("\""))
       | (key >> lit("=\"") > escaped > lit("\""));
 
     // definitions from http://oauth.net/core/1.0a/#rfc.section.5.4.1
@@ -252,7 +251,7 @@ bool get_all_request_parameters(request &req, std::vector<param> &params) {
     bool success = parse_oauth_authorization(auth_header, auth_params);
 
     if (success) {
-      BOOST_FOREACH(param &p, auth_params) {
+      for (param &p : auth_params) {
         std::string k = http::urldecode(p.k);
         params.push_back(param());
         params.back().k = urlnormalise(p.k);
@@ -263,7 +262,7 @@ bool get_all_request_parameters(request &req, std::vector<param> &params) {
 
   { // add HTTP GET parameters
     params_t get_params = http::parse_params(get_query_string(req));
-    BOOST_FOREACH(const params_t::value_type &kv, get_params) {
+    for (const params_t::value_type &kv : get_params) {
       params.push_back(param());
       params.back().k = urlnormalise(kv.first);
       params.back().v = urlnormalise(kv.second);
@@ -274,7 +273,7 @@ bool get_all_request_parameters(request &req, std::vector<param> &params) {
 
   // check for duplicate protocol parameters
   std::string last_key;
-  BOOST_FOREACH(const param &p, params) {
+  for (const param &p : params) {
     std::string k = http::urldecode(p.k);
     if (begins_with(k, "oauth_") && (p.k == last_key)) {
       return false;
@@ -374,7 +373,7 @@ boost::optional<std::string> normalise_request_parameters(request &req) {
 
   std::ostringstream out;
   bool first = true;
-  BOOST_FOREACH(const param &p, params) {
+  for (const param &p : params) {
     if ((p.k != "realm") && (p.k != "oauth_signature")) {
       if (first) { first = false; } else { out << "&"; }
       out << p.k << "=" << p.v;
@@ -561,7 +560,6 @@ validity::validity is_valid_signature(
   }
 }
 
-store::~store() {
-}
+store::~store() = default;
 
 } // namespace oauth

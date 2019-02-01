@@ -4,8 +4,8 @@
 #include "cgimap/types.hpp"
 #include "cgimap/output_formatter.hpp"
 
+#include <memory>
 #include <vector>
-#include <boost/shared_ptr.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 /**
@@ -164,7 +164,7 @@ public:
 
     /// get a handle to a selection which can be used to build up
     /// a working set of data.
-    virtual boost::shared_ptr<data_selection> make_selection() = 0;
+    virtual std::shared_ptr<data_selection> make_selection() = 0;
   };
 };
 
@@ -172,7 +172,7 @@ public:
 // https://www.postgresql.org/docs/current/static/arrays.html#ARRAYS-IO
 std::vector<std::string> psql_array_to_vector(std::string str);
 
-typedef boost::shared_ptr<data_selection::factory> factory_ptr;
-typedef boost::shared_ptr<data_selection> data_selection_ptr;
+typedef std::shared_ptr<data_selection::factory> factory_ptr;
+typedef std::shared_ptr<data_selection> data_selection_ptr;
 
 #endif /* DATA_SELECTION_HPP */

@@ -9,8 +9,7 @@
 
 const unsigned int ZLIB_COMPLETE_CHUNK = 16384;
 
-#include <boost/shared_ptr.hpp>
-
+#include <memory>
 #include <zlib.h>
 #include "cgimap/output_buffer.hpp"
 
@@ -27,18 +26,18 @@ public:
   /**
    * Methods.
    */
-  zlib_output_buffer(boost::shared_ptr<output_buffer> o, mode m);
+  zlib_output_buffer(std::shared_ptr<output_buffer> o, mode m);
   zlib_output_buffer(const zlib_output_buffer &old);
-  virtual ~zlib_output_buffer(void);
+  virtual ~zlib_output_buffer();
   virtual int write(const char *buffer, int len);
-  virtual int written(void);
-  virtual int close(void);
+  virtual int written();
+  virtual int close();
   virtual void flush();
 
 private:
-  void flush_output(void);
+  void flush_output();
 
-  boost::shared_ptr<output_buffer> out;
+  std::shared_ptr<output_buffer> out;
   // keep track of bytes written because the z_stream struct doesn't seem to
   // update unless its flushed.
   size_t bytes_in;
@@ -67,7 +66,7 @@ public:
 protected:
   ZLibBaseDecompressor();
   ZLibBaseDecompressor(int windowBits);
-  ~ZLibBaseDecompressor(void);
+  ~ZLibBaseDecompressor();
 
 private:
   char inbuf[ZLIB_COMPLETE_CHUNK];
@@ -78,20 +77,20 @@ private:
 
 class ZLibDecompressor : public ZLibBaseDecompressor {
 public:
-  ZLibDecompressor(void);
-  virtual ~ZLibDecompressor(void);
+  ZLibDecompressor();
+  virtual ~ZLibDecompressor();
 };
 
 class GZipDecompressor : public ZLibBaseDecompressor {
 public:
-  GZipDecompressor(void);
-  virtual ~GZipDecompressor(void);
+  GZipDecompressor();
+  virtual ~GZipDecompressor();
 };
 
 class IdentityDecompressor : public ZLibBaseDecompressor {
 public:
-  IdentityDecompressor(void);
-  virtual ~IdentityDecompressor(void);
+  IdentityDecompressor();
+  virtual ~IdentityDecompressor();
 };
 
 #endif /* ZLIB_HPP */

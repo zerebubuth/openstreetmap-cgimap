@@ -11,30 +11,21 @@
 #include "cgimap/backend/apidb/changeset_upload/relation_updater.hpp"
 #include "cgimap/backend/apidb/changeset_upload/way_updater.hpp"
 
+#include <functional>
 #include <set>
 #include <sstream>
 #include <list>
 #include <vector>
 #include <boost/lexical_cast.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/ref.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/bind.hpp>
-#include <boost/foreach.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
-#if PQXX_VERSION_MAJOR >= 4
-#define PREPARE_ARGS(args)
-#else
-#define PREPARE_ARGS(args) args
-#endif
 
 namespace po = boost::program_options;
 namespace pt = boost::posix_time;
 using std::set;
 using std::list;
 using std::vector;
-using boost::shared_ptr;
+using std::shared_ptr;
 
 namespace {
 std::string connect_db_str(const po::variables_map &options) {
@@ -114,7 +105,7 @@ pgsql_update::pgsql_update(
      )");
 }
 
-pgsql_update::~pgsql_update() {}
+pgsql_update::~pgsql_update() = default;
 
 bool pgsql_update::is_readonly() {
   return m_readonly;
@@ -155,9 +146,7 @@ void pgsql_update::commit() {
 
 pgsql_update::factory::factory(const po::variables_map &opts)
     : m_connection(connect_db_str(opts)), m_readonly(false)
-#if PQXX_VERSION_MAJOR >= 4
       ,m_errorhandler(m_connection)
-#endif
  {
 
   check_postgres_version(m_connection);
@@ -174,18 +163,11 @@ pgsql_update::factory::factory(const po::variables_map &opts)
     m_readonly = true;
     m_connection.set_variable("default_transaction_read_only", "true");
   }
-
-  // ignore notice messages
-#if PQXX_VERSION_MAJOR < 4
-  m_connection.set_noticer(
-      std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
-#endif
-
 }
 
-pgsql_update::factory::~factory() {}
+pgsql_update::factory::~factory() = default;
 
-boost::shared_ptr<data_update>
+std::shared_ptr<data_update>
 pgsql_update::factory::make_data_update() {
-  return boost::make_shared<pgsql_update>(boost::ref(m_connection), m_readonly);
+  return std::make_shared<pgsql_update>(std::ref(m_connection), m_readonly);
 }

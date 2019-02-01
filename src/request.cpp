@@ -22,7 +22,7 @@ request::request()
   : m_workflow_status(status_NONE), m_status(500), m_headers()
   , m_methods(http::method::GET | http::method::HEAD | http::method::OPTIONS) {}
 
-request::~request() {}
+request::~request() = default;
 
 void request::status(int code) {
   check_workflow(status_HEADERS);
@@ -34,7 +34,7 @@ void request::add_header(const std::string &key, const std::string &value) {
   m_headers.push_back(std::make_pair(key, value));
 }
 
-boost::shared_ptr<output_buffer> request::get_buffer() {
+std::shared_ptr<output_buffer> request::get_buffer() {
   check_workflow(status_BODY);
   return get_buffer_internal();
 }

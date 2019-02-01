@@ -1,14 +1,11 @@
+#include <cstdio>
 #include <iostream>
 #include <stdexcept>
-#include <boost/noncopyable.hpp>
 #include <boost/format.hpp>
-#include <boost/foreach.hpp>
 #include <boost/optional/optional_io.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
-#include <stdio.h>
 
 #include "cgimap/config.hpp"
 #include "cgimap/time.hpp"
@@ -1619,7 +1616,7 @@ namespace {
              </osmChange>)" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, sel_factory, upd_factory, boost::shared_ptr<oauth::store>(nullptr));
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
 
 	if (req.response_status() != 409)
 	  throw std::runtime_error("Expected HTTP 409 Conflict: Payload and URL changeset id differ");
@@ -1640,7 +1637,7 @@ namespace {
              </osmChange>)" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, sel_factory, upd_factory, boost::shared_ptr<oauth::store>(nullptr));
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
 
 	if (req.response_status() != 409)
 	  throw std::runtime_error("Expected HTTP 409 Conflict: User doesn't own the changeset");
@@ -1661,7 +1658,7 @@ namespace {
 		  </osmChange>)" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, sel_factory, upd_factory, boost::shared_ptr<oauth::store>(nullptr));
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
 
 	if (req.response_status() != 409)
 	  std::runtime_error("Expected HTTP 409 Conflict: Cannot add more elements to changeset");
@@ -1682,7 +1679,7 @@ namespace {
 		  </osmChange>)" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, sel_factory, upd_factory, boost::shared_ptr<oauth::store>(nullptr));
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
 
 	if (req.response_status() != 409)
 	  std::runtime_error("Expected HTTP 409 Conflict: Changeset already closed");
@@ -1743,7 +1740,7 @@ namespace {
 		 </osmChange>)" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, sel_factory, upd_factory, boost::shared_ptr<oauth::store>(nullptr));
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
 
 	// std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
 
@@ -1799,7 +1796,7 @@ namespace {
 		 </osmChange>)" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, sel_factory, upd_factory, boost::shared_ptr<oauth::store>(nullptr));
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
 
 	// std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
 
@@ -1835,7 +1832,7 @@ namespace {
                    </osmChange>)" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, sel_factory, upd_factory, boost::shared_ptr<oauth::store>(nullptr));
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
 
 	// std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
 
@@ -1854,15 +1851,15 @@ int main(int, char **) {
       test_database tdb;
       tdb.setup();
 
-      tdb.run_update(boost::function<void(test_database&)>(&test_single_nodes));
+      tdb.run_update(std::function<void(test_database&)>(&test_single_nodes));
 
-      tdb.run_update(boost::function<void(test_database&)>(&test_single_ways));
+      tdb.run_update(std::function<void(test_database&)>(&test_single_ways));
 
-      tdb.run_update(boost::function<void(test_database&)>(&test_single_relations));
+      tdb.run_update(std::function<void(test_database&)>(&test_single_relations));
 
-      tdb.run_update(boost::function<void(test_database&)>(&test_osmchange_message));
+      tdb.run_update(std::function<void(test_database&)>(&test_osmchange_message));
 
-      tdb.run_update(boost::function<void(test_database&)>(&test_osmchange_end_to_end));
+      tdb.run_update(std::function<void(test_database&)>(&test_osmchange_end_to_end));
 
 
   } catch (const test_database::setup_error &e) {

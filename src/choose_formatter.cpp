@@ -25,7 +25,6 @@
 #include <boost/spirit/include/phoenix_statement.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
 #include <boost/spirit/include/qi.hpp>
-#include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
 
@@ -37,7 +36,7 @@ using std::map;
 using std::numeric_limits;
 using std::make_pair;
 using boost::optional;
-using boost::shared_ptr;
+using std::shared_ptr;
 using boost::lexical_cast;
 using std::string;
 using std::vector;
@@ -136,7 +135,7 @@ acceptable_types::acceptable_types(const std::string &accept_header) {
   bool status = phrase_parse(itr, end, g, blank, ranges);
 
   if (status && (itr == end)) {
-    BOOST_FOREACH(media_range range, ranges) {
+    for (media_range range : ranges) {
       // figure out the mime::type from the string.
       mime::type mime_type = mime::parse_from(range.mime_type);
       if (mime_type == mime::unspecified_type) {
@@ -145,7 +144,7 @@ acceptable_types::acceptable_types(const std::string &accept_header) {
       }
 
       // figure out the quality
-      media_range::param_t::iterator q_itr = range.params.find("q");
+      auto q_itr = range.params.find("q");
       // default quality parameter is 1
       float quality = 1.0;
       if (q_itr != range.params.end()) {
@@ -172,8 +171,8 @@ mime::type
 acceptable_types::most_acceptable_of(const list<mime::type> &available) const {
   mime::type best = mime::unspecified_type;
   float score = numeric_limits<float>::min();
-  BOOST_FOREACH(mime::type type, available) {
-    map<mime::type, float>::const_iterator itr = mapping.find(type);
+  for (mime::type type : available) {
+    auto itr = mapping.find(type);
     if ((itr != mapping.end()) && (itr->second > score)) {
       best = itr->first;
       score = itr->second;
@@ -184,7 +183,7 @@ acceptable_types::most_acceptable_of(const list<mime::type> &available) const {
 
   // also check the full wildcard.
   if (available.size() > 0) {
-    map<mime::type, float>::const_iterator itr = mapping.find(mime::any_type);
+    auto itr = mapping.find(mime::any_type);
     if ((itr != mapping.end()) && (itr->second > score)) {
       best = available.front();
     }
@@ -262,12 +261,12 @@ shared_ptr<output_formatter> create_formatter(request &req,
   shared_ptr<output_formatter> o_formatter;
 
   if (best_type == mime::text_xml) {
-    xml_writer *xwriter = new xml_writer(out, true);
+    auto *xwriter = new xml_writer(out, true);
     o_formatter = shared_ptr<output_formatter>(new xml_formatter(xwriter));
 
 #ifdef HAVE_YAJL
   } else if (best_type == mime::text_json) {
-    json_writer *jwriter = new json_writer(out, true);
+    auto *jwriter = new json_writer(out, true);
     o_formatter = shared_ptr<output_formatter>(new json_formatter(jwriter));
 #endif
 

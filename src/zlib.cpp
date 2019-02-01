@@ -1,4 +1,4 @@
-#include <assert.h>
+#include <cassert>
 #include <algorithm>
 #include <cstring>
 
@@ -6,7 +6,7 @@
 #include "cgimap/zlib.hpp"
 #include "cgimap/output_writer.hpp"
 
-zlib_output_buffer::zlib_output_buffer(boost::shared_ptr<output_buffer> o,
+zlib_output_buffer::zlib_output_buffer(std::shared_ptr<output_buffer> o,
                                        zlib_output_buffer::mode m)
     : out(o), bytes_in(0) {
   int windowBits;
@@ -43,7 +43,7 @@ zlib_output_buffer::zlib_output_buffer(const zlib_output_buffer &old)
   stream.next_out = (Bytef *)outbuf + (sizeof(outbuf) - stream.avail_out);
 }
 
-zlib_output_buffer::~zlib_output_buffer(void) {}
+zlib_output_buffer::~zlib_output_buffer(void) = default;
 
 int zlib_output_buffer::write(const char *buffer, int len) {
   assert(stream.avail_in == 0);
@@ -74,7 +74,7 @@ int zlib_output_buffer::write(const char *buffer, int len) {
   return len;
 }
 
-int zlib_output_buffer::close(void) {
+int zlib_output_buffer::close() {
   int status;
 
   assert(stream.avail_in == 0);
@@ -97,9 +97,9 @@ int zlib_output_buffer::close(void) {
   return out->close();
 }
 
-int zlib_output_buffer::written(void) { return bytes_in; }
+int zlib_output_buffer::written() { return bytes_in; }
 
-void zlib_output_buffer::flush_output(void) {
+void zlib_output_buffer::flush_output() {
   out->write(outbuf, sizeof(outbuf) - stream.avail_out);
 
   stream.next_out = (Bytef *)outbuf;
@@ -180,15 +180,15 @@ std::string ZLibBaseDecompressor::decompress(const std::string& input) {
 
 GZipDecompressor::GZipDecompressor() : ZLibBaseDecompressor(15+16) { }
 
-GZipDecompressor::~GZipDecompressor() { }
+GZipDecompressor::~GZipDecompressor() = default;
 
 ZLibDecompressor::ZLibDecompressor() : ZLibBaseDecompressor(15) { }
 
-ZLibDecompressor::~ZLibDecompressor() { }
+ZLibDecompressor::~ZLibDecompressor() = default;
 
 IdentityDecompressor::IdentityDecompressor() : ZLibBaseDecompressor() { }
 
-IdentityDecompressor::~IdentityDecompressor() {}
+IdentityDecompressor::~IdentityDecompressor() = default;
 
 
 

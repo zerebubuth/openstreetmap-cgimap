@@ -1,7 +1,6 @@
 #include "cgimap/output_formatter.hpp"
 #include "test_formatter.hpp"
 
-#include <boost/foreach.hpp>
 #include <boost/optional/optional_io.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
@@ -130,7 +129,7 @@ bool test_formatter::changeset_t::operator==(const changeset_t &other) const {
   return std::equal(m_tags.begin(), m_tags.end(), other.m_tags.begin());
 }
 
-test_formatter::~test_formatter() {}
+test_formatter::~test_formatter() = default;
 
 mime::type test_formatter::mime_type() const {
   throw std::runtime_error("Unimplemented");
@@ -217,7 +216,7 @@ std::ostream &operator<<(std::ostream &out, const test_formatter::node_t &n) {
       << "lon=" << n.lon << ", "
       << "lat=" << n.lat << ", "
       << "tags{";
-  BOOST_FOREACH(const tags_t::value_type &v, n.tags) {
+  for (const tags_t::value_type &v : n.tags) {
     out << "\"" << v.first << "\" => \"" << v.second << "\", ";
   }
   out << "})";
@@ -245,13 +244,13 @@ std::ostream &operator<<(std::ostream &out, const test_formatter::changeset_t &c
       << "num_changes=" << c.m_info.num_changes << ", "
       << "comments_count=" << c.m_info.comments_count << "), "
       << "tags{";
-  BOOST_FOREACH(const tags_t::value_type &v, c.m_tags) {
+  for (const tags_t::value_type &v : c.m_tags) {
     out << "\"" << v.first << "\" => \"" << v.second << "\", ";
   }
   out << "}, "
       << "include_comments=" << c.m_include_comments << ", "
       << "comments[";
-  BOOST_FOREACH(const comments_t::value_type &v, c.m_comments) {
+  for (const comments_t::value_type &v : c.m_comments) {
     out << "comment(author_id=" << v.author_id << ", "
         << "body=\"" << v.body << "\", "
         << "created_at=\"" << v.created_at << "\", "
@@ -267,11 +266,11 @@ std::ostream &operator<<(std::ostream &out, const test_formatter::changeset_t &c
 std::ostream &operator<<(std::ostream &out, const test_formatter::way_t &w) {
   out << "way(" << w.elem << ", "
       << "[";
-  BOOST_FOREACH(const nodes_t::value_type &v, w.nodes) {
+  for (const nodes_t::value_type &v : w.nodes) {
     out << v << ", ";
   }
   out << "], {";
-  BOOST_FOREACH(const tags_t::value_type &v, w.tags) {
+  for (const tags_t::value_type &v : w.tags) {
     out << "\"" << v.first << "\" => \"" << v.second << "\", ";
   }
   out << "})";
@@ -287,11 +286,11 @@ std::ostream &operator<<(std::ostream &out, const member_info &m) {
 std::ostream &operator<<(std::ostream &out, const test_formatter::relation_t &r) {
   out << "relation(" << r.elem << ", "
       << "[";
-  BOOST_FOREACH(const member_info &m, r.members) {
+  for (const member_info &m : r.members) {
     out << m << ", ";
   }
   out << "], {";
-  BOOST_FOREACH(const tags_t::value_type &v, r.tags) {
+  for (const tags_t::value_type &v : r.tags) {
     out << "\"" << v.first << "\" => \"" << v.second << "\", ";
   }
   out << "})";

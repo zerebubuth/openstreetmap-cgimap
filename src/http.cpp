@@ -1,7 +1,6 @@
 #include "cgimap/config.hpp"
 #include "cgimap/http.hpp"
 #include <vector>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>
@@ -14,7 +13,7 @@ namespace al = boost::algorithm;
 using std::string;
 using std::vector;
 using std::pair;
-using boost::shared_ptr;
+using std::shared_ptr;
 
 namespace {
 /**
@@ -69,19 +68,22 @@ namespace http {
 exception::exception(unsigned int c, const string &h, const string &m)
     : code_(c), header_(h), message_(m) {}
 
-exception::~exception() throw() {}
+exception::~exception() noexcept = default;
 
 unsigned int exception::code() const { return code_; }
 
 const string &exception::header() const { return header_; }
 
-const char *exception::what() const throw() { return message_.c_str(); }
+const char *exception::what() const noexcept { return message_.c_str(); }
 
 server_error::server_error(const string &message)
     : exception(500, "Internal Server Error", message) {}
 
 bad_request::bad_request(const string &message)
     : exception(400, "Bad Request", message) {}
+
+forbidden::forbidden(const string &message)
+    : exception(403, "Forbidden", message) {}
 
 not_found::not_found(const string &uri) : exception(404, "Not Found", uri) {}
 
@@ -116,7 +118,7 @@ string urlencode(const string &s) {
                               '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
   std::ostringstream ostr;
 
-  BOOST_FOREACH(char c, s) {
+  for (char c : s) {
     if (((c >= 'a') && (c <= 'z')) ||
         ((c >= 'A') && (c <= 'Z')) ||
         ((c >= '0') && (c <= '9')) ||
@@ -127,7 +129,7 @@ string urlencode(const string &s) {
       ostr << c;
 
     } else {
-      unsigned char idx = (unsigned char)(c);
+      auto idx = (unsigned char)(c);
       ostr << "%" << hex[idx >> 4] << hex[idx & 0xf];
     }
   }
@@ -143,7 +145,7 @@ vector<pair<string, string> > parse_params(const string &p) {
     vector<string> temp;
     al::split(temp, p, al::is_any_of("&"));
 
-    BOOST_FOREACH(const string &kvPair, temp) {
+    for (const string &kvPair : temp) {
       vector<string> kvTemp;
       al::split(kvTemp, kvPair, al::is_any_of("="));
 
@@ -167,7 +169,7 @@ shared_ptr<encoding> choose_encoding(const string &accept_encoding) {
   float deflate_quality = 0.000;
   float gzip_quality = 0.000;
 
-  BOOST_FOREACH(const string &encoding, encodings) {
+  for (const string &encoding : encodings) {
     boost::smatch what;
     string name;
     float quality;
@@ -181,7 +183,7 @@ shared_ptr<encoding> choose_encoding(const string &accept_encoding) {
     } else if (boost::regex_match(
                    encoding, what,
                    boost::regex(
-                       "\\s*([^()<>@,;:\\\\\"/[\\]\\\\?={} \\t]+)\\s*"))) {
+                       R"(\s*([^()<>@,;:\\"/[\]\\?={} \t]+)\s*)"))) {
       name = what[1];
       quality = 1.0;
     } else {

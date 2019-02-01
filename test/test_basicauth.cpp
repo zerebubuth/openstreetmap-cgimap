@@ -9,7 +9,6 @@
 #include <set>
 
 #include <boost/date_time/posix_time/conversion.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/optional.hpp>
 #include <boost/optional/optional_io.hpp>
 #include <boost/tuple/tuple.hpp>
@@ -61,7 +60,7 @@ class basicauth_test_data_selection
   : public data_selection {
 public:
 
-  virtual ~basicauth_test_data_selection() {}
+  virtual ~basicauth_test_data_selection() = default;
 
   void write_nodes(output_formatter &formatter) {}
   void write_ways(output_formatter &formatter) {}
@@ -104,9 +103,9 @@ public:
 
   struct factory
     : public data_selection::factory {
-    virtual ~factory() {}
-    virtual boost::shared_ptr<data_selection> make_selection() {
-      return boost::make_shared<basicauth_test_data_selection>();
+    virtual ~factory() = default;
+    virtual std::shared_ptr<data_selection> make_selection() {
+      return std::make_shared<basicauth_test_data_selection>();
     }
   };
 };
@@ -169,8 +168,8 @@ void test_password_hash() {
 
 void test_authenticate_user() {
 
-  boost::shared_ptr<data_selection::factory> factory =
-    boost::make_shared<basicauth_test_data_selection::factory>();
+  std::shared_ptr<data_selection::factory> factory =
+    std::make_shared<basicauth_test_data_selection::factory>();
 
   auto sel = factory->make_selection();
 

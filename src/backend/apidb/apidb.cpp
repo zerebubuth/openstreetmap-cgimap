@@ -5,11 +5,11 @@
 #include "cgimap/backend/apidb/oauth_store.hpp"
 #include "cgimap/backend.hpp"
 
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <sstream>
 
 namespace po = boost::program_options;
-using boost::shared_ptr;
+using std::shared_ptr;
 using std::string;
 
 #define CACHE_SIZE 100000
@@ -56,7 +56,7 @@ struct apidb_backend : public backend {
        "database port for API write operations, if different from --dbport");
     // clang-format on
   }
-  virtual ~apidb_backend() {}
+  virtual ~apidb_backend() = default;
 
   const string &name() const { return m_name; }
   const po::options_description &options() const { return m_options; }
@@ -71,9 +71,9 @@ struct apidb_backend : public backend {
 
     shared_ptr<data_selection::factory> factory;
     if (db_is_writeable) {
-      factory = boost::make_shared<writeable_pgsql_selection::factory>(opts);
+      factory = std::make_shared<writeable_pgsql_selection::factory>(opts);
     } else {
-      factory = boost::make_shared<readonly_pgsql_selection::factory>(opts);
+      factory = std::make_shared<readonly_pgsql_selection::factory>(opts);
     }
 
     return factory;
@@ -85,14 +85,14 @@ struct apidb_backend : public backend {
       throw std::runtime_error("database name not specified");
     }
 
-    return boost::make_shared<pgsql_update::factory>(opts);
+    return std::make_shared<pgsql_update::factory>(opts);
   }
 
 
-  boost::shared_ptr<oauth::store> create_oauth_store(
+  std::shared_ptr<oauth::store> create_oauth_store(
     const po::variables_map &opts) {
     shared_ptr<oauth::store> store =
-      boost::make_shared<oauth_store>(opts);
+      std::make_shared<oauth_store>(opts);
     return store;
   }
 
@@ -102,6 +102,6 @@ private:
 };
 }
 
-boost::shared_ptr<backend> make_apidb_backend() {
-  return boost::make_shared<apidb_backend>();
+std::shared_ptr<backend> make_apidb_backend() {
+  return std::make_shared<apidb_backend>();
 }

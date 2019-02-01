@@ -1,9 +1,8 @@
-#include <boost/shared_ptr.hpp>
 
 #include "cgimap/json_formatter.hpp"
 #include "cgimap/config.hpp"
 
-using boost::shared_ptr;
+using std::shared_ptr;
 using std::string;
 using std::transform;
 namespace pt = boost::posix_time;
@@ -31,7 +30,7 @@ const std::string &element_type_name(element_type elt) {
 json_formatter::json_formatter(json_writer *w) : writer(w),
     is_in_elements_array(false) {}
 
-json_formatter::~json_formatter() {}
+json_formatter::~json_formatter() = default;
 
 mime::type json_formatter::mime_type() const { return mime::text_json; }
 

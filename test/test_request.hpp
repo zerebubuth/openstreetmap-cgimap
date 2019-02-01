@@ -47,7 +47,7 @@ struct test_request : public request {
 
 protected:
   virtual void write_header_info(int status, const headers_t &headers);
-  virtual boost::shared_ptr<output_buffer> get_buffer_internal();
+  virtual std::shared_ptr<output_buffer> get_buffer_internal();
   virtual void finish_internal();
 
 private:

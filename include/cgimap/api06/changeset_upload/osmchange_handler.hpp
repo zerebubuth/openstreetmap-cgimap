@@ -24,7 +24,7 @@ public:
                     std::unique_ptr<Relation_Updater> _relation_updater,
                     osm_changeset_id_t _changeset, osm_user_id_t _uid);
 
-  virtual ~OSMChange_Handler() {};
+  virtual ~OSMChange_Handler() = default;
 
   // checks common to all objects
   void check_osm_object(const OSMObject &o) const;

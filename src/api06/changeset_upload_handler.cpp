@@ -22,7 +22,7 @@
 using std::stringstream;
 using std::vector;
 using std::list;
-using boost::shared_ptr;
+using std::shared_ptr;
 namespace pt = boost::posix_time;
 
 namespace api06 {
@@ -59,7 +59,7 @@ changeset_upload_responder::changeset_upload_responder(
   upd->commit();
 }
 
-changeset_upload_responder::~changeset_upload_responder() {}
+changeset_upload_responder::~changeset_upload_responder() = default;
 
 changeset_upload_handler::changeset_upload_handler(request &req,
                                                    osm_changeset_id_t id_)
@@ -67,7 +67,7 @@ changeset_upload_handler::changeset_upload_handler(request &req,
                               http::method::POST | http::method::OPTIONS),
       id(id_) {}
 
-changeset_upload_handler::~changeset_upload_handler() {}
+changeset_upload_handler::~changeset_upload_handler() = default;
 
 std::string changeset_upload_handler::log_name() const {
   return ((boost::format("changeset/upload %1%") % id).str());

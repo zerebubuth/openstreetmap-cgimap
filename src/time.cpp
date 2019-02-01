@@ -2,7 +2,7 @@
 #include <boost/date_time/time_parsing.hpp>
 #include <stdexcept>
 #include <sstream>
-#include <ctype.h>
+#include <cctype>
 
 namespace bpt = boost::posix_time;
 namespace bdt = boost::date_time;

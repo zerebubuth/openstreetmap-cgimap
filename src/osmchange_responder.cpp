@@ -2,7 +2,7 @@
 #include "cgimap/osmchange_responder.hpp"
 
 using std::list;
-using boost::shared_ptr;
+using std::shared_ptr;
 namespace pt = boost::posix_time;
 
 namespace {
@@ -55,7 +55,7 @@ bool operator<(const element &a, const element &b) {
 struct sorting_formatter
   : public output_formatter {
 
-  virtual ~sorting_formatter() {}
+  virtual ~sorting_formatter() = default;
 
   mime::type mime_type() const {
     throw std::runtime_error("sorting_formatter::mime_type unimplemented");
@@ -215,8 +215,7 @@ osmchange_responder::osmchange_responder(
   : osm_responder(mt, boost::none), sel(s) {
 }
 
-osmchange_responder::~osmchange_responder() {
-}
+osmchange_responder::~osmchange_responder() = default;
 
 list<mime::type> osmchange_responder::types_available() const {
   list<mime::type> types;

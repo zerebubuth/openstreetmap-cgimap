@@ -21,7 +21,6 @@
 #include <boost/fusion/include/at.hpp>
 #include <boost/fusion/container/list/convert.hpp>
 #include <boost/fusion/include/as_list.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/function_types/function_type.hpp>
 #include <boost/fusion/functional/invocation/invoke.hpp>

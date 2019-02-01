@@ -5,6 +5,8 @@
 #include "cgimap/backend/apidb/changeset.hpp"
 #include "cgimap/backend/apidb/cache.hpp"
 #include "cgimap/backend/apidb/transaction_manager.hpp"
+
+#include <memory>
 #include <pqxx/pqxx>
 #include <boost/program_options.hpp>
 
@@ -39,14 +41,12 @@ public:
   public:
     factory(const boost::program_options::variables_map &);
     virtual ~factory();
-    virtual boost::shared_ptr<data_update> make_data_update();
+    virtual std::shared_ptr<data_update> make_data_update();
 
   private:
     pqxx::connection m_connection;
     bool m_readonly;
-#if PQXX_VERSION_MAJOR >= 4
     pqxx::quiet_errorhandler m_errorhandler;
-#endif
   };
 
 private:

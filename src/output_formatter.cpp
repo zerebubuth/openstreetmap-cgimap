@@ -15,9 +15,7 @@ element_info::element_info()
     visible(false), redaction(boost::none) {}
 
 element_info::element_info(const element_info &other)
-  : id(other.id), version(other.version), changeset(other.changeset),
-    timestamp(other.timestamp), uid(other.uid), display_name(other.display_name),
-    visible(other.visible), redaction(other.redaction) {}
+   = default;
 
 element_info::element_info(osm_nwr_id_t id_, osm_nwr_id_t version_,
                            osm_changeset_id_t changeset_,
@@ -36,11 +34,8 @@ changeset_info::changeset_info()
     comments_count(0) {}
 
 changeset_info::changeset_info(const changeset_info &other)
-  : id(other.id), created_at(other.created_at),
-    closed_at(other.closed_at), uid(other.uid),
-    display_name(other.display_name), bounding_box(other.bounding_box),
-    num_changes(other.num_changes),
-    comments_count(other.comments_count) {}
+  
+    = default;
 
 changeset_info::changeset_info(
   osm_changeset_id_t id_,
@@ -68,4 +63,4 @@ bool changeset_comment_info::operator==(const changeset_comment_info &other) con
           (author_display_name == other.author_display_name));
 }
 
-output_formatter::~output_formatter() {}
+output_formatter::~output_formatter() = default;

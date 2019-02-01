@@ -1,11 +1,10 @@
 #include "cgimap/backend/pgsnapshot/snapshot_selection.hpp"
 #include "cgimap/backend.hpp"
 
-#include <boost/make_shared.hpp>
 #include <sstream>
 
 namespace po = boost::program_options;
-using boost::shared_ptr;
+using std::shared_ptr;
 using std::string;
 
 namespace {
@@ -21,7 +20,7 @@ struct pgsnapshot_backend : public backend {
         "dbport", po::value<string>(),
         "database port number or UNIX socket file name");
   }
-  virtual ~pgsnapshot_backend() {}
+  virtual ~pgsnapshot_backend() = default;
 
   const string &name() const { return m_name; }
   const po::options_description &options() const { return m_options; }
@@ -31,7 +30,7 @@ struct pgsnapshot_backend : public backend {
       throw std::runtime_error("database name not specified");
     }
     shared_ptr<data_selection::factory> factory;
-    factory = boost::make_shared<snapshot_selection::factory>(opts);
+    factory = std::make_shared<snapshot_selection::factory>(opts);
 
     return factory;
   }
@@ -41,9 +40,9 @@ struct pgsnapshot_backend : public backend {
     return nullptr;   // TODO: not implemented
   }
 
-  boost::shared_ptr<oauth::store> create_oauth_store(
+  std::shared_ptr<oauth::store> create_oauth_store(
     const po::variables_map &opts) {
-    return boost::shared_ptr<oauth::store>();
+    return std::shared_ptr<oauth::store>();
   }
 
 private:
@@ -52,6 +51,6 @@ private:
 };
 }
 
-boost::shared_ptr<backend> make_pgsnapshot_backend() {
-  return boost::make_shared<pgsnapshot_backend>();
+std::shared_ptr<backend> make_pgsnapshot_backend() {
+  return std::make_shared<pgsnapshot_backend>();
 }

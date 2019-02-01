@@ -3,13 +3,14 @@
 #include "cgimap/logger.hpp"
 #include "cgimap/output_buffer.hpp"
 #include "cgimap/request_helpers.hpp"
-#include <boost/foreach.hpp>
+
+#include <array>
 #include <iostream>
 #include <stdexcept>
 #include <sstream>
 #include <fcgiapp.h>
-#include <errno.h>
-#include <string.h>
+#include <cerrno>
+#include <cstring>
 
 using std::runtime_error;
 
@@ -18,7 +19,7 @@ struct fcgi_buffer : public output_buffer {
 
   explicit fcgi_buffer(FCGX_Request req) : m_req(req), m_written(0) {}
 
-  virtual ~fcgi_buffer() {}
+  virtual ~fcgi_buffer() = default;
 
   int write(const char *buffer, int len) {
     int bytes = FCGX_PutStr(buffer, len, m_req.out);
@@ -54,7 +55,7 @@ fcgi_request::fcgi_request(int socket, const boost::posix_time::ptime &now) : m_
     throw runtime_error("Couldn't initialise FCGX request structure.");
   }
   m_impl->now = now;
-  m_buffer = boost::shared_ptr<output_buffer>(new fcgi_buffer(m_impl->req));
+  m_buffer = std::shared_ptr<output_buffer>(new fcgi_buffer(m_impl->req));
 }
 
 fcgi_request::~fcgi_request() { FCGX_Free(&m_impl->req, true); }
@@ -81,13 +82,13 @@ const std::string fcgi_request::get_payload() {
   if (content_length_str)
     content_length = http::parse_content_length(content_length_str);
 
-  char * content_buffer = new char[BUFFER_LEN];
+  std::array<char, BUFFER_LEN> content_buffer{};
 
   std::string result = "";
 
-  while ((curr_content_length = FCGX_GetStr(content_buffer, BUFFER_LEN, m_impl->req.in)) > 0)
+  while ((curr_content_length = FCGX_GetStr(content_buffer.data(), BUFFER_LEN, m_impl->req.in)) > 0)
   {
-      std::string content(content_buffer, curr_content_length);
+      std::string content(content_buffer.data(), curr_content_length);
       result_length += content.length();
 
       // Decompression according to Content-Encoding header (null op, if header is not set)
@@ -107,7 +108,6 @@ const std::string fcgi_request::get_payload() {
   if (content_length > 0 && result_length != content_length)
     throw http::server_error("HTTP Header field 'Content-Length' differs from actual payload length");
 
-  delete [] content_buffer;
   return result;
 }
 
@@ -123,7 +123,7 @@ void fcgi_request::write_header_info(int status,
                                      const request::headers_t &headers) {
   std::ostringstream ostr;
   ostr << "Status: " << status << " " << status_message(status) << "\r\n";
-  BOOST_FOREACH(const request::headers_t::value_type &header, headers) {
+  for (const request::headers_t::value_type &header : headers) {
     ostr << header.first << ": " << header.second << "\r\n";
   }
   ostr << "\r\n";
@@ -131,7 +131,7 @@ void fcgi_request::write_header_info(int status,
   m_buffer->write(&data[0], data.size());
 }
 
-boost::shared_ptr<output_buffer> fcgi_request::get_buffer_internal() {
+std::shared_ptr<output_buffer> fcgi_request::get_buffer_internal() {
   return m_buffer;
 }
 
@@ -168,7 +168,7 @@ int fcgi_request::accept_r() {
 
   // swap out the output buffer for a new one referencing the new
   // request.
-  boost::shared_ptr<output_buffer> new_buffer(new fcgi_buffer(m_impl->req));
+  std::shared_ptr<output_buffer> new_buffer(new fcgi_buffer(m_impl->req));
   m_buffer.swap(new_buffer);
 
   return status;

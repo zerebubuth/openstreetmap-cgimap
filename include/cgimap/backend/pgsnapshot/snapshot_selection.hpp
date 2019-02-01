@@ -2,6 +2,7 @@
 #define PGSNAPSHOT_SELECTION_HPP
 
 #include "cgimap/data_selection.hpp"
+#include <memory>
 #include <pqxx/pqxx>
 #include <boost/program_options.hpp>
 
@@ -44,13 +45,11 @@ public:
   public:
     factory(const boost::program_options::variables_map &);
     virtual ~factory();
-    virtual boost::shared_ptr<data_selection> make_selection();
+    virtual std::shared_ptr<data_selection> make_selection();
 
   private:
     pqxx::connection m_connection;
-#if PQXX_VERSION_MAJOR >= 4
     pqxx::quiet_errorhandler m_errorhandler;
-#endif
   };
 
 private:

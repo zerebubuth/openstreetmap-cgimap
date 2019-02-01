@@ -11,14 +11,14 @@
 #include "cgimap/api06/changeset_upload/way_updater.hpp"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <vector>
 
 /**
  */
 class data_update {
 public:
-  virtual ~data_update() {};
+  virtual ~data_update() = default;
 
   virtual std::unique_ptr<api06::Changeset_Updater>
   get_changeset_updater(osm_changeset_id_t _changeset, osm_user_id_t _uid) = 0;
@@ -44,15 +44,15 @@ public:
    * a database connection.
    */
   struct factory {
-    virtual ~factory() {};
+    virtual ~factory() = default;
 
     /// get a handle to a selection which can be used to build up
     /// a working set of data.
-    virtual boost::shared_ptr<data_update> make_data_update() = 0;
+    virtual std::shared_ptr<data_update> make_data_update() = 0;
   };
 };
 
-typedef boost::shared_ptr<data_update::factory> factory_update_ptr;
-typedef boost::shared_ptr<data_update> data_update_ptr;
+typedef std::shared_ptr<data_update::factory> factory_update_ptr;
+typedef std::shared_ptr<data_update> data_update_ptr;
 
 #endif /* DATA_UPDATE_HPP */

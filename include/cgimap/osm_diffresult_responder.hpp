@@ -16,7 +16,7 @@ public:
   virtual ~osm_diffresult_responder();
 
 
-  void write(boost::shared_ptr<output_formatter> f,
+  void write(std::shared_ptr<output_formatter> f,
              const std::string &generator,
              const boost::posix_time::ptime &now);
 

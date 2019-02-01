@@ -40,7 +40,7 @@ map_responder::map_responder(mime::type mt, bbox b, data_selection_ptr &x)
   }
 }
 
-map_responder::~map_responder() {}
+map_responder::~map_responder() = default;
 
 map_handler::map_handler(request &req) : bounds(validate_request(req)) {
   // map calls typically have a Content-Disposition header saying that
@@ -48,7 +48,7 @@ map_handler::map_handler(request &req) : bounds(validate_request(req)) {
   req.add_header("Content-Disposition", "attachment; filename=\"map.osm\"");
 }
 
-map_handler::~map_handler() {}
+map_handler::~map_handler() = default;
 
 string map_handler::log_name() const {
   return (boost::format("map(%1%,%2%,%3%,%4%)") % bounds.minlon %
@@ -72,7 +72,7 @@ bool is_bbox(const pair<string, string> &p) {
 bbox map_handler::validate_request(request &req) {
   string decoded = http::urldecode(get_query_string(req));
   const vector<pair<string, string> > params = http::parse_params(decoded);
-  vector<pair<string, string> >::const_iterator itr =
+  auto itr =
     std::find_if(params.begin(), params.end(), is_bbox);
 
   bbox bounds;

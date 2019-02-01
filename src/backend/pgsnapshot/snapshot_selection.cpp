@@ -2,17 +2,11 @@
 #include "cgimap/logger.hpp"
 #include "cgimap/infix_ostream_iterator.hpp"
 
+#include <functional>
 #include <set>
 #include <sstream>
 #include <list>
-#include <boost/make_shared.hpp>
-#include <boost/ref.hpp>
 
-#if PQXX_VERSION_MAJOR >= 4
-#define PREPARE_ARGS(args)
-#else
-#define PREPARE_ARGS(args) args
-#endif
 
 // Unlike apidb, SCALE is purely internal to the SQL in this file and
 // aren't part of the pgsnapshot schema. It saves sending around postgis
@@ -163,7 +157,7 @@ snapshot_selection::snapshot_selection(pqxx::connection &conn) : w(conn) {
   w.set_variable("default_transaction_read_only", "true");
 }
 
-snapshot_selection::~snapshot_selection() {}
+snapshot_selection::~snapshot_selection() = default;
 
 void snapshot_selection::write_nodes(output_formatter &formatter) {
   // get all nodes - they already contain their own tags, so
@@ -302,9 +296,7 @@ void snapshot_selection::select_relations_members_of_relations() {
 
 snapshot_selection::factory::factory(const po::variables_map &opts)
     : m_connection(connect_db_str(opts))
-#if PQXX_VERSION_MAJOR >= 4
     , m_errorhandler(m_connection)
-#endif
 {
   if (m_connection.server_version() < 90300) {
     throw std::runtime_error("Expected Postgres version 9.3+, currently installed version "
@@ -313,12 +305,6 @@ snapshot_selection::factory::factory(const po::variables_map &opts)
 
   // set the connections to use the appropriate charset.
   m_connection.set_client_encoding(opts["charset"].as<std::string>());
-
-  // ignore notice messages
-#if PQXX_VERSION_MAJOR < 4
-  m_connection.set_noticer(
-      std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
-#endif
 
   logger::message("Preparing prepared statements.");
 
@@ -336,8 +322,7 @@ snapshot_selection::factory::factory(const po::variables_map &opts)
         "LEFT JOIN users u ON (n.user_id = u.id)");
   m_connection.prepare("extract_node_tags",
     "SELECT (each(tags)).key AS k, (each(tags)).value AS v "
-      "FROM tmp_nodes WHERE id=$1")
-    PREPARE_ARGS(("bigint"));
+      "FROM tmp_nodes WHERE id=$1");
 
   m_connection.prepare("extract_ways",
     "SELECT w.id, w.version, "
@@ -347,14 +332,12 @@ snapshot_selection::factory::factory(const po::variables_map &opts)
         "LEFT JOIN users u ON (w.user_id = u.id)");
   m_connection.prepare("extract_way_nds",
     "SELECT unnest(nodes) FROM tmp_ways "
-      "WHERE id=$1")
-    PREPARE_ARGS(("bigint"));
+      "WHERE id=$1");
   m_connection.prepare("extract_way_tags",
     "SELECT (each(tags)).key AS k, "
         "(each(tags)).value AS v "
       "FROM tmp_ways "
-      "WHERE id=$1")
-    PREPARE_ARGS(("bigint"));
+      "WHERE id=$1");
 
   m_connection.prepare("extract_relations",
     "SELECT r.id, r.version, "
@@ -366,13 +349,11 @@ snapshot_selection::factory::factory(const po::variables_map &opts)
     "SELECT member_type, member_id, member_role "
       "FROM relation_members "
       "WHERE relation_id=$1 "
-      "ORDER BY sequence_id ASC")
-    PREPARE_ARGS(("bigint"));
+      "ORDER BY sequence_id ASC");
   m_connection.prepare("extract_relation_tags",
     "SELECT (each(tags)).key AS k, (each(tags)).value as v "
       "FROM tmp_relations "
-      "WHERE id=$1")
-    PREPARE_ARGS(("bigint"));
+      "WHERE id=$1");
 
   // map? call geometry stuff
   m_connection.prepare("nodes_from_bbox",
@@ -382,8 +363,7 @@ snapshot_selection::factory::factory(const po::variables_map &opts)
         "FROM nodes n "
         "WHERE geom && ST_SetSRID(ST_MakeBox2D(ST_Point($1,$2),ST_Point($3,$4)),4326) "
         "AND id NOT IN (SELECT id FROM tmp_nodes) "
-        "LIMIT $5")
-    PREPARE_ARGS(("double precision")("double precision")("double precision")("double precision")("integer"));
+        "LIMIT $5");
 
   // selecting elements from a list
   m_connection.prepare("add_nodes_list",
@@ -391,22 +371,19 @@ snapshot_selection::factory::factory(const po::variables_map &opts)
       "SELECT id,version,user_id,tstamp,changeset_id,tags, "
         "ST_X(geom) * " SCALE ", ST_Y(geom) * " SCALE
         "FROM nodes WHERE id = ANY($1) "
-        "AND id NOT IN (SELECT id FROM tmp_nodes)")
-    PREPARE_ARGS(("bigint[]"));
+        "AND id NOT IN (SELECT id FROM tmp_nodes)");
   m_connection.prepare("add_ways_list",
     "INSERT INTO tmp_ways "
       "SELECT id,version,user_id,tstamp,changeset_id,tags,nodes "
         "FROM ways "
         "WHERE id = ANY($1) "
-          "AND id NOT IN (SELECT id FROM tmp_ways)")
-    PREPARE_ARGS(("bigint[]"));
+          "AND id NOT IN (SELECT id FROM tmp_ways)");
   m_connection.prepare("add_relations_list",
     "INSERT INTO tmp_relations "
       "SELECT id,version,user_id,tstamp,changeset_id,tags "
         "FROM relations "
         "WHERE id = ANY($1) "
-          "AND id NOT IN (SELECT id FROM tmp_relations)")
-    PREPARE_ARGS(("bigint[]"));
+          "AND id NOT IN (SELECT id FROM tmp_relations)");
 
   // queries for filling elements which are used as members in relations
   m_connection.prepare("nodes_from_relations",
@@ -481,9 +458,9 @@ snapshot_selection::factory::factory(const po::variables_map &opts)
   // clang-format on
 }
 
-snapshot_selection::factory::~factory() {}
+snapshot_selection::factory::~factory() = default;
 
-boost::shared_ptr<data_selection>
+std::shared_ptr<data_selection>
 snapshot_selection::factory::make_selection() {
-  return boost::make_shared<snapshot_selection>(boost::ref(m_connection));
+  return std::make_shared<snapshot_selection>(std::ref(m_connection));
 }

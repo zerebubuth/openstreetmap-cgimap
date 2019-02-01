@@ -14,7 +14,7 @@ class OSMChange_Tracking {
 
 public:
 
-  OSMChange_Tracking() {};
+  OSMChange_Tracking() = default;
 
   void populate_orig_sequence_mapping();
 

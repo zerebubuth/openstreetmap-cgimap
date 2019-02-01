@@ -1,11 +1,11 @@
 #ifndef HTTP_HPP
 #define HTTP_HPP
 
+#include <memory>
 #include <string>
 #include <vector>
 #include <bitset>
 #include <stdexcept>
-#include <boost/shared_ptr.hpp>
 #include <boost/optional.hpp>
 #include <ostream>
 #include "cgimap/config.hpp"
@@ -48,11 +48,11 @@ protected:
   exception(unsigned int c, const std::string &h, const std::string &m);
 
 public:
-  virtual ~exception() throw();
+  virtual ~exception() noexcept;
 
   unsigned int code() const;
   const std::string &header() const;
-  const char *what() const throw();
+  const char *what() const noexcept;
 };
 
 /**
@@ -73,6 +73,16 @@ public:
 class bad_request : public exception {
 public:
   bad_request(const std::string &message);
+};
+
+/**
+ * The server understood the request, but is refusing to fulfill it.
+ * Authorization will not help and the request SHOULD NOT be repeated.
+ */
+
+class forbidden : public exception {
+public:
+   forbidden(const std::string &message);
 };
 
 /**
@@ -207,36 +217,36 @@ private:
 
 public:
   encoding(const std::string &name) : name_(name){};
-  virtual ~encoding(void){};
-  const std::string &name(void) const { return name_; };
-  virtual boost::shared_ptr<output_buffer>
-  buffer(boost::shared_ptr<output_buffer> out) {
+  virtual ~encoding() = default;
+  const std::string &name() const { return name_; };
+  virtual std::shared_ptr<output_buffer>
+  buffer(std::shared_ptr<output_buffer> out) {
     return out;
   }
 };
 
 class identity : public encoding {
 public:
-  identity(void) : encoding("identity"){};
+  identity() : encoding("identity"){};
 };
 
 #ifdef HAVE_LIBZ
 class deflate : public encoding {
 public:
-  deflate(void) : encoding("deflate"){};
-  virtual boost::shared_ptr<output_buffer>
-  buffer(boost::shared_ptr<output_buffer> out) {
-    return boost::shared_ptr<zlib_output_buffer>(
+  deflate() : encoding("deflate"){};
+  virtual std::shared_ptr<output_buffer>
+  buffer(std::shared_ptr<output_buffer> out) {
+    return std::shared_ptr<zlib_output_buffer>(
         new zlib_output_buffer(out, zlib_output_buffer::zlib));
   }
 };
 
 class gzip : public encoding {
 public:
-  gzip(void) : encoding("gzip"){};
-  virtual boost::shared_ptr<output_buffer>
-  buffer(boost::shared_ptr<output_buffer> out) {
-    return boost::shared_ptr<zlib_output_buffer>(
+  gzip() : encoding("gzip"){};
+  virtual std::shared_ptr<output_buffer>
+  buffer(std::shared_ptr<output_buffer> out) {
+    return std::shared_ptr<zlib_output_buffer>(
         new zlib_output_buffer(out, zlib_output_buffer::gzip));
   }
 };
@@ -246,10 +256,10 @@ public:
  * Parses an Accept-Encoding header and returns the chosen
  * encoding.
  */
-boost::shared_ptr<http::encoding>
+std::shared_ptr<http::encoding>
 choose_encoding(const std::string &accept_encoding);
 
-boost::shared_ptr<ZLibBaseDecompressor>
+std::shared_ptr<ZLibBaseDecompressor>
 get_content_encoding_handler(const std::string &content_encoding);
 
 enum class method : uint8_t {

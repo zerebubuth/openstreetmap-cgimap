@@ -5,7 +5,6 @@
 #include "cgimap/infix_ostream_iterator.hpp"
 #include "cgimap/api06/id_version_io.hpp"
 
-#include <boost/foreach.hpp>
 
 #include <sstream>
 
@@ -21,7 +20,7 @@ relations_responder::relations_responder(mime::type mt, vector<id_version> ids_,
   vector<osm_nwr_id_t> current_ids;
   vector<osm_edition_t> historic_ids;
 
-  BOOST_FOREACH(id_version idv, ids_) {
+  for (id_version idv : ids_) {
     if (idv.version) {
       historic_ids.push_back(std::make_pair(idv.id, *idv.version));
     } else {
@@ -43,12 +42,12 @@ relations_responder::relations_responder(mime::type mt, vector<id_version> ids_,
   }
 }
 
-relations_responder::~relations_responder() {}
+relations_responder::~relations_responder() = default;
 
 relations_handler::relations_handler(request &req)
     : ids(validate_request(req)) {}
 
-relations_handler::~relations_handler() {}
+relations_handler::~relations_handler() = default;
 
 std::string relations_handler::log_name() const {
   stringstream msg;

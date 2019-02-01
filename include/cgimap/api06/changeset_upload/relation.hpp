@@ -88,9 +88,9 @@ private:
 
 class Relation : public OSMObject {
 public:
-  Relation() : OSMObject(){};
+  Relation() : OSMObject() {};
 
-  virtual ~Relation(){};
+  virtual ~Relation() = default;
 
   void add_member(RelationMember &member) {
     if (!member.is_valid())
@@ -102,8 +102,6 @@ public:
   const std::vector<RelationMember> &members() const {
     return m_relation_member;
   }
-
-  bool is_valid() const { return (OSMObject::is_valid()); }
 
   std::string get_type_name() { return "Relation"; }
 

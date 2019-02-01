@@ -8,9 +8,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/program_options.hpp>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
@@ -76,7 +74,7 @@ void setup_request_headers(test_request &req, std::istream &in) {
   typedef std::map<std::string, std::string> dict;
   dict headers = read_headers(in, "---");
 
-  BOOST_FOREACH(const dict::value_type &val, headers) {
+  for (const dict::value_type &val : headers) {
     std::string key(val.first);
 
     al::to_upper(key);
@@ -102,32 +100,32 @@ void setup_request_headers(test_request &req, std::istream &in) {
 void check_xmlattr(const pt::ptree &expected, const pt::ptree &actual) {
   std::set<std::string> exp_keys, act_keys;
 
-  BOOST_FOREACH(const pt::ptree::value_type &val, expected) {
+  for (const pt::ptree::value_type &val : expected) {
     exp_keys.insert(val.first);
   }
-  BOOST_FOREACH(const pt::ptree::value_type &val, actual) {
+  for (const pt::ptree::value_type &val : actual) {
     act_keys.insert(val.first);
   }
 
   if (exp_keys.size() > act_keys.size()) {
-    BOOST_FOREACH(const std::string &ak, act_keys) { exp_keys.erase(ak); }
+    for (const std::string &ak : act_keys) { exp_keys.erase(ak); }
     std::ostringstream out;
     out << "Missing attributes [";
-    BOOST_FOREACH(const std::string &ek, exp_keys) { out << ek << " "; }
+    for (const std::string &ek : exp_keys) { out << ek << " "; }
     out << "]";
     throw std::runtime_error(out.str());
   }
 
   if (act_keys.size() > exp_keys.size()) {
-    BOOST_FOREACH(const std::string &ek, exp_keys) { act_keys.erase(ek); }
+    for (const std::string &ek : exp_keys) { act_keys.erase(ek); }
     std::ostringstream out;
     out << "Extra attributes [";
-    BOOST_FOREACH(const std::string &ak, act_keys) { out << ak << " "; }
+    for (const std::string &ak : act_keys) { out << ak << " "; }
     out << "]";
     throw std::runtime_error(out.str());
   }
 
-  BOOST_FOREACH(const std::string &k, exp_keys) {
+  for (const std::string &k : exp_keys) {
     boost::optional<const pt::ptree &> exp_child = expected.get_child_optional(k);
     boost::optional<const pt::ptree &> act_child = actual.get_child_optional(k);
 
@@ -388,7 +386,7 @@ void check_content_body_plain(std::istream &expected, std::istream &actual) {
 typedef std::map<std::string, std::string> dict;
 
 std::ostream &operator<<(std::ostream &out, const dict &d) {
-  BOOST_FOREACH(const dict::value_type &val, d) {
+  for (const dict::value_type &val : d) {
     out << val.first << ": " << val.second << "\n";
   }
   return out;
@@ -396,9 +394,9 @@ std::ostream &operator<<(std::ostream &out, const dict &d) {
 
 void check_headers(const dict &expected_headers,
                    const dict &actual_headers) {
-  BOOST_FOREACH(const dict::value_type &val, expected_headers) {
+  for (const dict::value_type &val : expected_headers) {
     if ((val.first.size() > 0) && (val.first[0] == '!')) {
-      dict::const_iterator itr = actual_headers.find(val.first.substr(1));
+      auto itr = actual_headers.find(val.first.substr(1));
       if (itr != actual_headers.end()) {
         throw std::runtime_error(
           (boost::format(
@@ -406,7 +404,7 @@ void check_headers(const dict &expected_headers,
            itr->first).str());
       }
     } else {
-      dict::const_iterator itr = actual_headers.find(val.first);
+      auto itr = actual_headers.find(val.first);
       if (itr == actual_headers.end()) {
         throw std::runtime_error(
           (boost::format("Expected header `%1%: %2%', but didn't find it in "
@@ -480,8 +478,8 @@ void check_response(std::istream &expected, std::istream &actual) {
  */
 void run_test(fs::path test_case, rate_limiter &limiter,
               const std::string &generator, routes &route,
-              boost::shared_ptr<data_selection::factory> factory,
-              boost::shared_ptr<oauth::store> store) {
+              std::shared_ptr<data_selection::factory> factory,
+              std::shared_ptr<oauth::store> store) {
   try {
     test_request req;
 
@@ -550,7 +548,7 @@ struct test_oauth
     if (tokens) {
       for (const auto &entry : *tokens) {
         std::string key = entry.first;
-        osm_user_id_t user_id = entry.second.get<osm_user_id_t>("user_id");
+        auto user_id = entry.second.get<osm_user_id_t>("user_id");
         std::string secret = entry.second.get<std::string>("secret");
 
         m_tokens.emplace(key, secret);
@@ -562,7 +560,7 @@ struct test_oauth
       config.get_child_optional("users");
     if (users) {
       for (const auto &entry : *users) {
-        osm_user_id_t id = boost::lexical_cast<osm_user_id_t>(entry.first);
+        auto id = boost::lexical_cast<osm_user_id_t>(entry.first);
         boost::optional<const pt::ptree &> roles =
           entry.second.get_child_optional("roles");
 
@@ -578,7 +576,7 @@ struct test_oauth
     }
   }
 
-  virtual ~test_oauth() {}
+  virtual ~test_oauth() = default;
 
   boost::optional<std::string> consumer_secret(const std::string &consumer_key) {
     auto itr = m_consumers.find(consumer_key);
@@ -648,7 +646,7 @@ int main(int argc, char *argv[]) {
   fs::path oauth_file = test_directory / "oauth.json";
   std::vector<fs::path> test_cases;
 
-  boost::shared_ptr<oauth::store> store;
+  std::shared_ptr<oauth::store> store;
 
   try {
     if (fs::is_directory(test_directory) == false) {
@@ -680,7 +678,7 @@ int main(int argc, char *argv[]) {
           ((boost::format("%1%, while reading expected JSON.") % ex.what()).str());
       }
 
-      store = boost::make_shared<test_oauth>(config);
+      store = std::make_shared<test_oauth>(config);
     }
 
   } catch (const std::exception &e) {
@@ -697,13 +695,13 @@ int main(int argc, char *argv[]) {
     vm.insert(std::make_pair(std::string("file"),
                              po::variable_value(data_file.native(), false)));
 
-    boost::shared_ptr<backend> data_backend = make_staticxml_backend();
-    boost::shared_ptr<data_selection::factory> factory =
+    std::shared_ptr<backend> data_backend = make_staticxml_backend();
+    std::shared_ptr<data_selection::factory> factory =
         data_backend->create(vm);
     null_rate_limiter limiter;
     routes route;
 
-    BOOST_FOREACH(fs::path test_case, test_cases) {
+    for (fs::path test_case : test_cases) {
       std::string generator =
           (boost::format(PACKAGE_STRING " (test %1%)") % test_case).str();
       run_test(test_case, limiter, generator, route, factory, store);

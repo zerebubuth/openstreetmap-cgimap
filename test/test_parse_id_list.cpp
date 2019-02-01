@@ -1,6 +1,5 @@
 #include "cgimap/api06/handler_utils.hpp"
 #include "cgimap/api06/id_version_io.hpp"
-#include <boost/foreach.hpp>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -9,13 +8,13 @@
 namespace {
 
 struct test_request : public request {
-  test_request() {}
+  test_request() = default;
 
   /// implementation of request interface
-  virtual ~test_request() {}
+  virtual ~test_request() = default;
   virtual const char *get_param(const char *key) {
     std::string key_str(key);
-    std::map<std::string, std::string>::iterator itr = m_params.find(key_str);
+    auto itr = m_params.find(key_str);
     if (itr != m_params.end()) {
       return itr->second.c_str();
     } else {
@@ -41,8 +40,8 @@ struct test_request : public request {
 
 protected:
   virtual void write_header_info(int status, const headers_t &headers) {}
-  virtual boost::shared_ptr<output_buffer> get_buffer_internal() {
-    return boost::shared_ptr<output_buffer>();
+  virtual std::shared_ptr<output_buffer> get_buffer_internal() {
+    return std::shared_ptr<output_buffer>();
   }
   virtual void finish_internal() {}
 
@@ -70,7 +69,7 @@ void test_parse_returns_no_duplicates() {
     std::ostringstream err;
     err << "Parsing " << query_str << " as a list of nodes should "
         << "discard duplicates, but got: {";
-    BOOST_FOREACH(api06::id_version id, ids) {
+    for (api06::id_version id : ids) {
       err << id << ", ";
     }
     err << "}\n";
@@ -91,7 +90,7 @@ void test_parse_negative_nodes() {
   // maximum ID that postgres can handle is 2^63-1, so that should never
   // be returned by the parsing function.
   const osm_nwr_id_t max_id = std::numeric_limits<int64_t>::max();
-  BOOST_FOREACH(api06::id_version idv, ids) {
+  for (api06::id_version idv : ids) {
     if (idv.id > max_id) {
       throw std::runtime_error("Found ID > max allowed ID in parsed list.");
     }
