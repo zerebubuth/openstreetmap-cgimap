@@ -43,14 +43,14 @@ DEALINGS IN THE SOFTWARE.
 
 template <class Key, class Object> class cache {
 public:
-  typedef std::pair< ::std::shared_ptr<Object const>, Key const *> value_type;
-  typedef std::list<value_type> list_type;
-  typedef typename list_type::iterator list_iterator;
-  typedef std::map<Key, list_iterator> map_type;
-  typedef typename map_type::iterator map_iterator;
-  typedef typename list_type::size_type size_type;
-  typedef std::function<Object *(Key)> function_type_fetch;
-  typedef std::function< std::map< Key, Object* >(std::set<Key>) > function_type_prefetch;
+  using value_type = std::pair< ::std::shared_ptr<Object const>, Key const *>;
+  using list_type = std::list<value_type>;
+  using list_iterator = typename list_type::iterator;
+  using map_type = std::map<Key, list_iterator>;
+  using map_iterator = typename map_type::iterator;
+  using size_type = typename list_type::size_type;
+  using function_type_fetch = std::function<Object *(Key)>;
+  using function_type_prefetch = std::function< std::map< Key, Object* >(std::set<Key>) >;
 
   cache(function_type_fetch f, size_type m);
   cache(function_type_fetch f, function_type_prefetch p, size_type m);
@@ -65,7 +65,7 @@ private:
     map_type index;
   };
 
-  typedef typename cache<Key, Object>::data object_data;
+  using object_data = typename cache<Key, Object>::data;
 
   // functor to get a value which isn't in the cache.
   function_type_fetch f_fetch;
@@ -168,7 +168,7 @@ std::shared_ptr<Object const> cache<Key, Object>::get(const Key &k) {
 template <class Key, class Object>
 void cache<Key, Object>::insert_into_cache(const Key &k, std::shared_ptr<Object const> result) {
 
-  typedef typename map_type::size_type map_size_type;
+  using map_size_type = typename map_type::size_type;
 
   // don't insert element if already in cache
   if (sdata()->index.find(k) != sdata()->index.end())

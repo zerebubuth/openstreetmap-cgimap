@@ -49,7 +49,7 @@ void http_check_urldecoding() {
 }
 
 void http_check_parse_params() {
-  typedef std::vector<std::pair<std::string, std::string> > params_t;
+  using params_t = std::vector<std::pair<std::string, std::string> >;
   params_t params = http::parse_params("a2=r%20b&a3=2%20q&a3=a&b5=%3D%253D&c%40=&c2=");
 
   assert_equal<std::size_t>(params.size(), 6);

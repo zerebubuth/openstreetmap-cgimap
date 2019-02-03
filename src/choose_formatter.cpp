@@ -57,7 +57,7 @@ private:
 };
 
 struct media_range {
-  typedef map<string, string> param_t;
+  using param_t = map<string, string>;
   string mime_type;
   param_t params;
 };
@@ -125,8 +125,8 @@ struct http_accept_grammar
 
 acceptable_types::acceptable_types(const std::string &accept_header) {
   using boost::spirit::ascii::blank;
-  typedef std::string::const_iterator iterator_type;
-  typedef http_accept_grammar<iterator_type> grammar;
+  using iterator_type = std::string::const_iterator;
+  using grammar = http_accept_grammar<iterator_type>;
 
   vector<media_range> ranges;
   grammar g;

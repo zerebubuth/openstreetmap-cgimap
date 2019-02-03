@@ -82,7 +82,7 @@ struct request {
   http::method methods() const;
 
 protected:
-  typedef std::vector<std::pair<std::string, std::string> > headers_t;
+  using headers_t = std::vector<std::pair<std::string, std::string> >;
 
   // this is called once, the first time an output function is called. the
   // implementing output system may use this to write out the complete set of
