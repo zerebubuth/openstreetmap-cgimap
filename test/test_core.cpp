@@ -71,7 +71,7 @@ std::map<std::string, std::string> read_headers(std::istream &in,
  * take the test file and use it to set up the request headers.
  */
 void setup_request_headers(test_request &req, std::istream &in) {
-  typedef std::map<std::string, std::string> dict;
+  using dict = std::map<std::string, std::string>;
   dict headers = read_headers(in, "---");
 
   for (const dict::value_type &val : headers) {
@@ -383,7 +383,7 @@ void check_content_body_plain(std::istream &expected, std::istream &actual) {
   }
 }
 
-typedef std::map<std::string, std::string> dict;
+using dict = std::map<std::string, std::string>;
 
 std::ostream &operator<<(std::ostream &out, const dict &d) {
   for (const dict::value_type &val : d) {

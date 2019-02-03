@@ -117,10 +117,10 @@ struct member_info {
   }
 };
 
-typedef std::list<osm_nwr_id_t> nodes_t;
-typedef std::list<member_info> members_t;
-typedef std::list<std::pair<std::string, std::string> > tags_t;
-typedef std::vector<changeset_comment_info> comments_t;
+using nodes_t = std::list<osm_nwr_id_t>;
+using members_t = std::list<member_info>;
+using tags_t = std::list<std::pair<std::string, std::string> >;
+using comments_t = std::vector<changeset_comment_info>;
 
 /**
  * Base type for different output formats. Hopefully this is general

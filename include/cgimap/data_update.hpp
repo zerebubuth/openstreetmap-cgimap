@@ -52,7 +52,7 @@ public:
   };
 };
 
-typedef std::shared_ptr<data_update::factory> factory_update_ptr;
-typedef std::shared_ptr<data_update> data_update_ptr;
+using factory_update_ptr = std::shared_ptr<data_update::factory>;
+using data_update_ptr = std::shared_ptr<data_update>;
 
 #endif /* DATA_UPDATE_HPP */

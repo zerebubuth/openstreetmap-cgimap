@@ -43,7 +43,7 @@ struct registry {
   shared_ptr<oauth::store> create_oauth_store(const boost::program_options::variables_map &opts);
 
 private:
-  typedef std::map<std::string, shared_ptr<backend> > backend_map_t;
+  using backend_map_t = std::map<std::string, shared_ptr<backend> >;
   backend_map_t backends;
   shared_ptr<backend> default_backend;
 };

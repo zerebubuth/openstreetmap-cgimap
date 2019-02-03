@@ -398,7 +398,7 @@ struct oauth_status_response : public boost::static_visitor<void> {
 // look in the request get parameters to see if the user requested that
 // redactions be shown
 bool show_redactions_requested(request &req) {
-  typedef std::vector<std::pair<std::string, std::string> > params_t;
+  using params_t = std::vector<std::pair<std::string, std::string> >;
   std::string decoded = http::urldecode(get_query_string(req));
   const params_t params = http::parse_params(decoded);
   auto itr = std::find_if(
