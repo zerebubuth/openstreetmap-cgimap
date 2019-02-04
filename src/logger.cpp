@@ -24,21 +24,10 @@ void initialise(const string &filename) {
   pid = getpid();
 }
 
-std::string get_current_timestamp()
-{
-  struct tm tstruct;
-  char buf[80];
-  time_t now = time(0);
-  tstruct = *gmtime(&now);
-  strftime(buf, sizeof(buf), "%FT%T", &tstruct);
-  return buf;
-}
-
-
 void message(const string &m) {
   if (stream) {
-
-    *stream << "[" << get_current_timestamp() << " #" << pid << "] " << m
+    time_t now = time(0);
+    *stream << "[" << std::put_time( std::gmtime( &now ), "%FT%T") << " #" << pid << "] " << m
             << std::endl;
   }
 }

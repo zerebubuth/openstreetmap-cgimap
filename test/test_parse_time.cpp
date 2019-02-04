@@ -16,8 +16,8 @@ void assert_eq_time(std::chrono::system_clock::time_point expected, std::string 
       std::time_t time_tb  = std::chrono::system_clock::to_time_t(tb);
 
     std::ostringstream ostr;
-    ostr << "Expected " << std::put_time( std::gmtime( &time_ex ), "%FT%T%z")  << ", but got time "
-         << std::put_time( std::gmtime( &time_tb ), "%FT%T%z") << " [from '" << str << "'] instead.";
+    ostr << "Expected " << std::put_time( std::gmtime( &time_ex ), "%FT%T")  << ", but got time "
+         << std::put_time( std::gmtime( &time_tb ), "%FT%T") << " [from '" << str << "'] instead.";
     throw std::runtime_error(ostr.str());
   }
 }
