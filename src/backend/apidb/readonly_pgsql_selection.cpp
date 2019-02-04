@@ -20,8 +20,6 @@ using std::list;
 using std::vector;
 using std::shared_ptr;
 
-// number of nodes to chunk together
-#define STRIDE (1000)
 
 namespace {
 std::string connect_db_str(const po::variables_map &options) {
