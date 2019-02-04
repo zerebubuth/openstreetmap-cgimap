@@ -22,11 +22,11 @@ relation_version_responder::relation_version_responder(mime::type mt, osm_nwr_id
   }
 }
 
-relation_version_responder::~relation_version_responder() {}
+relation_version_responder::~relation_version_responder() = default;
 
 relation_version_handler::relation_version_handler(request &, osm_nwr_id_t id_, osm_version_t v_) : id(id_), v(v_) {}
 
-relation_version_handler::~relation_version_handler() {}
+relation_version_handler::~relation_version_handler() = default;
 
 std::string relation_version_handler::log_name() const { return "relation"; }
 

@@ -23,7 +23,7 @@ ApiDB_Way_Updater::ApiDB_Way_Updater(Transaction_Manager &_m,
                                      std::shared_ptr<api06::OSMChange_Tracking> _ct)
     : m_bbox(), m(_m), ct(_ct) {}
 
-ApiDB_Way_Updater::~ApiDB_Way_Updater() {}
+ApiDB_Way_Updater::~ApiDB_Way_Updater() = default;
 
 void ApiDB_Way_Updater::add_way(osm_changeset_id_t changeset_id,
                                 osm_nwr_signed_id_t old_id,

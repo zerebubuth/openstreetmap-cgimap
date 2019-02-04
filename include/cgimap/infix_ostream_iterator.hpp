@@ -13,9 +13,9 @@ template <typename _Tp, typename _CharT = char,
 class infix_ostream_iterator
     : public std::iterator<std::output_iterator_tag, void, void, void, void> {
 public:
-  typedef _CharT char_type;
-  typedef _Traits traits_type;
-  typedef std::basic_ostream<_CharT, _Traits> ostream_type;
+  using char_type = _CharT;
+  using traits_type = _Traits ;
+  using ostream_type = std::basic_ostream<_CharT, _Traits>;
 
 private:
   ostream_type *_M_stream;

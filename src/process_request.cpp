@@ -396,7 +396,7 @@ struct oauth_status_response : public boost::static_visitor<void> {
 // look in the request get parameters to see if the user requested that
 // redactions be shown
 bool show_redactions_requested(request &req) {
-  typedef std::vector<std::pair<std::string, std::string> > params_t;
+  using params_t = std::vector<std::pair<std::string, std::string> >;
   std::string decoded = http::urldecode(get_query_string(req));
   const params_t params = http::parse_params(decoded);
   auto itr = std::find_if(
@@ -525,10 +525,13 @@ void process_request(request &req, rate_limiter &limiter,
         throw http::unauthorized("User is not authorized");
 
       if (selection->supports_user_details() && selection->is_user_blocked(*user_id))
-	throw http::unauthorized("User has been blocked");
+	throw http::forbidden("Your access to the API has been blocked. Please log-in to the web interface to find out more.");
 
       if (!allow_api_write)
 	throw http::unauthorized("You have not granted the modify map permission");
+
+      if (update_factory == nullptr)
+	throw http::bad_request("Backend does not support POST requests");
 
       auto data_update = update_factory->make_data_update();
 

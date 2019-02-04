@@ -11,11 +11,6 @@
 #include <list>
 #include <vector>
 
-#if PQXX_VERSION_MAJOR >= 4
-#define PREPARE_ARGS(args)
-#else
-#define PREPARE_ARGS(args) args
-#endif
 
 namespace po = boost::program_options;
 using std::set;
@@ -24,8 +19,6 @@ using std::list;
 using std::vector;
 using std::shared_ptr;
 
-// number of nodes to chunk together
-#define STRIDE (1000)
 
 namespace {
 std::string connect_db_str(const po::variables_map &options) {
@@ -78,8 +71,8 @@ osm_changeset_id_t id_of<osm_changeset_id_t>(const pqxx::tuple &row) {
 
 template <>
 osm_edition_t id_of<osm_edition_t>(const pqxx::tuple &row) {
-  osm_nwr_id_t id = row["id"].as<osm_nwr_id_t>();
-  osm_version_t ver = row["version"].as<osm_version_t>();
+  auto id = row["id"].as<osm_nwr_id_t>();
+  auto ver = row["version"].as<osm_version_t>();
   return osm_edition_t(id, ver);
 }
 
@@ -121,7 +114,7 @@ struct erase_formatter
     , m_sel_historic_ways(sel_historic_ways)
     , m_sel_historic_relations(sel_historic_relations) {
   }
-  virtual ~erase_formatter() {}
+  virtual ~erase_formatter() = default;
 
   mime::type mime_type() const { return m_fmt.mime_type(); }
 
@@ -198,7 +191,7 @@ readonly_pgsql_selection::readonly_pgsql_selection(
     , include_changeset_discussions(false)
     , m_redactions_visible(false) {}
 
-readonly_pgsql_selection::~readonly_pgsql_selection() {}
+readonly_pgsql_selection::~readonly_pgsql_selection() = default;
 
 void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
   // get all nodes - they already contain their own tags, so
@@ -545,10 +538,8 @@ bool readonly_pgsql_selection::get_user_id_pass(const std::string& display_name,
 readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
     : m_connection(connect_db_str(opts)),
       m_cache_connection(connect_db_str(opts)),
-#if PQXX_VERSION_MAJOR >= 4
       m_errorhandler(m_connection),
       m_cache_errorhandler(m_cache_connection),
-#endif
       m_cache_tx(m_cache_connection, "changeset_cache"),
       m_cache(std::bind(fetch_changeset, std::ref(m_cache_tx), std::placeholders::_1),
               std::bind(fetch_changesets, std::ref(m_cache_tx), std::placeholders::_1),
@@ -566,14 +557,6 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
   // set the connection to use readonly transaction.
   m_connection.set_variable("default_transaction_read_only", "true");
 
-  // ignore notice messages
-#if PQXX_VERSION_MAJOR < 4
-  m_connection.set_noticer(
-      std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
-  m_cache_connection.set_noticer(
-      std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
-#endif
-
   logger::message("Preparing prepared statements.");
 
   // clang-format off
@@ -581,7 +564,6 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
   m_cache_connection.prepare("extract_changeset_userdetails",
       "SELECT c.id, u.data_public, u.display_name, u.id from users u "
                    "join changesets c on u.id=c.user_id where c.id = ANY($1)");
-  PREPARE_ARGS("bigint[]");
 
   // select nodes with bbox
   m_connection.prepare("visible_node_in_bbox",
@@ -591,110 +573,94 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
         "AND latitude BETWEEN $2 AND $3 "
         "AND longitude BETWEEN $4 AND $5 "
         "AND visible = true "
-      "LIMIT $6")
-    PREPARE_ARGS(("bigint[]")("integer")("integer")("integer")("integer")("integer"));
+      "LIMIT $6");
 
   // selecting node, way and relation visibility information
   m_connection.prepare("visible_node",
-    "SELECT visible FROM current_nodes WHERE id = $1")PREPARE_ARGS(("bigint"));
+    "SELECT visible FROM current_nodes WHERE id = $1");
   m_connection.prepare("visible_way",
-    "SELECT visible FROM current_ways WHERE id = $1")PREPARE_ARGS(("bigint"));
+    "SELECT visible FROM current_ways WHERE id = $1");
   m_connection.prepare("visible_relation",
-    "SELECT visible FROM current_relations WHERE id = $1")PREPARE_ARGS(("bigint"));
+    "SELECT visible FROM current_relations WHERE id = $1");
 
   // selecting a set of objects as a list
   m_connection.prepare("select_nodes",
     "SELECT id "
       "FROM current_nodes "
-      "WHERE id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+      "WHERE id = ANY($1)");
   m_connection.prepare("select_ways",
     "SELECT id "
       "FROM current_ways "
-      "WHERE id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+      "WHERE id = ANY($1)");
   m_connection.prepare("select_relations",
     "SELECT id "
       "FROM current_relations "
-      "WHERE id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+      "WHERE id = ANY($1)");
   m_connection.prepare("select_changesets",
     "SELECT id "
       "FROM changesets "
-      "WHERE id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+      "WHERE id = ANY($1)");
 
   // select ways used by nodes
   m_connection.prepare("ways_from_nodes",
     "SELECT DISTINCT wn.way_id AS id "
       "FROM current_way_nodes wn "
-      "WHERE wn.node_id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+      "WHERE wn.node_id = ANY($1)");
   // select nodes used by ways
   m_connection.prepare("nodes_from_ways",
     "SELECT DISTINCT wn.node_id AS id "
       "FROM current_way_nodes wn "
-      "WHERE wn.way_id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+      "WHERE wn.way_id = ANY($1)");
 
   // Queries for getting relation parents of objects
   m_connection.prepare("relation_parents_of_nodes",
     "SELECT DISTINCT rm.relation_id AS id "
       "FROM current_relation_members rm "
       "WHERE rm.member_type = 'Node' "
-        "AND rm.member_id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+        "AND rm.member_id = ANY($1)");
   m_connection.prepare("relation_parents_of_ways",
     "SELECT DISTINCT rm.relation_id AS id "
       "FROM current_relation_members rm "
       "WHERE rm.member_type = 'Way' "
-        "AND rm.member_id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+        "AND rm.member_id = ANY($1)");
   m_connection.prepare("relation_parents_of_relations",
     "SELECT DISTINCT rm.relation_id AS id "
       "FROM current_relation_members rm "
       "WHERE rm.member_type = 'Relation' "
-        "AND rm.member_id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+        "AND rm.member_id = ANY($1)");
 
   // queries for filling elements which are used as members in relations
   m_connection.prepare("nodes_from_relations",
     "SELECT DISTINCT rm.member_id AS id "
       "FROM current_relation_members rm "
       "WHERE rm.member_type = 'Node' "
-        "AND rm.relation_id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+        "AND rm.relation_id = ANY($1)");
   m_connection.prepare("ways_from_relations",
     "SELECT DISTINCT rm.member_id AS id "
       "FROM current_relation_members rm "
       "WHERE rm.member_type = 'Way' "
-        "AND rm.relation_id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+        "AND rm.relation_id = ANY($1)");
   m_connection.prepare("relation_members_of_relations",
     "SELECT DISTINCT rm.member_id AS id "
       "FROM current_relation_members rm "
       "WHERE rm.member_type = 'Relation' "
-        "AND rm.relation_id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+        "AND rm.relation_id = ANY($1)");
 
   m_connection.prepare("select_nodes_history",
     "SELECT node_id AS id, version "
       "FROM nodes "
       "WHERE node_id = ANY($1) AND "
-            "(redaction_id IS NULL OR $2 = TRUE)")
-    PREPARE_ARGS(("bigint[]")("boolean"));
+            "(redaction_id IS NULL OR $2 = TRUE)");
   m_connection.prepare("select_ways_history",
     "SELECT way_id AS id, version "
       "FROM ways "
       "WHERE way_id = ANY($1) AND "
-            "(redaction_id IS NULL OR $2 = TRUE)")
-    PREPARE_ARGS(("bigint[]")("boolean"));
+            "(redaction_id IS NULL OR $2 = TRUE)");
   m_connection.prepare("select_relations_history",
     "SELECT relation_id AS id, version "
       "FROM relations "
       "WHERE relation_id = ANY($1) AND "
-            "(redaction_id IS NULL OR $2 = TRUE)")
-    PREPARE_ARGS(("bigint[]")("boolean"));
+            "(redaction_id IS NULL OR $2 = TRUE)");
 
   m_connection.prepare("select_historical_nodes",
     "WITH wanted(id, version) AS ("
@@ -703,8 +669,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
     "SELECT n.node_id AS id, n.version "
       "FROM nodes n "
       "INNER JOIN wanted w ON n.node_id = w.id AND n.version = w.version "
-      "WHERE (n.redaction_id IS NULL OR $3 = TRUE)")
-    PREPARE_ARGS(("bigint[]")("bigint[]")("boolean"));
+      "WHERE (n.redaction_id IS NULL OR $3 = TRUE)");
   m_connection.prepare("select_historical_ways",
     "WITH wanted(id, version) AS ("
       "SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))"
@@ -712,8 +677,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
     "SELECT w.way_id AS id, w.version "
       "FROM ways w "
       "INNER JOIN wanted x ON w.way_id = x.id AND w.version = x.version "
-      "WHERE (w.redaction_id IS NULL OR $3 = TRUE)")
-    PREPARE_ARGS(("bigint[]")("bigint[]")("boolean"));
+      "WHERE (w.redaction_id IS NULL OR $3 = TRUE)");
   m_connection.prepare("select_historical_relations",
     "WITH wanted(id, version) AS ("
       "SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))"
@@ -721,8 +685,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
     "SELECT r.relation_id AS id, r.version "
       "FROM relations r "
       "INNER JOIN wanted x ON r.relation_id = x.id AND r.version = x.version "
-      "WHERE (r.redaction_id IS NULL OR $3 = TRUE)")
-    PREPARE_ARGS(("bigint[]")("bigint[]")("boolean"));
+      "WHERE (r.redaction_id IS NULL OR $3 = TRUE)");
 
   // ------------------------- NODE EXTRACTION -------------------------------
   m_connection.prepare("extract_nodes",
@@ -732,8 +695,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
       "FROM current_nodes n "
         "LEFT JOIN current_node_tags t ON n.id=t.node_id "
       "WHERE n.id = ANY($1) "
-      "GROUP BY n.id ORDER BY n.id")
-    PREPARE_ARGS(("bigint[]"));
+      "GROUP BY n.id ORDER BY n.id");
 
   m_connection.prepare("extract_historic_nodes",
     "WITH wanted(id, version) AS ("
@@ -745,8 +707,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
       "FROM nodes n "
         "INNER JOIN wanted x ON n.node_id = x.id AND n.version = x.version "
         "LEFT JOIN node_tags t ON n.node_id = t.node_id AND n.version = t.version "
-      "GROUP BY n.node_id, n.version ORDER BY n.node_id, n.version")
-    PREPARE_ARGS(("bigint[]")("bigint[]"));
+      "GROUP BY n.node_id, n.version ORDER BY n.node_id, n.version");
 
   // -------------------------- WAY EXTRACTION -------------------------------
   m_connection.prepare("extract_ways",
@@ -764,8 +725,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
              "(SELECT node_id FROM current_way_nodes WHERE w.id=way_id "
               "ORDER BY sequence_id) x) wn ON true "
       "WHERE w.id = ANY($1) "
-      "ORDER BY w.id")
-    PREPARE_ARGS(("bigint[]"));
+      "ORDER BY w.id");
 
   m_connection.prepare("extract_historic_ways",
     "WITH wanted(id, version) AS ("
@@ -786,8 +746,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
              "(SELECT node_id FROM way_nodes "
               "WHERE w.way_id=way_id AND w.version=version "
               "ORDER BY sequence_id) x) wn ON true "
-      "ORDER BY w.way_id, w.version")
-    PREPARE_ARGS(("bigint[]")("bigint[]"));
+      "ORDER BY w.way_id, w.version");
 
   // --------------------- RELATION EXTRACTION -------------------------------
   m_connection.prepare("extract_relations",
@@ -806,8 +765,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
              "(SELECT * FROM current_relation_members WHERE r.id=relation_id "
               "ORDER BY sequence_id) x) rm ON true "
       "WHERE r.id = ANY($1) "
-      "ORDER BY r.id")
-    PREPARE_ARGS(("bigint[]"));
+      "ORDER BY r.id");
 
   m_connection.prepare("extract_historic_relations",
     "WITH wanted(id, version) AS ("
@@ -828,8 +786,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
            "FROM "
              "(SELECT * FROM relation_members WHERE r.relation_id=relation_id AND r.version=version "
               "ORDER BY sequence_id) x) rm ON true "
-      "ORDER BY r.relation_id, r.version")
-    PREPARE_ARGS(("bigint[]")("bigint[]"));
+      "ORDER BY r.relation_id, r.version");
 
   // --------------------------- CHANGESET EXTRACTION -----------------------
   m_connection.prepare("extract_changesets",
@@ -853,54 +810,43 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
           "FROM changeset_comments cc JOIN users u ON cc.author_id = u.id "
           "where cc.changeset_id=c.id AND cc.visible ORDER BY cc.created_at) x "
         ")cc ON true "
-     "WHERE c.id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+     "WHERE c.id = ANY($1)");
 
   // ------------------- CHANGESET DOWNLOAD QUERIES -----------------------
   m_connection.prepare("select_nodes_by_changesets",
       "SELECT n.node_id AS id, n.version "
       "FROM nodes n "
       "WHERE n.changeset_id = ANY($1) "
-        "AND (n.redaction_id IS NULL OR $2 = TRUE)"
-    "")
-    PREPARE_ARGS(("bigint[]")("boolean"));
+        "AND (n.redaction_id IS NULL OR $2 = TRUE)");
 
   m_connection.prepare("select_ways_by_changesets",
       "SELECT w.way_id AS id, w.version "
       "FROM ways w "
       "WHERE w.changeset_id = ANY($1) "
-        "AND (w.redaction_id IS NULL OR $2 = TRUE)"
-    "")
-    PREPARE_ARGS(("bigint[]")("boolean"));
+        "AND (w.redaction_id IS NULL OR $2 = TRUE)");
 
   m_connection.prepare("select_relations_by_changesets",
       "SELECT r.relation_id AS id, r.version "
       "FROM relations r "
       "WHERE r.changeset_id = ANY($1) "
-        "AND (r.redaction_id IS NULL OR $2 = TRUE)"
-    "")
-    PREPARE_ARGS(("bigint[]")("boolean"));
+        "AND (r.redaction_id IS NULL OR $2 = TRUE)");
 
   // ------------------- USER QUERIES -----------------------
 
   m_connection.prepare("check_user_blocked",
     R"(SELECT id FROM "user_blocks" 
           WHERE "user_blocks"."user_id" = $1 
-            AND (needs_view or ends_at > (now() at time zone 'utc')) LIMIT 1 )"
-    "")
-    PREPARE_ARGS(("character varying"));
+            AND (needs_view or ends_at > (now() at time zone 'utc')) LIMIT 1 )");
 
   m_connection.prepare("get_user_id_pass",
     R"(SELECT id, pass_crypt, pass_salt FROM users 
            WHERE display_name = $1 
-             AND (status = 'active' or status = 'confirmed') )"
-    "")
-    PREPARE_ARGS(("bigint"));
+             AND (status = 'active' or status = 'confirmed') )");
 
   // clang-format on
 }
 
-readonly_pgsql_selection::factory::~factory() {}
+readonly_pgsql_selection::factory::~factory() = default;
 
 std::shared_ptr<data_selection>
 readonly_pgsql_selection::factory::make_selection() {

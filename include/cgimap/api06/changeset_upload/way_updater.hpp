@@ -24,7 +24,7 @@ using WayNodeList = std::vector<osm_nwr_signed_id_t>;
 class Way_Updater {
 
 public:
-  virtual ~Way_Updater() {};
+  virtual ~Way_Updater() = default;
 
   virtual void add_way(osm_changeset_id_t changeset_id,
                        osm_nwr_signed_id_t old_id, const WayNodeList &nodes,

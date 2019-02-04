@@ -5,7 +5,7 @@
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
-#include <stdio.h>
+#include <cstdio>
 
 #include "cgimap/config.hpp"
 #include "cgimap/time.hpp"
@@ -209,7 +209,7 @@ class empty_data_selection
   : public data_selection {
 public:
 
-  virtual ~empty_data_selection() {}
+  virtual ~empty_data_selection() = default;
 
   void write_nodes(output_formatter &formatter) {}
   void write_ways(output_formatter &formatter) {}
@@ -239,7 +239,7 @@ public:
 
   struct factory
     : public data_selection::factory {
-    virtual ~factory() {}
+    virtual ~factory() = default;
     virtual std::shared_ptr<data_selection> make_selection() {
       return std::make_shared<empty_data_selection>();
     }
@@ -248,7 +248,7 @@ public:
 
 struct recording_rate_limiter
   : public rate_limiter {
-  ~recording_rate_limiter() {}
+  ~recording_rate_limiter() = default;
 
   bool check(const std::string &key) {
     m_keys_seen.insert(key);
@@ -363,7 +363,7 @@ void test_oauth_get_roles_for_user(test_database &tdb) {
     "");
   std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
 
-  typedef std::set<osm_user_role_t> roles_t;
+  using roles_t = std::set<osm_user_role_t>;
 
   // user 3 has no roles -> should return empty set
   assert_equal<roles_t>(roles_t(), store->get_roles_for_user(3),

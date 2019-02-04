@@ -18,11 +18,11 @@ node_history_responder::node_history_responder(mime::type mt, osm_nwr_id_t id_, 
   }
 }
 
-node_history_responder::~node_history_responder() {}
+node_history_responder::~node_history_responder() = default;
 
 node_history_handler::node_history_handler(request &, osm_nwr_id_t id_) : id(id_) {}
 
-node_history_handler::~node_history_handler() {}
+node_history_handler::~node_history_handler() = default;
 
 std::string node_history_handler::log_name() const { return "node/history"; }
 

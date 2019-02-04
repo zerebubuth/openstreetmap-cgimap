@@ -2,13 +2,12 @@
 
 responder::responder(mime::type mt) : mime_type(mt) {}
 
-responder::~responder() {}
+responder::~responder() = default;
 
 bool responder::is_available(mime::type mt) const {
   std::list<mime::type> types = types_available();
-  for (std::list<mime::type>::iterator itr = types.begin(); itr != types.end();
-       ++itr) {
-    if (*itr == mt) {
+  for (auto & itr : types) {
+    if (itr == mt) {
       return true;
     }
   }
@@ -25,7 +24,7 @@ handler::handler(
   : mime_type(default_type)
   , m_allowed_methods(methods) {}
 
-handler::~handler() {}
+handler::~handler() = default;
 
 void handler::set_resource_type(mime::type mt) { mime_type = mt; }
 

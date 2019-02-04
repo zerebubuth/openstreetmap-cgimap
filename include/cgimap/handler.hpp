@@ -38,7 +38,7 @@ private:
   mime::type mime_type;
 };
 
-typedef std::shared_ptr<responder> responder_ptr_t;
+using responder_ptr_t = std::shared_ptr<responder>;
 
 /**
  * object which is able to validate and create responders from
@@ -69,7 +69,7 @@ protected:
   http::method m_allowed_methods;
 };
 
-typedef std::shared_ptr<handler> handler_ptr_t;
+using handler_ptr_t = std::shared_ptr<handler>;
 
 
 class payload_enabled_handler : public handler {

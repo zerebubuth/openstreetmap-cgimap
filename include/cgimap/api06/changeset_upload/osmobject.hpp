@@ -22,9 +22,9 @@ namespace api06 {
   class OSMObject {
 
   public:
-    OSMObject(){};
+    OSMObject() = default;
 
-    virtual ~OSMObject(){};
+    virtual ~OSMObject() = default;
 
     void set_changeset(osm_changeset_id_t changeset) { m_changeset = changeset; }
 

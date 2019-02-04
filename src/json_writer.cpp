@@ -1,7 +1,7 @@
 #include <yajl/yajl_gen.h>
 #include <memory>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <utility>
 
 #include "cgimap/json_writer.hpp"
@@ -20,7 +20,7 @@ struct json_writer::pimpl_ {
 };
 
 static void wrap_write(void *context, const char *str, unsigned int len) {
-  output_buffer *out = static_cast<output_buffer *>(context);
+  auto *out = static_cast<output_buffer *>(context);
   if (out == 0) {
     throw output_writer::write_error(
         "Output buffer was NULL in json_writer wrap_write().");
@@ -35,7 +35,7 @@ static void wrap_write(void *context, const char *str, unsigned int len) {
 }
 
 json_writer::json_writer(std::shared_ptr<output_buffer> &out, bool indent)
-    : pimpl{make_unique<pimpl_>()}, out(out) {
+    : pimpl(std::unique_ptr<pimpl_>(new pimpl_())), out(out) {
 #ifdef HAVE_YAJL2
   pimpl->gen = yajl_gen_alloc(NULL);
 
@@ -69,7 +69,7 @@ json_writer::json_writer(std::shared_ptr<output_buffer> &out, bool indent)
 #endif /* HAVE_YAJL2 */
 }
 
-json_writer::~json_writer() throw() {
+json_writer::~json_writer() noexcept {
   yajl_gen_clear(pimpl->gen);
   yajl_gen_free(pimpl->gen);
 

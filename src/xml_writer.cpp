@@ -11,7 +11,7 @@ struct xml_writer::pimpl_ {
 };
 
 xml_writer::xml_writer(const std::string &file_name, bool indent)
-    : pimpl{make_unique<pimpl_>()} {
+    : pimpl(std::unique_ptr<pimpl_>(new pimpl_())) {
   // allocate the text writer "object"
   pimpl->writer = xmlNewTextWriterFilename(file_name.c_str(), 0);
 
@@ -24,7 +24,7 @@ xml_writer::xml_writer(const std::string &file_name, bool indent)
 }
 
 static int wrap_write(void *context, const char *buffer, int len) {
-  output_buffer *out = static_cast<output_buffer *>(context);
+  auto *out = static_cast<output_buffer *>(context);
 
   if (out == 0) {
     throw xml_writer::write_error("Output buffer was NULL in wrap_write().");
@@ -34,7 +34,7 @@ static int wrap_write(void *context, const char *buffer, int len) {
 }
 
 static int wrap_close(void *context) {
-  output_buffer *out = static_cast<output_buffer *>(context);
+  auto *out = static_cast<output_buffer *>(context);
 
   if (out == 0) {
     throw xml_writer::write_error("Output buffer was NULL in wrap_close().");
@@ -45,7 +45,7 @@ static int wrap_close(void *context) {
 
 // create a new XML writer using writer callback functions
 xml_writer::xml_writer(std::shared_ptr<output_buffer> &out, bool indent)
-    : pimpl{make_unique<pimpl_>()} {
+    : pimpl(std::unique_ptr<pimpl_>(new pimpl_())) {
   xmlOutputBufferPtr output_buffer =
       xmlOutputBufferCreateIO(wrap_write, wrap_close, out.get(), NULL);
 
@@ -75,7 +75,7 @@ void xml_writer::init(bool indent) {
   }
 }
 
-xml_writer::~xml_writer() throw() {
+xml_writer::~xml_writer() noexcept {
   // close and flush the xml writer object. note - if this fails then
   // there isn't much we can do, as this object is going to be deleted
   // anyway.
@@ -187,7 +187,7 @@ void xml_writer::error(const std::string &s) {
 }
 
 // TODO: move this to its own file
-output_buffer::~output_buffer() {}
+output_buffer::~output_buffer() = default;
 
 xml_writer::write_error::write_error(const char *message)
     : std::runtime_error(message) {}

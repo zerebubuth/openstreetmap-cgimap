@@ -9,7 +9,7 @@ namespace api06 {
 class Changeset_Updater {
 
 public:
-  virtual ~Changeset_Updater() {};
+  virtual ~Changeset_Updater() = default;
 
   virtual void lock_current_changeset() = 0;
 

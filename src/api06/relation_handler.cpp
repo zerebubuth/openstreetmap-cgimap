@@ -23,11 +23,11 @@ relation_responder::relation_responder(mime::type mt, osm_nwr_id_t id_,
   }
 }
 
-relation_responder::~relation_responder() {}
+relation_responder::~relation_responder() = default;
 
 relation_handler::relation_handler(request &, osm_nwr_id_t id_) : id(id_) {}
 
-relation_handler::~relation_handler() {}
+relation_handler::~relation_handler() = default;
 
 std::string relation_handler::log_name() const { return "relation"; }
 

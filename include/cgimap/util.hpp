@@ -49,14 +49,14 @@ inline std::string escape(std::string input)
 
 	std::string result = "\"";
 
-	for (unsigned int i = 0; i < input.length(); i++)
+	for (char i : input)
 	{
-		if (input.at(i) == '\"')
+		if (i == '\"')
 			result += "\\";
-		else if (input.at(i) == '\\')
+		else if (i == '\\')
 			result += "\\";
 
-		result += input.at(i);
+		result += i;
 	}
 
 	result += "\"";

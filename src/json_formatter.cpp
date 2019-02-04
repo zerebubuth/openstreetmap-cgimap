@@ -31,7 +31,7 @@ const std::string &element_type_name(element_type elt) {
 json_formatter::json_formatter(json_writer *w) : writer(w),
     is_in_elements_array(false) {}
 
-json_formatter::~json_formatter() {}
+json_formatter::~json_formatter() = default;
 
 mime::type json_formatter::mime_type() const { return mime::text_json; }
 

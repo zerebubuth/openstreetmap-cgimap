@@ -19,11 +19,6 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
-#if PQXX_VERSION_MAJOR >= 4
-#define PREPARE_ARGS(args)
-#else
-#define PREPARE_ARGS(args) args
-#endif
 
 namespace po = boost::program_options;
 using std::set;
@@ -109,7 +104,7 @@ pgsql_update::pgsql_update(
      )");
 }
 
-pgsql_update::~pgsql_update() {}
+pgsql_update::~pgsql_update() = default;
 
 bool pgsql_update::is_readonly() {
   return m_readonly;
@@ -150,9 +145,7 @@ void pgsql_update::commit() {
 
 pgsql_update::factory::factory(const po::variables_map &opts)
     : m_connection(connect_db_str(opts)), m_readonly(false)
-#if PQXX_VERSION_MAJOR >= 4
       ,m_errorhandler(m_connection)
-#endif
  {
 
   check_postgres_version(m_connection);
@@ -169,16 +162,9 @@ pgsql_update::factory::factory(const po::variables_map &opts)
     m_readonly = true;
     m_connection.set_variable("default_transaction_read_only", "true");
   }
-
-  // ignore notice messages
-#if PQXX_VERSION_MAJOR < 4
-  m_connection.set_noticer(
-      std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
-#endif
-
 }
 
-pgsql_update::factory::~factory() {}
+pgsql_update::factory::~factory() = default;
 
 std::shared_ptr<data_update>
 pgsql_update::factory::make_data_update() {

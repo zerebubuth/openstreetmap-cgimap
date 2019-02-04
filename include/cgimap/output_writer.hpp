@@ -5,11 +5,6 @@
 #include <string>
 #include <stdexcept>
 
-// due to compatibility issues in gcc 4.8
-template<typename T, typename... Args>
-std::unique_ptr<T> make_unique(Args&&... args) {
-    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-}
 
 /**
  * base class of all writers.
@@ -24,7 +19,7 @@ public:
 
   output_writer() = default;
 
-  virtual ~output_writer() throw();
+  virtual ~output_writer() noexcept;
 
   /* write an error to the output. normally, we'd detect errors *before*
    * starting to write. so this is a very rare case, for example when the

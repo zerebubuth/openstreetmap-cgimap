@@ -8,7 +8,7 @@ osm_current_responder::osm_current_responder(mime::type mt, data_selection_ptr &
                                              boost::optional<bbox> b)
     : osm_responder(mt, b), sel(s) {}
 
-osm_current_responder::~osm_current_responder() {}
+osm_current_responder::~osm_current_responder() = default;
 
 void osm_current_responder::write(shared_ptr<output_formatter> formatter,
                                   const std::string &generator,

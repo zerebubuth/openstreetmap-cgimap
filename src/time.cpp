@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 #include <sstream>
-#include <ctype.h>
+#include <cctype>
 #include <time.h>
 
 

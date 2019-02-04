@@ -164,7 +164,7 @@ struct oauth_authorization_grammar
     // looks like realm is special, see the OAuth spec for details
     // http://oauth.net/core/1.0a/#rfc.section.5.4.1
     kvpair
-      = (ascii::string("realm") >> lit("=\"") > quoted_string > lit("\""))
+      = ((ascii::string("realm") >> (lit("=\"")) > quoted_string) > lit("\""))
       | (key >> lit("=\"") > escaped > lit("\""));
 
     // definitions from http://oauth.net/core/1.0a/#rfc.section.5.4.1
@@ -218,8 +218,8 @@ struct oauth_authorization_grammar
 // not parsed.
 bool parse_oauth_authorization(const char *auth_header, std::vector<param> &params) {
   using boost::spirit::ascii::blank;
-  typedef const char *iterator_type;
-  typedef oauth_authorization_grammar<iterator_type> grammar;
+  using iterator_type = const char *;
+  using grammar = oauth_authorization_grammar<iterator_type>;
 
   grammar g;
   iterator_type itr = auth_header;
@@ -244,7 +244,7 @@ std::string urlnormalise(const std::string &str) {
 }
 
 bool get_all_request_parameters(request &req, std::vector<param> &params) {
-  typedef std::vector<std::pair<std::string, std::string> > params_t;
+  using params_t = std::vector<std::pair<std::string, std::string> >;
 
   { // add oauth params, except realm
     std::vector<param> auth_params;
@@ -338,15 +338,14 @@ std::string hmac_sha1(const std::string &key, const std::string &text) {
 }
 
 std::string base64_encode(const std::string &str) {
-  typedef
+  using base64_encode =
     bai::base64_from_binary<
       bai::transform_width<
         std::string::const_iterator,
         6,
         8
       >
-    >
-    base64_encode;
+    >;
 
   std::ostringstream ostr;
   std::copy(base64_encode(str.begin()),
@@ -563,7 +562,6 @@ validity::validity is_valid_signature(
   }
 }
 
-store::~store() {
-}
+store::~store() = default;
 
 } // namespace oauth

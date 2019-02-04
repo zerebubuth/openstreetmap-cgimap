@@ -34,13 +34,13 @@ changeset_download_responder::changeset_download_responder(
   sel->select_historical_by_changesets(ids);
 }
 
-changeset_download_responder::~changeset_download_responder() {}
+changeset_download_responder::~changeset_download_responder() = default;
 
 changeset_download_handler::changeset_download_handler(request &req, osm_changeset_id_t id_)
   : id(id_) {
 }
 
-changeset_download_handler::~changeset_download_handler() {}
+changeset_download_handler::~changeset_download_handler() = default;
 
 std::string changeset_download_handler::log_name() const { return "changeset/download"; }
 

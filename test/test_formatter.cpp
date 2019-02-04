@@ -12,7 +12,7 @@
 namespace {
 
 bool equal_tags(const tags_t &a, const tags_t &b) {
-  typedef std::vector<std::pair<std::string, std::string> > vec_tags_t;
+  using vec_tags_t = std::vector<std::pair<std::string, std::string> >;
   if (a.size() != b.size()) { return false; }
   vec_tags_t sorted_a(a.begin(), a.end());
   vec_tags_t sorted_b(b.begin(), b.end());
@@ -134,7 +134,7 @@ bool test_formatter::changeset_t::operator==(const changeset_t &other) const {
   return std::equal(m_tags.begin(), m_tags.end(), other.m_tags.begin());
 }
 
-test_formatter::~test_formatter() {}
+test_formatter::~test_formatter() = default;
 
 mime::type test_formatter::mime_type() const {
   throw std::runtime_error("Unimplemented");

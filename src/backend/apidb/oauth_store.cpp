@@ -1,12 +1,6 @@
 #include "cgimap/backend/apidb/oauth_store.hpp"
 #include "cgimap/logger.hpp"
 
-#if PQXX_VERSION_MAJOR >= 4
-#define PREPARE_ARGS(args)
-#else
-#define PREPARE_ARGS(args) args
-#endif
-
 namespace po = boost::program_options;
 
 namespace {
@@ -42,9 +36,7 @@ std::string connect_db_str(const po::variables_map &options) {
 
 oauth_store::oauth_store(const po::variables_map &opts)
   : m_connection(connect_db_str(opts))
-#if PQXX_VERSION_MAJOR >= 4
   , m_errorhandler(m_connection)
-#endif
 {
 
   // set the connections to use the appropriate charset.
@@ -53,12 +45,6 @@ oauth_store::oauth_store(const po::variables_map &opts)
     db_charset = opts["oauth-charset"].as<std::string>();
   }
   m_connection.set_client_encoding(db_charset);
-
-  // ignore notice messages
-#if PQXX_VERSION_MAJOR < 4
-  m_connection.set_noticer(
-      std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
-#endif
 
   logger::message("Preparing OAuth prepared statements.");
 
@@ -71,8 +57,7 @@ oauth_store::oauth_store(const po::variables_map &opts)
       "SELECT $1::varchar, $2::integer "
       "WHERE NOT EXISTS ("
         "SELECT 1 FROM oauth_nonces "
-        "WHERE nonce=$1 AND \"timestamp\"=$2)")
-    PREPARE_ARGS(("character varying")("integer"));
+        "WHERE nonce=$1 AND \"timestamp\"=$2)");
 
   // return a row if there's a token with the given ID which is authorized and
   // valid.
@@ -81,42 +66,36 @@ oauth_store::oauth_store(const po::variables_map &opts)
     "WHERE "
       "token=$1 AND "
       "authorized_at IS NOT NULL AND "
-      "invalidated_at IS NULL")
-    PREPARE_ARGS(("character varying"));
+      "invalidated_at IS NULL");
 
   // return a row with the user ID of the owner of the given token ID.
   m_connection.prepare("token_belongs_to",
     "SELECT user_id FROM oauth_tokens "
-    "WHERE token=$1")
-    PREPARE_ARGS(("character varying"));
+    "WHERE token=$1");
 
   // return a row with allow_write_api boolean status of the given token ID
   m_connection.prepare("token_allow_write_api",
     "SELECT allow_write_api FROM oauth_tokens "
-    "WHERE token=$1")
-    PREPARE_ARGS(("character varying"));
+    "WHERE token=$1");
 
   // return a row with the consumer secret for a given consumer key.
   m_connection.prepare("consumer_secret_for_key",
     "SELECT secret FROM client_applications "
-    "WHERE key=$1")
-    PREPARE_ARGS(("character varying"));
+    "WHERE key=$1");
 
   // return a row with the token secret given the token ID.
   m_connection.prepare("token_secret_for_id",
     "SELECT secret FROM oauth_tokens "
-    "WHERE token=$1")
-    PREPARE_ARGS(("character varying"));
+    "WHERE token=$1");
 
   // return all the roles to which the user belongs.
   m_connection.prepare("roles_for_user",
-    "SELECT role FROM user_roles WHERE user_id = $1")
-    PREPARE_ARGS(("bigint"));
+    "SELECT role FROM user_roles WHERE user_id = $1");
 
   // clang-format on
 }
 
-oauth_store::~oauth_store() {}
+oauth_store::~oauth_store() = default;
 
 boost::optional<std::string>
 oauth_store::consumer_secret(const std::string &consumer_key) {
@@ -171,7 +150,7 @@ oauth_store::get_user_id_for_token(const std::string &token_id) {
   pqxx::result res = w.prepared("token_belongs_to")(token_id).exec();
 
   if (res.affected_rows() > 0) {
-    osm_user_id_t uid = res[0][0].as<osm_user_id_t>();
+    auto uid = res[0][0].as<osm_user_id_t>();
     return uid;
 
   } else {

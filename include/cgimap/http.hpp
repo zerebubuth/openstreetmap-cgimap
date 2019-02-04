@@ -48,11 +48,11 @@ protected:
   exception(unsigned int c, const std::string &h, const std::string &m);
 
 public:
-  virtual ~exception() throw();
+  virtual ~exception() noexcept;
 
   unsigned int code() const;
   const std::string &header() const;
-  const char *what() const throw();
+  const char *what() const noexcept;
 };
 
 /**
@@ -73,6 +73,16 @@ public:
 class bad_request : public exception {
 public:
   bad_request(const std::string &message);
+};
+
+/**
+ * The server understood the request, but is refusing to fulfill it.
+ * Authorization will not help and the request SHOULD NOT be repeated.
+ */
+
+class forbidden : public exception {
+public:
+   forbidden(const std::string &message);
 };
 
 /**
@@ -207,8 +217,8 @@ private:
 
 public:
   encoding(const std::string &name) : name_(name){};
-  virtual ~encoding(void){};
-  const std::string &name(void) const { return name_; };
+  virtual ~encoding() = default;
+  const std::string &name() const { return name_; };
   virtual std::shared_ptr<output_buffer>
   buffer(std::shared_ptr<output_buffer> out) {
     return out;
@@ -217,13 +227,13 @@ public:
 
 class identity : public encoding {
 public:
-  identity(void) : encoding("identity"){};
+  identity() : encoding("identity"){};
 };
 
 #ifdef HAVE_LIBZ
 class deflate : public encoding {
 public:
-  deflate(void) : encoding("deflate"){};
+  deflate() : encoding("deflate"){};
   virtual std::shared_ptr<output_buffer>
   buffer(std::shared_ptr<output_buffer> out) {
     return std::shared_ptr<zlib_output_buffer>(
@@ -233,7 +243,7 @@ public:
 
 class gzip : public encoding {
 public:
-  gzip(void) : encoding("gzip"){};
+  gzip() : encoding("gzip"){};
   virtual std::shared_ptr<output_buffer>
   buffer(std::shared_ptr<output_buffer> out) {
     return std::shared_ptr<zlib_output_buffer>(

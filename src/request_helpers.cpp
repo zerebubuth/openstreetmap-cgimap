@@ -101,6 +101,7 @@ namespace {
 const char *http_message_status_200 = "OK";
 const char *http_message_status_400 = "Bad Request";
 const char *http_message_status_401 = "Unauthorized";
+const char *http_message_status_403 = "Forbidden";
 const char *http_message_status_404 = "Not Found";
 const char *http_message_status_405 = "Method Not Allowed";
 const char *http_message_status_406 = "Not Acceptable";
@@ -125,6 +126,9 @@ const char *status_message(int code) {
     break;
   case 401:
     msg = http_message_status_401;
+    break;
+  case 403:
+    msg = http_message_status_403;
     break;
   case 404:
     msg = http_message_status_404;
@@ -184,7 +188,7 @@ public:
     r.flush();
   }
 
-  virtual ~fcgi_output_buffer() {}
+  virtual ~fcgi_output_buffer() = default;
 
   fcgi_output_buffer(request &req) : r(req), w(0) {}
 

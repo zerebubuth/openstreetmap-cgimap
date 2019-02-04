@@ -20,7 +20,7 @@ struct pgsnapshot_backend : public backend {
         "dbport", po::value<string>(),
         "database port number or UNIX socket file name");
   }
-  virtual ~pgsnapshot_backend() {}
+  virtual ~pgsnapshot_backend() = default;
 
   const string &name() const { return m_name; }
   const po::options_description &options() const { return m_options; }

@@ -5,7 +5,7 @@
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
-#include <stdio.h>
+#include <cstdio>
 
 #include "cgimap/config.hpp"
 #include "cgimap/time.hpp"

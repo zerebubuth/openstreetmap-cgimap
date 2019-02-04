@@ -8,13 +8,13 @@
 namespace {
 
 struct test_request : public request {
-  test_request() {}
+  test_request() = default;
 
   /// implementation of request interface
-  virtual ~test_request() {}
+  virtual ~test_request() = default;
   virtual const char *get_param(const char *key) {
     std::string key_str(key);
-    std::map<std::string, std::string>::iterator itr = m_params.find(key_str);
+    auto itr = m_params.find(key_str);
     if (itr != m_params.end()) {
       return itr->second.c_str();
     } else {

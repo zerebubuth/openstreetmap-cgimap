@@ -30,7 +30,7 @@ public:
    * Methods.
    */
   memcached_rate_limiter(const boost::program_options::variables_map &options);
-  ~memcached_rate_limiter(void);
+  ~memcached_rate_limiter();
   bool check(const std::string &key);
   void update(const std::string &key, int bytes);
 
