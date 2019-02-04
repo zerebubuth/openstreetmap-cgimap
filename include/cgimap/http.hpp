@@ -76,6 +76,16 @@ public:
 };
 
 /**
+ * The server understood the request, but is refusing to fulfill it.
+ * Authorization will not help and the request SHOULD NOT be repeated.
+ */
+
+class forbidden : public exception {
+public:
+   forbidden(const std::string &message);
+};
+
+/**
  * The client has attempted to use an HTTP method which is not
  * supported on the receiving URI. This is a very specific error
  * and shouldn't be used except in this context.

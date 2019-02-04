@@ -82,6 +82,9 @@ server_error::server_error(const string &message)
 bad_request::bad_request(const string &message)
     : exception(400, "Bad Request", message) {}
 
+forbidden::forbidden(const string &message)
+    : exception(403, "Forbidden", message) {}
+
 not_found::not_found(const string &uri) : exception(404, "Not Found", uri) {}
 
 not_acceptable::not_acceptable(const string &message)
