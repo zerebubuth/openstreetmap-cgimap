@@ -32,6 +32,7 @@ DEALINGS IN THE SOFTWARE.
 #ifndef CACHE_HPP
 #define CACHE_HPP
 
+#include <cassert>
 #include <functional>
 #include <map>
 #include <memory>
@@ -146,11 +147,11 @@ std::shared_ptr<Object const> cache<Key, Object>::get(const Key &k) {
       temp.splice(temp.end(), sdata()->cont, mpos->second);
       // and now place it at the end of the list:
       sdata()->cont.splice(sdata()->cont.end(), temp, temp.begin());
-      BOOST_ASSERT(*(sdata()->cont.back().second) == k);
+      assert(*(sdata()->cont.back().second) == k);
       // update index with new position:
       mpos->second = --(sdata()->cont.end());
-      BOOST_ASSERT(&(mpos->first) == mpos->second->second);
-      BOOST_ASSERT(&(mpos->first) == sdata()->cont.back().second);
+      assert(&(mpos->first) == mpos->second->second);
+      assert(&(mpos->first) == sdata()->cont.back().second);
     }
     return sdata()->cont.back().first;
   }
@@ -181,9 +182,9 @@ void cache<Key, Object>::insert_into_cache(const Key &k, std::shared_ptr<Object 
   sdata()->index.insert(std::make_pair(k, --(sdata()->cont.end())));
   sdata()->cont.back().second = &(sdata()->index.find(k)->first);
   map_size_type s = sdata()->index.size();
-  BOOST_ASSERT(sdata()->index[k]->first.get() == result.get());
-  BOOST_ASSERT(&(sdata()->index.find(k)->first) == sdata()->cont.back().second);
-  BOOST_ASSERT(sdata()->index.find(k)->first == k);
+  assert(sdata()->index[k]->first.get() == result.get());
+  assert(&(sdata()->index.find(k)->first) == sdata()->cont.back().second);
+  assert(sdata()->index.find(k)->first == k);
   if (s > max_cache_size) {
     //
     // We have too many items in the list, so we need to start
@@ -198,7 +199,7 @@ void cache<Key, Object>::insert_into_cache(const Key &k, std::shared_ptr<Object 
         ++pos;
         // now remove the items from our containers,
         // then order has to be as follows:
-        BOOST_ASSERT(sdata()->index.find(*(condemmed->second)) !=
+        assert(sdata()->index.find(*(condemmed->second)) !=
             sdata()->index.end());
         sdata()->index.erase(*(condemmed->second));
         sdata()->cont.erase(condemmed);
@@ -206,9 +207,9 @@ void cache<Key, Object>::insert_into_cache(const Key &k, std::shared_ptr<Object 
       } else
         --pos;
     }
-    BOOST_ASSERT(sdata()->index[k]->first.get() == result.get());
-    BOOST_ASSERT(&(sdata()->index.find(k)->first) == sdata()->cont.back().second);
-    BOOST_ASSERT(sdata()->index.find(k)->first == k);
+    assert(sdata()->index[k]->first.get() == result.get());
+    assert(&(sdata()->index.find(k)->first) == sdata()->cont.back().second);
+    assert(sdata()->index.find(k)->first == k);
   }
 
 }
