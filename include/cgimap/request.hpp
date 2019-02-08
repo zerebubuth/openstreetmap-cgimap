@@ -52,6 +52,11 @@ struct request {
   // after a call to any of the output functions.
   void add_header(const std::string &key, const std::string &value);
 
+  // add a key-value header to the response like add_header, provided that
+  // processing didn't trigger any error before calling any of the output
+  // functions
+  void add_success_header(const std::string &key, const std::string &value);
+
   /********************** RESPONSE OUTPUT FUNCTIONS **************************/
 
   // return a handle to the output buffer to write body output. this function
@@ -116,6 +121,9 @@ private:
 
   // the headers to be written in the response
   headers_t m_headers;
+
+  // the headers to be written in the response if process was successful
+  headers_t m_success_headers;
 
   // allowed methods, to be returned to the client in the CORS headers.
   http::method m_methods;
