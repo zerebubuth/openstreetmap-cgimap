@@ -25,7 +25,7 @@ namespace api06 {
 changeset_upload_responder::changeset_upload_responder(
     mime::type mt, data_update_ptr & upd, osm_changeset_id_t id_, const std::string &payload,
     boost::optional<osm_user_id_t> user_id)
-    : osm_diffresult_responder(mt), id(id_), upd(upd) {
+    : osm_diffresult_responder(mt), upd(upd) {
 
   osm_changeset_id_t changeset = id_;
   osm_user_id_t uid = *user_id;
@@ -40,7 +40,7 @@ changeset_upload_responder::changeset_upload_responder(
   changeset_updater->lock_current_changeset();
 
   OSMChange_Handler handler(std::move(node_updater), std::move(way_updater),
-                            std::move(relation_updater), changeset, uid);
+                            std::move(relation_updater), changeset);
 
   OSMChangeXMLParser parser(&handler);
 
@@ -56,7 +56,7 @@ changeset_upload_responder::changeset_upload_responder(
 
 changeset_upload_responder::~changeset_upload_responder() = default;
 
-changeset_upload_handler::changeset_upload_handler(request &req,
+changeset_upload_handler::changeset_upload_handler(request &,
                                                    osm_changeset_id_t id_)
     : payload_enabled_handler(mime::unspecified_type,
                               http::method::POST | http::method::OPTIONS),
@@ -69,7 +69,7 @@ std::string changeset_upload_handler::log_name() const {
 }
 
 responder_ptr_t
-changeset_upload_handler::responder(data_selection_ptr &w) const {
+changeset_upload_handler::responder(data_selection_ptr &) const {
   throw http::server_error(
       "changeset_upload_handler: data_selection unsupported");
 }

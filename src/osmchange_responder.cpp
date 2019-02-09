@@ -63,8 +63,8 @@ struct sorting_formatter
   }
 
   void start_document(
-    const std::string &generator,
-    const std::string &root_name) {
+    const std::string &,
+    const std::string &) {
 
     throw std::runtime_error("sorting_formatter::start_document unimplemented");
   }
@@ -73,19 +73,19 @@ struct sorting_formatter
     throw std::runtime_error("sorting_formatter::end_document unimplemented");
   }
 
-  void error(const std::exception &e) {
+  void error(const std::exception &) {
     throw std::runtime_error("sorting_formatter::error unimplemented");
   }
 
-  void write_bounds(const bbox &bounds) {
+  void write_bounds(const bbox &) {
     throw std::runtime_error("sorting_formatter::write_bounds unimplemented");
   }
 
-  void start_element_type(element_type type) {
+  void start_element_type(element_type) {
     throw std::runtime_error("sorting_formatter::start_element_type unimplemented");
   }
 
-  void end_element_type(element_type type) {
+  void end_element_type(element_type) {
     throw std::runtime_error("sorting_formatter::end_element_type unimplemented");
   }
 
@@ -126,26 +126,26 @@ struct sorting_formatter
   }
 
   void write_changeset(
-    const changeset_info &elem,
-    const tags_t &tags,
-    bool include_comments,
-    const comments_t &comments,
-    const std::chrono::system_clock::time_point &now) {
+    const changeset_info &,
+    const tags_t &,
+    bool,
+    const comments_t &,
+    const std::chrono::system_clock::time_point &) {
 
     throw std::runtime_error("sorting_formatter::write_changeset unimplemented");
   }
 
-  void write_diffresult_create_modify(const element_type elem,
-                                              const osm_nwr_signed_id_t old_id,
-                                              const osm_nwr_id_t new_id,
-                                              const osm_version_t new_version) {
+  void write_diffresult_create_modify(const element_type,
+				      const osm_nwr_signed_id_t,
+				      const osm_nwr_id_t,
+				      const osm_version_t) {
 
     throw std::runtime_error("sorting_formatter::write_diffresult_create_modify unimplemented");
   }
 
 
-  void write_diffresult_delete(const element_type elem,
-                               const osm_nwr_signed_id_t old_id) {
+  void write_diffresult_delete(const element_type,
+                               const osm_nwr_signed_id_t) {
     throw std::runtime_error("sorting_formatter::write_diffresult_delete unimplemented");
   }
 
@@ -158,13 +158,13 @@ struct sorting_formatter
     throw std::runtime_error("sorting_formatter::error unimplemented");
   }
 
-  void start_action(action_type type) {
+  void start_action(action_type) {
     // this shouldn't be called here, as the things which call this don't have
     // actions - they're added by this code.
     throw std::runtime_error("Unexpected call to start_action.");
   }
 
-  void end_action(action_type type) {
+  void end_action(action_type) {
     // this shouldn't be called here, as the things which call this don't have
     // actions - they're added by this code.
     throw std::runtime_error("Unexpected call to end_action.");

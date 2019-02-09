@@ -17,7 +17,6 @@ public:
   ~changeset_upload_responder();
 
 private:
-  osm_changeset_id_t id;
   data_update_ptr upd;
 };
 

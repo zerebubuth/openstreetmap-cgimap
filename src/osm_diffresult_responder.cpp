@@ -6,7 +6,7 @@
 using std::list;
 using std::shared_ptr;
 
-element_type as_elem_type(object_type o) {
+element_type as_elem_type(object_type o) { // @suppress("No return")
 
   switch (o) {
 
@@ -17,6 +17,7 @@ element_type as_elem_type(object_type o) {
   case object_type::relation:
     return element_type_relation;
   }
+
 }
 
 osm_diffresult_responder::osm_diffresult_responder(mime::type mt)
@@ -26,7 +27,7 @@ osm_diffresult_responder::~osm_diffresult_responder() = default;
 
 void osm_diffresult_responder::write(shared_ptr<output_formatter> formatter,
                                      const std::string &generator,
-                                     const std::chrono::system_clock::time_point &now) {
+                                     const std::chrono::system_clock::time_point &) {
 
   // TODO: is it possible that formatter can be null?
   output_formatter &fmt = *formatter;
@@ -62,6 +63,10 @@ void osm_diffresult_responder::write(shared_ptr<output_formatter> formatter,
           fmt.write_diffresult_delete(as_elem_type(item.obj_type),
                                       item.orig_id);
         break;
+
+      case operation::op_undefined:
+
+	break;
       }
     }
 

@@ -1454,7 +1454,7 @@ namespace {
     changeset_updater->lock_current_changeset();
 
     api06::OSMChange_Handler handler(std::move(node_updater), std::move(way_updater),
-                                     std::move(relation_updater), changeset, uid);
+                                     std::move(relation_updater), changeset);
 
     api06::OSMChangeXMLParser parser(&handler);
 

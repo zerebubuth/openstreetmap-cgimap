@@ -35,13 +35,13 @@ struct pgsnapshot_backend : public backend {
     return factory;
   }
 
-  shared_ptr<data_update::factory> create_data_update(const po::variables_map &opts) {
+  shared_ptr<data_update::factory> create_data_update(const po::variables_map &) {
 
-    return nullptr;   // TODO: not implemented
+    return nullptr;   // Data update operations not supported by pgsnapshot backend
   }
 
   std::shared_ptr<oauth::store> create_oauth_store(
-    const po::variables_map &opts) {
+    const po::variables_map &) {
     return std::shared_ptr<oauth::store>();
   }
 
