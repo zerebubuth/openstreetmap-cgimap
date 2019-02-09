@@ -25,7 +25,7 @@ public:
   // likely that some documents may be poorly formed.
   void write(std::shared_ptr<output_formatter> f,
              const std::string &generator,
-             const boost::posix_time::ptime &now);
+             const std::chrono::system_clock::time_point &now);
 
 protected:
   // selection of elements to be written out

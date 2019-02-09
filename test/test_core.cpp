@@ -23,7 +23,6 @@ namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 namespace al = boost::algorithm;
 namespace pt = boost::property_tree;
-namespace bt = boost::posix_time;
 
 std::map<std::string, std::string> read_headers(std::istream &in,
                                                 const std::string &separator) {

@@ -40,7 +40,7 @@ int data_selection::select_historical_by_changesets(
     "versions or changesets");
 }
 
-void data_selection::write_changesets(output_formatter &, const boost::posix_time::ptime &) {
+void data_selection::write_changesets(output_formatter &, const std::chrono::system_clock::time_point &) {
 }
 
 bool data_selection::supports_changesets() {

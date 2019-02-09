@@ -2,10 +2,11 @@
 #include "cgimap/json_formatter.hpp"
 #include "cgimap/config.hpp"
 
+#include <chrono>
+
 using std::shared_ptr;
 using std::string;
 using std::transform;
-namespace pt = boost::posix_time;
 
 namespace {
 
@@ -210,7 +211,7 @@ void json_formatter::write_changeset(const changeset_info &elem,
                                      const tags_t &tags,
                                      bool include_comments,
                                      const comments_t &comments,
-                                     const pt::ptime &now) {
+                                     const std::chrono::system_clock::time_point &now) {
 
   writer->start_object();
 

@@ -60,8 +60,8 @@ ___test_test_parse_id_list_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @
 ___test_test_basicauth_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
 ___test_test_oauth_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
 ___test_test_http_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
-___test_test_parse_time_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_DATE_TIME_LIB@ @BOOST_SYSTEM_LIB@ @LIBPQXX_LIBS@
-___test_test_parse_osmchange_input_LDADD=libcgimap_core.la @LIBXML_LIBS@ @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_DATE_TIME_LIB@ @BOOST_SYSTEM_LIB@
+___test_test_parse_time_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @LIBPQXX_LIBS@
+___test_test_parse_osmchange_input_LDADD=libcgimap_core.la @LIBXML_LIBS@ @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@
 
 if ENABLE_APIDB
 ___test_test_apidb_backend_nodes_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
@@ -163,7 +163,7 @@ libcgimap_core_la_SOURCES=\
 	xml_formatter.cpp \
 	xml_writer.cpp \
 	zlib.cpp
-libcgimap_core_la_LIBADD=@LIBXML_LIBS@ @YAJL_LIBS@ @LIBMEMCACHED_LIBS@ @BOOST_REGEX_LIB@ @BOOST_DATE_TIME_LIB@ @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@  @CRYPTOPP_LIBS@
+libcgimap_core_la_LIBADD=@LIBXML_LIBS@ @YAJL_LIBS@ @LIBMEMCACHED_LIBS@ @BOOST_REGEX_LIB@ @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@  @CRYPTOPP_LIBS@
 
 libcgimap_core_la_SOURCES+=\
 	api06/map_handler.cpp \
@@ -220,7 +220,7 @@ libcgimap_apidb_la_SOURCES=\
 	backend/apidb/changeset_upload/relation_updater.cpp \
 	backend/apidb/changeset_upload/way_updater.cpp
 
-libcgimap_apidb_la_LIBADD=libcgimap_core.la @BOOST_DATE_TIME_LIB@ @LIBPQXX_LIBS@
+libcgimap_apidb_la_LIBADD=libcgimap_core.la @LIBPQXX_LIBS@
 endif
 
 if ENABLE_PGSNAPSHOT

@@ -4,11 +4,12 @@
 #include "cgimap/bbox.hpp"
 #include "cgimap/types.hpp"
 #include "cgimap/mime_types.hpp"
+
+#include <chrono>
 #include <list>
 #include <vector>
 #include <stdexcept>
 #include <boost/optional.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
 
 /**
  * What type of element the formatter is starting to write.
@@ -69,7 +70,7 @@ struct changeset_info {
   //
   // note that the definition of "open" is fraught with
   // difficulty, and it's not wise to rely on it too much.
-  bool is_open_at(const boost::posix_time::ptime &) const;
+  bool is_open_at(const std::chrono::system_clock::time_point &) const;
 
   // standard meaning of ID
   osm_changeset_id_t id;
@@ -182,7 +183,7 @@ struct output_formatter {
                                const tags_t &tags,
                                bool include_comments,
                                const comments_t &comments,
-                               const boost::posix_time::ptime &now) = 0;
+                               const std::chrono::system_clock::time_point &now) = 0;
 
   // output an entry of a diffResult with 3 parameters: old_id, new_id and new_version
   virtual void write_diffresult_create_modify(const element_type elem,

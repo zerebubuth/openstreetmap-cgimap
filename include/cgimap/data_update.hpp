@@ -10,7 +10,6 @@
 #include "cgimap/api06/changeset_upload/relation_updater.hpp"
 #include "cgimap/api06/changeset_upload/way_updater.hpp"
 
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <memory>
 #include <vector>
 

@@ -215,7 +215,7 @@ public:
   void write_ways(output_formatter &formatter) {}
   void write_relations(output_formatter &formatter) {}
   void write_changesets(output_formatter &formatter,
-                        const boost::posix_time::ptime &now) {}
+                        const std::chrono::system_clock::time_point &now) {}
 
   visibility_t check_node_visibility(osm_nwr_id_t id) {}
   visibility_t check_way_visibility(osm_nwr_id_t id) {}

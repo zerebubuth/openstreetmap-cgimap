@@ -2,8 +2,11 @@
 #include "cgimap/oauth.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/request_helpers.hpp"
+#include "cgimap/time.hpp"
 
 #include <algorithm>
+#include <chrono>
+#include <iomanip>
 #include <vector>
 #include <sstream>
 
@@ -17,15 +20,13 @@
 #include <boost/spirit/include/qi.hpp>
 #include <boost/archive/iterators/base64_from_binary.hpp>
 #include <boost/archive/iterators/transform_width.hpp>
-#include <boost/date_time/posix_time/conversion.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
+
 
 #include <cryptopp/hmac.h>
 #include <cryptopp/sha.h>
 #include <cryptopp/filters.h>
 
 namespace bai = boost::archive::iterators;
-namespace pt = boost::posix_time;
 
 namespace {
 
@@ -511,8 +512,10 @@ validity::validity is_valid_signature(
         return validity::bad_request();
       }
 
+      std::chrono::system_clock::time_point ts = std::chrono::system_clock::from_time_t(timestamp);
+
       // check that the time isn't too far in the past
-      if (req.get_current_time() - pt::from_time_t(timestamp) > pt::hours(24)) {
+      if (std::chrono::duration_cast<std::chrono::hours>(req.get_current_time() - ts).count() >= 24) {
         return validity::unauthorized(
           "Timestamp is too far in the past.");
       }

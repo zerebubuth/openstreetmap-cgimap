@@ -8,11 +8,12 @@
 #include "cgimap/data_selection.hpp"
 #include "cgimap/http.hpp"
 
+#include <chrono>
 #include <list>
 #include <set>
 #include <string>
 #include <memory>
-#include <boost/date_time/posix_time/posix_time.hpp>
+
 
 /**
  * object which is able to respond to an already-setup request.
@@ -23,7 +24,7 @@ public:
   virtual ~responder();
   virtual void write(std::shared_ptr<output_formatter> f,
                      const std::string &generator,
-                     const boost::posix_time::ptime &now) = 0;
+                     const std::chrono::system_clock::time_point &now) = 0;
 
   mime::type resource_type() const;
 

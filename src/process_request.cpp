@@ -11,7 +11,6 @@
 #include <sstream>
 #include <tuple>
 
-#include <boost/date_time.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
@@ -24,7 +23,6 @@ using std::shared_ptr;
 using boost::format;
 
 namespace al = boost::algorithm;
-namespace pt = boost::posix_time;
 namespace po = boost::program_options;
 
 

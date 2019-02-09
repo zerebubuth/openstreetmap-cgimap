@@ -6,7 +6,6 @@
 using std::string;
 using std::shared_ptr;
 using std::transform;
-namespace pt = boost::posix_time;
 
 namespace {
 
@@ -176,7 +175,7 @@ void xml_formatter::write_changeset(const changeset_info &elem,
                                     const tags_t &tags,
                                     bool include_comments,
                                     const comments_t &comments,
-                                    const pt::ptime &now) {
+                                    const std::chrono::system_clock::time_point &now) {
   writer->start("changeset");
 
   writer->attribute("id", elem.id);

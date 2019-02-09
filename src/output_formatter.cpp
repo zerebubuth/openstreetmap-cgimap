@@ -1,8 +1,7 @@
 #include "cgimap/output_formatter.hpp"
 #include "cgimap/time.hpp"
-#include <boost/date_time/posix_time/posix_time.hpp>
 
-namespace pt = boost::posix_time;
+#include <chrono>
 
 // maximum number of element versions which can be associated
 // with a single changeset. this is hard-coded in the API,
@@ -51,8 +50,8 @@ changeset_info::changeset_info(
     bounding_box(bounding_box_), num_changes(num_changes_),
     comments_count(comments_count_) {}
 
-bool changeset_info::is_open_at(const pt::ptime &now) const {
-  const pt::ptime closed_at_time = parse_time(closed_at);
+bool changeset_info::is_open_at(const std::chrono::system_clock::time_point &now) const {
+  const std::chrono::system_clock::time_point closed_at_time = parse_time(closed_at);
   return (closed_at_time > now) && (num_changes < MAX_CHANGESET_ELEMENTS);
 }
 

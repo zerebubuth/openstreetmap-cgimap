@@ -4,6 +4,8 @@
 #include <cgimap/output_formatter.hpp>
 #include <cgimap/backend/apidb/cache.hpp>
 #include <cgimap/backend/apidb/changeset.hpp>
+
+#include <chrono>
 #include <pqxx/pqxx>
 
 /* these functions take the results of "rolled-up" queries where tags, way
@@ -31,7 +33,7 @@ void extract_relations(
 void extract_changesets(
   const pqxx::result &rows, output_formatter &formatter,
   cache<osm_changeset_id_t, changeset> &cc,
-  const boost::posix_time::ptime &now,
+  const std::chrono::system_clock::time_point &now,
   bool include_changeset_discussions);
 
 #endif /* CGIMAP_BACKEND_APIDB_COMMON_PGSQL_SELECTION_HPP */
