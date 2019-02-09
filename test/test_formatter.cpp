@@ -1,13 +1,18 @@
 #include "cgimap/output_formatter.hpp"
 #include "test_formatter.hpp"
 
+#include <chrono>
+#include <ctime>
+#include <fstream>
+#include <iomanip>
+
 #include <boost/optional/optional_io.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
+
 
 namespace {
 
 bool equal_tags(const tags_t &a, const tags_t &b) {
-  typedef std::vector<std::pair<std::string, std::string> > vec_tags_t;
+  using vec_tags_t = std::vector<std::pair<std::string, std::string> >;
   if (a.size() != b.size()) { return false; }
   vec_tags_t sorted_a(a.begin(), a.end());
   vec_tags_t sorted_b(b.begin(), b.end());
@@ -98,7 +103,7 @@ test_formatter::changeset_t::changeset_t(const changeset_info &info,
                                          const tags_t &tags,
                                          bool include_comments,
                                          const comments_t &comments,
-                                         const boost::posix_time::ptime &time)
+                                         const std::chrono::system_clock::time_point &time)
   : m_info(info)
   , m_tags(tags)
   , m_include_comments(include_comments)
@@ -173,7 +178,7 @@ void test_formatter::write_relation(const element_info &elem,
 
 void test_formatter::write_changeset(const changeset_info &elem, const tags_t &tags,
                                      bool include_comments, const comments_t &comments,
-                                     const boost::posix_time::ptime &time) {
+                                     const std::chrono::system_clock::time_point &time) {
   m_changesets.push_back(changeset_t(elem, tags, include_comments, comments, time));
 }
 
@@ -256,8 +261,11 @@ std::ostream &operator<<(std::ostream &out, const test_formatter::changeset_t &c
         << "created_at=\"" << v.created_at << "\", "
         << "author_display_name=\"" << v.author_display_name << "\"), ";
   }
+
+  std::time_t t = std::chrono::system_clock::to_time_t(c.m_time);
+
   out << "], "
-      << "time=" << c.m_time
+      << "time=" << std::put_time( std::gmtime( &t ), "%FT%T%z")
       << ")";
 
   return out;

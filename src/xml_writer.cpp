@@ -11,7 +11,7 @@ struct xml_writer::pimpl_ {
 };
 
 xml_writer::xml_writer(const std::string &file_name, bool indent)
-    : pimpl{make_unique<pimpl_>()} {
+    : pimpl(std::unique_ptr<pimpl_>(new pimpl_())) {
   // allocate the text writer "object"
   pimpl->writer = xmlNewTextWriterFilename(file_name.c_str(), 0);
 
@@ -45,7 +45,7 @@ static int wrap_close(void *context) {
 
 // create a new XML writer using writer callback functions
 xml_writer::xml_writer(std::shared_ptr<output_buffer> &out, bool indent)
-    : pimpl{make_unique<pimpl_>()} {
+    : pimpl(std::unique_ptr<pimpl_>(new pimpl_())) {
   xmlOutputBufferPtr output_buffer =
       xmlOutputBufferCreateIO(wrap_write, wrap_close, out.get(), NULL);
 

@@ -67,7 +67,7 @@ struct router {
                            handler_ptr_t &) = 0;
   };
 
-  typedef std::shared_ptr<rule_base> rule_ptr;
+  using rule_ptr = std::shared_ptr<rule_base>;
 
   // concrete rule match / constructor class
   template <typename rule_t, typename func_t> struct rule : public rule_base {

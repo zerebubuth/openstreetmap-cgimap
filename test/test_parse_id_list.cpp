@@ -34,8 +34,8 @@ struct test_request : public request {
   }
   std::stringstream &buffer() { assert(false); }
 
-  boost::posix_time::ptime get_current_time() const {
-    return boost::posix_time::ptime();
+  std::chrono::system_clock::time_point get_current_time() const {
+    return std::chrono::system_clock::time_point();
   }
 
 protected:

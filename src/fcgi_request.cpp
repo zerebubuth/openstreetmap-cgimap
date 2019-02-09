@@ -43,10 +43,10 @@ private:
 
 struct fcgi_request::pimpl {
   FCGX_Request req;
-  boost::posix_time::ptime now;
+  std::chrono::system_clock::time_point now;
 };
 
-fcgi_request::fcgi_request(int socket, const boost::posix_time::ptime &now) : m_impl(new pimpl) {
+fcgi_request::fcgi_request(int socket, const std::chrono::system_clock::time_point &now) : m_impl(new pimpl) {
   // initialise FCGI
   if (FCGX_Init() != 0) {
     throw runtime_error("Couldn't initialise FCGX library.");
@@ -111,11 +111,11 @@ const std::string fcgi_request::get_payload() {
   return result;
 }
 
-boost::posix_time::ptime fcgi_request::get_current_time() const {
+std::chrono::system_clock::time_point fcgi_request::get_current_time() const {
   return m_impl->now;
 }
 
-void fcgi_request::set_current_time(const boost::posix_time::ptime &now) {
+void fcgi_request::set_current_time(const std::chrono::system_clock::time_point &now) {
   m_impl->now = now;
 }
 

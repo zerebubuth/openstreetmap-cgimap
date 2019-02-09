@@ -80,12 +80,12 @@ struct unauthorized {
   std::string reason;
 };
 
-typedef boost::variant<
+using validity = boost::variant<
   copacetic,
   not_signed,
   bad_request,
   unauthorized
-  > validity;
+  >;
 
 } // namespace validity
 

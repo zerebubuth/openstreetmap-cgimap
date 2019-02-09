@@ -4,9 +4,10 @@
 #include "cgimap/types.hpp"
 #include "cgimap/output_formatter.hpp"
 
+#include <chrono>
 #include <memory>
+#include <sstream>
 #include <vector>
-#include <boost/date_time/posix_time/posix_time.hpp>
 
 /**
  * represents a selected set of data which can be written out to
@@ -32,7 +33,7 @@ public:
 
   /// does this data selection support changesets?
   virtual void write_changesets(output_formatter &formatter,
-                                const boost::posix_time::ptime &now);
+                                const std::chrono::system_clock::time_point &now);
 
   /******************* information functions *******************/
 
@@ -172,7 +173,7 @@ public:
 // https://www.postgresql.org/docs/current/static/arrays.html#ARRAYS-IO
 std::vector<std::string> psql_array_to_vector(std::string str);
 
-typedef std::shared_ptr<data_selection::factory> factory_ptr;
-typedef std::shared_ptr<data_selection> data_selection_ptr;
+using factory_ptr = std::shared_ptr<data_selection::factory>;
+using data_selection_ptr = std::shared_ptr<data_selection>;
 
 #endif /* DATA_SELECTION_HPP */

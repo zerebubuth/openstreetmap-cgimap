@@ -5,14 +5,12 @@
 
 #include <libxml/parser.h>
 
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <sstream>
 #include <unordered_set>
 
 namespace po = boost::program_options;
-namespace pt = boost::posix_time;
 using std::shared_ptr;
 using std::string;
 using api06::id_version;
@@ -348,7 +346,7 @@ struct static_data_selection : public data_selection {
   }
 
   virtual void write_changesets(output_formatter &formatter,
-                                const pt::ptime &now) {
+                                const std::chrono::system_clock::time_point &now) {
     for (osm_changeset_id_t id : m_changesets) {
       auto itr = m_db->m_changesets.find(id);
       if (itr != m_db->m_changesets.end()) {
@@ -385,7 +383,7 @@ struct static_data_selection : public data_selection {
   }
 
   virtual int select_nodes_from_bbox(const bbox &bounds, int max_nodes) {
-    typedef std::map<id_version, node> node_map_t;
+    using node_map_t = std::map<id_version, node>;
     int selected = 0;
     const node_map_t::const_iterator end = m_db->m_nodes.end();
     for (node_map_t::const_iterator itr = m_db->m_nodes.begin();
@@ -421,7 +419,7 @@ struct static_data_selection : public data_selection {
   }
 
   virtual void select_ways_from_nodes() {
-    typedef std::map<id_version, way> way_map_t;
+    using way_map_t = std::map<id_version, way>;
     const way_map_t::const_iterator end = m_db->m_ways.end();
     for (way_map_t::const_iterator itr = m_db->m_ways.begin();
          itr != end; ++itr) {
@@ -452,7 +450,7 @@ struct static_data_selection : public data_selection {
   }
 
   virtual void select_relations_from_ways() {
-    typedef std::map<id_version, relation> relation_map_t;
+    using relation_map_t = std::map<id_version, relation>;
     const relation_map_t::const_iterator end = m_db->m_relations.end();
     for (relation_map_t::const_iterator itr = m_db->m_relations.begin();
          itr != end; ++itr) {
@@ -479,7 +477,7 @@ struct static_data_selection : public data_selection {
   }
 
   virtual void select_relations_from_nodes() {
-    typedef std::map<id_version, relation> relation_map_t;
+    using relation_map_t = std::map<id_version, relation>;
     const relation_map_t::const_iterator end = m_db->m_relations.end();
     for (relation_map_t::const_iterator itr = m_db->m_relations.begin();
          itr != end; ++itr) {
@@ -496,7 +494,7 @@ struct static_data_selection : public data_selection {
 
   virtual void select_relations_from_relations() {
     std::set<osm_nwr_id_t> tmp_relations;
-    typedef std::map<id_version, relation> relation_map_t;
+    using relation_map_t = std::map<id_version, relation>;
     const relation_map_t::const_iterator end = m_db->m_relations.end();
     for (relation_map_t::const_iterator itr = m_db->m_relations.begin();
          itr != end; ++itr) {
@@ -595,7 +593,7 @@ private:
 
   template <typename T>
   boost::optional<const T&> find_current(osm_nwr_id_t id) const {
-    typedef std::map<id_version, T> element_map_t;
+    using element_map_t = std::map<id_version, T>;
     id_version idv(id);
     const element_map_t &m = map_of<T>();
     if (!m.empty()) {
@@ -612,7 +610,7 @@ private:
 
   template <typename T>
   boost::optional<const T &> find(osm_edition_t edition) const {
-    typedef std::map<id_version, T> element_map_t;
+    using element_map_t = std::map<id_version, T>;
     id_version idv(edition.first, edition.second);
     const element_map_t &m = map_of<T>();
     if (!m.empty()) {
@@ -697,7 +695,7 @@ private:
                             const std::vector<osm_nwr_id_t> &ids) const {
     int selected = 0;
     for (osm_nwr_id_t id : ids) {
-      typedef std::map<id_version, T> element_map_t;
+      using element_map_t = std::map<id_version, T>;
       id_version idv_start(id, 0), idv_end(id+1, 0);
       const element_map_t &m = map_of<T>();
       if (!m.empty()) {

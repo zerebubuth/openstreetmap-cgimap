@@ -215,7 +215,7 @@ public:
   void write_ways(output_formatter &formatter) {}
   void write_relations(output_formatter &formatter) {}
   void write_changesets(output_formatter &formatter,
-                        const boost::posix_time::ptime &now) {}
+                        const std::chrono::system_clock::time_point &now) {}
 
   visibility_t check_node_visibility(osm_nwr_id_t id) {}
   visibility_t check_way_visibility(osm_nwr_id_t id) {}
@@ -363,7 +363,7 @@ void test_oauth_get_roles_for_user(test_database &tdb) {
     "");
   std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
 
-  typedef std::set<osm_user_role_t> roles_t;
+  using roles_t = std::set<osm_user_role_t>;
 
   // user 3 has no roles -> should return empty set
   assert_equal<roles_t>(roles_t(), store->get_roles_for_user(3),

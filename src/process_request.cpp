@@ -11,7 +11,6 @@
 #include <sstream>
 #include <tuple>
 
-#include <boost/date_time.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
@@ -24,7 +23,6 @@ using std::shared_ptr;
 using boost::format;
 
 namespace al = boost::algorithm;
-namespace pt = boost::posix_time;
 namespace po = boost::program_options;
 
 
@@ -398,7 +396,7 @@ struct oauth_status_response : public boost::static_visitor<void> {
 // look in the request get parameters to see if the user requested that
 // redactions be shown
 bool show_redactions_requested(request &req) {
-  typedef std::vector<std::pair<std::string, std::string> > params_t;
+  using params_t = std::vector<std::pair<std::string, std::string> >;
   std::string decoded = http::urldecode(get_query_string(req));
   const params_t params = http::parse_params(decoded);
   auto itr = std::find_if(

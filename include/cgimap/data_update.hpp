@@ -10,7 +10,6 @@
 #include "cgimap/api06/changeset_upload/relation_updater.hpp"
 #include "cgimap/api06/changeset_upload/way_updater.hpp"
 
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <memory>
 #include <vector>
 
@@ -52,7 +51,7 @@ public:
   };
 };
 
-typedef std::shared_ptr<data_update::factory> factory_update_ptr;
-typedef std::shared_ptr<data_update> data_update_ptr;
+using factory_update_ptr = std::shared_ptr<data_update::factory>;
+using data_update_ptr = std::shared_ptr<data_update>;
 
 #endif /* DATA_UPDATE_HPP */

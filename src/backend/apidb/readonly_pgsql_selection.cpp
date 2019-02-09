@@ -13,15 +13,12 @@
 
 
 namespace po = boost::program_options;
-namespace pt = boost::posix_time;
 using std::set;
 using std::stringstream;
 using std::list;
 using std::vector;
 using std::shared_ptr;
 
-// number of nodes to chunk together
-#define STRIDE (1000)
 
 namespace {
 std::string connect_db_str(const po::variables_map &options) {
@@ -162,7 +159,7 @@ struct erase_formatter
     const tags_t &tags,
     bool include_comments,
     const comments_t &comments,
-    const boost::posix_time::ptime &now) {
+    const std::chrono::system_clock::time_point &now) {
     m_fmt.write_changeset(elem, tags, include_comments, comments, now);
   }
 
@@ -253,7 +250,7 @@ void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
 }
 
 void readonly_pgsql_selection::write_changesets(output_formatter &formatter,
-                                                const pt::ptime &now) {
+                                                const std::chrono::system_clock::time_point &now) {
   pqxx::result changesets = w.prepared("extract_changesets")(sel_changesets).exec();
   extract_changesets(changesets, formatter, cc, now, include_changeset_discussions);
 }

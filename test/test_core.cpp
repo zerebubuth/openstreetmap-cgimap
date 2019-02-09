@@ -23,7 +23,6 @@ namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 namespace al = boost::algorithm;
 namespace pt = boost::property_tree;
-namespace bt = boost::posix_time;
 
 std::map<std::string, std::string> read_headers(std::istream &in,
                                                 const std::string &separator) {
@@ -71,7 +70,7 @@ std::map<std::string, std::string> read_headers(std::istream &in,
  * take the test file and use it to set up the request headers.
  */
 void setup_request_headers(test_request &req, std::istream &in) {
-  typedef std::map<std::string, std::string> dict;
+  using dict = std::map<std::string, std::string>;
   dict headers = read_headers(in, "---");
 
   for (const dict::value_type &val : headers) {
@@ -383,7 +382,7 @@ void check_content_body_plain(std::istream &expected, std::istream &actual) {
   }
 }
 
-typedef std::map<std::string, std::string> dict;
+using dict = std::map<std::string, std::string>;
 
 std::ostream &operator<<(std::ostream &out, const dict &d) {
   for (const dict::value_type &val : d) {
