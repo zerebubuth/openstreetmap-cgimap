@@ -844,6 +844,18 @@ void test_relation() {
   }
 }
 
+void test_invalid_data() {
+
+  std::string s = "\x3C\x00\x00\x00\x00\x0A\x01\x00";
+  try {
+    process_testmsg(s);
+    throw std::runtime_error("test_invalid_data::001: Expected exception");
+  } catch (http::exception &e) {
+    if (e.code() != 400)
+      throw std::runtime_error("test_invalid_data::001: Expected HTTP 400");
+  }
+}
+
 void test_large_message() {
 
   // Test XML chunking with a very large message
@@ -889,6 +901,7 @@ int main(int argc, char *argv[]) {
     test_node();
     test_way();
     test_relation();
+    test_invalid_data();
     test_large_message();
 
   } catch (const std::exception &ex) {

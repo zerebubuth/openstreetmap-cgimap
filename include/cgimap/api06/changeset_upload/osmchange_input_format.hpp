@@ -160,7 +160,11 @@ class OSMChangeXMLParser {
       if (ctxt == NULL)
         throw std::runtime_error("Could not create parser context!");
 
-      xmlCtxtUseOptions(ctxt, XML_PARSE_RECOVER | XML_PARSE_NONET | XML_PARSE_NOENT);
+      // removed XML_PARSE_RECOVER : the use of XML_PARSE_RECOVER in libxml2
+      // is discouraged in production  code as it hides errors in invalid XML
+      // and exercises some less-tested code paths in libxml2.
+      // Source: https://mail.gnome.org/archives/xml/2018-January/msg00016.html
+      xmlCtxtUseOptions(ctxt, XML_PARSE_NONET | XML_PARSE_NOENT);
 
       unsigned int offset = 4;
 
@@ -171,7 +175,7 @@ class OSMChangeXMLParser {
 
         if (xmlParseChunk(ctxt, data.c_str() + offset, current_chunksize, 0)) {
           xmlErrorPtr err = xmlGetLastError();
-          throw std::runtime_error(
+          throw http::bad_request(
               (boost::format("XML ERROR: %1%.") % err->message).str());
         }
 
