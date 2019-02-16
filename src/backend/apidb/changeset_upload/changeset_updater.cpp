@@ -20,6 +20,23 @@ ApiDB_Changeset_Updater::~ApiDB_Changeset_Updater() = default;
 
 void ApiDB_Changeset_Updater::lock_current_changeset() {
 
+  {
+    m.prepare("changeset_exists",
+	      R"( SELECT id,
+			 user_id
+		  FROM changesets
+		  WHERE id = $1)");
+
+    pqxx::result r = m.prepared("changeset_exists")(changeset).exec();
+
+    if (r.affected_rows() != 1)
+      throw http::not_found("");
+
+    if (r[0]["user_id"].as<osm_user_id_t>() != uid)
+      throw http::conflict("The user doesn't own that changeset");
+  }
+
+  // Only lock changeset if it belongs to user_id = uid
   m.prepare("changeset_current_lock",
             R"( SELECT id, 
                        user_id,
