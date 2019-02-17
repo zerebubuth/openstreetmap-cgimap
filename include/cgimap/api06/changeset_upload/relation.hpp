@@ -105,8 +105,30 @@ public:
 
   std::string get_type_name() { return "Relation"; }
 
+  bool is_valid(operation op) const {
+
+    switch (op) {
+
+    case operation::op_delete:
+      return (is_valid());
+
+    default:
+      if (m_relation_member.size() > RELATION_MAX_MEMBERS) {
+        throw http::bad_request(
+            (boost::format(
+                 "You tried to add %1% members to relation %2%, however only "
+                 "%3% are allowed") %
+        	m_relation_member.size() % (has_id() ? id() : 0) % RELATION_MAX_MEMBERS)
+                .str());
+      }
+
+      return (is_valid());
+    }
+  }
+
 private:
   std::vector<RelationMember> m_relation_member;
+  using OSMObject::is_valid;
 };
 
 } // namespace api06
