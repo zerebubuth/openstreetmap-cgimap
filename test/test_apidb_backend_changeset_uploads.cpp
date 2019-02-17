@@ -340,7 +340,7 @@ namespace {
         node_updater->add_node(-25.3448570, 131.2325171, 1, -2, { });
         node_updater->process_new_nodes();
 
-        way_updater->add_way(1, -1, {{ -1}, { -2}}, { {"highway", "path"}});
+        way_updater->add_way(1, -1, { -1,  -2}, { {"highway", "path"}});
         way_updater->process_new_ways();
 
         upd->commit();
@@ -399,8 +399,8 @@ namespace {
           node_updater->add_node(10, 20 , 1, -2, {});
           node_updater->process_new_nodes();
 
-          way_updater->add_way(1, -1, {{ -1}, { -2}}, { {"highway", "path"}});
-          way_updater->add_way(1, -1, {{ -2}, { -1}}, { {"highway", "path"}});
+          way_updater->add_way(1, -1, { -1,  -2}, { {"highway", "path"}});
+          way_updater->add_way(1, -1, { -2,  -1}, { {"highway", "path"}});
           way_updater->process_new_ways();
 
           throw std::runtime_error("Expected exception for duplicate old_ids");
@@ -418,7 +418,7 @@ namespace {
         auto way_updater = upd->get_way_updater(change_tracking);
 
         try {
-          way_updater->add_way(1, -1, {{ -1}, { -2}}, { {"highway", "path"}});
+          way_updater->add_way(1, -1, { -1, -2}, { {"highway", "path"}});
           way_updater->process_new_ways();
 
           throw std::runtime_error("Expected exception for unknown placeholder ids");
@@ -687,7 +687,7 @@ namespace {
 
       osm_nwr_id_t relation_id;
       osm_version_t relation_version;
-      osm_nwr_id_t node_new_ids[2];
+      osm_nwr_id_t node_new_ids[3];
       osm_nwr_id_t way_new_id;
 
       osm_nwr_id_t relation_id_1;
@@ -706,15 +706,19 @@ namespace {
 
         node_updater->add_node(-25.3448570, 131.0325171, 1, -1, { {"name", "Uluṟu"}, {"ele", "863"} });
         node_updater->add_node(-25.3448570, 131.2325171, 1, -2, { });
+        // the following node is later used for a 'node still referenced by a relation' test
+        node_updater->add_node( 15.5536221, 11.5462653,  1, -3, { });
         node_updater->process_new_nodes();
 
-        way_updater->add_way(1, -1, {{ -1}, { -2}}, { {"highway", "path"}});
+        way_updater->add_way(1, -1, { -1,  -2}, { {"highway", "path"}});
         way_updater->process_new_ways();
 
+        // Remember new_ids for later tests. old_ids -1, -2, -3 are mapped to 0, 1, 2
         for (const auto id : change_tracking->created_node_ids) {
            node_new_ids[-1 * id.old_id - 1] = id.new_id;
         }
 
+        // Also remember the new_id for the way we are creating
         way_new_id = change_tracking->created_way_ids[0].new_id;
 
         rel_updater->add_relation(1, -1,
@@ -785,7 +789,7 @@ namespace {
         node_updater->add_node(-25.3448570, 131.2325171, 1, -2, { });
         node_updater->process_new_nodes();
 
-        way_updater->add_way(1, -1, {{ -1}, { -2}}, { {"highway", "track"}});
+        way_updater->add_way(1, -1, { -1,  -2}, { {"highway", "track"}});
         way_updater->process_new_ways();
 
         rel_updater->add_relation(1, -1,
@@ -907,7 +911,7 @@ namespace {
 
       // Create two relations with parent/child relationship
       {
-	      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1197,6 +1201,22 @@ namespace {
 
       }
 
+      // Preparation for next test case: create a new relation with node_new_ids[2] as only member
+      {
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+        auto upd = tdb.get_data_update();
+        auto rel_updater = upd->get_relation_updater(change_tracking);
+
+        rel_updater->add_relation(1, -1,
+	  {
+	      { "Node", static_cast<osm_nwr_signed_id_t>(node_new_ids[2]), "center" }
+	  },
+	  {{"boundary", "administrative"}});
+
+        rel_updater->process_new_relations();
+        upd->commit();
+      }
+
       // Try to delete node which still belongs to relation, if-unused not set
       {
 	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
@@ -1205,7 +1225,7 @@ namespace {
         auto node_updater = upd->get_node_updater(change_tracking);
 
         try {
-          node_updater->delete_node(1, node_new_ids[0], 1, false);
+          node_updater->delete_node(1, node_new_ids[2], 1, false);
           node_updater->process_delete_nodes();
 	  throw std::runtime_error("Deleting a node that is still referenced by relation should raise an exception");
         } catch (http::exception &e) {
@@ -1222,7 +1242,7 @@ namespace {
         auto node_updater = upd->get_node_updater(change_tracking);
 
         try {
-          node_updater->delete_node(1, node_new_ids[0], 1, true);
+          node_updater->delete_node(1, node_new_ids[2], 1, true);
           node_updater->process_delete_nodes();
         } catch (http::exception& e) {
   	  throw std::runtime_error("HTTP Exception unexpected");
@@ -1234,6 +1254,10 @@ namespace {
         if (change_tracking->skip_deleted_node_ids[0].new_version != 1)
   	throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_node_ids")
                                    % 1).str());
+
+        if (change_tracking->skip_deleted_node_ids[0].new_id != node_new_ids[2])
+  	throw std::runtime_error((boost::format("Expected new id == %1% in skip_deleted_node_ids")
+                                   % node_new_ids[2]).str());
       }
 
       // Try to delete way which still belongs to relation, if-unused not set
@@ -1273,6 +1297,10 @@ namespace {
         if (change_tracking->skip_deleted_way_ids[0].new_version != 1)
   	throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_way_ids")
                                    % 1).str());
+
+        if (change_tracking->skip_deleted_way_ids[0].new_id != way_new_id)
+  	throw std::runtime_error((boost::format("Expected new id == %1% in skip_deleted_way_ids")
+                                   % way_new_id).str());
       }
 
       // Try to delete relation which still belongs to relation, if-unused not set
@@ -1312,6 +1340,10 @@ namespace {
         if (change_tracking->skip_deleted_relation_ids[0].new_version != 1)
   	throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_relation_ids")
                                    % 1).str());
+
+        if (change_tracking->skip_deleted_relation_ids[0].new_id != relation_id_1)
+  	throw std::runtime_error((boost::format("Expected new id == %1% in skip_deleted_relation_ids")
+                                   % relation_id_1).str());
       }
 
 
@@ -1436,13 +1468,10 @@ namespace {
       }
     }
 
-  void process_payload(test_database &tdb, std::string payload)
+  void process_payload(test_database &tdb, osm_changeset_id_t changeset, osm_user_id_t uid, std::string payload)
   {
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-
-    auto changeset = 1;
-    auto uid = 1;
 
     auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
 
@@ -1483,17 +1512,35 @@ namespace {
   	"  (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z');"
       );
 
+      try {
+
+      // Test unknown changeset id
+	process_payload(tdb, 1234, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
+	  <osmChange version="0.6" generator="iD">
+	     <create>
+		<node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1234">
+		   <tag k="highway" v="bus_stop" />
+		</node>
+	     </create>
+	  </osmChange>
+	)");
+    	 throw std::runtime_error("Test unknown changeset id should trigger a not_found error");
+      } catch (http::exception& e) {
+  	  if (e.code() != 404)
+  	    throw std::runtime_error("Test unknown changeset id: Expected HTTP 404 Not found");
+      }
+
       // Test more complex examples, including XML parsing
 
+      // Forward relation member declarations
 
-   // Forward relation member declarations
-	 // Example from https://github.com/openstreetmap/iD/issues/3208#issuecomment-281942743
+      // Example from https://github.com/openstreetmap/iD/issues/3208#issuecomment-281942743
    
       try {
 
   // Relation id -3 has a relation member with forward reference to relation id -4
 
-	process_payload(tdb, R"(<?xml version="1.0" encoding="UTF-8"?>
+	process_payload(tdb, 1, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
 	  <osmChange version="0.6" generator="iD">
 	     <create>
 		<node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1">
@@ -1523,7 +1570,7 @@ namespace {
 	     <delete if-unused="true" />
 	  </osmChange>
   
-	)" );
+	)");
     	 throw std::runtime_error("Forward relation definition should trigger a bad request error");
       } catch (http::exception& e) {
   	  if (e.code() != 400)
@@ -1533,7 +1580,7 @@ namespace {
   // Testing correct parent/child sequence
   try {
 
-	process_payload(tdb, R"(<?xml version="1.0" encoding="UTF-8"?>
+	process_payload(tdb, 1, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
 	  <osmChange version="0.6" generator="iD">
 	     <create>
 		<node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1">
@@ -1563,7 +1610,7 @@ namespace {
 	     <delete if-unused="true" />
 	  </osmChange>
   
-	)" );
+	)");
       } catch (http::exception& e) {
         throw std::runtime_error("Correct forward relation member reference should not trigger an exception");
       }
