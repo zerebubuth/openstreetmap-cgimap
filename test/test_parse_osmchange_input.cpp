@@ -2,6 +2,7 @@
 #include "cgimap/options.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_input_format.hpp"
 #include "cgimap/api06/changeset_upload/parser_callback.hpp"
+#include "cgimap/util.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -592,6 +593,28 @@ void test_node() {
       throw std::runtime_error("test_node::102: Expected HTTP 400");
   }
 
+  // Check maximum number of tags per element
+  for (int i = OSM_ELEMENT_MAX_TAGS; i <= OSM_ELEMENT_MAX_TAGS + 1; i++) {
+     std::ostringstream os;
+
+     for (int x = 0; x < i; x++)
+       os << "<tag k='amenity_" << x << "' v='cafe' />";
+
+    try {
+      process_testmsg(
+          (boost::format(
+               R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">%1%</node></create></osmChange>)") %
+              os.str()).str());
+      if (i > OSM_ELEMENT_MAX_TAGS)
+        throw std::runtime_error("test_node::120: Expected exception for max number of tags exceeded");
+    } catch (http::exception &e) {
+      if (e.code() != 400)
+        throw std::runtime_error("test_node::120: Expected HTTP 400");
+      if (i <= OSM_ELEMENT_MAX_TAGS)
+        throw std::runtime_error("test_node::120: Unexpected exception max. tags not yet exceeded");
+    }
+  }
+
 }
 
 void test_way() {
@@ -841,6 +864,27 @@ void test_relation() {
       if (i <= 255)
         throw std::runtime_error("test_relation::010: Unexpected exception for "
                                  "string length <= 255 characters");
+    }
+  }
+
+  // Check maximum number of members in relation
+  for (int i = RELATION_MAX_MEMBERS; i <= RELATION_MAX_MEMBERS + 1; i++) {
+    auto v = repeat(R"(<member type="node" role="demo" ref="123"/>)", i);
+
+    try {
+      process_testmsg(
+          (boost::format(
+               R"(<osmChange><create><relation changeset="858" id="-1">%1%"</relation></create></osmChange>)") %
+           v).str());
+      if (i > RELATION_MAX_MEMBERS)
+        throw std::runtime_error("test_relation::011: Expected exception for "
+                                 "maximum number of members in relation exceeded");
+    } catch (http::exception &e) {
+      if (e.code() != 400)
+        throw std::runtime_error("test_relation::011: Expected HTTP 400");
+      if (i <= RELATION_MAX_MEMBERS)
+        throw std::runtime_error("test_relation::011: Unexpected exception for "
+                                 "maximum number of members in relation not exceeded");
     }
   }
 }
