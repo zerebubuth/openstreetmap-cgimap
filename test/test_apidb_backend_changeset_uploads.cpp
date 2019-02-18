@@ -1468,6 +1468,42 @@ namespace {
       }
     }
 
+  void test_changeset_update(test_database &tdb) {
+
+      tdb.run_sql(
+  	"INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+  	"VALUES "
+  	"  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true), "
+  	"  (2, 'user_2@example.com', '', '2013-11-14T02:10:00Z', 'user_2', false); "
+
+  	"INSERT INTO changesets (id, user_id, created_at, closed_at) "
+  	"VALUES "
+  	"  (1, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval), "
+  	"  (2, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'), "
+  	"  (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z');"
+      );
+
+      // Trying to add CHANGESET_MAX_ELEMENTS to empty changeset - should succeed
+      try {
+	auto upd = tdb.get_data_update();
+	auto changeset_updater = upd->get_changeset_updater(1, 1);
+	changeset_updater->update_changeset(CHANGESET_MAX_ELEMENTS, {});  // use undefined bbox
+      } catch (http::exception & e) {
+	  throw std::runtime_error("test_changeset_update:001 - HTTP Exception unexpected");
+      }
+
+      // Trying to add CHANGESET_MAX_ELEMENTS + 1 to empty changeset - should fail
+      try {
+	auto upd = tdb.get_data_update();
+	auto changeset_updater = upd->get_changeset_updater(1, 1);
+	changeset_updater->update_changeset(CHANGESET_MAX_ELEMENTS + 1, {});
+      } catch (http::exception &e) {
+	  if (e.code() != 409)
+	    throw std::runtime_error("test_changeset_update:002 - Expected HTTP 409 Conflict");
+      }
+  }
+
+
   void process_payload(test_database &tdb, osm_changeset_id_t changeset, osm_user_id_t uid, std::string payload)
   {
     auto sel = tdb.get_data_selection();
@@ -1903,6 +1939,8 @@ int main(int, char **) {
       tdb.run_update(std::function<void(test_database&)>(&test_single_ways));
 
       tdb.run_update(std::function<void(test_database&)>(&test_single_relations));
+
+      tdb.run_update(std::function<void(test_database&)>(&test_changeset_update));
 
       tdb.run_update(std::function<void(test_database&)>(&test_osmchange_message));
 
