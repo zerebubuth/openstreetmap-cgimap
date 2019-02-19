@@ -1672,6 +1672,10 @@ namespace {
                  now() at time zone 'utc' - '11 hour' ::interval, 10000),
 	  (4, 2, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 0),
 	  (5, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 0);
+
+        INSERT INTO user_blocks (user_id, creator_id, reason, ends_at, needs_view)
+        VALUES (1,  2, '', now() at time zone 'utc' - ('1 hour' ::interval), false);
+
         )"
     );
 
@@ -1683,6 +1687,85 @@ namespace {
 
     null_rate_limiter limiter;
     routes route;
+
+    // User providing wrong password
+    {
+	// set up request headers from test case
+	test_request req;
+	req.set_header("REQUEST_METHOD", "POST");
+	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
+	req.set_header("HTTP_AUTHORIZATION", "Basic ZGVtbzppbnZhbGlkcGFzc3dvcmQK");
+	req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+	     <osmChange version="0.6" generator="iD">
+	     <create><node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="2"/></create>
+             </osmChange>)" );
+
+	// execute the request
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+
+	if (req.response_status() != 401)
+	  throw std::runtime_error("Expected HTTP 401 Unauthorized: wrong user/password");
+    }
+
+
+    // User is blocked (needs_view)
+    {
+        tdb.run_sql(R"(UPDATE user_blocks SET needs_view = true where user_id = 1;)");
+
+	// set up request headers from test case
+	test_request req;
+	req.set_header("REQUEST_METHOD", "POST");
+	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
+	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+	     <osmChange version="0.6" generator="iD">
+	     <create><node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1"/></create>
+             </osmChange>)" );
+
+	// execute the request
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+
+	if (req.response_status() != 403)
+	  throw std::runtime_error("Expected HTTP 403 Forbidden: user blocked (needs view)");
+
+	tdb.run_sql(R"(UPDATE user_blocks SET needs_view = false where user_id = 1;)");
+    }
+
+    // User is blocked for 1 hour
+    {
+        tdb.run_sql(R"(UPDATE user_blocks
+                         SET needs_view = false,
+                             ends_at = now() at time zone 'utc' + ('1 hour' ::interval)
+                         WHERE user_id = 1;)");
+
+	// set up request headers from test case
+	test_request req;
+	req.set_header("REQUEST_METHOD", "POST");
+	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
+	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+	     <osmChange version="0.6" generator="iD">
+	     <create><node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1"/></create>
+             </osmChange>)" );
+
+	// execute the request
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+
+
+	if (req.response_status() != 403)
+	  throw std::runtime_error("Expected HTTP 403 Forbidden: user blocked for 1 hour");
+
+	tdb.run_sql(R"(UPDATE user_blocks
+                          SET needs_view = false,
+                              ends_at = now() at time zone 'utc' - ('1 hour' ::interval)
+                          WHERE user_id = 1;)");
+    }
 
     // Try to post a changeset, where the URL points to a different URL than the payload
     {
