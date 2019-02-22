@@ -17,6 +17,7 @@
 #include <string>
 
 
+
 inline size_t unicode_strlen(const std::string & s)
 {
    const char* mbstr = s.c_str();
