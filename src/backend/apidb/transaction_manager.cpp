@@ -22,3 +22,4 @@ pqxx::result Transaction_Manager::exec(const std::string &query,
 }
 
 void Transaction_Manager::commit() { m_txn.commit(); }
+

@@ -301,8 +301,7 @@ void ApiDB_Node_Updater::insert_new_nodes_to_tmp_table(
   }
 
   pqxx::result r =
-      m.prepared("insert_tmp_create_nodes")(lats)(lons)(cs)(tiles)(oldids)
-          .exec();
+      m.exec_prepared("insert_tmp_create_nodes", lats, lons, cs, tiles, oldids);
 
   if (r.affected_rows() != create_nodes.size())
     throw http::server_error(
@@ -337,7 +336,7 @@ void ApiDB_Node_Updater::lock_current_nodes(
   m.prepare("lock_current_nodes",
             "SELECT id FROM current_nodes WHERE id = ANY($1) FOR UPDATE");
 
-  pqxx::result r = m.prepared("lock_current_nodes")(ids).exec();
+  pqxx::result r = m.exec_prepared("lock_current_nodes", ids);
 
   std::vector<osm_nwr_id_t> locked_ids;
 
@@ -426,7 +425,7 @@ void ApiDB_Node_Updater::check_current_node_versions(
           )");
 
   pqxx::result r =
-      m.prepared("check_current_node_versions")(ids)(versions).exec();
+      m.exec_prepared("check_current_node_versions", ids, versions);
 
   if (!r.empty()) {
     throw http::conflict(
@@ -470,7 +469,7 @@ std::set<osm_nwr_id_t> ApiDB_Node_Updater::determine_already_deleted_nodes(
                                      "WHERE id = ANY($1) AND visible = false");
 
   pqxx::result r =
-      m.prepared("already_deleted_nodes")(ids_to_be_deleted).exec();
+      m.exec_prepared("already_deleted_nodes", ids_to_be_deleted);
 
   for (const auto &row : r) {
 
@@ -521,7 +520,7 @@ ApiDB_Node_Updater::calc_node_bbox(const std::vector<osm_nwr_id_t> &ids) {
       FROM current_nodes WHERE id = ANY($1)
        )");
 
-  pqxx::result r = m.prepared("calc_node_bbox")(ids).exec();
+  pqxx::result r = m.exec_prepared("calc_node_bbox", ids);
 
   if (!(r.empty() || r[0]["minlat"].is_null())) {
     bbox.minlat = r[0]["minlat"].as<int64_t>();
@@ -583,8 +582,7 @@ void ApiDB_Node_Updater::update_current_nodes(
   }
 
   pqxx::result r =
-      m.prepared("update_current_nodes")(ids)(lats)(lons)(cs)(tiles)(versions)
-          .exec();
+      m.exec_prepared("update_current_nodes", ids, lats, lons, cs, tiles, versions);
 
   if (r.affected_rows() != nodes.size()) {
     std::set<osm_nwr_id_t> ids_set(ids.begin(), ids.end());
@@ -655,7 +653,7 @@ void ApiDB_Node_Updater::delete_current_nodes(
     id_to_old_id[node.id] = node.old_id;
   }
 
-  pqxx::result r = m.prepared("delete_current_nodes")(ids)(cs)(versions).exec();
+  pqxx::result r = m.exec_prepared("delete_current_nodes", ids, cs, versions);
 
   if (r.affected_rows() != nodes.size())
     throw http::server_error("Could not delete all current nodes");
@@ -703,7 +701,7 @@ void ApiDB_Node_Updater::insert_new_current_node_tags(
     return;
 
   pqxx::result r =
-      m.prepared("insert_new_current_node_tags")(ids)(ks)(vs).exec();
+      m.exec_prepared("insert_new_current_node_tags", ids, ks, vs);
 
   if (r.affected_rows() != total_tags)
     throw http::server_error("Could not create new current node tags");
@@ -726,7 +724,7 @@ void ApiDB_Node_Updater::save_current_nodes_to_history(
              )
        )");
 
-  pqxx::result r = m.prepared("current_nodes_to_history")(ids).exec();
+  pqxx::result r = m.exec_prepared("current_nodes_to_history", ids);
 
   if (r.affected_rows() != ids.size())
     throw http::server_error("Could not save current nodes to history");
@@ -749,7 +747,7 @@ void ApiDB_Node_Updater::save_current_node_tags_to_history(
                 WHERE id = ANY($1) )
            )");
 
-  pqxx::result r = m.prepared("current_node_tags_to_history")(ids).exec();
+  pqxx::result r = m.exec_prepared("current_node_tags_to_history", ids);
 }
 
 std::vector<ApiDB_Node_Updater::node_t>
@@ -787,7 +785,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
                    GROUP BY current_way_nodes.node_id
             )");
 
-    pqxx::result r = m.prepared("node_still_referenced_by_way")(ids).exec();
+    pqxx::result r = m.exec_prepared("node_still_referenced_by_way", ids);
 
     for (const auto &row : r) {
       auto node_id = row["node_id"].as<osm_nwr_id_t>();
@@ -831,7 +829,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
              )");
 
     pqxx::result r =
-        m.prepared("node_still_referenced_by_relation")(ids).exec();
+        m.exec_prepared("node_still_referenced_by_relation", ids);
 
     for (const auto &row : r) {
       auto node_id = row["member_id"].as<osm_nwr_id_t>();
@@ -876,8 +874,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
               "SELECT id, version FROM current_nodes WHERE id = ANY($1)");
 
     pqxx::result r =
-        m.prepared("still_referenced_nodes")(nodes_to_exclude_from_deletion)
-            .exec();
+        m.exec_prepared("still_referenced_nodes", nodes_to_exclude_from_deletion);
 
     if (r.affected_rows() != nodes_to_exclude_from_deletion.size())
       throw http::server_error(
@@ -912,7 +909,7 @@ void ApiDB_Node_Updater::delete_current_node_tags(
   m.prepare("delete_current_node_tags",
             "DELETE FROM current_node_tags WHERE node_id = ANY($1)");
 
-  pqxx::result r = m.prepared("delete_current_node_tags")(ids).exec();
+  pqxx::result r = m.exec_prepared("delete_current_node_tags", ids);
 }
 
 uint32_t ApiDB_Node_Updater::get_num_changes() {
