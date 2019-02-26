@@ -985,7 +985,8 @@ ApiDB_Relation_Updater::relations_with_changed_way_node_members(
       }
     }
 
-  m.prepare("relations_with_changed_way_node_members",
+  // new member was added in tmp
+  m.prepare("relations_with_added_way_node_members",
             R"(  
             WITH tmp_member(relation_id, member_type, member_id) AS (
                  SELECT * FROM
@@ -994,31 +995,53 @@ ApiDB_Relation_Updater::relations_with_changed_way_node_members(
                          CAST($3 as bigint[])
                  )
               )
-            /* new member was added in tmp */
             SELECT tm.member_type, tm.member_id, true as new_member
-                   FROM   tmp_member tm
+                   FROM tmp_member tm
                    LEFT OUTER JOIN current_relation_members cm
                      ON tm.relation_id = cm.relation_id
                     AND tm.member_type = cm.member_type
                     AND tm.member_id   = cm.member_id
-                 WHERE cm.member_id IS NULL
-            UNION 
-            /* existing member was removed in tmp */
+                 WHERE cm.relation_id IS NULL AND
+                       cm.member_type IS NULL AND
+                       cm.member_id   IS NULL
+         )");
+
+  pqxx::result r_added = m.exec_prepared("relations_with_added_way_node_members", ids, membertypes, memberids);
+
+  for (const auto &row : r_added) {
+    rel_member_difference_t diff;
+    diff.member_type = row["member_type"].as<std::string>();
+    diff.member_id = row["member_id"].as<osm_nwr_id_t>();
+    diff.new_member = row["new_member"].as<bool>();
+    result.push_back(diff);
+  }
+
+  // existing member was removed in tmp
+  m.prepare("relations_with_removed_way_node_members",
+            R"(  
+            WITH tmp_member(relation_id, member_type, member_id) AS (
+                 SELECT * FROM
+                 UNNEST( CAST($1 as bigint[]),
+                         CAST($2 as nwr_enum[]),
+                         CAST($3 as bigint[])
+                 )
+              )
             SELECT cm.member_type, cm.member_id, false as new_member
                FROM current_relation_members cm
-               INNER JOIN tmp_member t1
-                  ON cm.relation_id = t1.relation_id
                LEFT OUTER JOIN tmp_member tm
                   ON cm.relation_id = tm.relation_id
                  AND cm.member_type = tm.member_type
                  AND cm.member_id   = tm.member_id
-            WHERE tm.member_id IS NULL
+            WHERE cm.relation_id IN (SELECT DISTINCT relation_id FROM tmp_member) AND
+                  tm.relation_id IS NULL AND
+                  tm.member_type IS NULL AND
+                  tm.member_id   IS NULL
 
          )");
 
-  pqxx::result r = m.exec_prepared("relations_with_changed_way_node_members", ids, membertypes, memberids);
+  pqxx::result r_removed = m.exec_prepared("relations_with_removed_way_node_members", ids, membertypes, memberids);
 
-  for (const auto &row : r) {
+  for (const auto &row : r_removed) {
     rel_member_difference_t diff;
     diff.member_type = row["member_type"].as<std::string>();
     diff.member_id = row["member_id"].as<osm_nwr_id_t>();
