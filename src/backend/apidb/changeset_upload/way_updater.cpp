@@ -348,7 +348,7 @@ void ApiDB_Way_Updater::insert_new_ways_to_tmp_table(
     oldids.emplace_back(create_way.old_id);
   }
 
-  pqxx::result r = m.prepared("insert_tmp_create_ways")(cs)(oldids).exec();
+  pqxx::result r = m.exec_prepared("insert_tmp_create_ways", cs, oldids);
 
   if (r.affected_rows() != create_ways.size())
     throw http::server_error("Could not create all new way in temporary table");
@@ -392,7 +392,7 @@ bbox_t ApiDB_Way_Updater::calc_way_bbox(const std::vector<osm_nwr_id_t> &ids) {
       WHERE w.id = ANY($1)
        )");
 
-  pqxx::result r = m.prepared("calc_way_bbox")(ids).exec();
+  pqxx::result r = m.exec_prepared("calc_way_bbox", ids);
 
   if (!(r.empty() || r[0]["minlat"].is_null())) {
     bbox.minlat = r[0]["minlat"].as<int64_t>();
@@ -413,7 +413,7 @@ void ApiDB_Way_Updater::lock_current_ways(
   m.prepare("lock_current_ways",
             "SELECT id FROM current_ways WHERE id = ANY($1) FOR UPDATE");
 
-  pqxx::result r = m.prepared("lock_current_ways")(ids).exec();
+  pqxx::result r = m.exec_prepared("lock_current_ways", ids);
 
   std::vector<osm_nwr_id_t> locked_ids;
 
@@ -500,7 +500,7 @@ void ApiDB_Way_Updater::check_current_way_versions(
       )");
 
   pqxx::result r =
-      m.prepared("check_current_way_versions")(ids)(versions).exec();
+      m.exec_prepared("check_current_way_versions", ids, versions);
 
   if (!r.empty()) {
     throw http::conflict(
@@ -543,7 +543,7 @@ std::set<osm_nwr_id_t> ApiDB_Way_Updater::determine_already_deleted_ways(
   m.prepare("already_deleted_ways", "SELECT id, version FROM current_ways "
                                     "WHERE id = ANY($1) AND visible = false");
 
-  pqxx::result r = m.prepared("already_deleted_ways")(ids_to_be_deleted).exec();
+  pqxx::result r = m.exec_prepared("already_deleted_ways", ids_to_be_deleted);
 
   for (const auto &row : r) {
 
@@ -607,7 +607,7 @@ void ApiDB_Way_Updater::lock_future_nodes(const std::vector<way_t> &ways) {
          AND id = ANY($1) FOR SHARE 
       )");
 
-  pqxx::result r = m.prepared("lock_future_nodes_in_ways")(node_ids).exec();
+  pqxx::result r = m.exec_prepared("lock_future_nodes_in_ways", node_ids);
 
   if (r.size() != node_ids.size()) {
     std::set<osm_nwr_id_t> locked_nodes;
@@ -673,7 +673,7 @@ void ApiDB_Way_Updater::update_current_ways(const std::vector<way_t> &ways,
   }
 
   pqxx::result r =
-      m.prepared("update_current_ways")(ids)(cs)(visibles)(versions).exec();
+      m.exec_prepared("update_current_ways", ids, cs, visibles, versions);
 
   if (r.affected_rows() != ways.size())
     throw http::server_error("Could not update all current ways");
@@ -721,7 +721,7 @@ void ApiDB_Way_Updater::insert_new_current_way_tags(
     }
 
   pqxx::result r =
-      m.prepared("insert_new_current_way_tags")(ids)(ks)(vs).exec();
+      m.exec_prepared("insert_new_current_way_tags", ids, ks, vs);
 }
 
 void ApiDB_Way_Updater::insert_new_current_way_nodes(
@@ -756,8 +756,7 @@ void ApiDB_Way_Updater::insert_new_current_way_nodes(
     }
 
   pqxx::result r =
-      m.prepared("insert_new_current_way_nodes")(ids)(nodeids)(sequenceids)
-          .exec();
+      m.exec_prepared("insert_new_current_way_nodes", ids, nodeids, sequenceids);
 }
 
 void ApiDB_Way_Updater::save_current_ways_to_history(
@@ -776,7 +775,7 @@ void ApiDB_Way_Updater::save_current_ways_to_history(
         )
     )");
 
-  pqxx::result r = m.prepared("current_ways_to_history")(ids).exec();
+  pqxx::result r = m.exec_prepared("current_ways_to_history", ids);
 
   if (r.affected_rows() != ids.size())
     throw http::server_error("Could not save current ways to history");
@@ -798,7 +797,7 @@ void ApiDB_Way_Updater::save_current_way_nodes_to_history(
        ON wn.way_id = w.id
        WHERE id = ANY($1) ) )");
 
-  pqxx::result r = m.prepared("current_way_nodes_to_history")(ids).exec();
+  pqxx::result r = m.exec_prepared("current_way_nodes_to_history", ids);
 }
 
 void ApiDB_Way_Updater::save_current_way_tags_to_history(
@@ -819,7 +818,7 @@ void ApiDB_Way_Updater::save_current_way_tags_to_history(
          ) 
      )");
 
-  pqxx::result r = m.prepared("current_way_tags_to_history")(ids).exec();
+  pqxx::result r = m.exec_prepared("current_way_tags_to_history", ids);
 }
 
 std::vector<ApiDB_Way_Updater::way_t>
@@ -857,7 +856,7 @@ ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t> &ways) {
          GROUP BY current_relation_members.member_id
       )");
 
-  pqxx::result r = m.prepared("way_still_referenced_by_relation")(ids).exec();
+  pqxx::result r = m.exec_prepared("way_still_referenced_by_relation", ids);
 
   for (const auto &row : r) {
     auto way_id = row["member_id"].as<osm_nwr_id_t>();
@@ -909,8 +908,7 @@ ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t> &ways) {
               "SELECT id, version FROM current_ways WHERE id = ANY($1)");
 
     pqxx::result r =
-        m.prepared("still_referenced_ways")(ways_to_exclude_from_deletion)
-            .exec();
+        m.exec_prepared("still_referenced_ways", ways_to_exclude_from_deletion);
 
     if (r.affected_rows() != ways_to_exclude_from_deletion.size())
       throw http::server_error(
@@ -945,7 +943,7 @@ void ApiDB_Way_Updater::delete_current_way_tags(
   m.prepare("delete_current_way_tags",
             "DELETE FROM current_way_tags WHERE way_id = ANY($1)");
 
-  pqxx::result r = m.prepared("delete_current_way_tags")(ids).exec();
+  pqxx::result r = m.exec_prepared("delete_current_way_tags", ids);
 }
 
 void ApiDB_Way_Updater::delete_current_way_nodes(
@@ -957,7 +955,7 @@ void ApiDB_Way_Updater::delete_current_way_nodes(
   m.prepare("delete_current_way_nodes",
             "DELETE FROM current_way_nodes WHERE way_id = ANY($1)");
 
-  pqxx::result r = m.prepared("delete_current_way_nodes")(ids).exec();
+  pqxx::result r = m.exec_prepared("delete_current_way_nodes", ids);
 }
 
 uint32_t ApiDB_Way_Updater::get_num_changes() {
