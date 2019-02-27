@@ -66,7 +66,7 @@ match_begin::match_type match_begin::match(part_iterator &,
   return match_type();
 }
 
-extern const match_begin root_;
-extern const match_osm_id osm_id_;
-extern const match_name name_;
+extern const match_begin root_; // @suppress("Unused variable declaration in file scope")
+extern const match_osm_id osm_id_; // @suppress("Unused variable declaration in file scope")
+extern const match_name name_; // @suppress("Unused variable declaration in file scope")
 }

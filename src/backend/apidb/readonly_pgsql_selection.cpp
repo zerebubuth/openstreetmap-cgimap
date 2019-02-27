@@ -94,11 +94,6 @@ inline int insert_results(const pqxx::result &res, set<T> &elems) {
   return num_inserted;
 }
 
-/* Shim for functions not yet converted to prepared statements */
-inline int insert_results_of(pqxx::work &w, std::stringstream &query,
-                             set<osm_nwr_id_t> &elems) {
-  return insert_results(w.exec(query), elems);
-}
 
 // use this to remove current versions from the historical set of elements.
 struct erase_formatter
@@ -163,17 +158,17 @@ struct erase_formatter
     m_fmt.write_changeset(elem, tags, include_comments, comments, now);
   }
 
-  void write_diffresult_create_modify(const element_type elem,
-                                              const osm_nwr_signed_id_t old_id,
-                                              const osm_nwr_id_t new_id,
-                                              const osm_version_t new_version) {
+  void write_diffresult_create_modify(const element_type,
+				      const osm_nwr_signed_id_t,
+				      const osm_nwr_id_t,
+				      const osm_version_t) {
 
     throw std::runtime_error("erase_formatter::write_diffresult_create_modify unimplemented");
   }
 
 
-  void write_diffresult_delete(const element_type elem,
-                               const osm_nwr_signed_id_t old_id) {
+  void write_diffresult_delete(const element_type,
+                               const osm_nwr_signed_id_t) {
     throw std::runtime_error("erase_formatter::write_diffresult_delete unimplemented");
   }
 
@@ -187,9 +182,10 @@ private:
 
 readonly_pgsql_selection::readonly_pgsql_selection(
     pqxx::connection &conn, cache<osm_changeset_id_t, changeset> &changeset_cache)
-    : w(conn), cc(changeset_cache)
+    : w(conn)
     , include_changeset_discussions(false)
-    , m_redactions_visible(false) {}
+    , m_redactions_visible(false)
+    , cc(changeset_cache) {}
 
 readonly_pgsql_selection::~readonly_pgsql_selection() = default;
 

@@ -128,6 +128,10 @@ void OSMChange_Tracking::populate_orig_sequence_mapping() {
 	  }
 	  break;
 
+	case operation::op_undefined:
+
+	  throw std::runtime_error ("Unexpected operation in original sequence mapping. This should not happen!");
+
       }
   }
 }

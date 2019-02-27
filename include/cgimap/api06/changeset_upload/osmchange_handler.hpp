@@ -22,7 +22,7 @@ public:
   OSMChange_Handler(std::unique_ptr<Node_Updater> _node_updater,
                     std::unique_ptr<Way_Updater> _way_updater,
                     std::unique_ptr<Relation_Updater> _relation_updater,
-                    osm_changeset_id_t _changeset, osm_user_id_t _uid);
+                    osm_changeset_id_t _changeset);
 
   virtual ~OSMChange_Handler() = default;
 
@@ -67,7 +67,6 @@ private:
   std::unique_ptr<Relation_Updater> relation_updater;
 
   osm_changeset_id_t m_changeset;
-  osm_user_id_t m_uid;
 };
 
 } // namespace api06

@@ -15,8 +15,6 @@ using std::shared_ptr;
 using std::string;
 using api06::id_version;
 
-#define CACHE_SIZE (1000)
-
 namespace {
 
 // needed to get boost::lexical_cast<bool>(string) to work.
@@ -788,13 +786,13 @@ struct staticxml_backend : public backend {
     return std::make_shared<factory>(file);
   }
 
-  shared_ptr<data_update::factory> create_data_update(const po::variables_map &opts) {
-    return nullptr;   // TODO: not implemented
+  shared_ptr<data_update::factory> create_data_update(const po::variables_map &) {
+    return nullptr;   // Data update operations not supported by staticxml backend
   }
 
 
   std::shared_ptr<oauth::store> create_oauth_store(
-    const po::variables_map &opts) {
+    const po::variables_map &) {
     return std::shared_ptr<oauth::store>();
   }
 

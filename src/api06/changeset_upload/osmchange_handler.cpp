@@ -12,12 +12,11 @@ OSMChange_Handler::OSMChange_Handler(
     std::unique_ptr<Node_Updater> _node_updater,
     std::unique_ptr<Way_Updater> _way_updater,
     std::unique_ptr<Relation_Updater> _relation_updater,
-    osm_changeset_id_t _changeset, osm_user_id_t _uid)
+    osm_changeset_id_t _changeset)
     : node_updater(std::move(_node_updater)),
       way_updater(std::move(_way_updater)),
       relation_updater(std::move(_relation_updater)),
-      m_changeset(_changeset),
-      m_uid(_uid)
+      m_changeset(_changeset)
 
 {}
 
