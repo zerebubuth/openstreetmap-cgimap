@@ -1,10 +1,16 @@
+openstreetmap-cgimap (0.7.0-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.7.0
+
+ -- mmd osm <mmd.osm@gmail.com>  Sun, 24 Mar 2019 11:24:53 +0000
+
 openstreetmap-cgimap (0.7.0-rc1~bionic1) bionic; urgency=medium
 
   * 0.7.0 RC-1
   * Changeset upload (#140)
   * Disabled JSON output due to missing Rails support
 
- -- mmd osm <mmd.osm@gmail.com>  Fri, 18 Jan 2018 19:30:12 +0000
+ -- mmd osm <mmd.osm@gmail.com>  Fri, 18 Jan 2019 19:30:12 +0000
 
 openstreetmap-cgimap (0.6.2-1~bionic1) bionic; urgency=medium
 
