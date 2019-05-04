@@ -10,13 +10,23 @@
 
 namespace api06 {
 
+
+struct diffresult_t {
+  operation op;
+  object_type obj_type;
+  osm_nwr_signed_id_t old_id;
+  osm_nwr_id_t new_id;
+  osm_version_t new_version;
+  bool deletion_skipped;
+};
+
 class OSMChange_Tracking {
 
 public:
 
   OSMChange_Tracking() = default;
 
-  void populate_orig_sequence_mapping();
+  std::vector<diffresult_t> assemble_diffresult();
 
   struct object_id_mapping_t {
     osm_nwr_signed_id_t old_id;
@@ -30,10 +40,6 @@ public:
     osm_nwr_signed_id_t orig_id;
     osm_version_t orig_version;
     bool if_unused;
-    // the following fields will be populated once the whole message has been processed
-    object_id_mapping_t mapping;
-    bool deletion_skipped;         // if-unused flag was set, and object could not be deleted
-
   };
 
   // created objects are kept separately for id replacement purposes

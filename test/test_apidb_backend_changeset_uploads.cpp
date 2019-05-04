@@ -1504,7 +1504,7 @@ namespace {
   }
 
 
-  void process_payload(test_database &tdb, osm_changeset_id_t changeset, osm_user_id_t uid, std::string payload)
+  std::vector<api06::diffresult_t> process_payload(test_database &tdb, osm_changeset_id_t changeset, osm_user_id_t uid, std::string payload)
   {
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
@@ -1525,12 +1525,14 @@ namespace {
 
     parser.process_message(payload);
 
-    change_tracking->populate_orig_sequence_mapping();
+    auto diffresult = change_tracking->assemble_diffresult();
 
     changeset_updater->update_changeset(handler.get_num_changes(),
                                         handler.get_bbox());
 
     upd->commit();
+
+    return diffresult;
   }
 
   void test_osmchange_message(test_database &tdb) {
@@ -1551,7 +1553,7 @@ namespace {
       try {
 
       // Test unknown changeset id
-	process_payload(tdb, 1234, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
+	auto diffresult = process_payload(tdb, 1234, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
 	  <osmChange version="0.6" generator="iD">
 	     <create>
 		<node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1234">
@@ -1576,7 +1578,7 @@ namespace {
 
   // Relation id -3 has a relation member with forward reference to relation id -4
 
-	process_payload(tdb, 1, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
+	  auto diffresult = process_payload(tdb, 1, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
 	  <osmChange version="0.6" generator="iD">
 	     <create>
 		<node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1">
@@ -1616,7 +1618,7 @@ namespace {
   // Testing correct parent/child sequence
   try {
 
-	process_payload(tdb, 1, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
+      auto diffresult = process_payload(tdb, 1, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
 	  <osmChange version="0.6" generator="iD">
 	     <create>
 		<node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1">
@@ -1647,6 +1649,24 @@ namespace {
 	  </osmChange>
   
 	)");
+
+      assert_equal<int>(diffresult.size(), 5, "diffresult rows written");
+
+      std::vector<osm_nwr_signed_id_t> old_ids{ -5, -6, -2, -3, -4};
+      std::vector<object_type> obj_type{ object_type::node,
+	                                 object_type::node,
+					 object_type::relation,
+					 object_type::relation,
+					 object_type::relation };
+
+      for (int i = 0; i < 5; i++) {
+	  assert_equal<osm_nwr_signed_id_t>(old_ids[i], diffresult[i].old_id, "diffresult old_id");
+	  assert_equal<osm_version_t>(1, diffresult[i].new_version, "diffresult new_version");
+	  assert_equal<int>(static_cast<int>(obj_type[i]), static_cast<int>(diffresult[i].obj_type), "diffresult obj_type");
+	  assert_equal<int>(static_cast<int>(operation::op_create), static_cast<int>(diffresult[i].op), "diffresult operation");
+	  assert_equal<bool>(false, diffresult[i].deletion_skipped, "diffresult deletion_skipped");
+      }
+
       } catch (http::exception& e) {
         throw std::runtime_error("Correct forward relation member reference should not trigger an exception");
       }
