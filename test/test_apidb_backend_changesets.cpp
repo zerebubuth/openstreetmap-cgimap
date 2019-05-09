@@ -254,7 +254,6 @@ void check_changeset_with_comments_impl(
                        "should have written one changeset.");
 
   comments_t comments;
-  if (include_discussion)
   {
     changeset_comment_info comment;
     comment.author_id = 3;
@@ -275,7 +274,7 @@ void check_changeset_with_comments_impl(
         std::string("user_1"), // display_name
         boost::none, // bounding box
         0, // num_changes
-        comments.size() // comments_count
+        1 // comments_count
         ),
       tags_t(),
       include_discussion,
