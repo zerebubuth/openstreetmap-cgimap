@@ -33,4 +33,5 @@ enum class object_type {
   node = 1, way = 2, relation = 3
 };
 
+
 #endif /* TYPES_HPP */
