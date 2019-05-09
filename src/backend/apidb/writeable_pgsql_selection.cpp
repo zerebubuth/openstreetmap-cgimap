@@ -138,7 +138,7 @@ void writeable_pgsql_selection::write_relations(output_formatter &formatter) {
 
 void writeable_pgsql_selection::write_changesets(output_formatter &formatter,
                                                  const std::chrono::system_clock::time_point &now) {
-  pqxx::result changesets = w.prepared("extract_changesets").exec();
+  pqxx::result changesets = w.prepared("extract_changesets")(include_changeset_discussions).exec();
   extract_changesets(changesets, formatter, cc, now, include_changeset_discussions);
 }
 
@@ -539,7 +539,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
           "to_char(cc.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at "
           "FROM changeset_comments cc JOIN users u ON cc.author_id = u.id "
           "where cc.changeset_id=c.id AND cc.visible ORDER BY cc.created_at) x "
-        ")cc ON true");
+        ")cc ON ($1)");
 
   // selecting a set of nodes as a list
   m_connection.prepare("add_nodes_list",
