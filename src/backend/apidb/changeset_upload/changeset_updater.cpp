@@ -19,53 +19,30 @@ ApiDB_Changeset_Updater::ApiDB_Changeset_Updater(Transaction_Manager &_m,
 ApiDB_Changeset_Updater::~ApiDB_Changeset_Updater() = default;
 
 
+
 void ApiDB_Changeset_Updater::lock_current_changeset() {
 
-  check_changeset_exists ();
+  bool is_closed;
+  std::string closed_at;
+  std::string current_time;
 
-  // Only lock changeset if it belongs to user_id = uid
-  m.prepare("changeset_current_lock",
-            R"( SELECT id, 
-                       user_id,
-                       created_at,
-                       min_lat,
-                       max_lat,
-                       min_lon,
-                       max_lon,
-                       num_changes, 
-                       to_char(closed_at,'YYYY-MM-DD HH24:MI:SS "UTC"') as closed_at, 
-                       ((now() at time zone 'utc') > closed_at) as is_closed,
-                       to_char((now() at time zone 'utc'),'YYYY-MM-DD HH24:MI:SS "UTC"') as current_time
-                FROM changesets WHERE id = $1 AND user_id = $2 
-                FOR UPDATE 
-             )");
+  check_user_owns_changeset();
 
-  pqxx::result r = m.prepared("changeset_current_lock")(changeset)(uid).exec();
+  lock_cs(is_closed, closed_at, current_time);
 
-  if (r.affected_rows() != 1)
-    throw http::conflict("The user doesn't own that changeset");
-
-  if (r[0]["is_closed"].as<bool>())
+  if (is_closed)
     throw http::conflict((boost::format("The changeset %1% was closed at %2%") %
-                          changeset % r[0]["closed_at"].as<std::string>())
+                          changeset % closed_at)
                              .str());
 
   // Some clients try to send further changes, although the changeset already
   // holds the maximum number of elements. As this is futile, we raise an error
   // as early as possible.
-  if (r[0]["num_changes"].as<int>() >= CHANGESET_MAX_ELEMENTS)
+  if (cs_num_changes >= CHANGESET_MAX_ELEMENTS)
     throw http::conflict((boost::format("The changeset %1% was closed at %2%") %
-                          changeset % r[0]["current_time"].as<std::string>())
+                          changeset % current_time)
                              .str());
 
-  cs_num_changes = r[0]["num_changes"].as<int>();
-
-  if (!(r.empty() || r[0]["min_lat"].is_null())) {
-    cs_bbox.minlat = r[0]["min_lat"].as<int64_t>();
-    cs_bbox.minlon = r[0]["min_lon"].as<int64_t>();
-    cs_bbox.maxlat = r[0]["max_lat"].as<int64_t>();
-    cs_bbox.maxlon = r[0]["max_lon"].as<int64_t>();
-  }
 }
 
 void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
@@ -122,7 +99,7 @@ void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
        )");
 
   if (valid_bbox) {
-    pqxx::result r =
+    auto r =
         m.prepared("changeset_update")(cs_num_changes)(cs_bbox.minlat)(
              cs_bbox.minlon)(cs_bbox.maxlat)(cs_bbox.maxlon)(MAX_TIME_OPEN)(
              IDLE_TIMEOUT)(changeset)
@@ -131,7 +108,7 @@ void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
     if (r.affected_rows() != 1)
       throw http::server_error("Cannot update changeset");
   } else {
-    pqxx::result r = m.prepared("changeset_update")(cs_num_changes)()()()()(
+    auto r = m.prepared("changeset_update")(cs_num_changes)()()()()(
                           MAX_TIME_OPEN)(IDLE_TIMEOUT)(changeset)
                          .exec();
 
@@ -142,28 +119,82 @@ void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
 
 void ApiDB_Changeset_Updater::close_changeset()
 {
+  bool is_closed;
+  std::string closed_at;
+  std::string current_time;
 
-  lock_current_changeset();
+  check_user_owns_changeset();
 
+  lock_cs(is_closed, closed_at, current_time);
+
+  // Closed changeset cannot be closed again
+  if (is_closed)
+    throw http::conflict((boost::format("The changeset %1% was closed at %2%") %
+                          changeset % closed_at)
+                             .str());
+
+  // Set closed_at timestamp to now() to indicate that the changeset is closed
   m.prepare("changeset_close",
             R"( 
        UPDATE changesets 
        SET closed_at = now() at time zone 'utc'
            WHERE id = $1 AND user_id = $2 )");
 
-  pqxx::result r = m.prepared("changeset_close")(changeset)(uid).exec();
+  auto r = m.exec_prepared("changeset_close", changeset, uid);
 
   if (r.affected_rows() != 1)
      throw http::server_error("Cannot close changeset");
 }
 
-void ApiDB_Changeset_Updater::check_changeset_exists()
+
+void ApiDB_Changeset_Updater::lock_cs(bool& is_closed, std::string& closed_at, std::string& current_time)
+{
+  // Only lock changeset if it belongs to user_id = uid
+  m.prepare (
+      "changeset_current_lock",
+      R"( SELECT id, 
+		 user_id,
+		 created_at,
+		 min_lat,
+		 max_lat,
+		 min_lon,
+		 max_lon,
+		 num_changes, 
+		 to_char(closed_at,'YYYY-MM-DD HH24:MI:SS "UTC"') as closed_at, 
+		 ((now() at time zone 'utc') > closed_at) as is_closed,
+		 to_char((now() at time zone 'utc'),'YYYY-MM-DD HH24:MI:SS "UTC"') as current_time
+	  FROM changesets WHERE id = $1 AND user_id = $2 
+	  FOR UPDATE 
+     )");
+
+  auto r = m.prepared ("changeset_current_lock")(changeset)(uid).exec ();
+  if (r.affected_rows () != 1)
+    throw http::conflict ("The user doesn't own that changeset");
+
+  cs_num_changes = r[0]["num_changes"].as<int> ();
+  is_closed = r[0]["is_closed"].as<bool> ();
+  closed_at = r[0]["closed_at"].as<std::string> ();
+  current_time = r[0]["current_time"].as<std::string> ();
+
+  if (!(r.empty () || r[0]["min_lat"].is_null ()))
+    {
+      cs_bbox.minlat = r[0]["min_lat"].as<int64_t> ();
+      cs_bbox.minlon = r[0]["min_lon"].as<int64_t> ();
+      cs_bbox.maxlat = r[0]["max_lat"].as<int64_t> ();
+      cs_bbox.maxlon = r[0]["max_lon"].as<int64_t> ();
+    }
+}
+
+
+void ApiDB_Changeset_Updater::check_user_owns_changeset()
 {
     m.prepare("changeset_exists",
 	R"( SELECT id, user_id
 		FROM changesets
 		WHERE id = $1)");
-    pqxx::result r = m.prepared ("changeset_exists")(changeset).exec ();
+
+    auto r = m.exec_prepared ("changeset_exists", changeset);
+
     if (r.affected_rows () != 1)
       throw http::not_found ("");
 

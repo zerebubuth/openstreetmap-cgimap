@@ -23,7 +23,8 @@ public:
   void close_changeset();
 
 private:
-  void check_changeset_exists();
+  void check_user_owns_changeset();
+  void lock_cs(bool& is_closed, std::string& closed_at, std::string& current_time);
 
   Transaction_Manager &m;
   uint32_t cs_num_changes;
