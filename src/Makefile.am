@@ -160,6 +160,8 @@ libcgimap_core_la_SOURCES=\
 	request_helpers.cpp \
 	router.cpp \
 	routes.cpp \
+	text_formatter.cpp \
+	text_writer.cpp \
 	time.cpp \
 	xml_formatter.cpp \
 	xml_writer.cpp \
