@@ -151,6 +151,7 @@ libcgimap_core_la_SOURCES=\
 	osm_current_responder.cpp \
 	osm_diffresult_responder.cpp \
 	osmchange_responder.cpp \
+        empty_responder.cpp \
 	output_formatter.cpp \
 	output_writer.cpp \
 	process_request.cpp \
@@ -185,6 +186,7 @@ libcgimap_core_la_SOURCES+=\
 	api06/id_version_io.cpp \
 	api06/changeset_handler.cpp \
 	api06/changeset_download_handler.cpp \
+	api06/changeset_close_handler.cpp \
 	api06/changeset_upload_handler.cpp \
 	api06/changeset_upload/osmchange_handler.cpp \
 	api06/changeset_upload/osmchange_tracking.cpp

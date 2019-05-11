@@ -18,23 +18,10 @@ ApiDB_Changeset_Updater::ApiDB_Changeset_Updater(Transaction_Manager &_m,
 
 ApiDB_Changeset_Updater::~ApiDB_Changeset_Updater() = default;
 
+
 void ApiDB_Changeset_Updater::lock_current_changeset() {
 
-  {
-    m.prepare("changeset_exists",
-	      R"( SELECT id,
-			 user_id
-		  FROM changesets
-		  WHERE id = $1)");
-
-    pqxx::result r = m.prepared("changeset_exists")(changeset).exec();
-
-    if (r.affected_rows() != 1)
-      throw http::not_found("");
-
-    if (r[0]["user_id"].as<osm_user_id_t>() != uid)
-      throw http::conflict("The user doesn't own that changeset");
-  }
+  check_changeset_exists ();
 
   // Only lock changeset if it belongs to user_id = uid
   m.prepare("changeset_current_lock",
@@ -151,4 +138,36 @@ void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
     if (r.affected_rows() != 1)
       throw http::server_error("Cannot update changeset");
   }
+}
+
+void ApiDB_Changeset_Updater::close_changeset()
+{
+
+  lock_current_changeset();
+
+  m.prepare("changeset_close",
+            R"( 
+       UPDATE changesets 
+       SET closed_at = now() at time zone 'utc'
+           WHERE id = $1 AND user_id = $2 )");
+
+  pqxx::result r = m.prepared("changeset_close")(changeset)(uid).exec();
+
+  if (r.affected_rows() != 1)
+     throw http::server_error("Cannot close changeset");
+}
+
+void ApiDB_Changeset_Updater::check_changeset_exists()
+{
+    m.prepare("changeset_exists",
+	R"( SELECT id, user_id
+		FROM changesets
+		WHERE id = $1)");
+    pqxx::result r = m.prepared ("changeset_exists")(changeset).exec ();
+    if (r.affected_rows () != 1)
+      throw http::not_found ("");
+
+    if (r[0]["user_id"].as<osm_user_id_t> () != uid)
+      throw http::conflict ("The user doesn't own that changeset");
+
 }

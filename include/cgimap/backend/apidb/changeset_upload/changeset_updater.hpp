@@ -20,7 +20,11 @@ public:
 
   void update_changeset(const uint32_t num_new_changes, const bbox_t bbox);
 
+  void close_changeset();
+
 private:
+  void check_changeset_exists();
+
   Transaction_Manager &m;
   uint32_t cs_num_changes;
   osm_changeset_id_t changeset;

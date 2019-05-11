@@ -270,6 +270,9 @@ shared_ptr<output_formatter> create_formatter(request &req,
     o_formatter = shared_ptr<output_formatter>(new json_formatter(jwriter));
 #endif
 
+  } else if (best_type == mime::text_plain) {
+      auto *xwriter = new xml_writer(out, true);           // TODO
+      o_formatter = shared_ptr<output_formatter>(new xml_formatter(xwriter));
   } else {
     ostringstream ostr;
     ostr << "Could not create formatter for MIME type `"

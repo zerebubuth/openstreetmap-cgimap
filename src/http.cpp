@@ -250,6 +250,7 @@ namespace {
 const std::map<method, std::string> METHODS = {
   {method::GET,     "GET"},
   {method::POST,    "POST"},
+  {method::PUT,     "PUT"},
   {method::HEAD,    "HEAD"},
   {method::OPTIONS, "OPTIONS"}
 };

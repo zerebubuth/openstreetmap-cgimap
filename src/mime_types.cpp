@@ -9,6 +9,8 @@ namespace mime {
 string to_string(type t) {
   if (any_type == t) {
     return "*/*";
+  } else if (text_plain == t) {
+    return "text/plain";
   } else if (text_xml == t) {
     return "text/xml";
 #ifdef HAVE_YAJL
@@ -29,6 +31,8 @@ type parse_from(const std::string &name) {
     t = any_type;
   } else if (name == "text/*") {
     t = any_type;
+  } else if (name == "text/plain") {
+    t = text_plain;
   } else if (name == "text/xml") {
     t = text_xml;
 #ifdef HAVE_YAJL
