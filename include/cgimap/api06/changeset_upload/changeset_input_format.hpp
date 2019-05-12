@@ -253,9 +253,14 @@ namespace api06 {
 	  break;
 
 	case context::in_changeset:
-	  if (!std::strcmp(element, "tag"))
+	  if (!std::strcmp(element, "tag")) {
+	    m_context = context::in_tag;
 	    add_tag(attrs);
+	  }
+	  else
+	    throw xml_error{ "Unknown element, expecting tag" };
 	  break;
+
       }
     }
 
@@ -273,6 +278,9 @@ namespace api06 {
 	  assert(!std::strcmp(element, "changeset"));
 	  m_context = context::top;
 	  break;
+	case context::in_tag:
+	  assert(!std::strcmp(element, "tag"));
+	  m_context = context::in_changeset;
       }
     }
 
@@ -280,6 +288,7 @@ namespace api06 {
       root,
       top,
       in_changeset,
+      in_tag
     };
 
     context m_context = context::root;
