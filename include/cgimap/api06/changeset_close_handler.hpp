@@ -2,13 +2,14 @@
 #define API06_CHANGESET_CLOSE_HANDLER_HPP
 
 #include <string>
+
+#include "cgimap/text_responder.hpp"
 #include "cgimap/handler.hpp"
 #include "cgimap/request.hpp"
-#include "cgimap/empty_responder.hpp"
 
 namespace api06 {
 
-class changeset_close_responder : public empty_responder {
+class changeset_close_responder : public text_responder {
 public:
   changeset_close_responder(mime::type, data_update_ptr &, osm_changeset_id_t,
                              const std::string &,

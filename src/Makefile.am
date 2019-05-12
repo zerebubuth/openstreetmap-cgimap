@@ -151,7 +151,6 @@ libcgimap_core_la_SOURCES=\
 	osm_current_responder.cpp \
 	osm_diffresult_responder.cpp \
 	osmchange_responder.cpp \
-        empty_responder.cpp \
 	output_formatter.cpp \
 	output_writer.cpp \
 	process_request.cpp \
@@ -161,6 +160,7 @@ libcgimap_core_la_SOURCES=\
 	router.cpp \
 	routes.cpp \
 	text_formatter.cpp \
+        text_responder.cpp \
 	text_writer.cpp \
 	time.cpp \
 	xml_formatter.cpp \

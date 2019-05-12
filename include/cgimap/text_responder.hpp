@@ -1,5 +1,5 @@
-#ifndef EMPTY_RESPONDER_HPP
-#define EMPTY_RESPONDER_HPP
+#ifndef TEXT_RESPONDER_HPP
+#define TEXT_RESPONDER_HPP
 
 #include "cgimap/handler.hpp"
 #include "cgimap/bbox.hpp"
@@ -10,15 +10,15 @@
 
 /**
  * utility class - use this as a base class when the derived class is going to
- * respond with an empty response
+ * respond with a text response
  */
-class empty_responder : public responder {
+class text_responder : public responder {
 public:
   // construct, passing the mime type down to the responder.
   // optional bounds are stored at this level, but available to derived classes.
-  empty_responder(mime::type);
+  text_responder(mime::type);
 
-  virtual ~empty_responder();
+  virtual ~text_responder();
 
   // lists the standard types that OSM format can respond in, currently XML and,
   // if
@@ -39,6 +39,8 @@ protected:
 
   // adds an extra response header.
   void add_response_header(const std::string &);
+
+  std::string output_text;
 };
 
-#endif /* EMPTY_RESPONDER_HPP */
+#endif /* TEXT_RESPONDER_HPP */
