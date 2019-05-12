@@ -25,6 +25,7 @@
 #include "cgimap/api06/changeset_handler.hpp"
 #include "cgimap/api06/changeset_download_handler.hpp"
 #include "cgimap/api06/changeset_upload_handler.hpp"
+#include "cgimap/api06/changeset_create_handler.hpp"
 #include "cgimap/api06/changeset_close_handler.hpp"
 
 #ifdef ENABLE_EXPERIMENTAL
@@ -174,6 +175,7 @@ routes::routes()
     r->add<changeset_download_handler>(root_ / "changeset" / osm_id_ / "download");
     r->add<changeset_upload_handler>(root_ / "changeset" / osm_id_ / "upload");
     r->add<changeset_close_handler>(root_ / "changeset" / osm_id_ / "close");
+    r->add<changeset_create_handler>(root_ / "changeset" / "create");
     r->add<changeset_handler>(root_ / "changeset" / osm_id_);
   }
 

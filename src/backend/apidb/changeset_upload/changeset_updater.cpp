@@ -117,6 +117,18 @@ void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
   }
 }
 
+osm_changeset_id_t ApiDB_Changeset_Updater::create_changeset(const std::map<std::string, std::string>& tags)
+{
+
+//  INSERT INTO "changesets" ("user_id", "created_at", "closed_at") VALUES ($1, $2, $3) RETURNING "id"  [["user_id", 1], ["created_at", "2019-05-12 08:30:01.858363"], ["closed_at", "2019-05-12 09:30:01.859977"]]
+//  UPDATE "users" SET "changesets_count" = COALESCE("changesets_count", 0) + 1 WHERE "users"."id" = $1  [["id", 1]]
+//  DELETE FROM "changeset_tags" WHERE "changeset_tags"."changeset_id" = $1  [["changeset_id", 1498]]
+//  INSERT INTO "changeset_tags" ("changeset_id", "k", "v") VALUES ($1, $2, $3) RETURNING "changeset_id","k"  [["changeset_id", 1498], ["k", "created_by"], ["v", "JOSM/1.5"]]
+//  INSERT INTO "changesets_subscribers" ("subscriber_id", "changeset_id") VALUES ($1, $2)  [["subscriber_id", 1], ["changeset_id", 1498]]
+
+
+}
+
 void ApiDB_Changeset_Updater::close_changeset()
 {
   bool is_closed;

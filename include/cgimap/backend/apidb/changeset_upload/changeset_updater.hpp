@@ -20,6 +20,8 @@ public:
 
   void update_changeset(const uint32_t num_new_changes, const bbox_t bbox);
 
+  osm_changeset_id_t create_changeset(const std::map<std::string, std::string>&);
+
   void close_changeset();
 
 private:
