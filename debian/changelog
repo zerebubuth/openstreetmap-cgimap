@@ -1,3 +1,12 @@
+openstreetmap-cgimap (0.7.1-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.7.1
+  * Specify columns explictly when inserting into API tables (#179)
+  * Use cryptopp path for crypto++ includes (#178)
+  * Refactoring: improve OSMChange_Tracking diffresult isolation (#177)
+
+ -- mmd osm <mmd.osm@gmail.com>  Sat, 25 May 2019 19:11:57 +0000
+
 openstreetmap-cgimap (0.7.0-1~bionic1) bionic; urgency=medium
 
   * Released version 0.7.0
