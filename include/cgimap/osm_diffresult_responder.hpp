@@ -1,8 +1,11 @@
 #ifndef OSM_DIFFRESULT_RESPONDER_HPP
 #define OSM_DIFFRESULT_RESPONDER_HPP
 
+#include <vector>
+
 #include "cgimap/osm_responder.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
+
 
 /**
  * utility class - inherit from this when implementing something that responds
@@ -21,7 +24,7 @@ public:
              const std::chrono::system_clock::time_point &now);
 
 protected:
-  std::shared_ptr<api06::OSMChange_Tracking> change_tracking;
+  std::vector<api06::diffresult_t> m_diffresult;
 };
 
 #endif /* OSM_DIFFRESULT_RESPONDER_HPP */

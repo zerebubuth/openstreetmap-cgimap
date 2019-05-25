@@ -1,13 +1,13 @@
 #define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
 
-#include <crypto++/base64.h>
-#include <crypto++/config.h>
-#include <crypto++/filters.h>
-#include <crypto++/hex.h>
-#include <crypto++/md5.h>
-#include <crypto++/pwdbased.h>
-#include <crypto++/secblock.h>
-#include <crypto++/sha.h>
+#include <cryptopp/base64.h>
+#include <cryptopp/config.h>
+#include <cryptopp/filters.h>
+#include <cryptopp/hex.h>
+#include <cryptopp/md5.h>
+#include <cryptopp/pwdbased.h>
+#include <cryptopp/secblock.h>
+#include <cryptopp/sha.h>
 #include <sys/types.h>
 #include <cassert>
 #include <iostream>

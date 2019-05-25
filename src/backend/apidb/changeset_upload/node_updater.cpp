@@ -316,9 +316,10 @@ void ApiDB_Node_Updater::copy_tmp_create_nodes_to_current_nodes() {
 
   auto r = m.exec(
       R"(
-        INSERT INTO current_nodes ( 
+        INSERT INTO current_nodes (id, latitude, longitude, changeset_id,
+                  visible, timestamp, tile, version)
              SELECT id, latitude, longitude, changeset_id, visible, 
-                  timestamp, tile, version from tmp_create_nodes )
+                  timestamp, tile, version FROM tmp_create_nodes
               )");
 }
 
@@ -716,12 +717,12 @@ void ApiDB_Node_Updater::save_current_nodes_to_history(
 
   m.prepare("current_nodes_to_history",
             R"(   
-         INSERT INTO nodes 
-             (SELECT id AS node_id, latitude, longitude,
+         INSERT INTO nodes (node_id, latitude, longitude, changeset_id,
+                   visible, timestamp, tile, version)
+              SELECT id, latitude, longitude,
                    changeset_id, visible, timestamp, tile, version
               FROM current_nodes
               WHERE id = ANY($1) 
-             )
        )");
 
   pqxx::result r = m.exec_prepared("current_nodes_to_history", ids);
@@ -739,12 +740,12 @@ void ApiDB_Node_Updater::save_current_node_tags_to_history(
 
   m.prepare("current_node_tags_to_history",
             R"(   
-            INSERT INTO node_tags ( 
+            INSERT INTO node_tags (node_id, version, k, v)
                 SELECT node_id, version, k, v 
                 FROM current_node_tags t
                   INNER JOIN current_nodes n
                      ON t.node_id = n.id 
-                WHERE id = ANY($1) )
+                WHERE id = ANY($1)
            )");
 
   pqxx::result r = m.exec_prepared("current_node_tags_to_history", ids);

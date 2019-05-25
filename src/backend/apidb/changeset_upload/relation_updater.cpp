@@ -498,8 +498,8 @@ void ApiDB_Relation_Updater::copy_tmp_create_relations_to_current_relations() {
 
   m.exec(
       R"(
-        INSERT INTO current_relations 
-               (SELECT id, changeset_id, timestamp, visible, version from tmp_create_relations)
+        INSERT INTO current_relations (id, changeset_id, timestamp, visible, version)
+               SELECT id, changeset_id, timestamp, visible, version FROM tmp_create_relations
         )");
 }
 
@@ -1353,10 +1353,10 @@ void ApiDB_Relation_Updater::save_current_relations_to_history(
 
   m.prepare("current_relations_to_history",
             R"(   
-                INSERT INTO relations 
-                (SELECT id AS relation_id, changeset_id, timestamp, version, visible
-                 FROM current_relations
-                 WHERE id = ANY($1)) 
+                INSERT INTO relations (relation_id, changeset_id, timestamp, version, visible)
+                SELECT id AS relation_id, changeset_id, timestamp, version, visible
+                FROM current_relations
+                WHERE id = ANY($1)
             )");
 
   pqxx::result r = m.exec_prepared("current_relations_to_history", ids);
@@ -1372,11 +1372,11 @@ void ApiDB_Relation_Updater::save_current_relation_tags_to_history(
 
   m.prepare("current_relation_tags_to_history",
             R"(   
-                INSERT INTO relation_tags ( 
+                INSERT INTO relation_tags (relation_id, k, v, version)
                  SELECT relation_id, k, v, version FROM current_relation_tags rt
                  INNER JOIN current_relations r
                  ON rt.relation_id = r.id 
-                 WHERE id = ANY($1)) 
+                 WHERE id = ANY($1)
              )");
 
   pqxx::result r = m.exec_prepared("current_relation_tags_to_history", ids);
@@ -1390,13 +1390,14 @@ void ApiDB_Relation_Updater::save_current_relation_members_to_history(
 
   m.prepare("current_relation_members_to_history",
             R"(   
-                INSERT INTO relation_members ( 
+                INSERT INTO relation_members (relation_id, member_type, member_id, member_role,
+                        version, sequence_id)
                  SELECT relation_id, member_type, member_id, member_role,
                         version, sequence_id 
                  FROM current_relation_members rm
                  INNER JOIN current_relations r
                  ON rm.relation_id = r.id
-                 WHERE id = ANY($1))
+                 WHERE id = ANY($1)
                           )");
 
   pqxx::result r =

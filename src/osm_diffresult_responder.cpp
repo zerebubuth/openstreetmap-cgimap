@@ -37,31 +37,31 @@ void osm_diffresult_responder::write(shared_ptr<output_formatter> formatter,
 
     // Iterate over all elements in the sequence defined in the osmChange
     // message
-    for (const auto &item : change_tracking->osmchange_orig_sequence) {
+    for (const auto &item : m_diffresult) {
 
       switch (item.op) {
       case operation::op_create:
         fmt.write_diffresult_create_modify(
-            as_elem_type(item.obj_type), item.mapping.old_id,
-            item.mapping.new_id, item.mapping.new_version);
+            as_elem_type(item.obj_type), item.old_id,
+            item.new_id, item.new_version);
 
         break;
 
       case operation::op_modify:
         fmt.write_diffresult_create_modify(
-            as_elem_type(item.obj_type), item.mapping.old_id,
-            item.mapping.new_id, item.mapping.new_version);
+            as_elem_type(item.obj_type), item.old_id,
+            item.new_id, item.new_version);
 
         break;
 
       case operation::op_delete:
         if (item.deletion_skipped)
           fmt.write_diffresult_create_modify(
-              as_elem_type(item.obj_type), item.mapping.old_id,
-              item.mapping.new_id, item.mapping.new_version);
+              as_elem_type(item.obj_type), item.old_id,
+              item.new_id, item.new_version);
         else
           fmt.write_diffresult_delete(as_elem_type(item.obj_type),
-                                      item.orig_id);
+                                      item.old_id);
         break;
 
       case operation::op_undefined:
