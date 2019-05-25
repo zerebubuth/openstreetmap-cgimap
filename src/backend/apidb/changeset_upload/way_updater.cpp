@@ -361,8 +361,8 @@ void ApiDB_Way_Updater::insert_new_ways_to_tmp_table(
 void ApiDB_Way_Updater::copy_tmp_create_ways_to_current_ways() {
 
   m.exec(
-      R"( INSERT INTO current_ways 
-             (SELECT id, changeset_id, timestamp, visible, version from tmp_create_ways)
+      R"( INSERT INTO current_ways (id, changeset_id, timestamp, visible, version)
+             SELECT id, changeset_id, timestamp, visible, version FROM tmp_create_ways
            )");
 }
 
@@ -740,7 +740,7 @@ void ApiDB_Way_Updater::insert_new_current_way_nodes(
                  CAST($3 AS bigint[])
               )
       )
-      INSERT INTO current_way_nodes
+      INSERT INTO current_way_nodes (way_id, node_id, sequence_id)
       SELECT * FROM new_way_nodes
        )");
 
@@ -768,11 +768,10 @@ void ApiDB_Way_Updater::save_current_ways_to_history(
 
   m.prepare("current_ways_to_history",
             R"(   
-       INSERT INTO ways 
-        ( SELECT id AS way_id, changeset_id, timestamp, version, visible
-          FROM current_ways
-          WHERE id = ANY($1) 
-        )
+       INSERT INTO ways (way_id, changeset_id, timestamp, version, visible)
+        SELECT id, changeset_id, timestamp, version, visible
+        FROM current_ways
+        WHERE id = ANY($1) 
     )");
 
   pqxx::result r = m.exec_prepared("current_ways_to_history", ids);
@@ -790,12 +789,12 @@ void ApiDB_Way_Updater::save_current_way_nodes_to_history(
 
   m.prepare("current_way_nodes_to_history",
             R"(   
-   INSERT INTO way_nodes ( 
+   INSERT INTO way_nodes (way_id, node_id, version, sequence_id)
        SELECT  way_id, node_id, version, sequence_id 
        FROM current_way_nodes wn
        INNER JOIN current_ways w
        ON wn.way_id = w.id
-       WHERE id = ANY($1) ) )");
+       WHERE id = ANY($1) )");
 
   pqxx::result r = m.exec_prepared("current_way_nodes_to_history", ids);
 }
@@ -809,13 +808,12 @@ void ApiDB_Way_Updater::save_current_way_tags_to_history(
 
   m.prepare("current_way_tags_to_history",
             R"(   
-         INSERT INTO way_tags ( 
+         INSERT INTO way_tags (way_id, k, v, version)
              SELECT way_id, k, v, version 
              FROM current_way_tags wt
              INNER JOIN current_ways w 
                 ON wt.way_id = w.id 
              WHERE id = ANY($1)
-         ) 
      )");
 
   pqxx::result r = m.exec_prepared("current_way_tags_to_history", ids);
