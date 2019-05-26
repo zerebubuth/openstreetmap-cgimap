@@ -694,7 +694,7 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
           "ON w.way_id = tw.way_id AND w.version = tw.version "
         "LEFT JOIN LATERAL "
           "(SELECT array_agg(k) AS keys, array_agg(v) AS values "
-          "FROM way_tags WHERE w.way_id = way_id ) t ON true "
+          "FROM way_tags WHERE w.way_id = way_id AND w.version = version) t ON true "
         "LEFT JOIN LATERAL "
           "(SELECT array_agg(node_id) AS node_ids from "
             "(SELECT * FROM way_nodes "
