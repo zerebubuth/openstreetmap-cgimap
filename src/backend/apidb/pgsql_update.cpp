@@ -61,7 +61,7 @@ pgsql_update::pgsql_update(
     pqxx::connection &conn, bool readonly)
     : m{ conn }, m_readonly{ readonly } {
 
-  if (is_readonly())
+  if (is_api_write_disabled())
     return;
 
   m.exec(R"(CREATE TEMPORARY TABLE tmp_create_nodes 
@@ -106,7 +106,7 @@ pgsql_update::pgsql_update(
 
 pgsql_update::~pgsql_update() = default;
 
-bool pgsql_update::is_readonly() {
+bool pgsql_update::is_api_write_disabled() {
   return m_readonly;
 }
 
@@ -144,7 +144,7 @@ void pgsql_update::commit() {
 
 
 pgsql_update::factory::factory(const po::variables_map &opts)
-    : m_connection(connect_db_str(opts)), m_readonly(false)
+    : m_connection(connect_db_str(opts)), m_api_write_disabled(false)
       ,m_errorhandler(m_connection)
  {
 
@@ -157,9 +157,9 @@ pgsql_update::factory::factory(const po::variables_map &opts)
   }
   m_connection.set_client_encoding(db_charset);
 
-  // set the connection to readonly transaction, if readonly flag is set
-  if (opts.count("readonly") != 0) {
-    m_readonly = true;
+  // set the connection to readonly transaction, if disable-api-write flag is set
+  if (opts.count("disable-api-write") != 0) {
+    m_api_write_disabled = true;
     m_connection.set_variable("default_transaction_read_only", "true");
   }
 }
@@ -168,5 +168,5 @@ pgsql_update::factory::~factory() = default;
 
 std::shared_ptr<data_update>
 pgsql_update::factory::make_data_update() {
-  return std::make_shared<pgsql_update>(std::ref(m_connection), m_readonly);
+  return std::make_shared<pgsql_update>(std::ref(m_connection), m_api_write_disabled);
 }

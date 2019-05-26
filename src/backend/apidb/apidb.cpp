@@ -25,7 +25,8 @@ struct apidb_backend : public backend {
       ("password", po::value<string>(), "database password")
       ("charset", po::value<string>()->default_value("utf8"),
        "database character set")
-      ("readonly", "use the database in read-only mode")
+      ("readonly", "use the read-only backend (default: write backend)")
+      ("disable-api-write", "disable API write operations")
       ("cachesize", po::value<size_t>()->default_value(CACHE_SIZE),
        "maximum size of changeset cache")
       ("dbport", po::value<string>(),
