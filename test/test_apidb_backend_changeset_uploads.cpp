@@ -54,7 +54,6 @@ namespace {
     // Create new node
     {
       auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
-      auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
 
@@ -79,26 +78,58 @@ namespace {
       node_id = change_tracking->created_node_ids[0].new_id;
       node_version = change_tracking->created_node_ids[0].new_version;
 
-      if (sel->check_node_visibility(node_id) != data_selection::exists) {
-	  throw std::runtime_error("Node should be visible, but isn't");
+
+      {
+	auto sel = tdb.get_data_selection();
+
+	if (sel->check_node_visibility(node_id) != data_selection::exists) {
+	    throw std::runtime_error("Node should be visible, but isn't");
+	}
+
+	sel->select_nodes({ node_id });
+
+	test_formatter f;
+	sel->write_nodes(f);
+	assert_equal<size_t>(f.m_nodes.size(), 1, "number of nodes written");
+
+	// we don't want to find out about deviating timestamps here...
+	assert_equal<test_formatter::node_t>(
+	    test_formatter::node_t(
+		element_info(node_id, 1, 1, f.m_nodes[0].elem.timestamp, 1, std::string("user_1"), true),
+		131.0325171, -25.3448570,
+		tags_t({{"name", "Uluṟu"}, {"ele", "863"}})
+	    ),
+	    f.m_nodes[0], "first node written");
       }
 
-      sel->select_nodes({ node_id });
+      {
+	// verify historic tables
+	auto sel = tdb.get_data_selection();
 
-      test_formatter f;
-      sel->write_nodes(f);
-      assert_equal<size_t>(f.m_nodes.size(), 1, "number of nodes written");
+	assert_equal<bool>(
+	    sel->supports_historical_versions(), true,
+	    "data selection supports historical versions");
 
-      // we don't want to find out about deviating timestamps here...
-      assert_equal<test_formatter::node_t>(
-	  test_formatter::node_t(
-	      element_info(node_id, 1, 1, f.m_nodes[0].elem.timestamp, 1, std::string("user_1"), true),
-	      131.0325171, -25.3448570,
-	      tags_t({{"name", "Uluṟu"}, {"ele", "863"}})
-	  ),
-	  f.m_nodes[0], "first node written");
+	std::vector<osm_edition_t> editions;
+	editions.push_back(std::make_pair(osm_nwr_id_t(node_id), osm_version_t(1)));
+
+	assert_equal<int>(
+	    sel->select_nodes_with_history({ osm_nwr_id_t(node_id) }), 1,
+	    "number of nodes selected");
+
+	test_formatter f2;
+	sel->write_nodes(f2);
+	assert_equal<size_t>(f2.m_nodes.size(), 1, "number of nodes written");
+
+	assert_equal<test_formatter::node_t>(
+	    test_formatter::node_t(
+		element_info(node_id, 1, 1, f2.m_nodes[0].elem.timestamp, 1, std::string("user_1"), true),
+		131.0325171, -25.3448570,
+		tags_t({{"name", "Uluṟu"}, {"ele", "863"}})
+	    ),
+	    f2.m_nodes[0], "first node written");
+      }
     }
-
 
     // Create two nodes with the same old_id
     {
@@ -121,7 +152,6 @@ namespace {
     // Change existing node
     {
       auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
-      auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
 
@@ -138,25 +168,52 @@ namespace {
 
       if (change_tracking->modified_node_ids[0].new_id != node_id)
 	throw std::runtime_error((boost::format("Expected new_id == node_id, %1%, %2%")
-                                 % change_tracking->modified_node_ids[0].new_id
-				 % node_id).str());
+      % change_tracking->modified_node_ids[0].new_id
+      % node_id).str());
 
       node_version = change_tracking->modified_node_ids[0].new_version;
 
-      sel->select_nodes({ node_id });
+      {
+	// verify current tables
+	auto sel = tdb.get_data_selection();
 
-      test_formatter f;
-      sel->write_nodes(f);
-      assert_equal<size_t>(f.m_nodes.size(), 1, "number of nodes written");
+	sel->select_nodes({ node_id });
 
-      // we don't want to find out about deviating timestamps here...
-      assert_equal<test_formatter::node_t>(
-	  test_formatter::node_t(
-	      element_info(node_id, node_version, 1, f.m_nodes[0].elem.timestamp, 1, std::string("user_1"), true),
-	      20, 10,
-	      tags_t()
-	  ),
-	  f.m_nodes[0], "first node written");
+	test_formatter f;
+	sel->write_nodes(f);
+	assert_equal<size_t>(f.m_nodes.size(), 1, "number of nodes written");
+
+	// we don't want to find out about deviating timestamps here...
+	assert_equal<test_formatter::node_t>(
+	    test_formatter::node_t(
+		element_info(node_id, node_version, 1, f.m_nodes[0].elem.timestamp, 1, std::string("user_1"), true),
+		20, 10,
+		tags_t()
+	    ),
+	    f.m_nodes[0], "first node written");
+      }
+
+      {
+	// verify historic tables
+	auto sel = tdb.get_data_selection();
+
+	assert_equal<int>(
+	    sel->select_nodes_with_history({ osm_nwr_id_t(node_id) }), 2,
+	    "number of nodes selected");
+
+	test_formatter f2;
+	sel->write_nodes(f2);
+	assert_equal<size_t>(f2.m_nodes.size(), 2, "number of nodes written");
+
+	assert_equal<test_formatter::node_t>(
+	    test_formatter::node_t(
+		element_info(node_id, node_version, 1, f2.m_nodes[1].elem.timestamp, 1, std::string("user_1"), true),
+		20, 10,
+		tags_t()
+	    ),
+	    f2.m_nodes[1], "first node written");
+
+      }
     }
 
     // Change existing node with incorrect version number
@@ -179,7 +236,6 @@ namespace {
     // Change existing node multiple times
     {
       auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
-      auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
 
@@ -210,12 +266,35 @@ namespace {
         throw std::runtime_error("Bbox does not match expected size");
 
       upd->commit();
+
+      {
+	// verify historic tables
+	auto sel = tdb.get_data_selection();
+
+	assert_equal<int>(
+	    sel->select_nodes_with_history({ osm_nwr_id_t(node_id) }), 12,
+	    "number of nodes selected");
+
+	test_formatter f2;
+	sel->write_nodes(f2);
+	assert_equal<size_t>(f2.m_nodes.size(), node_version, "number of nodes written");
+
+	assert_equal<test_formatter::node_t>(
+	    test_formatter::node_t(
+		element_info(node_id, node_version, 1, f2.m_nodes[node_version - 1].elem.timestamp, 1, std::string("user_1"), true),
+		-27, 45,
+		tags_t({ {"key", "value9"} })
+	    ),
+	    f2.m_nodes[node_version - 1], "last node written");
+
+      }
+
     }
 
     // Delete existing node
     {
       auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
-      auto sel = tdb.get_data_selection();
+
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
 
@@ -230,8 +309,34 @@ namespace {
 	  throw std::runtime_error("Expected node_id in deleted_node_ids");
       }
 
-      if (sel->check_node_visibility(node_id) != data_selection::deleted) {
-	  throw std::runtime_error("Node should be deleted, but isn't");
+      {
+	// verify current tables
+        auto sel = tdb.get_data_selection();
+        if (sel->check_node_visibility(node_id) != data_selection::deleted) {
+	    throw std::runtime_error("Node should be deleted, but isn't");
+        }
+      }
+
+      {
+	// verify historic tables
+	auto sel = tdb.get_data_selection();
+
+	assert_equal<int>(
+	    sel->select_nodes_with_history({ osm_nwr_id_t(node_id) }), node_version,
+	    "number of nodes selected");
+
+	test_formatter f2;
+	sel->write_nodes(f2);
+	assert_equal<size_t>(f2.m_nodes.size(), node_version, "number of nodes written");
+
+	assert_equal<test_formatter::node_t>(
+	    test_formatter::node_t(
+		element_info(node_id, node_version, 1, f2.m_nodes[node_version - 1].elem.timestamp, 1, std::string("user_1"), false),
+		-27, 45,
+		tags_t()
+	    ),
+	    f2.m_nodes[node_version - 1], "first node written");
+
       }
     }
 
