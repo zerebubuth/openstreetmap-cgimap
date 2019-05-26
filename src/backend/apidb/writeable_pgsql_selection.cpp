@@ -664,7 +664,8 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
           "ON n.node_id = tn.node_id AND n.version = tn.version "
         "LEFT JOIN node_tags t "
           "ON n.node_id = t.node_id AND n.version = t.version "
-      "GROUP BY n.node_id, n.version");
+      "GROUP BY n.node_id, n.version "
+      "ORDER BY n.node_id, n.version");
   m_connection.prepare("extract_historic_node_tags",
     "SELECT k, v FROM node_tags WHERE node_id=$1 AND version=$2");
 
@@ -700,7 +701,8 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
             "(SELECT * FROM way_nodes "
               "WHERE w.way_id = way_id AND w.version = version "
               "ORDER BY sequence_id) x "
-          ") wn ON true ");
+          ") wn ON true "
+     "ORDER BY w.way_id, w.version");
   m_connection.prepare("extract_historic_way_tags",
     "SELECT k, v FROM way_tags WHERE way_id=$1 AND version=$2");
 
@@ -747,7 +749,8 @@ writeable_pgsql_selection::factory::factory(const po::variables_map &opts)
             "(SELECT * FROM relation_members "
               "WHERE r.relation_id = relation_id AND r.version = version "
             "ORDER BY sequence_id) x"
-          ") rm ON true");
+          ") rm ON true "
+      "ORDER BY r.relation_id, r.version");
   m_connection.prepare("extract_historic_relation_tags",
     "SELECT k, v FROM relation_tags WHERE relation_id=$1 AND version=$2");
   m_connection.prepare("extract_historic_relation_members",
