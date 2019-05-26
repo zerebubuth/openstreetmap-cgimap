@@ -110,9 +110,6 @@ namespace {
 	    sel->supports_historical_versions(), true,
 	    "data selection supports historical versions");
 
-	std::vector<osm_edition_t> editions;
-	editions.push_back(std::make_pair(osm_nwr_id_t(node_id), osm_version_t(1)));
-
 	assert_equal<int>(
 	    sel->select_nodes_with_history({ osm_nwr_id_t(node_id) }), 1,
 	    "number of nodes selected");
@@ -436,7 +433,6 @@ namespace {
       // Create new way with two nodes
       {
 	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
-        auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto node_updater = upd->get_node_updater(change_tracking);
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -470,24 +466,55 @@ namespace {
            node_new_ids[-1 * id.old_id - 1] = id.new_id;
         }
 
-        if (sel->check_way_visibility(way_id) != data_selection::exists) {
-  	  throw std::runtime_error("Way should be visible, but isn't");
+        {
+          // verify current tables
+          auto sel = tdb.get_data_selection();
+
+          if (sel->check_way_visibility(way_id) != data_selection::exists) {
+              throw std::runtime_error("Way should be visible, but isn't");
+          }
+
+          sel->select_ways({ way_id });
+
+          test_formatter f;
+          sel->write_ways(f);
+          assert_equal<size_t>(f.m_ways.size(), 1, "number of ways written");
+
+          // we don't want to find out about deviating timestamps here...
+          assert_equal<test_formatter::way_t>(
+              test_formatter::way_t(
+        	  element_info(way_id, 1, 1, f.m_ways[0].elem.timestamp, 1, std::string("user_1"), true),
+		  nodes_t({node_new_ids[0], node_new_ids[1]}),
+		  tags_t({{"highway", "path"}})
+              ),
+	      f.m_ways[0], "first way written");
+
         }
 
-        sel->select_ways({ way_id });
+        {
+          // verify historic tables
+          auto sel = tdb.get_data_selection();
 
-        test_formatter f;
-        sel->write_ways(f);
-        assert_equal<size_t>(f.m_ways.size(), 1, "number of ways written");
+          assert_equal<bool>(
+              sel->supports_historical_versions(), true,
+	      "data selection supports historical versions");
 
-        // we don't want to find out about deviating timestamps here...
-        assert_equal<test_formatter::way_t>(
-  	  test_formatter::way_t(
-  	      element_info(way_id, 1, 1, f.m_ways[0].elem.timestamp, 1, std::string("user_1"), true),
-	      nodes_t({node_new_ids[0], node_new_ids[1]}),
-  	      tags_t({{"highway", "path"}})
-  	  ),
-  	  f.m_ways[0], "first way written");
+          assert_equal<int>(
+              sel->select_ways_with_history({ osm_nwr_id_t(way_id) }), 1,
+	      "number of ways selected");
+
+          test_formatter f2;
+          sel->write_ways(f2);
+          assert_equal<size_t>(f2.m_ways.size(), 1, "number of ways written");
+
+          assert_equal<test_formatter::way_t>(
+              test_formatter::way_t(
+        	  element_info(way_id, 1, 1, f2.m_ways[0].elem.timestamp, 1, std::string("user_1"), true),
+		  nodes_t({node_new_ids[0], node_new_ids[1]}),
+		  tags_t({{"highway", "path"}})
+              ),
+	      f2.m_ways[0], "first way written");
+        }
       }
 
 
@@ -536,7 +563,6 @@ namespace {
       // Change existing way
      {
 	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
-        auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
 
@@ -560,20 +586,51 @@ namespace {
 
         way_version = change_tracking->modified_way_ids[0].new_version;
 
-        sel->select_ways({ way_id });
+        {
+          // verify current tables
+          auto sel = tdb.get_data_selection();
 
-        test_formatter f;
-        sel->write_ways(f);
-        assert_equal<size_t>(f.m_ways.size(), 1, "number of ways written");
+          sel->select_ways({ way_id });
 
-        // we don't want to find out about deviating timestamps here...
-        assert_equal<test_formatter::way_t>(
-  	  test_formatter::way_t(
-  	      element_info(way_id, way_version, 1, f.m_ways[0].elem.timestamp, 1, std::string("user_1"), true),
-	      nodes_t({node_new_ids[0]}),
-  	      tags_t({{"access", "yes"}})
-  	  ),
-  	  f.m_ways[0], "first way written");
+          test_formatter f;
+          sel->write_ways(f);
+          assert_equal<size_t>(f.m_ways.size(), 1, "number of ways written");
+
+          // we don't want to find out about deviating timestamps here...
+          assert_equal<test_formatter::way_t>(
+              test_formatter::way_t(
+        	  element_info(way_id, way_version, 1, f.m_ways[0].elem.timestamp, 1, std::string("user_1"), true),
+		  nodes_t({node_new_ids[0]}),
+		  tags_t({{"access", "yes"}})
+              ),
+	      f.m_ways[0], "second way written");
+        }
+
+        {
+          // verify historic tables
+          auto sel = tdb.get_data_selection();
+
+          assert_equal<bool>(
+              sel->supports_historical_versions(), true,
+	      "data selection supports historical versions");
+
+          assert_equal<int>(
+              sel->select_ways_with_history({ osm_nwr_id_t(way_id) }), 2,
+	      "number of ways selected");
+
+          test_formatter f2;
+          sel->write_ways(f2);
+          assert_equal<size_t>(f2.m_ways.size(), 2, "number of ways written");
+
+          assert_equal<test_formatter::way_t>(
+              test_formatter::way_t(
+        	  element_info(way_id, way_version, 1, f2.m_ways[1].elem.timestamp, 1, std::string("user_1"), true),
+		  nodes_t({node_new_ids[0]}),
+		  tags_t({{"access", "yes"}})
+              ),
+	      f2.m_ways[1], "second way written");
+        }
+
       }
 
       // Change existing way with incorrect version number
@@ -682,7 +739,7 @@ namespace {
       // Delete existing way
       {
 	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
-        auto sel = tdb.get_data_selection();
+
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
 
@@ -696,9 +753,36 @@ namespace {
         if (change_tracking->deleted_way_ids[0] != way_id) {
   	  throw std::runtime_error("Expected way_id in deleted_way_ids");
         }
+        {
+          auto sel = tdb.get_data_selection();
+          if (sel->check_way_visibility(way_id) != data_selection::deleted) {
+              throw std::runtime_error("Way should be deleted, but isn't");
+          }
+        }
 
-        if (sel->check_way_visibility(way_id) != data_selection::deleted) {
-  	  throw std::runtime_error("Way should be deleted, but isn't");
+        {
+          // verify historic tables
+          auto sel = tdb.get_data_selection();
+
+          assert_equal<bool>(
+              sel->supports_historical_versions(), true,
+	      "data selection supports historical versions");
+
+          assert_equal<int>(
+              sel->select_ways_with_history({ osm_nwr_id_t(way_id) }), way_version,
+	      "number of ways selected");
+
+          test_formatter f2;
+          sel->write_ways(f2);
+          assert_equal<size_t>(f2.m_ways.size(), way_version, "number of ways written");
+
+          assert_equal<test_formatter::way_t>(
+              test_formatter::way_t(
+        	  element_info(way_id, way_version, 1, f2.m_ways[way_version - 1].elem.timestamp, 1, std::string("user_1"), false),
+		  nodes_t(),
+		  tags_t()
+              ),
+	      f2.m_ways[way_version - 1], "deleted way written");
         }
       }
 
