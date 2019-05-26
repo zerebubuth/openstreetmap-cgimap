@@ -31,7 +31,7 @@ public:
 
   void commit();
 
-  bool is_readonly();
+  bool is_api_write_disabled();
 
   /**
    * abstracts the creation of transactions for the
@@ -45,7 +45,7 @@ public:
 
   private:
     pqxx::connection m_connection;
-    bool m_readonly;
+    bool m_api_write_disabled;
     pqxx::quiet_errorhandler m_errorhandler;
   };
 
