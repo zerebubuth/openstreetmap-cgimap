@@ -1,5 +1,8 @@
 #include "cgimap/config.hpp"
+#include "cgimap/logger.hpp"
 #include "cgimap/osm_current_responder.hpp"
+
+#include <boost/format.hpp>
 
 using std::list;
 using std::shared_ptr;
@@ -43,6 +46,8 @@ void osm_current_responder::write(shared_ptr<output_formatter> formatter,
     fmt.end_element_type(element_type_relation);
 
   } catch (const std::exception &e) {
+    logger::message(boost::format("Caught error in osm_current_responder: %1%") %
+                      e.what());
     fmt.error(e);
   }
 

@@ -535,7 +535,7 @@ void process_request(request &req, rate_limiter &limiter,
 
       auto data_update = update_factory->make_data_update();
 
-      if (data_update->is_readonly())
+      if (data_update->is_api_write_disabled())
         throw http::bad_request("Server is currently in read only mode, no database changes allowed at this time");
 
       std::string payload = req.get_payload();

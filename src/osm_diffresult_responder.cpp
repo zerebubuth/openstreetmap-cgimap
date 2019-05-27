@@ -1,7 +1,9 @@
 #include "cgimap/osm_diffresult_responder.hpp"
 #include "cgimap/config.hpp"
+#include "cgimap/logger.hpp"
 
 #include <chrono>
+#include <boost/format.hpp>
 
 using std::list;
 using std::shared_ptr;
@@ -71,6 +73,8 @@ void osm_diffresult_responder::write(shared_ptr<output_formatter> formatter,
     }
 
   } catch (const std::exception &e) {
+    logger::message(boost::format("Caught error in osm_diffresult_responder: %1%") %
+                        e.what());
     fmt.error(e);
   }
 
