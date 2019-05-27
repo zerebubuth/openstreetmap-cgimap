@@ -1,3 +1,13 @@
+openstreetmap-cgimap (0.7.2-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.7.2
+  * Fix history api returns wrong/duplicate tag data for ways (#183)
+  * Sort History api call result by object and version (#184)
+  * Introduce --disable-api-write command line param to disable API writes (#185)
+  * Added exception logging in osm_responder subclasses (#187)
+
+ -- mmd osm <mmd.osm@gmail.com>  Mon, 27 May 2019 19:15:12 +0000
+
 openstreetmap-cgimap (0.7.1-1~bionic1) bionic; urgency=medium
 
   * Released version 0.7.1
