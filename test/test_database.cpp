@@ -208,7 +208,20 @@ void test_database::run_update(
 
   } catch (const std::exception &e) {
     throw std::runtime_error(
-        (boost::format("%1%, in update") % e.what()).str());
+        (boost::format("%1%, in update, writable selection") % e.what()).str());
+  }
+
+  try {
+    // clear out database before using it!
+    pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
+    conn.perform(truncate_all_tables());
+
+    m_use_readonly = true;
+    func(*this);
+
+  } catch (const std::exception &e) {
+    throw std::runtime_error(
+        (boost::format("%1%, in update, read-only selection") % e.what()).str());
   }
 }
 

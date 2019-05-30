@@ -88,10 +88,10 @@ public:
   int select_changesets(const std::vector<osm_changeset_id_t> &) { return 0; }
   void select_changeset_discussions() {}
 
-  bool get_user_id_pass(const std::string& display_name, osm_user_id_t & user_id,
+  bool get_user_id_pass(const std::string& user_name, osm_user_id_t & user_id,
 				std::string & pass_crypt, std::string & pass_salt) {
 
-    if (display_name == "demo") {
+    if (user_name == "demo") {
 	user_id = 4711;
         pass_crypt = "3wYbPiOxk/tU0eeIDjUhdvi8aDP3AbFtwYKKxF1IhGg=";
         pass_salt = "sha512!10000!OUQLgtM7eD8huvanFT5/WtWaCwdOdrir8QOtFwxhO0A=";

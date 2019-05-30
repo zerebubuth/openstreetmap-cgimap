@@ -11,6 +11,8 @@
 #include <list>
 #include <vector>
 
+#include <boost/algorithm/string/trim.hpp>
+
 
 namespace po = boost::program_options;
 using std::set;
@@ -516,12 +518,20 @@ bool readonly_pgsql_selection::is_user_blocked(const osm_user_id_t id) {
   return !res.empty();
 }
 
-bool readonly_pgsql_selection::get_user_id_pass(const std::string& display_name, osm_user_id_t & id,
+bool readonly_pgsql_selection::get_user_id_pass(const std::string& user_name, osm_user_id_t & id,
 						 std::string & pass_crypt, std::string & pass_salt) {
-  auto res = w.prepared("get_user_id_pass")(display_name).exec();
 
-  if (res.empty())
-    return false;
+  std::string email = boost::algorithm::trim_copy(user_name);
+
+  auto res = w.prepared("get_user_id_pass")(email)(user_name).exec();
+
+  if (res.empty()) {
+    // try case insensitive query
+    res = w.prepared("get_user_id_pass_case_insensitive")(email)(user_name).exec();
+    // failure, in case no entries or multiple entries were found
+    if (res.size() != 1)
+      return false;
+  }
 
   auto row = res[0];
   id = row["id"].as<osm_user_id_t>();
@@ -835,9 +845,16 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
             AND (needs_view or ends_at > (now() at time zone 'utc')) LIMIT 1 )");
 
   m_connection.prepare("get_user_id_pass",
-    R"(SELECT id, pass_crypt, pass_salt FROM users 
-           WHERE display_name = $1 
-             AND (status = 'active' or status = 'confirmed') )");
+    R"(SELECT id, pass_crypt, pass_salt FROM users
+           WHERE (email = $1 OR display_name = $2)
+             AND (status = 'active' or status = 'confirmed') LIMIT 1
+      )");
+
+  m_connection.prepare("get_user_id_pass_case_insensitive",
+    R"(SELECT id, pass_crypt, pass_salt FROM users
+           WHERE (LOWER(email) = LOWER($1) OR LOWER(display_name) = LOWER($2))
+             AND (status = 'active' or status = 'confirmed')
+      )");
 
   // clang-format on
 }
