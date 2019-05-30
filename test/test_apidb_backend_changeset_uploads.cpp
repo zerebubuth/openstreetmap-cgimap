@@ -2072,6 +2072,72 @@ namespace {
     }
 
 
+    // User logging on with display name (different case)
+    {
+	// set up request headers from test case
+	test_request req;
+	req.set_header("REQUEST_METHOD", "POST");
+	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
+	req.set_header("HTTP_AUTHORIZATION", "Basic REVNTzpwYXNzd29yZA==");
+	req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+	     <osmChange version="0.6" generator="iD">
+	     <create><node id="-1" lon="11" lat="46" changeset="1"/></create>
+             </osmChange>)" );
+
+	// execute the request
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+
+	if (req.response_status() != 200)
+	  throw std::runtime_error("Expected HTTP 200 OK: Log on with display name, different case");
+    }
+
+    // User logging on with email address rather than display name
+    {
+	// set up request headers from test case
+	test_request req;
+	req.set_header("REQUEST_METHOD", "POST");
+	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
+	req.set_header("HTTP_AUTHORIZATION", "Basic ZGVtb0BleGFtcGxlLmNvbTpwYXNzd29yZA==");
+	req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+	     <osmChange version="0.6" generator="iD">
+	     <create><node id="-1" lon="11" lat="46" changeset="1"/></create>
+             </osmChange>)" );
+
+	// execute the request
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+
+	if (req.response_status() != 200)
+	  throw std::runtime_error("Expected HTTP 200 OK: Log on with email address");
+    }
+
+
+    // User logging on with email address with different case and additional whitespace rather than display name
+    {
+	// set up request headers from test case
+	test_request req;
+	req.set_header("REQUEST_METHOD", "POST");
+	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
+	req.set_header("HTTP_AUTHORIZATION", "Basic ICAgZGVtb0BleGFtcGxlLkNPTSAgIDpwYXNzd29yZA==");
+	req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+	     <osmChange version="0.6" generator="iD">
+	     <create><node id="-1" lon="11" lat="46" changeset="1"/></create>
+             </osmChange>)" );
+
+	// execute the request
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+
+	if (req.response_status() != 200)
+	  throw std::runtime_error("Expected HTTP 200 OK: Log on with email address, whitespace, different case");
+    }
+
+
+
     // User is blocked (needs_view)
     {
         tdb.run_sql(R"(UPDATE user_blocks SET needs_view = true where user_id = 1;)");
