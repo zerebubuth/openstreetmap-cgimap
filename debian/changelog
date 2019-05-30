@@ -1,3 +1,11 @@
+openstreetmap-cgimap (0.7.3-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.7.3
+  * Basic auth should also consider user email and lower case variants (#190)
+  * Reorder WWW-Authenticate headers to work around non-compliant clients (#191)
+
+ -- mmd osm <mmd.osm@gmail.com>  Thu, 30 May 2019 20:14:57 +0000
+
 openstreetmap-cgimap (0.7.2-1~bionic1) bionic; urgency=medium
 
   * Released version 0.7.2
