@@ -1,3 +1,11 @@
+openstreetmap-cgimap (0.7.4-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.7.4
+  * Fix Basic Auth realm to be in sync with Rails (#192)
+  * Remove OAuth WWW-Authenticate header for better rails compatibility (#193)
+
+ -- mmd osm <mmd.osm@gmail.com>  Fri, 31 May 2019 06:43:02 +0000
+
 openstreetmap-cgimap (0.7.3-1~bionic1) bionic; urgency=medium
 
   * Released version 0.7.3
