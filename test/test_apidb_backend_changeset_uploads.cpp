@@ -650,6 +650,23 @@ namespace {
         }
       }
 
+      // Change existing way with incorrect version number and non-existing node id
+      {
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+        auto sel = tdb.get_data_selection();
+        auto upd = tdb.get_data_update();
+        auto way_updater = upd->get_way_updater(change_tracking);
+
+        try {
+           way_updater->modify_way(1, way_id, 666, {static_cast<osm_nwr_signed_id_t>(5934531745)}, {});
+           way_updater->process_modify_ways();
+  	 throw std::runtime_error("Modifying a way with wrong version and non-existing node id should raise http conflict error");
+        } catch (http::exception &e) {
+  	  if (e.code() != 409)
+  	    throw std::runtime_error("Expected HTTP 409 Conflict");
+        }
+      }
+
       // Change existing way with unknown node id
       {
 	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
@@ -1384,7 +1401,25 @@ namespace {
            rel_updater->modify_relation(1, relation_id, 666,
 					{ {"Node", static_cast<osm_nwr_signed_id_t>(node_new_ids[0]), ""} }, {});
            rel_updater->process_modify_relations();
-  	 throw std::runtime_error("Modifying a way with wrong version should raise http conflict error");
+  	 throw std::runtime_error("Modifying a relation with wrong version should raise http conflict error");
+        } catch (http::exception &e) {
+  	  if (e.code() != 409)
+  	    throw std::runtime_error("Expected HTTP 409 Conflict");
+        }
+      }
+
+      // Change existing relation with incorrect version number and non-existing node id
+      {
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+        auto sel = tdb.get_data_selection();
+        auto upd = tdb.get_data_update();
+        auto rel_updater = upd->get_relation_updater(change_tracking);
+
+        try {
+           rel_updater->modify_relation(1, relation_id, 666,
+					{ {"Node", static_cast<osm_nwr_signed_id_t>(1434253485634), ""} }, {});
+           rel_updater->process_modify_relations();
+  	 throw std::runtime_error("Modifying a relation with wrong version and non-existing node member id should raise http conflict error");
         } catch (http::exception &e) {
   	  if (e.code() != 409)
   	    throw std::runtime_error("Expected HTTP 409 Conflict");

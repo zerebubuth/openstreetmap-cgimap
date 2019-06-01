@@ -160,8 +160,6 @@ void ApiDB_Way_Updater::process_modify_ways() {
 
   lock_current_ways(ids);
 
-  lock_future_nodes(modify_ways);
-
   // modify may contain several versions of the same way
   // those have to be processed one after the other
   auto packages = build_packages(modify_ways);
@@ -178,6 +176,8 @@ void ApiDB_Way_Updater::process_modify_ways() {
               ids_package.end());
 
     check_current_way_versions(modify_ways_package);
+
+    lock_future_nodes(modify_ways_package);
 
     m_bbox.expand(calc_way_bbox(ids_package));
 
