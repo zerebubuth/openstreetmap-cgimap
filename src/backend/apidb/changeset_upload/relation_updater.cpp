@@ -166,8 +166,6 @@ void ApiDB_Relation_Updater::process_modify_relations() {
 
   lock_current_relations(ids);
 
-  lock_future_members(modify_relations);
-
   // modify may contain several versions of the same relation
   // those have to be processed one after the other
   auto packages = build_packages(modify_relations);
@@ -184,6 +182,8 @@ void ApiDB_Relation_Updater::process_modify_relations() {
               ids_package.end());
 
     check_current_relation_versions(modify_relations_package);
+
+    lock_future_members(modify_relations_package);
 
     // Analyse required updates to the bbox before applying changes to the
     // database
