@@ -1,3 +1,10 @@
+openstreetmap-cgimap (0.7.5-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.7.5
+  * Fix 412 Precondition Failed when trying to upload old version of a way/relation (#195)
+
+ -- mmd osm <mmd.osm@gmail.com>  Sat, 01 Jun 2019 18:32:42 +0000
+
 openstreetmap-cgimap (0.7.4-1~bionic1) bionic; urgency=medium
 
   * Released version 0.7.4
