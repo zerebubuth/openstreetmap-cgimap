@@ -71,7 +71,7 @@ FCGI port number (e.g. 8000) to listen on. This option is for backwards compatib
 FCGI port number (e.g. :8000) or UNIX socket to listen on.
 .TP
 .BR \-\-backend =\fIBACKEND\fR
-Backend to use, available options are: apidb, pgsnapshot, staticxml.
+Backend to use, available options are: apidb, staticxml.
 Default is apidb.
 .SS ApiDB backend options
 .TP
@@ -97,26 +97,6 @@ Use the database in read-only mode.
 .BR \-\-cachesize =\fISIZE\fR
 Maximum size of changeset cache.
 Default is 1000.
-.TP
-.BR \-\-dbport =\fIPORT\fR
-Database port number or UNIX socket file name.
-.SS pgsnapshot backend options
-.TP
-.BR \-\-dbname =\fIDBNAME\fR
-Database name.
-.TP
-.BR \-\-host =\fIHOST\fR
-Database server host.
-.TP
-.BR \-\-username =\fIUSER\fR
-Database user name.
-.TP
-.BR \-\-password =\fIPASS\fR
-Database password.
-.TP
-.BR \-\-charset =\fICHARSET\fR
-Database character set.
-Default is utf8.
 .TP
 .BR \-\-dbport =\fIPORT\fR
 Database port number or UNIX socket file name.

@@ -37,9 +37,7 @@
 #ifdef ENABLE_APIDB
 #include "cgimap/backend/apidb/apidb.hpp"
 #endif
-#ifdef ENABLE_PGSNAPSHOT
-#include "cgimap/backend/pgsnapshot/pgsnapshot.hpp"
-#endif
+
 #include "cgimap/backend/staticxml/staticxml.hpp"
 
 using std::runtime_error;

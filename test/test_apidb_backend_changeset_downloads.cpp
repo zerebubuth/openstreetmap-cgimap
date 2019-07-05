@@ -51,11 +51,6 @@ void test_changeset_select_node(test_database &tdb) {
     );
   std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
-  assert_equal<bool>(sel->supports_changesets(), true,
-    "apidb should support changesets.");
-  assert_equal<bool>(sel->supports_historical_versions(), true,
-    "apidb should support historical versions.");
-
   std::vector<osm_changeset_id_t> ids;
   ids.push_back(1);
   int num = sel->select_historical_by_changesets(ids);
@@ -107,11 +102,6 @@ void test_changeset_select_way(test_database &tdb) {
     "  (1, 1, 1, 1); "
     );
   std::shared_ptr<data_selection> sel = tdb.get_data_selection();
-
-  assert_equal<bool>(sel->supports_changesets(), true,
-    "apidb should support changesets.");
-  assert_equal<bool>(sel->supports_historical_versions(), true,
-    "apidb should support historical versions.");
 
   std::vector<osm_changeset_id_t> ids;
   ids.push_back(2);
@@ -171,11 +161,6 @@ void test_changeset_select_relation(test_database &tdb) {
     );
   std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
-  assert_equal<bool>(sel->supports_changesets(), true,
-    "apidb should support changesets.");
-  assert_equal<bool>(sel->supports_historical_versions(), true,
-    "apidb should support historical versions.");
-
   std::vector<osm_changeset_id_t> ids;
   ids.push_back(2);
   int num = sel->select_historical_by_changesets(ids);
@@ -223,11 +208,6 @@ void test_changeset_redacted(test_database &tdb) {
     "  (1, 0, 0, 3, true,  '2017-03-19T20:18:00Z', 3221225472, 3, NULL);"
     );
   std::shared_ptr<data_selection> sel = tdb.get_data_selection();
-
-  assert_equal<bool>(sel->supports_changesets(), true,
-    "apidb should support changesets.");
-  assert_equal<bool>(sel->supports_historical_versions(), true,
-    "apidb should support historical versions.");
 
   {
     std::vector<osm_changeset_id_t> ids;

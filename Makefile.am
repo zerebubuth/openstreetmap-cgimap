@@ -78,13 +78,6 @@ cgimap_apidb_changeset_upload_include_HEADERS = \
 	include/cgimap/backend/apidb/changeset_upload/way_updater.hpp
 endif
 
-if ENABLE_PGSNAPSHOT
-cgimap_pgsnapshot_includedir=$(includedir)/cgimap/backend/pgsnapshot
-cgimap_pgsnapshot_include_HEADERS = \
-	include/cgimap/backend/pgsnapshot/pgsnapshot.hpp \
-	include/cgimap/backend/pgsnapshot/snapshot_selection.hpp
-endif
-
 cgimap_staticxml_includedir=$(includedir)/cgimap/backend/staticxml
 cgimap_staticxml_include_HEADERS = \
 	include/cgimap/backend/staticxml/staticxml.hpp
@@ -132,14 +125,12 @@ clang-format:
 	for i in include/cgimap/api06/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in include/cgimap/api07/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in include/cgimap/backend/apidb/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
-	for i in include/cgimap/backend/pgsnapshot/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in include/cgimap/backend/staticxml/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in include/cgimap/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in include/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in src/api06/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in src/api07/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in src/backend/apidb/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
-	for i in src/backend/pgsnapshot/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in src/backend/staticxml/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in src/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in test/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done;

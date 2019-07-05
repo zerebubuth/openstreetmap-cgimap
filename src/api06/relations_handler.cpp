@@ -30,11 +30,7 @@ relations_responder::relations_responder(mime::type mt, vector<id_version> ids_,
 
   size_t num_selected = sel->select_relations(current_ids);
   if (!historic_ids.empty()) {
-    if (sel->supports_historical_versions()) {
-      num_selected += sel->select_historical_relations(historic_ids);
-    } else {
-      throw http::server_error("Data source does not support historical versions.");
-    }
+    num_selected += sel->select_historical_relations(historic_ids);
   }
 
   if (num_selected != ids.size()) {

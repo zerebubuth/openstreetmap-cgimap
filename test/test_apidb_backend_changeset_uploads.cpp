@@ -106,10 +106,6 @@ namespace {
 	// verify historic tables
 	auto sel = tdb.get_data_selection();
 
-	assert_equal<bool>(
-	    sel->supports_historical_versions(), true,
-	    "data selection supports historical versions");
-
 	assert_equal<int>(
 	    sel->select_nodes_with_history({ osm_nwr_id_t(node_id) }), 1,
 	    "number of nodes selected");
@@ -495,10 +491,6 @@ namespace {
           // verify historic tables
           auto sel = tdb.get_data_selection();
 
-          assert_equal<bool>(
-              sel->supports_historical_versions(), true,
-	      "data selection supports historical versions");
-
           assert_equal<int>(
               sel->select_ways_with_history({ osm_nwr_id_t(way_id) }), 1,
 	      "number of ways selected");
@@ -609,10 +601,6 @@ namespace {
         {
           // verify historic tables
           auto sel = tdb.get_data_selection();
-
-          assert_equal<bool>(
-              sel->supports_historical_versions(), true,
-	      "data selection supports historical versions");
 
           assert_equal<int>(
               sel->select_ways_with_history({ osm_nwr_id_t(way_id) }), 2,
@@ -780,10 +768,6 @@ namespace {
         {
           // verify historic tables
           auto sel = tdb.get_data_selection();
-
-          assert_equal<bool>(
-              sel->supports_historical_versions(), true,
-	      "data selection supports historical versions");
 
           assert_equal<int>(
               sel->select_ways_with_history({ osm_nwr_id_t(way_id) }), way_version,
@@ -989,10 +973,6 @@ namespace {
           // verify historic tables
           auto sel = tdb.get_data_selection();
 
-          assert_equal<bool>(
-              sel->supports_historical_versions(), true,
-	      "data selection supports historical versions");
-
           assert_equal<int>(
               sel->select_relations_with_history({ osm_nwr_id_t(relation_id) }), 1,
 	      "number of relations selected");
@@ -1099,10 +1079,6 @@ namespace {
         {
           // verify historic tables
           auto sel = tdb.get_data_selection();
-
-          assert_equal<bool>(
-              sel->supports_historical_versions(), true,
-	      "data selection supports historical versions");
 
           assert_equal<int>(
               sel->select_relations_with_history({ osm_nwr_id_t( r_id ) }), 1,
@@ -1235,10 +1211,6 @@ namespace {
           // verify historic tables
           auto sel = tdb.get_data_selection();
 
-          assert_equal<bool>(
-              sel->supports_historical_versions(), true,
-	      "data selection supports historical versions");
-
           assert_equal<int>(
               sel->select_relations_with_history({relation_id_1, relation_id_2}), 2,
 	      "number of relations selected");
@@ -1361,10 +1333,6 @@ namespace {
         {
           // verify historic tables
           auto sel = tdb.get_data_selection();
-
-          assert_equal<bool>(
-              sel->supports_historical_versions(), true,
-	      "data selection supports historical versions");
 
           assert_equal<int>(
               sel->select_relations_with_history({ osm_nwr_id_t(relation_id) }), 2,
@@ -1724,10 +1692,6 @@ namespace {
         {
           // verify historic tables
           auto sel = tdb.get_data_selection();
-
-          assert_equal<bool>(
-              sel->supports_historical_versions(), true,
-	      "data selection supports historical versions");
 
           assert_equal<int>(
               sel->select_relations_with_history({ osm_nwr_id_t(relation_id) }), relation_version,

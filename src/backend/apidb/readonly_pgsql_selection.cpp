@@ -374,10 +374,6 @@ void readonly_pgsql_selection::select_relations_members_of_relations() {
   }
 }
 
-bool readonly_pgsql_selection::supports_historical_versions() {
-  return true;
-}
-
 int readonly_pgsql_selection::select_historical_nodes(
   const std::vector<osm_edition_t> &eds) {
 
@@ -491,10 +487,6 @@ int readonly_pgsql_selection::select_historical_by_changesets(
   }
 
   return selected;
-}
-
-bool readonly_pgsql_selection::supports_changesets() {
-  return true;
 }
 
 int readonly_pgsql_selection::select_changesets(const std::vector<osm_changeset_id_t> &ids) {

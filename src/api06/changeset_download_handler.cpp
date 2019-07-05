@@ -14,14 +14,6 @@ changeset_download_responder::changeset_download_responder(
   mime::type mt, osm_changeset_id_t id_, data_selection_ptr &w_)
   : osmchange_responder(mt, w_), id(id_) {
 
-  if (!sel->supports_changesets()) {
-    throw http::server_error("Data source does not support changesets.");
-  }
-
-  if (!sel->supports_historical_versions()) {
-    throw http::server_error("Data source does not support historical versions.");
-  }
-
   vector<osm_changeset_id_t> ids;
   ids.push_back(id);
 

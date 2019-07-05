@@ -507,8 +507,7 @@ void process_request(request &req, rate_limiter &limiter,
     // override the default access control allow methods header
     req.set_default_methods(handler->allowed_methods());
 
-    if (selection->supports_historical_versions() &&
-        show_redactions_requested(req) &&
+    if (show_redactions_requested(req) &&
         (user_roles.count(osm_user_role_t::moderator) > 0)) {
       selection->set_redactions_visible(true);
     }
