@@ -193,7 +193,6 @@ endif
 if ENABLE_APIDB
 libcgimap_apidb_la_SOURCES=\
 	backend/apidb/apidb.cpp \
-	backend/apidb/writeable_pgsql_selection.cpp \
 	backend/apidb/readonly_pgsql_selection.cpp \
 	backend/apidb/common_pgsql_selection.cpp \
 	backend/apidb/pgsql_update.cpp \
