@@ -541,8 +541,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
       m_errorhandler(m_connection),
       m_cache_errorhandler(m_cache_connection),
       m_cache_tx(m_cache_connection, "changeset_cache"),
-      m_cache(std::bind(fetch_changeset, std::ref(m_cache_tx), std::placeholders::_1),
-              std::bind(fetch_changesets, std::ref(m_cache_tx), std::placeholders::_1),
+      m_cache(std::bind(fetch_changesets, std::ref(m_cache_tx), std::placeholders::_1),
               opts["cachesize"].as<size_t>()) {
 
   if (m_connection.server_version() < 90300) {
