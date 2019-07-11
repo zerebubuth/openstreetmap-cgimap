@@ -126,19 +126,6 @@ AS_IF([test "x$enable_apidb" == xyes],
       [AC_DEFINE([ENABLE_APIDB], [1], [Define for APIDB backend support.])])
 AM_CONDITIONAL([ENABLE_APIDB], [test "x$enable_apidb" == xyes])
 
-AC_MSG_CHECKING([whether to enable PGSNAPSHOT backend])
-AC_ARG_ENABLE([pgsnapshot],
-	[AS_HELP_STRING([--enable-pgsnapshot],
-		[Enable pgsnapshot backend (default: enabled)])],
-	[case "${enableval}" in
-	  yes | no ) enable_pgsnapshot="${enableval}" ;;
-	  * ) AC_MSG_ERROR(value for --enable-pgsnapshot should be yes or no) ;;
-	 esac],
-	[enable_pgsnapshot="yes"])
-AC_MSG_RESULT($enable_pgsnapshot)
-AS_IF([test "x$enable_pgsnapshot" == xyes],
-      [AC_DEFINE([ENABLE_PGSNAPSHOT], [1], [Define for PGSNAPSHOT backend support.])])
-AM_CONDITIONAL([ENABLE_PGSNAPSHOT], [test "x$enable_pgsnapshot" == xyes])
 AC_CONFIG_FILES([
 	Makefile
 	src/Makefile])

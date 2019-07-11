@@ -35,7 +35,7 @@ download (i.e: `osmChange` data).
 Requirements
 ------------
 
-CGImap uses a PostgreSQL server for either the APIDB or PGsnapshot backends. A minimum server version of 9.4 is required.
+CGImap uses a PostgreSQL server for the APIDB backend. A minimum server version of 9.4 is required.
 
 CGImap depends on the following libraries. Versions used during
 development are in brackets. Other versions may work, but YMMV.
@@ -61,7 +61,7 @@ The build system used is GNU Make, using pkg-config to provide some of
 the flags.
 
 Note that the full set of packages needed from a fresh install (tested
-with Ubuntu 16.04) - you may already have many or all of these - is:
+with Ubuntu 18.04) - you may already have many or all of these - is:
 
     sudo apt-get install git build-essential automake autoconf libtool
 
@@ -145,11 +145,7 @@ The apidb backend requires permissions to SELECT and CREATE TEMPORARY on the
 Postgres server. For situations where temporary tables cannot be created there
 is the `--readonly` option.
 
-The pgsnapshot backend requires permissions to SELECT and CREATE TEMPORARY on
-the Postgres server, but will not work in situations where temporary tables
-cannot be created.
-
-In both cases it is recommended that a separate account is created for
+It is recommended that a separate account is created for
 CGImap to avoid any possibility of data corruption. Care has been
 taken programming CGImap but, as with most C++ applications, there is
 the chance of an exploitable flaw leading to complete pwnage.

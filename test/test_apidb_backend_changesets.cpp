@@ -93,9 +93,6 @@ void test_changeset(test_database &tdb) {
     );
   std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
-  assert_equal<bool>(sel->supports_changesets(), true,
-                     "apidb should support changesets.");
-
   std::vector<osm_changeset_id_t> ids;
   ids.push_back(1);
   int num = sel->select_changesets(ids);
@@ -139,9 +136,6 @@ void test_nonpublic_changeset(test_database &tdb) {
     "  (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 1);"
     );
   std::shared_ptr<data_selection> sel = tdb.get_data_selection();
-
-  assert_equal<bool>(sel->supports_changesets(), true,
-                     "apidb should support changesets.");
 
   std::vector<osm_changeset_id_t> ids;
   ids.push_back(4);
@@ -192,9 +186,6 @@ void test_changeset_with_tags(test_database &tdb) {
     );
   std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
-  assert_equal<bool>(sel->supports_changesets(), true,
-                     "apidb should support changesets.");
-
   std::vector<osm_changeset_id_t> ids;
   ids.push_back(2);
   int num = sel->select_changesets(ids);
@@ -233,9 +224,6 @@ void test_changeset_with_tags(test_database &tdb) {
 void check_changeset_with_comments_impl(
   std::shared_ptr<data_selection> sel,
   bool include_discussion) {
-
-  assert_equal<bool>(sel->supports_changesets(), true,
-                     "apidb should support changesets.");
 
   std::vector<osm_changeset_id_t> ids;
   ids.push_back(3);

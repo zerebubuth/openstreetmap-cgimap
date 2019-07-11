@@ -12,13 +12,11 @@ node_version_responder::node_version_responder(mime::type mt, osm_nwr_id_t id_, 
     : osm_current_responder(mt, w_), id(id_), v(v_) {
   vector<osm_edition_t> historic_ids;
   historic_ids.push_back(std::make_pair(id, v));
-  if (sel->supports_historical_versions()) {
-    if (sel->select_historical_nodes(historic_ids) == 0) {
-       throw http::not_found("");
-    }
-  } else {
-   throw http::server_error("Data source does not support historical versions.");
+
+  if (sel->select_historical_nodes(historic_ids) == 0) {
+     throw http::not_found("");
   }
+
 }
 
 node_version_responder::~node_version_responder() = default;

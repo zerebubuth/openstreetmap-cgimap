@@ -45,11 +45,9 @@ public:
   void select_relations_from_relations();
   void select_relations_members_of_relations();
 
-  bool supports_changesets();
   int select_changesets(const std::vector<osm_changeset_id_t> &);
   void select_changeset_discussions();
 
-  bool supports_historical_versions();
   int select_historical_nodes(const std::vector<osm_edition_t> &);
   int select_historical_ways(const std::vector<osm_edition_t> &);
   int select_historical_relations(const std::vector<osm_edition_t> &);

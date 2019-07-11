@@ -241,10 +241,6 @@ void writeable_pgsql_selection::select_relations_members_of_relations() {
   w.prepared("relation_members_of_relations").exec();
 }
 
-bool writeable_pgsql_selection::supports_historical_versions() {
-  return true;
-}
-
 int writeable_pgsql_selection::select_historical_nodes(
   const std::vector<osm_edition_t> &eds) {
   m_historic_tables_empty = false;
@@ -358,10 +354,6 @@ int writeable_pgsql_selection::select_historical_by_changesets(
   }
 
   return selected;
-}
-
-bool writeable_pgsql_selection::supports_changesets() {
-  return true;
 }
 
 int writeable_pgsql_selection::select_changesets(const std::vector<osm_changeset_id_t> &ids) {

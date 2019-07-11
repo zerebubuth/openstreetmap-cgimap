@@ -29,19 +29,6 @@ ___test_test_apidb_backend_changeset_downloads_LDADD=libcgimap_core.la libcgimap
 ___test_test_apidb_backend_changeset_uploads_LDADD=libcgimap_core.la libcgimap_apidb.la
 endif
 
-if ENABLE_PGSNAPSHOT
-lib_LTLIBRARIES+=libcgimap_pgsnapshot.la
-___openstreetmap_cgimap_LDADD+=libcgimap_pgsnapshot.la
-___test_test_core_LDADD+=libcgimap_pgsnapshot.la
-if ENABLE_APIDB
-___test_test_apidb_backend_nodes_LDADD+=libcgimap_pgsnapshot.la
-___test_test_apidb_backend_oauth_LDADD+=libcgimap_pgsnapshot.la
-___test_test_apidb_backend_historic_LDADD+=libcgimap_pgsnapshot.la
-___test_test_apidb_backend_changesets_LDADD+=libcgimap_pgsnapshot.la
-___test_test_apidb_backend_changeset_downloads_LDADD+=libcgimap_pgsnapshot.la
-endif
-endif
-
 lib_LTLIBRARIES+=libcgimap_staticxml.la
 ___openstreetmap_cgimap_LDADD+=libcgimap_staticxml.la
 ___test_test_core_LDADD+=libcgimap_staticxml.la
@@ -221,13 +208,6 @@ libcgimap_apidb_la_SOURCES=\
 	backend/apidb/changeset_upload/way_updater.cpp
 
 libcgimap_apidb_la_LIBADD=libcgimap_core.la @LIBPQXX_LIBS@
-endif
-
-if ENABLE_PGSNAPSHOT
-libcgimap_pgsnapshot_la_SOURCES=\
-	backend/pgsnapshot/pgsnapshot.cpp \
-	backend/pgsnapshot/snapshot_selection.cpp
-libcgimap_pgsnapshot_la_LIBADD=libcgimap_core.la @LIBPQXX_LIBS@
 endif
 
 libcgimap_staticxml_la_SOURCES=\

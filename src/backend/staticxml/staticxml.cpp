@@ -522,10 +522,6 @@ struct static_data_selection : public data_selection {
     }
   }
 
-  virtual bool supports_historical_versions() {
-    return true;
-  }
-
   virtual int select_historical_nodes(const std::vector<osm_edition_t> &editions) {
     return select_historical<node>(m_historic_nodes, editions);
   }
@@ -566,8 +562,6 @@ struct static_data_selection : public data_selection {
 
     return selected;
   }
-
-  virtual bool supports_changesets() { return true; }
 
   virtual int select_changesets(const std::vector<osm_changeset_id_t> &ids) {
     int selected = 0;
