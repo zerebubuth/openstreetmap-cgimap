@@ -7,7 +7,10 @@ using std::shared_ptr;
 
 namespace {
 
-void extract_elem(const pqxx::result::tuple &row, element_info &elem,
+using pqxx_tuple = pqxx::result::reference;
+using pqxx_field = pqxx::field;
+
+void extract_elem(const pqxx_tuple &row, element_info &elem,
                   cache<osm_changeset_id_t, changeset> &changeset_cache) {
   elem.id = row["id"].as<osm_nwr_id_t>();
   elem.version = row["version"].as<int>();
@@ -25,7 +28,7 @@ void extract_elem(const pqxx::result::tuple &row, element_info &elem,
 }
 
 template <typename T>
-boost::optional<T> extract_optional(const pqxx::result::field &f) {
+boost::optional<T> extract_optional(const pqxx_field &f) {
   if (f.is_null()) {
     return boost::none;
   } else {
@@ -33,7 +36,7 @@ boost::optional<T> extract_optional(const pqxx::result::field &f) {
   }
 }
 
-void extract_changeset(const pqxx::result::tuple &row,
+void extract_changeset(const pqxx_tuple &row,
                        changeset_info &elem,
                        cache<osm_changeset_id_t, changeset> &changeset_cache) {
   elem.id = row["id"].as<osm_changeset_id_t>();
@@ -66,7 +69,7 @@ void extract_changeset(const pqxx::result::tuple &row,
   elem.num_changes = row["num_changes"].as<size_t>();
 }
 
-void extract_tags(const pqxx::result::tuple &row, tags_t &tags) {
+void extract_tags(const pqxx_tuple &row, tags_t &tags) {
   tags.clear();
   std::vector<std::string> keys = psql_array_to_vector(row["tag_k"].c_str());
   std::vector<std::string> values = psql_array_to_vector(row["tag_v"].c_str());
@@ -77,7 +80,7 @@ void extract_tags(const pqxx::result::tuple &row, tags_t &tags) {
      tags.push_back(std::make_pair(keys[i], values[i]));
 }
 
-void extract_nodes(const pqxx::result::tuple &row, nodes_t &nodes) {
+void extract_nodes(const pqxx_tuple &row, nodes_t &nodes) {
   nodes.clear();
   std::vector<std::string> ids = psql_array_to_vector(row["node_ids"].c_str());
   for (const auto & id : ids)
@@ -112,7 +115,7 @@ element_type type_from_name(const char *name) {
   return type;
 }
 
-void extract_members(const pqxx::result::tuple &row, members_t &members) {
+void extract_members(const pqxx_tuple &row, members_t &members) {
   member_info member;
   members.clear();
   std::vector<std::string> types = psql_array_to_vector(row["member_types"].c_str());
@@ -129,7 +132,7 @@ void extract_members(const pqxx::result::tuple &row, members_t &members) {
   }
 }
 
-void extract_comments(const pqxx::result::tuple &row, comments_t &comments) {
+void extract_comments(const pqxx_tuple &row, comments_t &comments) {
   changeset_comment_info comment;
   comments.clear();
   std::vector<std::string> author_id = psql_array_to_vector(row["comment_author_id"].c_str());
@@ -152,7 +155,7 @@ void extract_comments(const pqxx::result::tuple &row, comments_t &comments) {
 struct node {
   struct extra_info {
     double lon, lat;
-    inline void extract(const pqxx::tuple &row) {
+    inline void extract(const pqxx_tuple &row) {
       lon = double(row["longitude"].as<int64_t>()) / (SCALE);
       lat = double(row["latitude"].as<int64_t>()) / (SCALE);
     }
@@ -167,7 +170,7 @@ struct node {
 struct way {
   struct extra_info {
     nodes_t nodes;
-    inline void extract(const pqxx::tuple &row) {
+    inline void extract(const pqxx_tuple &row) {
       extract_nodes(row, nodes);
     }
   };
@@ -181,7 +184,7 @@ struct way {
 struct relation {
   struct extra_info {
     members_t members;
-    inline void extract(const pqxx::tuple &row) {
+    inline void extract(const pqxx_tuple &row) {
       extract_members(row, members);
     }
   };

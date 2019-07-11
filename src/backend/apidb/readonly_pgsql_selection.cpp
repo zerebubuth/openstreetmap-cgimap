@@ -59,20 +59,22 @@ check_table_visibility(pqxx::work &w, osm_nwr_id_t id,
   }
 }
 
-template <typename T> T id_of(const pqxx::tuple &);
+using pqxx_tuple = pqxx::result::reference;
+
+template <typename T> T id_of(const pqxx_tuple &);
 
 template <>
-osm_nwr_id_t id_of<osm_nwr_id_t>(const pqxx::tuple &row) {
+osm_nwr_id_t id_of<osm_nwr_id_t>(const pqxx_tuple &row) {
   return row["id"].as<osm_nwr_id_t>();
 }
 
 template <>
-osm_changeset_id_t id_of<osm_changeset_id_t>(const pqxx::tuple &row) {
+osm_changeset_id_t id_of<osm_changeset_id_t>(const pqxx_tuple &row) {
   return row["id"].as<osm_changeset_id_t>();
 }
 
 template <>
-osm_edition_t id_of<osm_edition_t>(const pqxx::tuple &row) {
+osm_edition_t id_of<osm_edition_t>(const pqxx_tuple &row) {
   auto id = row["id"].as<osm_nwr_id_t>();
   auto ver = row["version"].as<osm_version_t>();
   return osm_edition_t(id, ver);
@@ -84,7 +86,7 @@ inline int insert_results(const pqxx::result &res, set<T> &elems) {
 
   for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
        ++itr) {
-    const pqxx::tuple &row = *itr;
+    const pqxx_tuple &row = *itr;
     const T id = id_of<T>(row);
 
     // note: only count the *new* rows inserted.
