@@ -244,9 +244,6 @@ void setup_backends() {
 #if ENABLE_APIDB
   register_backend(make_apidb_backend());
 #endif
-#if ENABLE_PGSNAPSHOT
-  register_backend(make_pgsnapshot_backend());
-#endif
   register_backend(make_staticxml_backend());
 }
 
