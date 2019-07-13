@@ -12,17 +12,13 @@ namespace api06 {
 way_full_responder::way_full_responder(mime::type mt_, osm_nwr_id_t id_,
                                        data_selection_ptr &w_)
     : osm_current_responder(mt_, w_), id(id_) {
-  vector<osm_nwr_id_t> ids;
-  ids.push_back(id);
 
-  if (sel->select_ways(ids) == 0) {
+  if (sel->select_ways({id}) == 0) {
     std::ostringstream error;
     error << "Way " << id << " was not found.";
     throw http::not_found(error.str());
-  } else {
-    check_visibility();
   }
-
+  check_visibility();
   sel->select_nodes_from_way_nodes();
 }
 

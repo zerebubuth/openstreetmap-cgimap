@@ -12,8 +12,8 @@ using std::map;
 using std::pair;
 using std::vector;
 
-#define MAX_AREA 0.25
-#define MAX_NODES 50000
+constexpr double MAX_AREA  = 0.25;
+constexpr int    MAX_NODES = 50000;
 
 namespace api06 {
 

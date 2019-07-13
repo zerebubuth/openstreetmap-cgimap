@@ -15,10 +15,8 @@ changeset_responder::changeset_responder(mime::type mt, osm_changeset_id_t id_,
                                          data_selection_ptr &w_)
   : osm_current_responder(mt, w_), id(id_),
     include_discussion(include_discussion_) {
-  vector<osm_changeset_id_t> ids;
-  ids.push_back(id);
 
-  if (sel->select_changesets(ids) == 0) {
+  if (sel->select_changesets({id}) == 0) {
     std::ostringstream error;
     error << "Changeset " << id << " was not found.";
     throw http::not_found(error.str());

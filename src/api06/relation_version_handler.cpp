@@ -11,10 +11,8 @@ namespace api06 {
 relation_version_responder::relation_version_responder(mime::type mt, osm_nwr_id_t id_, 
                                        osm_version_t v_, data_selection_ptr &w_)
     : osm_current_responder(mt, w_), id(id_), v(v_) {
-  vector<osm_edition_t> historic_ids;
-  historic_ids.push_back(std::make_pair(id, v));
 
-  if (sel->select_historical_relations(historic_ids) == 0) {
+  if (sel->select_historical_relations({std::make_pair(id, v)}) == 0) {
      throw http::not_found("");
   }
 }
