@@ -2,6 +2,7 @@
 #include "cgimap/backend/apidb/common_pgsql_selection.hpp"
 #include "cgimap/backend/apidb/apidb.hpp"
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
+#include "cgimap/backend/apidb/utils.hpp"
 #include "cgimap/logger.hpp"
 #include "cgimap/backend/apidb/quad_tile.hpp"
 #include "cgimap/infix_ostream_iterator.hpp"
@@ -48,14 +49,13 @@ check_table_visibility(pqxx::work &w, osm_nwr_id_t id,
                        const std::string &prepared_name) {
   pqxx::result res = w.prepared(prepared_name)(id).exec();
 
-  if (res.size() > 0) {
-    if (res[0][0].as<bool>()) {
-      return data_selection::exists;
-    } else {
-      return data_selection::deleted;
-    }
-  } else {
+  if (res.empty())
     return data_selection::non_exist;
+
+  if (res[0][0].as<bool>()) {
+    return data_selection::exists;
+  } else {
+    return data_selection::deleted;
   }
 }
 
@@ -84,9 +84,7 @@ template <typename T>
 inline int insert_results(const pqxx::result &res, set<T> &elems) {
   int num_inserted = 0;
 
-  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
-       ++itr) {
-    const pqxx_tuple &row = *itr;
+  for (const auto & row : res) {
     const T id = id_of<T>(row);
 
     // note: only count the *new* rows inserted.
@@ -94,7 +92,6 @@ inline int insert_results(const pqxx::result &res, set<T> &elems) {
       ++num_inserted;
     }
   }
-
   return num_inserted;
 }
 
@@ -271,28 +268,25 @@ readonly_pgsql_selection::check_relation_visibility(osm_nwr_id_t id) {
 }
 
 int readonly_pgsql_selection::select_nodes(const std::vector<osm_nwr_id_t> &ids) {
-  if (!ids.empty()) {
-    return insert_results(w.prepared("select_nodes")(ids).exec(), sel_nodes);
-  } else {
+  if (ids.empty())
     return 0;
-  }
+
+  return insert_results(w.prepared("select_nodes")(ids).exec(), sel_nodes);
 }
 
 int readonly_pgsql_selection::select_ways(const std::vector<osm_nwr_id_t> &ids) {
-  if (!ids.empty()) {
-    return insert_results(w.prepared("select_ways")(ids).exec(), sel_ways);
-  } else {
+  if (ids.empty())
     return 0;
-  }
+
+  return insert_results(w.prepared("select_ways")(ids).exec(), sel_ways);
 }
 
 int readonly_pgsql_selection::select_relations(const std::vector<osm_nwr_id_t> &ids) {
-  if (!ids.empty()) {
-    return insert_results(w.prepared("select_relations")(ids).exec(),
-                          sel_relations);
-  } else {
+  if (ids.empty())
     return 0;
-  }
+
+  return insert_results(w.prepared("select_relations")(ids).exec(),
+                        sel_relations);
 }
 
 int readonly_pgsql_selection::select_nodes_from_bbox(const bbox &bounds,
@@ -379,92 +373,91 @@ void readonly_pgsql_selection::select_relations_members_of_relations() {
 int readonly_pgsql_selection::select_historical_nodes(
   const std::vector<osm_edition_t> &eds) {
 
-  if (!eds.empty()) {
-    std::vector<osm_nwr_id_t> ids;
-    std::vector<osm_version_t> vers;
-    ids.resize(eds.size());
-    vers.resize(eds.size());
-    for (const auto &ed : eds) {
-      ids.emplace_back(ed.first);
-      vers.emplace_back(ed.second);
-    }
-    return insert_results(
-      w.prepared("select_historical_nodes")(ids)(vers)(m_redactions_visible).exec(),
-      sel_historic_nodes);
-  } else {
+  if (eds.empty())
     return 0;
+
+  std::vector<osm_nwr_id_t> ids(eds.size());
+  std::vector<osm_version_t> vers(eds.size());
+
+  for (const auto &ed : eds) {
+    ids.emplace_back(ed.first);
+    vers.emplace_back(ed.second);
   }
+
+  return insert_results(
+    w.prepared("select_historical_nodes")(ids)(vers)(m_redactions_visible).exec(),
+    sel_historic_nodes);
 }
 
 int readonly_pgsql_selection::select_historical_ways(
   const std::vector<osm_edition_t> &eds) {
-  if (!eds.empty()) {
-    std::vector<osm_nwr_id_t> ids;
-    std::vector<osm_version_t> vers;
-    ids.resize(eds.size());
-    vers.resize(eds.size());
-    for (const auto &ed : eds) {
-      ids.emplace_back(ed.first);
-      vers.emplace_back(ed.second);
-    }
-    return insert_results(
-      w.prepared("select_historical_ways")(ids)(vers)(m_redactions_visible).exec(),
-      sel_historic_ways);
-  } else {
+
+  if (eds.empty())
     return 0;
+
+  std::vector<osm_nwr_id_t> ids(eds.size());
+  std::vector<osm_version_t> vers(eds.size());
+
+  for (const auto &ed : eds) {
+    ids.emplace_back(ed.first);
+    vers.emplace_back(ed.second);
   }
+
+  return insert_results(
+    w.prepared("select_historical_ways")(ids)(vers)(m_redactions_visible).exec(),
+    sel_historic_ways);
 }
 
 int readonly_pgsql_selection::select_historical_relations(
   const std::vector<osm_edition_t> &eds) {
-  if (!eds.empty()) {
-    std::vector<osm_nwr_id_t> ids;
-    std::vector<osm_version_t> vers;
-    ids.resize(eds.size());
-    vers.resize(eds.size());
-    for (const auto &ed : eds) {
-      ids.emplace_back(ed.first);
-      vers.emplace_back(ed.second);
-    }
-    return insert_results(
-      w.prepared("select_historical_relations")(ids)(vers)(m_redactions_visible).exec(),
-      sel_historic_relations);
-  } else {
+
+  if (eds.empty())
     return 0;
+
+  std::vector<osm_nwr_id_t> ids(eds.size());
+  std::vector<osm_version_t> vers(eds.size());
+
+  for (const auto &ed : eds) {
+    ids.emplace_back(ed.first);
+    vers.emplace_back(ed.second);
   }
+
+  return insert_results(
+    w.prepared("select_historical_relations")(ids)(vers)(m_redactions_visible).exec(),
+    sel_historic_relations);
 }
 
 int readonly_pgsql_selection::select_nodes_with_history(
   const std::vector<osm_nwr_id_t> &ids) {
-  if (!ids.empty()) {
-    return insert_results(
-      w.prepared("select_nodes_history")(ids)(m_redactions_visible).exec(),
-      sel_historic_nodes);
-  } else {
+
+  if (ids.empty())
     return 0;
-  }
+
+  return insert_results(
+    w.prepared("select_nodes_history")(ids)(m_redactions_visible).exec(),
+    sel_historic_nodes);
 }
 
 int readonly_pgsql_selection::select_ways_with_history(
   const std::vector<osm_nwr_id_t> &ids) {
-  if (!ids.empty()) {
-    return insert_results(
-      w.prepared("select_ways_history")(ids)(m_redactions_visible).exec(),
-      sel_historic_ways);
-  } else {
+
+  if (ids.empty())
     return 0;
-  }
+
+  return insert_results(
+    w.prepared("select_ways_history")(ids)(m_redactions_visible).exec(),
+    sel_historic_ways);
 }
 
 int readonly_pgsql_selection::select_relations_with_history(
   const std::vector<osm_nwr_id_t> &ids) {
-  if (!ids.empty()) {
-    return insert_results(w.prepared("select_relations_history")
-      (ids)(m_redactions_visible).exec(),
-      sel_historic_relations);
-  } else {
+
+  if (ids.empty())
     return 0;
-  }
+
+  return insert_results(w.prepared("select_relations_history")
+    (ids)(m_redactions_visible).exec(),
+    sel_historic_relations);
 }
 
 void readonly_pgsql_selection::set_redactions_visible(bool visible) {
@@ -474,29 +467,28 @@ void readonly_pgsql_selection::set_redactions_visible(bool visible) {
 int readonly_pgsql_selection::select_historical_by_changesets(
   const std::vector<osm_changeset_id_t> &ids) {
 
-  int selected = 0;
+  if (ids.empty())
+    return 0;
 
-  if (!ids.empty()) {
-    selected += insert_results(w.prepared("select_nodes_by_changesets")
-      (ids)(m_redactions_visible).exec(),
-      sel_historic_nodes);
-    selected += insert_results(w.prepared("select_ways_by_changesets")
-      (ids)(m_redactions_visible).exec(),
-      sel_historic_ways);
-    selected += insert_results(w.prepared("select_relations_by_changesets")
-      (ids)(m_redactions_visible).exec(),
-      sel_historic_relations);
-  }
+  int selected = insert_results(w.prepared("select_nodes_by_changesets")
+    (ids)(m_redactions_visible).exec(),
+    sel_historic_nodes);
+  selected += insert_results(w.prepared("select_ways_by_changesets")
+    (ids)(m_redactions_visible).exec(),
+    sel_historic_ways);
+  selected += insert_results(w.prepared("select_relations_by_changesets")
+    (ids)(m_redactions_visible).exec(),
+    sel_historic_relations);
 
   return selected;
 }
 
 int readonly_pgsql_selection::select_changesets(const std::vector<osm_changeset_id_t> &ids) {
-  if (!ids.empty()) {
-    return insert_results(w.prepared("select_changesets")(ids).exec(), sel_changesets);
-  } else {
+
+  if (ids.empty())
     return 0;
-  }
+
+  return insert_results(w.prepared("select_changesets")(ids).exec(), sel_changesets);
 }
 
 void readonly_pgsql_selection::select_changeset_discussions() {
@@ -545,10 +537,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
               std::bind(fetch_changesets, std::ref(m_cache_tx), std::placeholders::_1),
               opts["cachesize"].as<size_t>()) {
 
-  if (m_connection.server_version() < 90300) {
-    throw std::runtime_error("Expected Postgres version 9.3+, currently installed version "
-        + std::to_string(m_connection.server_version()));
-  }
+  check_postgres_version(m_connection);
 
   // set the connections to use the appropriate charset.
   m_connection.set_client_encoding(opts["charset"].as<std::string>());
