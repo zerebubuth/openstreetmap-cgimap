@@ -83,18 +83,14 @@ private:
   // the name of the test database.
   std::string m_db_name;
 
-  // factories using the test database which produce writeable and
-  // read-only data selections.
-  std::shared_ptr<data_selection::factory> m_writeable_factory,
-      m_readonly_factory;
+  // factories using the test database which produce read-only data selections.
+  std::shared_ptr<data_selection::factory> m_readonly_factory;
 
   std::shared_ptr<data_update::factory> m_update_factory;
 
   // oauth store based on the writeable connection.
   std::shared_ptr<oauth::store> m_oauth_store;
 
-  // whether to use read-only code (true) or writeable code (false)
-  bool m_use_readonly;
 };
 
 #endif /* TEST_TEST_DATABASE_HPP */

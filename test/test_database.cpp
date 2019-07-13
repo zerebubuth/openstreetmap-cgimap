@@ -80,8 +80,6 @@ test_database::test_database() {
     throw setup_error(
         boost::format("Unable to set up test database due to unknown error."));
   }
-
-  m_use_readonly = false;
 }
 
 /**
@@ -102,26 +100,14 @@ void test_database::setup() {
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     vm.notify();
-    m_writeable_factory = apidb->create(vm);
+    m_readonly_factory = apidb->create(vm);
     m_update_factory = apidb->create_data_update(vm);
     m_oauth_store = apidb->create_oauth_store(vm);
-  }
-
-  {
-    po::options_description desc = apidb->options();
-    const char *argv[] = { "", "--dbname", m_db_name.c_str(), "--readonly" };
-    int argc = sizeof(argv) / sizeof(*argv);
-    po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    vm.notify();
-    m_readonly_factory = apidb->create(vm);
   }
 }
 
 test_database::~test_database() {
-  if (m_writeable_factory) {
-    m_writeable_factory.reset();
-  }
+
   if (m_readonly_factory) {
     m_readonly_factory.reset();
   }
@@ -169,25 +155,12 @@ std::string test_database::random_db_name() {
 
 void test_database::run(
     std::function<void(test_database&)> func) {
-  try {
-    // clear out database before using it!
-    pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
-    conn.perform(truncate_all_tables());
-
-    m_use_readonly = false;
-    func(*this);
-
-  } catch (const std::exception &e) {
-    throw std::runtime_error(
-        (boost::format("%1%, in writeable selection") % e.what()).str());
-  }
 
   try {
     // clear out database before using it!
     pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
     conn.perform(truncate_all_tables());
 
-    m_use_readonly = true;
     func(*this);
 
   } catch (const std::exception &e) {
@@ -198,25 +171,12 @@ void test_database::run(
 
 void test_database::run_update(
     std::function<void(test_database&)> func) {
-  try {
-    // clear out database before using it!
-    pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
-    conn.perform(truncate_all_tables());
-
-    m_use_readonly = false;
-    func(*this);
-
-  } catch (const std::exception &e) {
-    throw std::runtime_error(
-        (boost::format("%1%, in update, writable selection") % e.what()).str());
-  }
 
   try {
     // clear out database before using it!
     pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
     conn.perform(truncate_all_tables());
 
-    m_use_readonly = true;
     func(*this);
 
   } catch (const std::exception &e) {
@@ -227,12 +187,7 @@ void test_database::run_update(
 
 
 std::shared_ptr<data_selection::factory> test_database::get_data_selection_factory() {
-  if (m_use_readonly) {
-    return m_readonly_factory;
-
-  } else {
-    return m_writeable_factory;
-  }
+  return m_readonly_factory;
 }
 
 // return a data update factory pointing at the current database
@@ -242,12 +197,8 @@ std::shared_ptr<data_update::factory> test_database:: get_data_update_factory() 
 
 
 std::shared_ptr<data_selection> test_database::get_data_selection() {
-  if (m_use_readonly) {
-    return (*m_readonly_factory).make_selection();
 
-  } else {
-    return (*m_writeable_factory).make_selection();
-  }
+  return (*m_readonly_factory).make_selection();
 }
 
 std::shared_ptr<data_update> test_database::get_data_update() {
