@@ -50,11 +50,9 @@ public:
   using map_type = std::map<Key, list_iterator>;
   using map_iterator = typename map_type::iterator;
   using size_type = typename list_type::size_type;
-  using function_type_fetch = std::function<Object *(Key)>;
-  using function_type_prefetch = std::function< std::map< Key, Object* >(std::set<Key>) >;
+  using function_type_fetch = std::function< std::map< Key, Object* >(std::set<Key>) >;
 
   cache(function_type_fetch f, size_type m);
-  cache(function_type_fetch f, function_type_prefetch p, size_type m);
 
   std::shared_ptr<Object const> get(const Key &k);
   void prefetch(const std::set<Key> & k);
@@ -68,10 +66,8 @@ private:
 
   using object_data = typename cache<Key, Object>::data;
 
-  // functor to get a value which isn't in the cache.
+  // functor to retrieve changesets not available in the cache
   function_type_fetch f_fetch;
-
-  function_type_prefetch f_prefetch;
 
   // maximum size of the cache, set at construction time
   const size_type max_cache_size;
@@ -87,17 +83,10 @@ private:
 
 template <class Key, class Object>
 cache<Key, Object>::cache(function_type_fetch f, size_type m)
-    : f_fetch(f), f_prefetch(nullptr), max_cache_size(m) {}
-
-template <class Key, class Object>
-cache<Key, Object>::cache(function_type_fetch f, function_type_prefetch p, size_type m)
-    : f_fetch(f), f_prefetch(p), max_cache_size(m) {}
+    : f_fetch(f), max_cache_size(m) {}
 
 template <class Key, class Object>
 void cache<Key, Object>::prefetch(const std::set<Key> & keys) {
-
-  if (f_prefetch == nullptr)
-    return;
 
   std::set<Key> new_keys;
 
@@ -106,7 +95,7 @@ void cache<Key, Object>::prefetch(const std::set<Key> & keys) {
       new_keys.insert(k);
   }
 
-  std::map<Key, Object* > result(f_prefetch(new_keys));
+  std::map<Key, Object* > result(f_fetch(new_keys));
 
   for (const auto& r : result) {
     std::shared_ptr<Object const> result(r.second);
@@ -159,10 +148,9 @@ std::shared_ptr<Object const> cache<Key, Object>::get(const Key &k) {
   // if we get here then the item is not in the cache,
   // so create it:
   //
-  std::shared_ptr<Object const> result(f_fetch(k));
-
+  std::map<Key, Object* > res(f_fetch({k}));
+  std::shared_ptr<Object const> result(res[k]);
   insert_into_cache(k, result);
-
   return result;
 }
 
