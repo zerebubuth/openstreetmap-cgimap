@@ -176,10 +176,11 @@ libcgimap_core_la_SOURCES+=\
 	api06/changeset_upload/osmchange_handler.cpp \
 	api06/changeset_upload/osmchange_tracking.cpp
 
-if ENABLE_EXPERIMENTAL
 libcgimap_core_la_SOURCES+=\
-	api06/node_ways_handler.cpp
-endif
+	api06/node_ways_handler.cpp \
+        api06/node_relations_handler.cpp \
+        api06/way_relations_handler.cpp \
+        api06/relation_relations_handler.cpp
 
 if ENABLE_API07
 libcgimap_core_la_SOURCES+=api07/map_handler.cpp

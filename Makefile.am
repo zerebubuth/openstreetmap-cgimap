@@ -81,10 +81,11 @@ cgimap_staticxml_includedir=$(includedir)/cgimap/backend/staticxml
 cgimap_staticxml_include_HEADERS = \
 	include/cgimap/backend/staticxml/staticxml.hpp
 
-if ENABLE_EXPERIMENTAL
 cgimap_api06_include_HEADERS += \
-	include/cgimap/api06/node_ways_handler.hpp
-endif
+	include/cgimap/api06/node_ways_handler.hpp \
+	include/cgimap/api06/node_relations_handler.hpp \
+	include/cgimap/api06/way_relations_handler.hpp \
+	include/cgimap/api06/relation_relations_handler.hpp
 
 if ENABLE_API07
 cgimap_api07_includedir=$(includedir)/cgimap/api07
@@ -98,9 +99,10 @@ TESTS += test/test_parse_id_list test/test_basicauth test/test_oauth test/test_h
 TESTS += test/changesets.testcore test/message.testcore test/routes.testcore
 TESTS += test/redactions.testcore
 TESTS += test/test_parse_osmchange_input
-if ENABLE_EXPERIMENTAL
 TESTS += test/node_ways.testcore
-endif
+TESTS += test/node_relations.testcore
+TESTS += test/way_relations.testcore
+TESTS += test/relation_relations.testcore
 if HAVE_YAJL
 TESTS += test/json.testcore
 endif

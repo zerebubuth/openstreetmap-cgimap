@@ -490,7 +490,7 @@ struct static_data_selection : public data_selection {
     }
   }
 
-  virtual void select_relations_from_relations() {
+  virtual void select_relations_from_relations(bool drop_relations = false) {
     std::set<osm_nwr_id_t> tmp_relations;
     using relation_map_t = std::map<id_version, relation>;
     const relation_map_t::const_iterator end = m_db->m_relations.end();
@@ -506,6 +506,8 @@ struct static_data_selection : public data_selection {
         }
       }
     }
+    if (drop_relations)
+      m_relations.clear();
     m_relations.insert(tmp_relations.begin(), tmp_relations.end());
   }
 
@@ -561,6 +563,18 @@ struct static_data_selection : public data_selection {
     selected += select_by_changesets<relation>(m_historic_relations, changesets);
 
     return selected;
+  }
+
+  virtual void drop_nodes() {
+    m_nodes.clear();
+  }
+
+  virtual void drop_ways() {
+    m_ways.clear();
+  }
+
+  virtual void drop_relations() {
+    m_relations.clear();
   }
 
   virtual int select_changesets(const std::vector<osm_changeset_id_t> &ids) {
