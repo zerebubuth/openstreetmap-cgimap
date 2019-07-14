@@ -88,6 +88,7 @@ public:
   void select_changeset_discussions() {}
   void drop_nodes() {}
   void drop_ways() {}
+  void drop_relations() {}
 
   bool get_user_id_pass(const std::string& user_name, osm_user_id_t & user_id,
 				std::string & pass_crypt, std::string & pass_salt) {

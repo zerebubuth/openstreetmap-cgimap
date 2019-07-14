@@ -94,6 +94,9 @@ public:
   /// drop any ways which are in the current selection
   virtual void drop_ways() = 0;
 
+  /// drop any relations which are in the current selection
+  virtual void drop_relations() = 0;
+
   /******************* historical functions ********************/
 
   /// select the given (id, version) versions of nodes, returning the number of

@@ -20,8 +20,4 @@
 
   <relation id="2" version="2" changeset="3" user="foo" uid="1" visible="false" timestamp="2015-12-26T23:26:00Z"/>
 
-  <!-- not sure if this can actually happen, but worth testing that any deleted relation which still has members won't get included. -->
-  <relation id="3" version="1" changeset="3" user="foo" uid="1" visible="false" timestamp="2016-10-30T12:57:00Z">
-    <member role="something" type="way" ref="1"/>
-  </relation>
 </osm>

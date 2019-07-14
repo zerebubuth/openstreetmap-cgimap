@@ -26,12 +26,10 @@
 #include "cgimap/api06/changeset_download_handler.hpp"
 #include "cgimap/api06/changeset_upload_handler.hpp"
 
-#ifdef ENABLE_EXPERIMENTAL
 #include "cgimap/api06/node_ways_handler.hpp"
 #include "cgimap/api06/node_relations_handler.hpp"
 #include "cgimap/api06/way_relations_handler.hpp"
 #include "cgimap/api06/relation_relations_handler.hpp"
-#endif /* ENABLE_EXPERIMENTAL */
 
 #ifdef ENABLE_API07
 /*** API 0.7 ***/
@@ -151,11 +149,8 @@ routes::routes()
   {
     using namespace api06;
     r->add<map_handler>(root_ / "map");
-
-#ifdef ENABLE_EXPERIMENTAL
     r->add<node_ways_handler>(root_ / "node" / osm_id_ / "ways");
     r->add<node_relations_handler>(root_ / "node" / osm_id_ / "relations");
-#endif /* ENABLE_EXPERIMENTAL */
     // make sure that *_version_handler is listed before matching *_handler
     r->add<node_history_handler>(root_ / "node" / osm_id_ / "history");
     r->add<node_version_handler>(root_ / "node" / osm_id_ / osm_id_ );
@@ -163,18 +158,14 @@ routes::routes()
     r->add<nodes_handler>(root_ / "nodes");
 
     r->add<way_full_handler>(root_ / "way" / osm_id_ / "full");
-#ifdef ENABLE_EXPERIMENTAL
     r->add<way_relations_handler>(root_ / "way" / osm_id_ / "relations");
-#endif
     r->add<way_history_handler>(root_ / "way" / osm_id_ / "history");
     r->add<way_version_handler>(root_ / "way" / osm_id_ / osm_id_ );
     r->add<way_handler>(root_ / "way" / osm_id_);
     r->add<ways_handler>(root_ / "ways");
 
     r->add<relation_full_handler>(root_ / "relation" / osm_id_ / "full");
-#ifdef ENABLE_EXPERIMENTAL
     r->add<relation_relations_handler>(root_ / "relation" / osm_id_ / "relations");
-#endif
     r->add<relation_history_handler>(root_ / "relation" / osm_id_ / "history");
     r->add<relation_version_handler>(root_ / "relation" / osm_id_ / osm_id_ );
     r->add<relation_handler>(root_ / "relation" / osm_id_);

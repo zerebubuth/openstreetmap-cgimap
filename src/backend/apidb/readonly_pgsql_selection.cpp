@@ -438,6 +438,11 @@ void readonly_pgsql_selection::drop_ways() {
   sel_ways.clear();
 }
 
+void readonly_pgsql_selection::drop_relations() {
+  sel_relations.clear();
+}
+
+
 int readonly_pgsql_selection::select_changesets(const std::vector<osm_changeset_id_t> &ids) {
 
   if (ids.empty())

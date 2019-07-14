@@ -573,6 +573,10 @@ struct static_data_selection : public data_selection {
     m_ways.clear();
   }
 
+  virtual void drop_relations() {
+    m_relations.clear();
+  }
+
   virtual int select_changesets(const std::vector<osm_changeset_id_t> &ids) {
     int selected = 0;
     for (osm_changeset_id_t id : ids) {

@@ -50,6 +50,7 @@ public:
 
   void drop_nodes();
   void drop_ways();
+  void drop_relations();
 
   int select_historical_nodes(const std::vector<osm_edition_t> &);
   int select_historical_ways(const std::vector<osm_edition_t> &);

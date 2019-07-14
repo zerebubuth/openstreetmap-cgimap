@@ -237,6 +237,7 @@ public:
   void select_changeset_discussions() {}
   void drop_nodes() {}
   void drop_ways() {}
+  void drop_relations() {}
 
   struct factory
     : public data_selection::factory {

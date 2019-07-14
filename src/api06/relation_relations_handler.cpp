@@ -15,6 +15,8 @@ relation_relations_responder::relation_relations_responder(mime::type mt, osm_nw
   if (sel->select_relations({id}) > 0 && is_visible()) {
     sel->select_relations_from_relations(true);
   }
+  else
+    sel->drop_relations();
 }
 
 relation_relations_responder::~relation_relations_responder() {}
