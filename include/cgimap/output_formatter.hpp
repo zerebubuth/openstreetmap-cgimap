@@ -4,11 +4,12 @@
 #include "cgimap/bbox.hpp"
 #include "cgimap/types.hpp"
 #include "cgimap/mime_types.hpp"
+
+#include <chrono>
 #include <list>
 #include <vector>
 #include <stdexcept>
 #include <boost/optional.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
 
 /**
  * What type of element the formatter is starting to write.
@@ -69,7 +70,7 @@ struct changeset_info {
   //
   // note that the definition of "open" is fraught with
   // difficulty, and it's not wise to rely on it too much.
-  bool is_open_at(const boost::posix_time::ptime &) const;
+  bool is_open_at(const std::chrono::system_clock::time_point &) const;
 
   // standard meaning of ID
   osm_changeset_id_t id;
@@ -106,7 +107,7 @@ struct member_info {
   osm_nwr_id_t ref;
   std::string role;
 
-  member_info() {}
+  member_info() = default;
   member_info(element_type type_, osm_nwr_id_t ref_, const std::string &role_)
     : type(type_), ref(ref_), role(role_) {}
 
@@ -117,10 +118,10 @@ struct member_info {
   }
 };
 
-typedef std::list<osm_nwr_id_t> nodes_t;
-typedef std::list<member_info> members_t;
-typedef std::list<std::pair<std::string, std::string> > tags_t;
-typedef std::vector<changeset_comment_info> comments_t;
+using nodes_t = std::list<osm_nwr_id_t>;
+using members_t = std::list<member_info>;
+using tags_t = std::list<std::pair<std::string, std::string> >;
+using comments_t = std::vector<changeset_comment_info>;
 
 /**
  * Base type for different output formats. Hopefully this is general
@@ -182,7 +183,17 @@ struct output_formatter {
                                const tags_t &tags,
                                bool include_comments,
                                const comments_t &comments,
-                               const boost::posix_time::ptime &now) = 0;
+                               const std::chrono::system_clock::time_point &now) = 0;
+
+  // output an entry of a diffResult with 3 parameters: old_id, new_id and new_version
+  virtual void write_diffresult_create_modify(const element_type elem,
+                                              const osm_nwr_signed_id_t old_id,
+                                              const osm_nwr_id_t new_id,
+                                              const osm_version_t new_version) = 0;
+
+  // output an entry of a diffResult with 1 parameter: old_id
+  virtual void write_diffresult_delete(const element_type elem,
+                                       const osm_nwr_signed_id_t old_id) = 0;
 
   // flush the current state
   virtual void flush() = 0;

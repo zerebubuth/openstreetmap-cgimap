@@ -5,20 +5,8 @@
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  # default build target is currently Ubuntu 14.04
-  config.vm.define "trusty", :primary => true do |trusty|
-    trusty.vm.box = 'ubuntu/trusty64'
-    trusty.vm.provision 'shell', path: 'scripts/provision.sh'
-  end
-
-  # but also try to handle F21
-  config.vm.define "f21", :autostart => false do |f21|
-    f21.vm.box = 'hansode/fedora-21-server-x86_64'
-    f21.vm.provision 'shell', path: 'scripts/provision_f21.sh'
-  end
-
-  # and Ubuntu 16.04
-  config.vm.define "xenial", :autostart => false do |xenial|
+  # default build target is currently Ubuntu 16.04
+  config.vm.define "xenial", :primary => true do |xenial|
     xenial.vm.box = 'ubuntu/xenial64'
     xenial.vm.provision 'shell', path: 'scripts/provision.sh'
   end

@@ -11,7 +11,7 @@ void set_default_headers(request &req) {
   const char *origin = req.get_param("HTTP_ORIGIN");
   if (origin) {
     req.add_header("Access-Control-Allow-Credentials", "true");
-    req.add_header("Access-Control-Allow-Methods", "GET");
+    req.add_header("Access-Control-Allow-Methods", http::list_methods(req.methods()));
     req.add_header("Access-Control-Allow-Origin", std::string(origin));
     req.add_header("Access-Control-Max-Age", "1728000");
   }
@@ -19,9 +19,10 @@ void set_default_headers(request &req) {
 } // anonymous namespace
 
 request::request()
-    : m_workflow_status(status_NONE), m_status(500), m_headers() {}
+  : m_workflow_status(status_NONE), m_status(500), m_headers(), m_success_headers()
+  , m_methods(http::method::GET | http::method::HEAD | http::method::OPTIONS) {}
 
-request::~request() {}
+request::~request() = default;
 
 void request::status(int code) {
   check_workflow(status_HEADERS);
@@ -33,7 +34,12 @@ void request::add_header(const std::string &key, const std::string &value) {
   m_headers.push_back(std::make_pair(key, value));
 }
 
-boost::shared_ptr<output_buffer> request::get_buffer() {
+void request::add_success_header(const std::string &key, const std::string &value) {
+  check_workflow(status_HEADERS);
+  m_success_headers.push_back(std::make_pair(key, value));
+}
+
+std::shared_ptr<output_buffer> request::get_buffer() {
   check_workflow(status_BODY);
   return get_buffer_internal();
 }
@@ -65,7 +71,13 @@ void request::check_workflow(workflow_status this_stage) {
     if ((status_BODY > m_workflow_status) && (status_BODY <= this_stage)) {
       // must be in BODY workflow stage to write output
       m_workflow_status = status_BODY;
-      write_header_info(m_status, m_headers);
+
+      // some HTTP headers are only returned in case the request was successful
+      auto headers = m_headers;
+      if (m_status == 200)
+	headers.insert(headers.end(), m_success_headers.begin(), m_success_headers.end());
+
+      write_header_info(m_status, headers);
     }
 
     m_workflow_status = this_stage;
@@ -84,4 +96,13 @@ void request::reset() {
   m_workflow_status = status_NONE;
   m_status = 500;
   m_headers.clear();
+  m_success_headers.clear();
+}
+
+void request::set_default_methods(http::method m) {
+  m_methods = m;
+}
+
+http::method request::methods() const {
+  return m_methods;
 }

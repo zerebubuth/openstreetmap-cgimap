@@ -10,19 +10,17 @@ namespace api06 {
 
 way_history_responder::way_history_responder(mime::type mt, osm_nwr_id_t id_, data_selection_ptr &w_)
   : osm_current_responder(mt, w_), id(id_) {
-  vector<osm_nwr_id_t> ids;
-  ids.push_back(id);
 
-  if (sel->select_ways_with_history(ids) == 0) {
+  if (sel->select_ways_with_history({id}) == 0) {
     throw http::not_found("");
   }
 }
 
-way_history_responder::~way_history_responder() {}
+way_history_responder::~way_history_responder() = default;
 
 way_history_handler::way_history_handler(request &, osm_nwr_id_t id_) : id(id_) {}
 
-way_history_handler::~way_history_handler() {}
+way_history_handler::~way_history_handler() = default;
 
 std::string way_history_handler::log_name() const { return "way/history"; }
 

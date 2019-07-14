@@ -1,27 +1,22 @@
 #include <pqxx/pqxx>
 #include <iostream>
 #include <sstream>
-#include <boost/bind.hpp>
-#include <boost/ref.hpp>
+
 #include <boost/lambda/lambda.hpp>
-#include <boost/function.hpp>
-#include <boost/date_time.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/program_options.hpp>
-#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/tuple/tuple.hpp>
+
 #include <cmath>
+#include <fstream>
 #include <stdexcept>
 #include <vector>
 #include <map>
 #include <string>
 #include <memory>
 #include <algorithm>
-#include <errno.h>
-#include <signal.h>
+#include <cerrno>
+#include <csignal>
 #include <sys/wait.h>
 
 #include "cgimap/bbox.hpp"
@@ -42,9 +37,7 @@
 #ifdef ENABLE_APIDB
 #include "cgimap/backend/apidb/apidb.hpp"
 #endif
-#ifdef ENABLE_PGSNAPSHOT
-#include "cgimap/backend/pgsnapshot/pgsnapshot.hpp"
-#endif
+
 #include "cgimap/backend/staticxml/staticxml.hpp"
 
 using std::runtime_error;
@@ -52,12 +45,10 @@ using std::vector;
 using std::string;
 using std::map;
 using std::ostringstream;
-using std::auto_ptr;
-using boost::shared_ptr;
+using std::shared_ptr;
 using boost::format;
 
 namespace al = boost::algorithm;
-namespace pt = boost::posix_time;
 namespace po = boost::program_options;
 
 /**
@@ -157,13 +148,15 @@ static void process_requests(int socket, const po::variables_map &options) {
   routes route;
 
   // create the request object (persists over several calls)
-  fcgi_request req(socket, pt::ptime());
+  fcgi_request req(socket, std::chrono::system_clock::time_point());
 
   // create a factory for data selections - the mechanism for actually
   // getting at data.
-  boost::shared_ptr<data_selection::factory> factory = create_backend(options);
+  std::shared_ptr<data_selection::factory> factory = create_backend(options);
 
-  boost::shared_ptr<oauth::store> oauth_store = create_oauth_store(options);
+  std::shared_ptr<data_update::factory> update_factory = create_update_backend(options);
+
+  std::shared_ptr<oauth::store> oauth_store = create_oauth_store(options);
 
   logger::message("Initialised");
 
@@ -180,9 +173,9 @@ static void process_requests(int socket, const po::variables_map &options) {
 
     // get the next request
     if (req.accept_r() >= 0) {
-      pt::ptime now(pt::second_clock::local_time());
+	std::chrono::system_clock::time_point now(std::chrono::system_clock::now());
       req.set_current_time(now);
-      process_request(req, limiter, generator, route, factory, oauth_store);
+      process_request(req, limiter, generator, route, factory, update_factory, oauth_store);
     }
   }
 
@@ -209,7 +202,7 @@ static void reload(int) {
 /**
  * make the process into a daemon by detaching from the console.
  */
-static void daemonise(void) {
+static void daemonise() {
   pid_t pid;
   struct sigaction sa;
 
@@ -250,9 +243,6 @@ static void daemonise(void) {
 void setup_backends() {
 #if ENABLE_APIDB
   register_backend(make_apidb_backend());
-#endif
-#if ENABLE_PGSNAPSHOT
-  register_backend(make_pgsnapshot_backend());
 #endif
   register_backend(make_staticxml_backend());
 }
@@ -334,14 +324,14 @@ int main(int argc, char **argv) {
 
         // pass on any termination request to our children
         if (terminate_requested && !children_terminated) {
-          BOOST_FOREACH(pid, children) { kill(pid, SIGTERM); }
+          for (auto pid : children) { kill(pid, SIGTERM); }
 
           children_terminated = true;
         }
 
         // pass on any reload request to our children
         if (reload_requested) {
-          BOOST_FOREACH(pid, children) { kill(pid, SIGHUP); }
+          for (auto pid : children) { kill(pid, SIGHUP); }
 
           reload_requested = false;
         }

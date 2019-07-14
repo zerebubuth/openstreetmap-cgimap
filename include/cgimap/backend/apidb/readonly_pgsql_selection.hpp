@@ -6,6 +6,8 @@
 #include "cgimap/backend/apidb/cache.hpp"
 #include <pqxx/pqxx>
 #include <boost/program_options.hpp>
+#include <chrono>
+#include <memory>
 #include <set>
 
 /**
@@ -24,7 +26,7 @@ public:
   void write_nodes(output_formatter &formatter);
   void write_ways(output_formatter &formatter);
   void write_relations(output_formatter &formatter);
-  void write_changesets(output_formatter &formatter, const boost::posix_time::ptime &now);
+  void write_changesets(output_formatter &formatter, const std::chrono::system_clock::time_point &now);
 
   visibility_t check_node_visibility(osm_nwr_id_t id);
   visibility_t check_way_visibility(osm_nwr_id_t id);
@@ -43,11 +45,9 @@ public:
   void select_relations_from_relations();
   void select_relations_members_of_relations();
 
-  bool supports_changesets();
   int select_changesets(const std::vector<osm_changeset_id_t> &);
   void select_changeset_discussions();
 
-  bool supports_historical_versions();
   int select_historical_nodes(const std::vector<osm_edition_t> &);
   int select_historical_ways(const std::vector<osm_edition_t> &);
   int select_historical_relations(const std::vector<osm_edition_t> &);
@@ -57,6 +57,10 @@ public:
   void set_redactions_visible(bool);
   int select_historical_by_changesets(const std::vector<osm_changeset_id_t> &);
 
+  bool supports_user_details();
+  bool is_user_blocked(const osm_user_id_t);
+  bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &);
+
   /**
    * a factory for the creation of read-only selections, so it
    * can set up prepared statements.
@@ -65,13 +69,11 @@ public:
   public:
     factory(const boost::program_options::variables_map &);
     virtual ~factory();
-    virtual boost::shared_ptr<data_selection> make_selection();
+    virtual std::shared_ptr<data_selection> make_selection();
 
   private:
     pqxx::connection m_connection, m_cache_connection;
-#if PQXX_VERSION_MAJOR >= 4
     pqxx::quiet_errorhandler m_errorhandler, m_cache_errorhandler;
-#endif
     pqxx::nontransaction m_cache_tx;
     cache<osm_changeset_id_t, changeset> m_cache;
   };

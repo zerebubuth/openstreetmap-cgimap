@@ -32,30 +32,29 @@ DEALINGS IN THE SOFTWARE.
 #ifndef CACHE_HPP
 #define CACHE_HPP
 
+#include <cassert>
+#include <functional>
 #include <map>
+#include <memory>
 #include <list>
 #include <set>
 #include <stdexcept>
 #include <string>
 #include <boost/config.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
 
 template <class Key, class Object> class cache {
 public:
-  typedef std::pair< ::boost::shared_ptr<Object const>, Key const *> value_type;
-  typedef std::list<value_type> list_type;
-  typedef typename list_type::iterator list_iterator;
-  typedef std::map<Key, list_iterator> map_type;
-  typedef typename map_type::iterator map_iterator;
-  typedef typename list_type::size_type size_type;
-  typedef boost::function<Object *(Key)> function_type_fetch;
-  typedef boost::function< std::map< Key, Object* >(std::set<Key>) > function_type_prefetch;
+  using value_type = std::pair< ::std::shared_ptr<Object const>, Key const *>;
+  using list_type = std::list<value_type>;
+  using list_iterator = typename list_type::iterator;
+  using map_type = std::map<Key, list_iterator>;
+  using map_iterator = typename map_type::iterator;
+  using size_type = typename list_type::size_type;
+  using function_type_fetch = std::function< std::map< Key, Object* >(std::set<Key>) >;
 
   cache(function_type_fetch f, size_type m);
-  cache(function_type_fetch f, function_type_prefetch p, size_type m);
 
-  boost::shared_ptr<Object const> get(const Key &k);
+  std::shared_ptr<Object const> get(const Key &k);
   void prefetch(const std::set<Key> & k);
 
 private:
@@ -65,12 +64,10 @@ private:
     map_type index;
   };
 
-  typedef typename cache<Key, Object>::data object_data;
+  using object_data = typename cache<Key, Object>::data;
 
-  // functor to get a value which isn't in the cache.
+  // functor to retrieve changesets not available in the cache
   function_type_fetch f_fetch;
-
-  function_type_prefetch f_prefetch;
 
   // maximum size of the cache, set at construction time
   const size_type max_cache_size;
@@ -80,23 +77,16 @@ private:
   friend struct data;
 
   inline object_data * sdata();
-  void insert_into_cache(const Key &k, boost::shared_ptr<Object const> result);
+  void insert_into_cache(const Key &k, std::shared_ptr<Object const> result);
   bool is_in_cache(const Key &k);
 };
 
 template <class Key, class Object>
 cache<Key, Object>::cache(function_type_fetch f, size_type m)
-    : f_fetch(f), f_prefetch(nullptr), max_cache_size(m) {}
-
-template <class Key, class Object>
-cache<Key, Object>::cache(function_type_fetch f, function_type_prefetch p, size_type m)
-    : f_fetch(f), f_prefetch(p), max_cache_size(m) {}
+    : f_fetch(f), max_cache_size(m) {}
 
 template <class Key, class Object>
 void cache<Key, Object>::prefetch(const std::set<Key> & keys) {
-
-  if (f_prefetch == nullptr)
-    return;
 
   std::set<Key> new_keys;
 
@@ -105,10 +95,10 @@ void cache<Key, Object>::prefetch(const std::set<Key> & keys) {
       new_keys.insert(k);
   }
 
-  std::map<Key, Object* > result(f_prefetch(new_keys));
+  std::map<Key, Object* > result(f_fetch(new_keys));
 
   for (const auto& r : result) {
-    boost::shared_ptr<Object const> result(r.second);
+    std::shared_ptr<Object const> result(r.second);
     insert_into_cache(r.first, result);
   }
 
@@ -129,7 +119,7 @@ bool cache<Key, Object>::is_in_cache(const Key &k) {
 }
 
 template <class Key, class Object>
-boost::shared_ptr<Object const> cache<Key, Object>::get(const Key &k) {
+std::shared_ptr<Object const> cache<Key, Object>::get(const Key &k) {
 
   //
   // see if the object is already in the cache:
@@ -146,11 +136,11 @@ boost::shared_ptr<Object const> cache<Key, Object>::get(const Key &k) {
       temp.splice(temp.end(), sdata()->cont, mpos->second);
       // and now place it at the end of the list:
       sdata()->cont.splice(sdata()->cont.end(), temp, temp.begin());
-      BOOST_ASSERT(*(sdata()->cont.back().second) == k);
+      assert(*(sdata()->cont.back().second) == k);
       // update index with new position:
       mpos->second = --(sdata()->cont.end());
-      BOOST_ASSERT(&(mpos->first) == mpos->second->second);
-      BOOST_ASSERT(&(mpos->first) == sdata()->cont.back().second);
+      assert(&(mpos->first) == mpos->second->second);
+      assert(&(mpos->first) == sdata()->cont.back().second);
     }
     return sdata()->cont.back().first;
   }
@@ -158,17 +148,16 @@ boost::shared_ptr<Object const> cache<Key, Object>::get(const Key &k) {
   // if we get here then the item is not in the cache,
   // so create it:
   //
-  boost::shared_ptr<Object const> result(f_fetch(k));
-
+  std::map<Key, Object* > res(f_fetch({k}));
+  std::shared_ptr<Object const> result(res[k]);
   insert_into_cache(k, result);
-
   return result;
 }
 
 template <class Key, class Object>
-void cache<Key, Object>::insert_into_cache(const Key &k, boost::shared_ptr<Object const> result) {
+void cache<Key, Object>::insert_into_cache(const Key &k, std::shared_ptr<Object const> result) {
 
-  typedef typename map_type::size_type map_size_type;
+  using map_size_type = typename map_type::size_type;
 
   // don't insert element if already in cache
   if (sdata()->index.find(k) != sdata()->index.end())
@@ -181,9 +170,9 @@ void cache<Key, Object>::insert_into_cache(const Key &k, boost::shared_ptr<Objec
   sdata()->index.insert(std::make_pair(k, --(sdata()->cont.end())));
   sdata()->cont.back().second = &(sdata()->index.find(k)->first);
   map_size_type s = sdata()->index.size();
-  BOOST_ASSERT(sdata()->index[k]->first.get() == result.get());
-  BOOST_ASSERT(&(sdata()->index.find(k)->first) == sdata()->cont.back().second);
-  BOOST_ASSERT(sdata()->index.find(k)->first == k);
+  assert(sdata()->index[k]->first.get() == result.get());
+  assert(&(sdata()->index.find(k)->first) == sdata()->cont.back().second);
+  assert(sdata()->index.find(k)->first == k);
   if (s > max_cache_size) {
     //
     // We have too many items in the list, so we need to start
@@ -198,7 +187,7 @@ void cache<Key, Object>::insert_into_cache(const Key &k, boost::shared_ptr<Objec
         ++pos;
         // now remove the items from our containers,
         // then order has to be as follows:
-        BOOST_ASSERT(sdata()->index.find(*(condemmed->second)) !=
+        assert(sdata()->index.find(*(condemmed->second)) !=
             sdata()->index.end());
         sdata()->index.erase(*(condemmed->second));
         sdata()->cont.erase(condemmed);
@@ -206,9 +195,9 @@ void cache<Key, Object>::insert_into_cache(const Key &k, boost::shared_ptr<Objec
       } else
         --pos;
     }
-    BOOST_ASSERT(sdata()->index[k]->first.get() == result.get());
-    BOOST_ASSERT(&(sdata()->index.find(k)->first) == sdata()->cont.back().second);
-    BOOST_ASSERT(sdata()->index.find(k)->first == k);
+    assert(sdata()->index[k]->first.get() == result.get());
+    assert(&(sdata()->index.find(k)->first) == sdata()->cont.back().second);
+    assert(sdata()->index.find(k)->first == k);
   }
 
 }

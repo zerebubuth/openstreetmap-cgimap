@@ -1,13 +1,11 @@
 #include "cgimap/xml_formatter.hpp"
 #include "cgimap/config.hpp"
 #include <string>
-#include <boost/shared_ptr.hpp>
 #include <stdexcept>
 
 using std::string;
-using boost::shared_ptr;
+using std::shared_ptr;
 using std::transform;
-namespace pt = boost::posix_time;
 
 namespace {
 
@@ -32,7 +30,7 @@ const std::string &element_type_name(element_type elt) {
 
 xml_formatter::xml_formatter(xml_writer *w) : writer(w) {}
 
-xml_formatter::~xml_formatter() {}
+xml_formatter::~xml_formatter() = default;
 
 mime::type xml_formatter::mime_type() const { return mime::text_xml; }
 
@@ -105,10 +103,10 @@ void xml_formatter::error(const std::exception &e) {
 }
 
 void xml_formatter::write_tags(const tags_t &tags) {
-  for (tags_t::const_iterator itr = tags.begin(); itr != tags.end(); ++itr) {
+  for (const auto & tag : tags) {
     writer->start("tag");
-    writer->attribute("k", itr->first);
-    writer->attribute("v", itr->second);
+    writer->attribute("k", tag.first);
+    writer->attribute("v", tag.second);
     writer->end();
   }
 }
@@ -143,9 +141,9 @@ void xml_formatter::write_way(const element_info &elem, const nodes_t &nodes,
   writer->start("way");
   write_common(elem);
 
-  for (nodes_t::const_iterator itr = nodes.begin(); itr != nodes.end(); ++itr) {
+  for (osm_nwr_id_t node : nodes) {
     writer->start("nd");
-    writer->attribute("ref", *itr);
+    writer->attribute("ref", node);
     writer->end();
   }
 
@@ -160,12 +158,11 @@ void xml_formatter::write_relation(const element_info &elem,
   writer->start("relation");
   write_common(elem);
 
-  for (members_t::const_iterator itr = members.begin(); itr != members.end();
-       ++itr) {
+  for (const auto & member : members) {
     writer->start("member");
-    writer->attribute("type", element_type_name(itr->type));
-    writer->attribute("ref", itr->ref);
-    writer->attribute("role", itr->role);
+    writer->attribute("type", element_type_name(member.type));
+    writer->attribute("ref", member.ref);
+    writer->attribute("role", member.role);
     writer->end();
   }
 
@@ -178,7 +175,7 @@ void xml_formatter::write_changeset(const changeset_info &elem,
                                     const tags_t &tags,
                                     bool include_comments,
                                     const comments_t &comments,
-                                    const pt::ptime &now) {
+                                    const std::chrono::system_clock::time_point &now) {
   writer->start("changeset");
 
   writer->attribute("id", elem.id);
@@ -208,14 +205,13 @@ void xml_formatter::write_changeset(const changeset_info &elem,
 
   if (include_comments) {
     writer->start("discussion");
-    for (comments_t::const_iterator itr = comments.begin();
-         itr != comments.end(); ++itr) {
+    for (const auto & comment : comments) {
       writer->start("comment");
-      writer->attribute("date", itr->created_at);
-      writer->attribute("uid", itr->author_id);
-      writer->attribute("user", itr->author_display_name);
+      writer->attribute("date", comment.created_at);
+      writer->attribute("uid", comment.author_id);
+      writer->attribute("user", comment.author_display_name);
       writer->start("text");
-      writer->text(itr->body);
+      writer->text(comment.body);
       writer->end();
       writer->end();
     }
@@ -224,6 +220,29 @@ void xml_formatter::write_changeset(const changeset_info &elem,
 
   writer->end();
 }
+
+void xml_formatter::write_diffresult_create_modify(const element_type elem,
+                                            const osm_nwr_signed_id_t old_id,
+                                            const osm_nwr_id_t new_id,
+                                            const osm_version_t new_version)
+{
+  writer->start(element_type_name(elem));
+  writer->attribute("old_id", old_id);
+  writer->attribute("new_id", new_id);
+  writer->attribute("new_version", new_version);
+  writer->end();
+}
+
+
+void xml_formatter::write_diffresult_delete(const element_type elem,
+                                            const osm_nwr_signed_id_t old_id)
+{
+  writer->start(element_type_name(elem));
+  writer->attribute("old_id", old_id);
+  writer->end();
+}
+
+
 
 void xml_formatter::flush() { writer->flush(); }
 

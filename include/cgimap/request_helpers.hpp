@@ -2,7 +2,6 @@
 #define REQUEST_HELPERS_HPP
 
 #include <string>
-#include <boost/shared_ptr.hpp>
 #include "cgimap/request.hpp"
 #include "cgimap/http.hpp"
 
@@ -31,7 +30,7 @@ std::string get_request_path(request &req);
 /**
  * get encoding to use for response.
  */
-boost::shared_ptr<http::encoding> get_encoding(request &req);
+std::shared_ptr<http::encoding> get_encoding(request &req);
 
 /**
  * return a static string description for an HTTP status code.
@@ -42,6 +41,6 @@ const char *status_message(int code);
  * return shared pointer to a buffer object which can be
  * used to write to the response body.
  */
-boost::shared_ptr<output_buffer> make_output_buffer(request &req);
+std::shared_ptr<output_buffer> make_output_buffer(request &req);
 
 #endif /* REQUEST_HELPERS_HPP */

@@ -3,11 +3,9 @@
 
 #include "cgimap/rate_limiter.hpp"
 
-rate_limiter::~rate_limiter() {
-}
+rate_limiter::~rate_limiter() = default;
 
-null_rate_limiter::~null_rate_limiter() {
-}
+null_rate_limiter::~null_rate_limiter() = default;
 
 bool null_rate_limiter::check(const std::string &key) {
   return true;
@@ -53,7 +51,7 @@ memcached_rate_limiter::memcached_rate_limiter(
   }
 }
 
-memcached_rate_limiter::~memcached_rate_limiter(void) {
+memcached_rate_limiter::~memcached_rate_limiter() {
   if (ptr)
     memcached_free(ptr);
 }

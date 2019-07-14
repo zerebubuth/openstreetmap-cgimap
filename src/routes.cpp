@@ -24,6 +24,7 @@
 
 #include "cgimap/api06/changeset_handler.hpp"
 #include "cgimap/api06/changeset_download_handler.hpp"
+#include "cgimap/api06/changeset_upload_handler.hpp"
 
 #ifdef ENABLE_EXPERIMENTAL
 #include "cgimap/api06/node_ways_handler.hpp"
@@ -45,16 +46,15 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/optional.hpp>
 
-using std::auto_ptr;
 using std::list;
 using std::string;
 using std::pair;
-using boost::shared_ptr;
-using boost::scoped_ptr;
+using std::shared_ptr;
+using std::unique_ptr;
 using boost::optional;
 using boost::fusion::make_cons;
 using boost::fusion::invoke;
-using boost::ref;
+
 namespace al = boost::algorithm;
 
 /**
@@ -65,12 +65,12 @@ namespace al = boost::algorithm;
 struct router {
   // interface through which all matches and constructions are performed.
   struct rule_base {
-    virtual ~rule_base() {}
+    virtual ~rule_base() = default;
     virtual bool invoke_if(const list<string> &, request &,
                            handler_ptr_t &) = 0;
   };
 
-  typedef boost::shared_ptr<rule_base> rule_ptr;
+  using rule_ptr = std::shared_ptr<rule_base>;
 
   // concrete rule match / constructor class
   template <typename rule_t, typename func_t> struct rule : public rule_base {
@@ -87,12 +87,12 @@ struct router {
     bool invoke_if(const list<string> &parts, request &params,
                    handler_ptr_t &ptr) {
       try {
-        list<string>::const_iterator begin = parts.begin();
+        auto begin = parts.begin();
         auto sequence = r.match(begin, parts.end());
         if(begin!=parts.end())
           throw match::error();
         ptr.reset(
-            invoke(func, make_cons(ref(params), sequence)));
+            invoke(func, make_cons(std::ref(params), sequence)));
         return true;
       } catch (const match::error &e) {
         return false;
@@ -123,9 +123,7 @@ struct router {
     // it probably isn't necessary to have any more sophisticated data structure
     // than a list at this point. also means the semantics for rule matching are
     // pretty clear - the first match wins.
-    for (list<rule_ptr>::iterator itr = rules.begin(); itr != rules.end();
-         ++itr) {
-      rule_ptr rptr = *itr;
+    for (auto rptr : rules) {
       if (rptr->invoke_if(p, params, hptr)) {
         break;
       }
@@ -179,6 +177,7 @@ routes::routes()
     r->add<relations_handler>(root_ / "relations");
 
     r->add<changeset_download_handler>(root_ / "changeset" / osm_id_ / "download");
+    r->add<changeset_upload_handler>(root_ / "changeset" / osm_id_ / "upload");
     r->add<changeset_handler>(root_ / "changeset" / osm_id_);
   }
 
@@ -191,7 +190,7 @@ routes::routes()
 #endif /* ENABLE_API07 */
 }
 
-routes::~routes() {}
+routes::~routes() = default;
 
 namespace {
 /**
@@ -222,7 +221,7 @@ namespace {
 }
 
 handler_ptr_t route_resource(request &req, const string &path,
-                             const scoped_ptr<router> &r) {
+                             const unique_ptr<router> &r) {
   // strip off the format-spec, if there is one
   pair<string, mime::type> resource = resource_mime_type(path);
 

@@ -1,6 +1,8 @@
 #include <yajl/yajl_gen.h>
-#include <stdio.h>
-#include <string.h>
+#include <memory>
+#include <cstdio>
+#include <cstring>
+#include <utility>
 
 #include "cgimap/json_writer.hpp"
 #include "cgimap/config.hpp"
@@ -18,7 +20,7 @@ struct json_writer::pimpl_ {
 };
 
 static void wrap_write(void *context, const char *str, unsigned int len) {
-  output_buffer *out = static_cast<output_buffer *>(context);
+  auto *out = static_cast<output_buffer *>(context);
   if (out == 0) {
     throw output_writer::write_error(
         "Output buffer was NULL in json_writer wrap_write().");
@@ -32,8 +34,8 @@ static void wrap_write(void *context, const char *str, unsigned int len) {
   }
 }
 
-json_writer::json_writer(boost::shared_ptr<output_buffer> &out, bool indent)
-    : pimpl(new pimpl_()), out(out) {
+json_writer::json_writer(std::shared_ptr<output_buffer> &out, bool indent)
+    : pimpl(std::unique_ptr<pimpl_>(new pimpl_())), out(out) {
 #ifdef HAVE_YAJL2
   pimpl->gen = yajl_gen_alloc(NULL);
 
@@ -67,10 +69,9 @@ json_writer::json_writer(boost::shared_ptr<output_buffer> &out, bool indent)
 #endif /* HAVE_YAJL2 */
 }
 
-json_writer::~json_writer() throw() {
+json_writer::~json_writer() noexcept {
   yajl_gen_clear(pimpl->gen);
   yajl_gen_free(pimpl->gen);
-  delete pimpl;
 
   if (out != nullptr) {
       try {

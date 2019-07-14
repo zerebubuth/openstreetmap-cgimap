@@ -12,8 +12,8 @@ using std::map;
 using std::pair;
 using std::vector;
 
-#define MAX_AREA 0.25
-#define MAX_NODES 50000
+constexpr double MAX_AREA  = 0.25;
+constexpr int    MAX_NODES = 50000;
 
 namespace api06 {
 
@@ -40,15 +40,28 @@ map_responder::map_responder(mime::type mt, bbox b, data_selection_ptr &x)
   }
 }
 
-map_responder::~map_responder() {}
+map_responder::~map_responder() = default;
 
 map_handler::map_handler(request &req) : bounds(validate_request(req)) {
   // map calls typically have a Content-Disposition header saying that
   // what's coming back is an attachment.
-  req.add_header("Content-Disposition", "attachment; filename=\"map.osm\"");
+  //
+  // Content-Disposition should be only returned to the browser, in case the
+  // node extraction does not exceed the maximum number of nodes in a bounding box.
+  //
+  // Sending this header even for HTTP 400 Bad request errors is causing lots
+  // of confusion to users, as most browsers will only show the following meaningless
+  // error message:
+  //
+  // The webpage at ... might be temporarily down or it may have
+  // moved permanently to a new web address.
+  //
+  // ERR_INVALID_RESPONSE
+  //
+  req.add_success_header("Content-Disposition", "attachment; filename=\"map.osm\"");
 }
 
-map_handler::~map_handler() {}
+map_handler::~map_handler() = default;
 
 string map_handler::log_name() const {
   return (boost::format("map(%1%,%2%,%3%,%4%)") % bounds.minlon %
@@ -72,7 +85,7 @@ bool is_bbox(const pair<string, string> &p) {
 bbox map_handler::validate_request(request &req) {
   string decoded = http::urldecode(get_query_string(req));
   const vector<pair<string, string> > params = http::parse_params(decoded);
-  vector<pair<string, string> >::const_iterator itr =
+  auto itr =
     std::find_if(params.begin(), params.end(), is_bbox);
 
   bbox bounds;

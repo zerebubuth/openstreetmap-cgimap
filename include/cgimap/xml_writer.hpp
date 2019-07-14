@@ -1,27 +1,32 @@
 #ifndef WRITER_HPP
 #define WRITER_HPP
 
+#include <memory>
 #include <string>
 #include <stdexcept>
-#include <boost/shared_ptr.hpp>
 #include "cgimap/output_buffer.hpp"
 #include "cgimap/output_writer.hpp"
-#include <inttypes.h>
+#include <cinttypes>
 
 /**
  * Writes UTF-8 output to a file or stdout.
  */
 class xml_writer : public output_writer {
 public:
+  xml_writer(const xml_writer &) = delete;
+  xml_writer& operator=(const xml_writer &) = delete;
+  xml_writer(xml_writer &&) = default;
+  xml_writer& operator=(xml_writer &&) = default;
+
   // create a new XML writer writing to file_name, which can be
   // "-" for stdout.
   xml_writer(const std::string &file_name, bool indent = false);
 
   // create a new XML writer using writer callback functions
-  xml_writer(boost::shared_ptr<output_buffer> &out, bool indent = false);
+  xml_writer(std::shared_ptr<output_buffer> &out, bool indent = false);
 
   // closes and flushes the XML writer
-  ~xml_writer() throw();
+  ~xml_writer() noexcept;
 
   // begin a new element with the given name
   void start(const std::string &name);
@@ -57,7 +62,7 @@ private:
 
   // PIMPL ideom
   struct pimpl_;
-  pimpl_ *pimpl;
+  std::unique_ptr<pimpl_> pimpl;
 };
 
 #endif /* WRITER_HPP */

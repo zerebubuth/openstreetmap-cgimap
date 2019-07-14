@@ -2,35 +2,26 @@
 #include "cgimap/backend/apidb/common_pgsql_selection.hpp"
 #include "cgimap/backend/apidb/apidb.hpp"
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
+#include "cgimap/backend/apidb/utils.hpp"
 #include "cgimap/logger.hpp"
 #include "cgimap/backend/apidb/quad_tile.hpp"
 #include "cgimap/infix_ostream_iterator.hpp"
 
+#include <functional>
 #include <sstream>
 #include <list>
 #include <vector>
-#include <boost/make_shared.hpp>
-#include <boost/ref.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/bind.hpp>
-#include <boost/foreach.hpp>
 
-#if PQXX_VERSION_MAJOR >= 4
-#define PREPARE_ARGS(args)
-#else
-#define PREPARE_ARGS(args) args
-#endif
+#include <boost/algorithm/string/trim.hpp>
+
 
 namespace po = boost::program_options;
-namespace pt = boost::posix_time;
 using std::set;
 using std::stringstream;
 using std::list;
 using std::vector;
-using boost::shared_ptr;
+using std::shared_ptr;
 
-// number of nodes to chunk together
-#define STRIDE (1000)
 
 namespace {
 std::string connect_db_str(const po::variables_map &options) {
@@ -58,33 +49,34 @@ check_table_visibility(pqxx::work &w, osm_nwr_id_t id,
                        const std::string &prepared_name) {
   pqxx::result res = w.prepared(prepared_name)(id).exec();
 
-  if (res.size() > 0) {
-    if (res[0][0].as<bool>()) {
-      return data_selection::exists;
-    } else {
-      return data_selection::deleted;
-    }
-  } else {
+  if (res.empty())
     return data_selection::non_exist;
+
+  if (res[0][0].as<bool>()) {
+    return data_selection::exists;
+  } else {
+    return data_selection::deleted;
   }
 }
 
-template <typename T> T id_of(const pqxx::tuple &);
+using pqxx_tuple = pqxx::result::reference;
+
+template <typename T> T id_of(const pqxx_tuple &);
 
 template <>
-osm_nwr_id_t id_of<osm_nwr_id_t>(const pqxx::tuple &row) {
+osm_nwr_id_t id_of<osm_nwr_id_t>(const pqxx_tuple &row) {
   return row["id"].as<osm_nwr_id_t>();
 }
 
 template <>
-osm_changeset_id_t id_of<osm_changeset_id_t>(const pqxx::tuple &row) {
+osm_changeset_id_t id_of<osm_changeset_id_t>(const pqxx_tuple &row) {
   return row["id"].as<osm_changeset_id_t>();
 }
 
 template <>
-osm_edition_t id_of<osm_edition_t>(const pqxx::tuple &row) {
-  osm_nwr_id_t id = row["id"].as<osm_nwr_id_t>();
-  osm_version_t ver = row["version"].as<osm_version_t>();
+osm_edition_t id_of<osm_edition_t>(const pqxx_tuple &row) {
+  auto id = row["id"].as<osm_nwr_id_t>();
+  auto ver = row["version"].as<osm_version_t>();
   return osm_edition_t(id, ver);
 }
 
@@ -92,9 +84,7 @@ template <typename T>
 inline int insert_results(const pqxx::result &res, set<T> &elems) {
   int num_inserted = 0;
 
-  for (pqxx::result::const_iterator itr = res.begin(); itr != res.end();
-       ++itr) {
-    const pqxx::tuple &row = *itr;
+  for (const auto & row : res) {
     const T id = id_of<T>(row);
 
     // note: only count the *new* rows inserted.
@@ -102,103 +92,33 @@ inline int insert_results(const pqxx::result &res, set<T> &elems) {
       ++num_inserted;
     }
   }
-
   return num_inserted;
 }
-
-/* Shim for functions not yet converted to prepared statements */
-inline int insert_results_of(pqxx::work &w, std::stringstream &query,
-                             set<osm_nwr_id_t> &elems) {
-  return insert_results(w.exec(query), elems);
-}
-
-// use this to remove current versions from the historical set of elements.
-struct erase_formatter
-  : public output_formatter {
-
-  erase_formatter(
-    output_formatter &fmt,
-    std::set<osm_edition_t> &sel_historic_nodes,
-    std::set<osm_edition_t> &sel_historic_ways,
-    std::set<osm_edition_t> &sel_historic_relations)
-    : m_fmt(fmt)
-    , m_sel_historic_nodes(sel_historic_nodes)
-    , m_sel_historic_ways(sel_historic_ways)
-    , m_sel_historic_relations(sel_historic_relations) {
-  }
-  virtual ~erase_formatter() {}
-
-  mime::type mime_type() const { return m_fmt.mime_type(); }
-
-  void start_document(
-    const std::string &generator, const std::string &root_name) {
-    m_fmt.start_document(generator, root_name);
-  }
-
-  void end_document() { m_fmt.end_document(); }
-  void error(const std::exception &e) { m_fmt.error(e); }
-  void write_bounds(const bbox &bounds) { m_fmt.write_bounds(bounds); }
-  void start_element_type(element_type type) { m_fmt.start_element_type(type); }
-  void end_element_type(element_type type) { m_fmt.end_element_type(type); }
-  void start_action(action_type type) { m_fmt.start_action(type); }
-  void end_action(action_type type) { m_fmt.end_action(type); }
-  void flush() { m_fmt.flush(); }
-  void error(const std::string &str) { m_fmt.error(str); }
-
-  void write_node(
-    const element_info &elem, double lon, double lat, const tags_t &tags) {
-
-    m_sel_historic_nodes.erase(osm_edition_t(elem.id, elem.version));
-    m_fmt.write_node(elem, lon, lat, tags);
-  }
-
-  void write_way(
-    const element_info &elem, const nodes_t &nodes, const tags_t &tags) {
-
-    m_sel_historic_ways.erase(osm_edition_t(elem.id, elem.version));
-    m_fmt.write_way(elem, nodes, tags);
-  }
-
-  void write_relation(
-    const element_info &elem, const members_t &members, const tags_t &tags) {
-
-    m_sel_historic_relations.erase(osm_edition_t(elem.id, elem.version));
-    m_fmt.write_relation(elem, members, tags);
-  }
-
-  void write_changeset(
-    const changeset_info &elem,
-    const tags_t &tags,
-    bool include_comments,
-    const comments_t &comments,
-    const boost::posix_time::ptime &now) {
-    m_fmt.write_changeset(elem, tags, include_comments, comments, now);
-  }
-
-private:
-  output_formatter &m_fmt;
-  std::set<osm_edition_t> &m_sel_historic_nodes, &m_sel_historic_ways,
-    &m_sel_historic_relations;
-};
 
 } // anonymous namespace
 
 readonly_pgsql_selection::readonly_pgsql_selection(
     pqxx::connection &conn, cache<osm_changeset_id_t, changeset> &changeset_cache)
-    : w(conn), cc(changeset_cache)
+    : w(conn)
     , include_changeset_discussions(false)
-    , m_redactions_visible(false) {}
+    , m_redactions_visible(false)
+    , cc(changeset_cache) {}
 
-readonly_pgsql_selection::~readonly_pgsql_selection() {}
+readonly_pgsql_selection::~readonly_pgsql_selection() = default;
 
 void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
   // get all nodes - they already contain their own tags, so
   // we don't need to do anything else.
   logger::message("Fetching nodes");
   if (!sel_nodes.empty()) {
-    erase_formatter eraser(formatter, sel_historic_nodes, sel_historic_ways,
-      sel_historic_relations);
-    extract_nodes(w.prepared("extract_nodes")(sel_nodes).exec(), eraser, cc);
+      // lambda function gets notified about each single element, allowing us to
+      // remove all object versions from historic nodes, that are already
+      // contained in current nodes
+    extract_nodes(w.prepared("extract_nodes")(sel_nodes).exec(),
+		  formatter,
+		  [&](const element_info& elem)
+                    { sel_historic_nodes.erase(osm_edition_t(elem.id, elem.version)); },
+		  cc);
   }
   if (!sel_historic_nodes.empty()) {
     std::vector<osm_nwr_id_t> ids, versions;
@@ -206,7 +126,10 @@ void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
       ids.emplace_back(ed.first);
       versions.emplace_back(ed.second);
     }
-    extract_nodes(w.prepared("extract_historic_nodes")(ids)(versions).exec(), formatter, cc);
+    extract_nodes(w.prepared("extract_historic_nodes")(ids)(versions).exec(),
+		  formatter,
+		  [&](const element_info&) {},
+		  cc);
   }
 }
 
@@ -216,9 +139,14 @@ void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
   // entire result set can be streamed from a single query.
   logger::message("Fetching ways");
   if (!sel_ways.empty()) {
-    erase_formatter eraser(formatter, sel_historic_nodes, sel_historic_ways,
-      sel_historic_relations);
-    extract_ways(w.prepared("extract_ways")(sel_ways).exec(), eraser, cc);
+      // lambda function gets notified about each single element, allowing us to
+    // remove all object versions from historic ways, that are already
+    // contained in current ways
+    extract_ways(w.prepared("extract_ways")(sel_ways).exec(),
+		 formatter,
+		 [&](const element_info& elem)
+		    { sel_historic_ways.erase(osm_edition_t(elem.id, elem.version)); },
+		 cc);
   }
   if (!sel_historic_ways.empty()) {
     std::vector<osm_nwr_id_t> ids, versions;
@@ -226,16 +154,24 @@ void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
       ids.emplace_back(ed.first);
       versions.emplace_back(ed.second);
     }
-    extract_ways(w.prepared("extract_historic_ways")(ids)(versions).exec(), formatter, cc);
+    extract_ways(w.prepared("extract_historic_ways")(ids)(versions).exec(),
+		 formatter,
+		 [&](const element_info&) {},
+		 cc);
   }
 }
 
 void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
   logger::message("Fetching relations");
   if (!sel_relations.empty()) {
-    erase_formatter eraser(formatter, sel_historic_nodes, sel_historic_ways,
-      sel_historic_relations);
-    extract_relations(w.prepared("extract_relations")(sel_relations).exec(), eraser, cc);
+    // lambda function gets notified about each single element, allowing us to
+    // remove all object versions from historic relations, that are already
+    // contained in current relations
+    extract_relations(w.prepared("extract_relations")(sel_relations).exec(),
+		      formatter,
+	              [&](const element_info& elem)
+		        { sel_historic_relations.erase(osm_edition_t(elem.id, elem.version)); },
+		      cc);
   }
   if (!sel_historic_relations.empty()) {
     std::vector<osm_nwr_id_t> ids, versions;
@@ -243,12 +179,15 @@ void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
       ids.emplace_back(ed.first);
       versions.emplace_back(ed.second);
     }
-    extract_relations(w.prepared("extract_historic_relations")(ids)(versions).exec(), formatter, cc);
+    extract_relations(w.prepared("extract_historic_relations")(ids)(versions).exec(),
+		      formatter,
+	              [&](const element_info&) {},
+		      cc);
   }
 }
 
 void readonly_pgsql_selection::write_changesets(output_formatter &formatter,
-                                                const pt::ptime &now) {
+                                                const std::chrono::system_clock::time_point &now) {
   pqxx::result changesets = w.prepared("extract_changesets")(sel_changesets).exec();
   extract_changesets(changesets, formatter, cc, now, include_changeset_discussions);
 }
@@ -269,28 +208,25 @@ readonly_pgsql_selection::check_relation_visibility(osm_nwr_id_t id) {
 }
 
 int readonly_pgsql_selection::select_nodes(const std::vector<osm_nwr_id_t> &ids) {
-  if (!ids.empty()) {
-    return insert_results(w.prepared("select_nodes")(ids).exec(), sel_nodes);
-  } else {
+  if (ids.empty())
     return 0;
-  }
+
+  return insert_results(w.prepared("select_nodes")(ids).exec(), sel_nodes);
 }
 
 int readonly_pgsql_selection::select_ways(const std::vector<osm_nwr_id_t> &ids) {
-  if (!ids.empty()) {
-    return insert_results(w.prepared("select_ways")(ids).exec(), sel_ways);
-  } else {
+  if (ids.empty())
     return 0;
-  }
+
+  return insert_results(w.prepared("select_ways")(ids).exec(), sel_ways);
 }
 
 int readonly_pgsql_selection::select_relations(const std::vector<osm_nwr_id_t> &ids) {
-  if (!ids.empty()) {
-    return insert_results(w.prepared("select_relations")(ids).exec(),
-                          sel_relations);
-  } else {
+  if (ids.empty())
     return 0;
-  }
+
+  return insert_results(w.prepared("select_relations")(ids).exec(),
+                        sel_relations);
 }
 
 int readonly_pgsql_selection::select_nodes_from_bbox(const bbox &bounds,
@@ -374,99 +310,94 @@ void readonly_pgsql_selection::select_relations_members_of_relations() {
   }
 }
 
-bool readonly_pgsql_selection::supports_historical_versions() {
-  return true;
-}
-
 int readonly_pgsql_selection::select_historical_nodes(
   const std::vector<osm_edition_t> &eds) {
 
-  if (!eds.empty()) {
-    std::vector<osm_nwr_id_t> ids;
-    std::vector<osm_version_t> vers;
-    ids.resize(eds.size());
-    vers.resize(eds.size());
-    for (const auto &ed : eds) {
-      ids.emplace_back(ed.first);
-      vers.emplace_back(ed.second);
-    }
-    return insert_results(
-      w.prepared("select_historical_nodes")(ids)(vers)(m_redactions_visible).exec(),
-      sel_historic_nodes);
-  } else {
+  if (eds.empty())
     return 0;
+
+  std::vector<osm_nwr_id_t> ids(eds.size());
+  std::vector<osm_version_t> vers(eds.size());
+
+  for (const auto &ed : eds) {
+    ids.emplace_back(ed.first);
+    vers.emplace_back(ed.second);
   }
+
+  return insert_results(
+    w.prepared("select_historical_nodes")(ids)(vers)(m_redactions_visible).exec(),
+    sel_historic_nodes);
 }
 
 int readonly_pgsql_selection::select_historical_ways(
   const std::vector<osm_edition_t> &eds) {
-  if (!eds.empty()) {
-    std::vector<osm_nwr_id_t> ids;
-    std::vector<osm_version_t> vers;
-    ids.resize(eds.size());
-    vers.resize(eds.size());
-    for (const auto &ed : eds) {
-      ids.emplace_back(ed.first);
-      vers.emplace_back(ed.second);
-    }
-    return insert_results(
-      w.prepared("select_historical_ways")(ids)(vers)(m_redactions_visible).exec(),
-      sel_historic_ways);
-  } else {
+
+  if (eds.empty())
     return 0;
+
+  std::vector<osm_nwr_id_t> ids(eds.size());
+  std::vector<osm_version_t> vers(eds.size());
+
+  for (const auto &ed : eds) {
+    ids.emplace_back(ed.first);
+    vers.emplace_back(ed.second);
   }
+
+  return insert_results(
+    w.prepared("select_historical_ways")(ids)(vers)(m_redactions_visible).exec(),
+    sel_historic_ways);
 }
 
 int readonly_pgsql_selection::select_historical_relations(
   const std::vector<osm_edition_t> &eds) {
-  if (!eds.empty()) {
-    std::vector<osm_nwr_id_t> ids;
-    std::vector<osm_version_t> vers;
-    ids.resize(eds.size());
-    vers.resize(eds.size());
-    for (const auto &ed : eds) {
-      ids.emplace_back(ed.first);
-      vers.emplace_back(ed.second);
-    }
-    return insert_results(
-      w.prepared("select_historical_relations")(ids)(vers)(m_redactions_visible).exec(),
-      sel_historic_relations);
-  } else {
+
+  if (eds.empty())
     return 0;
+
+  std::vector<osm_nwr_id_t> ids(eds.size());
+  std::vector<osm_version_t> vers(eds.size());
+
+  for (const auto &ed : eds) {
+    ids.emplace_back(ed.first);
+    vers.emplace_back(ed.second);
   }
+
+  return insert_results(
+    w.prepared("select_historical_relations")(ids)(vers)(m_redactions_visible).exec(),
+    sel_historic_relations);
 }
 
 int readonly_pgsql_selection::select_nodes_with_history(
   const std::vector<osm_nwr_id_t> &ids) {
-  if (!ids.empty()) {
-    return insert_results(
-      w.prepared("select_nodes_history")(ids)(m_redactions_visible).exec(),
-      sel_historic_nodes);
-  } else {
+
+  if (ids.empty())
     return 0;
-  }
+
+  return insert_results(
+    w.prepared("select_nodes_history")(ids)(m_redactions_visible).exec(),
+    sel_historic_nodes);
 }
 
 int readonly_pgsql_selection::select_ways_with_history(
   const std::vector<osm_nwr_id_t> &ids) {
-  if (!ids.empty()) {
-    return insert_results(
-      w.prepared("select_ways_history")(ids)(m_redactions_visible).exec(),
-      sel_historic_ways);
-  } else {
+
+  if (ids.empty())
     return 0;
-  }
+
+  return insert_results(
+    w.prepared("select_ways_history")(ids)(m_redactions_visible).exec(),
+    sel_historic_ways);
 }
 
 int readonly_pgsql_selection::select_relations_with_history(
   const std::vector<osm_nwr_id_t> &ids) {
-  if (!ids.empty()) {
-    return insert_results(w.prepared("select_relations_history")
-      (ids)(m_redactions_visible).exec(),
-      sel_historic_relations);
-  } else {
+
+  if (ids.empty())
     return 0;
-  }
+
+  return insert_results(w.prepared("select_relations_history")
+    (ids)(m_redactions_visible).exec(),
+    sel_historic_relations);
 }
 
 void readonly_pgsql_selection::set_redactions_visible(bool visible) {
@@ -476,55 +407,76 @@ void readonly_pgsql_selection::set_redactions_visible(bool visible) {
 int readonly_pgsql_selection::select_historical_by_changesets(
   const std::vector<osm_changeset_id_t> &ids) {
 
-  int selected = 0;
+  if (ids.empty())
+    return 0;
 
-  if (!ids.empty()) {
-    selected += insert_results(w.prepared("select_nodes_by_changesets")
-      (ids)(m_redactions_visible).exec(),
-      sel_historic_nodes);
-    selected += insert_results(w.prepared("select_ways_by_changesets")
-      (ids)(m_redactions_visible).exec(),
-      sel_historic_ways);
-    selected += insert_results(w.prepared("select_relations_by_changesets")
-      (ids)(m_redactions_visible).exec(),
-      sel_historic_relations);
-  }
+  int selected = insert_results(w.prepared("select_nodes_by_changesets")
+    (ids)(m_redactions_visible).exec(),
+    sel_historic_nodes);
+  selected += insert_results(w.prepared("select_ways_by_changesets")
+    (ids)(m_redactions_visible).exec(),
+    sel_historic_ways);
+  selected += insert_results(w.prepared("select_relations_by_changesets")
+    (ids)(m_redactions_visible).exec(),
+    sel_historic_relations);
 
   return selected;
 }
 
-bool readonly_pgsql_selection::supports_changesets() {
-  return true;
-}
-
 int readonly_pgsql_selection::select_changesets(const std::vector<osm_changeset_id_t> &ids) {
-  if (!ids.empty()) {
-    return insert_results(w.prepared("select_changesets")(ids).exec(), sel_changesets);
-  } else {
+
+  if (ids.empty())
     return 0;
-  }
+
+  return insert_results(w.prepared("select_changesets")(ids).exec(), sel_changesets);
 }
 
 void readonly_pgsql_selection::select_changeset_discussions() {
   include_changeset_discussions = true;
 }
 
+bool readonly_pgsql_selection::supports_user_details() {
+  return true;
+}
+
+bool readonly_pgsql_selection::is_user_blocked(const osm_user_id_t id) {
+  auto res = w.prepared("check_user_blocked")(id).exec();
+  return !res.empty();
+}
+
+bool readonly_pgsql_selection::get_user_id_pass(const std::string& user_name, osm_user_id_t & id,
+						 std::string & pass_crypt, std::string & pass_salt) {
+
+  std::string email = boost::algorithm::trim_copy(user_name);
+
+  auto res = w.prepared("get_user_id_pass")(email)(user_name).exec();
+
+  if (res.empty()) {
+    // try case insensitive query
+    res = w.prepared("get_user_id_pass_case_insensitive")(email)(user_name).exec();
+    // failure, in case no entries or multiple entries were found
+    if (res.size() != 1)
+      return false;
+  }
+
+  auto row = res[0];
+  id = row["id"].as<osm_user_id_t>();
+  pass_crypt = row["pass_crypt"].as<std::string>();
+  pass_salt = row["pass_salt"].as<std::string>();
+
+  return true;
+}
+
 readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
     : m_connection(connect_db_str(opts)),
       m_cache_connection(connect_db_str(opts)),
-#if PQXX_VERSION_MAJOR >= 4
       m_errorhandler(m_connection),
       m_cache_errorhandler(m_cache_connection),
-#endif
       m_cache_tx(m_cache_connection, "changeset_cache"),
-      m_cache(boost::bind(fetch_changeset, boost::ref(m_cache_tx), _1),
-              boost::bind(fetch_changesets, boost::ref(m_cache_tx), _1),
+      m_cache(std::bind(fetch_changesets, std::ref(m_cache_tx), std::placeholders::_1),
               opts["cachesize"].as<size_t>()) {
 
-  if (m_connection.server_version() < 90300) {
-    throw std::runtime_error("Expected Postgres version 9.3+, currently installed version "
-        + std::to_string(m_connection.server_version()));
-  }
+  check_postgres_version(m_connection);
 
   // set the connections to use the appropriate charset.
   m_connection.set_client_encoding(opts["charset"].as<std::string>());
@@ -533,14 +485,6 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
   // set the connection to use readonly transaction.
   m_connection.set_variable("default_transaction_read_only", "true");
 
-  // ignore notice messages
-#if PQXX_VERSION_MAJOR < 4
-  m_connection.set_noticer(
-      std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
-  m_cache_connection.set_noticer(
-      std::auto_ptr<pqxx::noticer>(new pqxx::nonnoticer()));
-#endif
-
   logger::message("Preparing prepared statements.");
 
   // clang-format off
@@ -548,7 +492,6 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
   m_cache_connection.prepare("extract_changeset_userdetails",
       "SELECT c.id, u.data_public, u.display_name, u.id from users u "
                    "join changesets c on u.id=c.user_id where c.id = ANY($1)");
-  PREPARE_ARGS("bigint[]");
 
   // select nodes with bbox
   m_connection.prepare("visible_node_in_bbox",
@@ -558,110 +501,94 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
         "AND latitude BETWEEN $2 AND $3 "
         "AND longitude BETWEEN $4 AND $5 "
         "AND visible = true "
-      "LIMIT $6")
-    PREPARE_ARGS(("bigint[]")("integer")("integer")("integer")("integer")("integer"));
+      "LIMIT $6");
 
   // selecting node, way and relation visibility information
   m_connection.prepare("visible_node",
-    "SELECT visible FROM current_nodes WHERE id = $1")PREPARE_ARGS(("bigint"));
+    "SELECT visible FROM current_nodes WHERE id = $1");
   m_connection.prepare("visible_way",
-    "SELECT visible FROM current_ways WHERE id = $1")PREPARE_ARGS(("bigint"));
+    "SELECT visible FROM current_ways WHERE id = $1");
   m_connection.prepare("visible_relation",
-    "SELECT visible FROM current_relations WHERE id = $1")PREPARE_ARGS(("bigint"));
+    "SELECT visible FROM current_relations WHERE id = $1");
 
   // selecting a set of objects as a list
   m_connection.prepare("select_nodes",
     "SELECT id "
       "FROM current_nodes "
-      "WHERE id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+      "WHERE id = ANY($1)");
   m_connection.prepare("select_ways",
     "SELECT id "
       "FROM current_ways "
-      "WHERE id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+      "WHERE id = ANY($1)");
   m_connection.prepare("select_relations",
     "SELECT id "
       "FROM current_relations "
-      "WHERE id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+      "WHERE id = ANY($1)");
   m_connection.prepare("select_changesets",
     "SELECT id "
       "FROM changesets "
-      "WHERE id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+      "WHERE id = ANY($1)");
 
   // select ways used by nodes
   m_connection.prepare("ways_from_nodes",
     "SELECT DISTINCT wn.way_id AS id "
       "FROM current_way_nodes wn "
-      "WHERE wn.node_id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+      "WHERE wn.node_id = ANY($1)");
   // select nodes used by ways
   m_connection.prepare("nodes_from_ways",
     "SELECT DISTINCT wn.node_id AS id "
       "FROM current_way_nodes wn "
-      "WHERE wn.way_id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+      "WHERE wn.way_id = ANY($1)");
 
   // Queries for getting relation parents of objects
   m_connection.prepare("relation_parents_of_nodes",
     "SELECT DISTINCT rm.relation_id AS id "
       "FROM current_relation_members rm "
       "WHERE rm.member_type = 'Node' "
-        "AND rm.member_id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+        "AND rm.member_id = ANY($1)");
   m_connection.prepare("relation_parents_of_ways",
     "SELECT DISTINCT rm.relation_id AS id "
       "FROM current_relation_members rm "
       "WHERE rm.member_type = 'Way' "
-        "AND rm.member_id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+        "AND rm.member_id = ANY($1)");
   m_connection.prepare("relation_parents_of_relations",
     "SELECT DISTINCT rm.relation_id AS id "
       "FROM current_relation_members rm "
       "WHERE rm.member_type = 'Relation' "
-        "AND rm.member_id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+        "AND rm.member_id = ANY($1)");
 
   // queries for filling elements which are used as members in relations
   m_connection.prepare("nodes_from_relations",
     "SELECT DISTINCT rm.member_id AS id "
       "FROM current_relation_members rm "
       "WHERE rm.member_type = 'Node' "
-        "AND rm.relation_id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+        "AND rm.relation_id = ANY($1)");
   m_connection.prepare("ways_from_relations",
     "SELECT DISTINCT rm.member_id AS id "
       "FROM current_relation_members rm "
       "WHERE rm.member_type = 'Way' "
-        "AND rm.relation_id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+        "AND rm.relation_id = ANY($1)");
   m_connection.prepare("relation_members_of_relations",
     "SELECT DISTINCT rm.member_id AS id "
       "FROM current_relation_members rm "
       "WHERE rm.member_type = 'Relation' "
-        "AND rm.relation_id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+        "AND rm.relation_id = ANY($1)");
 
   m_connection.prepare("select_nodes_history",
     "SELECT node_id AS id, version "
       "FROM nodes "
       "WHERE node_id = ANY($1) AND "
-            "(redaction_id IS NULL OR $2 = TRUE)")
-    PREPARE_ARGS(("bigint[]")("boolean"));
+            "(redaction_id IS NULL OR $2 = TRUE)");
   m_connection.prepare("select_ways_history",
     "SELECT way_id AS id, version "
       "FROM ways "
       "WHERE way_id = ANY($1) AND "
-            "(redaction_id IS NULL OR $2 = TRUE)")
-    PREPARE_ARGS(("bigint[]")("boolean"));
+            "(redaction_id IS NULL OR $2 = TRUE)");
   m_connection.prepare("select_relations_history",
     "SELECT relation_id AS id, version "
       "FROM relations "
       "WHERE relation_id = ANY($1) AND "
-            "(redaction_id IS NULL OR $2 = TRUE)")
-    PREPARE_ARGS(("bigint[]")("boolean"));
+            "(redaction_id IS NULL OR $2 = TRUE)");
 
   m_connection.prepare("select_historical_nodes",
     "WITH wanted(id, version) AS ("
@@ -670,8 +597,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
     "SELECT n.node_id AS id, n.version "
       "FROM nodes n "
       "INNER JOIN wanted w ON n.node_id = w.id AND n.version = w.version "
-      "WHERE (n.redaction_id IS NULL OR $3 = TRUE)")
-    PREPARE_ARGS(("bigint[]")("bigint[]")("boolean"));
+      "WHERE (n.redaction_id IS NULL OR $3 = TRUE)");
   m_connection.prepare("select_historical_ways",
     "WITH wanted(id, version) AS ("
       "SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))"
@@ -679,8 +605,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
     "SELECT w.way_id AS id, w.version "
       "FROM ways w "
       "INNER JOIN wanted x ON w.way_id = x.id AND w.version = x.version "
-      "WHERE (w.redaction_id IS NULL OR $3 = TRUE)")
-    PREPARE_ARGS(("bigint[]")("bigint[]")("boolean"));
+      "WHERE (w.redaction_id IS NULL OR $3 = TRUE)");
   m_connection.prepare("select_historical_relations",
     "WITH wanted(id, version) AS ("
       "SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))"
@@ -688,8 +613,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
     "SELECT r.relation_id AS id, r.version "
       "FROM relations r "
       "INNER JOIN wanted x ON r.relation_id = x.id AND r.version = x.version "
-      "WHERE (r.redaction_id IS NULL OR $3 = TRUE)")
-    PREPARE_ARGS(("bigint[]")("bigint[]")("boolean"));
+      "WHERE (r.redaction_id IS NULL OR $3 = TRUE)");
 
   // ------------------------- NODE EXTRACTION -------------------------------
   m_connection.prepare("extract_nodes",
@@ -699,8 +623,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
       "FROM current_nodes n "
         "LEFT JOIN current_node_tags t ON n.id=t.node_id "
       "WHERE n.id = ANY($1) "
-      "GROUP BY n.id ORDER BY n.id")
-    PREPARE_ARGS(("bigint[]"));
+      "GROUP BY n.id ORDER BY n.id");
 
   m_connection.prepare("extract_historic_nodes",
     "WITH wanted(id, version) AS ("
@@ -712,8 +635,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
       "FROM nodes n "
         "INNER JOIN wanted x ON n.node_id = x.id AND n.version = x.version "
         "LEFT JOIN node_tags t ON n.node_id = t.node_id AND n.version = t.version "
-      "GROUP BY n.node_id, n.version ORDER BY n.node_id, n.version")
-    PREPARE_ARGS(("bigint[]")("bigint[]"));
+      "GROUP BY n.node_id, n.version ORDER BY n.node_id, n.version");
 
   // -------------------------- WAY EXTRACTION -------------------------------
   m_connection.prepare("extract_ways",
@@ -731,8 +653,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
              "(SELECT node_id FROM current_way_nodes WHERE w.id=way_id "
               "ORDER BY sequence_id) x) wn ON true "
       "WHERE w.id = ANY($1) "
-      "ORDER BY w.id")
-    PREPARE_ARGS(("bigint[]"));
+      "ORDER BY w.id");
 
   m_connection.prepare("extract_historic_ways",
     "WITH wanted(id, version) AS ("
@@ -753,8 +674,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
              "(SELECT node_id FROM way_nodes "
               "WHERE w.way_id=way_id AND w.version=version "
               "ORDER BY sequence_id) x) wn ON true "
-      "ORDER BY w.way_id, w.version")
-    PREPARE_ARGS(("bigint[]")("bigint[]"));
+      "ORDER BY w.way_id, w.version");
 
   // --------------------- RELATION EXTRACTION -------------------------------
   m_connection.prepare("extract_relations",
@@ -773,8 +693,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
              "(SELECT * FROM current_relation_members WHERE r.id=relation_id "
               "ORDER BY sequence_id) x) rm ON true "
       "WHERE r.id = ANY($1) "
-      "ORDER BY r.id")
-    PREPARE_ARGS(("bigint[]"));
+      "ORDER BY r.id");
 
   m_connection.prepare("extract_historic_relations",
     "WITH wanted(id, version) AS ("
@@ -795,8 +714,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
            "FROM "
              "(SELECT * FROM relation_members WHERE r.relation_id=relation_id AND r.version=version "
               "ORDER BY sequence_id) x) rm ON true "
-      "ORDER BY r.relation_id, r.version")
-    PREPARE_ARGS(("bigint[]")("bigint[]"));
+      "ORDER BY r.relation_id, r.version");
 
   // --------------------------- CHANGESET EXTRACTION -----------------------
   m_connection.prepare("extract_changesets",
@@ -820,41 +738,53 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
           "FROM changeset_comments cc JOIN users u ON cc.author_id = u.id "
           "where cc.changeset_id=c.id AND cc.visible ORDER BY cc.created_at) x "
         ")cc ON true "
-     "WHERE c.id = ANY($1)")
-    PREPARE_ARGS(("bigint[]"));
+     "WHERE c.id = ANY($1)");
 
   // ------------------- CHANGESET DOWNLOAD QUERIES -----------------------
   m_connection.prepare("select_nodes_by_changesets",
       "SELECT n.node_id AS id, n.version "
       "FROM nodes n "
       "WHERE n.changeset_id = ANY($1) "
-        "AND (n.redaction_id IS NULL OR $2 = TRUE)"
-    "")
-    PREPARE_ARGS(("bigint[]")("boolean"));
+        "AND (n.redaction_id IS NULL OR $2 = TRUE)");
 
   m_connection.prepare("select_ways_by_changesets",
       "SELECT w.way_id AS id, w.version "
       "FROM ways w "
       "WHERE w.changeset_id = ANY($1) "
-        "AND (w.redaction_id IS NULL OR $2 = TRUE)"
-    "")
-    PREPARE_ARGS(("bigint[]")("boolean"));
+        "AND (w.redaction_id IS NULL OR $2 = TRUE)");
 
   m_connection.prepare("select_relations_by_changesets",
       "SELECT r.relation_id AS id, r.version "
       "FROM relations r "
       "WHERE r.changeset_id = ANY($1) "
-        "AND (r.redaction_id IS NULL OR $2 = TRUE)"
-    "")
-    PREPARE_ARGS(("bigint[]")("boolean"));
+        "AND (r.redaction_id IS NULL OR $2 = TRUE)");
+
+  // ------------------- USER QUERIES -----------------------
+
+  m_connection.prepare("check_user_blocked",
+    R"(SELECT id FROM "user_blocks" 
+          WHERE "user_blocks"."user_id" = $1 
+            AND (needs_view or ends_at > (now() at time zone 'utc')) LIMIT 1 )");
+
+  m_connection.prepare("get_user_id_pass",
+    R"(SELECT id, pass_crypt, pass_salt FROM users
+           WHERE (email = $1 OR display_name = $2)
+             AND (status = 'active' or status = 'confirmed') LIMIT 1
+      )");
+
+  m_connection.prepare("get_user_id_pass_case_insensitive",
+    R"(SELECT id, pass_crypt, pass_salt FROM users
+           WHERE (LOWER(email) = LOWER($1) OR LOWER(display_name) = LOWER($2))
+             AND (status = 'active' or status = 'confirmed')
+      )");
 
   // clang-format on
 }
 
-readonly_pgsql_selection::factory::~factory() {}
+readonly_pgsql_selection::factory::~factory() = default;
 
-boost::shared_ptr<data_selection>
+std::shared_ptr<data_selection>
 readonly_pgsql_selection::factory::make_selection() {
-  return boost::make_shared<readonly_pgsql_selection>(boost::ref(m_connection),
-                                                      boost::ref(m_cache));
+  return std::make_shared<readonly_pgsql_selection>(std::ref(m_connection),
+						    std::ref(m_cache));
 }

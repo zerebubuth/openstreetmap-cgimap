@@ -22,7 +22,7 @@ match_string::match_type match_string::match(part_iterator &begin,
   return match_type();
 }
 
-match_osm_id::match_osm_id() {}
+match_osm_id::match_osm_id() = default;
 
 match_osm_id::match_type match_osm_id::match(part_iterator &begin,
                                              const part_iterator &end) const {
@@ -32,7 +32,7 @@ match_osm_id::match_type match_osm_id::match(part_iterator &begin,
       // note that osm_nwr_id_t is actually unsigned, so we lose a bit of
       // precision here, but it's OK since IDs are postgres 'bigint' types
       // which are also signed, so element 2^63 is unlikely to exist.
-      int64_t x = boost::lexical_cast<int64_t>(bit);
+      auto x = boost::lexical_cast<int64_t>(bit);
       if (x > 0) {
         ++begin;
         return match_type(x);
@@ -44,7 +44,7 @@ match_osm_id::match_type match_osm_id::match(part_iterator &begin,
   throw error();
 }
 
-match_name::match_name() {}
+match_name::match_name() = default;
 
 match_name::match_type match_name::match(part_iterator &begin,
                                          const part_iterator &end) const {
@@ -59,14 +59,14 @@ match_name::match_type match_name::match(part_iterator &begin,
   throw error();
 }
 
-match_begin::match_begin() {}
+match_begin::match_begin() = default;
 
 match_begin::match_type match_begin::match(part_iterator &,
                                            const part_iterator &) const {
   return match_type();
 }
 
-extern const match_begin root_;
-extern const match_osm_id osm_id_;
-extern const match_name name_;
+extern const match_begin root_; // @suppress("Unused variable declaration in file scope")
+extern const match_osm_id osm_id_; // @suppress("Unused variable declaration in file scope")
+extern const match_name name_; // @suppress("Unused variable declaration in file scope")
 }

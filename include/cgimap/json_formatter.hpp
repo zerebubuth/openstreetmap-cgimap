@@ -3,7 +3,8 @@
 
 #include "cgimap/output_formatter.hpp"
 #include "cgimap/json_writer.hpp"
-#include <boost/scoped_ptr.hpp>
+
+#include <chrono>
 
 /**
  * Outputs a JSON-formatted document, which might be useful for javascript
@@ -11,7 +12,7 @@
  */
 class json_formatter : public output_formatter {
 private:
-  boost::scoped_ptr<json_writer> writer;
+  std::unique_ptr<json_writer> writer;
   bool is_in_elements_array;
 
   void write_tags(const tags_t &tags);
@@ -45,7 +46,14 @@ public:
                        const tags_t &tags,
                        bool include_comments,
                        const comments_t &comments,
-                       const boost::posix_time::ptime &now);
+                       const std::chrono::system_clock::time_point &now);
+
+  void write_diffresult_create_modify(const element_type elem,
+				      const osm_nwr_signed_id_t old_id,
+				      const osm_nwr_id_t new_id,
+				      const osm_version_t new_version);
+  void write_diffresult_delete(const element_type elem,
+			       const osm_nwr_signed_id_t old_id);
 
   void flush();
   void error(const std::string &);

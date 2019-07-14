@@ -1,4 +1,5 @@
 #include "cgimap/request_helpers.hpp"
+#include "cgimap/zlib.hpp"
 #include <sstream>
 #include <cstring>
 
@@ -86,13 +87,13 @@ std::string get_request_path(request &req) {
 /**
  * get encoding to use for response.
  */
-boost::shared_ptr<http::encoding> get_encoding(request &req) {
+std::shared_ptr<http::encoding> get_encoding(request &req) {
   const char *accept_encoding = req.get_param("HTTP_ACCEPT_ENCODING");
 
   if (accept_encoding) {
     return http::choose_encoding(string(accept_encoding));
   } else {
-    return boost::shared_ptr<http::identity>(new http::identity());
+    return std::shared_ptr<http::identity>(new http::identity());
   }
 }
 
@@ -100,10 +101,15 @@ namespace {
 const char *http_message_status_200 = "OK";
 const char *http_message_status_400 = "Bad Request";
 const char *http_message_status_401 = "Unauthorized";
+const char *http_message_status_403 = "Forbidden";
 const char *http_message_status_404 = "Not Found";
 const char *http_message_status_405 = "Method Not Allowed";
 const char *http_message_status_406 = "Not Acceptable";
+const char *http_message_status_409 = "Conflict";
 const char *http_message_status_410 = "Gone";
+const char *http_message_status_412 = "Precondition Failed";
+const char *http_message_status_413 = "Payload Too Large";
+const char *http_message_status_415 = "Unsupported Media Type";
 const char *http_message_status_509 = "Bandwidth Limit Exceeded";
 const char *http_message_status_500 = "Internal Server Error";
 } // anonymous namespace
@@ -121,6 +127,9 @@ const char *status_message(int code) {
   case 401:
     msg = http_message_status_401;
     break;
+  case 403:
+    msg = http_message_status_403;
+    break;
   case 404:
     msg = http_message_status_404;
     break;
@@ -130,8 +139,20 @@ const char *status_message(int code) {
   case 406:
     msg = http_message_status_406;
     break;
+  case 409:
+    msg = http_message_status_409;
+    break;
   case 410:
     msg = http_message_status_410;
+    break;
+  case 412:
+    msg = http_message_status_412;
+    break;
+  case 413:
+    msg = http_message_status_413;
+    break;
+  case 415:
+    msg = http_message_status_415;
     break;
   case 509:
     msg = http_message_status_509;
@@ -167,7 +188,7 @@ public:
     r.flush();
   }
 
-  virtual ~fcgi_output_buffer() {}
+  virtual ~fcgi_output_buffer() = default;
 
   fcgi_output_buffer(request &req) : r(req), w(0) {}
 
@@ -178,6 +199,6 @@ private:
 
 } // anonymous namespace
 
-boost::shared_ptr<output_buffer> make_output_buffer(request &req) {
-  return boost::shared_ptr<output_buffer>(new fcgi_output_buffer(req));
+std::shared_ptr<output_buffer> make_output_buffer(request &req) {
+  return std::shared_ptr<output_buffer>(new fcgi_output_buffer(req));
 }

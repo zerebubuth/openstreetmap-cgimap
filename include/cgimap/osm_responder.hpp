@@ -6,7 +6,6 @@
 #include "cgimap/data_selection.hpp"
 
 #include <boost/optional.hpp>
-#include <boost/shared_ptr.hpp>
 #include <sstream>
 
 /**
@@ -30,7 +29,7 @@ public:
   // lists the standard types that OSM format can respond in, currently XML and,
   // if
   // the yajl library is provided, JSON.
-  std::list<mime::type> types_available() const;
+  virtual std::list<mime::type> types_available() const;
 
   // quick hack to add headers to the response
   std::string extra_response_headers() const;

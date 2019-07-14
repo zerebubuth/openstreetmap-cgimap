@@ -10,23 +10,20 @@ namespace api06 {
 
 way_responder::way_responder(mime::type mt, osm_nwr_id_t id_, data_selection_ptr &w_)
     : osm_current_responder(mt, w_), id(id_) {
-  vector<osm_nwr_id_t> ids;
-  ids.push_back(id);
 
-  if (sel->select_ways(ids) == 0) {
+  if (sel->select_ways({id}) == 0) {
     std::ostringstream error;
     error << "Way " << id << " was not found.";
     throw http::not_found(error.str());
-  } else {
-    check_visibility();
   }
+  check_visibility();
 }
 
-way_responder::~way_responder() {}
+way_responder::~way_responder() = default;
 
 way_handler::way_handler(request &, osm_nwr_id_t id_) : id(id_) {}
 
-way_handler::~way_handler() {}
+way_handler::~way_handler() = default;
 
 std::string way_handler::log_name() const { return "way"; }
 

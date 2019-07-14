@@ -72,7 +72,7 @@ namespace api06 {
 vector<id_version> parse_id_list_params(request &req, const string &param_name) {
   string decoded = http::urldecode(get_query_string(req));
   const vector<pair<string, string> > params = http::parse_params(decoded);
-  vector<pair<string, string> >::const_iterator itr =
+  auto itr =
     std::find_if(params.begin(), params.end(), first_equals(param_name));
 
   vector<id_version> myids;
@@ -98,7 +98,7 @@ vector<id_version> parse_id_list_params(request &req, const string &param_name) 
 
   // ensure list of IDs is unique
   std::sort(myids.begin(), myids.end());
-  vector<id_version>::iterator new_end = std::unique(myids.begin(), myids.end());
+  auto new_end = std::unique(myids.begin(), myids.end());
   myids.erase(new_end, myids.end());
 
   return myids;

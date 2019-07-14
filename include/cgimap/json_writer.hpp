@@ -1,10 +1,9 @@
 #ifndef JSON_WRITER_HPP
 #define JSON_WRITER_HPP
 
+#include <memory>
 #include <string>
 #include <stdexcept>
-#include <boost/shared_ptr.hpp>
-#include <boost/noncopyable.hpp>
 #include "cgimap/output_buffer.hpp"
 #include "cgimap/output_writer.hpp"
 
@@ -13,11 +12,16 @@
  */
 class json_writer : public output_writer {
 public:
+  json_writer(const json_writer &) = delete;
+  json_writer& operator=(const json_writer &) = delete;
+  json_writer(json_writer &&) = default;
+  json_writer& operator=(json_writer &&) = default;
+
   // create a json writer using a callback object for output
-  json_writer(boost::shared_ptr<output_buffer> &out, bool indent = false);
+  json_writer(std::shared_ptr<output_buffer> &out, bool indent = false);
 
   // closes and flushes the buffer
-  ~json_writer() throw();
+  ~json_writer() noexcept;
 
   void start_object();
   void object_key(const std::string &s);
@@ -41,8 +45,8 @@ public:
 private:
   // PIMPL idiom
   struct pimpl_;
-  pimpl_ *pimpl;
-  boost::shared_ptr<output_buffer> out;
+  std::unique_ptr<pimpl_> pimpl;
+  std::shared_ptr<output_buffer> out;
 };
 
 #endif /* JSON_WRITER_HPP */

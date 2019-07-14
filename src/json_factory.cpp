@@ -1,10 +1,10 @@
 #include "cgimap/json_factory.hpp"
 
-json_factory::json_factory() {}
+json_factory::json_factory() = default;
 
-json_factory::~json_factory() {}
+json_factory::~json_factory() = default;
 
-json_writer &json_factory::create_writer(boost::shared_ptr<output_buffer> &out,
+json_writer &json_factory::create_writer(std::shared_ptr<output_buffer> &out,
                                          bool indent) {
   writer = new json_writer(out, indent);
   return *writer;

@@ -1,19 +1,21 @@
 #include "cgimap/config.hpp"
+#include "cgimap/logger.hpp"
 #include "cgimap/osm_current_responder.hpp"
 
+#include <boost/format.hpp>
+
 using std::list;
-using boost::shared_ptr;
-namespace pt = boost::posix_time;
+using std::shared_ptr;
 
 osm_current_responder::osm_current_responder(mime::type mt, data_selection_ptr &s,
                                              boost::optional<bbox> b)
     : osm_responder(mt, b), sel(s) {}
 
-osm_current_responder::~osm_current_responder() {}
+osm_current_responder::~osm_current_responder() = default;
 
 void osm_current_responder::write(shared_ptr<output_formatter> formatter,
                                   const std::string &generator,
-                                  const pt::ptime &now) {
+                                  const std::chrono::system_clock::time_point &now) {
   // TODO: is it possible that formatter can be null?
   output_formatter &fmt = *formatter;
 
@@ -44,6 +46,8 @@ void osm_current_responder::write(shared_ptr<output_formatter> formatter,
     fmt.end_element_type(element_type_relation);
 
   } catch (const std::exception &e) {
+    logger::message(boost::format("Caught error in osm_current_responder: %1%") %
+                      e.what());
     fmt.error(e);
   }
 

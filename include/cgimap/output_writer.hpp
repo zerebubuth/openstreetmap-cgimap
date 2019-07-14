@@ -1,16 +1,25 @@
 #ifndef OUTPUT_WRITER_HPP
 #define OUTPUT_WRITER_HPP
 
+#include <memory>
 #include <string>
 #include <stdexcept>
-#include <boost/noncopyable.hpp>
+
 
 /**
  * base class of all writers.
  */
-class output_writer : public boost::noncopyable {
+class output_writer {
 public:
-  virtual ~output_writer() throw();
+
+  output_writer(const output_writer &) = delete;
+  output_writer& operator=(const output_writer &) = delete;
+  output_writer(output_writer &&) = default;
+  output_writer& operator=(output_writer &&) = default;
+
+  output_writer() = default;
+
+  virtual ~output_writer() noexcept;
 
   /* write an error to the output. normally, we'd detect errors *before*
    * starting to write. so this is a very rare case, for example when the

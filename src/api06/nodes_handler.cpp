@@ -5,7 +5,6 @@
 #include "cgimap/infix_ostream_iterator.hpp"
 #include "cgimap/api06/id_version_io.hpp"
 
-#include <boost/foreach.hpp>
 
 #include <sstream>
 
@@ -22,7 +21,7 @@ nodes_responder::nodes_responder(mime::type mt, vector<id_version> ids_,
   vector<osm_nwr_id_t> current_ids;
   vector<osm_edition_t> historic_ids;
 
-  BOOST_FOREACH(id_version idv, ids_) {
+  for (id_version idv : ids_) {
     if (idv.version) {
       historic_ids.push_back(std::make_pair(idv.id, *idv.version));
     } else {
@@ -32,11 +31,7 @@ nodes_responder::nodes_responder(mime::type mt, vector<id_version> ids_,
 
   size_t num_selected = sel->select_nodes(current_ids);
   if (!historic_ids.empty()) {
-    if (sel->supports_historical_versions()) {
-      num_selected += sel->select_historical_nodes(historic_ids);
-    } else {
-      throw http::server_error("Data source does not support historical versions.");
-    }
+    num_selected += sel->select_historical_nodes(historic_ids);
   }
 
   if (num_selected != ids.size()) {
@@ -44,11 +39,11 @@ nodes_responder::nodes_responder(mime::type mt, vector<id_version> ids_,
   }
 }
 
-nodes_responder::~nodes_responder() {}
+nodes_responder::~nodes_responder() = default;
 
 nodes_handler::nodes_handler(request &req) : ids(validate_request(req)) {}
 
-nodes_handler::~nodes_handler() {}
+nodes_handler::~nodes_handler() = default;
 
 std::string nodes_handler::log_name() const {
   stringstream msg;

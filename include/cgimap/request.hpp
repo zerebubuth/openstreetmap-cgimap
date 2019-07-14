@@ -1,10 +1,12 @@
 #ifndef REQUEST_HPP
 #define REQUEST_HPP
 
+#include "cgimap/http.hpp"
+
+#include <chrono>
 #include <string>
 #include <vector>
-#include <boost/shared_ptr.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
+
 
 // forward declaration of output_buffer, which is only needed here by
 // reference.
@@ -31,7 +33,11 @@ struct request {
   virtual const char *get_param(const char *key) = 0;
 
   // get the current time of the request.
-  virtual boost::posix_time::ptime get_current_time() const = 0;
+  virtual std::chrono::system_clock::time_point get_current_time() const = 0;
+
+  // get payload provided for the request. this is useful in particular
+  // for HTTP POST and PUT requests.
+  virtual const std::string get_payload() = 0;
 
   /********************** RESPONSE HEADER FUNCTIONS **************************/
 
@@ -47,12 +53,17 @@ struct request {
   // after a call to any of the output functions.
   void add_header(const std::string &key, const std::string &value);
 
+  // add a key-value header to the response like add_header, provided that
+  // processing didn't trigger any error before calling any of the output
+  // functions
+  void add_success_header(const std::string &key, const std::string &value);
+
   /********************** RESPONSE OUTPUT FUNCTIONS **************************/
 
   // return a handle to the output buffer to write body output. this function
   // should only be called after setting the status and any custom response
   // headers.
-  boost::shared_ptr<output_buffer> get_buffer();
+  std::shared_ptr<output_buffer> get_buffer();
 
   // convenience functions to write body data. see `get_buffer()` for more
   // information on the constraints of calling this.
@@ -71,8 +82,13 @@ struct request {
   // dispose of any resources allocated to the request.
   virtual void dispose() = 0;
 
+  /******************** RANDOM FUDGE FUNCTION *******************************/
+
+  void set_default_methods(http::method);
+  http::method methods() const;
+
 protected:
-  typedef std::vector<std::pair<std::string, std::string> > headers_t;
+  using headers_t = std::vector<std::pair<std::string, std::string> >;
 
   // this is called once, the first time an output function is called. the
   // implementing output system may use this to write out the complete set of
@@ -82,7 +98,7 @@ protected:
   // internal functions.
   // TODO: this is really bad design and indicates this should probably use
   // composition rather than inheritance.
-  virtual boost::shared_ptr<output_buffer> get_buffer_internal() = 0;
+  virtual std::shared_ptr<output_buffer> get_buffer_internal() = 0;
   virtual void finish_internal() = 0;
 
   // reset the state of the request back to blank for re-use.
@@ -106,6 +122,12 @@ private:
 
   // the headers to be written in the response
   headers_t m_headers;
+
+  // the headers to be written in the response if process was successful
+  headers_t m_success_headers;
+
+  // allowed methods, to be returned to the client in the CORS headers.
+  http::method m_methods;
 };
 
 #endif /* REQUEST_HPP */

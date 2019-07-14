@@ -1,12 +1,12 @@
-#include <boost/shared_ptr.hpp>
 
 #include "cgimap/json_formatter.hpp"
 #include "cgimap/config.hpp"
 
-using boost::shared_ptr;
+#include <chrono>
+
+using std::shared_ptr;
 using std::string;
 using std::transform;
-namespace pt = boost::posix_time;
 
 namespace {
 
@@ -31,7 +31,7 @@ const std::string &element_type_name(element_type elt) {
 json_formatter::json_formatter(json_writer *w) : writer(w),
     is_in_elements_array(false) {}
 
-json_formatter::~json_formatter() {}
+json_formatter::~json_formatter() = default;
 
 mime::type json_formatter::mime_type() const { return mime::text_json; }
 
@@ -211,7 +211,7 @@ void json_formatter::write_changeset(const changeset_info &elem,
                                      const tags_t &tags,
                                      bool include_comments,
                                      const comments_t &comments,
-                                     const pt::ptime &now) {
+                                     const std::chrono::system_clock::time_point &now) {
 
   writer->start_object();
 
@@ -277,6 +277,36 @@ void json_formatter::write_changeset(const changeset_info &elem,
   }
 
   writer->end_object();
+}
+
+void json_formatter::write_diffresult_create_modify(const element_type elem,
+                                            const osm_nwr_signed_id_t old_id,
+                                            const osm_nwr_id_t new_id,
+                                            const osm_version_t new_version)
+{
+
+//  writer->start_object();
+//  writer->object_key("type");
+//  writer->entry_string(element_type_name(elem));
+//  writer->object_key("old_id");
+//  writer->entry_int(old_id);
+//  writer->object_key("new_id");
+//  writer->entry_int(new_id);
+//  writer->object_key("new_version");
+//  writer->entry_int(new_version);
+//  writer->end_object();
+}
+
+
+void json_formatter::write_diffresult_delete(const element_type elem,
+                                            const osm_nwr_signed_id_t old_id)
+{
+//  writer->start_object();
+//  writer->object_key("type");
+//  writer->entry_string(element_type_name(elem));
+//  writer->object_key("old_id");
+//  writer->entry_int(old_id);
+//  writer->end_object();
 }
 
 void json_formatter::flush() { writer->flush(); }

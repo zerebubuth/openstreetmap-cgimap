@@ -21,7 +21,6 @@
 #include <boost/fusion/include/at.hpp>
 #include <boost/fusion/container/list/convert.hpp>
 #include <boost/fusion/include/as_list.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/function_types/function_type.hpp>
 #include <boost/fusion/functional/invocation/invoke.hpp>
@@ -36,7 +35,7 @@ using boost::fusion::as_list;
 namespace result_of = boost::fusion::result_of;
 
 // iterates over the split up parts of the item being matched.
-typedef std::list<std::string>::const_iterator part_iterator;
+using part_iterator = std::list<std::string>::const_iterator;
 
 /**
  * thrown when a match error occurs, giving some information about the
@@ -86,9 +85,9 @@ template <typename Self> struct ops {
  */
 template <typename LeftType, typename RightType>
 struct match_and : public ops<match_and<LeftType, RightType> > {
-  typedef typename result_of::as_list<typename result_of::join<
+  using match_type = typename result_of::as_list<typename result_of::join<
       typename LeftType::match_type,
-      typename RightType::match_type>::type>::type match_type;
+      typename RightType::match_type>::type>::type;
   match_and(const LeftType &l, const RightType &r) : lhs(l), rhs(r) {}
   match_type match(part_iterator &begin, const part_iterator &end) const {
     typename LeftType::match_type lval = lhs.match(begin, end);
@@ -106,7 +105,7 @@ private:
  */
 struct match_string : public ops<match_string> {
   // doesn't return anything, simply fails if the string doesn't match.
-  typedef list<> match_type;
+  using match_type = list<>;
 
   // implicit constructor intended, so that the use of this class is
   // hidden and easier / nicer to read.
@@ -126,7 +125,7 @@ private:
  * match an OSM ID, returning it in the match tuple.
  */
 struct match_osm_id : public ops<match_osm_id> {
-  typedef list<osm_nwr_id_t> match_type;
+  using match_type = list<osm_nwr_id_t>;
   match_osm_id();
   match_type match(part_iterator &begin, const part_iterator &end) const;
 };
@@ -135,7 +134,7 @@ struct match_osm_id : public ops<match_osm_id> {
  * match any string.
  */
 struct match_name : public ops<match_name> {
-  typedef list<std::string> match_type;
+  using match_type = list<std::string>;
   match_name();
   match_type match(part_iterator &begin, const part_iterator &end) const;
 };
@@ -146,7 +145,7 @@ struct match_name : public ops<match_name> {
  * without needing explicit constructors for the string literal matches.
  */
 struct match_begin : public ops<match_begin> {
-  typedef list<> match_type;
+  using match_type = list<>;
   match_begin();
   match_type match(part_iterator &begin, const part_iterator &end) const;
 };

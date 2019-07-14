@@ -12,24 +12,21 @@ namespace api06 {
 relation_full_responder::relation_full_responder(mime::type mt_, osm_nwr_id_t id_,
                                                  data_selection_ptr &w_)
     : osm_current_responder(mt_, w_), id(id_) {
-  vector<osm_nwr_id_t> ids;
-  ids.push_back(id);
 
-  if (sel->select_relations(ids) == 0) {
+  if (sel->select_relations({id}) == 0) {
     std::ostringstream error;
     error << "Relation " << id << " was not found.";
     throw http::not_found(error.str());
-  } else {
-    check_visibility();
   }
 
+  check_visibility();
   sel->select_nodes_from_relations();
   sel->select_ways_from_relations();
   sel->select_nodes_from_way_nodes();
   sel->select_relations_members_of_relations();
 }
 
-relation_full_responder::~relation_full_responder() {}
+relation_full_responder::~relation_full_responder() = default;
 
 void relation_full_responder::check_visibility() {
   switch (sel->check_relation_visibility(id)) {
@@ -57,7 +54,7 @@ relation_full_handler::relation_full_handler(request &, osm_nwr_id_t id_)
           .str());
 }
 
-relation_full_handler::~relation_full_handler() {}
+relation_full_handler::~relation_full_handler() = default;
 
 std::string relation_full_handler::log_name() const { return "relation/full"; }
 

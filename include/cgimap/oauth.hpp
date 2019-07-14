@@ -42,6 +42,7 @@ struct nonce_store {
  */
 struct token_store {
   virtual bool allow_read_api(const std::string &token_id) = 0;
+  virtual bool allow_write_api(const std::string &token_id) = 0;
   virtual boost::optional<osm_user_id_t> get_user_id_for_token(
     const std::string &token_id) = 0;
   virtual std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t) = 0;
@@ -79,12 +80,12 @@ struct unauthorized {
   std::string reason;
 };
 
-typedef boost::variant<
+using validity = boost::variant<
   copacetic,
   not_signed,
   bad_request,
   unauthorized
-  > validity;
+  >;
 
 } // namespace validity
 

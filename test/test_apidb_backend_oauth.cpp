@@ -1,14 +1,11 @@
 #include <iostream>
 #include <stdexcept>
-#include <boost/noncopyable.hpp>
 #include <boost/format.hpp>
-#include <boost/foreach.hpp>
 #include <boost/optional/optional_io.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
-#include <stdio.h>
+#include <cstdio>
 
 #include "cgimap/config.hpp"
 #include "cgimap/time.hpp"
@@ -52,7 +49,7 @@ void assert_equal(const T& a, const T&b, const std::string &message) {
 
 void test_nonce_store(test_database &tdb) {
   tdb.run_sql("");
-  boost::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
 
   // can use a nonce
   assert_equal<bool>(true, store->use_nonce("abcdef", 0), "first use of nonce");
@@ -102,7 +99,7 @@ void test_allow_read_api(test_database &tdb) {
     "   '2UxsEFziZGv64hdWN3Qa90Vb6v1aovVxaTTQIn1D', "
     "   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z'); "
     "");
-  boost::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
 
   assert_equal<bool>(
     true, store->allow_read_api("OfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA"),
@@ -116,6 +113,45 @@ void test_allow_read_api(test_database &tdb) {
     false, store->allow_read_api("Rzcm5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf"),
     "invalid token does not allow reading API");
 }
+
+void test_allow_write_api(test_database &tdb) {
+  tdb.run_sql(
+    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+    "VALUES "
+    "  (11, 'user_11@example.com', '', '2013-11-14T02:10:00Z', 'user_11', true); "
+
+    "INSERT INTO client_applications "
+    "  (id, name, user_id, allow_read_prefs, allow_write_api, key, secret) "
+    "VALUES "
+    "  (111, 'test_client_application111', 11, true, true, "
+    "   'x3tHSMbotPe5fBlItMbg', '1NZRJ0u2o7OilPDe60nfZsKJTC7RUZPrNfYwGBjATw'); "
+
+    "INSERT INTO oauth_tokens "
+    "  (id, user_id, client_application_id, allow_read_prefs, allow_write_api, token, secret, "
+    "   created_at, authorized_at, invalidated_at) "
+    "VALUES "
+    // write api permitted
+    "  (11, 11, 111, true, true,"
+    "   'AfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA', "
+    "   'fFCKdXsLxeHPlgrIPr5fZSpXKnDuLw0GvJTzeE99', "
+    "   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', NULL), "
+    // write api not permitted
+    "  (12, 11, 111, true, false,"
+    "   'ApNsXPhrgWl4ELPjPbhfwjjSbNk9npsKoNrMGFlC', "
+    "   'NZskvUUYlOuCsPKuMbSTz5eMpVJVI3LsyW11Z2Uq', "
+    "   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', NULL); "
+    "");
+  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+
+  assert_equal<bool>(
+    true, store->allow_write_api("AfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA"),
+    "valid token and api write permitted allows writing API");
+
+  assert_equal<bool>(
+    false, store->allow_write_api("ApNsXPhrgWl4ELPjPbhfwjjSbNk9npsKoNrMGFlC"),
+    "valid token and api write not permitted does not allow writing API");
+}
+
 
 void test_get_user_id_for_token(test_database &tdb) {
   tdb.run_sql(
@@ -149,7 +185,7 @@ void test_get_user_id_for_token(test_database &tdb) {
     "   '2UxsEFziZGv64hdWN3Qa90Vb6v1aovVxaTTQIn1D', "
     "   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z'); "
     "");
-  boost::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
 
   assert_equal<boost::optional<osm_user_id_t> >(
     1, store->get_user_id_for_token("OfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA"),
@@ -173,13 +209,13 @@ class empty_data_selection
   : public data_selection {
 public:
 
-  virtual ~empty_data_selection() {}
+  virtual ~empty_data_selection() = default;
 
   void write_nodes(output_formatter &formatter) {}
   void write_ways(output_formatter &formatter) {}
   void write_relations(output_formatter &formatter) {}
   void write_changesets(output_formatter &formatter,
-                        const boost::posix_time::ptime &now) {}
+                        const std::chrono::system_clock::time_point &now) {}
 
   visibility_t check_node_visibility(osm_nwr_id_t id) {}
   visibility_t check_way_visibility(osm_nwr_id_t id) {}
@@ -197,22 +233,21 @@ public:
   void select_relations_from_nodes() {}
   void select_relations_from_relations() {}
   void select_relations_members_of_relations() {}
-  bool supports_changesets() { return false; }
   int select_changesets(const std::vector<osm_changeset_id_t> &) { return 0; }
   void select_changeset_discussions() {}
 
   struct factory
     : public data_selection::factory {
-    virtual ~factory() {}
-    virtual boost::shared_ptr<data_selection> make_selection() {
-      return boost::make_shared<empty_data_selection>();
+    virtual ~factory() = default;
+    virtual std::shared_ptr<data_selection> make_selection() {
+      return std::make_shared<empty_data_selection>();
     }
   };
 };
 
 struct recording_rate_limiter
   : public rate_limiter {
-  ~recording_rate_limiter() {}
+  ~recording_rate_limiter() = default;
 
   bool check(const std::string &key) {
     m_keys_seen.insert(key);
@@ -252,13 +287,13 @@ void test_oauth_end_to_end(test_database &tdb) {
     "   'H3Vb9Kgf4LpTyVlft5xsI9MwzknQsTu6CkHE0qK3', "
     "   '2016-10-07T00:00:00Z', '2016-10-07T00:00:00Z', NULL); "
     "");
-  boost::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
 
   recording_rate_limiter limiter;
   std::string generator("test_apidb_backend.cpp");
   routes route;
-  boost::shared_ptr<data_selection::factory> factory =
-    boost::make_shared<empty_data_selection::factory>();
+  std::shared_ptr<data_selection::factory> factory =
+    std::make_shared<empty_data_selection::factory>();
 
   test_request req;
   req.set_header("SCRIPT_URL", "/api/0.6/relation/165475/full");
@@ -325,9 +360,9 @@ void test_oauth_get_roles_for_user(test_database &tdb) {
     "  (2, 1, 'moderator', 1), "
     "  (3, 2, 'moderator', 1);"
     "");
-  boost::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
 
-  typedef std::set<osm_user_role_t> roles_t;
+  using roles_t = std::set<osm_user_role_t>;
 
   // user 3 has no roles -> should return empty set
   assert_equal<roles_t>(roles_t(), store->get_roles_for_user(3),
@@ -353,19 +388,22 @@ int main(int, char **) {
     test_database tdb;
     tdb.setup();
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_nonce_store));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_allow_read_api));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
+        &test_allow_write_api));
+
+    tdb.run(std::function<void(test_database&)>(
         &test_get_user_id_for_token));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_oauth_end_to_end));
 
-    tdb.run(boost::function<void(test_database&)>(
+    tdb.run(std::function<void(test_database&)>(
         &test_oauth_get_roles_for_user));
 
   } catch (const test_database::setup_error &e) {

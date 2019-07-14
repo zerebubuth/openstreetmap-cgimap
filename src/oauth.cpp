@@ -2,12 +2,14 @@
 #include "cgimap/oauth.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/request_helpers.hpp"
+#include "cgimap/time.hpp"
 
 #include <algorithm>
+#include <chrono>
+#include <iomanip>
 #include <vector>
 #include <sstream>
 
-#include <boost/foreach.hpp>
 #ifdef HAVE_BOOST_LOCALE
 #include <boost/locale.hpp>
 #else
@@ -18,15 +20,13 @@
 #include <boost/spirit/include/qi.hpp>
 #include <boost/archive/iterators/base64_from_binary.hpp>
 #include <boost/archive/iterators/transform_width.hpp>
-#include <boost/date_time/posix_time/conversion.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
+
 
 #include <cryptopp/hmac.h>
 #include <cryptopp/sha.h>
 #include <cryptopp/filters.h>
 
 namespace bai = boost::archive::iterators;
-namespace pt = boost::posix_time;
 
 namespace {
 
@@ -164,7 +164,7 @@ struct oauth_authorization_grammar
     // looks like realm is special, see the OAuth spec for details
     // http://oauth.net/core/1.0a/#rfc.section.5.4.1
     kvpair
-      = (ascii::string("realm") >> lit("=\"") > quoted_string > lit("\""))
+      = ((ascii::string("realm") >> (lit("=\"")) > quoted_string) > lit("\""))
       | (key >> lit("=\"") > escaped > lit("\""));
 
     // definitions from http://oauth.net/core/1.0a/#rfc.section.5.4.1
@@ -218,8 +218,8 @@ struct oauth_authorization_grammar
 // not parsed.
 bool parse_oauth_authorization(const char *auth_header, std::vector<param> &params) {
   using boost::spirit::ascii::blank;
-  typedef const char *iterator_type;
-  typedef oauth_authorization_grammar<iterator_type> grammar;
+  using iterator_type = const char *;
+  using grammar = oauth_authorization_grammar<iterator_type>;
 
   grammar g;
   iterator_type itr = auth_header;
@@ -244,7 +244,7 @@ std::string urlnormalise(const std::string &str) {
 }
 
 bool get_all_request_parameters(request &req, std::vector<param> &params) {
-  typedef std::vector<std::pair<std::string, std::string> > params_t;
+  using params_t = std::vector<std::pair<std::string, std::string> >;
 
   { // add oauth params, except realm
     std::vector<param> auth_params;
@@ -252,7 +252,7 @@ bool get_all_request_parameters(request &req, std::vector<param> &params) {
     bool success = parse_oauth_authorization(auth_header, auth_params);
 
     if (success) {
-      BOOST_FOREACH(param &p, auth_params) {
+      for (param &p : auth_params) {
         std::string k = http::urldecode(p.k);
         params.push_back(param());
         params.back().k = urlnormalise(p.k);
@@ -263,7 +263,7 @@ bool get_all_request_parameters(request &req, std::vector<param> &params) {
 
   { // add HTTP GET parameters
     params_t get_params = http::parse_params(get_query_string(req));
-    BOOST_FOREACH(const params_t::value_type &kv, get_params) {
+    for (const params_t::value_type &kv : get_params) {
       params.push_back(param());
       params.back().k = urlnormalise(kv.first);
       params.back().v = urlnormalise(kv.second);
@@ -274,7 +274,7 @@ bool get_all_request_parameters(request &req, std::vector<param> &params) {
 
   // check for duplicate protocol parameters
   std::string last_key;
-  BOOST_FOREACH(const param &p, params) {
+  for (const param &p : params) {
     std::string k = http::urldecode(p.k);
     if (begins_with(k, "oauth_") && (p.k == last_key)) {
       return false;
@@ -338,15 +338,14 @@ std::string hmac_sha1(const std::string &key, const std::string &text) {
 }
 
 std::string base64_encode(const std::string &str) {
-  typedef
+  using base64_encode =
     bai::base64_from_binary<
       bai::transform_width<
         std::string::const_iterator,
         6,
         8
       >
-    >
-    base64_encode;
+    >;
 
   std::ostringstream ostr;
   std::copy(base64_encode(str.begin()),
@@ -374,7 +373,7 @@ boost::optional<std::string> normalise_request_parameters(request &req) {
 
   std::ostringstream out;
   bool first = true;
-  BOOST_FOREACH(const param &p, params) {
+  for (const param &p : params) {
     if ((p.k != "realm") && (p.k != "oauth_signature")) {
       if (first) { first = false; } else { out << "&"; }
       out << p.k << "=" << p.v;
@@ -513,8 +512,10 @@ validity::validity is_valid_signature(
         return validity::bad_request();
       }
 
+      std::chrono::system_clock::time_point ts = std::chrono::system_clock::from_time_t(timestamp);
+
       // check that the time isn't too far in the past
-      if (req.get_current_time() - pt::from_time_t(timestamp) > pt::hours(24)) {
+      if (std::chrono::duration_cast<std::chrono::hours>(req.get_current_time() - ts).count() >= 24) {
         return validity::unauthorized(
           "Timestamp is too far in the past.");
       }
@@ -561,7 +562,6 @@ validity::validity is_valid_signature(
   }
 }
 
-store::~store() {
-}
+store::~store() = default;
 
 } // namespace oauth

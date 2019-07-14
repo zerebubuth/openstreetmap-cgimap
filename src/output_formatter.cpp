@@ -1,8 +1,7 @@
 #include "cgimap/output_formatter.hpp"
 #include "cgimap/time.hpp"
-#include <boost/date_time/posix_time/posix_time.hpp>
 
-namespace pt = boost::posix_time;
+#include <chrono>
 
 // maximum number of element versions which can be associated
 // with a single changeset. this is hard-coded in the API,
@@ -15,9 +14,7 @@ element_info::element_info()
     visible(false), redaction(boost::none) {}
 
 element_info::element_info(const element_info &other)
-  : id(other.id), version(other.version), changeset(other.changeset),
-    timestamp(other.timestamp), uid(other.uid), display_name(other.display_name),
-    visible(other.visible), redaction(other.redaction) {}
+   = default;
 
 element_info::element_info(osm_nwr_id_t id_, osm_nwr_id_t version_,
                            osm_changeset_id_t changeset_,
@@ -36,11 +33,8 @@ changeset_info::changeset_info()
     comments_count(0) {}
 
 changeset_info::changeset_info(const changeset_info &other)
-  : id(other.id), created_at(other.created_at),
-    closed_at(other.closed_at), uid(other.uid),
-    display_name(other.display_name), bounding_box(other.bounding_box),
-    num_changes(other.num_changes),
-    comments_count(other.comments_count) {}
+  
+    = default;
 
 changeset_info::changeset_info(
   osm_changeset_id_t id_,
@@ -56,8 +50,8 @@ changeset_info::changeset_info(
     bounding_box(bounding_box_), num_changes(num_changes_),
     comments_count(comments_count_) {}
 
-bool changeset_info::is_open_at(const pt::ptime &now) const {
-  const pt::ptime closed_at_time = parse_time(closed_at);
+bool changeset_info::is_open_at(const std::chrono::system_clock::time_point &now) const {
+  const std::chrono::system_clock::time_point closed_at_time = parse_time(closed_at);
   return (closed_at_time > now) && (num_changes < MAX_CHANGESET_ELEMENTS);
 }
 
@@ -68,4 +62,4 @@ bool changeset_comment_info::operator==(const changeset_comment_info &other) con
           (author_display_name == other.author_display_name));
 }
 
-output_formatter::~output_formatter() {}
+output_formatter::~output_formatter() = default;

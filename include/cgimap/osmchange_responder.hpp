@@ -15,13 +15,17 @@ public:
 
   virtual ~osmchange_responder();
 
+  // lists the standard types that OSM format can respond in, currently only XML,
+  // as the osmChange format is undefined for JSON
+  std::list<mime::type> types_available() const;
+
   // takes the stuff in the tmp_nodes/ways/relations tables and sorts them by
   // timestamp, then wraps them in <create>/<modify>/<delete> to create an
   // approximation of a diff. the reliance on timestamp means it's entirely
   // likely that some documents may be poorly formed.
-  void write(boost::shared_ptr<output_formatter> f,
+  void write(std::shared_ptr<output_formatter> f,
              const std::string &generator,
-             const boost::posix_time::ptime &now);
+             const std::chrono::system_clock::time_point &now);
 
 protected:
   // selection of elements to be written out

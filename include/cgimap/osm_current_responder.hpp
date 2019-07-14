@@ -3,6 +3,8 @@
 
 #include "cgimap/osm_responder.hpp"
 
+#include <chrono>
+
 /**
  * utility class - inherit from this when implementing somthing
  * responding with OSM data from the current tables.
@@ -18,9 +20,9 @@ public:
 
   // writes whatever is in the tmp_nodes/ways/relations tables to the given
   // formatter.
-  void write(boost::shared_ptr<output_formatter> f,
+  void write(std::shared_ptr<output_formatter> f,
              const std::string &generator,
-             const boost::posix_time::ptime &now);
+             const std::chrono::system_clock::time_point &now);
 
 protected:
   // current selection of elements to be written out
