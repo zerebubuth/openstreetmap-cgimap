@@ -15,6 +15,7 @@ node_relations_responder::node_relations_responder(mime::type mt, osm_nwr_id_t i
   if (sel->select_nodes({id}) > 0 && is_visible()) {
     sel->select_relations_from_nodes();
   }
+  sel->drop_nodes();
 }
 
 node_relations_responder::~node_relations_responder() {}

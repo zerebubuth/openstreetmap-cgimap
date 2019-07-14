@@ -15,6 +15,7 @@ node_ways_responder::node_ways_responder(mime::type mt, osm_nwr_id_t id_,
   if (sel->select_nodes({ id }) > 0 && is_visible()) {
     sel->select_ways_from_nodes();
   }
+  sel->drop_nodes();
 }
 
 node_ways_responder::~node_ways_responder() = default;

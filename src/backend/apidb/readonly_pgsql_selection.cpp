@@ -294,10 +294,17 @@ void readonly_pgsql_selection::select_relations_from_nodes() {
   }
 }
 
-void readonly_pgsql_selection::select_relations_from_relations() {
+void readonly_pgsql_selection::select_relations_from_relations(bool drop_relations) {
   if (!sel_relations.empty()) {
+
+    std::set<osm_nwr_id_t> sel;
+    if (drop_relations)
+      sel_relations.swap(sel);
+    else
+      sel = sel_relations;
+
     insert_results(
-        w.prepared("relation_parents_of_relations")(sel_relations).exec(),
+        w.prepared("relation_parents_of_relations")(sel).exec(),
         sel_relations);
   }
 }
@@ -421,6 +428,14 @@ int readonly_pgsql_selection::select_historical_by_changesets(
     sel_historic_relations);
 
   return selected;
+}
+
+void readonly_pgsql_selection::drop_nodes() {
+  sel_nodes.clear();
+}
+
+void readonly_pgsql_selection::drop_ways() {
+  sel_ways.clear();
 }
 
 int readonly_pgsql_selection::select_changesets(const std::vector<osm_changeset_id_t> &ids) {

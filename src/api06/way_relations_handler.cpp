@@ -15,6 +15,7 @@ way_relations_responder::way_relations_responder(mime::type mt, osm_nwr_id_t id_
   if (sel->select_ways({id}) > 0 && is_visible()) {
     sel->select_relations_from_ways();
   }
+  sel->drop_ways();
 }
 
 way_relations_responder::~way_relations_responder() {}

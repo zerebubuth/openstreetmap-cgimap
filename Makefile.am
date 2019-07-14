@@ -83,7 +83,10 @@ cgimap_staticxml_include_HEADERS = \
 
 if ENABLE_EXPERIMENTAL
 cgimap_api06_include_HEADERS += \
-	include/cgimap/api06/node_ways_handler.hpp
+	include/cgimap/api06/node_ways_handler.hpp \
+	include/cgimap/api06/node_relations_handler.hpp \
+	include/cgimap/api06/way_relations_handler.hpp \
+	include/cgimap/api06/relation_relations_handler.hpp
 endif
 
 if ENABLE_API07
@@ -100,6 +103,9 @@ TESTS += test/redactions.testcore
 TESTS += test/test_parse_osmchange_input
 if ENABLE_EXPERIMENTAL
 TESTS += test/node_ways.testcore
+TESTS += test/node_relations.testcore
+TESTS += test/way_relations.testcore
+TESTS += test/relation_relations.testcore
 endif
 if HAVE_YAJL
 TESTS += test/json.testcore

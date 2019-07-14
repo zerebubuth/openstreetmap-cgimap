@@ -13,7 +13,7 @@ relation_relations_responder::relation_relations_responder(mime::type mt, osm_nw
     : osm_current_responder(mt, w_), id(id_) {
 
   if (sel->select_relations({id}) > 0 && is_visible()) {
-    sel->select_relations_from_relations();
+    sel->select_relations_from_relations(true);
   }
 }
 
