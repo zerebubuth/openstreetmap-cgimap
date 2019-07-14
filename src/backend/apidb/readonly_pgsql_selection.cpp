@@ -95,90 +95,6 @@ inline int insert_results(const pqxx::result &res, set<T> &elems) {
   return num_inserted;
 }
 
-
-// use this to remove current versions from the historical set of elements.
-struct erase_formatter
-  : public output_formatter {
-
-  erase_formatter(
-    output_formatter &fmt,
-    std::set<osm_edition_t> &sel_historic_nodes,
-    std::set<osm_edition_t> &sel_historic_ways,
-    std::set<osm_edition_t> &sel_historic_relations)
-    : m_fmt(fmt)
-    , m_sel_historic_nodes(sel_historic_nodes)
-    , m_sel_historic_ways(sel_historic_ways)
-    , m_sel_historic_relations(sel_historic_relations) {
-  }
-  virtual ~erase_formatter() = default;
-
-  mime::type mime_type() const { return m_fmt.mime_type(); }
-
-  void start_document(
-    const std::string &generator, const std::string &root_name) {
-    m_fmt.start_document(generator, root_name);
-  }
-
-  void end_document() { m_fmt.end_document(); }
-  void error(const std::exception &e) { m_fmt.error(e); }
-  void write_bounds(const bbox &bounds) { m_fmt.write_bounds(bounds); }
-  void start_element_type(element_type type) { m_fmt.start_element_type(type); }
-  void end_element_type(element_type type) { m_fmt.end_element_type(type); }
-  void start_action(action_type type) { m_fmt.start_action(type); }
-  void end_action(action_type type) { m_fmt.end_action(type); }
-  void flush() { m_fmt.flush(); }
-  void error(const std::string &str) { m_fmt.error(str); }
-
-  void write_node(
-    const element_info &elem, double lon, double lat, const tags_t &tags) {
-
-    m_sel_historic_nodes.erase(osm_edition_t(elem.id, elem.version));
-    m_fmt.write_node(elem, lon, lat, tags);
-  }
-
-  void write_way(
-    const element_info &elem, const nodes_t &nodes, const tags_t &tags) {
-
-    m_sel_historic_ways.erase(osm_edition_t(elem.id, elem.version));
-    m_fmt.write_way(elem, nodes, tags);
-  }
-
-  void write_relation(
-    const element_info &elem, const members_t &members, const tags_t &tags) {
-
-    m_sel_historic_relations.erase(osm_edition_t(elem.id, elem.version));
-    m_fmt.write_relation(elem, members, tags);
-  }
-
-  void write_changeset(
-    const changeset_info &elem,
-    const tags_t &tags,
-    bool include_comments,
-    const comments_t &comments,
-    const std::chrono::system_clock::time_point &now) {
-    m_fmt.write_changeset(elem, tags, include_comments, comments, now);
-  }
-
-  void write_diffresult_create_modify(const element_type,
-				      const osm_nwr_signed_id_t,
-				      const osm_nwr_id_t,
-				      const osm_version_t) {
-
-    throw std::runtime_error("erase_formatter::write_diffresult_create_modify unimplemented");
-  }
-
-
-  void write_diffresult_delete(const element_type,
-                               const osm_nwr_signed_id_t) {
-    throw std::runtime_error("erase_formatter::write_diffresult_delete unimplemented");
-  }
-
-private:
-  output_formatter &m_fmt;
-  std::set<osm_edition_t> &m_sel_historic_nodes, &m_sel_historic_ways,
-    &m_sel_historic_relations;
-};
-
 } // anonymous namespace
 
 readonly_pgsql_selection::readonly_pgsql_selection(
@@ -195,9 +111,14 @@ void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
   // we don't need to do anything else.
   logger::message("Fetching nodes");
   if (!sel_nodes.empty()) {
-    erase_formatter eraser(formatter, sel_historic_nodes, sel_historic_ways,
-      sel_historic_relations);
-    extract_nodes(w.prepared("extract_nodes")(sel_nodes).exec(), eraser, cc);
+      // lambda function gets notified about each single element, allowing us to
+      // remove all object versions from historic nodes, that are already
+      // contained in current nodes
+    extract_nodes(w.prepared("extract_nodes")(sel_nodes).exec(),
+		  formatter,
+		  [&](const element_info& elem)
+                    { sel_historic_nodes.erase(osm_edition_t(elem.id, elem.version)); },
+		  cc);
   }
   if (!sel_historic_nodes.empty()) {
     std::vector<osm_nwr_id_t> ids, versions;
@@ -205,7 +126,10 @@ void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
       ids.emplace_back(ed.first);
       versions.emplace_back(ed.second);
     }
-    extract_nodes(w.prepared("extract_historic_nodes")(ids)(versions).exec(), formatter, cc);
+    extract_nodes(w.prepared("extract_historic_nodes")(ids)(versions).exec(),
+		  formatter,
+		  [&](const element_info&) {},
+		  cc);
   }
 }
 
@@ -215,9 +139,14 @@ void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
   // entire result set can be streamed from a single query.
   logger::message("Fetching ways");
   if (!sel_ways.empty()) {
-    erase_formatter eraser(formatter, sel_historic_nodes, sel_historic_ways,
-      sel_historic_relations);
-    extract_ways(w.prepared("extract_ways")(sel_ways).exec(), eraser, cc);
+      // lambda function gets notified about each single element, allowing us to
+    // remove all object versions from historic ways, that are already
+    // contained in current ways
+    extract_ways(w.prepared("extract_ways")(sel_ways).exec(),
+		 formatter,
+		 [&](const element_info& elem)
+		    { sel_historic_ways.erase(osm_edition_t(elem.id, elem.version)); },
+		 cc);
   }
   if (!sel_historic_ways.empty()) {
     std::vector<osm_nwr_id_t> ids, versions;
@@ -225,16 +154,24 @@ void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
       ids.emplace_back(ed.first);
       versions.emplace_back(ed.second);
     }
-    extract_ways(w.prepared("extract_historic_ways")(ids)(versions).exec(), formatter, cc);
+    extract_ways(w.prepared("extract_historic_ways")(ids)(versions).exec(),
+		 formatter,
+		 [&](const element_info&) {},
+		 cc);
   }
 }
 
 void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
   logger::message("Fetching relations");
   if (!sel_relations.empty()) {
-    erase_formatter eraser(formatter, sel_historic_nodes, sel_historic_ways,
-      sel_historic_relations);
-    extract_relations(w.prepared("extract_relations")(sel_relations).exec(), eraser, cc);
+    // lambda function gets notified about each single element, allowing us to
+    // remove all object versions from historic relations, that are already
+    // contained in current relations
+    extract_relations(w.prepared("extract_relations")(sel_relations).exec(),
+		      formatter,
+	              [&](const element_info& elem)
+		        { sel_historic_relations.erase(osm_edition_t(elem.id, elem.version)); },
+		      cc);
   }
   if (!sel_historic_relations.empty()) {
     std::vector<osm_nwr_id_t> ids, versions;
@@ -242,7 +179,10 @@ void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
       ids.emplace_back(ed.first);
       versions.emplace_back(ed.second);
     }
-    extract_relations(w.prepared("extract_historic_relations")(ids)(versions).exec(), formatter, cc);
+    extract_relations(w.prepared("extract_historic_relations")(ids)(versions).exec(),
+		      formatter,
+	              [&](const element_info&) {},
+		      cc);
   }
 }
 
