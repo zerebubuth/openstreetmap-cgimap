@@ -26,6 +26,8 @@ Currently, CGImap implements:
 * single node, way and relation history calls,
 * single node, way and relation specific version fetches,
 * multiple node, way and relation specific version fetches,
+* relations for element (node, way, relation),
+* ways for node,
 * changeset downloads,
 * changeset uploads.
 
@@ -141,9 +143,9 @@ The apache modules mod_proxy and mod_fastcgi_handler must also be enabled.
 Database Permissions
 --------------------
 
-The apidb backend requires permissions to SELECT and CREATE TEMPORARY on the
-Postgres server. For situations where temporary tables cannot be created there
-is the `--readonly` option.
+The read only apidb backend requires permissions to SELECT on the Postgres server.
+OAuth and update database connections require additional permissions to INSERT/UPDATE/DELETE
+data, as well as creating temporary tables.
 
 It is recommended that a separate account is created for
 CGImap to avoid any possibility of data corruption. Care has been
