@@ -263,10 +263,11 @@ std::shared_ptr<ZLibBaseDecompressor>
 get_content_encoding_handler(const std::string &content_encoding);
 
 enum class method : uint8_t {
-  GET     = 0b0001,
-  POST    = 0b0010,
-  HEAD    = 0b0100,
-  OPTIONS = 0b1000
+  GET     = 0b00001,
+  POST    = 0b00010,
+  PUT     = 0b00100,
+  HEAD    = 0b01000,
+  OPTIONS = 0b10000
 };
 
 // allow bitset-like operators on methods

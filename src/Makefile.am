@@ -146,6 +146,9 @@ libcgimap_core_la_SOURCES=\
 	request_helpers.cpp \
 	router.cpp \
 	routes.cpp \
+	text_formatter.cpp \
+        text_responder.cpp \
+	text_writer.cpp \
 	time.cpp \
 	xml_formatter.cpp \
 	xml_writer.cpp \
@@ -172,6 +175,8 @@ libcgimap_core_la_SOURCES+=\
 	api06/id_version_io.cpp \
 	api06/changeset_handler.cpp \
 	api06/changeset_download_handler.cpp \
+	api06/changeset_create_handler.cpp \
+	api06/changeset_close_handler.cpp \
 	api06/changeset_upload_handler.cpp \
 	api06/changeset_upload/osmchange_handler.cpp \
 	api06/changeset_upload/osmchange_tracking.cpp

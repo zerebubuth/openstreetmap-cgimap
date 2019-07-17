@@ -276,6 +276,78 @@ process_post_request(request &req, handler_ptr_t handler,
   return std::make_tuple(request_name, out->written());
 }
 
+/**
+ * process a PUT request.
+ */
+std::tuple<string, size_t>
+process_put_request(request &req, handler_ptr_t handler,
+		    data_update_ptr data_update,
+                    const string &payload,
+                    boost::optional<osm_user_id_t> user_id,
+                    const string &ip, const string &generator) {
+  // request start logging
+  string request_name = handler->log_name();
+  logger::message(format("Started request for %1% from %2%") % request_name %
+                  ip);
+
+  std::shared_ptr< payload_enabled_handler > pe_handler = std::static_pointer_cast< payload_enabled_handler >(handler);
+
+  if (pe_handler == nullptr)
+    throw http::server_error("HTTP PUT method is not payload enabled");
+
+  responder_ptr_t responder = pe_handler->responder(data_update, payload, user_id);
+
+  // get encoding to use
+  shared_ptr<http::encoding> encoding = get_encoding(req);
+
+//  // figure out best mime type
+  mime::type best_mime_type = choose_best_mime_type(req, responder);
+
+  //mime::type best_mime_type = mime::type::text_xml;
+
+  // TODO: use handler/responder to setup response headers.
+  // write the response header
+  req.status(200);
+  req.add_header("Content-Type", (boost::format("%1%; charset=utf-8") %
+                                  mime::to_string(best_mime_type)).str());
+  req.add_header("Content-Encoding", encoding->name());
+  req.add_header("Cache-Control", "private, max-age=0, must-revalidate");
+
+  // create the XML writer with the FCGI streams as output
+  shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
+
+  // create the correct mime type output formatter.
+  shared_ptr<output_formatter> o_formatter =
+      create_formatter(req, best_mime_type, out);
+
+  try {
+//    // call to write the response
+    responder->write(o_formatter, generator, req.get_current_time());
+
+    // ensure the request is finished
+    req.finish();
+
+    // make sure all bytes have been written. note that the writer can
+    // throw an exception here, leaving the xml document in a
+    // half-written state...
+    o_formatter->flush();
+    out->flush();
+
+  } catch (const output_writer::write_error &e) {
+    // don't do anything - just go on to the next request.
+    logger::message(format("Caught write error, aborting request: %1%") %
+                    e.what());
+
+  } catch (const std::exception &e) {
+    // errors here are unrecoverable (fatal to the request but maybe
+    // not fatal to the process) since we already started writing to
+    // the client.
+    o_formatter->error(e.what());
+  }
+
+  return std::make_tuple(request_name, out->written());
+}
+
 
 /**
  * process a HEAD request.
@@ -416,6 +488,29 @@ void process_request(request &req, rate_limiter &limiter,
   process_request(req, limiter, generator, route, factory, std::shared_ptr<data_update::factory>(nullptr), store);
 }
 
+void validate_user_db_update_permission (
+    const boost::optional<osm_user_id_t>& user_id,
+    const std::shared_ptr<data_selection>& selection, bool allow_api_write)
+{
+  if (!user_id)
+    throw http::unauthorized ("User is not authorized");
+
+  if (selection->supports_user_details ()
+      && selection->is_user_blocked (*user_id))
+    throw http::forbidden (
+	"Your access to the API has been blocked. Please log-in to the web interface to find out more.");
+
+  if (!allow_api_write)
+    throw http::unauthorized ("You have not granted the modify map permission");
+}
+
+void check_db_readonly_mode (const std::shared_ptr<data_update>& data_update)
+{
+  if (data_update->is_api_write_disabled())
+    throw http::bad_request (
+	"Server is currently in read only mode, no database changes allowed at this time");
+}
+
 /**
  * process a single request.
  */
@@ -519,27 +614,35 @@ void process_request(request &req, rate_limiter &limiter,
 
     } else if (method == http::method::POST) {
 
-      if (!user_id)
-        throw http::unauthorized("User is not authorized");
-
-      if (selection->supports_user_details() && selection->is_user_blocked(*user_id))
-	throw http::forbidden("Your access to the API has been blocked. Please log-in to the web interface to find out more.");
-
-      if (!allow_api_write)
-	throw http::unauthorized("You have not granted the modify map permission");
+      validate_user_db_update_permission(user_id, selection, allow_api_write);
 
       if (update_factory == nullptr)
 	throw http::bad_request("Backend does not support POST requests");
 
       auto data_update = update_factory->make_data_update();
 
-      if (data_update->is_api_write_disabled())
-        throw http::bad_request("Server is currently in read only mode, no database changes allowed at this time");
+      check_db_readonly_mode (data_update);
 
       std::string payload = req.get_payload();
 
       std::tie(request_name, bytes_written) =
           process_post_request(req, handler, data_update, payload, user_id, ip, generator);
+
+    } else if (method == http::method::PUT) {
+
+      validate_user_db_update_permission(user_id, selection, allow_api_write);
+
+      if (update_factory == nullptr)
+	throw http::bad_request("Backend does not support PUT requests");
+
+      auto data_update = update_factory->make_data_update();
+
+      check_db_readonly_mode (data_update);
+
+      std::string payload = req.get_payload();
+
+      std::tie(request_name, bytes_written) =
+          process_put_request(req, handler, data_update, payload, user_id, ip, generator);
 
     } else if (method == http::method::HEAD) {
       std::tie(request_name, bytes_written) =

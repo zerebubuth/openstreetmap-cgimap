@@ -20,7 +20,24 @@ public:
 
   void update_changeset(const uint32_t num_new_changes, const bbox_t bbox);
 
+  osm_changeset_id_t create_changeset(const std::map<std::string, std::string>&);
+
+  void close_changeset();
+
 private:
+  void check_user_owns_changeset();
+  void lock_cs(bool& is_closed, std::string& closed_at, std::string& current_time);
+  void
+  changeset_insert_subscriber ();
+  void
+  changeset_insert_tags (const std::map<std::string, std::string>& tags);
+  void
+  changeset_delete_tags ();
+  void
+  changeset_update_users_cs_count ();
+  void
+  changeset_insert_cs ();
+
   Transaction_Manager &m;
   uint32_t cs_num_changes;
   osm_changeset_id_t changeset;
