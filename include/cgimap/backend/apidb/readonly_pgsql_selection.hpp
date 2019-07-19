@@ -4,6 +4,8 @@
 #include "cgimap/data_selection.hpp"
 #include "cgimap/backend/apidb/changeset.hpp"
 #include "cgimap/backend/apidb/cache.hpp"
+#include "cgimap/backend/apidb/transaction_manager.hpp"
+
 #include <pqxx/pqxx>
 #include <boost/program_options.hpp>
 #include <chrono>
@@ -83,10 +85,6 @@ public:
   };
 
 private:
-  // the transaction in which the selection takes place. this is
-  // fully read-only, and cannot create any temporary tables,
-  // unlike writeable_pgsql_selection.
-  pqxx::work w;
 
   // true if we want to include changeset discussions along with
   // the changesets themselves. defaults to false.
@@ -101,6 +99,8 @@ private:
   std::set<osm_nwr_id_t> sel_nodes, sel_ways, sel_relations;
   std::set<osm_edition_t> sel_historic_nodes, sel_historic_ways, sel_historic_relations;
   cache<osm_changeset_id_t, changeset> &cc;
+
+  Transaction_Manager m;
 };
 
 #endif /* READONLY_PGSQL_SELECTION_HPP */
