@@ -10,10 +10,10 @@ namespace {
 void set_default_headers(request &req) {
   const char *origin = req.get_param("HTTP_ORIGIN");
   if (origin) {
-    req.add_header("Access-Control-Allow-Credentials", "true");
-    req.add_header("Access-Control-Allow-Methods", http::list_methods(req.methods()));
-    req.add_header("Access-Control-Allow-Origin", std::string(origin));
-    req.add_header("Access-Control-Max-Age", "1728000");
+    req.add_header("Access-Control-Allow-Credentials", "true")
+       .add_header("Access-Control-Allow-Methods", http::list_methods(req.methods()))
+       .add_header("Access-Control-Allow-Origin", std::string(origin))
+       .add_header("Access-Control-Max-Age", "1728000");
   }
 }
 } // anonymous namespace
@@ -24,19 +24,22 @@ request::request()
 
 request::~request() = default;
 
-void request::status(int code) {
+request& request::status(int code) {
   check_workflow(status_HEADERS);
   m_status = code;
+  return *this;
 }
 
-void request::add_header(const std::string &key, const std::string &value) {
+request& request::add_header(const std::string &key, const std::string &value) {
   check_workflow(status_HEADERS);
   m_headers.push_back(std::make_pair(key, value));
+  return *this;
 }
 
-void request::add_success_header(const std::string &key, const std::string &value) {
+request& request::add_success_header(const std::string &key, const std::string &value) {
   check_workflow(status_HEADERS);
   m_success_headers.push_back(std::make_pair(key, value));
+  return *this;
 }
 
 std::shared_ptr<output_buffer> request::get_buffer() {
