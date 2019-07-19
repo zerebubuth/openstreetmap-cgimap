@@ -68,8 +68,7 @@ public:
   bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &);
 
   /**
-   * a factory for the creation of read-only selections, so it
-   * can set up prepared statements.
+   * a factory for the creation of read-only selections
    */
   class factory : public data_selection::factory {
   public:
