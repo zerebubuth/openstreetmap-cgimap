@@ -788,14 +788,6 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
 
   // set the connection to use readonly transaction.
   m_connection.set_variable("default_transaction_read_only", "true");
-
-  // clang-format off
-
-  m_cache_connection.prepare("extract_changeset_userdetails",
-      "SELECT c.id, u.data_public, u.display_name, u.id from users u "
-                   "join changesets c on u.id=c.user_id where c.id = ANY($1)");
-
-  // clang-format on
 }
 
 readonly_pgsql_selection::factory::~factory() = default;

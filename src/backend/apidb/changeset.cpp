@@ -19,6 +19,10 @@ std::map<osm_changeset_id_t, changeset *> fetch_changesets(pqxx::transaction_bas
   if (ids.empty())
     return result;
 
+  w.conn().prepare("extract_changeset_userdetails",
+      "SELECT c.id, u.data_public, u.display_name, u.id from users u "
+                   "join changesets c on u.id=c.user_id where c.id = ANY($1)");
+
   pqxx::result res =
       w.prepared("extract_changeset_userdetails")(ids).exec();
 
