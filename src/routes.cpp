@@ -98,29 +98,53 @@ struct router {
     }
   };
 
-  /* add a rule (a DSL expression) which constructs the Handler type when the
-   * rule
-         * matches. the Rule type can be inferred, so generally this can be
-   * written as
-         * r.add<Handler>(...);
-         */
-  template <typename Handler, typename Rule> void add(Rule r) {
+  /* add a match all methods rule (a DSL expression) which constructs the Handler
+   * type when the rule matches. the Rule type can be inferred,
+   * so generally this can be written as
+   *  r.all<Handler>(...);
+   */
+  template <typename Handler, typename Rule> router& all(Rule r) {
     // functor to create Handler instances
     boost::factory<Handler *> ctor;
     rules.push_back(
         rule_ptr(new rule<Rule, boost::factory<Handler *> >(r, ctor)));
+    return *this;
+  }
+
+  // add rule to match PUT HTTP method only
+  template <typename Handler, typename Rule> router& put(Rule r) {
+    // functor to create Handler instances
+    boost::factory<Handler *> ctor;
+    rules_put.push_back(
+        rule_ptr(new rule<Rule, boost::factory<Handler *> >(r, ctor)));
+    return *this;
   }
 
   /* match the list of path components given in p. if a match is found,
    * construct an
-         * object of the handler type with the provided params and the matched
+   * object of the handler type with the provided params and the matched
    * params.
-         */
+   */
+
   handler_ptr_t match(const list<string> &p, request &params) {
+
     handler_ptr_t hptr;
+
     // it probably isn't necessary to have any more sophisticated data structure
     // than a list at this point. also means the semantics for rule matching are
     // pretty clear - the first match wins.
+
+//    boost::optional<http::method> maybe_method =
+//      http::parse_method(fcgi_get_env(params, "REQUEST_METHOD"));
+//
+//    if (maybe_method && *maybe_method == http::method::PUT) {
+//      for (auto rptr : rules_put) {
+//	if (rptr->invoke_if(p, params, hptr)) {
+//	  return hptr;
+//	}
+//      }
+//    }
+
     for (auto rptr : rules) {
       if (rptr->invoke_if(p, params, hptr)) {
         break;
@@ -132,6 +156,7 @@ struct router {
 
 private:
   list<rule_ptr> rules;
+  list<rule_ptr> rules_put;
 };
 
 routes::routes()
@@ -148,39 +173,40 @@ routes::routes()
 
   {
     using namespace api06;
-    r->add<map_handler>(root_ / "map");
-    r->add<node_ways_handler>(root_ / "node" / osm_id_ / "ways");
-    r->add<node_relations_handler>(root_ / "node" / osm_id_ / "relations");
+    r->all<map_handler>(root_ / "map")
+      .all<node_ways_handler>(root_ / "node" / osm_id_ / "ways")
+      .all<node_relations_handler>(root_ / "node" / osm_id_ / "relations")
+
     // make sure that *_version_handler is listed before matching *_handler
-    r->add<node_history_handler>(root_ / "node" / osm_id_ / "history");
-    r->add<node_version_handler>(root_ / "node" / osm_id_ / osm_id_ );
-    r->add<node_handler>(root_ / "node" / osm_id_);
-    r->add<nodes_handler>(root_ / "nodes");
+      .all<node_history_handler>(root_ / "node" / osm_id_ / "history")
+      .all<node_version_handler>(root_ / "node" / osm_id_ / osm_id_ )
+      .all<node_handler>(root_ / "node" / osm_id_)
+      .all<nodes_handler>(root_ / "nodes")
 
-    r->add<way_full_handler>(root_ / "way" / osm_id_ / "full");
-    r->add<way_relations_handler>(root_ / "way" / osm_id_ / "relations");
-    r->add<way_history_handler>(root_ / "way" / osm_id_ / "history");
-    r->add<way_version_handler>(root_ / "way" / osm_id_ / osm_id_ );
-    r->add<way_handler>(root_ / "way" / osm_id_);
-    r->add<ways_handler>(root_ / "ways");
+      .all<way_full_handler>(root_ / "way" / osm_id_ / "full")
+      .all<way_relations_handler>(root_ / "way" / osm_id_ / "relations")
+      .all<way_history_handler>(root_ / "way" / osm_id_ / "history")
+      .all<way_version_handler>(root_ / "way" / osm_id_ / osm_id_ )
+      .all<way_handler>(root_ / "way" / osm_id_)
+      .all<ways_handler>(root_ / "ways")
 
-    r->add<relation_full_handler>(root_ / "relation" / osm_id_ / "full");
-    r->add<relation_relations_handler>(root_ / "relation" / osm_id_ / "relations");
-    r->add<relation_history_handler>(root_ / "relation" / osm_id_ / "history");
-    r->add<relation_version_handler>(root_ / "relation" / osm_id_ / osm_id_ );
-    r->add<relation_handler>(root_ / "relation" / osm_id_);
-    r->add<relations_handler>(root_ / "relations");
+      .all<relation_full_handler>(root_ / "relation" / osm_id_ / "full")
+      .all<relation_relations_handler>(root_ / "relation" / osm_id_ / "relations")
+      .all<relation_history_handler>(root_ / "relation" / osm_id_ / "history")
+      .all<relation_version_handler>(root_ / "relation" / osm_id_ / osm_id_ )
+      .all<relation_handler>(root_ / "relation" / osm_id_)
+      .all<relations_handler>(root_ / "relations")
 
-    r->add<changeset_download_handler>(root_ / "changeset" / osm_id_ / "download");
-    r->add<changeset_upload_handler>(root_ / "changeset" / osm_id_ / "upload");
-    r->add<changeset_handler>(root_ / "changeset" / osm_id_);
+      .all<changeset_download_handler>(root_ / "changeset" / osm_id_ / "download")
+      .all<changeset_upload_handler>(root_ / "changeset" / osm_id_ / "upload")
+      .all<changeset_handler>(root_ / "changeset" / osm_id_);
   }
 
 #ifdef ENABLE_API07
   {
     using namespace api07;
-    r_experimental->add<map_handler>(root_ / "map");
-    r_experimental->add<map_handler>(root_ / "map" / "tile" / osm_id_);
+    r_experimental->all<map_handler>(root_ / "map")
+                   .all<map_handler>(root_ / "map" / "tile" / osm_id_);
   }
 #endif /* ENABLE_API07 */
 }
