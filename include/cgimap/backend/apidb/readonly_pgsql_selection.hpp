@@ -21,7 +21,7 @@
  */
 class readonly_pgsql_selection : public data_selection {
 public:
-  readonly_pgsql_selection(pqxx::connection &conn,
+  readonly_pgsql_selection(Transaction_Owner_Base& to,
                            cache<osm_changeset_id_t, changeset> &changeset_cache);
   ~readonly_pgsql_selection();
 
@@ -74,7 +74,8 @@ public:
   public:
     factory(const boost::program_options::variables_map &);
     virtual ~factory();
-    virtual std::shared_ptr<data_selection> make_selection();
+    virtual std::shared_ptr<data_selection> make_selection(Transaction_Owner_Base& );
+    virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction();
 
   private:
     pqxx::connection m_connection, m_cache_connection;

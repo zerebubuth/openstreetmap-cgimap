@@ -98,8 +98,8 @@ inline int insert_results(const pqxx::result &res, set<T> &elems) {
 } // anonymous namespace
 
 readonly_pgsql_selection::readonly_pgsql_selection(
-    pqxx::connection &conn, cache<osm_changeset_id_t, changeset> &changeset_cache)
-    : m{ conn }
+    Transaction_Owner_Base& to, cache<osm_changeset_id_t, changeset> &changeset_cache)
+    : m(to)
     , include_changeset_discussions(false)
     , m_redactions_visible(false)
     , cc(changeset_cache) {}
@@ -792,8 +792,17 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
 
 readonly_pgsql_selection::factory::~factory() = default;
 
+
 std::shared_ptr<data_selection>
-readonly_pgsql_selection::factory::make_selection() {
-  return std::make_shared<readonly_pgsql_selection>(std::ref(m_connection),
+readonly_pgsql_selection::factory::make_selection(Transaction_Owner_Base& to) {
+  return std::make_shared<readonly_pgsql_selection>(to,
 						    std::ref(m_cache));
 }
+
+std::unique_ptr<Transaction_Owner_Base>
+readonly_pgsql_selection::factory::get_default_transaction()
+{
+  return std::unique_ptr<Transaction_Owner_ReadOnly>(new Transaction_Owner_ReadOnly(std::ref(m_connection)));
+}
+
+

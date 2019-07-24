@@ -425,8 +425,10 @@ void process_request(request &req, rate_limiter &limiter,
     std::set<osm_user_role_t> user_roles;
     bool allow_api_write = true;
 
+    auto default_transaction = factory->get_default_transaction();
+
     // create a data selection for the request
-    auto selection = factory->make_selection();
+    auto selection = factory->make_selection(*default_transaction);
 
     // Initially assume IP based client key
     client_key = addr_prefix + ip;
@@ -524,7 +526,9 @@ void process_request(request &req, rate_limiter &limiter,
       if (update_factory == nullptr)
 	throw http::bad_request("Backend does not support POST requests");
 
-      auto data_update = update_factory->make_data_update();
+      auto rw_transaction = update_factory->get_default_transaction();
+
+      auto data_update = update_factory->make_data_update(*rw_transaction);
 
       if (data_update->is_api_write_disabled())
         throw http::bad_request("Server is currently in read only mode, no database changes allowed at this time");

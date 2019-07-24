@@ -15,6 +15,11 @@ using std::shared_ptr;
 using std::string;
 using api06::id_version;
 
+Transaction_Owner_Void::Transaction_Owner_Void() {};
+
+boost::optional<pqxx::transaction_base&>Transaction_Owner_Void::get_transaction() { return boost::none; }
+
+
 namespace {
 
 // needed to get boost::lexical_cast<bool>(string) to work.
@@ -770,8 +775,12 @@ struct factory : public data_selection::factory {
 
   virtual ~factory() = default;
 
-  virtual std::shared_ptr<data_selection> make_selection() {
+  virtual std::shared_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
     return std::make_shared<static_data_selection>(m_database);
+  }
+
+  virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() {
+    return std::unique_ptr<Transaction_Owner_Void>(new Transaction_Owner_Void());
   }
 
 private:
