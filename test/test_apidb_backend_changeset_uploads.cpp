@@ -2070,7 +2070,6 @@ namespace {
 	  throw std::runtime_error("Expected HTTP 401 Unauthorized: wrong user/password");
     }
 
-
     // User logging on with display name (different case)
     {
 	// set up request headers from test case
@@ -2113,7 +2112,6 @@ namespace {
 	  throw std::runtime_error("Expected HTTP 200 OK: Log on with email address");
     }
 
-
     // User logging on with email address with different case and additional whitespace rather than display name
     {
 	// set up request headers from test case
@@ -2134,8 +2132,6 @@ namespace {
 	if (req.response_status() != 200)
 	  throw std::runtime_error("Expected HTTP 200 OK: Log on with email address, whitespace, different case");
     }
-
-
 
     // User is blocked (needs_view)
     {

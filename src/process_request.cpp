@@ -34,11 +34,11 @@ namespace {
 // more information soon:
 // https://github.com/zerebubuth/openstreetmap-cgimap/pull/125#issuecomment-272720417
 void respond_404(const http::not_found &e, request &r) {
-  r.status(e.code());
-  r.add_header("Content-Type", "text/html; charset=utf-8");
-  r.add_header("Content-Length", "0");
-  r.add_header("Cache-Control", "no-cache");
-  r.put("");
+  r.status(e.code())
+    .add_header("Content-Type", "text/html; charset=utf-8")
+    .add_header("Content-Length", "0")
+    .add_header("Cache-Control", "no-cache")
+    .put("");
 }
 
 void respond_401(const http::unauthorized &e, request &r) {
@@ -50,15 +50,13 @@ void respond_401(const http::unauthorized &e, request &r) {
   std::ostringstream message_size;
   message_size << message.size();
 
-  r.status(e.code());
-  r.add_header("Content-Type", "text/plain; charset=utf-8");
+  r.status(e.code())
+    .add_header("Content-Type", "text/plain; charset=utf-8")
   // Header according to RFC 7617, section 2.1
-  r.add_header("WWW-Authenticate", R"(Basic realm="Web Password", charset="UTF-8")");
-  r.add_header("Content-Length", message_size.str());
-  r.add_header("Cache-Control", "no-cache");
-
-  // output the message
-  r.put(message);
+    .add_header("WWW-Authenticate", R"(Basic realm="Web Password", charset="UTF-8")")
+    .add_header("Content-Length", message_size.str())
+    .add_header("Cache-Control", "no-cache")
+    .put(message);      // output the message
 
   r.finish();
 }
@@ -73,18 +71,16 @@ void response_415(const http::unsupported_media_type&e, request &r) {
   std::ostringstream message_size;
   message_size << message.size();
 
-  r.status(e.code());
-  r.add_header("Content-Type", "text/plain; charset=utf-8");
+  r.status(e.code())
+    .add_header("Content-Type", "text/plain; charset=utf-8")
 #ifdef HAVE_LIBZ
-  r.add_header("Accept-Encoding", "gzip, deflate");
+    .add_header("Accept-Encoding", "gzip, deflate")
 #else
-  r.add_header("Accept-Encoding", "identity");
+    .add_header("Accept-Encoding", "identity")
 #endif
-  r.add_header("Content-Length", message_size.str());
-  r.add_header("Cache-Control", "no-cache");
-
-  // output the message
-  r.put(message);
+    .add_header("Content-Length", message_size.str())
+    .add_header("Cache-Control", "no-cache")
+    .put(message); // output the message
 
   r.finish();
 
@@ -97,8 +93,8 @@ void respond_error(const http::exception &e, request &r) {
   const char *error_format = r.get_param("HTTP_X_ERROR_FORMAT");
 
   if (error_format && al::iequals(error_format, "xml")) {
-    r.status(200);
-    r.add_header("Content-Type", "text/xml; charset=utf-8");
+    r.status(200)
+     .add_header("Content-Type", "text/xml; charset=utf-8");
 
     ostringstream ostr;
     ostr << "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\r\n"
@@ -113,14 +109,12 @@ void respond_error(const http::exception &e, request &r) {
     std::ostringstream message_size;
     message_size << message.size();
 
-    r.status(e.code());
-    r.add_header("Content-Type", "text/plain");
-    r.add_header("Content-Length", message_size.str());
-    r.add_header("Error", message);
-    r.add_header("Cache-Control", "no-cache");
-
-    // output the message as well
-    r.put(message);
+    r.status(e.code())
+      .add_header("Content-Type", "text/plain")
+      .add_header("Content-Length", message_size.str())
+      .add_header("Error", message)
+      .add_header("Cache-Control", "no-cache")
+      .put(message);   // output the message as well
   }
 
   r.finish();
@@ -130,13 +124,12 @@ void respond_error(const http::exception &e, request &r) {
  * Return a 405 error.
  */
 void process_not_allowed(request &req, handler_ptr_t handler) {
-  req.status(405);
-  std::string methods = http::list_methods(handler->allowed_methods());
-  req.add_header("Allow", methods);
-  req.add_header("Content-Type", "text/html");
-  req.add_header("Content-Length", "0");
-  req.add_header("Cache-Control", "no-cache");
-  req.finish();
+  req.status(405)
+     .add_header("Allow", http::list_methods(handler->allowed_methods()))
+     .add_header("Content-Type", "text/html")
+     .add_header("Content-Length", "0")
+     .add_header("Cache-Control", "no-cache")
+     .finish();
 }
 
 /**
@@ -162,11 +155,11 @@ process_get_request(request &req, handler_ptr_t handler,
 
   // TODO: use handler/responder to setup response headers.
   // write the response header
-  req.status(200);
-  req.add_header("Content-Type", (boost::format("%1%; charset=utf-8") %
-                                  mime::to_string(best_mime_type)).str());
-  req.add_header("Content-Encoding", encoding->name());
-  req.add_header("Cache-Control", "private, max-age=0, must-revalidate");
+  req.status(200)
+     .add_header("Content-Type", (boost::format("%1%; charset=utf-8") %
+                                  mime::to_string(best_mime_type)).str())
+     .add_header("Content-Encoding", encoding->name())
+     .add_header("Cache-Control", "private, max-age=0, must-revalidate");
 
   // create the XML writer with the FCGI streams as output
   shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
@@ -235,11 +228,11 @@ process_post_request(request &req, handler_ptr_t handler,
 
   // TODO: use handler/responder to setup response headers.
   // write the response header
-  req.status(200);
-  req.add_header("Content-Type", (boost::format("%1%; charset=utf-8") %
-                                  mime::to_string(best_mime_type)).str());
-  req.add_header("Content-Encoding", encoding->name());
-  req.add_header("Cache-Control", "private, max-age=0, must-revalidate");
+  req.status(200)
+     .add_header("Content-Type", (boost::format("%1%; charset=utf-8") %
+                                  mime::to_string(best_mime_type)).str())
+     .add_header("Content-Encoding", encoding->name())
+     .add_header("Cache-Control", "private, max-age=0, must-revalidate");
 
   // create the XML writer with the FCGI streams as output
   shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
@@ -378,11 +371,11 @@ process_head_request(request &req, handler_ptr_t handler,
 
   // TODO: use handler/responder to setup response headers.
   // write the response header
-  req.status(200);
-  req.add_header("Content-Type", (boost::format("%1%; charset=utf-8") %
-                                  mime::to_string(best_mime_type)).str());
-  req.add_header("Content-Encoding", encoding->name());
-  req.add_header("Cache-Control", "no-cache");
+  req.status(200)
+     .add_header("Content-Type", (boost::format("%1%; charset=utf-8") %
+                                  mime::to_string(best_mime_type)).str())
+     .add_header("Content-Encoding", encoding->name())
+     .add_header("Cache-Control", "no-cache");
 
   // ensure the request is finished
   req.finish();
@@ -405,8 +398,8 @@ std::tuple<string, size_t> process_options_request(
   if (origin && method) {
 
     // write the response
-    req.status(200);
-    req.add_header("Content-Type", "text/plain");
+    req.status(200)
+       .add_header("Content-Type", "text/plain");
 
     // if extra headers were requested, then reply that we allow them too.
     const char *headers = req.get_param("HTTP_ACCESS_CONTROL_REQUEST_HEADERS");
@@ -527,8 +520,10 @@ void process_request(request &req, rate_limiter &limiter,
     std::set<osm_user_role_t> user_roles;
     bool allow_api_write = true;
 
+    auto default_transaction = factory->get_default_transaction();
+
     // create a data selection for the request
-    auto selection = factory->make_selection();
+    auto selection = factory->make_selection(*default_transaction);
 
     // Initially assume IP based client key
     client_key = addr_prefix + ip;
@@ -619,7 +614,9 @@ void process_request(request &req, rate_limiter &limiter,
       if (update_factory == nullptr)
 	throw http::bad_request("Backend does not support POST requests");
 
-      auto data_update = update_factory->make_data_update();
+      auto rw_transaction = update_factory->get_default_transaction();
+
+      auto data_update = update_factory->make_data_update(*rw_transaction);
 
       check_db_readonly_mode (data_update);
 
@@ -635,7 +632,9 @@ void process_request(request &req, rate_limiter &limiter,
       if (update_factory == nullptr)
 	throw http::bad_request("Backend does not support PUT requests");
 
-      auto data_update = update_factory->make_data_update();
+      auto rw_transaction = update_factory->get_default_transaction();
+
+      auto data_update = update_factory->make_data_update(*rw_transaction);
 
       check_db_readonly_mode (data_update);
 

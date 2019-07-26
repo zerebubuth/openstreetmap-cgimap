@@ -108,6 +108,12 @@ void test_database::setup() {
 
 test_database::~test_database() {
 
+  if (txn_owner_readonly)
+    txn_owner_readonly.reset();
+
+  if (txn_owner_readwrite)
+    txn_owner_readwrite.reset();
+
   if (m_readonly_factory) {
     m_readonly_factory.reset();
   }
@@ -167,6 +173,8 @@ void test_database::run(
     throw std::runtime_error(
         (boost::format("%1%, in read-only selection") % e.what()).str());
   }
+  txn_owner_readonly.reset();
+  txn_owner_readwrite.reset();
 }
 
 void test_database::run_update(
@@ -183,6 +191,8 @@ void test_database::run_update(
     throw std::runtime_error(
         (boost::format("%1%, in update, read-only selection") % e.what()).str());
   }
+  txn_owner_readonly.reset();
+  txn_owner_readwrite.reset();
 }
 
 
@@ -197,12 +207,15 @@ std::shared_ptr<data_update::factory> test_database:: get_data_update_factory() 
 
 
 std::shared_ptr<data_selection> test_database::get_data_selection() {
-
-  return (*m_readonly_factory).make_selection();
+  txn_owner_readonly.reset();
+  txn_owner_readonly = m_readonly_factory->get_default_transaction();
+  return (*m_readonly_factory).make_selection(*txn_owner_readonly);
 }
 
 std::shared_ptr<data_update> test_database::get_data_update() {
-  return (*m_update_factory).make_data_update();
+  txn_owner_readwrite.reset();
+  txn_owner_readwrite = m_update_factory->get_default_transaction();
+  return (*m_update_factory).make_data_update(*txn_owner_readwrite);
 }
 
 std::shared_ptr<oauth::store> test_database::get_oauth_store() {

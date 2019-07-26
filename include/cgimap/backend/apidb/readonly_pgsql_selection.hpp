@@ -4,6 +4,8 @@
 #include "cgimap/data_selection.hpp"
 #include "cgimap/backend/apidb/changeset.hpp"
 #include "cgimap/backend/apidb/cache.hpp"
+#include "cgimap/backend/apidb/transaction_manager.hpp"
+
 #include <pqxx/pqxx>
 #include <boost/program_options.hpp>
 #include <chrono>
@@ -19,7 +21,7 @@
  */
 class readonly_pgsql_selection : public data_selection {
 public:
-  readonly_pgsql_selection(pqxx::connection &conn,
+  readonly_pgsql_selection(Transaction_Owner_Base& to,
                            cache<osm_changeset_id_t, changeset> &changeset_cache);
   ~readonly_pgsql_selection();
 
@@ -66,14 +68,14 @@ public:
   bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &);
 
   /**
-   * a factory for the creation of read-only selections, so it
-   * can set up prepared statements.
+   * a factory for the creation of read-only selections
    */
   class factory : public data_selection::factory {
   public:
     factory(const boost::program_options::variables_map &);
     virtual ~factory();
-    virtual std::shared_ptr<data_selection> make_selection();
+    virtual std::shared_ptr<data_selection> make_selection(Transaction_Owner_Base& );
+    virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction();
 
   private:
     pqxx::connection m_connection, m_cache_connection;
@@ -83,10 +85,6 @@ public:
   };
 
 private:
-  // the transaction in which the selection takes place. this is
-  // fully read-only, and cannot create any temporary tables,
-  // unlike writeable_pgsql_selection.
-  pqxx::work w;
 
   // true if we want to include changeset discussions along with
   // the changesets themselves. defaults to false.
@@ -101,6 +99,8 @@ private:
   std::set<osm_nwr_id_t> sel_nodes, sel_ways, sel_relations;
   std::set<osm_edition_t> sel_historic_nodes, sel_historic_ways, sel_historic_relations;
   cache<osm_changeset_id_t, changeset> &cc;
+
+  Transaction_Manager m;
 };
 
 #endif /* READONLY_PGSQL_SELECTION_HPP */
