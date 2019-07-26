@@ -11,9 +11,9 @@
 #include <sys/types.h>
 #include <cassert>
 #include <iostream>
+#include <regex>
 #include <string>
 
-#include <boost/regex.hpp>
 #include <boost/algorithm/string.hpp>
 
 #include "cgimap/basicauth.hpp"
@@ -114,18 +114,18 @@ namespace basicauth {
 
     auto auth_header = std::string(auth_hdr);
 
-    boost::smatch sm;
+    std::smatch sm;
 
     try {
-	boost::regex r("[Bb][Aa][Ss][Ii][Cc] ([A-Za-z0-9\\+\\/]+=*).*");
+	std::regex r("[Bb][Aa][Ss][Ii][Cc] ([A-Za-z0-9\\+\\/]+=*).*");
 
-	if (!boost::regex_match(auth_header, sm, r))
+	if (!std::regex_match(auth_header, sm, r))
 	  return boost::optional<osm_user_id_t>{};
 
 	if (sm.size() != 2)
 	  return boost::optional<osm_user_id_t>{};
 
-    } catch (boost::regex_error&) {
+    } catch (std::regex_error&) {
       return boost::optional<osm_user_id_t>{};
     }
 
