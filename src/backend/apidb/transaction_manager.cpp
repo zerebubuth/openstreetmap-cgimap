@@ -7,14 +7,14 @@
 
 Transaction_Owner_ReadOnly::Transaction_Owner_ReadOnly( pqxx::connection &conn) : m_txn{ conn } {};
 
-boost::optional<pqxx::transaction_base&> Transaction_Owner_ReadOnly::get_transaction() { return m_txn; }
+pqxx::transaction_base& Transaction_Owner_ReadOnly::get_transaction() { return m_txn; }
 
 Transaction_Owner_ReadWrite::Transaction_Owner_ReadWrite( pqxx::connection &conn) : m_txn{ conn } {};
 
-boost::optional<pqxx::transaction_base&> Transaction_Owner_ReadWrite::get_transaction() { return m_txn; }
+pqxx::transaction_base& Transaction_Owner_ReadWrite::get_transaction() { return m_txn; }
 
 
-Transaction_Manager::Transaction_Manager(Transaction_Owner_Base &to) : m_txn{ *to.get_transaction() } {}
+Transaction_Manager::Transaction_Manager(Transaction_Owner_Base &to) : m_txn{ to.get_transaction() } {}
 
 void Transaction_Manager::prepare(const std::string &name,
                                   const std::string &definition) {

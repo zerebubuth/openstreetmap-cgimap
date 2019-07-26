@@ -14,7 +14,7 @@ class Transaction_Owner_Base
 {
 public:
   Transaction_Owner_Base() {}
-  virtual boost::optional<pqxx::transaction_base&> get_transaction() = 0;
+  virtual pqxx::transaction_base& get_transaction() = 0;
   virtual ~Transaction_Owner_Base() {}
 };
 
@@ -23,7 +23,7 @@ class Transaction_Owner_ReadOnly : public Transaction_Owner_Base
 {
 public:
   explicit Transaction_Owner_ReadOnly(pqxx::connection &conn);
-  virtual boost::optional<pqxx::transaction_base&> get_transaction();
+  virtual pqxx::transaction_base& get_transaction();
   ~Transaction_Owner_ReadOnly() {}
 
 private:
@@ -35,7 +35,7 @@ class Transaction_Owner_ReadWrite : public Transaction_Owner_Base
 {
 public:
   explicit Transaction_Owner_ReadWrite(pqxx::connection &conn);
-  virtual boost::optional<pqxx::transaction_base&> get_transaction();
+  virtual pqxx::transaction_base& get_transaction();
   ~Transaction_Owner_ReadWrite() {}
 
 private:
@@ -46,11 +46,11 @@ class Transaction_Owner_Void : public Transaction_Owner_Base
 {
 public:
   explicit Transaction_Owner_Void();
-  virtual boost::optional<pqxx::transaction_base&> get_transaction();
+  virtual pqxx::transaction_base& get_transaction();
   ~Transaction_Owner_Void() {}
 };
 
-/******************************************************************************************/
+
 
 class Transaction_Manager {
 
