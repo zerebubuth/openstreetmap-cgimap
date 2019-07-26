@@ -3,6 +3,7 @@
 
 #include "cgimap/types.hpp"
 #include "cgimap/output_formatter.hpp"
+#include "cgimap/backend/apidb/transaction_manager.hpp"
 
 #include <chrono>
 #include <memory>
@@ -166,7 +167,9 @@ public:
 
     /// get a handle to a selection which can be used to build up
     /// a working set of data.
-    virtual std::shared_ptr<data_selection> make_selection() = 0;
+    virtual std::shared_ptr<data_selection> make_selection(Transaction_Owner_Base&) = 0;
+
+    virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() = 0;
   };
 };
 
