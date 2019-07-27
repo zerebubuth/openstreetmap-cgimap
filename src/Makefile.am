@@ -156,36 +156,36 @@ libcgimap_core_la_SOURCES=\
 libcgimap_core_la_LIBADD=@LIBXML_LIBS@ @YAJL_LIBS@ @LIBMEMCACHED_LIBS@ @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@  @CRYPTOPP_LIBS@
 
 libcgimap_core_la_SOURCES+=\
-	api06/map_handler.cpp \
-	api06/handler_utils.cpp \
-	api06/node_handler.cpp \
-	api06/node_version_handler.cpp \
-	api06/node_history_handler.cpp \
-	api06/nodes_handler.cpp \
-	api06/relation_handler.cpp \
-	api06/relation_version_handler.cpp \
-	api06/relations_handler.cpp \
-	api06/relation_history_handler.cpp \
-	api06/way_handler.cpp \
-	api06/way_version_handler.cpp \
-	api06/ways_handler.cpp \
-	api06/way_history_handler.cpp \
-	api06/relation_full_handler.cpp \
-	api06/way_full_handler.cpp \
-	api06/id_version_io.cpp \
-	api06/changeset_handler.cpp \
-	api06/changeset_download_handler.cpp \
-	api06/changeset_create_handler.cpp \
 	api06/changeset_close_handler.cpp \
+	api06/changeset_create_handler.cpp \
+	api06/changeset_download_handler.cpp \
+	api06/changeset_handler.cpp \
+	api06/changeset_update_handler.cpp \
 	api06/changeset_upload_handler.cpp \
+	api06/handler_utils.cpp \
+	api06/id_version_io.cpp \
+	api06/map_handler.cpp \
+	api06/node_handler.cpp \
+	api06/node_history_handler.cpp \
+	api06/node_relations_handler.cpp \
+	api06/nodes_handler.cpp \
+	api06/node_version_handler.cpp \
+	api06/node_ways_handler.cpp \
+	api06/relation_full_handler.cpp \
+	api06/relation_handler.cpp \
+	api06/relation_history_handler.cpp \
+	api06/relation_relations_handler.cpp \
+	api06/relations_handler.cpp \
+	api06/relation_version_handler.cpp \
+	api06/way_full_handler.cpp \
+	api06/way_handler.cpp \
+	api06/way_history_handler.cpp \
+	api06/way_relations_handler.cpp \
+	api06/ways_handler.cpp \
+	api06/way_version_handler.cpp \
 	api06/changeset_upload/osmchange_handler.cpp \
 	api06/changeset_upload/osmchange_tracking.cpp
 
-libcgimap_core_la_SOURCES+=\
-	api06/node_ways_handler.cpp \
-        api06/node_relations_handler.cpp \
-        api06/way_relations_handler.cpp \
-        api06/relation_relations_handler.cpp
 
 if ENABLE_API07
 libcgimap_core_la_SOURCES+=api07/map_handler.cpp

@@ -32,17 +32,29 @@ cgimap_include_HEADERS = \
 
 cgimap_api06_includedir=$(includedir)/cgimap/api06
 cgimap_api06_include_HEADERS = \
+	include/cgimap/api06/changeset_close_handler.hpp \
+	include/cgimap/api06/changeset_create_handler.hpp \
+	include/cgimap/api06/changeset_download_handler.hpp \
+	include/cgimap/api06/changeset_handler.hpp \
+	include/cgimap/api06/changeset_update_handler.hpp \
+	include/cgimap/api06/changeset_upload_handler.hpp \
 	include/cgimap/api06/handler_utils.hpp \
 	include/cgimap/api06/map_handler.hpp \
 	include/cgimap/api06/node_handler.hpp \
+	include/cgimap/api06/node_history_handler.hpp \
+	include/cgimap/api06/node_relations_handler.hpp \
 	include/cgimap/api06/node_version_handler.hpp \
 	include/cgimap/api06/nodes_handler.hpp \
 	include/cgimap/api06/relation_full_handler.hpp \
 	include/cgimap/api06/relation_handler.hpp \
+	include/cgimap/api06/relation_history_handler.hpp \
+	include/cgimap/api06/relation_relations_handler.hpp \
 	include/cgimap/api06/relation_version_handler.hpp \
 	include/cgimap/api06/relations_handler.hpp \
 	include/cgimap/api06/way_full_handler.hpp \
 	include/cgimap/api06/way_handler.hpp \
+	include/cgimap/api06/way_history_handler.hpp \
+	include/cgimap/api06/way_relations_handler.hpp \
 	include/cgimap/api06/way_version_handler.hpp \
 	include/cgimap/api06/ways_handler.hpp
 

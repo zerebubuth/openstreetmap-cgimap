@@ -1857,7 +1857,7 @@ namespace {
     auto way_updater = upd->get_way_updater(change_tracking);
     auto relation_updater = upd->get_relation_updater(change_tracking);
 
-    changeset_updater->lock_current_changeset();
+    changeset_updater->lock_current_changeset(true);
 
     api06::OSMChange_Handler handler(std::move(node_updater), std::move(way_updater),
                                      std::move(relation_updater), changeset);

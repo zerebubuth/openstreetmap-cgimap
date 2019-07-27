@@ -27,7 +27,7 @@ changeset_close_responder::changeset_close_responder(
 
   auto changeset_updater = upd->get_changeset_updater(changeset, uid);
 
-  changeset_updater->close_changeset();
+  changeset_updater->api_close_changeset();
 
   upd->commit();
 }
@@ -53,7 +53,7 @@ changeset_close_handler::responder(data_selection_ptr &) const {
 }
 
 responder_ptr_t changeset_close_handler::responder(
-    data_update_ptr & upd, const std::string &payload, boost::optional<osm_user_id_t> user_id) const {
+    data_update_ptr & upd, data_selection_ptr & sel, const std::string &payload, boost::optional<osm_user_id_t> user_id) const {
   return responder_ptr_t(
       new changeset_close_responder(mime_type, upd, id, payload, user_id));
 }

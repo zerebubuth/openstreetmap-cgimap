@@ -203,6 +203,7 @@ process_get_request(request &req, handler_ptr_t handler,
 std::tuple<string, size_t>
 process_post_request(request &req, handler_ptr_t handler,
 		    data_update_ptr data_update,
+		    data_selection_ptr data_selection,
                     const string &payload,
                     boost::optional<osm_user_id_t> user_id,
                     const string &ip, const string &generator) {
@@ -216,7 +217,7 @@ process_post_request(request &req, handler_ptr_t handler,
   if (pe_handler == nullptr)
     throw http::server_error("HTTP POST method is not payload enabled");
 
-  responder_ptr_t responder = pe_handler->responder(data_update, payload, user_id);
+  responder_ptr_t responder = pe_handler->responder(data_update, data_selection, payload, user_id);
 
   // get encoding to use
   shared_ptr<http::encoding> encoding = get_encoding(req);
@@ -275,6 +276,7 @@ process_post_request(request &req, handler_ptr_t handler,
 std::tuple<string, size_t>
 process_put_request(request &req, handler_ptr_t handler,
 		    data_update_ptr data_update,
+		    data_selection_ptr data_selection,
                     const string &payload,
                     boost::optional<osm_user_id_t> user_id,
                     const string &ip, const string &generator) {
@@ -288,7 +290,7 @@ process_put_request(request &req, handler_ptr_t handler,
   if (pe_handler == nullptr)
     throw http::server_error("HTTP PUT method is not payload enabled");
 
-  responder_ptr_t responder = pe_handler->responder(data_update, payload, user_id);
+  responder_ptr_t responder = pe_handler->responder(data_update, data_selection, payload, user_id);
 
   // get encoding to use
   shared_ptr<http::encoding> encoding = get_encoding(req);
@@ -623,7 +625,7 @@ void process_request(request &req, rate_limiter &limiter,
       std::string payload = req.get_payload();
 
       std::tie(request_name, bytes_written) =
-          process_post_request(req, handler, data_update, payload, user_id, ip, generator);
+          process_post_request(req, handler, data_update, selection, payload, user_id, ip, generator);
 
     } else if (method == http::method::PUT) {
 
@@ -633,15 +635,15 @@ void process_request(request &req, rate_limiter &limiter,
 	throw http::bad_request("Backend does not support PUT requests");
 
       auto rw_transaction = update_factory->get_default_transaction();
-
       auto data_update = update_factory->make_data_update(*rw_transaction);
+
 
       check_db_readonly_mode (data_update);
 
       std::string payload = req.get_payload();
 
       std::tie(request_name, bytes_written) =
-          process_put_request(req, handler, data_update, payload, user_id, ip, generator);
+          process_put_request(req, handler, data_update, selection, payload, user_id, ip, generator);
 
     } else if (method == http::method::HEAD) {
       std::tie(request_name, bytes_written) =

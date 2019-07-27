@@ -37,7 +37,7 @@ changeset_upload_responder::changeset_upload_responder(
   auto way_updater = upd->get_way_updater(change_tracking);
   auto relation_updater = upd->get_relation_updater(change_tracking);
 
-  changeset_updater->lock_current_changeset();
+  changeset_updater->lock_current_changeset(true);
 
   OSMChange_Handler handler(std::move(node_updater), std::move(way_updater),
                             std::move(relation_updater), changeset);
@@ -76,7 +76,7 @@ changeset_upload_handler::responder(data_selection_ptr &) const {
 }
 
 responder_ptr_t changeset_upload_handler::responder(
-    data_update_ptr & upd, const std::string &payload, boost::optional<osm_user_id_t> user_id) const {
+    data_update_ptr & upd, data_selection_ptr & sel, const std::string &payload, boost::optional<osm_user_id_t> user_id) const {
   return responder_ptr_t(
       new changeset_upload_responder(mime_type, upd, id, payload, user_id));
 }

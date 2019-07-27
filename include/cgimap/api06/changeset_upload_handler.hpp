@@ -29,6 +29,7 @@ public:
   responder_ptr_t responder(data_selection_ptr &x) const;
 
   responder_ptr_t responder(data_update_ptr &,
+			    data_selection_ptr & sel,
 			    const std::string &payload,
                             boost::optional<osm_user_id_t> user_id) const;
 

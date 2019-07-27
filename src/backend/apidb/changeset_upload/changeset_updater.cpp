@@ -20,7 +20,11 @@ ApiDB_Changeset_Updater::~ApiDB_Changeset_Updater() = default;
 
 
 
-void ApiDB_Changeset_Updater::lock_current_changeset() {
+
+void ApiDB_Changeset_Updater::lock_current_changeset(bool check_max_elements_limit) {
+
+  // check_max_elements_limit: raise a conflict exception, if the changeset contains the maximum
+  // number of elements already, i.e. no further objects can be added to the changeset.
 
   bool is_closed;
   std::string closed_at;
@@ -38,7 +42,7 @@ void ApiDB_Changeset_Updater::lock_current_changeset() {
   // Some clients try to send further changes, although the changeset already
   // holds the maximum number of elements. As this is futile, we raise an error
   // as early as possible.
-  if (cs_num_changes >= CHANGESET_MAX_ELEMENTS)
+  if (check_max_elements_limit && cs_num_changes >= CHANGESET_MAX_ELEMENTS)
     throw http::conflict((boost::format("The changeset %1% was closed at %2%") %
 	changeset % current_time)
 			 .str());
@@ -138,37 +142,29 @@ ApiDB_Changeset_Updater::changeset_update_users_cs_count ()
 
 
 
-osm_changeset_id_t ApiDB_Changeset_Updater::create_changeset(const std::map<std::string, std::string>& tags)
+osm_changeset_id_t ApiDB_Changeset_Updater::api_create_changeset(const std::map<std::string, std::string>& tags)
 {
   changeset_insert_cs ();
-
   changeset_update_users_cs_count ();
-
   changeset_delete_tags ();
-
   changeset_insert_tags (tags);
-
   changeset_insert_subscriber ();
-
   return changeset;
-
 }
 
-void ApiDB_Changeset_Updater::close_changeset()
+
+void ApiDB_Changeset_Updater::api_update_changeset(const std::map<std::string, std::string>& tags)
 {
-  bool is_closed;
-  std::string closed_at;
-  std::string current_time;
+  lock_current_changeset(false);
+  changeset_delete_tags ();
+  changeset_insert_tags (tags);
+  update_changeset(0, {});
+}
 
-  check_user_owns_changeset();
 
-  lock_cs(is_closed, closed_at, current_time);
-
-  // Closed changeset cannot be closed again
-  if (is_closed)
-    throw http::conflict((boost::format("The changeset %1% was closed at %2%") %
-	changeset % closed_at)
-			 .str());
+void ApiDB_Changeset_Updater::api_close_changeset()
+{
+  lock_current_changeset(false);
 
   // Set closed_at timestamp to now() to indicate that the changeset is closed
   m.prepare("changeset_close",

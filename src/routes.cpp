@@ -26,6 +26,7 @@
 #include "cgimap/api06/changeset_download_handler.hpp"
 #include "cgimap/api06/changeset_upload_handler.hpp"
 #include "cgimap/api06/changeset_create_handler.hpp"
+#include "cgimap/api06/changeset_update_handler.hpp"
 #include "cgimap/api06/changeset_close_handler.hpp"
 
 #include "cgimap/api06/node_ways_handler.hpp"
@@ -136,16 +137,16 @@ struct router {
     // than a list at this point. also means the semantics for rule matching are
     // pretty clear - the first match wins.
 
-//    boost::optional<http::method> maybe_method =
-//      http::parse_method(fcgi_get_env(params, "REQUEST_METHOD"));
-//
-//    if (maybe_method && *maybe_method == http::method::PUT) {
-//      for (auto rptr : rules_put) {
-//	if (rptr->invoke_if(p, params, hptr)) {
-//	  return hptr;
-//	}
-//      }
-//    }
+    boost::optional<http::method> maybe_method =
+      http::parse_method(fcgi_get_env(params, "REQUEST_METHOD"));
+
+    if (maybe_method && *maybe_method == http::method::PUT) {
+      for (auto rptr : rules_put) {
+	if (rptr->invoke_if(p, params, hptr)) {
+	  return hptr;
+	}
+      }
+    }
 
     for (auto rptr : rules) {
       if (rptr->invoke_if(p, params, hptr)) {
@@ -203,6 +204,7 @@ routes::routes()
       .all<changeset_upload_handler>(root_ / "changeset" / osm_id_ / "upload")
       .all<changeset_close_handler>(root_ / "changeset" / osm_id_ / "close")
       .all<changeset_create_handler>(root_ / "changeset" / "create")
+      .put<changeset_update_handler>(root_ / "changeset" / osm_id_)        // PUT Changeset update
       .all<changeset_handler>(root_ / "changeset" / osm_id_);
   }
 

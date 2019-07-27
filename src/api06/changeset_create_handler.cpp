@@ -33,7 +33,7 @@ changeset_create_responder::changeset_create_responder(
 
   auto tags = parser.process_message(payload);
 
-  changeset = changeset_updater->create_changeset(tags);
+  changeset = changeset_updater->api_create_changeset(tags);
 
   output_text = std::to_string(changeset);
 
@@ -59,7 +59,7 @@ changeset_create_handler::responder(data_selection_ptr &) const {
 }
 
 responder_ptr_t changeset_create_handler::responder(
-    data_update_ptr & upd, const std::string &payload, boost::optional<osm_user_id_t> user_id) const {
+    data_update_ptr & upd, data_selection_ptr & sel, const std::string &payload, boost::optional<osm_user_id_t> user_id) const {
   return responder_ptr_t(
       new changeset_create_responder(mime_type, upd, payload, user_id));
 }

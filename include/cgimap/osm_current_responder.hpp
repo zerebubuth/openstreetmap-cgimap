@@ -6,7 +6,7 @@
 #include <chrono>
 
 /**
- * utility class - inherit from this when implementing somthing
+ * utility class - inherit from this when implementing something
  * responding with OSM data from the current tables.
  */
 class osm_current_responder : public osm_responder {
