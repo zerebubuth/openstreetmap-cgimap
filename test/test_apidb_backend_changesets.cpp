@@ -309,6 +309,203 @@ void test_changeset_with_comments(test_database &tdb) {
   }
 }
 
+void init_changesets(test_database &tdb) {
+
+
+  // Prepare users, changesets
+
+  tdb.run_sql(R"(
+	 INSERT INTO users (id, email, pass_crypt, pass_salt, creation_time, display_name, data_public, status)
+	 VALUES
+	   (1, 'demo@example.com', '3wYbPiOxk/tU0eeIDjUhdvi8aDP3AbFtwYKKxF1IhGg=',
+                                   'sha512!10000!OUQLgtM7eD8huvanFT5/WtWaCwdOdrir8QOtFwxhO0A=',
+                                   '2013-11-14T02:10:00Z', 'demo', true, 'confirmed'),
+	   (2, 'user_2@example.com', '', '', '2013-11-14T02:10:00Z', 'user_2', false, 'active');
+
+	INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes)
+	VALUES
+	  (1, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 0),
+	  (2, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 10000),
+	  (3, 1, now() at time zone 'utc' - '12 hour' ::interval,
+               now() at time zone 'utc' - '11 hour' ::interval, 10000),
+	  (4, 2, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 0),
+	  (5, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 0);
+
+      INSERT INTO user_blocks (user_id, creator_id, reason, ends_at, needs_view)
+      VALUES (1,  2, '', now() at time zone 'utc' - ('1 hour' ::interval), false);
+
+      )"
+  );
+
+}
+
+
+void test_changeset_create(test_database &tdb) {
+
+
+    const std::string baseauth = "Basic ZGVtbzpwYXNzd29yZA==";
+    const std::string generator = "Test";
+
+    auto sel_factory = tdb.get_data_selection_factory();
+    auto upd_factory = tdb.get_data_update_factory();
+
+    null_rate_limiter limiter;
+    routes route;
+
+    init_changesets(tdb);
+
+    // User providing wrong password
+    {
+	// set up request headers from test case
+	test_request req;
+	req.set_header("REQUEST_METHOD", "PUT");
+	req.set_header("REQUEST_URI", "/api/0.6/changeset/create");
+	req.set_header("HTTP_AUTHORIZATION", "Basic ZGVtbzppbnZhbGlkcGFzc3dvcmQK");
+	req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+	req.set_payload(R"(
+			    <osm>
+			      <changeset>
+				<tag k="created_by" v="JOSM 1.61"/>
+				<tag k="comment" v="Just adding some streetnames"/>
+			      </changeset>
+			    </osm>
+                          )" );
+
+	// execute the request
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+
+	if (req.response_status() != 401)
+	  throw std::runtime_error("Expected HTTP 401 Unauthorized: wrong user/password");
+    }
+
+    // User is blocked (needs_view)
+    {
+        tdb.run_sql(R"(UPDATE user_blocks SET needs_view = true where user_id = 1;)");
+
+	// set up request headers from test case
+	test_request req;
+	req.set_header("REQUEST_METHOD", "PUT");
+	req.set_header("REQUEST_URI", "/api/0.6/changeset/create");
+	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+	req.set_payload(R"(
+			    <osm>
+			      <changeset>
+				<tag k="created_by" v="JOSM 1.61"/>
+				<tag k="comment" v="Just adding some streetnames"/>
+			      </changeset>
+			    </osm>
+                          )" );
+
+	// execute the request
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+
+	if (req.response_status() != 403)
+	  throw std::runtime_error("Expected HTTP 403 Forbidden: user blocked (needs view)");
+
+	tdb.run_sql(R"(UPDATE user_blocks SET needs_view = false where user_id = 1;)");
+    }
+
+    // User is blocked for 1 hour
+    {
+        tdb.run_sql(R"(UPDATE user_blocks
+                         SET needs_view = false,
+                             ends_at = now() at time zone 'utc' + ('1 hour' ::interval)
+                         WHERE user_id = 1;)");
+
+	// set up request headers from test case
+	test_request req;
+	req.set_header("REQUEST_METHOD", "PUT");
+	req.set_header("REQUEST_URI", "/api/0.6/changeset/create");
+	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+	req.set_payload(R"(
+			    <osm>
+			      <changeset>
+				<tag k="created_by" v="JOSM 1.61"/>
+				<tag k="comment" v="Just adding some streetnames"/>
+			      </changeset>
+			    </osm>
+                          )" );
+
+	// execute the request
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+
+
+	if (req.response_status() != 403)
+	  throw std::runtime_error("Expected HTTP 403 Forbidden: user blocked for 1 hour");
+
+	tdb.run_sql(R"(UPDATE user_blocks
+                          SET needs_view = false,
+                              ends_at = now() at time zone 'utc' - ('1 hour' ::interval)
+                          WHERE user_id = 1;)");
+    }
+
+    // Create new changeset
+    {
+      // Set changeset sequence id to new start value
+
+        tdb.run_sql(R"(  SELECT setval('changesets_id_seq', 10, false);  )");
+
+	// set up request headers from test case
+	test_request req;
+	req.set_header("REQUEST_METHOD", "PUT");
+	req.set_header("REQUEST_URI", "/api/0.6/changeset/create");
+	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+	req.set_payload(R"(
+			    <osm>
+			      <changeset>
+				<tag k="created_by" v="JOSM 1.61"/>
+				<tag k="comment" v="Just adding some streetnames"/>
+			      </changeset>
+			    </osm>
+                        )" );
+
+	// execute the request
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+
+    }
+
+}
+
+void test_changeset_update(test_database &tdb) {
+
+
+    const std::string baseauth = "Basic ZGVtbzpwYXNzd29yZA==";
+    const std::string generator = "Test";
+
+    auto sel_factory = tdb.get_data_selection_factory();
+    auto upd_factory = tdb.get_data_update_factory();
+
+    null_rate_limiter limiter;
+    routes route;
+
+    init_changesets(tdb);
+
+}
+
+
+void test_changeset_close(test_database &tdb) {
+
+
+    const std::string baseauth = "Basic ZGVtbzpwYXNzd29yZA==";
+    const std::string generator = "Test";
+
+    auto sel_factory = tdb.get_data_selection_factory();
+    auto upd_factory = tdb.get_data_update_factory();
+
+    null_rate_limiter limiter;
+    routes route;
+
+    init_changesets(tdb);
+
+}
+
 } // anonymous namespace
 
 int main(int, char **) {
@@ -330,6 +527,15 @@ int main(int, char **) {
 
     tdb.run(std::function<void(test_database&)>(
               &test_changeset_with_comments));
+
+    tdb.run(std::function<void(test_database&)>(
+              &test_changeset_create));
+
+    tdb.run(std::function<void(test_database&)>(
+              &test_changeset_update));
+
+    tdb.run(std::function<void(test_database&)>(
+              &test_changeset_close));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;
