@@ -31,7 +31,6 @@ AC_SUBST(LIBPQXX_CFLAGS)
 AC_SUBST(LIBPQXX_LIBS)
 
 #m4_include([aclocal/ax_boost_base.m4])
-#m4_include([aclocal/ax_boost_regex.m4])
 #m4_include([aclocal/ax_boost_system.m4])
 #m4_include([aclocal/ax_boost_program_options.m4])
 #m4_include([aclocal/ax_check_zlib.m4])
@@ -41,7 +40,6 @@ AC_SUBST(LIBMEMCACHED_CFLAGS)
 AC_SUBST(LIBMEMCACHED_LIBS)
 
 AX_BOOST_BASE([1.43], , [AC_MSG_ERROR([Boost libraries are required for building CGImap. Please install libboost-dev.])])
-AX_BOOST_REGEX
 AX_BOOST_SYSTEM
 AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_FILESYSTEM
@@ -50,8 +48,6 @@ AX_BOOST_LOCALE
 # the boost libraries are required, not optional, but the
 # AX_BOOST_* checks only error if the headers aren't
 # available?
-AS_IF([test "x$BOOST_REGEX_LIB" == "x"],
-      [AC_MSG_ERROR([Boost::Regex library not detected, please install libboost-regex-dev.])],)
 AS_IF([test "x$BOOST_SYSTEM_LIB" == "x"],
       [AC_MSG_ERROR([Boost::System library not detected, please install libboost-system-dev.])],)
 AS_IF([test "x$BOOST_PROGRAM_OPTIONS_LIB" == "x"],

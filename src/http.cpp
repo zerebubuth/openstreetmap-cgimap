@@ -3,10 +3,11 @@
 #include <vector>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/regex.hpp>
+
 #include <iterator> // for distance
 #include <cctype>   // for toupper, isxdigit
 #include <cstdlib>
+#include <regex>
 #include <sstream>
 
 namespace al = boost::algorithm;
@@ -170,19 +171,19 @@ shared_ptr<encoding> choose_encoding(const string &accept_encoding) {
   float gzip_quality = 0.000;
 
   for (const string &encoding : encodings) {
-    boost::smatch what;
+    std::smatch what;
     string name;
     float quality;
 
-    if (boost::regex_match(
+    if (std::regex_match(
             encoding, what,
-            boost::regex("\\s*([^()<>@,;:\\\\\"/[\\]\\\\?={} "
+            std::regex("\\s*([^()<>@,;:\\\\\"/[\\]\\\\?={} "
                          "\\t]+)\\s*;\\s*q\\s*=(\\d+(\\.\\d+)?)\\s*"))) {
       name = what[1];
       quality = std::atof(string(what[2]).c_str());
-    } else if (boost::regex_match(
+    } else if (std::regex_match(
                    encoding, what,
-                   boost::regex(
+                   std::regex(
                        R"(\s*([^()<>@,;:\\"/[\]\\?={} \t]+)\s*)"))) {
       name = what[1];
       quality = 1.0;
