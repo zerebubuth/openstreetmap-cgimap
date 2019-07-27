@@ -112,6 +112,11 @@ unsupported_media_type::unsupported_media_type(const string &message)
 unauthorized::unauthorized(const std::string &message)
   : exception(401, "Unauthorized", message) {}
 
+method_not_allowed::method_not_allowed(const http::method method)
+   : allowed_methods(method),
+     exception(405, "Method not allowed", http::list_methods(method)) {};
+
+
 string urldecode(const string &s) { return form_urldecode(s); }
 
 string urlencode(const string &s) {

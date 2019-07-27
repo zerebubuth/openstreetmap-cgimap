@@ -26,6 +26,14 @@ const unsigned long STDIN_MAX = 50000000;    // TODO: configurable parameter?
  */
 namespace http {
 
+  enum class method : uint8_t {
+    GET     = 0b00001,
+    POST    = 0b00010,
+    PUT     = 0b00100,
+    HEAD    = 0b01000,
+    OPTIONS = 0b10000
+  };
+
 /**
  * Base class for HTTP protocol related exceptions.
  *
@@ -92,7 +100,8 @@ public:
  */
 class method_not_allowed : public exception {
 public:
-  method_not_allowed(const std::string &message);
+  method_not_allowed(const http::method method);
+  http::method allowed_methods;
 };
 
 /**
@@ -262,13 +271,7 @@ choose_encoding(const std::string &accept_encoding);
 std::shared_ptr<ZLibBaseDecompressor>
 get_content_encoding_handler(const std::string &content_encoding);
 
-enum class method : uint8_t {
-  GET     = 0b00001,
-  POST    = 0b00010,
-  PUT     = 0b00100,
-  HEAD    = 0b01000,
-  OPTIONS = 0b10000
-};
+
 
 // allow bitset-like operators on methods
 inline method operator|(method a, method b) {
@@ -276,6 +279,10 @@ inline method operator|(method a, method b) {
 }
 inline method operator&(method a, method b) {
   return static_cast<method>(static_cast<uint8_t>(a) & static_cast<uint8_t>(b));
+}
+inline method& operator|=(method& a, method b)
+{
+  return a= a | b;
 }
 
 // return a comma-delimited string describing the methods.

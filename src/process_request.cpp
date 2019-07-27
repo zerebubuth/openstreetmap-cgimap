@@ -123,9 +123,19 @@ void respond_error(const http::exception &e, request &r) {
 /**
  * Return a 405 error.
  */
+
 void process_not_allowed(request &req, handler_ptr_t handler) {
   req.status(405)
      .add_header("Allow", http::list_methods(handler->allowed_methods()))
+     .add_header("Content-Type", "text/html")
+     .add_header("Content-Length", "0")
+     .add_header("Cache-Control", "no-cache")
+     .finish();
+}
+
+void process_not_allowed(request &req, const http::method_not_allowed& e) {
+  req.status(405)
+     .add_header("Allow", http::list_methods(e.allowed_methods))
      .add_header("Content-Type", "text/html")
      .add_header("Content-Length", "0")
      .add_header("Cache-Control", "no-cache")
@@ -678,6 +688,9 @@ void process_request(request &req, rate_limiter &limiter,
     // encoded description of the error. not found errors are special - they're
     // passed back just as empty HTML documents.
     respond_404(e, req);
+
+  } catch (const http::method_not_allowed &e) {
+      process_not_allowed(req, e);
 
   } catch (const http::unauthorized &e) {
     // HTTP 401 unauthorized requires WWW-Authenticate header field

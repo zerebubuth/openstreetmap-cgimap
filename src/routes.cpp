@@ -106,16 +106,28 @@ struct router {
    * so generally this can be written as
    *  r.all<Handler>(...);
    */
-  template <typename Handler, typename Rule> router& all(Rule r) {
+
+  // add rule to match HTTP GET method only
+  template <typename Handler, typename Rule> router& GET(Rule r) {
     // functor to create Handler instances
     boost::factory<Handler *> ctor;
-    rules.push_back(
+    rules_get.push_back(
         rule_ptr(new rule<Rule, boost::factory<Handler *> >(r, ctor)));
     return *this;
   }
 
-  // add rule to match PUT HTTP method only
-  template <typename Handler, typename Rule> router& put(Rule r) {
+  // add rule to match HTTP POST method only
+  template <typename Handler, typename Rule> router& POST(Rule r) {
+    // functor to create Handler instances
+    boost::factory<Handler *> ctor;
+    rules_post.push_back(
+        rule_ptr(new rule<Rule, boost::factory<Handler *> >(r, ctor)));
+    return *this;
+  }
+
+
+  // add rule to match HTTP PUT method only
+  template <typename Handler, typename Rule> router& PUT(Rule r) {
     // functor to create Handler instances
     boost::factory<Handler *> ctor;
     rules_put.push_back(
@@ -133,32 +145,63 @@ struct router {
 
     handler_ptr_t hptr;
 
+    http::method allowed_methods = http::method::OPTIONS;
+
     // it probably isn't necessary to have any more sophisticated data structure
     // than a list at this point. also means the semantics for rule matching are
     // pretty clear - the first match wins.
 
     boost::optional<http::method> maybe_method =
-      http::parse_method(fcgi_get_env(params, "REQUEST_METHOD"));
+	http::parse_method(fcgi_get_env(params, "REQUEST_METHOD"));
 
-    if (maybe_method && *maybe_method == http::method::PUT) {
-      for (auto rptr : rules_put) {
+    if (!maybe_method)
+      return hptr;
+
+    // Process HEAD like GET, as per rfc2616: The HEAD method is identical to
+    // GET except that the server MUST NOT return a message-body in the response.
+    for (auto rptr : rules_get) {
 	if (rptr->invoke_if(p, params, hptr)) {
-	  return hptr;
+	    if (*maybe_method == http::method::GET    ||
+		*maybe_method == http::method::HEAD   ||
+		*maybe_method == http::method::OPTIONS)
+	      return hptr;
+	    allowed_methods |= http::method::GET | http::method::HEAD;
 	}
-      }
     }
 
-    for (auto rptr : rules) {
-      if (rptr->invoke_if(p, params, hptr)) {
-        break;
-      }
+    for (auto rptr : rules_post) {
+	if (rptr->invoke_if(p, params, hptr)) {
+	    if (*maybe_method == http::method::POST||
+		*maybe_method == http::method::OPTIONS)
+	      return hptr;
+	    allowed_methods |= http::method::POST;
+	}
     }
+
+    for (auto rptr : rules_put) {
+	if (rptr->invoke_if(p, params, hptr)) {
+	    if (*maybe_method == http::method::PUT||
+		*maybe_method == http::method::OPTIONS)
+	      return hptr;
+	    allowed_methods |= http::method::PUT;
+	}
+    }
+
+    // Did the request URL path match one of the rules, yet the request method didn't match?
+    // This assumes that some additional request methods have been added to allowed_methods
+    // on top of the initial OPTIONS value.
+    if (allowed_methods != http::method::OPTIONS) {
+	// return a 405 HTTP Method not allowed error
+       throw http::method_not_allowed(allowed_methods);
+    }
+
     // return pointer to nothing if no matches found.
     return hptr;
   }
 
 private:
-  list<rule_ptr> rules;
+  list<rule_ptr> rules_get;
+  list<rule_ptr> rules_post;
   list<rule_ptr> rules_put;
 };
 
@@ -176,36 +219,36 @@ routes::routes()
 
   {
     using namespace api06;
-    r->all<map_handler>(root_ / "map")
-      .all<node_ways_handler>(root_ / "node" / osm_id_ / "ways")
-      .all<node_relations_handler>(root_ / "node" / osm_id_ / "relations")
+    r->GET<map_handler>(root_ / "map")
+      .GET<node_ways_handler>(root_ / "node" / osm_id_ / "ways")
+      .GET<node_relations_handler>(root_ / "node" / osm_id_ / "relations")
 
     // make sure that *_version_handler is listed before matching *_handler
-      .all<node_history_handler>(root_ / "node" / osm_id_ / "history")
-      .all<node_version_handler>(root_ / "node" / osm_id_ / osm_id_ )
-      .all<node_handler>(root_ / "node" / osm_id_)
-      .all<nodes_handler>(root_ / "nodes")
+      .GET<node_history_handler>(root_ / "node" / osm_id_ / "history")
+      .GET<node_version_handler>(root_ / "node" / osm_id_ / osm_id_ )
+      .GET<node_handler>(root_ / "node" / osm_id_)
+      .GET<nodes_handler>(root_ / "nodes")
 
-      .all<way_full_handler>(root_ / "way" / osm_id_ / "full")
-      .all<way_relations_handler>(root_ / "way" / osm_id_ / "relations")
-      .all<way_history_handler>(root_ / "way" / osm_id_ / "history")
-      .all<way_version_handler>(root_ / "way" / osm_id_ / osm_id_ )
-      .all<way_handler>(root_ / "way" / osm_id_)
-      .all<ways_handler>(root_ / "ways")
+      .GET<way_full_handler>(root_ / "way" / osm_id_ / "full")
+      .GET<way_relations_handler>(root_ / "way" / osm_id_ / "relations")
+      .GET<way_history_handler>(root_ / "way" / osm_id_ / "history")
+      .GET<way_version_handler>(root_ / "way" / osm_id_ / osm_id_ )
+      .GET<way_handler>(root_ / "way" / osm_id_)
+      .GET<ways_handler>(root_ / "ways")
 
-      .all<relation_full_handler>(root_ / "relation" / osm_id_ / "full")
-      .all<relation_relations_handler>(root_ / "relation" / osm_id_ / "relations")
-      .all<relation_history_handler>(root_ / "relation" / osm_id_ / "history")
-      .all<relation_version_handler>(root_ / "relation" / osm_id_ / osm_id_ )
-      .all<relation_handler>(root_ / "relation" / osm_id_)
-      .all<relations_handler>(root_ / "relations")
+      .GET<relation_full_handler>(root_ / "relation" / osm_id_ / "full")
+      .GET<relation_relations_handler>(root_ / "relation" / osm_id_ / "relations")
+      .GET<relation_history_handler>(root_ / "relation" / osm_id_ / "history")
+      .GET<relation_version_handler>(root_ / "relation" / osm_id_ / osm_id_ )
+      .GET<relation_handler>(root_ / "relation" / osm_id_)
+      .GET<relations_handler>(root_ / "relations")
 
-      .all<changeset_download_handler>(root_ / "changeset" / osm_id_ / "download")
-      .all<changeset_upload_handler>(root_ / "changeset" / osm_id_ / "upload")
-      .all<changeset_close_handler>(root_ / "changeset" / osm_id_ / "close")
-      .all<changeset_create_handler>(root_ / "changeset" / "create")
-      .put<changeset_update_handler>(root_ / "changeset" / osm_id_)        // PUT Changeset update
-      .all<changeset_handler>(root_ / "changeset" / osm_id_);
+      .GET<changeset_download_handler>(root_ / "changeset" / osm_id_ / "download")
+      .POST<changeset_upload_handler>(root_ / "changeset" / osm_id_ / "upload")
+      .PUT<changeset_close_handler>(root_ / "changeset" / osm_id_ / "close")
+      .PUT<changeset_create_handler>(root_ / "changeset" / "create")
+      .PUT<changeset_update_handler>(root_ / "changeset" / osm_id_)
+      .GET<changeset_handler>(root_ / "changeset" / osm_id_);
   }
 
 #ifdef ENABLE_API07
