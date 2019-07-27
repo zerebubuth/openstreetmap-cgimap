@@ -80,6 +80,17 @@ void http_check_parse_methods() {
   assert_eql(http::parse_method(""), boost::none);
 }
 
+void http_check_choose_encoding() {
+
+  assert_eq(http::choose_encoding("deflate, gzip;q=1.0, *;q=0.5")->name(), "gzip");
+  assert_eq(http::choose_encoding("gzip;q=1.0, identity;q=0.8, *;q=0.1")->name(), "gzip");
+  assert_eq(http::choose_encoding("identity;q=0.8, gzip;q=1.0, *;q=0.1")->name(), "gzip");
+  assert_eq(http::choose_encoding("gzip")->name(), "gzip");
+  assert_eq(http::choose_encoding("identity")->name(), "identity");
+  assert_eq(http::choose_encoding("*")->name(), "identity");
+  assert_eq(http::choose_encoding("deflate")->name(), "identity");
+}
+
 } // anonymous namespace
 
 int main() {
@@ -89,6 +100,7 @@ int main() {
     http_check_parse_params();
     http_check_list_methods();
     http_check_parse_methods();
+    http_check_choose_encoding();
 
   } catch (const std::exception &e) {
     std::cerr << "EXCEPTION: " << e.what() << std::endl;
