@@ -24,7 +24,7 @@ int test_output_buffer::close() {
 
 void test_output_buffer::flush() {}
 
-test_request::test_request() : m_status(-1), m_payload{} {}
+test_request::test_request(bool include_header_info) : m_status(-1), m_payload{}, m_include_header_info(include_header_info)  {}
 
 test_request::~test_request() = default;
 
@@ -67,11 +67,15 @@ void test_request::set_current_time(const std::chrono::system_clock::time_point 
 void test_request::write_header_info(int status, const headers_t &headers) {
   assert(m_output.tellp() == 0);
   m_status = status;
-  m_output << "Status: " << status << " " << status_message(status) << "\r\n";
-  for (const request::headers_t::value_type &header : headers) {
-    m_output << header.first << ": " << header.second << "\r\n";
+
+  // optional flag to omit HTTP header information, in case it is not relevant for a unit test
+  if (m_include_header_info) {
+    m_output << "Status: " << status << " " << status_message(status) << "\r\n";
+    for (const request::headers_t::value_type &header : headers) {
+      m_output << header.first << ": " << header.second << "\r\n";
+    }
+    m_output << "\r\n";
   }
-  m_output << "\r\n";
 }
 
 int test_request::response_status() const {

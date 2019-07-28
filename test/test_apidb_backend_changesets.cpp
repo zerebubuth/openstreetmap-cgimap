@@ -331,6 +331,11 @@ void init_changesets(test_database &tdb) {
 	  (4, 2, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 0),
 	  (5, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 0);
 
+      INSERT INTO changeset_tags(changeset_id, k, v)
+         VALUES
+          (2, 'created_by', 'iD 4.0.3'),
+          (2, 'comment', 'Adding some perfectly squared houses ;)');
+
       INSERT INTO user_blocks (user_id, creator_id, reason, ends_at, needs_view)
       VALUES (1,  2, '', now() at time zone 'utc' - ('1 hour' ::interval), false);
 
@@ -451,23 +456,57 @@ void test_changeset_create(test_database &tdb) {
         tdb.run_sql(R"(  SELECT setval('changesets_id_seq', 10, false);  )");
 
 	// set up request headers from test case
-	test_request req;
+	test_request req(false);
 	req.set_header("REQUEST_METHOD", "PUT");
 	req.set_header("REQUEST_URI", "/api/0.6/changeset/create");
 	req.set_header("HTTP_AUTHORIZATION", baseauth);
 	req.set_header("REMOTE_ADDR", "127.0.0.1");
 
-	req.set_payload(R"(
-			    <osm>
+	req.set_payload(R"( <osm>
 			      <changeset>
 				<tag k="created_by" v="JOSM 1.61"/>
 				<tag k="comment" v="Just adding some streetnames"/>
 			      </changeset>
-			    </osm>
-                        )" );
+			    </osm>  )" );
 
 	// execute the request
 	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+
+	assert_equal<int>(req.response_status(), 200, "should have received HTTP status 200 OK");
+	assert_equal<std::string>(req.buffer().str(), "10", "should have received changeset id 10");
+
+	std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+
+	int num = sel->select_changesets({10});
+	assert_equal<int>(num, 1, "should have selected changeset 10.");
+
+	std::chrono::system_clock::time_point t = std::chrono::system_clock::now();
+
+	test_formatter f;
+	sel->write_changesets(f, t);
+	assert_equal<size_t>(f.m_changesets.size(), 1, "should have written one changeset 10.");
+
+	tags_t tags;
+	tags.push_back(std::make_pair("comment", "Just adding some streetnames"));
+	tags.push_back(std::make_pair("created_by", "JOSM 1.61"));
+	assert_equal<test_formatter::changeset_t>(
+	  f.m_changesets.front(),
+	  test_formatter::changeset_t(
+	    changeset_info(
+	      10, // ID
+	      f.m_changesets.front().m_info.created_at, // created_at
+	      f.m_changesets.front().m_info.closed_at, // closed_at
+	      1, // uid
+	      std::string("demo"), // display_name
+	      boost::none, // bounding box
+	      0, // num_changes
+	      0 // comments_count
+	      ),
+	    tags,
+	    false,
+	    comments_t(),
+	    t),
+	  "changeset 10");
 
     }
 

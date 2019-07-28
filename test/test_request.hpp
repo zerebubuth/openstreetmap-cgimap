@@ -31,7 +31,7 @@ private:
  * body for comparison to what we expect.
  */
 struct test_request : public request {
-  test_request();
+  test_request(bool include_header_info = true);
 
   /// implementation of request interface
   virtual ~test_request();
@@ -61,6 +61,7 @@ private:
   std::map<std::string, std::string> m_params;
   std::chrono::system_clock::time_point m_now;
   std::string m_payload;
+  bool m_include_header_info;
 };
 
 #endif /* TEST_TEST_REQUEST_HPP */
