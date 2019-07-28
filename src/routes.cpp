@@ -111,6 +111,10 @@ struct router {
   template <typename Handler, typename Rule> router& GET(Rule r) {
     // functor to create Handler instances
     boost::factory<Handler *> ctor;
+
+    static_assert(std::is_base_of<handler, Handler>::value, "GET rule requires handler subclass");
+    static_assert(!std::is_base_of<payload_enabled_handler, Handler>::value, "GET rule cannot use payload enabled handler subclass");
+
     rules_get.push_back(
         rule_ptr(new rule<Rule, boost::factory<Handler *> >(r, ctor)));
     return *this;
@@ -120,6 +124,9 @@ struct router {
   template <typename Handler, typename Rule> router& POST(Rule r) {
     // functor to create Handler instances
     boost::factory<Handler *> ctor;
+
+    static_assert(std::is_base_of<payload_enabled_handler, Handler>::value, "POST rule requires payload enabled handler subclass");
+
     rules_post.push_back(
         rule_ptr(new rule<Rule, boost::factory<Handler *> >(r, ctor)));
     return *this;
@@ -130,6 +137,9 @@ struct router {
   template <typename Handler, typename Rule> router& PUT(Rule r) {
     // functor to create Handler instances
     boost::factory<Handler *> ctor;
+
+    static_assert(std::is_base_of<payload_enabled_handler, Handler>::value, "PUT rule requires payload enabled handler subclass");
+
     rules_put.push_back(
         rule_ptr(new rule<Rule, boost::factory<Handler *> >(r, ctor)));
     return *this;
@@ -254,8 +264,8 @@ routes::routes()
 #ifdef ENABLE_API07
   {
     using namespace api07;
-    r_experimental->all<map_handler>(root_ / "map")
-                   .all<map_handler>(root_ / "map" / "tile" / osm_id_);
+    r_experimental->GET<map_handler>(root_ / "map")
+                   .GET<map_handler>(root_ / "map" / "tile" / osm_id_);
   }
 #endif /* ENABLE_API07 */
 }

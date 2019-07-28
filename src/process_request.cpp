@@ -312,11 +312,11 @@ process_put_request(request &req, handler_ptr_t handler,
 
   // TODO: use handler/responder to setup response headers.
   // write the response header
-  req.status(200);
-  req.add_header("Content-Type", (boost::format("%1%; charset=utf-8") %
-                                  mime::to_string(best_mime_type)).str());
-  req.add_header("Content-Encoding", encoding->name());
-  req.add_header("Cache-Control", "private, max-age=0, must-revalidate");
+  req.status(200)
+     .add_header("Content-Type", (boost::format("%1%; charset=utf-8") %
+                                  mime::to_string(best_mime_type)).str())
+     .add_header("Content-Encoding", encoding->name())
+     .add_header("Cache-Control", "private, max-age=0, must-revalidate");
 
   // create the XML writer with the FCGI streams as output
   shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
@@ -485,13 +485,6 @@ bool show_redactions_requested(request &req) {
 
 } // anonymous namespace
 
-void process_request(request &req, rate_limiter &limiter,
-                     const std::string &generator, routes &route,
-                     std::shared_ptr<data_selection::factory> factory,
-                     std::shared_ptr<oauth::store> store)
-{ // TODO: temporary workaround only for test cases
-  process_request(req, limiter, generator, route, factory, std::shared_ptr<data_update::factory>(nullptr), store);
-}
 
 void validate_user_db_update_permission (
     const boost::optional<osm_user_id_t>& user_id,
@@ -615,56 +608,54 @@ void process_request(request &req, rate_limiter &limiter,
     }
 
     // process request
-    if (method == http::method::GET) {
-      std::tie(request_name, bytes_written) =
-        process_get_request(req, handler, selection, ip, generator);
+    switch (method) {
 
-    } else if (method == http::method::POST) {
+      case http::method::GET:
+	std::tie(request_name, bytes_written) = process_get_request(req, handler, selection, ip, generator);
+	break;
 
-      validate_user_db_update_permission(user_id, selection, allow_api_write);
+      case http::method::HEAD:
+	std::tie(request_name, bytes_written) = process_head_request(req, handler, selection, ip);
+	break;
 
-      if (update_factory == nullptr)
-	throw http::bad_request("Backend does not support POST requests");
+      case http::method::POST:
+	{
+	  validate_user_db_update_permission(user_id, selection, allow_api_write);
 
-      auto rw_transaction = update_factory->get_default_transaction();
+	  if (update_factory == nullptr)
+	    throw http::bad_request("Backend does not support POST requests");
 
-      auto data_update = update_factory->make_data_update(*rw_transaction);
+	  auto rw_transaction = update_factory->get_default_transaction();
+	  auto data_update = update_factory->make_data_update(*rw_transaction);
+	  check_db_readonly_mode (data_update);
+	  auto payload = req.get_payload();
+	  std::tie(request_name, bytes_written) =
+	      process_post_request(req, handler, data_update, selection, payload, user_id, ip, generator);
+	}
+	break;
 
-      check_db_readonly_mode (data_update);
+      case http::method::PUT:
+	{
+	  validate_user_db_update_permission(user_id, selection, allow_api_write);
 
-      std::string payload = req.get_payload();
+	  if (update_factory == nullptr)
+	    throw http::bad_request("Backend does not support PUT requests");
 
-      std::tie(request_name, bytes_written) =
-          process_post_request(req, handler, data_update, selection, payload, user_id, ip, generator);
+	  auto rw_transaction = update_factory->get_default_transaction();
+	  auto data_update = update_factory->make_data_update(*rw_transaction);
+	  check_db_readonly_mode (data_update);
+	  auto payload = req.get_payload();
+	  std::tie(request_name, bytes_written) =
+	      process_put_request(req, handler, data_update, selection, payload, user_id, ip, generator);
+	}
+	break;
 
-    } else if (method == http::method::PUT) {
+      case http::method::OPTIONS:
+	std::tie(request_name, bytes_written) = process_options_request(req, handler);
+	break;
 
-      validate_user_db_update_permission(user_id, selection, allow_api_write);
-
-      if (update_factory == nullptr)
-	throw http::bad_request("Backend does not support PUT requests");
-
-      auto rw_transaction = update_factory->get_default_transaction();
-      auto data_update = update_factory->make_data_update(*rw_transaction);
-
-
-      check_db_readonly_mode (data_update);
-
-      std::string payload = req.get_payload();
-
-      std::tie(request_name, bytes_written) =
-          process_put_request(req, handler, data_update, selection, payload, user_id, ip, generator);
-
-    } else if (method == http::method::HEAD) {
-      std::tie(request_name, bytes_written) =
-          process_head_request(req, handler, selection, ip);
-
-    } else if (method == http::method::OPTIONS) {
-      std::tie(request_name, bytes_written) =
-        process_options_request(req, handler);
-
-    } else {
-      process_not_allowed(req, handler);
+      default:
+	process_not_allowed(req, handler);
     }
 
     // update the rate limiter, if anything was written

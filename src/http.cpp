@@ -273,7 +273,6 @@ std::string list_methods(method m) {
       result << pair.second;
     }
   }
-
   return result.str();
 }
 
@@ -286,8 +285,13 @@ boost::optional<method> parse_method(const std::string &s) {
       break;
     }
   }
-
   return result;
+}
+
+std::ostream &operator<<(std::ostream &out, method m) {
+  std::string s = list_methods(m);
+  out << "methods{" << s << "}";
+  return out;
 }
 
 unsigned long parse_content_length(const std::string &content_length_str) {
@@ -306,12 +310,6 @@ unsigned long parse_content_length(const std::string &content_length_str) {
     throw http::payload_too_large((boost::format("CONTENT_LENGTH exceeds limit of %1% bytes") % STDIN_MAX).str());
 
   return length;
-}
-
-std::ostream &operator<<(std::ostream &out, method m) {
-  std::string s = list_methods(m);
-  out << "methods{" << s << "}";
-  return out;
 }
 
 } // namespace http

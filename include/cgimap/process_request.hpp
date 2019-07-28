@@ -19,10 +19,4 @@ void process_request(request &req, rate_limiter &limiter,
                      std::shared_ptr<data_update::factory> update_factory,
                      std::shared_ptr<oauth::store> store);
 
-// TODO: temporary workaround only for test cases
-void process_request(request &req, rate_limiter &limiter,
-                     const std::string &generator, routes &route,
-                     std::shared_ptr<data_selection::factory> factory,
-                     std::shared_ptr<oauth::store> store);
-
 #endif /* PROCESS_REQUEST_HPP */
