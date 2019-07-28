@@ -27,6 +27,31 @@ namespace po = boost::program_options;
 
 
 
+void validate_user_db_update_permission (
+    const boost::optional<osm_user_id_t>& user_id,
+    const std::shared_ptr<data_selection>& selection, bool allow_api_write)
+{
+  if (!user_id)
+    throw http::unauthorized ("User is not authorized");
+
+  if (selection->supports_user_details ()
+      && selection->is_user_blocked (*user_id))
+    throw http::forbidden (
+	"Your access to the API has been blocked. Please log-in to the web interface to find out more.");
+
+  if (!allow_api_write)
+    throw http::unauthorized ("You have not granted the modify map permission");
+}
+
+void check_db_readonly_mode (const std::shared_ptr<data_update>& data_update)
+{
+  if (data_update->is_api_write_disabled())
+    throw http::bad_request (
+	"Server is currently in read only mode, no database changes allowed at this time");
+}
+
+
+
 namespace {
 
 // Rails responds to ActiveRecord::RecordNotFound with an empty HTML document.
@@ -212,11 +237,22 @@ process_get_request(request &req, handler_ptr_t handler,
  */
 std::tuple<string, size_t>
 process_post_request(request &req, handler_ptr_t handler,
-		    data_update_ptr data_update,
-		    data_selection_ptr data_selection,
-                    const string &payload,
-                    boost::optional<osm_user_id_t> user_id,
-                    const string &ip, const string &generator) {
+	             std::shared_ptr<data_selection::factory> factory,
+	             std::shared_ptr<data_update::factory> update_factory,
+                     boost::optional<osm_user_id_t> user_id,
+                     const string &ip, const string &generator) {
+
+  auto rw_transaction = update_factory->get_default_transaction();
+
+  auto data_update = update_factory->make_data_update(*rw_transaction);
+
+  check_db_readonly_mode (data_update);
+
+  auto payload = req.get_payload();
+
+//  // create a data selection for the request
+//  auto data_selection = factory->make_selection(*rw_transaction);
+
   // request start logging
   string request_name = handler->log_name();
   logger::message(format("Started request for %1% from %2%") % request_name %
@@ -227,7 +263,7 @@ process_post_request(request &req, handler_ptr_t handler,
   if (pe_handler == nullptr)
     throw http::server_error("HTTP POST method is not payload enabled");
 
-  responder_ptr_t responder = pe_handler->responder(data_update, data_selection, payload, user_id);
+  responder_ptr_t responder = pe_handler->responder(data_update, payload, user_id);
 
   // get encoding to use
   shared_ptr<http::encoding> encoding = get_encoding(req);
@@ -285,9 +321,8 @@ process_post_request(request &req, handler_ptr_t handler,
  */
 std::tuple<string, size_t>
 process_put_request(request &req, handler_ptr_t handler,
-		    data_update_ptr data_update,
-		    data_selection_ptr data_selection,
-                    const string &payload,
+                    std::shared_ptr<data_selection::factory> factory,
+                    std::shared_ptr<data_update::factory> update_factory,
                     boost::optional<osm_user_id_t> user_id,
                     const string &ip, const string &generator) {
   // request start logging
@@ -295,12 +330,35 @@ process_put_request(request &req, handler_ptr_t handler,
   logger::message(format("Started request for %1% from %2%") % request_name %
                   ip);
 
+//  // create a data selection for the request
+//  auto data_selection = factory->make_selection(*rw_transaction);
+
   std::shared_ptr< payload_enabled_handler > pe_handler = std::static_pointer_cast< payload_enabled_handler >(handler);
 
   if (pe_handler == nullptr)
     throw http::server_error("HTTP PUT method is not payload enabled");
 
-  responder_ptr_t responder = pe_handler->responder(data_update, data_selection, payload, user_id);
+
+  auto payload = req.get_payload();
+  responder_ptr_t responder;
+
+  {
+    auto rw_transaction = update_factory->get_default_transaction();
+    auto data_update = update_factory->make_data_update(*rw_transaction);
+    check_db_readonly_mode (data_update);
+    responder = pe_handler->responder(data_update, payload, user_id);
+  }
+
+  auto rw_transaction = update_factory->get_default_transaction();
+
+  // create a data selection for the request
+  auto data_selection = factory->make_selection(*rw_transaction);
+
+  try {
+    responder = pe_handler->responder(data_selection);
+  } catch (http::server_error& e) {
+
+  }
 
   // get encoding to use
   shared_ptr<http::encoding> encoding = get_encoding(req);
@@ -486,28 +544,6 @@ bool show_redactions_requested(request &req) {
 } // anonymous namespace
 
 
-void validate_user_db_update_permission (
-    const boost::optional<osm_user_id_t>& user_id,
-    const std::shared_ptr<data_selection>& selection, bool allow_api_write)
-{
-  if (!user_id)
-    throw http::unauthorized ("User is not authorized");
-
-  if (selection->supports_user_details ()
-      && selection->is_user_blocked (*user_id))
-    throw http::forbidden (
-	"Your access to the API has been blocked. Please log-in to the web interface to find out more.");
-
-  if (!allow_api_write)
-    throw http::unauthorized ("You have not granted the modify map permission");
-}
-
-void check_db_readonly_mode (const std::shared_ptr<data_update>& data_update)
-{
-  if (data_update->is_api_write_disabled())
-    throw http::bad_request (
-	"Server is currently in read only mode, no database changes allowed at this time");
-}
 
 /**
  * process a single request.
@@ -625,12 +661,9 @@ void process_request(request &req, rate_limiter &limiter,
 	  if (update_factory == nullptr)
 	    throw http::bad_request("Backend does not support POST requests");
 
-	  auto rw_transaction = update_factory->get_default_transaction();
-	  auto data_update = update_factory->make_data_update(*rw_transaction);
-	  check_db_readonly_mode (data_update);
-	  auto payload = req.get_payload();
+
 	  std::tie(request_name, bytes_written) =
-	      process_post_request(req, handler, data_update, selection, payload, user_id, ip, generator);
+	      process_post_request(req, handler, factory, update_factory, user_id, ip, generator);
 	}
 	break;
 
@@ -641,12 +674,8 @@ void process_request(request &req, rate_limiter &limiter,
 	  if (update_factory == nullptr)
 	    throw http::bad_request("Backend does not support PUT requests");
 
-	  auto rw_transaction = update_factory->get_default_transaction();
-	  auto data_update = update_factory->make_data_update(*rw_transaction);
-	  check_db_readonly_mode (data_update);
-	  auto payload = req.get_payload();
 	  std::tie(request_name, bytes_written) =
-	      process_put_request(req, handler, data_update, selection, payload, user_id, ip, generator);
+	      process_put_request(req, handler, factory, update_factory, user_id, ip, generator);
 	}
 	break;
 

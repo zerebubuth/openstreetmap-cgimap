@@ -31,7 +31,7 @@ responder_ptr_t node_relations_handler::responder(data_selection_ptr &x) const {
 }
 
 bool node_relations_responder::is_visible() {
-  return (!sel->check_node_visibility(id) == data_selection::deleted);
+  return (!(sel->check_node_visibility(id) == data_selection::deleted));
 }
 
 } // namespace api06

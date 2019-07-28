@@ -3,24 +3,35 @@
 
 #include <string>
 
+#include "cgimap/text_responder.hpp"
 #include "cgimap/osm_current_responder.hpp"
 #include "cgimap/handler.hpp"
 #include "cgimap/request.hpp"
 
 namespace api06 {
 
-class changeset_update_responder : public osm_current_responder {
+class changeset_update_responder : public text_responder {
 public:
   changeset_update_responder(mime::type,
 			     data_update_ptr &,
-			     data_selection_ptr & sel,
 			     osm_changeset_id_t id_,
                              const std::string & payload,
 			     boost::optional<osm_user_id_t> user_id);
   ~changeset_update_responder();
 
 private:
-  data_update_ptr upd;
+  osm_changeset_id_t id;
+};
+
+class changeset_update_sel_responder : public osm_current_responder {
+public:
+  changeset_update_sel_responder(mime::type,
+			     data_selection_ptr & sel,
+			     osm_changeset_id_t id_);
+  ~changeset_update_sel_responder();
+
+private:
+  data_selection_ptr sel;
   osm_changeset_id_t id;
   bool include_discussion;
 };
@@ -34,7 +45,6 @@ public:
   responder_ptr_t responder(data_selection_ptr &x) const;
 
   responder_ptr_t responder(data_update_ptr &,
-			    data_selection_ptr & sel,
 			    const std::string &payload,
                             boost::optional<osm_user_id_t> user_id) const;
 

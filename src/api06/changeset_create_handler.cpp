@@ -21,7 +21,7 @@ namespace api06 {
 changeset_create_responder::changeset_create_responder(
     mime::type mt, data_update_ptr & upd, const std::string &payload,
     boost::optional<osm_user_id_t> user_id)
-    : text_responder(mt), upd(upd) {
+    : text_responder(mt) {
 
   osm_changeset_id_t changeset = 0;
 
@@ -59,7 +59,7 @@ changeset_create_handler::responder(data_selection_ptr &) const {
 }
 
 responder_ptr_t changeset_create_handler::responder(
-    data_update_ptr & upd, data_selection_ptr & sel, const std::string &payload, boost::optional<osm_user_id_t> user_id) const {
+    data_update_ptr & upd, const std::string &payload, boost::optional<osm_user_id_t> user_id) const {
   return responder_ptr_t(
       new changeset_create_responder(mime_type, upd, payload, user_id));
 }

@@ -359,6 +359,9 @@ void test_changeset_create(test_database &tdb) {
 
     init_changesets(tdb);
 
+
+    // TODO: Unauthenticated user
+
     // User providing wrong password
     {
 	// set up request headers from test case
@@ -526,6 +529,15 @@ void test_changeset_update(test_database &tdb) {
 
     init_changesets(tdb);
 
+    // TODO: unauthenticated user
+
+    // TODO: updating already closed changeset
+
+    // TODO: update changeset with 10k entries
+
+    // TODO: changeset belongs to another user
+
+
 }
 
 
@@ -542,6 +554,12 @@ void test_changeset_close(test_database &tdb) {
     routes route;
 
     init_changesets(tdb);
+
+    // TODO: unauthenticated user
+
+    // TODO: changeset already closed
+
+    // TODO: changeset belongs to another user
 
 }
 
