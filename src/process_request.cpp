@@ -349,10 +349,10 @@ process_put_request(request &req, handler_ptr_t handler,
     responder = pe_handler->responder(data_update, payload, user_id);
   }
 
-  auto rw_transaction = update_factory->get_default_transaction();
+  auto read_only_transaction = update_factory->get_read_only_transaction();
 
   // create a data selection for the request
-  auto data_selection = factory->make_selection(*rw_transaction);
+  auto data_selection = factory->make_selection(*read_only_transaction);
 
   try {
     responder = pe_handler->responder(data_selection);

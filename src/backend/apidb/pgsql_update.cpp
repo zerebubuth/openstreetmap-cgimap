@@ -177,4 +177,9 @@ pgsql_update::factory::get_default_transaction()
   return std::unique_ptr<Transaction_Owner_ReadWrite>(new Transaction_Owner_ReadWrite(std::ref(m_connection)));
 }
 
+std::unique_ptr<Transaction_Owner_Base>
+pgsql_update::factory::get_read_only_transaction()
+{
+  return std::unique_ptr<Transaction_Owner_ReadOnly>(new Transaction_Owner_ReadOnly(std::ref(m_connection)));
+}
 

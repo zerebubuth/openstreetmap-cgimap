@@ -52,6 +52,8 @@ public:
     virtual std::shared_ptr<data_update> make_data_update(Transaction_Owner_Base&) = 0;
 
     virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() = 0;
+
+    virtual std::unique_ptr<Transaction_Owner_Base> get_read_only_transaction() = 0;
   };
 };
 

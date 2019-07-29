@@ -43,6 +43,7 @@ public:
     virtual ~factory();
     virtual std::shared_ptr<data_update> make_data_update(Transaction_Owner_Base& to);
     virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction();
+    virtual std::unique_ptr<Transaction_Owner_Base> get_read_only_transaction();
 
   private:
     pqxx::connection m_connection;
