@@ -14,7 +14,7 @@
  * backed buffer.
  */
 struct test_output_buffer : public output_buffer {
-  explicit test_output_buffer(std::ostream &out);
+  explicit test_output_buffer(std::ostream &out, std::ostream &body);
   virtual ~test_output_buffer();
   virtual int write(const char *buffer, int len);
   virtual int written();
@@ -23,6 +23,7 @@ struct test_output_buffer : public output_buffer {
 
 private:
   std::ostream &m_out;
+  std::ostream &m_body;
   int m_written;
 };
 
@@ -31,7 +32,7 @@ private:
  * body for comparison to what we expect.
  */
 struct test_request : public request {
-  test_request(bool include_header_info = true);
+  test_request();
 
   /// implementation of request interface
   virtual ~test_request();
@@ -44,6 +45,8 @@ struct test_request : public request {
   /// getters and setters for the input headers and output response
   void set_header(const std::string &k, const std::string &v);
   std::stringstream &buffer();
+  std::stringstream &body();
+  std::stringstream &header();
 
   std::chrono::system_clock::time_point get_current_time() const;
   void set_current_time(const std::chrono::system_clock::time_point &now);
@@ -58,10 +61,11 @@ protected:
 private:
   int m_status;
   std::stringstream m_output;
+  std::stringstream m_header;
+  std::stringstream m_body;
   std::map<std::string, std::string> m_params;
   std::chrono::system_clock::time_point m_now;
   std::string m_payload;
-  bool m_include_header_info;
 };
 
 #endif /* TEST_TEST_REQUEST_HPP */

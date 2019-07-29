@@ -459,7 +459,7 @@ void test_changeset_create(test_database &tdb) {
         tdb.run_sql(R"(  SELECT setval('changesets_id_seq', 10, false);  )");
 
 	// set up request headers from test case
-	test_request req(false);
+	test_request req;
 	req.set_header("REQUEST_METHOD", "PUT");
 	req.set_header("REQUEST_URI", "/api/0.6/changeset/create");
 	req.set_header("HTTP_AUTHORIZATION", baseauth);
@@ -476,7 +476,7 @@ void test_changeset_create(test_database &tdb) {
 	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
 
 	assert_equal<int>(req.response_status(), 200, "should have received HTTP status 200 OK");
-	assert_equal<std::string>(req.buffer().str(), "10", "should have received changeset id 10");
+	assert_equal<std::string>(req.body().str(), "10", "should have received changeset id 10");
 
 	std::shared_ptr<data_selection> sel = tdb.get_data_selection();
 
