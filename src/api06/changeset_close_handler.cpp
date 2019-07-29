@@ -58,4 +58,8 @@ responder_ptr_t changeset_close_handler::responder(
       new changeset_close_responder(mime_type, upd, id, payload, user_id));
 }
 
+bool changeset_close_handler::requires_selection_after_update() const {
+  return false;
+}
+
 } // namespace api06

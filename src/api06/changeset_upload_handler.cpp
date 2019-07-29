@@ -81,4 +81,8 @@ responder_ptr_t changeset_upload_handler::responder(
       new changeset_upload_responder(mime_type, upd, id, payload, user_id));
 }
 
+bool changeset_upload_handler::requires_selection_after_update() const {
+  return false;
+}
+
 } // namespace api06

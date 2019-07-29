@@ -28,7 +28,7 @@ public:
   responder_ptr_t responder(data_update_ptr &,
 			    const std::string &payload,
                             boost::optional<osm_user_id_t> user_id) const;
-
+  bool requires_selection_after_update() const;
 };
 
 } // namespace api06

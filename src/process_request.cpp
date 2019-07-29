@@ -285,8 +285,7 @@ process_post_request(request &req, handler_ptr_t handler,
   shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
 
   // create the correct mime type output formatter.
-  shared_ptr<output_formatter> o_formatter =
-      create_formatter(req, best_mime_type, out);
+  shared_ptr<output_formatter> o_formatter = create_formatter(req, best_mime_type, out);
 
   try {
 //    // call to write the response
@@ -342,22 +341,29 @@ process_put_request(request &req, handler_ptr_t handler,
   auto payload = req.get_payload();
   responder_ptr_t responder;
 
-  {
-    auto rw_transaction = update_factory->get_default_transaction();
-    auto data_update = update_factory->make_data_update(*rw_transaction);
-    check_db_readonly_mode (data_update);
-    responder = pe_handler->responder(data_update, payload, user_id);
-  }
+  // Step 1: execute database update
+  auto rw_transaction = update_factory->get_default_transaction();
 
+  auto data_update = update_factory->make_data_update(*rw_transaction);
+
+  check_db_readonly_mode (data_update);
+
+  // Executing the responder constructor is expected to call db commit()
+  // rw_transaction is no longer usable after this point
+  responder = pe_handler->responder(data_update, payload, user_id);
+
+  // Step 2 (optional): read back result from database to generate response
+
+  // Create a new read only transaction based on the update factory
+  // (which possibly uses a different db/user compared to the data_selection factory)
   auto read_only_transaction = update_factory->get_read_only_transaction();
-
   // create a data selection for the request
   auto data_selection = factory->make_selection(*read_only_transaction);
 
-  try {
-    responder = pe_handler->responder(data_selection);
-  } catch (http::server_error& e) {
-
+  // Instantiate data selection based responder, if required to produce the output message
+  // This instance replaces the previous responder instance, which is no longer needed.
+  if (pe_handler->requires_selection_after_update()) {
+      responder = pe_handler->responder(data_selection);
   }
 
   // get encoding to use
@@ -380,8 +386,7 @@ process_put_request(request &req, handler_ptr_t handler,
   shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
 
   // create the correct mime type output formatter.
-  shared_ptr<output_formatter> o_formatter =
-      create_formatter(req, best_mime_type, out);
+  shared_ptr<output_formatter> o_formatter = create_formatter(req, best_mime_type, out);
 
   try {
 //    // call to write the response
