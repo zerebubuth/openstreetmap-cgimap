@@ -463,7 +463,46 @@ bool show_redactions_requested(request &req) {
 
 } // anonymous namespace
 
+// Determine user id and allow_api_write flag based on Basic Auth or OAuth header
+boost::optional<osm_user_id_t> determine_user_id (request& req,
+			        std::shared_ptr<data_selection>& selection,
+			        std::shared_ptr<oauth::store>& store,
+			        bool& allow_api_write)
+{
+  // Try to authenticate user via Basic Auth
+  boost::optional<osm_user_id_t>  user_id = basicauth::authenticate_user (req, selection);
 
+  // Try to authenticate user via OAuth token
+  if (!user_id && store)
+    {
+      oauth::validity::validity oauth_valid = oauth::is_valid_signature (
+	  req, *store, *store, *store);
+      if (boost::apply_visitor (is_copacetic (), oauth_valid))
+	{
+	  string token = boost::apply_visitor (get_oauth_token (), oauth_valid);
+	  user_id = store->get_user_id_for_token (token);
+	  if (!user_id)
+	    {
+	      // we can get here if there's a valid OAuth signature, with an
+	      // authorised token matching the secret stored in the database,
+	      // but that's not assigned to a user ID. perhaps this can
+	      // happen due to concurrent revocation? in any case, we don't
+	      // want to go any further.
+	      logger::message (
+		  format ("Unable to find user ID for token %1%.") % token);
+	      throw http::server_error ("Unable to find user ID for token.");
+	    }
+	  allow_api_write = store->allow_write_api (token);
+	}
+      else
+	{
+	  boost::apply_visitor (oauth_status_response (), oauth_valid);
+	  // if we got here then oauth_status_response didn't throw, which means
+	  // the request must have been unsigned.
+	}
+    }
+  return user_id;
+}
 
 /**
  * process a single request.
@@ -474,50 +513,26 @@ void process_request(request &req, rate_limiter &limiter,
                      std::shared_ptr<data_update::factory> update_factory,
                      std::shared_ptr<oauth::store> store) {
   try {
+
+    std::set<osm_user_role_t> user_roles;
+
+    bool allow_api_write = true;
+
     // get the client IP address
     string ip = fcgi_get_env(req, "REMOTE_ADDR");
-    string client_key;
-    boost::optional<osm_user_id_t> user_id;
-    std::set<osm_user_role_t> user_roles;
-    bool allow_api_write = true;
+
+    // fetch and parse the request method
+    boost::optional<http::method> maybe_method =  http::parse_method(fcgi_get_env(req, "REQUEST_METHOD"));
 
     auto default_transaction = factory->get_default_transaction();
 
     // create a data selection for the request
     auto selection = factory->make_selection(*default_transaction);
 
+    boost::optional<osm_user_id_t> user_id = determine_user_id (req, selection, store, allow_api_write);
+
     // Initially assume IP based client key
-    client_key = addr_prefix + ip;
-
-    // Try to authenticate user via Basic Auth
-    user_id = basicauth::authenticate_user(req, selection);
-
-    // Try to authenticate user via OAuth token
-    if (!user_id && store) {
-      oauth::validity::validity oauth_valid =
-        oauth::is_valid_signature(req, *store, *store, *store);
-
-      if (boost::apply_visitor(is_copacetic(), oauth_valid)) {
-        string token = boost::apply_visitor(get_oauth_token(), oauth_valid);
-        user_id = store->get_user_id_for_token(token);
-        if (!user_id) {
-          // we can get here if there's a valid OAuth signature, with an
-          // authorised token matching the secret stored in the database,
-          // but that's not assigned to a user ID. perhaps this can
-          // happen due to concurrent revocation? in any case, we don't
-          // want to go any further.
-          logger::message(format("Unable to find user ID for token %1%.") %
-                          token);
-          throw http::server_error("Unable to find user ID for token.");
-        }
-        allow_api_write = store->allow_write_api(token);
-
-      } else {
-        boost::apply_visitor(oauth_status_response(), oauth_valid);
-        // if we got here then oauth_status_response didn't throw, which means
-        // the request must have been unsigned.
-      }
-    }
+    string client_key = addr_prefix + ip;
 
     // If user has been authenticated either via Basic Auth or OAuth,
     // set the client key and user roles accordingly
@@ -527,22 +542,13 @@ void process_request(request &req, rate_limiter &limiter,
           user_roles = store->get_roles_for_user(*user_id);
     }
 
-    auto start_time = std::chrono::high_resolution_clock::now();
-
     // check whether the client is being rate limited
     if (!limiter.check(client_key)) {
       logger::message(format("Rate limiter rejected request from %1%") % client_key);
-      throw http::bandwidth_limit_exceeded("You have downloaded too much "
-                                           "data. Please try again later.");
+      throw http::bandwidth_limit_exceeded("You have downloaded too much data. Please try again later.");
     }
 
-    // fetch and parse the request method
-    boost::optional<http::method> maybe_method =
-      http::parse_method(fcgi_get_env(req, "REQUEST_METHOD"));
-
-    // data returned from request methods
-    string request_name;
-    size_t bytes_written = 0;
+    auto start_time = std::chrono::high_resolution_clock::now();
 
     // figure how to handle the request
     handler_ptr_t handler = route(req);
@@ -563,6 +569,10 @@ void process_request(request &req, rate_limiter &limiter,
       selection->set_redactions_visible(true);
     }
 
+    // data returned from request methods
+    string request_name;
+    size_t bytes_written = 0;
+
     // process request
     switch (method) {
 
@@ -580,7 +590,6 @@ void process_request(request &req, rate_limiter &limiter,
 
 	  if (update_factory == nullptr)
 	    throw http::bad_request("Backend does not support POST requests");
-
 
 	  std::tie(request_name, bytes_written) =
 	      process_post_put_request(req, handler, factory, update_factory, user_id, ip, generator);
@@ -616,8 +625,7 @@ void process_request(request &req, rate_limiter &limiter,
     // logging twice when an error is thrown.)
     auto end_time = std::chrono::high_resolution_clock::now();;
     auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-    logger::message(format("Completed request for %1% from %2% in %3% ms "
-                           "returning %4% bytes") %
+    logger::message(format("Completed request for %1% from %2% in %3% ms returning %4% bytes") %
                     request_name % ip %
 		    delta %
                     bytes_written);
