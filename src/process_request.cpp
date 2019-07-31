@@ -232,94 +232,12 @@ process_get_request(request &req, handler_ptr_t handler,
 }
 
 
-/**
- * process a POST request.
- */
-std::tuple<string, size_t>
-process_post_request(request &req, handler_ptr_t handler,
-	             std::shared_ptr<data_selection::factory> factory,
-	             std::shared_ptr<data_update::factory> update_factory,
-                     boost::optional<osm_user_id_t> user_id,
-                     const string &ip, const string &generator) {
-
-  auto rw_transaction = update_factory->get_default_transaction();
-
-  auto data_update = update_factory->make_data_update(*rw_transaction);
-
-  check_db_readonly_mode (data_update);
-
-  auto payload = req.get_payload();
-
-//  // create a data selection for the request
-//  auto data_selection = factory->make_selection(*rw_transaction);
-
-  // request start logging
-  string request_name = handler->log_name();
-  logger::message(format("Started request for %1% from %2%") % request_name %
-                  ip);
-
-  std::shared_ptr< payload_enabled_handler > pe_handler = std::static_pointer_cast< payload_enabled_handler >(handler);
-
-  if (pe_handler == nullptr)
-    throw http::server_error("HTTP POST method is not payload enabled");
-
-  responder_ptr_t responder = pe_handler->responder(data_update, payload, user_id);
-
-  // get encoding to use
-  shared_ptr<http::encoding> encoding = get_encoding(req);
-
-//  // figure out best mime type
-  //mime::type best_mime_type = choose_best_mime_type(req, responder);
-
-  mime::type best_mime_type = mime::type::text_xml;
-
-  // TODO: use handler/responder to setup response headers.
-  // write the response header
-  req.status(200)
-     .add_header("Content-Type", (boost::format("%1%; charset=utf-8") %
-                                  mime::to_string(best_mime_type)).str())
-     .add_header("Content-Encoding", encoding->name())
-     .add_header("Cache-Control", "private, max-age=0, must-revalidate");
-
-  // create the XML writer with the FCGI streams as output
-  shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
-
-  // create the correct mime type output formatter.
-  shared_ptr<output_formatter> o_formatter = create_formatter(req, best_mime_type, out);
-
-  try {
-//    // call to write the response
-    responder->write(o_formatter, generator, req.get_current_time());
-
-    // ensure the request is finished
-    req.finish();
-
-    // make sure all bytes have been written. note that the writer can
-    // throw an exception here, leaving the xml document in a
-    // half-written state...
-    o_formatter->flush();
-    out->flush();
-
-  } catch (const output_writer::write_error &e) {
-    // don't do anything - just go on to the next request.
-    logger::message(format("Caught write error, aborting request: %1%") %
-                    e.what());
-
-  } catch (const std::exception &e) {
-    // errors here are unrecoverable (fatal to the request but maybe
-    // not fatal to the process) since we already started writing to
-    // the client.
-    o_formatter->error(e.what());
-  }
-
-  return std::make_tuple(request_name, out->written());
-}
 
 /**
- * process a PUT request.
+ * process a POST/PUT request.
  */
 std::tuple<string, size_t>
-process_put_request(request &req, handler_ptr_t handler,
+process_post_put_request(request &req, handler_ptr_t handler,
                     std::shared_ptr<data_selection::factory> factory,
                     std::shared_ptr<data_update::factory> update_factory,
                     boost::optional<osm_user_id_t> user_id,
@@ -329,13 +247,10 @@ process_put_request(request &req, handler_ptr_t handler,
   logger::message(format("Started request for %1% from %2%") % request_name %
                   ip);
 
-//  // create a data selection for the request
-//  auto data_selection = factory->make_selection(*rw_transaction);
-
   std::shared_ptr< payload_enabled_handler > pe_handler = std::static_pointer_cast< payload_enabled_handler >(handler);
 
   if (pe_handler == nullptr)
-    throw http::server_error("HTTP PUT method is not payload enabled");
+    throw http::server_error("HTTP method is not payload enabled");
 
 
   auto payload = req.get_payload();
@@ -668,7 +583,7 @@ void process_request(request &req, rate_limiter &limiter,
 
 
 	  std::tie(request_name, bytes_written) =
-	      process_post_request(req, handler, factory, update_factory, user_id, ip, generator);
+	      process_post_put_request(req, handler, factory, update_factory, user_id, ip, generator);
 	}
 	break;
 
@@ -680,7 +595,7 @@ void process_request(request &req, rate_limiter &limiter,
 	    throw http::bad_request("Backend does not support PUT requests");
 
 	  std::tie(request_name, bytes_written) =
-	      process_put_request(req, handler, factory, update_factory, user_id, ip, generator);
+	      process_post_put_request(req, handler, factory, update_factory, user_id, ip, generator);
 	}
 	break;
 
