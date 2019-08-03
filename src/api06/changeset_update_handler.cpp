@@ -28,6 +28,7 @@ changeset_update_responder::changeset_update_responder(
       id(changeset_id){
 
   osm_user_id_t uid = *user_id;
+
   auto changeset_updater = upd->get_changeset_updater(changeset_id, uid);
 
   ChangesetXMLParser parser{};

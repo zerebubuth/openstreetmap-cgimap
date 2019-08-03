@@ -111,6 +111,7 @@ TESTS += test/test_parse_id_list test/test_basicauth test/test_oauth test/test_h
 TESTS += test/changesets.testcore test/message.testcore test/routes.testcore
 TESTS += test/redactions.testcore
 TESTS += test/test_parse_osmchange_input
+TESTS += test/test_parse_changeset_input
 TESTS += test/node_ways.testcore
 TESTS += test/node_relations.testcore
 TESTS += test/way_relations.testcore

@@ -171,7 +171,7 @@ void test_database::run(
 
   } catch (const std::exception &e) {
     throw std::runtime_error(
-        (boost::format("%1%, in read-only selection") % e.what()).str());
+        (boost::format("%1%") % e.what()).str());
   }
   txn_owner_readonly.reset();
   txn_owner_readwrite.reset();
@@ -189,7 +189,7 @@ void test_database::run_update(
 
   } catch (const std::exception &e) {
     throw std::runtime_error(
-        (boost::format("%1%, in update, read-only selection") % e.what()).str());
+        (boost::format("%1%, in update") % e.what()).str());
   }
   txn_owner_readonly.reset();
   txn_owner_readwrite.reset();

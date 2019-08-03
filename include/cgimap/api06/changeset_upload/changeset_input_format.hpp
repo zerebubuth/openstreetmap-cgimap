@@ -246,8 +246,10 @@ namespace api06 {
 	  break;
 
 	case context::top:
-	  if (!std::strcmp(element, "changeset"))
+	  if (!std::strcmp(element, "changeset")) {
 	    m_context = context::in_changeset;
+	    changeset_element_found = true;
+	  }
 	  else
 	    throw xml_error{ "Unknown element, expecting changeset" };
 	  break;
@@ -273,6 +275,8 @@ namespace api06 {
 	case context::top:
 	  assert(!std::strcmp(element, "osm"));
 	  m_context = context::root;
+	  if (!changeset_element_found)
+	    throw xml_error{ "Cannot parse valid changeset from xml string. XML doesn't contain an osm/changeset element." };
 	  break;
 	case context::in_changeset:
 	  assert(!std::strcmp(element, "changeset"));
@@ -294,6 +298,7 @@ namespace api06 {
     context m_context = context::root;
 
     std::map<std::string, std::string> m_tags;
+    bool changeset_element_found = false;
 
   };
 
