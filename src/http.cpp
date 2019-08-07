@@ -66,7 +66,7 @@ std::string form_urldecode(const std::string &src) {
 
 namespace http {
 
-exception::exception(const int c, const string &h, const string &m)
+exception::exception(int c, const string &h, const string &m)
     : code_(c), header_(h), message_(m) {}
 
 exception::~exception() noexcept = default;
