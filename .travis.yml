@@ -1,18 +1,16 @@
 sudo: required
-dist: xenial
+dist: bionic
 language: cpp
 compiler: gcc
 cache: ccache
 addons:
-  postgresql: 9.4
+  postgresql: 9.5
   apt:
     packages:
       - libboost-dev
-      - libboost-date-time-dev
       - libboost-filesystem-dev
       - libboost-locale-dev
       - libboost-program-options-dev
-      - libboost-regex-dev
       - libboost-system-dev
       - libcrypto++-dev
       - libfcgi-dev
