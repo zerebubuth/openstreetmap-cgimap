@@ -68,7 +68,7 @@ std::vector<std::string> psql_array_to_vector(std::string str) {
   if (str == "{NULL}" || str == "")
     return strs;
 
-  for (int i=1; i<str.size(); i++) {
+  for (unsigned int i=1; i<str.size(); i++) {
     if (str[i]==',') {
       if (quotedValue) {
         value<<",";

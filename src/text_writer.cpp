@@ -10,7 +10,7 @@ text_writer::text_writer(const std::string &file_name, bool indent) {
 }
 
 // create a new text writer using writer callback functions
-text_writer::text_writer(std::shared_ptr<output_buffer> &out, bool indent) : out(out) {
+text_writer::text_writer(std::shared_ptr<output_buffer> &o, bool indent) : out(o) {
 
 }
 

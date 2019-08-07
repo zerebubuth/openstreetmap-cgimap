@@ -25,7 +25,7 @@ using boost::format;
 namespace al = boost::algorithm;
 namespace po = boost::program_options;
 
-
+namespace {
 
 void validate_user_db_update_permission (
     const boost::optional<osm_user_id_t>& user_id,
@@ -50,9 +50,6 @@ void check_db_readonly_mode (const std::shared_ptr<data_update>& data_update)
 	"Server is currently in read only mode, no database changes allowed at this time");
 }
 
-
-
-namespace {
 
 // Rails responds to ActiveRecord::RecordNotFound with an empty HTML document.
 // Arguably, this isn't very useful. But it looks like we might be able to get
@@ -461,7 +458,6 @@ bool show_redactions_requested(request &req) {
   return itr != params.end();
 }
 
-} // anonymous namespace
 
 // Determine user id and allow_api_write flag based on Basic Auth or OAuth header
 boost::optional<osm_user_id_t> determine_user_id (request& req,
@@ -503,6 +499,8 @@ boost::optional<osm_user_id_t> determine_user_id (request& req,
     }
   return user_id;
 }
+
+} // anonymous namespace
 
 /**
  * process a single request.

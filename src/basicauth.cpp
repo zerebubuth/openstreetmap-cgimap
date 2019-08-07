@@ -67,8 +67,8 @@ std::string PasswordHash::PBKDF2_HMAC_SHA_string(const std::string& pass,
 
   PKCS5_PBKDF2_HMAC<T> pbkdf;
 
-  pbkdf.DeriveKey(result, result.size(), 0x00, (byte*)pass.data(),
-		  pass.size(), (byte*)salt.data(), salt.size(), iterations);
+  pbkdf.DeriveKey(result, result.size(), 0x00, (const byte*)pass.data(),
+		  pass.size(), (const byte*)salt.data(), salt.size(), iterations);
 
   ArraySource resultEncoder(
       result, result.size(), true,

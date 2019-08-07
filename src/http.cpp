@@ -66,12 +66,12 @@ std::string form_urldecode(const std::string &src) {
 
 namespace http {
 
-exception::exception(unsigned int c, const string &h, const string &m)
+exception::exception(const int c, const string &h, const string &m)
     : code_(c), header_(h), message_(m) {}
 
 exception::~exception() noexcept = default;
 
-unsigned int exception::code() const { return code_; }
+int exception::code() const { return code_; }
 
 const string &exception::header() const { return header_; }
 
@@ -113,8 +113,8 @@ unauthorized::unauthorized(const std::string &message)
   : exception(401, "Unauthorized", message) {}
 
 method_not_allowed::method_not_allowed(const http::method method)
-   : allowed_methods(method),
-     exception(405, "Method not allowed", http::list_methods(method)) {};
+   :  exception(405, "Method not allowed", http::list_methods(method)),
+      allowed_methods(method) {}
 
 
 string urldecode(const string &s) { return form_urldecode(s); }

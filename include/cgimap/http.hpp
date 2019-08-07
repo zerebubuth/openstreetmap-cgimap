@@ -43,7 +43,7 @@ class exception : public std::exception {
 private:
   /// numerical status code, for more information see
   /// http://en.wikipedia.org/wiki/List_of_HTTP_status_codes
-  const unsigned int code_;
+  const int code_;
 
   /// the header is a short description of the code, mainly for
   /// human consumption.
@@ -53,12 +53,12 @@ private:
   const std::string message_;
 
 protected:
-  exception(unsigned int c, const std::string &h, const std::string &m);
+  exception(int c, const std::string &h, const std::string &m);
 
 public:
   virtual ~exception() noexcept;
 
-  unsigned int code() const;
+  int code() const;
   const std::string &header() const;
   const char *what() const noexcept;
 };

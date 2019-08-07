@@ -98,8 +98,8 @@ void cache<Key, Object>::prefetch(const std::set<Key> & keys) {
   std::map<Key, Object* > result(f_fetch(new_keys));
 
   for (const auto& r : result) {
-    std::shared_ptr<Object const> result(r.second);
-    insert_into_cache(r.first, result);
+    std::shared_ptr<Object const> res(r.second);
+    insert_into_cache(r.first, res);
   }
 
 }

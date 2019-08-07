@@ -85,6 +85,7 @@ public:
   };
 
 private:
+  Transaction_Manager m;
 
   // true if we want to include changeset discussions along with
   // the changesets themselves. defaults to false.
@@ -99,8 +100,6 @@ private:
   std::set<osm_nwr_id_t> sel_nodes, sel_ways, sel_relations;
   std::set<osm_edition_t> sel_historic_nodes, sel_historic_ways, sel_historic_relations;
   cache<osm_changeset_id_t, changeset> &cc;
-
-  Transaction_Manager m;
 };
 
 #endif /* READONLY_PGSQL_SELECTION_HPP */

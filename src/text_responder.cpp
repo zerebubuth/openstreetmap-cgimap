@@ -5,7 +5,7 @@ using std::list;
 using std::shared_ptr;
 
 text_responder::text_responder(mime::type mt)
-    : output_text{}, responder(mt) {}
+    : responder(mt), output_text{}  {}
 
 text_responder::~text_responder() = default;
 

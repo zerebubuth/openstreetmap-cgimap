@@ -5,11 +5,11 @@
 #include <pqxx/pqxx>
 
 
-Transaction_Owner_ReadOnly::Transaction_Owner_ReadOnly( pqxx::connection &conn) : m_txn{ conn } {};
+Transaction_Owner_ReadOnly::Transaction_Owner_ReadOnly( pqxx::connection &conn) : m_txn{ conn } {}
 
 pqxx::transaction_base& Transaction_Owner_ReadOnly::get_transaction() { return m_txn; }
 
-Transaction_Owner_ReadWrite::Transaction_Owner_ReadWrite( pqxx::connection &conn) : m_txn{ conn } {};
+Transaction_Owner_ReadWrite::Transaction_Owner_ReadWrite( pqxx::connection &conn) : m_txn{ conn } {}
 
 pqxx::transaction_base& Transaction_Owner_ReadWrite::get_transaction() { return m_txn; }
 
