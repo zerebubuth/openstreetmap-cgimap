@@ -91,8 +91,8 @@ namespace api06 {
 					const xmlChar **attrs) {
 	try {
 	    static_cast<user_data_t *>(data)->callback->
-		start_element((const char *)element,
-			      (const char **)attrs);
+		start_element(reinterpret_cast<const char *>(element),
+			      reinterpret_cast<const char **>(attrs));
 	} catch (xml_error& e) {
 	    throw_with_context(data, e);
 	}
@@ -101,7 +101,7 @@ namespace api06 {
       static void end_element_wrapper(void *data, const xmlChar *element) {
 	try {
 	    static_cast<user_data_t *>(data)->callback->
-		end_element((const char *)element);
+		end_element(reinterpret_cast<const char *>(element));
 	} catch (xml_error& e) {
 	    throw_with_context(data, e);
 	}

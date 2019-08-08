@@ -91,14 +91,14 @@ xml_writer::~xml_writer() noexcept {
 }
 
 void xml_writer::start(const std::string &name) {
-  if (xmlTextWriterStartElement(pimpl->writer, BAD_CAST name.c_str()) < 0) {
+  if (xmlTextWriterStartElement(pimpl->writer, reinterpret_cast<const xmlChar *>(name.c_str())) < 0) {
     throw write_error("cannot start element.");
   }
 }
 
 void xml_writer::attribute(const std::string &name, const std::string &value) {
-  int rc = xmlTextWriterWriteAttribute(pimpl->writer, BAD_CAST name.c_str(),
-                                       BAD_CAST value.c_str());
+  int rc = xmlTextWriterWriteAttribute(pimpl->writer, reinterpret_cast<const xmlChar *>(name.c_str()),
+				       reinterpret_cast<const xmlChar *>(value.c_str()));
   if (rc < 0) {
     throw write_error("cannot write attribute.");
   }
@@ -106,8 +106,8 @@ void xml_writer::attribute(const std::string &name, const std::string &value) {
 
 void xml_writer::attribute(const std::string &name, const char *value) {
   const char *c_str = (value == NULL) ? "" : value;
-  int rc = xmlTextWriterWriteAttribute(pimpl->writer, BAD_CAST name.c_str(),
-                                       BAD_CAST c_str);
+  int rc = xmlTextWriterWriteAttribute(pimpl->writer, reinterpret_cast<const xmlChar *>(name.c_str()),
+				       reinterpret_cast<const xmlChar *>(c_str));
   if (rc < 0) {
     throw write_error("cannot write attribute.");
   }
@@ -115,7 +115,7 @@ void xml_writer::attribute(const std::string &name, const char *value) {
 
 void xml_writer::attribute(const std::string &name, double value) {
   int rc = xmlTextWriterWriteFormatAttribute(
-      pimpl->writer, BAD_CAST name.c_str(), "%.7f", value);
+      pimpl->writer, reinterpret_cast<const xmlChar *>(name.c_str()), "%.7f", value);
   if (rc < 0) {
     throw write_error("cannot write double-precision attribute.");
   }
@@ -123,7 +123,7 @@ void xml_writer::attribute(const std::string &name, double value) {
 
 void xml_writer::attribute(const std::string &name, int32_t value) {
   int rc = xmlTextWriterWriteFormatAttribute(
-      pimpl->writer, BAD_CAST name.c_str(), "%" PRId32, value);
+      pimpl->writer, reinterpret_cast<const xmlChar *>(name.c_str()), "%" PRId32, value);
   if (rc < 0) {
     throw write_error("cannot write int32_t attribute.");
   }
@@ -131,7 +131,7 @@ void xml_writer::attribute(const std::string &name, int32_t value) {
 
 void xml_writer::attribute(const std::string &name, int64_t value) {
   int rc = xmlTextWriterWriteFormatAttribute(
-      pimpl->writer, BAD_CAST name.c_str(), "%" PRId64, value);
+      pimpl->writer, reinterpret_cast<const xmlChar *>(name.c_str()), "%" PRId64, value);
   if (rc < 0) {
     throw write_error("cannot write int64_t attribute.");
   }
@@ -139,7 +139,7 @@ void xml_writer::attribute(const std::string &name, int64_t value) {
 
 void xml_writer::attribute(const std::string &name, uint32_t value) {
   int rc = xmlTextWriterWriteFormatAttribute(
-      pimpl->writer, BAD_CAST name.c_str(), "%" PRIu32, value);
+      pimpl->writer, reinterpret_cast<const xmlChar *>(name.c_str()), "%" PRIu32, value);
   if (rc < 0) {
     throw write_error("cannot write uint32_t attribute.");
   }
@@ -147,7 +147,7 @@ void xml_writer::attribute(const std::string &name, uint32_t value) {
 
 void xml_writer::attribute(const std::string &name, uint64_t value) {
   int rc = xmlTextWriterWriteFormatAttribute(
-      pimpl->writer, BAD_CAST name.c_str(), "%" PRIu64, value);
+      pimpl->writer, reinterpret_cast<const xmlChar *>(name.c_str()), "%" PRIu64, value);
   if (rc < 0) {
     throw write_error("cannot write uint64_t attribute.");
   }
@@ -155,15 +155,15 @@ void xml_writer::attribute(const std::string &name, uint64_t value) {
 
 void xml_writer::attribute(const std::string &name, bool value) {
   const char *str = value ? "true" : "false";
-  int rc = xmlTextWriterWriteAttribute(pimpl->writer, BAD_CAST name.c_str(),
-                                       BAD_CAST str);
+  int rc = xmlTextWriterWriteAttribute(pimpl->writer, reinterpret_cast<const xmlChar *>(name.c_str()),
+				       reinterpret_cast<const xmlChar *>(str));
   if (rc < 0) {
     throw write_error("cannot write boolean attribute.");
   }
 }
 
 void xml_writer::text(const std::string &t) {
-  if (xmlTextWriterWriteString(pimpl->writer, BAD_CAST t.c_str()) < 0) {
+  if (xmlTextWriterWriteString(pimpl->writer, reinterpret_cast<const xmlChar *>(t.c_str())) < 0) {
     throw write_error("cannot write text string.");
   }
 }
