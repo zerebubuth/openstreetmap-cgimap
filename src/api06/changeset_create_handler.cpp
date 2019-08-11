@@ -29,9 +29,7 @@ changeset_create_responder::changeset_create_responder(
 
   auto changeset_updater = upd->get_changeset_updater(changeset, uid);
 
-  ChangesetXMLParser parser{};
-
-  auto tags = parser.process_message(payload);
+  auto tags = ChangesetXMLParser().process_message(payload);
 
   changeset = changeset_updater->api_create_changeset(tags);
 

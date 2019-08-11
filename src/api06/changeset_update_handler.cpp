@@ -31,8 +31,7 @@ changeset_update_responder::changeset_update_responder(
 
   auto changeset_updater = upd->get_changeset_updater(changeset_id, uid);
 
-  ChangesetXMLParser parser{};
-  auto tags = parser.process_message(payload);
+  auto tags = ChangesetXMLParser().process_message(payload);
 
   changeset_updater->api_update_changeset(tags);
 
