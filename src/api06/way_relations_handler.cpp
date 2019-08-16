@@ -31,7 +31,7 @@ responder_ptr_t way_relations_handler::responder(data_selection_ptr &x) const {
 }
 
 bool way_relations_responder::is_visible() {
-  return (!sel->check_way_visibility(id) == data_selection::deleted);
+  return (!(sel->check_way_visibility(id) == data_selection::deleted));
 }
 
 } // namespace api06

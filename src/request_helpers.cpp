@@ -115,7 +115,7 @@ const char *http_message_status_500 = "Internal Server Error";
 } // anonymous namespace
 
 const char *status_message(int code) {
-  const char *msg = http_message_status_500;
+  const char *msg;
 
   switch (code) {
   case 200:
@@ -156,6 +156,9 @@ const char *status_message(int code) {
     break;
   case 509:
     msg = http_message_status_509;
+    break;
+  default:
+    msg = http_message_status_500;
     break;
   }
 

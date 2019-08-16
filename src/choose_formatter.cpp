@@ -8,6 +8,8 @@
 #include "cgimap/xml_formatter.hpp"
 #include "cgimap/json_writer.hpp"
 #include "cgimap/json_formatter.hpp"
+#include "cgimap/text_writer.hpp"
+#include "cgimap/text_formatter.hpp"
 #include "cgimap/logger.hpp"
 
 #include <stdexcept>
@@ -270,6 +272,9 @@ shared_ptr<output_formatter> create_formatter(request &req,
     o_formatter = shared_ptr<output_formatter>(new json_formatter(jwriter));
 #endif
 
+  } else if (best_type == mime::text_plain) {
+      auto *twriter = new text_writer(out, true);
+      o_formatter = shared_ptr<output_formatter>(new text_formatter(twriter));
   } else {
     ostringstream ostr;
     ostr << "Could not create formatter for MIME type `"

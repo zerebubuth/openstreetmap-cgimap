@@ -15,7 +15,7 @@ using std::shared_ptr;
 using std::string;
 using api06::id_version;
 
-Transaction_Owner_Void::Transaction_Owner_Void() {};
+Transaction_Owner_Void::Transaction_Owner_Void() {}
 
 pqxx::transaction_base& Transaction_Owner_Void::get_transaction() {
   throw std::runtime_error ("get_transaction is not supported by Transaction_Owner_Void");

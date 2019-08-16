@@ -345,7 +345,7 @@ void test_oauth_end_to_end(test_database &tdb) {
     oauth::detail::hashed_signature(req, *store),
     "hashed signatures");
 
-  process_request(req, limiter, generator, route, factory, store);
+  process_request(req, limiter, generator, route, factory, std::shared_ptr<data_update::factory>(nullptr), store);
 
   assert_equal<int>(404, req.response_status(), "response status");
   assert_equal<bool>(false, limiter.saw_key("addr:127.0.0.1"),

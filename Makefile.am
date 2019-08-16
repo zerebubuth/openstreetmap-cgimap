@@ -32,17 +32,29 @@ cgimap_include_HEADERS = \
 
 cgimap_api06_includedir=$(includedir)/cgimap/api06
 cgimap_api06_include_HEADERS = \
+	include/cgimap/api06/changeset_close_handler.hpp \
+	include/cgimap/api06/changeset_create_handler.hpp \
+	include/cgimap/api06/changeset_download_handler.hpp \
+	include/cgimap/api06/changeset_handler.hpp \
+	include/cgimap/api06/changeset_update_handler.hpp \
+	include/cgimap/api06/changeset_upload_handler.hpp \
 	include/cgimap/api06/handler_utils.hpp \
 	include/cgimap/api06/map_handler.hpp \
 	include/cgimap/api06/node_handler.hpp \
+	include/cgimap/api06/node_history_handler.hpp \
+	include/cgimap/api06/node_relations_handler.hpp \
 	include/cgimap/api06/node_version_handler.hpp \
 	include/cgimap/api06/nodes_handler.hpp \
 	include/cgimap/api06/relation_full_handler.hpp \
 	include/cgimap/api06/relation_handler.hpp \
+	include/cgimap/api06/relation_history_handler.hpp \
+	include/cgimap/api06/relation_relations_handler.hpp \
 	include/cgimap/api06/relation_version_handler.hpp \
 	include/cgimap/api06/relations_handler.hpp \
 	include/cgimap/api06/way_full_handler.hpp \
 	include/cgimap/api06/way_handler.hpp \
+	include/cgimap/api06/way_history_handler.hpp \
+	include/cgimap/api06/way_relations_handler.hpp \
 	include/cgimap/api06/way_version_handler.hpp \
 	include/cgimap/api06/ways_handler.hpp
 
@@ -99,6 +111,7 @@ TESTS += test/test_parse_id_list test/test_basicauth test/test_oauth test/test_h
 TESTS += test/changesets.testcore test/message.testcore test/routes.testcore
 TESTS += test/redactions.testcore
 TESTS += test/test_parse_osmchange_input
+TESTS += test/test_parse_changeset_input
 TESTS += test/node_ways.testcore
 TESTS += test/node_relations.testcore
 TESTS += test/way_relations.testcore

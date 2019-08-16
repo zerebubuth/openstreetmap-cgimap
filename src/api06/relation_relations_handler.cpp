@@ -32,7 +32,7 @@ responder_ptr_t relation_relations_handler::responder(data_selection_ptr &x) con
 }
 
 bool relation_relations_responder::is_visible() {
-  return (!sel->check_relation_visibility(id) == data_selection::deleted);
+  return (!(sel->check_relation_visibility(id) == data_selection::deleted));
 }
 
 } // namespace api06

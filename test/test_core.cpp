@@ -487,7 +487,7 @@ void run_test(fs::path test_case, rate_limiter &limiter,
     setup_request_headers(req, in);
 
     // execute the request
-    process_request(req, limiter, generator, route, factory, store);
+    process_request(req, limiter, generator, route, factory, std::shared_ptr<data_update::factory>(nullptr), store);
 
     // compare the result to what we're expecting
     try {
