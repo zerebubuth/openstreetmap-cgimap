@@ -44,6 +44,7 @@ cgimap_api06_include_HEADERS = \
 	include/cgimap/api06/node_history_handler.hpp \
 	include/cgimap/api06/node_relations_handler.hpp \
 	include/cgimap/api06/node_version_handler.hpp \
+	include/cgimap/api06/node_ways_handler.hpp \
 	include/cgimap/api06/nodes_handler.hpp \
 	include/cgimap/api06/relation_full_handler.hpp \
 	include/cgimap/api06/relation_handler.hpp \
@@ -92,12 +93,6 @@ endif
 cgimap_staticxml_includedir=$(includedir)/cgimap/backend/staticxml
 cgimap_staticxml_include_HEADERS = \
 	include/cgimap/backend/staticxml/staticxml.hpp
-
-cgimap_api06_include_HEADERS += \
-	include/cgimap/api06/node_ways_handler.hpp \
-	include/cgimap/api06/node_relations_handler.hpp \
-	include/cgimap/api06/way_relations_handler.hpp \
-	include/cgimap/api06/relation_relations_handler.hpp
 
 if ENABLE_API07
 cgimap_api07_includedir=$(includedir)/cgimap/api07
