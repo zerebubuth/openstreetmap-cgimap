@@ -23,7 +23,7 @@ namespace api06 {
 
 
 
-  class ChangesetXMLParser : public xmlpp::SaxParser {
+  class ChangesetXMLParser : private xmlpp::SaxParser {
 
   public:
     explicit ChangesetXMLParser() {}

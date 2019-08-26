@@ -24,7 +24,7 @@
 
 namespace api06 {
 
-class OSMChangeXMLParser : public xmlpp::SaxParser {
+class OSMChangeXMLParser : private xmlpp::SaxParser {
 
 public:
   explicit OSMChangeXMLParser(Parser_Callback *callback)
@@ -274,22 +274,6 @@ private:
     in_object
   };
 
-  context m_context = context::root;
-  context m_operation_context = context::root;
-  context m_last_context = context::root;
-
-  operation m_operation = operation::op_undefined;
-
-  Parser_Callback *m_callback;
-
-  std::unique_ptr<Node> m_node{};
-  std::unique_ptr<Way> m_way{};
-  std::unique_ptr<Relation> m_relation{};
-
-  bool m_if_unused = false;
-
-
-
   template <typename T>
   static void check_attributes(const char **attrs, T check) {
     if (attrs == NULL)
@@ -386,6 +370,21 @@ private:
 
     o.add_tag(*k, *v);
   }
+
+
+  context m_context = context::root;
+  context m_operation_context = context::root;
+  context m_last_context = context::root;
+
+  operation m_operation = operation::op_undefined;
+
+  Parser_Callback *m_callback;
+
+  std::unique_ptr<Node> m_node{};
+  std::unique_ptr<Way> m_way{};
+  std::unique_ptr<Relation> m_relation{};
+
+  bool m_if_unused = false;
 
 };
 
