@@ -128,13 +128,17 @@ void respond_error(const http::exception &e, request &r) {
 
   } else {
     std::string message(e.what());
+
+    std::string message_error_header = message;
+    std::replace(message_error_header.begin(), message_error_header.end(), '\n', ' ');   // replace newline by space (newlines screw up HTTP header)
+
     std::ostringstream message_size;
     message_size << message.size();
 
     r.status(e.code())
       .add_header("Content-Type", "text/plain")
       .add_header("Content-Length", message_size.str())
-      .add_header("Error", message)
+      .add_header("Error", message_error_header)
       .add_header("Cache-Control", "no-cache")
       .put(message);   // output the message as well
   }
