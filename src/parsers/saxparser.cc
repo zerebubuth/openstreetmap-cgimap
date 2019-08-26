@@ -196,7 +196,6 @@ void SaxParser::parse_stream(std::istream& in)
 
   initialize_context();
 
-  // std::string or Glib::ustring?
   // Output from the XML parser is UTF-8 encoded.
   // But the istream "in" is input, i.e. an XML file. It can use any encoding.
   // If it's not UTF-8, the file itself must contain information about which
