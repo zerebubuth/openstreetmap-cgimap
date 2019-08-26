@@ -89,12 +89,12 @@ void SaxParser::on_end_document()
 }
 
 
-void SaxParser::on_start_element(const xmlChar* name,
-                                 const xmlChar** p)
+void SaxParser::on_start_element(const char* name,
+                                 const char** p)
 {
 }
 
-void SaxParser::on_end_element(const xmlChar* name)
+void SaxParser::on_end_element(const char* name)
 {
 }
 
@@ -376,7 +376,7 @@ void SaxParserCallback::start_element(void* context,
 
   try
   {
-    parser->on_start_element(name, p);
+    parser->on_start_element(reinterpret_cast<const char *>(name), reinterpret_cast<const char **>(p));
   }
   catch (...)
   {
@@ -391,7 +391,7 @@ void SaxParserCallback::end_element(void* context, const xmlChar* name)
 
   try
   {
-    parser->on_end_element(name);
+    parser->on_end_element(reinterpret_cast<const char *>(name));
   }
   catch (...)
   {

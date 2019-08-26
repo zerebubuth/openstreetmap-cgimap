@@ -70,9 +70,8 @@ void Parser::initialize_context()
   pimpl_->parser_error_.erase();
   pimpl_->parser_warning_.erase();
 
-
   //Disactivate any non-standards-compliant libxml1 features.
-  //These are disactivated by default, but if we don't deactivate them for each context
+  //These are deactivated by default, but if we don't deactivate them for each context
   //then some other code which uses a global function, such as xmlKeepBlanksDefault(),
   // could cause this to use the wrong settings:
   context_->linenumbers = 1; // TRUE - This is the default anyway.
@@ -81,9 +80,9 @@ void Parser::initialize_context()
   int options = context_->options;
 
   options &= ~XML_PARSE_DTDVALID;
-  options &= ~XML_PARSE_NOENT;
-
   options &= ~XML_PARSE_DTDATTR;
+
+  options |= XML_PARSE_NONET | XML_PARSE_NOENT;
 
   //Turn on/off any parser options.
   options |= pimpl_->set_options_;
@@ -108,11 +107,6 @@ void Parser::release_underlying()
   if(context_)
   {
     context_->_private = nullptr; //Not really necessary.
-
-    if( context_->myDoc != nullptr )
-    {
-      xmlFreeDoc(context_->myDoc);
-    }
 
     xmlFreeParserCtxt(context_);
     context_ = nullptr;

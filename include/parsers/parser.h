@@ -30,7 +30,7 @@ class Parser
 {
 public:
   Parser();
-  ~Parser();
+  virtual ~Parser();
 
   Parser( const Parser& ) = delete;
   Parser& operator=( const Parser& ) = delete;
@@ -112,8 +112,6 @@ public:
    * @param in The stream.
    */
   virtual void parse_stream(std::istream& in) = 0;
-
-  //TODO: Add stop_parser()/stop_parsing(), wrapping xmlStopParser()?
 
 protected:
   virtual void initialize_context();
