@@ -120,6 +120,10 @@ protected:
   virtual void on_warning(const std::string& text);
   virtual void on_error(const std::string& text);
 
+  // provides current location information to parser to provide option
+  // to enhance exception with location information
+  virtual void on_enhance_exception(xmlParserInputPtr& location);
+
   /** @throws xmlpp::parse_error
    */
   virtual void on_fatal_error(const std::string& text);

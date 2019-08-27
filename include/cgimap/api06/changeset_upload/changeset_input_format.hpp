@@ -102,6 +102,15 @@ namespace api06 {
       }
     }
 
+    void on_enhance_exception(xmlParserInputPtr& location) override {
+
+      try {
+          throw;
+      } catch (http::bad_request& e) {
+        throw_with_context(e, location);
+      }
+    }
+
   private:
 
     std::map<std::string, std::string> tags() const { return m_tags; }
@@ -153,6 +162,21 @@ namespace api06 {
 	throw xml_error{"Mandatory field v missing in tag element"};
 
       add_tag(*k, *v);
+    }
+
+    // Include XML message location information where error occurred in exception
+    template <typename TEx>
+    void throw_with_context(TEx& e, xmlParserInputPtr& location) {
+
+      // Location unknown
+      if (location == nullptr)
+        throw e;
+
+      throw TEx{ (boost::format("%1% at line %2%, column %3%") %
+    	e.what() %
+    	location->line %
+    	location->col )
+        .str() };
     }
 
     enum class context {
