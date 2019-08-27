@@ -160,6 +160,14 @@ libcgimap_core_la_SOURCES=\
 libcgimap_core_la_LIBADD=@LIBXML_LIBS@ @YAJL_LIBS@ @LIBMEMCACHED_LIBS@ @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@  @CRYPTOPP_LIBS@
 
 libcgimap_core_la_SOURCES+=\
+	parsers/exception.cc \
+	parsers/internal_error.cc \
+	parsers/parse_error.cc \
+	parsers/parser.cc \
+	parsers/saxparser.cc \
+	parsers/wrapped_exception.cc
+
+libcgimap_core_la_SOURCES+=\
 	api06/changeset_close_handler.cpp \
 	api06/changeset_create_handler.cpp \
 	api06/changeset_download_handler.cpp \
