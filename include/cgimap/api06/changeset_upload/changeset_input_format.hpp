@@ -106,7 +106,7 @@ namespace api06 {
 
       try {
           throw;
-      } catch (http::bad_request& e) {
+      } catch (const xml_error& e) {
         throw_with_context(e, location);
       }
     }
