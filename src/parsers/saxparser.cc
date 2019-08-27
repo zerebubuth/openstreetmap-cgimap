@@ -7,9 +7,10 @@
  * 2002/01/21 Valentin Rusu - added CDATA handlers
  */
 
-
+#include "cgimap/http.hpp"
 #include "parsers/saxparser.h"
 
+#include <boost/format.hpp>
 #include <libxml/parser.h>
 #include <libxml/parserInternals.h> // for xmlCreateFileParserCtxt
 
@@ -17,6 +18,21 @@
 #include <iostream>
 
 namespace xmlpp {
+
+  // Include XML message location information where error occurred in exception
+  template <typename TEx>
+  void throw_with_context(TEx& e, xmlParserInputPtr& location) {
+
+    // Location unknown
+    if (location == nullptr)
+      throw e;
+
+    throw TEx{ (boost::format("%1% at line %2%, column %3%") %
+	e.what() %
+	location->line %
+	location->col )
+      .str() };
+  }
 
 struct SaxParserCallback
 {
@@ -375,7 +391,11 @@ void SaxParserCallback::start_element(void* context,
 
   try
   {
-    parser->on_start_element(reinterpret_cast<const char *>(name), reinterpret_cast<const char **>(p));
+    try {
+      parser->on_start_element(reinterpret_cast<const char *>(name), reinterpret_cast<const char **>(p));
+    } catch (http::bad_request& e) {
+      throw_with_context(e, the_context->input);
+    }
   }
   catch (...)
   {
@@ -390,7 +410,11 @@ void SaxParserCallback::end_element(void* context, const xmlChar* name)
 
   try
   {
-    parser->on_end_element(reinterpret_cast<const char *>(name));
+    try {
+      parser->on_end_element(reinterpret_cast<const char *>(name));
+    } catch (http::bad_request& e) {
+      throw_with_context(e, the_context->input);
+    }
   }
   catch (...)
   {
