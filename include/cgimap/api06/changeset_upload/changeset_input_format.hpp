@@ -90,7 +90,7 @@ namespace api06 {
 	  assert(!std::strcmp(element, "osm"));
 	  m_context = context::root;
 	  if (!changeset_element_found)
-	    throw xml_error{ "Cannot parse valid changeset from xml string. XML doesn't contain an osm/changeset element." };
+	    throw xml_error{ "Cannot parse valid changeset from xml string. XML doesn't contain an osm/changeset element" };
 	  break;
 	case context::in_changeset:
 	  assert(!std::strcmp(element, "changeset"));
