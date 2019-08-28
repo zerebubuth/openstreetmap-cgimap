@@ -7,13 +7,12 @@
 #ifndef __LIBXMLPP_PARSER_H
 #define __LIBXMLPP_PARSER_H
 
-#include "exception.h"
-#include "internal_error.h"
-
 #include <string>
 #include <istream>
 #include <cstdarg> // va_list
 #include <memory> // std::unique_ptr
+#include "exception.hpp"
+#include "internal_error.hpp"
 
 
 extern "C" {

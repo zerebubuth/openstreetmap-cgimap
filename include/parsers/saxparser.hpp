@@ -7,13 +7,12 @@
 #ifndef __LIBXMLPP_PARSERS_SAXPARSER_H
 #define __LIBXMLPP_PARSERS_SAXPARSER_H
 
-#include "parsers/parser.h"
-#include "parsers/wrapped_exception.h"
-#include "parsers/parse_error.h"
-
 #include <memory>
 
 #include <libxml/parser.h>
+#include "parse_error.hpp"
+#include "parser.hpp"
+#include "wrapped_exception.hpp"
 
 extern "C" {
   struct _xmlSAXHandler;

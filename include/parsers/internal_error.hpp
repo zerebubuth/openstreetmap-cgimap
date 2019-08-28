@@ -22,7 +22,7 @@
 
 #include <string>
 
-#include "exception.h"
+#include "exception.hpp"
 
 namespace xmlpp {
 

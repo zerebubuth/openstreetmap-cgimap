@@ -1,4 +1,5 @@
-#include "parsers/exception.h"
+#include "parsers/exception.hpp"
+
 #include <libxml/xmlerror.h>
 #include <libxml/parser.h>
 #include <cstdio>
