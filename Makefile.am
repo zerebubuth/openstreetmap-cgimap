@@ -29,12 +29,12 @@ cgimap_include_HEADERS = \
 	include/cgimap/types.hpp \
 	include/cgimap/util.hpp \
 	include/cgimap/zlib.hpp \
-	include/parsers/exception.h \
-	include/parsers/internal_error.h \
- 	include/parsers/parse_error.h \
-	include/parsers/parser.h \
-	include/parsers/saxparser.h \
-	include/parsers/wrapped_exception.h
+	include/parsers/exception.hpp \
+	include/parsers/internal_error.hpp \
+ 	include/parsers/parse_error.hpp \
+	include/parsers/parser.hpp \
+	include/parsers/saxparser.hpp \
+	include/parsers/wrapped_exception.hpp
 
 cgimap_api06_includedir=$(includedir)/cgimap/api06
 cgimap_api06_include_HEADERS = \

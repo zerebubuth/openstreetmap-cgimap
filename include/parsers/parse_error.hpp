@@ -20,7 +20,7 @@
 #ifndef __LIBXMLPP_PARSE_ERROR_H
 #define __LIBXMLPP_PARSE_ERROR_H
 
-#include "exception.h"
+#include "exception.hpp"
 
 namespace xmlpp
 {

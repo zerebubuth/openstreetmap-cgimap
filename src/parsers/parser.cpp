@@ -4,11 +4,11 @@
  * included with libxml++ as the file COPYING.
  */
 
-#include "parsers/wrapped_exception.h"
-#include "parsers/parse_error.h"
-#include "parsers/parser.h"
+#include "parsers/parser.hpp"
 
 #include <libxml/parser.h>
+#include "parsers/parse_error.hpp"
+#include "parsers/wrapped_exception.hpp"
 
 namespace xmlpp
 {

@@ -4,8 +4,6 @@
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
 
-#include "parsers/saxparser.h"
-
 #include <libxml/parser.h>
 #include <boost/format.hpp>
 
@@ -18,6 +16,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include "parsers/saxparser.hpp"
 
 namespace api06 {
 

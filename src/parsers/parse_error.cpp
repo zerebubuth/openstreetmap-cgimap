@@ -1,4 +1,4 @@
-#include "parsers/parse_error.h"
+#include "parsers/parse_error.hpp"
 
 namespace xmlpp {
 

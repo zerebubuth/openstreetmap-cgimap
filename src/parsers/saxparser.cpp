@@ -7,7 +7,7 @@
  * 2002/01/21 Valentin Rusu - added CDATA handlers
  */
 
-#include "parsers/saxparser.h"
+#include "parsers/saxparser.hpp"
 
 #include <boost/format.hpp>
 #include <libxml/parser.h>

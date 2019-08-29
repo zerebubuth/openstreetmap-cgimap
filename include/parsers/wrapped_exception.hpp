@@ -15,28 +15,36 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "parsers/wrapped_exception.h"
+#ifndef __LIBXMLPP_WRAPPED_EXCEPTION_H
+#define __LIBXMLPP_WRAPPED_EXCEPTION_H
+
+#include <exception>
+
+#include "exception.hpp"
+
 
 namespace xmlpp
 {
 
-wrapped_exception::wrapped_exception(std::exception_ptr exception_ptr)
-  : exception("Wrapped exception"), exception_ptr_(exception_ptr)
+/** Helper class for propagating an exception through C code.
+ * Should not be used by applications.
+ * Does not exist in systems that don't support std::exception_ptr.
+ *
+ * @newin{2,40}
+ */
+class wrapped_exception : public exception
 {
-}
+public:
+  explicit wrapped_exception(std::exception_ptr exception_ptr);
+  ~wrapped_exception() noexcept override;
 
-wrapped_exception::~wrapped_exception() noexcept
-{
-}
+  void raise() const override;
+  exception* clone() const override;
 
-void wrapped_exception::raise() const
-{
-  std::rethrow_exception(exception_ptr_);
-}
-
-exception* wrapped_exception::clone() const
-{
-  return new wrapped_exception(exception_ptr_);
-}
+private:
+  std::exception_ptr exception_ptr_;
+};
 
 } // namespace xmlpp
+
+#endif // __LIBXMLPP_WRAPPED_EXCEPTION_H
