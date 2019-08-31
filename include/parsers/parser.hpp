@@ -116,6 +116,7 @@ protected:
   virtual void initialize_context();
   virtual void release_underlying();
 
+  virtual void on_generic_error(const std::string& message);
   virtual void on_parser_error(const std::string& message);
   virtual void on_parser_warning(const std::string& message);
 
@@ -128,8 +129,11 @@ protected:
   static void callback_parser_error(void* ctx, const char* msg, ...);
   static void callback_parser_warning(void* ctx, const char* msg, ...);
 
+  static void callback_generic_error(void* ctx, const char* msg, ...);
+
   enum class MsgType
   {
+    GenericError,
     ParserError,
     ParserWarning
   };
