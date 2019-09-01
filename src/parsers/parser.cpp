@@ -6,6 +6,9 @@
 
 #include "parsers/parser.hpp"
 
+#include <algorithm>
+#include <vector>
+
 #include <libxml/parser.h>
 #include "parsers/parse_error.hpp"
 #include "parsers/wrapped_exception.hpp"
@@ -21,9 +24,9 @@ struct Parser::Impl
   {}
 
   // Built gradually - used in an exception at the end of parsing.
-  std::string generic_error_;
-  std::string parser_error_;
-  std::string parser_warning_;
+  std::vector<std::string> generic_error_;
+  std::vector<std::string> parser_error_;
+  std::vector<std::string> parser_warning_;
 
 
   bool throw_messages_;
@@ -68,9 +71,9 @@ void Parser::get_parser_options(int& set_options, int& clear_options) const noex
 void Parser::initialize_context()
 {
   //Clear these temporary buffers:
-  pimpl_->generic_error_.erase();
-  pimpl_->parser_error_.erase();
-  pimpl_->parser_warning_.erase();
+  pimpl_->generic_error_.clear();
+  pimpl_->parser_error_.clear();
+  pimpl_->parser_warning_.clear();
 
   //Disactivate any non-standards-compliant libxml1 features.
   //These are deactivated by default, but if we don't deactivate them for each context
@@ -120,19 +123,19 @@ void Parser::release_underlying()
 void Parser::on_generic_error(const std::string& message)
 {
   //Throw an exception later when the whole message has been received:
-  pimpl_->generic_error_ += message;
+  pimpl_->generic_error_.push_back(message);
 }
 
 void Parser::on_parser_error(const std::string& message)
 {
   //Throw an exception later when the whole message has been received:
-  pimpl_->parser_error_ += message;
+  pimpl_->parser_error_.push_back(message);
 }
 
 void Parser::on_parser_warning(const std::string& message)
 {
   //Throw an exception later when the whole message has been received:
-  pimpl_->parser_warning_ += message;
+  pimpl_->parser_warning_.push_back(message);
 }
 
 void Parser::check_for_error_and_warning_messages()
@@ -144,22 +147,33 @@ void Parser::check_for_error_and_warning_messages()
   if (!pimpl_->generic_error_.empty())
   {
     generic_msg = true;
-    msg += "\nGeneric error:\n" + pimpl_->generic_error_;
-    pimpl_->generic_error_.erase();
+    pimpl_->generic_error_.erase( std::unique( pimpl_->generic_error_.begin(),
+					       pimpl_->generic_error_.end()),
+				  pimpl_->generic_error_.end());
+
+    msg += "\nGeneric error:\n" ;
+    for (const auto& m : pimpl_->generic_error_)
+      msg += m;
+    pimpl_->generic_error_.clear();
   }
 
   if (!pimpl_->parser_error_.empty())
   {
     parser_msg = true;
-    msg += "\nParser error:\n" + pimpl_->parser_error_;
-    pimpl_->parser_error_.erase();
+    msg += "\nParser error:\n";
+
+    for (const auto& m : pimpl_->parser_error_)
+      msg += m;
+    pimpl_->parser_error_.clear();
   }
 
   if (!pimpl_->parser_warning_.empty())
   {
     parser_msg = true;
-    msg += "\nParser warning:\n" + pimpl_->parser_warning_;
-    pimpl_->parser_warning_.erase();
+    msg += "\nParser warning:\n" ;
+    for (const auto& m : pimpl_->parser_warning_)
+      msg += m;
+    pimpl_->parser_warning_.clear();
   }
 
   if (generic_msg)
