@@ -129,7 +129,7 @@ void respond_error(const http::exception &e, request &r) {
   } else {
     std::string message(e.what());
 
-    std::string message_error_header = message;
+    std::string message_error_header = message.substr(0, 250);                           // limit HTTP header to 250 chars
     std::replace(message_error_header.begin(), message_error_header.end(), '\n', ' ');   // replace newline by space (newlines screw up HTTP header)
 
     std::ostringstream message_size;

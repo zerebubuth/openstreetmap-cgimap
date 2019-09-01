@@ -21,6 +21,7 @@ struct Parser::Impl
   {}
 
   // Built gradually - used in an exception at the end of parsing.
+  std::string generic_error_;
   std::string parser_error_;
   std::string parser_warning_;
 
@@ -67,6 +68,7 @@ void Parser::get_parser_options(int& set_options, int& clear_options) const noex
 void Parser::initialize_context()
 {
   //Clear these temporary buffers:
+  pimpl_->generic_error_.erase();
   pimpl_->parser_error_.erase();
   pimpl_->parser_warning_.erase();
 
@@ -98,6 +100,8 @@ void Parser::initialize_context()
     context_->sax->warning = &callback_parser_warning;
   }
 
+  xmlSetGenericErrorFunc(context_, &callback_generic_error);
+
   //Allow callback_error_or_warning() to retrieve the C++ instance:
   context_->_private = this;
 }
@@ -111,6 +115,12 @@ void Parser::release_underlying()
     xmlFreeParserCtxt(context_);
     context_ = nullptr;
   }
+}
+
+void Parser::on_generic_error(const std::string& message)
+{
+  //Throw an exception later when the whole message has been received:
+  pimpl_->generic_error_ += message;
 }
 
 void Parser::on_parser_error(const std::string& message)
@@ -128,8 +138,15 @@ void Parser::on_parser_warning(const std::string& message)
 void Parser::check_for_error_and_warning_messages()
 {
   std::string msg(exception_ ? exception_->what() : "");
+  bool generic_msg = false;
   bool parser_msg = false;
-  bool validity_msg = false;
+
+  if (!pimpl_->generic_error_.empty())
+  {
+    generic_msg = true;
+    msg += "\nGeneric error:\n" + pimpl_->generic_error_;
+    pimpl_->generic_error_.erase();
+  }
 
   if (!pimpl_->parser_error_.empty())
   {
@@ -145,7 +162,9 @@ void Parser::check_for_error_and_warning_messages()
     pimpl_->parser_warning_.erase();
   }
 
-  if (parser_msg)
+  if (generic_msg)
+    exception_.reset(new parse_error(msg));
+  else if (parser_msg)
     exception_.reset(new parse_error(msg));
 }
 
@@ -164,6 +183,14 @@ void Parser::callback_parser_warning(void* ctx, const char* msg, ...)
   va_list var_args;
   va_start(var_args, msg);
   callback_error_or_warning(MsgType::ParserWarning, ctx, msg, var_args);
+  va_end(var_args);
+}
+
+void Parser::callback_generic_error(void* ctx, const char* msg, ...)
+{
+  va_list var_args;
+  va_start(var_args, msg);
+  callback_error_or_warning(MsgType::GenericError, ctx, msg, var_args);
   va_end(var_args);
 }
 
@@ -196,6 +223,9 @@ void Parser::callback_error_or_warning(MsgType msg_type, void* ctx,
       {
         switch (msg_type)
         {
+          case MsgType::GenericError:
+            parser->on_generic_error(ubuff);
+            break;
           case MsgType::ParserError:
             parser->on_parser_error(ubuff);
             break;
