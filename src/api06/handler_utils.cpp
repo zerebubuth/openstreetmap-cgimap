@@ -4,6 +4,7 @@
 #include "cgimap/request_helpers.hpp"
 #include <map>
 #include <vector>
+
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
@@ -20,6 +21,7 @@ using std::vector;
 using std::pair;
 namespace qi = boost::spirit::qi;
 namespace ascii = boost::spirit::ascii;
+namespace standard = boost::spirit::standard;
 
 namespace {
 struct first_equals {
@@ -40,7 +42,7 @@ BOOST_FUSION_ADAPT_STRUCT(
 namespace {
 
 template <typename Iterator>
-struct id_version_parser : qi::grammar<Iterator, api06::id_version(), ascii::space_type> {
+struct id_version_parser : qi::grammar<Iterator, api06::id_version(), standard::space_type> {
   id_version_parser() : id_version_parser::base_type(root) {
     using qi::lit;
     using qi::uint_;
@@ -49,19 +51,19 @@ struct id_version_parser : qi::grammar<Iterator, api06::id_version(), ascii::spa
     root = ulong_long >> -(lit("v") >> uint_);
   }
 
-  qi::rule<Iterator, api06::id_version(), ascii::space_type> root;
+  qi::rule<Iterator, api06::id_version(), standard::space_type> root;
 };
 
 template <typename Iterator>
 struct id_version_list_parser
-  : qi::grammar<Iterator, std::vector<api06::id_version>(), ascii::space_type> {
+  : qi::grammar<Iterator, std::vector<api06::id_version>(), standard::space_type> {
   id_version_list_parser() : id_version_list_parser::base_type(root) {
     using qi::lit;
 
     root = idv % lit(",");
   }
 
-  qi::rule<Iterator, std::vector<api06::id_version>(), ascii::space_type> root;
+  qi::rule<Iterator, std::vector<api06::id_version>(), standard::space_type> root;
   id_version_parser<Iterator> idv;
 };
 
@@ -82,16 +84,22 @@ vector<id_version> parse_id_list_params(request &req, const string &param_name) 
     const string &str = itr->second;
 
     if (!str.empty()) {
+
       string::const_iterator first = str.begin(), last = str.end();
       id_version_list_parser<string::const_iterator> idv_p;
 
-      bool ok = qi::phrase_parse(
-        first, last, idv_p, boost::spirit::qi::ascii::space, parse_ids);
+      try {
 
-      if (ok && (first == last)) {
-        myids.swap(parse_ids);
-      } else {
-        myids.push_back(id_version());
+	bool ok = qi::phrase_parse(
+	  first, last, idv_p, boost::spirit::qi::standard::space, parse_ids);
+
+	if (ok && (first == last)) {
+	  myids.swap(parse_ids);
+        } else {
+	   myids.push_back(id_version());
+        }
+      } catch (...) {   // input could not be parsed, ignore
+	  myids.clear();
       }
     }
   }
