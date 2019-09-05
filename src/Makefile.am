@@ -40,7 +40,7 @@ ___test_test_apidb_backend_changesets_LDADD+=libcgimap_staticxml.la
 ___test_test_apidb_backend_changeset_downloads_LDADD+=libcgimap_staticxml.la
 endif
 
-___openstreetmap_cgimap_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
+___openstreetmap_cgimap_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_SYSTEM_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
 ___test_test_core_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @CRYPTOPP_LIBS@
 check_PROGRAMS+=../test/test_parse_id_list ../test/test_basicauth ../test/test_oauth ../test/test_http ../test/test_parse_time ../test/test_parse_osmchange_input ../test/test_parse_changeset_input
 ___test_test_parse_id_list_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@
@@ -157,7 +157,7 @@ libcgimap_core_la_SOURCES=\
 	xml_formatter.cpp \
 	xml_writer.cpp \
 	zlib.cpp
-libcgimap_core_la_LIBADD=@LIBXML_LIBS@ @YAJL_LIBS@ @LIBMEMCACHED_LIBS@ @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_FILESYSTEM_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@  @CRYPTOPP_LIBS@
+libcgimap_core_la_LIBADD=@LIBXML_LIBS@ @YAJL_LIBS@ @LIBMEMCACHED_LIBS@ @BOOST_PROGRAM_OPTIONS_LIB@ @BOOST_SYSTEM_LIB@ @BOOST_LOCALE_LIB@  @CRYPTOPP_LIBS@
 
 libcgimap_core_la_SOURCES+=\
 	parsers/exception.cpp \
