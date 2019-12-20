@@ -309,6 +309,9 @@ handler_ptr_t route_resource(request &req, const string &path,
   list<string> path_components;
   al::split(path_components, resource.first, al::is_any_of("/"));
 
+  if (path_components.rbegin()->compare("") == 0)
+    path_components.pop_back();
+
   handler_ptr_t hptr(r->match(path_components, req));
 
   // if the pointer points at something, then the path was found. otherwise,
