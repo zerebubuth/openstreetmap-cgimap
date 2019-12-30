@@ -308,11 +308,6 @@ handler_ptr_t route_resource(request &req, const string &path,
   // split the URL into bits to be matched.
   list<string> path_components;
   al::split(path_components, resource.first, al::is_any_of("/"));
-  // remove empty trailing components to allow for "/api/0.6/changeset/create/"
-  // like the rails port instead on only allowing  "/api/0.6/changeset/create"
-  // which fails on the out of the box rails port
-  if (path_components.rbegin()->compare("") == 0)
-    path_components.pop_back();
 
   handler_ptr_t hptr(r->match(path_components, req));
 

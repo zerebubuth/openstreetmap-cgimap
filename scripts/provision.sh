@@ -1,7 +1,5 @@
 #!/bin/bash
 
-apt-get update;
-
 apt-get install -y git build-essential automake autoconf libtool;
 
 apt-get install -y libxml2-dev libpqxx-dev libfcgi-dev \
