@@ -5,10 +5,10 @@
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  # default build target is currently Ubuntu 16.04
-  config.vm.define "xenial", :primary => true do |xenial|
-    xenial.vm.box = 'ubuntu/xenial64'
-    xenial.vm.provision 'shell', path: 'scripts/provision.sh'
+  # default build target is currently Ubuntu 18.04
+  config.vm.define "bionic", :primary => true do |bionic|
+    bionic.vm.box = 'ubuntu/bionic64'
+    bionic.vm.provision 'shell', path: 'scripts/provision.sh'
   end
 
   config.vm.synced_folder ".", "/vagrant"
