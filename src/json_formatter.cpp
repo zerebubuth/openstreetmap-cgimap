@@ -164,12 +164,15 @@ void json_formatter::write_way(const element_info &elem, const nodes_t &nodes,
 
   write_id(elem);
   write_common(elem);
-  writer->object_key("nodes");
-  writer->start_array();
-  for (const auto &node : nodes) {
-    writer->entry_int(node);
+
+  if (!nodes.empty()) {
+      writer->object_key("nodes");
+      writer->start_array();
+      for (const auto &node : nodes) {
+        writer->entry_int(node);
+      }
+      writer->end_array();
   }
-  writer->end_array();
 
   write_tags(tags);
 
