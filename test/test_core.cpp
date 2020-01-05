@@ -454,7 +454,7 @@ void check_response(std::istream &expected, std::istream &actual) {
         content_type.substr(0, 9) == "text/html") {
       check_content_body_xml(expected, actual);
 
-    } else if (content_type.substr(0, 9) == "text/json") {
+    } else if (content_type.substr(0, 16) == "application/json") {
       check_content_body_json(expected, actual);
 
     } else if (content_type.substr(0, 10) == "text/plain") {
