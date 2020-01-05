@@ -13,7 +13,7 @@ enum type {
   text_plain,
   text_xml,
 #ifdef HAVE_YAJL
-  text_json,
+  application_json,
 #endif
   any_type // the "*/*" type used to mean that anything is acceptable.
 };
