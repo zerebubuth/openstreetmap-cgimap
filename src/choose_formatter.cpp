@@ -268,7 +268,7 @@ shared_ptr<output_formatter> create_formatter(request &req,
 
 #ifdef HAVE_YAJL
   } else if (best_type == mime::text_json) {
-    auto *jwriter = new json_writer(out, true);
+    auto *jwriter = new json_writer(out, false);
     o_formatter = shared_ptr<output_formatter>(new json_formatter(jwriter));
 #endif
 
