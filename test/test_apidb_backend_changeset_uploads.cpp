@@ -106,10 +106,6 @@ namespace {
 	// verify historic tables
 	auto sel = tdb.get_data_selection();
 
-	assert_equal<bool>(
-	    sel->supports_historical_versions(), true,
-	    "data selection supports historical versions");
-
 	assert_equal<int>(
 	    sel->select_nodes_with_history({ osm_nwr_id_t(node_id) }), 1,
 	    "number of nodes selected");
@@ -495,10 +491,6 @@ namespace {
           // verify historic tables
           auto sel = tdb.get_data_selection();
 
-          assert_equal<bool>(
-              sel->supports_historical_versions(), true,
-	      "data selection supports historical versions");
-
           assert_equal<int>(
               sel->select_ways_with_history({ osm_nwr_id_t(way_id) }), 1,
 	      "number of ways selected");
@@ -609,10 +601,6 @@ namespace {
         {
           // verify historic tables
           auto sel = tdb.get_data_selection();
-
-          assert_equal<bool>(
-              sel->supports_historical_versions(), true,
-	      "data selection supports historical versions");
 
           assert_equal<int>(
               sel->select_ways_with_history({ osm_nwr_id_t(way_id) }), 2,
@@ -780,10 +768,6 @@ namespace {
         {
           // verify historic tables
           auto sel = tdb.get_data_selection();
-
-          assert_equal<bool>(
-              sel->supports_historical_versions(), true,
-	      "data selection supports historical versions");
 
           assert_equal<int>(
               sel->select_ways_with_history({ osm_nwr_id_t(way_id) }), way_version,
@@ -989,10 +973,6 @@ namespace {
           // verify historic tables
           auto sel = tdb.get_data_selection();
 
-          assert_equal<bool>(
-              sel->supports_historical_versions(), true,
-	      "data selection supports historical versions");
-
           assert_equal<int>(
               sel->select_relations_with_history({ osm_nwr_id_t(relation_id) }), 1,
 	      "number of relations selected");
@@ -1099,10 +1079,6 @@ namespace {
         {
           // verify historic tables
           auto sel = tdb.get_data_selection();
-
-          assert_equal<bool>(
-              sel->supports_historical_versions(), true,
-	      "data selection supports historical versions");
 
           assert_equal<int>(
               sel->select_relations_with_history({ osm_nwr_id_t( r_id ) }), 1,
@@ -1235,10 +1211,6 @@ namespace {
           // verify historic tables
           auto sel = tdb.get_data_selection();
 
-          assert_equal<bool>(
-              sel->supports_historical_versions(), true,
-	      "data selection supports historical versions");
-
           assert_equal<int>(
               sel->select_relations_with_history({relation_id_1, relation_id_2}), 2,
 	      "number of relations selected");
@@ -1361,10 +1333,6 @@ namespace {
         {
           // verify historic tables
           auto sel = tdb.get_data_selection();
-
-          assert_equal<bool>(
-              sel->supports_historical_versions(), true,
-	      "data selection supports historical versions");
 
           assert_equal<int>(
               sel->select_relations_with_history({ osm_nwr_id_t(relation_id) }), 2,
@@ -1725,10 +1693,6 @@ namespace {
           // verify historic tables
           auto sel = tdb.get_data_selection();
 
-          assert_equal<bool>(
-              sel->supports_historical_versions(), true,
-	      "data selection supports historical versions");
-
           assert_equal<int>(
               sel->select_relations_with_history({ osm_nwr_id_t(relation_id) }), relation_version,
 	      "number of relations selected");
@@ -1893,7 +1857,7 @@ namespace {
     auto way_updater = upd->get_way_updater(change_tracking);
     auto relation_updater = upd->get_relation_updater(change_tracking);
 
-    changeset_updater->lock_current_changeset();
+    changeset_updater->lock_current_changeset(true);
 
     api06::OSMChange_Handler handler(std::move(node_updater), std::move(way_updater),
                                      std::move(relation_updater), changeset);
@@ -2106,7 +2070,6 @@ namespace {
 	  throw std::runtime_error("Expected HTTP 401 Unauthorized: wrong user/password");
     }
 
-
     // User logging on with display name (different case)
     {
 	// set up request headers from test case
@@ -2149,7 +2112,6 @@ namespace {
 	  throw std::runtime_error("Expected HTTP 200 OK: Log on with email address");
     }
 
-
     // User logging on with email address with different case and additional whitespace rather than display name
     {
 	// set up request headers from test case
@@ -2170,8 +2132,6 @@ namespace {
 	if (req.response_status() != 200)
 	  throw std::runtime_error("Expected HTTP 200 OK: Log on with email address, whitespace, different case");
     }
-
-
 
     // User is blocked (needs_view)
     {

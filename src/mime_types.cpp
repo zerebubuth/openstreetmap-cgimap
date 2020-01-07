@@ -9,11 +9,13 @@ namespace mime {
 string to_string(type t) {
   if (any_type == t) {
     return "*/*";
+  } else if (text_plain == t) {
+    return "text/plain";
   } else if (text_xml == t) {
     return "text/xml";
 #ifdef HAVE_YAJL
-  } else if (text_json == t) {
-    return "text/json";
+  } else if (application_json == t) {
+    return "application/json";
 #endif
   } else {
     throw runtime_error("No string conversion for unspecified MIME type.");
@@ -29,11 +31,13 @@ type parse_from(const std::string &name) {
     t = any_type;
   } else if (name == "text/*") {
     t = any_type;
+  } else if (name == "text/plain") {
+    t = text_plain;
   } else if (name == "text/xml") {
     t = text_xml;
 #ifdef HAVE_YAJL
-  } else if (name == "text/json") {
-    t = text_json;
+  } else if (name == "application/json") {
+    t = application_json;
 #endif
   }
 

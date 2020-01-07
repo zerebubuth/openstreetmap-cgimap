@@ -45,18 +45,18 @@ struct request {
   // will receive an error unless this is called with some other value. you can
   // call this function several times, but it is an error to call it after the
   // first call to any of the output functions.
-  void status(int code);
+  request& status(int code);
 
   // add a key-value header to the response. there may be some pre-existing
   // headers which are set by the output system, and some (e.g: CORS headers)
   // which are on by default for CGImap. it is an error to call this function
   // after a call to any of the output functions.
-  void add_header(const std::string &key, const std::string &value);
+  request& add_header(const std::string &key, const std::string &value);
 
   // add a key-value header to the response like add_header, provided that
   // processing didn't trigger any error before calling any of the output
   // functions
-  void add_success_header(const std::string &key, const std::string &value);
+  request& add_success_header(const std::string &key, const std::string &value);
 
   /********************** RESPONSE OUTPUT FUNCTIONS **************************/
 

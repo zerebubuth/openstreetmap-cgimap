@@ -1,5 +1,9 @@
 Request-Method: GET
 Request-URI: /api/0.6/node/4/ways
 ---
-Status: 410 Gone
+Content-Type: text/xml; charset=utf-8
+!Content-Disposition: 
+Status: 200 OK
 ---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+</osm>

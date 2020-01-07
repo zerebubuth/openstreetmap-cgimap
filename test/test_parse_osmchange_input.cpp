@@ -640,11 +640,11 @@ void test_way() {
   } catch (http::exception &e) {
     if (e.code() != 412)
       throw std::runtime_error("test_way::010: Expected HTTP 412");
-    const std::string expected = "Way -1 must have at least one node";
+    const std::string expected = "Precondition failed: Way -1 must have at least one node";
     const std::string actual = std::string(e.what()).substr(0, expected.size());
     if (actual != expected)
       throw std::runtime_error(
-          "test_way::010: Expected Way -1 must have at least one node, got: " + actual);
+          "test_way::010: Expected Precondition failed: Way -1 must have at least one node, got: " + actual);
   }
 
   // Test node refs up to max number of nodes per way

@@ -58,8 +58,8 @@ std::string connect_db_str(const po::variables_map &options) {
 } // anonymous namespace
 
 pgsql_update::pgsql_update(
-    pqxx::connection &conn, bool readonly)
-    : m{ conn }, m_readonly{ readonly } {
+    Transaction_Owner_Base& to, bool readonly)
+    : m{ to }, m_readonly{ readonly } {
 
   if (is_api_write_disabled())
     return;
@@ -167,6 +167,19 @@ pgsql_update::factory::factory(const po::variables_map &opts)
 pgsql_update::factory::~factory() = default;
 
 std::shared_ptr<data_update>
-pgsql_update::factory::make_data_update() {
-  return std::make_shared<pgsql_update>(std::ref(m_connection), m_api_write_disabled);
+pgsql_update::factory::make_data_update(Transaction_Owner_Base& to) {
+  return std::make_shared<pgsql_update>(to, m_api_write_disabled);
 }
+
+std::unique_ptr<Transaction_Owner_Base>
+pgsql_update::factory::get_default_transaction()
+{
+  return std::unique_ptr<Transaction_Owner_ReadWrite>(new Transaction_Owner_ReadWrite(std::ref(m_connection)));
+}
+
+std::unique_ptr<Transaction_Owner_Base>
+pgsql_update::factory::get_read_only_transaction()
+{
+  return std::unique_ptr<Transaction_Owner_ReadOnly>(new Transaction_Owner_ReadOnly(std::ref(m_connection)));
+}
+

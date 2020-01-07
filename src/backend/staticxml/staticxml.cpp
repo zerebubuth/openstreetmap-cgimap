@@ -15,6 +15,13 @@ using std::shared_ptr;
 using std::string;
 using api06::id_version;
 
+Transaction_Owner_Void::Transaction_Owner_Void() {}
+
+pqxx::transaction_base& Transaction_Owner_Void::get_transaction() {
+  throw std::runtime_error ("get_transaction is not supported by Transaction_Owner_Void");
+}
+
+
 namespace {
 
 // needed to get boost::lexical_cast<bool>(string) to work.
@@ -490,7 +497,7 @@ struct static_data_selection : public data_selection {
     }
   }
 
-  virtual void select_relations_from_relations() {
+  virtual void select_relations_from_relations(bool drop_relations = false) {
     std::set<osm_nwr_id_t> tmp_relations;
     using relation_map_t = std::map<id_version, relation>;
     const relation_map_t::const_iterator end = m_db->m_relations.end();
@@ -506,6 +513,8 @@ struct static_data_selection : public data_selection {
         }
       }
     }
+    if (drop_relations)
+      m_relations.clear();
     m_relations.insert(tmp_relations.begin(), tmp_relations.end());
   }
 
@@ -520,10 +529,6 @@ struct static_data_selection : public data_selection {
         }
       }
     }
-  }
-
-  virtual bool supports_historical_versions() {
-    return true;
   }
 
   virtual int select_historical_nodes(const std::vector<osm_edition_t> &editions) {
@@ -567,7 +572,17 @@ struct static_data_selection : public data_selection {
     return selected;
   }
 
-  virtual bool supports_changesets() { return true; }
+  virtual void drop_nodes() {
+    m_nodes.clear();
+  }
+
+  virtual void drop_ways() {
+    m_ways.clear();
+  }
+
+  virtual void drop_relations() {
+    m_relations.clear();
+  }
 
   virtual int select_changesets(const std::vector<osm_changeset_id_t> &ids) {
     int selected = 0;
@@ -762,8 +777,12 @@ struct factory : public data_selection::factory {
 
   virtual ~factory() = default;
 
-  virtual std::shared_ptr<data_selection> make_selection() {
+  virtual std::shared_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
     return std::make_shared<static_data_selection>(m_database);
+  }
+
+  virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() {
+    return std::unique_ptr<Transaction_Owner_Void>(new Transaction_Owner_Void());
   }
 
 private:

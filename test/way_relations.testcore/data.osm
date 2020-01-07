@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<osm version="0.6" generator="by hand">
+  <node id="1" version="1" changeset="1" lat="0.0" lon="0.0" user="foo" uid="1" visible="true" timestamp="2012-09-25T00:00:00Z"/>
+  <node id="2" version="8" changeset="3" lat="1.0" lon="1.0" user="foo" uid="1" visible="true" timestamp="2012-10-01T00:00:00Z"/>
+  <node id="3" version="2" changeset="3" lat="0.0" lon="0.0" user="foo" uid="1" visible="true" timestamp="2012-09-25T00:01:00Z"/>
+
+  <way id="1" version="1" changeset="1" user="foo" uid="1" visible="true" timestamp="2012-12-01T00:00:00Z">
+    <nd ref="1"/>
+    <nd ref="2"/>
+    <nd ref="3"/>
+    <nd ref="1"/>
+    <tag k="highway" v="motorway"/>
+    <tag k="name" v="Foo"/>
+  </way>
+
+  <relation id="1" version="1" changeset="1" user="foo" uid="1" visible="true" timestamp="2015-12-26T23:26:00Z">
+	 <member role="something" type="way" ref="1"/>
+    <tag k="type" v="test"/>
+  </relation>
+
+  <relation id="2" version="2" changeset="3" user="foo" uid="1" visible="false" timestamp="2015-12-26T23:26:00Z"/>
+
+</osm>

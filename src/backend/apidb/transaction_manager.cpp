@@ -4,7 +4,17 @@
 
 #include <pqxx/pqxx>
 
-Transaction_Manager::Transaction_Manager(pqxx::connection &conn) : m_txn{ conn } {}
+
+Transaction_Owner_ReadOnly::Transaction_Owner_ReadOnly( pqxx::connection &conn) : m_txn{ conn } {}
+
+pqxx::transaction_base& Transaction_Owner_ReadOnly::get_transaction() { return m_txn; }
+
+Transaction_Owner_ReadWrite::Transaction_Owner_ReadWrite( pqxx::connection &conn) : m_txn{ conn } {}
+
+pqxx::transaction_base& Transaction_Owner_ReadWrite::get_transaction() { return m_txn; }
+
+
+Transaction_Manager::Transaction_Manager(Transaction_Owner_Base &to) : m_txn{ to.get_transaction() } {}
 
 void Transaction_Manager::prepare(const std::string &name,
                                   const std::string &definition) {
@@ -22,4 +32,3 @@ pqxx::result Transaction_Manager::exec(const std::string &query,
 }
 
 void Transaction_Manager::commit() { m_txn.commit(); }
-

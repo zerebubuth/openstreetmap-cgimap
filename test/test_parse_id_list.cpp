@@ -97,6 +97,15 @@ void test_parse_negative_nodes() {
   }
 }
 
+void test_parse_garbage() {
+  std::string query_str =
+    "nodes=\xf5";
+
+  // may not crash
+  std::vector<api06::id_version> ids = parse_query_str(query_str);
+
+}
+
 void test_parse_history() {
   std::string query_str = "nodes=1,1v1";
 
@@ -127,6 +136,7 @@ int main(int argc, char *argv[]) {
     test_parse_returns_no_duplicates();
     test_parse_negative_nodes();
     test_parse_history();
+    test_parse_garbage();
 
   } catch (const std::exception &e) {
     std::cout << "Error: " << e.what() << std::endl;

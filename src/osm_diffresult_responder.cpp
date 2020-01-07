@@ -8,16 +8,19 @@
 using std::list;
 using std::shared_ptr;
 
-element_type as_elem_type(object_type o) { // @suppress("No return")
+namespace {
 
-  switch (o) {
+  element_type as_elem_type(object_type o) { // @suppress("No return")
 
-  case object_type::node:
-    return element_type_node;
-  case object_type::way:
-    return element_type_way;
-  case object_type::relation:
-    return element_type_relation;
+    switch (o) {
+
+      case object_type::node:
+	return element_type_node;
+      case object_type::way:
+	return element_type_way;
+      case object_type::relation:
+	return element_type_relation;
+    }
   }
 
 }

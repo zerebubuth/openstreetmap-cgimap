@@ -37,9 +37,7 @@
 #ifdef ENABLE_APIDB
 #include "cgimap/backend/apidb/apidb.hpp"
 #endif
-#ifdef ENABLE_PGSNAPSHOT
-#include "cgimap/backend/pgsnapshot/pgsnapshot.hpp"
-#endif
+
 #include "cgimap/backend/staticxml/staticxml.hpp"
 
 using std::runtime_error;
@@ -245,9 +243,6 @@ static void daemonise() {
 void setup_backends() {
 #if ENABLE_APIDB
   register_backend(make_apidb_backend());
-#endif
-#if ENABLE_PGSNAPSHOT
-  register_backend(make_pgsnapshot_backend());
 #endif
   register_backend(make_staticxml_backend());
 }

@@ -3,6 +3,7 @@
 
 #include "cgimap/types.hpp"
 #include "cgimap/output_formatter.hpp"
+#include "cgimap/backend/apidb/transaction_manager.hpp"
 
 #include <chrono>
 #include <memory>
@@ -83,17 +84,21 @@ public:
   virtual void select_relations_from_nodes() = 0;
 
   /// select relations which include selected relations
-  virtual void select_relations_from_relations() = 0;
+  virtual void select_relations_from_relations(bool drop_relations = false) = 0;
 
   /// select relations which are members of selected relations
   virtual void select_relations_members_of_relations() = 0;
 
-  /******************* historical functions ********************/
+  /// drop any nodes which are in the current selection
+  virtual void drop_nodes() = 0;
 
-  /// returns true if this data selections supports selecting historical
-  /// versions of nodes, ways and relations. if it returns false, then calling
-  /// any of the select_historical_* functions will throw an exception.
-  virtual bool supports_historical_versions();
+  /// drop any ways which are in the current selection
+  virtual void drop_ways() = 0;
+
+  /// drop any relations which are in the current selection
+  virtual void drop_relations() = 0;
+
+  /******************* historical functions ********************/
 
   /// select the given (id, version) versions of nodes, returning the number of
   /// nodes added to the selected set.
@@ -131,9 +136,6 @@ public:
 
   /****************** changeset functions **********************/
 
-  /// does this data selection support changesets?
-  virtual bool supports_changesets();
-
   /// select specified changesets, returning the number of
   /// changesets selected.
   virtual int select_changesets(const std::vector<osm_changeset_id_t> &);
@@ -165,7 +167,9 @@ public:
 
     /// get a handle to a selection which can be used to build up
     /// a working set of data.
-    virtual std::shared_ptr<data_selection> make_selection() = 0;
+    virtual std::shared_ptr<data_selection> make_selection(Transaction_Owner_Base&) = 0;
+
+    virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() = 0;
   };
 };
 

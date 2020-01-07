@@ -28,21 +28,40 @@ cgimap_include_HEADERS = \
 	include/cgimap/routes.hpp \
 	include/cgimap/types.hpp \
 	include/cgimap/util.hpp \
-	include/cgimap/zlib.hpp
+	include/cgimap/zlib.hpp \
+	include/parsers/exception.hpp \
+	include/parsers/internal_error.hpp \
+ 	include/parsers/parse_error.hpp \
+	include/parsers/parser.hpp \
+	include/parsers/saxparser.hpp \
+	include/parsers/wrapped_exception.hpp
 
 cgimap_api06_includedir=$(includedir)/cgimap/api06
 cgimap_api06_include_HEADERS = \
+	include/cgimap/api06/changeset_close_handler.hpp \
+	include/cgimap/api06/changeset_create_handler.hpp \
+	include/cgimap/api06/changeset_download_handler.hpp \
+	include/cgimap/api06/changeset_handler.hpp \
+	include/cgimap/api06/changeset_update_handler.hpp \
+	include/cgimap/api06/changeset_upload_handler.hpp \
 	include/cgimap/api06/handler_utils.hpp \
 	include/cgimap/api06/map_handler.hpp \
 	include/cgimap/api06/node_handler.hpp \
+	include/cgimap/api06/node_history_handler.hpp \
+	include/cgimap/api06/node_relations_handler.hpp \
 	include/cgimap/api06/node_version_handler.hpp \
+	include/cgimap/api06/node_ways_handler.hpp \
 	include/cgimap/api06/nodes_handler.hpp \
 	include/cgimap/api06/relation_full_handler.hpp \
 	include/cgimap/api06/relation_handler.hpp \
+	include/cgimap/api06/relation_history_handler.hpp \
+	include/cgimap/api06/relation_relations_handler.hpp \
 	include/cgimap/api06/relation_version_handler.hpp \
 	include/cgimap/api06/relations_handler.hpp \
 	include/cgimap/api06/way_full_handler.hpp \
 	include/cgimap/api06/way_handler.hpp \
+	include/cgimap/api06/way_history_handler.hpp \
+	include/cgimap/api06/way_relations_handler.hpp \
 	include/cgimap/api06/way_version_handler.hpp \
 	include/cgimap/api06/ways_handler.hpp
 
@@ -66,7 +85,6 @@ cgimap_apidb_include_HEADERS = \
 	include/cgimap/backend/apidb/changeset.hpp \
 	include/cgimap/backend/apidb/quad_tile.hpp \
 	include/cgimap/backend/apidb/readonly_pgsql_selection.hpp \
-	include/cgimap/backend/apidb/writeable_pgsql_selection.hpp \
  	include/cgimap/backend/apidb/transaction_manager.hpp \
 	include/cgimap/backend/apidb/utils.hpp
 
@@ -78,21 +96,9 @@ cgimap_apidb_changeset_upload_include_HEADERS = \
 	include/cgimap/backend/apidb/changeset_upload/way_updater.hpp
 endif
 
-if ENABLE_PGSNAPSHOT
-cgimap_pgsnapshot_includedir=$(includedir)/cgimap/backend/pgsnapshot
-cgimap_pgsnapshot_include_HEADERS = \
-	include/cgimap/backend/pgsnapshot/pgsnapshot.hpp \
-	include/cgimap/backend/pgsnapshot/snapshot_selection.hpp
-endif
-
 cgimap_staticxml_includedir=$(includedir)/cgimap/backend/staticxml
 cgimap_staticxml_include_HEADERS = \
 	include/cgimap/backend/staticxml/staticxml.hpp
-
-if ENABLE_EXPERIMENTAL
-cgimap_api06_include_HEADERS += \
-	include/cgimap/api06/node_ways_handler.hpp
-endif
 
 if ENABLE_API07
 cgimap_api07_includedir=$(includedir)/cgimap/api07
@@ -106,9 +112,11 @@ TESTS += test/test_parse_id_list test/test_basicauth test/test_oauth test/test_h
 TESTS += test/changesets.testcore test/message.testcore test/routes.testcore
 TESTS += test/redactions.testcore
 TESTS += test/test_parse_osmchange_input
-if ENABLE_EXPERIMENTAL
+TESTS += test/test_parse_changeset_input
 TESTS += test/node_ways.testcore
-endif
+TESTS += test/node_relations.testcore
+TESTS += test/way_relations.testcore
+TESTS += test/relation_relations.testcore
 if HAVE_YAJL
 TESTS += test/json.testcore
 endif
@@ -132,14 +140,12 @@ clang-format:
 	for i in include/cgimap/api06/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in include/cgimap/api07/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in include/cgimap/backend/apidb/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
-	for i in include/cgimap/backend/pgsnapshot/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in include/cgimap/backend/staticxml/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in include/cgimap/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in include/*.hpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in src/api06/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in src/api07/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in src/backend/apidb/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
-	for i in src/backend/pgsnapshot/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in src/backend/staticxml/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in src/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done; \
 	for i in test/*.cpp; do @CLANG_FORMAT@ -style=file -i $$i; done;

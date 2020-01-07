@@ -11,17 +11,11 @@ namespace api06 {
 node_ways_responder::node_ways_responder(mime::type mt, osm_nwr_id_t id_,
                                          data_selection_ptr &w_)
     : osm_current_responder(mt, w_), id(id_) {
-  vector<osm_nwr_id_t> ids;
-  ids.push_back(id);
 
-  if (sel->select_nodes(ids) == 0) {
-    std::ostringstream error;
-    error << "Node " << id << " was not found.";
-    throw http::not_found(error.str());
-  } else {
+  if (sel->select_nodes({ id }) > 0 && is_visible()) {
     sel->select_ways_from_nodes();
-    check_visibility();
   }
+  sel->drop_nodes();
 }
 
 node_ways_responder::~node_ways_responder() = default;
@@ -36,11 +30,8 @@ responder_ptr_t node_ways_handler::responder(data_selection_ptr &x) const {
   return responder_ptr_t(new node_ways_responder(mime_type, id, x));
 }
 
-void node_ways_responder::check_visibility() {
-  if (sel->check_node_visibility(id) == data_selection::deleted) {
-    // TODO: fix error message / throw structure to emit better error message
-    throw http::gone();
-  }
+bool node_ways_responder::is_visible() {
+  return (!(sel->check_node_visibility(id) == data_selection::deleted));
 }
 
 } // namespace api06

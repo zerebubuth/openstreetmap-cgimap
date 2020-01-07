@@ -1,7 +1,7 @@
 AC_INIT([CGImap],
-        [0.7.5],
+        [0.8.0-dev],
         [https://github.com/zerebubuth/openstreetmap-cgimap/issues],
-        [cgimap-0.7.5],
+        [cgimap-0.8.0-dev],
         [https://github.com/zerebubuth/openstreetmap-cgimap])
 AM_INIT_AUTOMAKE([subdir-objects parallel-tests])
 LT_INIT
@@ -31,7 +31,6 @@ AC_SUBST(LIBPQXX_CFLAGS)
 AC_SUBST(LIBPQXX_LIBS)
 
 #m4_include([aclocal/ax_boost_base.m4])
-#m4_include([aclocal/ax_boost_regex.m4])
 #m4_include([aclocal/ax_boost_system.m4])
 #m4_include([aclocal/ax_boost_program_options.m4])
 #m4_include([aclocal/ax_check_zlib.m4])
@@ -41,7 +40,6 @@ AC_SUBST(LIBMEMCACHED_CFLAGS)
 AC_SUBST(LIBMEMCACHED_LIBS)
 
 AX_BOOST_BASE([1.43], , [AC_MSG_ERROR([Boost libraries are required for building CGImap. Please install libboost-dev.])])
-AX_BOOST_REGEX
 AX_BOOST_SYSTEM
 AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_FILESYSTEM
@@ -50,8 +48,6 @@ AX_BOOST_LOCALE
 # the boost libraries are required, not optional, but the
 # AX_BOOST_* checks only error if the headers aren't
 # available?
-AS_IF([test "x$BOOST_REGEX_LIB" == "x"],
-      [AC_MSG_ERROR([Boost::Regex library not detected, please install libboost-regex-dev.])],)
 AS_IF([test "x$BOOST_SYSTEM_LIB" == "x"],
       [AC_MSG_ERROR([Boost::System library not detected, please install libboost-system-dev.])],)
 AS_IF([test "x$BOOST_PROGRAM_OPTIONS_LIB" == "x"],
@@ -126,19 +122,6 @@ AS_IF([test "x$enable_apidb" == xyes],
       [AC_DEFINE([ENABLE_APIDB], [1], [Define for APIDB backend support.])])
 AM_CONDITIONAL([ENABLE_APIDB], [test "x$enable_apidb" == xyes])
 
-AC_MSG_CHECKING([whether to enable PGSNAPSHOT backend])
-AC_ARG_ENABLE([pgsnapshot],
-	[AS_HELP_STRING([--enable-pgsnapshot],
-		[Enable pgsnapshot backend (default: enabled)])],
-	[case "${enableval}" in
-	  yes | no ) enable_pgsnapshot="${enableval}" ;;
-	  * ) AC_MSG_ERROR(value for --enable-pgsnapshot should be yes or no) ;;
-	 esac],
-	[enable_pgsnapshot="yes"])
-AC_MSG_RESULT($enable_pgsnapshot)
-AS_IF([test "x$enable_pgsnapshot" == xyes],
-      [AC_DEFINE([ENABLE_PGSNAPSHOT], [1], [Define for PGSNAPSHOT backend support.])])
-AM_CONDITIONAL([ENABLE_PGSNAPSHOT], [test "x$enable_pgsnapshot" == xyes])
 AC_CONFIG_FILES([
 	Makefile
 	src/Makefile])

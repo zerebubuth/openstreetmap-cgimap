@@ -3,10 +3,11 @@
 #include <vector>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/regex.hpp>
+
 #include <iterator> // for distance
 #include <cctype>   // for toupper, isxdigit
 #include <cstdlib>
+#include <regex>
 #include <sstream>
 
 namespace al = boost::algorithm;
@@ -65,12 +66,12 @@ std::string form_urldecode(const std::string &src) {
 
 namespace http {
 
-exception::exception(unsigned int c, const string &h, const string &m)
+exception::exception(int c, const string &h, const string &m)
     : code_(c), header_(h), message_(m) {}
 
 exception::~exception() noexcept = default;
 
-unsigned int exception::code() const { return code_; }
+int exception::code() const { return code_; }
 
 const string &exception::header() const { return header_; }
 
@@ -94,7 +95,10 @@ conflict::conflict(const string &message)
     : exception(409, "Conflict", message) {}
 
 precondition_failed::precondition_failed(const string &message)
-    : exception(412, "Precondition Failed", message) {}
+    : exception(412, "Precondition Failed", message),
+      fullstring("Precondition failed: " + message) {}
+
+const char *precondition_failed::what() const noexcept { return fullstring.c_str(); }
 
 payload_too_large::payload_too_large(const string &message)
     : exception(413, "Payload Too Large", message) {}
@@ -110,6 +114,11 @@ unsupported_media_type::unsupported_media_type(const string &message)
 
 unauthorized::unauthorized(const std::string &message)
   : exception(401, "Unauthorized", message) {}
+
+method_not_allowed::method_not_allowed(const http::method method)
+   :  exception(405, "Method not allowed", http::list_methods(method)),
+      allowed_methods(method) {}
+
 
 string urldecode(const string &s) { return form_urldecode(s); }
 
@@ -170,19 +179,19 @@ shared_ptr<encoding> choose_encoding(const string &accept_encoding) {
   float gzip_quality = 0.000;
 
   for (const string &encoding : encodings) {
-    boost::smatch what;
+    std::smatch what;
     string name;
     float quality;
 
-    if (boost::regex_match(
+    if (std::regex_match(
             encoding, what,
-            boost::regex("\\s*([^()<>@,;:\\\\\"/[\\]\\\\?={} "
+            std::regex("\\s*([^()<>@,;:\\\\\"/[\\]\\\\?={} "
                          "\\t]+)\\s*;\\s*q\\s*=(\\d+(\\.\\d+)?)\\s*"))) {
       name = what[1];
       quality = std::atof(string(what[2]).c_str());
-    } else if (boost::regex_match(
+    } else if (std::regex_match(
                    encoding, what,
-                   boost::regex(
+                   std::regex(
                        R"(\s*([^()<>@,;:\\"/[\]\\?={} \t]+)\s*)"))) {
       name = what[1];
       quality = 1.0;
@@ -250,6 +259,7 @@ namespace {
 const std::map<method, std::string> METHODS = {
   {method::GET,     "GET"},
   {method::POST,    "POST"},
+  {method::PUT,     "PUT"},
   {method::HEAD,    "HEAD"},
   {method::OPTIONS, "OPTIONS"}
 };
@@ -266,7 +276,6 @@ std::string list_methods(method m) {
       result << pair.second;
     }
   }
-
   return result.str();
 }
 
@@ -279,8 +288,13 @@ boost::optional<method> parse_method(const std::string &s) {
       break;
     }
   }
-
   return result;
+}
+
+std::ostream &operator<<(std::ostream &out, method m) {
+  std::string s = list_methods(m);
+  out << "methods{" << s << "}";
+  return out;
 }
 
 unsigned long parse_content_length(const std::string &content_length_str) {
@@ -299,12 +313,6 @@ unsigned long parse_content_length(const std::string &content_length_str) {
     throw http::payload_too_large((boost::format("CONTENT_LENGTH exceeds limit of %1% bytes") % STDIN_MAX).str());
 
   return length;
-}
-
-std::ostream &operator<<(std::ostream &out, method m) {
-  std::string s = list_methods(m);
-  out << "methods{" << s << "}";
-  return out;
 }
 
 } // namespace http

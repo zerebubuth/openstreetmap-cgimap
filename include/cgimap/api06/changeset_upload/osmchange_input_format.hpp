@@ -19,280 +19,35 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include "parsers/saxparser.hpp"
 
 namespace api06 {
 
-class OSMChangeXMLParser {
+class OSMChangeXMLParser : private xmlpp::SaxParser {
 
-  enum class context {
-    root,
-    top,
-    in_create,
-    in_modify,
-    in_delete,
-    node,
-    way,
-    relation,
-    in_object
-  };
+public:
+  explicit OSMChangeXMLParser(Parser_Callback *callback)
+      : m_callback(callback) {}
 
-  context m_context = context::root;
-  context m_operation_context = context::root;
-  context m_last_context = context::root;
+  OSMChangeXMLParser(const OSMChangeXMLParser &) = delete;
+  OSMChangeXMLParser &operator=(const OSMChangeXMLParser &) = delete;
 
-  operation m_operation = operation::op_undefined;
+  OSMChangeXMLParser(OSMChangeXMLParser &&) = delete;
+  OSMChangeXMLParser &operator=(OSMChangeXMLParser &&) = delete;
 
-  Parser_Callback *m_callback;
+  void process_message(const std::string &data) {
 
-  std::unique_ptr<Node> m_node{};
-  std::unique_ptr<Way> m_way{};
-  std::unique_ptr<Relation> m_relation{};
-
-  bool m_if_unused = false;
-
-  template <typename T> class XMLParser {
-
-    xmlSAXHandler handler{};
-    xmlParserCtxtPtr ctxt{};
-    T *m_callback_object;
-
-    struct user_data_t {
-       T *callback;
-       std::function<std::pair<int, int>(void)> current_location;
-    };
-
-    // Include XML message location information where error occurred in exception
-    template <typename TEx>
-    static void throw_with_context(void *data, TEx& e) {
-      auto location = static_cast<user_data_t *>(data)->current_location();
-
-      // Location unknown
-      if (location.first == 0 && location.second == 0)
-	throw e;
-
-      throw TEx{ (boost::format("%1% at line %2%, column %3%") %
-	  e.what() %
-	  location.first %
-	  location.second )
-	.str() };
-    }
-
-    static void start_element_wrapper(void *data, const xmlChar *element,
-				      const xmlChar **attrs) {
-      try {
-	  static_cast<user_data_t *>(data)->callback->
-	                          start_element((const char *)element,
-						(const char **)attrs);
-      } catch (xml_error& e) {
-	 throw_with_context(data, e);
-      }
-    }
-
-    static void end_element_wrapper(void *data, const xmlChar *element) {
-      try {
-	  static_cast<user_data_t *>(data)->callback->
-	                             end_element((const char *)element);
-      } catch (xml_error& e) {
-	 throw_with_context(data, e);
-      }
-    }
-
-    static void warning(void *, const char *, ...) {}
-
-    static void error(void *, const char *fmt, ...) {
-      char buffer[1024];
-      va_list arg_ptr;
-      va_start(arg_ptr, fmt);
-      vsnprintf(buffer, sizeof(buffer) - 1, fmt, arg_ptr);
-      va_end(arg_ptr);
-      throw http::bad_request((boost::format("XML Error: %1%") % buffer).str());
-    }
-
-    // Don't load any external entities provided in the XML document
-    static xmlParserInputPtr xmlCustomExternalEntityLoader(const char *,
-                                                           const char *,
-                                                           xmlParserCtxtPtr) {
-      throw xml_error{ "XML external entities not supported" };
-    }
-
-  public:
-    explicit XMLParser(T *callback_object)
-        : m_callback_object(callback_object) {
-
-      xmlInitParser();
-
-      xmlSetExternalEntityLoader(xmlCustomExternalEntityLoader);
-
-      memset(&handler, 0, sizeof(handler));
-      handler.initialized = XML_SAX2_MAGIC;
-      handler.startElement = &start_element_wrapper;
-      handler.endElement = &end_element_wrapper;
-      handler.warning = &warning;
-      handler.error = &error;
-    }
-
-    XMLParser(const XMLParser &) = delete;
-    XMLParser(XMLParser &&) = delete;
-
-    XMLParser &operator=(const XMLParser &) = delete;
-    XMLParser &operator=(XMLParser &&) = delete;
-
-    ~XMLParser() noexcept {
-      xmlFreeParserCtxt(ctxt);
-      xmlCleanupParser();
-    }
-
-    void operator()(const std::string &data) {
-
-      const size_t MAX_CHUNKSIZE = 131072;
-
-      if (data.size() < 4)
-        throw http::bad_request("Invalid XML input");
-
-      user_data_t user_data;
-      user_data.callback = m_callback_object;
-      user_data.current_location = std::bind(&XMLParser::get_current_location, this);
-
-      // provide first 4 characters of data string, according to
-      // http://xmlsoft.org/library.html
-      ctxt = xmlCreatePushParserCtxt(&handler, &user_data, data.c_str(),
-                                     4, NULL);
-      if (ctxt == NULL)
-        throw std::runtime_error("Could not create parser context!");
-
-      // removed XML_PARSE_RECOVER : the use of XML_PARSE_RECOVER in libxml2
-      // is discouraged in production  code as it hides errors in invalid XML
-      // and exercises some less-tested code paths in libxml2.
-      // Source: https://mail.gnome.org/archives/xml/2018-January/msg00016.html
-      xmlCtxtUseOptions(ctxt, XML_PARSE_NONET | XML_PARSE_NOENT);
-
-      unsigned int offset = 4;
-
-      while (offset < data.size()) {
-
-        unsigned int current_chunksize =
-            std::min(data.size() - offset, MAX_CHUNKSIZE);
-
-        if (xmlParseChunk(ctxt, data.c_str() + offset, current_chunksize, 0)) {
-          xmlErrorPtr err = xmlGetLastError();
-          throw http::bad_request(
-              (boost::format("XML ERROR: %1%.") % err->message).str());
-        }
-
-        offset += current_chunksize;
-      }
-
-      xmlParseChunk(ctxt, 0, 0, 1);
-    }
-
-  private:
-
-    std::pair<int, int> get_current_location() {
-      if (ctxt->input == nullptr)
-	return {};
-      return { ctxt->input->line, ctxt->input->col };
-    }
-
-  }; // class XMLParser
-
-  template <typename T>
-  static void check_attributes(const char **attrs, T check) {
-    if (attrs == NULL)
-      return;
-
-    while (*attrs) {
-      check(attrs[0], attrs[1]);
-      attrs += 2;
+    try {
+      parse_memory(data);
+    } catch (const xmlpp::exception& e) {
+      throw http::bad_request(e.what());    // rethrow XML parser error as HTTP 400 Bad request
     }
   }
 
-  void init_object(OSMObject &object, const char **attrs) {
 
-    check_attributes(attrs, [&object](const char *name, const char *value) {
+protected:
 
-      if (!std::strcmp(name, "id")) {
-        object.set_id(value);
-      } else if (!std::strcmp(name, "changeset")) {
-        object.set_changeset(value);
-      } else if (!std::strcmp(name, "version")) {
-        object.set_version(value);
-      } // don't parse any other attributes here
-    });
-
-    if (!object.has_id()) {
-	throw xml_error{ "Mandatory field id missing in object" };
-    }
-
-    if (!object.has_changeset()) {
-      throw xml_error{ (boost::format("Changeset id is missing for %1%") %
-                        object.to_string())
-                           .str() };
-    }
-
-    if (m_operation == operation::op_create) {
-      // we always override version number for create operations (they are not
-      // mandatory)
-      object.set_version(0u);
-    } else if (m_operation == operation::op_delete ||
-               m_operation == operation::op_modify) {
-      // objects for other operations must have a positive version number
-      if (!object.has_version()) {
-        throw xml_error{ (boost::format(
-                              "Version is required when updating %1%") %
-                          object.to_string())
-                             .str() };
-      }
-      if (object.version() < 1) {
-        throw xml_error{ (boost::format("Invalid version number %1% in %2%") %
-                          object.version() % object.to_string())
-                             .str() };
-      }
-    }
-  }
-
-  void init_node(Node &node, const char **attrs) {
-    check_attributes(attrs, [&node](const char *name, const char *value) {
-
-      if (!std::strcmp(name, "lon")) {
-        node.set_lon(value);
-      } else if (!std::strcmp(name, "lat")) {
-        node.set_lat(value);
-      }
-    });
-  }
-
-  void add_tag(OSMObject &o, const char **attrs) {
-
-    boost::optional<std::string> k;
-    boost::optional<std::string> v;
-
-    check_attributes(attrs, [&k, &v](const char *name, const char *value) {
-
-      if (name[0] == 'k' && name[1] == 0) {
-        k = value;
-      } else if (name[0] == 'v' && name[1] == 0) {
-        v = value;
-      }
-    });
-
-    if (!k)
-      throw xml_error{
-        (boost::format("Mandatory field k missing in tag element for %1%") %
-         o.to_string())
-            .str()
-      };
-
-    if (!v)
-      throw xml_error{
-        (boost::format("Mandatory field v missing in tag element for %1%") %
-         o.to_string())
-            .str()
-      };
-
-    o.add_tag(*k, *v);
-  }
-
-  void start_element(const char *element, const char **attrs) {
+  void on_start_element(const char *element, const char **attrs) override {
 
     switch (m_context) {
     case context::root:
@@ -424,7 +179,7 @@ class OSMChangeXMLParser {
     }
   }
 
-  void end_element(const char *element) {
+  void on_end_element(const char *element) override {
 
     switch (m_context) {
     case context::root:
@@ -501,22 +256,157 @@ class OSMChangeXMLParser {
     }
   }
 
-public:
-  explicit OSMChangeXMLParser(Parser_Callback *callback)
-      : m_callback(callback) {}
 
-  OSMChangeXMLParser(const OSMChangeXMLParser &) = delete;
-  OSMChangeXMLParser &operator=(const OSMChangeXMLParser &) = delete;
+  void on_enhance_exception(xmlParserInputPtr& location) override {
 
-  OSMChangeXMLParser(OSMChangeXMLParser &&) = delete;
-  OSMChangeXMLParser &operator=(OSMChangeXMLParser &&) = delete;
-
-  void process_message(const std::string &data) {
-
-    XMLParser<OSMChangeXMLParser> parser{ this };
-
-    parser(data);
+    try {
+        throw;
+    } catch (const xml_error& e) {
+      throw_with_context(e, location);
+    }
   }
+
+private:
+
+
+  enum class context {
+    root,
+    top,
+    in_create,
+    in_modify,
+    in_delete,
+    node,
+    way,
+    relation,
+    in_object
+  };
+
+  template <typename T>
+  static void check_attributes(const char **attrs, T check) {
+    if (attrs == NULL)
+      return;
+
+    while (*attrs) {
+      check(attrs[0], attrs[1]);
+      attrs += 2;
+    }
+  }
+
+  void init_object(OSMObject &object, const char **attrs) {
+
+    check_attributes(attrs, [&object](const char *name, const char *value) {
+
+      if (!std::strcmp(name, "id")) {
+        object.set_id(value);
+      } else if (!std::strcmp(name, "changeset")) {
+        object.set_changeset(value);
+      } else if (!std::strcmp(name, "version")) {
+        object.set_version(value);
+      } // don't parse any other attributes here
+    });
+
+    if (!object.has_id()) {
+	throw xml_error{ "Mandatory field id missing in object" };
+    }
+
+    if (!object.has_changeset()) {
+      throw xml_error{ (boost::format("Changeset id is missing for %1%") %
+                        object.to_string())
+                           .str() };
+    }
+
+    if (m_operation == operation::op_create) {
+      // we always override version number for create operations (they are not
+      // mandatory)
+      object.set_version(0u);
+    } else if (m_operation == operation::op_delete ||
+               m_operation == operation::op_modify) {
+      // objects for other operations must have a positive version number
+      if (!object.has_version()) {
+        throw xml_error{ (boost::format(
+                              "Version is required when updating %1%") %
+                          object.to_string())
+                             .str() };
+      }
+      if (object.version() < 1) {
+        throw xml_error{ (boost::format("Invalid version number %1% in %2%") %
+                          object.version() % object.to_string())
+                             .str() };
+      }
+    }
+  }
+
+  void init_node(Node &node, const char **attrs) {
+    check_attributes(attrs, [&node](const char *name, const char *value) {
+
+      if (!std::strcmp(name, "lon")) {
+        node.set_lon(value);
+      } else if (!std::strcmp(name, "lat")) {
+        node.set_lat(value);
+      }
+    });
+  }
+
+  void add_tag(OSMObject &o, const char **attrs) {
+
+    boost::optional<std::string> k;
+    boost::optional<std::string> v;
+
+    check_attributes(attrs, [&k, &v](const char *name, const char *value) {
+
+      if (name[0] == 'k' && name[1] == 0) {
+        k = value;
+      } else if (name[0] == 'v' && name[1] == 0) {
+        v = value;
+      }
+    });
+
+    if (!k)
+      throw xml_error{
+        (boost::format("Mandatory field k missing in tag element for %1%") %
+         o.to_string())
+            .str()
+      };
+
+    if (!v)
+      throw xml_error{
+        (boost::format("Mandatory field v missing in tag element for %1%") %
+         o.to_string())
+            .str()
+      };
+
+    o.add_tag(*k, *v);
+  }
+
+  // Include XML message location information where error occurred in exception
+  template <typename TEx>
+  void throw_with_context(TEx& e, xmlParserInputPtr& location) {
+
+    // Location unknown
+    if (location == nullptr)
+      throw e;
+
+    throw TEx{ (boost::format("%1% at line %2%, column %3%") %
+  	e.what() %
+  	location->line %
+  	location->col )
+      .str() };
+  }
+
+  context m_context = context::root;
+  context m_operation_context = context::root;
+  context m_last_context = context::root;
+
+  operation m_operation = operation::op_undefined;
+
+  Parser_Callback *m_callback;
+
+  std::unique_ptr<Node> m_node{};
+  std::unique_ptr<Way> m_way{};
+  std::unique_ptr<Relation> m_relation{};
+
+  bool m_if_unused = false;
+
 };
 
 } // namespace api06

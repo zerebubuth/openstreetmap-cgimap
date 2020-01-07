@@ -77,8 +77,15 @@ public:
   payload_enabled_handler(mime::type default_type = mime::unspecified_type,
     http::method methods = http::method::POST | http::method::OPTIONS);
 
+  // Responder used to update the database
   virtual responder_ptr_t responder(data_update_ptr &, const std::string & payload, boost::optional<osm_user_id_t> user_id) const = 0;
 
+  // Optional responder to return XML response back to caller of the API method
+  virtual responder_ptr_t responder(data_selection_ptr &) const = 0;
+
+  // Indicates that this payload_enabled_handler requires the optional data_selection based handler to be called
+  // after the database update
+  virtual bool requires_selection_after_update() const = 0;
 private:
   using handler::responder;
 };

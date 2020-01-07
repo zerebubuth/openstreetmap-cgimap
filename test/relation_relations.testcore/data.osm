@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<osm version="0.6" generator="by hand">
+
+  <relation id="1" version="1" changeset="1" user="foo" uid="1" visible="true" timestamp="2015-12-26T23:26:00Z">
+	 <member role="something" type="relation" ref="2"/>
+	 <member role="something" type="relation" ref="1"/>
+    <tag k="type" v="test"/>
+  </relation>
+
+  <relation id="2" version="2" changeset="3" user="foo" uid="1" visible="true" timestamp="2015-12-26T23:26:00Z">
+	 <member role="something" type="relation" ref="1"/>
+  </relation>
+
+  <relation id="3" version="3" changeset="3" user="foo" uid="1" visible="false" timestamp="2015-12-26T23:26:00Z"/>
+
+</osm>

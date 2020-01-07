@@ -25,10 +25,14 @@
 #include "cgimap/api06/changeset_handler.hpp"
 #include "cgimap/api06/changeset_download_handler.hpp"
 #include "cgimap/api06/changeset_upload_handler.hpp"
+#include "cgimap/api06/changeset_create_handler.hpp"
+#include "cgimap/api06/changeset_update_handler.hpp"
+#include "cgimap/api06/changeset_close_handler.hpp"
 
-#ifdef ENABLE_EXPERIMENTAL
 #include "cgimap/api06/node_ways_handler.hpp"
-#endif /* ENABLE_EXPERIMENTAL */
+#include "cgimap/api06/node_relations_handler.hpp"
+#include "cgimap/api06/way_relations_handler.hpp"
+#include "cgimap/api06/relation_relations_handler.hpp"
 
 #ifdef ENABLE_API07
 /*** API 0.7 ***/
@@ -97,40 +101,118 @@ struct router {
     }
   };
 
-  /* add a rule (a DSL expression) which constructs the Handler type when the
-   * rule
-         * matches. the Rule type can be inferred, so generally this can be
-   * written as
-         * r.add<Handler>(...);
-         */
-  template <typename Handler, typename Rule> void add(Rule r) {
+  /* add a match all methods rule (a DSL expression) which constructs the Handler
+   * type when the rule matches. the Rule type can be inferred,
+   * so generally this can be written as
+   *  r.all<Handler>(...);
+   */
+
+  // add rule to match HTTP GET method only
+  template <typename Handler, typename Rule> router& GET(Rule r) {
     // functor to create Handler instances
     boost::factory<Handler *> ctor;
-    rules.push_back(
+
+    static_assert(std::is_base_of<handler, Handler>::value, "GET rule requires handler subclass");
+    static_assert(!std::is_base_of<payload_enabled_handler, Handler>::value, "GET rule cannot use payload enabled handler subclass");
+
+    rules_get.push_back(
         rule_ptr(new rule<Rule, boost::factory<Handler *> >(r, ctor)));
+    return *this;
+  }
+
+  // add rule to match HTTP POST method only
+  template <typename Handler, typename Rule> router& POST(Rule r) {
+    // functor to create Handler instances
+    boost::factory<Handler *> ctor;
+
+    static_assert(std::is_base_of<payload_enabled_handler, Handler>::value, "POST rule requires payload enabled handler subclass");
+
+    rules_post.push_back(
+        rule_ptr(new rule<Rule, boost::factory<Handler *> >(r, ctor)));
+    return *this;
+  }
+
+
+  // add rule to match HTTP PUT method only
+  template <typename Handler, typename Rule> router& PUT(Rule r) {
+    // functor to create Handler instances
+    boost::factory<Handler *> ctor;
+
+    static_assert(std::is_base_of<payload_enabled_handler, Handler>::value, "PUT rule requires payload enabled handler subclass");
+
+    rules_put.push_back(
+        rule_ptr(new rule<Rule, boost::factory<Handler *> >(r, ctor)));
+    return *this;
   }
 
   /* match the list of path components given in p. if a match is found,
    * construct an
-         * object of the handler type with the provided params and the matched
+   * object of the handler type with the provided params and the matched
    * params.
-         */
+   */
+
   handler_ptr_t match(const list<string> &p, request &params) {
+
     handler_ptr_t hptr;
+
+    http::method allowed_methods = http::method::OPTIONS;
+
     // it probably isn't necessary to have any more sophisticated data structure
     // than a list at this point. also means the semantics for rule matching are
     // pretty clear - the first match wins.
-    for (auto rptr : rules) {
-      if (rptr->invoke_if(p, params, hptr)) {
-        break;
-      }
+
+    boost::optional<http::method> maybe_method =
+	http::parse_method(fcgi_get_env(params, "REQUEST_METHOD"));
+
+    if (!maybe_method)
+      return hptr;
+
+    // Process HEAD like GET, as per rfc2616: The HEAD method is identical to
+    // GET except that the server MUST NOT return a message-body in the response.
+    for (auto rptr : rules_get) {
+	if (rptr->invoke_if(p, params, hptr)) {
+	    if (*maybe_method == http::method::GET    ||
+		*maybe_method == http::method::HEAD   ||
+		*maybe_method == http::method::OPTIONS)
+	      return hptr;
+	    allowed_methods |= http::method::GET | http::method::HEAD;
+	}
     }
+
+    for (auto rptr : rules_post) {
+	if (rptr->invoke_if(p, params, hptr)) {
+	    if (*maybe_method == http::method::POST||
+		*maybe_method == http::method::OPTIONS)
+	      return hptr;
+	    allowed_methods |= http::method::POST;
+	}
+    }
+
+    for (auto rptr : rules_put) {
+	if (rptr->invoke_if(p, params, hptr)) {
+	    if (*maybe_method == http::method::PUT||
+		*maybe_method == http::method::OPTIONS)
+	      return hptr;
+	    allowed_methods |= http::method::PUT;
+	}
+    }
+
+    // Did the request URL path match one of the rules, yet the request method didn't match?
+    // This assumes that some additional request methods have been added to allowed_methods
+    // on top of the initial OPTIONS value.
+    if (allowed_methods != http::method::OPTIONS) {
+	// return a 405 HTTP Method not allowed error
+       throw http::method_not_allowed(allowed_methods);
+    }
+
     // return pointer to nothing if no matches found.
     return hptr;
   }
 
 private:
-  list<rule_ptr> rules;
+  list<rule_ptr> rules_get;
+  list<rule_ptr> rules_post;
+  list<rule_ptr> rules_put;
 };
 
 routes::routes()
@@ -147,39 +229,43 @@ routes::routes()
 
   {
     using namespace api06;
-    r->add<map_handler>(root_ / "map");
+    r->GET<map_handler>(root_ / "map")
+      .GET<node_ways_handler>(root_ / "node" / osm_id_ / "ways")
+      .GET<node_relations_handler>(root_ / "node" / osm_id_ / "relations")
 
-#ifdef ENABLE_EXPERIMENTAL
-    r->add<node_ways_handler>(root_ / "node" / osm_id_ / "ways");
-#endif /* ENABLE_EXPERIMENTAL */
     // make sure that *_version_handler is listed before matching *_handler
-    r->add<node_history_handler>(root_ / "node" / osm_id_ / "history");
-    r->add<node_version_handler>(root_ / "node" / osm_id_ / osm_id_ );
-    r->add<node_handler>(root_ / "node" / osm_id_);
-    r->add<nodes_handler>(root_ / "nodes");
+      .GET<node_history_handler>(root_ / "node" / osm_id_ / "history")
+      .GET<node_version_handler>(root_ / "node" / osm_id_ / osm_id_ )
+      .GET<node_handler>(root_ / "node" / osm_id_)
+      .GET<nodes_handler>(root_ / "nodes")
 
-    r->add<way_full_handler>(root_ / "way" / osm_id_ / "full");
-    r->add<way_history_handler>(root_ / "way" / osm_id_ / "history");
-    r->add<way_version_handler>(root_ / "way" / osm_id_ / osm_id_ );
-    r->add<way_handler>(root_ / "way" / osm_id_);
-    r->add<ways_handler>(root_ / "ways");
+      .GET<way_full_handler>(root_ / "way" / osm_id_ / "full")
+      .GET<way_relations_handler>(root_ / "way" / osm_id_ / "relations")
+      .GET<way_history_handler>(root_ / "way" / osm_id_ / "history")
+      .GET<way_version_handler>(root_ / "way" / osm_id_ / osm_id_ )
+      .GET<way_handler>(root_ / "way" / osm_id_)
+      .GET<ways_handler>(root_ / "ways")
 
-    r->add<relation_full_handler>(root_ / "relation" / osm_id_ / "full");
-    r->add<relation_history_handler>(root_ / "relation" / osm_id_ / "history");
-    r->add<relation_version_handler>(root_ / "relation" / osm_id_ / osm_id_ );
-    r->add<relation_handler>(root_ / "relation" / osm_id_);
-    r->add<relations_handler>(root_ / "relations");
+      .GET<relation_full_handler>(root_ / "relation" / osm_id_ / "full")
+      .GET<relation_relations_handler>(root_ / "relation" / osm_id_ / "relations")
+      .GET<relation_history_handler>(root_ / "relation" / osm_id_ / "history")
+      .GET<relation_version_handler>(root_ / "relation" / osm_id_ / osm_id_ )
+      .GET<relation_handler>(root_ / "relation" / osm_id_)
+      .GET<relations_handler>(root_ / "relations")
 
-    r->add<changeset_download_handler>(root_ / "changeset" / osm_id_ / "download");
-    r->add<changeset_upload_handler>(root_ / "changeset" / osm_id_ / "upload");
-    r->add<changeset_handler>(root_ / "changeset" / osm_id_);
+      .GET<changeset_download_handler>(root_ / "changeset" / osm_id_ / "download")
+      .POST<changeset_upload_handler>(root_ / "changeset" / osm_id_ / "upload")
+      .PUT<changeset_close_handler>(root_ / "changeset" / osm_id_ / "close")
+      .PUT<changeset_create_handler>(root_ / "changeset" / "create")
+      .PUT<changeset_update_handler>(root_ / "changeset" / osm_id_)
+      .GET<changeset_handler>(root_ / "changeset" / osm_id_);
   }
 
 #ifdef ENABLE_API07
   {
     using namespace api07;
-    r_experimental->add<map_handler>(root_ / "map");
-    r_experimental->add<map_handler>(root_ / "map" / "tile" / osm_id_);
+    r_experimental->GET<map_handler>(root_ / "map")
+                   .GET<map_handler>(root_ / "map" / "tile" / osm_id_);
   }
 #endif /* ENABLE_API07 */
 }
@@ -189,7 +275,7 @@ routes::~routes() = default;
 namespace {
 /**
  * figures out the mime type from the path specification, e.g: a resource ending
- * in .xml should be text/xml, .json should be text/json, etc...
+ * in .xml should be text/xml, .json should be application/json, etc...
  */
   pair<string, mime::type> resource_mime_type(const string &path) {
 
@@ -198,7 +284,7 @@ namespace {
       std::size_t json_found = path.rfind(".json");
 
       if (json_found != string::npos && json_found == path.length() - 5) {
-	  return make_pair(path.substr(0, json_found), mime::text_json);
+	  return make_pair(path.substr(0, json_found), mime::application_json);
       }
     }
 #endif

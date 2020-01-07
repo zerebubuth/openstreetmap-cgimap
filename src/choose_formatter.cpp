@@ -8,6 +8,8 @@
 #include "cgimap/xml_formatter.hpp"
 #include "cgimap/json_writer.hpp"
 #include "cgimap/json_formatter.hpp"
+#include "cgimap/text_writer.hpp"
+#include "cgimap/text_formatter.hpp"
 #include "cgimap/logger.hpp"
 
 #include <stdexcept>
@@ -118,7 +120,7 @@ struct http_accept_grammar
       = lit("* / *")      [_val = mime::any_type]
       | lit("text/xml") [_val = mime::text_xml]
 #ifdef HAVE_YAJL
-      | lit("text/json")[_val = mime::text_json]
+      | lit("application/json")[_val = mime::application_json]
 #endif
       ;
 */
@@ -265,11 +267,14 @@ shared_ptr<output_formatter> create_formatter(request &req,
     o_formatter = shared_ptr<output_formatter>(new xml_formatter(xwriter));
 
 #ifdef HAVE_YAJL
-  } else if (best_type == mime::text_json) {
-    auto *jwriter = new json_writer(out, true);
+  } else if (best_type == mime::application_json) {
+    auto *jwriter = new json_writer(out, false);
     o_formatter = shared_ptr<output_formatter>(new json_formatter(jwriter));
 #endif
 
+  } else if (best_type == mime::text_plain) {
+      auto *twriter = new text_writer(out, true);
+      o_formatter = shared_ptr<output_formatter>(new text_formatter(twriter));
   } else {
     ostringstream ostr;
     ostr << "Could not create formatter for MIME type `"

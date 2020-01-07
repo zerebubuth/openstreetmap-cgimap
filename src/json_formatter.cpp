@@ -33,7 +33,7 @@ json_formatter::json_formatter(json_writer *w) : writer(w),
 
 json_formatter::~json_formatter() = default;
 
-mime::type json_formatter::mime_type() const { return mime::text_json; }
+mime::type json_formatter::mime_type() const { return mime::application_json; }
 
 void json_formatter::write_tags(const tags_t &tags) {
 
@@ -164,12 +164,15 @@ void json_formatter::write_way(const element_info &elem, const nodes_t &nodes,
 
   write_id(elem);
   write_common(elem);
-  writer->object_key("nodes");
-  writer->start_array();
-  for (const auto &node : nodes) {
-    writer->entry_int(node);
+
+  if (!nodes.empty()) {
+      writer->object_key("nodes");
+      writer->start_array();
+      for (const auto &node : nodes) {
+        writer->entry_int(node);
+      }
+      writer->end_array();
   }
-  writer->end_array();
 
   write_tags(tags);
 

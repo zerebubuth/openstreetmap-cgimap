@@ -7,10 +7,55 @@
 #include <boost/format.hpp>
 #include <pqxx/pqxx>
 
+#include <iostream>
+
+
+class Transaction_Owner_Base
+{
+public:
+  Transaction_Owner_Base() {}
+  virtual pqxx::transaction_base& get_transaction() = 0;
+  virtual ~Transaction_Owner_Base() {}
+};
+
+
+class Transaction_Owner_ReadOnly : public Transaction_Owner_Base
+{
+public:
+  explicit Transaction_Owner_ReadOnly(pqxx::connection &conn);
+  virtual pqxx::transaction_base& get_transaction();
+  ~Transaction_Owner_ReadOnly() {}
+
+private:
+  pqxx::read_transaction m_txn;
+};
+
+
+class Transaction_Owner_ReadWrite : public Transaction_Owner_Base
+{
+public:
+  explicit Transaction_Owner_ReadWrite(pqxx::connection &conn);
+  virtual pqxx::transaction_base& get_transaction();
+  ~Transaction_Owner_ReadWrite() {}
+
+private:
+  pqxx::work m_txn;
+};
+
+class Transaction_Owner_Void : public Transaction_Owner_Base
+{
+public:
+  explicit Transaction_Owner_Void();
+  virtual pqxx::transaction_base& get_transaction();
+  ~Transaction_Owner_Void() {}
+};
+
+
+
 class Transaction_Manager {
 
 public:
-  explicit Transaction_Manager(pqxx::connection &conn);
+  explicit Transaction_Manager(Transaction_Owner_Base &to);
 
   void prepare(const std::string &name, const std::string &);
 
@@ -55,7 +100,8 @@ private:
     return (pass_param<Args...>(in(std::forward<Arg>(arg)), std::forward<Args>(args)...));
   }
 
-  pqxx::work m_txn;
+  pqxx::transaction_base & m_txn;
 };
+
 
 #endif

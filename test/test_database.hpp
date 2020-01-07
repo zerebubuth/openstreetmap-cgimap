@@ -12,6 +12,8 @@
 #include "cgimap/data_update.hpp"
 #include "cgimap/oauth.hpp"
 
+#include "cgimap/backend/apidb/transaction_manager.hpp"
+
 /**
  * test_database is a RAII object to create a unique apidb format database
  * populated with fake data to allow the apidb data selection process to
@@ -83,18 +85,17 @@ private:
   // the name of the test database.
   std::string m_db_name;
 
-  // factories using the test database which produce writeable and
-  // read-only data selections.
-  std::shared_ptr<data_selection::factory> m_writeable_factory,
-      m_readonly_factory;
+  // factories using the test database which produce read-only data selections.
+  std::shared_ptr<data_selection::factory> m_readonly_factory;
 
   std::shared_ptr<data_update::factory> m_update_factory;
 
   // oauth store based on the writeable connection.
   std::shared_ptr<oauth::store> m_oauth_store;
 
-  // whether to use read-only code (true) or writeable code (false)
-  bool m_use_readonly;
+  std::unique_ptr<Transaction_Owner_Base> txn_owner_readonly;
+  std::unique_ptr<Transaction_Owner_Base> txn_owner_readwrite;
+
 };
 
 #endif /* TEST_TEST_DATABASE_HPP */

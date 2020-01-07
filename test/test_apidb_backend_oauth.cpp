@@ -231,17 +231,24 @@ public:
   void select_relations_from_ways() {}
   void select_nodes_from_way_nodes() {}
   void select_relations_from_nodes() {}
-  void select_relations_from_relations() {}
+  void select_relations_from_relations(bool drop_relations = false) {}
   void select_relations_members_of_relations() {}
-  bool supports_changesets() { return false; }
   int select_changesets(const std::vector<osm_changeset_id_t> &) { return 0; }
   void select_changeset_discussions() {}
+  void drop_nodes() {}
+  void drop_ways() {}
+  void drop_relations() {}
 
   struct factory
     : public data_selection::factory {
     virtual ~factory() = default;
-    virtual std::shared_ptr<data_selection> make_selection() {
+    virtual std::shared_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
       return std::make_shared<empty_data_selection>();
+    }
+    virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() {
+      {
+        return std::unique_ptr<Transaction_Owner_Void>(new Transaction_Owner_Void());
+      }
     }
   };
 };
@@ -338,7 +345,7 @@ void test_oauth_end_to_end(test_database &tdb) {
     oauth::detail::hashed_signature(req, *store),
     "hashed signatures");
 
-  process_request(req, limiter, generator, route, factory, store);
+  process_request(req, limiter, generator, route, factory, std::shared_ptr<data_update::factory>(nullptr), store);
 
   assert_equal<int>(404, req.response_status(), "response status");
   assert_equal<bool>(false, limiter.saw_key("addr:127.0.0.1"),

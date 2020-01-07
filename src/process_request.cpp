@@ -25,20 +25,42 @@ using boost::format;
 namespace al = boost::algorithm;
 namespace po = boost::program_options;
 
-
-
 namespace {
+
+void validate_user_db_update_permission (
+    const boost::optional<osm_user_id_t>& user_id,
+    const std::shared_ptr<data_selection>& selection, bool allow_api_write)
+{
+  if (!user_id)
+    throw http::unauthorized ("User is not authorized");
+
+  if (selection->supports_user_details ()
+      && selection->is_user_blocked (*user_id))
+    throw http::forbidden (
+	"Your access to the API has been blocked. Please log-in to the web interface to find out more.");
+
+  if (!allow_api_write)
+    throw http::unauthorized ("You have not granted the modify map permission");
+}
+
+void check_db_readonly_mode (const std::shared_ptr<data_update>& data_update)
+{
+  if (data_update->is_api_write_disabled())
+    throw http::bad_request (
+	"Server is currently in read only mode, no database changes allowed at this time");
+}
+
 
 // Rails responds to ActiveRecord::RecordNotFound with an empty HTML document.
 // Arguably, this isn't very useful. But it looks like we might be able to get
 // more information soon:
 // https://github.com/zerebubuth/openstreetmap-cgimap/pull/125#issuecomment-272720417
 void respond_404(const http::not_found &e, request &r) {
-  r.status(e.code());
-  r.add_header("Content-Type", "text/html; charset=utf-8");
-  r.add_header("Content-Length", "0");
-  r.add_header("Cache-Control", "no-cache");
-  r.put("");
+  r.status(e.code())
+    .add_header("Content-Type", "text/html; charset=utf-8")
+    .add_header("Content-Length", "0")
+    .add_header("Cache-Control", "no-cache")
+    .put("");
 }
 
 void respond_401(const http::unauthorized &e, request &r) {
@@ -50,15 +72,13 @@ void respond_401(const http::unauthorized &e, request &r) {
   std::ostringstream message_size;
   message_size << message.size();
 
-  r.status(e.code());
-  r.add_header("Content-Type", "text/plain; charset=utf-8");
+  r.status(e.code())
+    .add_header("Content-Type", "text/plain; charset=utf-8")
   // Header according to RFC 7617, section 2.1
-  r.add_header("WWW-Authenticate", R"(Basic realm="Web Password", charset="UTF-8")");
-  r.add_header("Content-Length", message_size.str());
-  r.add_header("Cache-Control", "no-cache");
-
-  // output the message
-  r.put(message);
+    .add_header("WWW-Authenticate", R"(Basic realm="Web Password", charset="UTF-8")")
+    .add_header("Content-Length", message_size.str())
+    .add_header("Cache-Control", "no-cache")
+    .put(message);      // output the message
 
   r.finish();
 }
@@ -73,18 +93,16 @@ void response_415(const http::unsupported_media_type&e, request &r) {
   std::ostringstream message_size;
   message_size << message.size();
 
-  r.status(e.code());
-  r.add_header("Content-Type", "text/plain; charset=utf-8");
+  r.status(e.code())
+    .add_header("Content-Type", "text/plain; charset=utf-8")
 #ifdef HAVE_LIBZ
-  r.add_header("Accept-Encoding", "gzip, deflate");
+    .add_header("Accept-Encoding", "gzip, deflate")
 #else
-  r.add_header("Accept-Encoding", "identity");
+    .add_header("Accept-Encoding", "identity")
 #endif
-  r.add_header("Content-Length", message_size.str());
-  r.add_header("Cache-Control", "no-cache");
-
-  // output the message
-  r.put(message);
+    .add_header("Content-Length", message_size.str())
+    .add_header("Cache-Control", "no-cache")
+    .put(message); // output the message
 
   r.finish();
 
@@ -97,8 +115,8 @@ void respond_error(const http::exception &e, request &r) {
   const char *error_format = r.get_param("HTTP_X_ERROR_FORMAT");
 
   if (error_format && al::iequals(error_format, "xml")) {
-    r.status(200);
-    r.add_header("Content-Type", "text/xml; charset=utf-8");
+    r.status(200)
+     .add_header("Content-Type", "text/xml; charset=utf-8");
 
     ostringstream ostr;
     ostr << "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\r\n"
@@ -110,17 +128,19 @@ void respond_error(const http::exception &e, request &r) {
 
   } else {
     std::string message(e.what());
+
+    std::string message_error_header = message.substr(0, 250);                           // limit HTTP header to 250 chars
+    std::replace(message_error_header.begin(), message_error_header.end(), '\n', ' ');   // replace newline by space (newlines screw up HTTP header)
+
     std::ostringstream message_size;
     message_size << message.size();
 
-    r.status(e.code());
-    r.add_header("Content-Type", "text/plain");
-    r.add_header("Content-Length", message_size.str());
-    r.add_header("Error", message);
-    r.add_header("Cache-Control", "no-cache");
-
-    // output the message as well
-    r.put(message);
+    r.status(e.code())
+      .add_header("Content-Type", "text/plain")
+      .add_header("Content-Length", message_size.str())
+      .add_header("Error", message_error_header)
+      .add_header("Cache-Control", "no-cache")
+      .put(message);   // output the message as well
   }
 
   r.finish();
@@ -129,14 +149,23 @@ void respond_error(const http::exception &e, request &r) {
 /**
  * Return a 405 error.
  */
+
 void process_not_allowed(request &req, handler_ptr_t handler) {
-  req.status(405);
-  std::string methods = http::list_methods(handler->allowed_methods());
-  req.add_header("Allow", methods);
-  req.add_header("Content-Type", "text/html");
-  req.add_header("Content-Length", "0");
-  req.add_header("Cache-Control", "no-cache");
-  req.finish();
+  req.status(405)
+     .add_header("Allow", http::list_methods(handler->allowed_methods()))
+     .add_header("Content-Type", "text/html")
+     .add_header("Content-Length", "0")
+     .add_header("Cache-Control", "no-cache")
+     .finish();
+}
+
+void process_not_allowed(request &req, const http::method_not_allowed& e) {
+  req.status(405)
+     .add_header("Allow", http::list_methods(e.allowed_methods))
+     .add_header("Content-Type", "text/html")
+     .add_header("Content-Length", "0")
+     .add_header("Cache-Control", "no-cache")
+     .finish();
 }
 
 /**
@@ -162,11 +191,11 @@ process_get_request(request &req, handler_ptr_t handler,
 
   // TODO: use handler/responder to setup response headers.
   // write the response header
-  req.status(200);
-  req.add_header("Content-Type", (boost::format("%1%; charset=utf-8") %
-                                  mime::to_string(best_mime_type)).str());
-  req.add_header("Content-Encoding", encoding->name());
-  req.add_header("Cache-Control", "private, max-age=0, must-revalidate");
+  req.status(200)
+     .add_header("Content-Type", (boost::format("%1%; charset=utf-8") %
+                                  mime::to_string(best_mime_type)).str())
+     .add_header("Content-Encoding", encoding->name())
+     .add_header("Cache-Control", "private, max-age=0, must-revalidate");
 
   // create the XML writer with the FCGI streams as output
   shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
@@ -204,13 +233,14 @@ process_get_request(request &req, handler_ptr_t handler,
 }
 
 
+
 /**
- * process a POST request.
+ * process a POST/PUT request.
  */
 std::tuple<string, size_t>
-process_post_request(request &req, handler_ptr_t handler,
-		    data_update_ptr data_update,
-                    const string &payload,
+process_post_put_request(request &req, handler_ptr_t handler,
+                    std::shared_ptr<data_selection::factory> factory,
+                    std::shared_ptr<data_update::factory> update_factory,
                     boost::optional<osm_user_id_t> user_id,
                     const string &ip, const string &generator) {
   // request start logging
@@ -221,32 +251,58 @@ process_post_request(request &req, handler_ptr_t handler,
   std::shared_ptr< payload_enabled_handler > pe_handler = std::static_pointer_cast< payload_enabled_handler >(handler);
 
   if (pe_handler == nullptr)
-    throw http::server_error("HTTP POST method is not payload enabled");
+    throw http::server_error("HTTP method is not payload enabled");
 
-  responder_ptr_t responder = pe_handler->responder(data_update, payload, user_id);
+
+  auto payload = req.get_payload();
+  responder_ptr_t responder;
+
+  // Step 1: execute database update
+  auto rw_transaction = update_factory->get_default_transaction();
+
+  auto data_update = update_factory->make_data_update(*rw_transaction);
+
+  check_db_readonly_mode (data_update);
+
+  // Executing the responder constructor is expected to call db commit()
+  // rw_transaction is no longer usable after this point
+  responder = pe_handler->responder(data_update, payload, user_id);
+
+  // Step 2 (optional): read back result from database to generate response
+
+  // Create a new read only transaction based on the update factory
+  // (which possibly uses a different db/user compared to the data_selection factory)
+  auto read_only_transaction = update_factory->get_read_only_transaction();
+  // create a data selection for the request
+  auto data_selection = factory->make_selection(*read_only_transaction);
+
+  // Instantiate data selection based responder, if required to produce the output message
+  // This instance replaces the previous responder instance, which is no longer needed.
+  if (pe_handler->requires_selection_after_update()) {
+      responder = pe_handler->responder(data_selection);
+  }
 
   // get encoding to use
   shared_ptr<http::encoding> encoding = get_encoding(req);
 
 //  // figure out best mime type
-  //mime::type best_mime_type = choose_best_mime_type(req, responder);
+  mime::type best_mime_type = choose_best_mime_type(req, responder);
 
-  mime::type best_mime_type = mime::type::text_xml;
+  //mime::type best_mime_type = mime::type::text_xml;
 
   // TODO: use handler/responder to setup response headers.
   // write the response header
-  req.status(200);
-  req.add_header("Content-Type", (boost::format("%1%; charset=utf-8") %
-                                  mime::to_string(best_mime_type)).str());
-  req.add_header("Content-Encoding", encoding->name());
-  req.add_header("Cache-Control", "private, max-age=0, must-revalidate");
+  req.status(200)
+     .add_header("Content-Type", (boost::format("%1%; charset=utf-8") %
+                                  mime::to_string(best_mime_type)).str())
+     .add_header("Content-Encoding", encoding->name())
+     .add_header("Cache-Control", "private, max-age=0, must-revalidate");
 
   // create the XML writer with the FCGI streams as output
   shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
 
   // create the correct mime type output formatter.
-  shared_ptr<output_formatter> o_formatter =
-      create_formatter(req, best_mime_type, out);
+  shared_ptr<output_formatter> o_formatter = create_formatter(req, best_mime_type, out);
 
   try {
 //    // call to write the response
@@ -306,11 +362,11 @@ process_head_request(request &req, handler_ptr_t handler,
 
   // TODO: use handler/responder to setup response headers.
   // write the response header
-  req.status(200);
-  req.add_header("Content-Type", (boost::format("%1%; charset=utf-8") %
-                                  mime::to_string(best_mime_type)).str());
-  req.add_header("Content-Encoding", encoding->name());
-  req.add_header("Cache-Control", "no-cache");
+  req.status(200)
+     .add_header("Content-Type", (boost::format("%1%; charset=utf-8") %
+                                  mime::to_string(best_mime_type)).str())
+     .add_header("Content-Encoding", encoding->name())
+     .add_header("Cache-Control", "no-cache");
 
   // ensure the request is finished
   req.finish();
@@ -333,8 +389,8 @@ std::tuple<string, size_t> process_options_request(
   if (origin && method) {
 
     // write the response
-    req.status(200);
-    req.add_header("Content-Type", "text/plain");
+    req.status(200)
+       .add_header("Content-Type", "text/plain");
 
     // if extra headers were requested, then reply that we allow them too.
     const char *headers = req.get_param("HTTP_ACCESS_CONTROL_REQUEST_HEADERS");
@@ -406,15 +462,49 @@ bool show_redactions_requested(request &req) {
   return itr != params.end();
 }
 
-} // anonymous namespace
 
-void process_request(request &req, rate_limiter &limiter,
-                     const std::string &generator, routes &route,
-                     std::shared_ptr<data_selection::factory> factory,
-                     std::shared_ptr<oauth::store> store)
-{ // TODO: temporary workaround only for test cases
-  process_request(req, limiter, generator, route, factory, std::shared_ptr<data_update::factory>(nullptr), store);
+// Determine user id and allow_api_write flag based on Basic Auth or OAuth header
+boost::optional<osm_user_id_t> determine_user_id (request& req,
+			        std::shared_ptr<data_selection>& selection,
+			        std::shared_ptr<oauth::store>& store,
+			        bool& allow_api_write)
+{
+  // Try to authenticate user via Basic Auth
+  boost::optional<osm_user_id_t>  user_id = basicauth::authenticate_user (req, selection);
+
+  // Try to authenticate user via OAuth token
+  if (!user_id && store)
+    {
+      oauth::validity::validity oauth_valid = oauth::is_valid_signature (
+	  req, *store, *store, *store);
+      if (boost::apply_visitor (is_copacetic (), oauth_valid))
+	{
+	  string token = boost::apply_visitor (get_oauth_token (), oauth_valid);
+	  user_id = store->get_user_id_for_token (token);
+	  if (!user_id)
+	    {
+	      // we can get here if there's a valid OAuth signature, with an
+	      // authorised token matching the secret stored in the database,
+	      // but that's not assigned to a user ID. perhaps this can
+	      // happen due to concurrent revocation? in any case, we don't
+	      // want to go any further.
+	      logger::message (
+		  format ("Unable to find user ID for token %1%.") % token);
+	      throw http::server_error ("Unable to find user ID for token.");
+	    }
+	  allow_api_write = store->allow_write_api (token);
+	}
+      else
+	{
+	  boost::apply_visitor (oauth_status_response (), oauth_valid);
+	  // if we got here then oauth_status_response didn't throw, which means
+	  // the request must have been unsigned.
+	}
+    }
+  return user_id;
 }
+
+} // anonymous namespace
 
 /**
  * process a single request.
@@ -425,48 +515,26 @@ void process_request(request &req, rate_limiter &limiter,
                      std::shared_ptr<data_update::factory> update_factory,
                      std::shared_ptr<oauth::store> store) {
   try {
-    // get the client IP address
-    string ip = fcgi_get_env(req, "REMOTE_ADDR");
-    string client_key;
-    boost::optional<osm_user_id_t> user_id;
+
     std::set<osm_user_role_t> user_roles;
+
     bool allow_api_write = true;
 
+    // get the client IP address
+    string ip = fcgi_get_env(req, "REMOTE_ADDR");
+
+    // fetch and parse the request method
+    boost::optional<http::method> maybe_method =  http::parse_method(fcgi_get_env(req, "REQUEST_METHOD"));
+
+    auto default_transaction = factory->get_default_transaction();
+
     // create a data selection for the request
-    auto selection = factory->make_selection();
+    auto selection = factory->make_selection(*default_transaction);
+
+    boost::optional<osm_user_id_t> user_id = determine_user_id (req, selection, store, allow_api_write);
 
     // Initially assume IP based client key
-    client_key = addr_prefix + ip;
-
-    // Try to authenticate user via Basic Auth
-    user_id = basicauth::authenticate_user(req, selection);
-
-    // Try to authenticate user via OAuth token
-    if (!user_id && store) {
-      oauth::validity::validity oauth_valid =
-        oauth::is_valid_signature(req, *store, *store, *store);
-
-      if (boost::apply_visitor(is_copacetic(), oauth_valid)) {
-        string token = boost::apply_visitor(get_oauth_token(), oauth_valid);
-        user_id = store->get_user_id_for_token(token);
-        if (!user_id) {
-          // we can get here if there's a valid OAuth signature, with an
-          // authorised token matching the secret stored in the database,
-          // but that's not assigned to a user ID. perhaps this can
-          // happen due to concurrent revocation? in any case, we don't
-          // want to go any further.
-          logger::message(format("Unable to find user ID for token %1%.") %
-                          token);
-          throw http::server_error("Unable to find user ID for token.");
-        }
-        allow_api_write = store->allow_write_api(token);
-
-      } else {
-        boost::apply_visitor(oauth_status_response(), oauth_valid);
-        // if we got here then oauth_status_response didn't throw, which means
-        // the request must have been unsigned.
-      }
-    }
+    string client_key = addr_prefix + ip;
 
     // If user has been authenticated either via Basic Auth or OAuth,
     // set the client key and user roles accordingly
@@ -476,22 +544,13 @@ void process_request(request &req, rate_limiter &limiter,
           user_roles = store->get_roles_for_user(*user_id);
     }
 
-    auto start_time = std::chrono::high_resolution_clock::now();
-
     // check whether the client is being rate limited
     if (!limiter.check(client_key)) {
       logger::message(format("Rate limiter rejected request from %1%") % client_key);
-      throw http::bandwidth_limit_exceeded("You have downloaded too much "
-                                           "data. Please try again later.");
+      throw http::bandwidth_limit_exceeded("You have downloaded too much data. Please try again later.");
     }
 
-    // fetch and parse the request method
-    boost::optional<http::method> maybe_method =
-      http::parse_method(fcgi_get_env(req, "REQUEST_METHOD"));
-
-    // data returned from request methods
-    string request_name;
-    size_t bytes_written = 0;
+    auto start_time = std::chrono::high_resolution_clock::now();
 
     // figure how to handle the request
     handler_ptr_t handler = route(req);
@@ -507,51 +566,56 @@ void process_request(request &req, rate_limiter &limiter,
     // override the default access control allow methods header
     req.set_default_methods(handler->allowed_methods());
 
-    if (selection->supports_historical_versions() &&
-        show_redactions_requested(req) &&
+    if (show_redactions_requested(req) &&
         (user_roles.count(osm_user_role_t::moderator) > 0)) {
       selection->set_redactions_visible(true);
     }
 
+    // data returned from request methods
+    string request_name;
+    size_t bytes_written = 0;
+
     // process request
-    if (method == http::method::GET) {
-      std::tie(request_name, bytes_written) =
-        process_get_request(req, handler, selection, ip, generator);
+    switch (method) {
 
-    } else if (method == http::method::POST) {
+      case http::method::GET:
+	std::tie(request_name, bytes_written) = process_get_request(req, handler, selection, ip, generator);
+	break;
 
-      if (!user_id)
-        throw http::unauthorized("User is not authorized");
+      case http::method::HEAD:
+	std::tie(request_name, bytes_written) = process_head_request(req, handler, selection, ip);
+	break;
 
-      if (selection->supports_user_details() && selection->is_user_blocked(*user_id))
-	throw http::forbidden("Your access to the API has been blocked. Please log-in to the web interface to find out more.");
+      case http::method::POST:
+	{
+	  validate_user_db_update_permission(user_id, selection, allow_api_write);
 
-      if (!allow_api_write)
-	throw http::unauthorized("You have not granted the modify map permission");
+	  if (update_factory == nullptr)
+	    throw http::bad_request("Backend does not support POST requests");
 
-      if (update_factory == nullptr)
-	throw http::bad_request("Backend does not support POST requests");
+	  std::tie(request_name, bytes_written) =
+	      process_post_put_request(req, handler, factory, update_factory, user_id, ip, generator);
+	}
+	break;
 
-      auto data_update = update_factory->make_data_update();
+      case http::method::PUT:
+	{
+	  validate_user_db_update_permission(user_id, selection, allow_api_write);
 
-      if (data_update->is_api_write_disabled())
-        throw http::bad_request("Server is currently in read only mode, no database changes allowed at this time");
+	  if (update_factory == nullptr)
+	    throw http::bad_request("Backend does not support PUT requests");
 
-      std::string payload = req.get_payload();
+	  std::tie(request_name, bytes_written) =
+	      process_post_put_request(req, handler, factory, update_factory, user_id, ip, generator);
+	}
+	break;
 
-      std::tie(request_name, bytes_written) =
-          process_post_request(req, handler, data_update, payload, user_id, ip, generator);
+      case http::method::OPTIONS:
+	std::tie(request_name, bytes_written) = process_options_request(req, handler);
+	break;
 
-    } else if (method == http::method::HEAD) {
-      std::tie(request_name, bytes_written) =
-          process_head_request(req, handler, selection, ip);
-
-    } else if (method == http::method::OPTIONS) {
-      std::tie(request_name, bytes_written) =
-        process_options_request(req, handler);
-
-    } else {
-      process_not_allowed(req, handler);
+      default:
+	process_not_allowed(req, handler);
     }
 
     // update the rate limiter, if anything was written
@@ -563,8 +627,7 @@ void process_request(request &req, rate_limiter &limiter,
     // logging twice when an error is thrown.)
     auto end_time = std::chrono::high_resolution_clock::now();;
     auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-    logger::message(format("Completed request for %1% from %2% in %3% ms "
-                           "returning %4% bytes") %
+    logger::message(format("Completed request for %1% from %2% in %3% ms returning %4% bytes") %
                     request_name % ip %
 		    delta %
                     bytes_written);
@@ -575,6 +638,9 @@ void process_request(request &req, rate_limiter &limiter,
     // encoded description of the error. not found errors are special - they're
     // passed back just as empty HTML documents.
     respond_404(e, req);
+
+  } catch (const http::method_not_allowed &e) {
+      process_not_allowed(req, e);
 
   } catch (const http::unauthorized &e) {
     // HTTP 401 unauthorized requires WWW-Authenticate header field

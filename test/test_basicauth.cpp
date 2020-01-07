@@ -17,6 +17,8 @@
 #include "cgimap/basicauth.hpp"
 #include "test_request.hpp"
 
+#include "cgimap/backend/apidb/transaction_manager.hpp"
+
 #define ANNOTATE_EXCEPTION(stmt)                \
   {                                             \
     try {                                       \
@@ -27,6 +29,12 @@
         throw std::runtime_error(ostr.str());   \
     }                                           \
   }
+
+Transaction_Owner_Void::Transaction_Owner_Void() {};
+
+pqxx::transaction_base& Transaction_Owner_Void::get_transaction() {
+  throw std::runtime_error("get_transaction is not supported by Transaction_Owner_Void");
+}
 
 namespace {
 
@@ -55,7 +63,6 @@ void assert_equal(const T &actual, const T &expected, const std::string& scope) 
 }
 
 
-
 class basicauth_test_data_selection
   : public data_selection {
 public:
@@ -82,11 +89,13 @@ public:
   void select_relations_from_ways() {}
   void select_nodes_from_way_nodes() {}
   void select_relations_from_nodes() {}
-  void select_relations_from_relations() {}
+  void select_relations_from_relations(bool drop_relations = false) {}
   void select_relations_members_of_relations() {}
-  bool supports_changesets() { return false; }
   int select_changesets(const std::vector<osm_changeset_id_t> &) { return 0; }
   void select_changeset_discussions() {}
+  void drop_nodes() {}
+  void drop_ways() {}
+  void drop_relations() {}
 
   bool get_user_id_pass(const std::string& user_name, osm_user_id_t & user_id,
 				std::string & pass_crypt, std::string & pass_salt) {
@@ -104,8 +113,11 @@ public:
   struct factory
     : public data_selection::factory {
     virtual ~factory() = default;
-    virtual std::shared_ptr<data_selection> make_selection() {
+    virtual std::shared_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
       return std::make_shared<basicauth_test_data_selection>();
+    }
+    virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() {
+      return std::unique_ptr<Transaction_Owner_Void>(new Transaction_Owner_Void());
     }
   };
 };
@@ -171,7 +183,8 @@ void test_authenticate_user() {
   std::shared_ptr<data_selection::factory> factory =
     std::make_shared<basicauth_test_data_selection::factory>();
 
-  auto sel = factory->make_selection();
+  auto txn_readonly = factory->get_default_transaction();
+  auto sel = factory->make_selection(*txn_readonly);
 
   {
     test_request req;
