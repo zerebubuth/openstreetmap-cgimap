@@ -1,3 +1,25 @@
+openstreetmap-cgimap (0.8.0-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.8.0
+  * Re-enable JSON output
+  * Added new API endpoints for Changeset create/update/close (#206)
+  * New handler for /*/relations and node/*/ways (#166)
+  * Fix compilation issues for libpqxx 6.x (#200)
+  * Use boost::spirit::standard instead of boost::spirit::ascii to
+    avoid assertions failures in param list parsing
+  * Prepend HTTP 412 error text w/ Precondition failed: for Rails port compatibility (#211)
+  * JSON format fixes (#218, #219)
+  * Vagrant: dist update fix (#216), use Bionic (#217)
+  * Improved XML parsing, using parts of libxml++ (#209)
+  * Replace boost regex by c++11 std (#205)
+  * Refactoring transaction handling (#204)
+  * Simplify changeset cache sql (#202)
+  * Application router HTTP method handling
+  * Remove write api backend (#198)
+  * Remove pgsnapshot backend and all related special case logic (#196)
+
+ -- mmd osm <mmd.osm@gmail.com>  Sat, 15 Feb 2020 12:10:22 +0000
+
 openstreetmap-cgimap (0.7.5-1~bionic1) bionic; urgency=medium
 
   * Released version 0.7.5
