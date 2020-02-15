@@ -9,7 +9,7 @@ Standards-Version: 3.9.7
 Package: libcgimap-dev
 Section: contrib/libdevel
 Architecture: any
-Depends: libcgimap-apidb0 (= ${binary:Version}), libcgimap-core0 (= ${binary:Version}), libcgimap-fcgi0 (= ${binary:Version}), libcgimap-pgsnapshot0 (= ${binary:Version}), libcgimap-staticxml0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends: libcgimap-apidb0 (= ${binary:Version}), libcgimap-core0 (= ${binary:Version}), libcgimap-fcgi0 (= ${binary:Version}), libcgimap-staticxml0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Description: Development packages for CGImap, the C++ OpenStreetMap API
  Development files for developing applications or libraries against CGImap.
 
@@ -36,14 +36,6 @@ Depends: libcgimap-core0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depend
 Description: Library for exposing CGImap functionality via FCGI
  Connects CGImap via FCGI to a web server such as Apache.
 
-Package: libcgimap-pgsnapshot0
-Section: contrib/libs
-Architecture: any
-Depends: libcgimap-core0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: Library for connecting CGImap to a "pgsnapshot" schema database
- The "pgsnapshot" schema data is that used by Osmosis with the "pgsnapshot"
- functions and is more compact than "apidb" schema.
-
 Package: libcgimap-staticxml0
 Section: contrib/libs
 Architecture: any
@@ -55,7 +47,7 @@ Description: Library for serving XML files on disk via CGImap
 Package: openstreetmap-cgimap-bin
 Section: contrib/net
 Architecture: any
-Depends: libcgimap-core0 (= ${binary:Version}), libcgimap-apidb0 (= ${binary:Version}), libcgimap-fcgi0 (= ${binary:Version}), libcgimap-pgsnapshot0 (= ${binary:Version}), libcgimap-staticxml0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends: libcgimap-core0 (= ${binary:Version}), libcgimap-apidb0 (= ${binary:Version}), libcgimap-fcgi0 (= ${binary:Version}), libcgimap-staticxml0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Description: CGImap is a C++ implementation of the OpenStreetMap API map call
  CGImap is a C++ implementation of some parts of the OpenStreetMap API as an
  FCGI process. The rails implementation of the "map" call had a few problems
