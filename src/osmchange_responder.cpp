@@ -222,7 +222,7 @@ osmchange_responder::~osmchange_responder() = default;
 
 list<mime::type> osmchange_responder::types_available() const {
   list<mime::type> types;
-  types.push_back(mime::text_xml);
+  types.push_back(mime::application_xml);
   return types;
 }
 

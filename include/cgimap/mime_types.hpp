@@ -11,7 +11,7 @@ namespace mime {
 enum type {
   unspecified_type, // a "null" type, used to indicate no choice.
   text_plain,
-  text_xml,
+  application_xml,
 #ifdef HAVE_YAJL
   application_json,
 #endif

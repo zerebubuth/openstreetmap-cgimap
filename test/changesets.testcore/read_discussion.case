@@ -4,7 +4,7 @@ HTTP-X-Error-Format: xml
 Date: 2015-08-09T11:33:13Z
 ---
 Status: 200 OK
-Content-Type: text/xml; charset=utf-8
+Content-Type: application/xml; charset=utf-8
 !Content-Disposition: 
 ---
 <osm version="0.6" generator="***" copyright="***" attribution="***" license="***">

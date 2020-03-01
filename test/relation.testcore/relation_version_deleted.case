@@ -2,7 +2,7 @@
 Request-Method: GET
 Request-URI: /api/0.6/relation/2/2
 ---
-Content-Type: text/xml; charset=utf-8
+Content-Type: application/xml; charset=utf-8
 !Content-Disposition:
 Status: 200 OK
 ---

@@ -3,7 +3,7 @@ Request-Method: GET
 Request-URI: /api/0.6/node/3/history
 ---
 Status: 200 OK
-Content-Type: text/xml; charset=utf-8
+Content-Type: application/xml; charset=utf-8
 !Content-Disposition:
 ---
 <osm version="0.6" generator="***" copyright="***" attribution="***" license="***">

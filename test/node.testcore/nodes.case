@@ -2,7 +2,7 @@
 Request-Method: GET
 Request-URI: /api/0.6/nodes?nodes=1,2,3
 ---
-Content-Type: text/xml; charset=utf-8
+Content-Type: application/xml; charset=utf-8
 !Content-Disposition: 
 Status: 200 OK
 ---
