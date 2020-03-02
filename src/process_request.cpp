@@ -116,7 +116,7 @@ void respond_error(const http::exception &e, request &r) {
 
   if (error_format && al::iequals(error_format, "xml")) {
     r.status(200)
-     .add_header("Content-Type", "text/xml; charset=utf-8");
+     .add_header("Content-Type", "application/xml; charset=utf-8");
 
     ostringstream ostr;
     ostr << "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\r\n"

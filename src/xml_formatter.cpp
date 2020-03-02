@@ -32,7 +32,7 @@ xml_formatter::xml_formatter(xml_writer *w) : writer(w) {}
 
 xml_formatter::~xml_formatter() = default;
 
-mime::type xml_formatter::mime_type() const { return mime::text_xml; }
+mime::type xml_formatter::mime_type() const { return mime::application_xml; }
 
 void xml_formatter::start_document(
   const std::string &generator, const std::string &root_name) {

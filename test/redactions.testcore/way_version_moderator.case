@@ -7,7 +7,7 @@ Date: 2017-02-03T16:31:00Z
 Http-Authorization: OAuth realm="http://cgimap.example.com/api/0.6/way/1/2", oauth_consumer_key="heqfjrcolc", oauth_token="scgncknxqr", oauth_nonce="ng8dUT94UOvYmX98sAof", oauth_timestamp="1486139460", oauth_signature_method="HMAC-SHA1", oauth_version="1.0", oauth_signature="QnliNV2%2BjeQWVDPZUXwTxrc%2BhDQ%3D"
 ---
 Status: 200 OK
-Content-Type: text/xml; charset=utf-8
+Content-Type: application/xml; charset=utf-8
 !Content-Disposition:
 ---
 <?xml version="1.0"?>
