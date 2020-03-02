@@ -1,3 +1,10 @@
+openstreetmap-cgimap (0.8.1-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.8.1
+  * Use MIME type application/xml for better Rails compatibility (#221)
+
+ -- mmd osm <mmd.osm@gmail.com>  Mon, 02 Mar 2020 17:12:55 +0000
+
 openstreetmap-cgimap (0.8.0-1~bionic1) bionic; urgency=medium
 
   * Released version 0.8.0
