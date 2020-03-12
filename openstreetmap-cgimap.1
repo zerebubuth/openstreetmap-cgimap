@@ -9,6 +9,7 @@ openstreetmap-cgimap \- FCGI version of the OpenStreetMap API
 [\fB\-\-instances \fIINSTANCES\fR]
 [\fB\-\-pidfile \fIPIDFILE\fR]
 [\fB\-\-logfile \fILOGFILE\fR]
+[\fB\-\-configfile \fICONFIGFILE\fR]
 [\fB\-\-memcache \fISPEC\fR]
 [\fB\-\-ratelimit \fILIMIT\fR]
 [\fB\-\-maxdebt \fIDEBT\fR]
@@ -54,6 +55,10 @@ Write pid to \fIPIDFILE\fR.
 .TP
 .BR \-\-logfile =\fILOGFILE\fR
 File to write log messages to.
+.TP
+.BR \-\-configfile =\fICONFIGFILE\fR
+File to read configuration values from.
+Default is '/usr/local/etc/cgimap/cgimap.xml'.
 .TP
 .BR \-\-memcache =\fISPEC\fR
 Memcache server specification.
