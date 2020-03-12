@@ -129,6 +129,7 @@ libcgimap_fcgi_la_LIBADD=@FCGI_LIBS@
 
 libcgimap_core_la_SOURCES=\
 	backend.cpp \
+	basicauth.cpp \
 	bbox.cpp \
 	choose_formatter.cpp \
 	data_selection.cpp \
@@ -136,8 +137,8 @@ libcgimap_core_la_SOURCES=\
 	http.cpp \
 	logger.cpp \
 	mime_types.cpp \
-        basicauth.cpp \
 	oauth.cpp \
+	options.cpp \
 	osm_responder.cpp \
 	osm_current_responder.cpp \
 	osm_diffresult_responder.cpp \
@@ -151,7 +152,7 @@ libcgimap_core_la_SOURCES=\
 	router.cpp \
 	routes.cpp \
 	text_formatter.cpp \
-        text_responder.cpp \
+	text_responder.cpp \
 	text_writer.cpp \
 	time.cpp \
 	xml_formatter.cpp \
@@ -211,12 +212,12 @@ endif
 if ENABLE_APIDB
 libcgimap_apidb_la_SOURCES=\
 	backend/apidb/apidb.cpp \
-	backend/apidb/readonly_pgsql_selection.cpp \
 	backend/apidb/common_pgsql_selection.cpp \
-	backend/apidb/pgsql_update.cpp \
 	backend/apidb/changeset.cpp \
-	backend/apidb/quad_tile.cpp \
 	backend/apidb/oauth_store.cpp \
+	backend/apidb/pgsql_update.cpp \
+	backend/apidb/quad_tile.cpp \
+	backend/apidb/readonly_pgsql_selection.cpp \
 	backend/apidb/transaction_manager.cpp \
 	backend/apidb/utils.cpp \
 	backend/apidb/changeset_upload/changeset_updater.cpp \

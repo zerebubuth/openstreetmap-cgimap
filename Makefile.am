@@ -5,6 +5,9 @@ LIBTOOL_DEPS = @LIBTOOL_DEPS@
 libtool: $(LIBTOOL_DEPS)
 	$(SHELL) ./config.status libtool
 
+etc_cgimapdir=$(sysconfdir)/cgimap
+etc_cgimap_DATA=config/cgimap.xml.orig
+
 cgimap_includedir=$(includedir)/cgimap
 cgimap_include_HEADERS = \
 	include/cgimap/bbox.hpp \
