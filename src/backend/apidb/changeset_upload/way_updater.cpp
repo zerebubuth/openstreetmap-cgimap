@@ -5,6 +5,7 @@
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
+#include "cgimap/options.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -28,7 +29,7 @@ ApiDB_Way_Updater::~ApiDB_Way_Updater() = default;
 void ApiDB_Way_Updater::add_way(osm_changeset_id_t changeset_id,
                                 osm_nwr_signed_id_t old_id,
                                 const api06::WayNodeList &nodes,
-				const api06::TagList &tags) {
+                                const api06::TagList &tags) {
 
   way_t new_way{};
   new_way.version = 1;
@@ -42,7 +43,7 @@ void ApiDB_Way_Updater::add_way(osm_changeset_id_t changeset_id,
   // If the following conditions are still not met, although our XML parser
   // raised an exception for it, it's clearly a programming error.
   assert(nodes.size() > 0);
-  assert(nodes.size() <= WAY_MAX_NODES);
+  assert(nodes.size() <= Options::get_instance().get_way_max_nodes());
 
   osm_sequence_id_t node_seq = 0;
   for (const auto &node : nodes)
@@ -74,7 +75,7 @@ void ApiDB_Way_Updater::modify_way(osm_changeset_id_t changeset_id,
   // If the following conditions are still not met, although our XML parser
   // raised an exception for it, it's clearly a programming error.
   assert(nodes.size() > 0);
-  assert(nodes.size() <= WAY_MAX_NODES);
+  assert(nodes.size() <= Options::get_instance().get_way_max_nodes());
 
   osm_sequence_id_t node_seq = 0;
   for (const auto &node : nodes)

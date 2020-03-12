@@ -1,5 +1,6 @@
 #include "cgimap/backend/apidb/common_pgsql_selection.hpp"
 #include "cgimap/backend/apidb/apidb.hpp"
+#include "cgimap/options.hpp"
 
 #include <chrono>
 
@@ -62,10 +63,10 @@ void extract_changeset(const pqxx_tuple &row,
   auto max_lon = extract_optional<int64_t>(row["max_lon"]);
 
   if (bool(min_lat) && bool(min_lon) && bool(max_lat) && bool(max_lon)) {
-    elem.bounding_box = bbox(double(*min_lat) / SCALE,
-                             double(*min_lon) / SCALE,
-                             double(*max_lat) / SCALE,
-                             double(*max_lon) / SCALE);
+    elem.bounding_box = bbox(double(*min_lat) / Options::get_instance().get_bbox_scale(),
+                             double(*min_lon) / Options::get_instance().get_bbox_scale(),
+                             double(*max_lat) / Options::get_instance().get_bbox_scale(),
+                             double(*max_lon) / Options::get_instance().get_bbox_scale());
   } else {
     elem.bounding_box = boost::none;
   }
@@ -169,8 +170,8 @@ struct node {
   struct extra_info {
     double lon, lat;
     inline void extract(const pqxx_tuple &row) {
-      lon = double(row["longitude"].as<int64_t>()) / (SCALE);
-      lat = double(row["latitude"].as<int64_t>()) / (SCALE);
+      lon = double(row["longitude"].as<int64_t>()) / (Options::get_instance().get_bbox_scale());
+      lat = double(row["latitude"].as<int64_t>()) / (Options::get_instance().get_bbox_scale());
     }
   };
   static inline void write(

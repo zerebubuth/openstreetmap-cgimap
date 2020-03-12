@@ -5,8 +5,6 @@
 
 #include <memory>
 
-#define SCALE (10000000)
-
 std::shared_ptr<backend> make_apidb_backend();
 
 #endif /* APIDB_BACKEND_HPP */

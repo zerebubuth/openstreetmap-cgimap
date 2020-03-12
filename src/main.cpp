@@ -22,6 +22,7 @@
 #include "cgimap/bbox.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
+#include "cgimap/options.hpp"
 #include "cgimap/output_formatter.hpp"
 #include "cgimap/output_writer.hpp"
 #include "cgimap/handler.hpp"
@@ -102,6 +103,7 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
     ("instances", po::value<int>()->default_value(5), "number of daemon instances to run")
     ("pidfile", po::value<string>(), "file to write pid to")
     ("logfile", po::value<string>(), "file to write log messages to")
+    ("configfile", po::value<string>()->default_value("/usr/local/etc/cgimap/cgimap.xml"), "configuration file")
     ("memcache", po::value<string>(), "memcache server specification")
     ("ratelimit", po::value<int>(), "average number of bytes/s to allow each client")
     ("maxdebt", po::value<int>(), "maximum debt (in Mb) to allow each client before rate limiting")
@@ -127,6 +129,16 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
   if (options.count("daemon") != 0 && options.count("socket") == 0 && options.count("port") == 0) {
     throw runtime_error("an FCGI port number or UNIX socket is required in daemon mode");
   }
+}
+
+/**
+ * Parse the options file for configuration options
+ */
+static void load_configuration(po::variables_map &options) {
+  if (options.count("configfile") != 0)
+    Options::get_instance().parse_file(options["configfile"].as<string>());
+  else
+    Options::get_instance().parse_file();
 }
 
 /**
@@ -173,7 +185,7 @@ static void process_requests(int socket, const po::variables_map &options) {
 
     // get the next request
     if (req.accept_r() >= 0) {
-	std::chrono::system_clock::time_point now(std::chrono::system_clock::now());
+      std::chrono::system_clock::time_point now(std::chrono::system_clock::now());
       req.set_current_time(now);
       process_request(req, limiter, generator, route, factory, update_factory, oauth_store);
     }
@@ -257,6 +269,9 @@ int main(int argc, char **argv) {
 
     // get options
     get_options(argc, argv, options);
+
+    // load configuration
+    load_configuration(options);
 
     // get the socket to use
     if (options.count("socket")) {

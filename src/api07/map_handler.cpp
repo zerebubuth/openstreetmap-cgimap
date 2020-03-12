@@ -10,23 +10,19 @@ using std::string;
 using std::auto_ptr;
 using std::map;
 
-constexpr double MAX_AREA  = 0.25;
-constexpr int    MAX_NODES = 50000;
-
 namespace api07 {
 
 map_responder::map_responder(mime::type mt, bbox b, data_selection_ptr &x)
     : osm_current_responder(mt, x, boost::optional<bbox>(b)) {
   // create temporary tables of nodes, ways and relations which
   // are in or used by elements in the bbox
-  int num_nodes = sel->select_nodes_from_bbox(b, MAX_NODES);
+  int num_nodes = sel->select_nodes_from_bbox(b, Options::get_instance().get_map_max_nodes());
 
-  // TODO: make configurable parameter?
-  if (num_nodes > MAX_NODES) {
+  if (num_nodes > Options::get_instance().get_map_max_nodes()) {
     throw http::bad_request(
         (format("You requested too many nodes (limit is %1%). "
                 "Either request a smaller area, or use planet.osm") %
-         MAX_NODES).str());
+         Options::get_instance().get_map_max_nodes()).str());
   }
   // Short-circuit empty areas
   if (num_nodes > 0) {
@@ -88,13 +84,12 @@ bbox map_handler::validate_request(request &req) {
                             "minima must be less than the maxima.");
   }
 
-  // TODO: make configurable parameter?
-  if (bounds.area() > MAX_AREA) {
+  if (bounds.area() > Options::get_instance().get_map_area_max()) {
     throw http::bad_request(
         (boost::format("The maximum bbox size is %1%, and your request "
                        "was too large. Either request a smaller area, or use "
                        "planet.osm") %
-         MAX_AREA).str());
+         Options::get_instance().get_map_area_max()).str());
   }
 
   return bounds;

@@ -4,6 +4,7 @@
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
+#include "cgimap/options.hpp"
 
 #include <boost/format.hpp>
 #include <pqxx/pqxx>
@@ -42,7 +43,7 @@ void ApiDB_Changeset_Updater::lock_current_changeset(bool check_max_elements_lim
   // Some clients try to send further changes, although the changeset already
   // holds the maximum number of elements. As this is futile, we raise an error
   // as early as possible.
-  if (check_max_elements_limit && cs_num_changes >= CHANGESET_MAX_ELEMENTS)
+  if (check_max_elements_limit && cs_num_changes >= Options::get_instance().get_changeset_max_elements())
     throw http::conflict((boost::format("The changeset %1% was closed at %2%") %
 	changeset % current_time)
 			 .str());
@@ -52,8 +53,8 @@ void ApiDB_Changeset_Updater::lock_current_changeset(bool check_max_elements_lim
 void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
 					       const bbox_t bbox) {
 
-  // Don't raise an exception when reaching exactly CHANGESET_MAX_ELEMENTS!
-  if (cs_num_changes + num_new_changes > CHANGESET_MAX_ELEMENTS) {
+  // Don't raise an exception when reaching exactly changeset max elements!
+  if (cs_num_changes + num_new_changes > Options::get_instance().get_changeset_max_elements()) {
 
       auto r = m.exec(
 	  R"(SELECT to_char((now() at time zone 'utc'),'YYYY-MM-DD HH24:MI:SS "UTC"') as current_time)");
@@ -104,17 +105,19 @@ void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
 
   if (valid_bbox) {
       auto r =
-	  m.prepared("changeset_update")(cs_num_changes)(cs_bbox.minlat)(
-	      cs_bbox.minlon)(cs_bbox.maxlat)(cs_bbox.maxlon)(MAX_TIME_OPEN)(
-		  IDLE_TIMEOUT)(changeset)
-		  .exec();
+        m.prepared("changeset_update")(cs_num_changes)(cs_bbox.minlat)(
+          cs_bbox.minlon)(cs_bbox.maxlat)(cs_bbox.maxlon)(
+          Options::get_instance().get_timeout_open_max())(
+          Options::get_instance().get_timeout_idle())(changeset)
+      .exec();
 
       if (r.affected_rows() != 1)
 	throw http::server_error("Cannot update changeset");
   } else {
       auto r = m.prepared("changeset_update")(cs_num_changes)()()()()(
-	  MAX_TIME_OPEN)(IDLE_TIMEOUT)(changeset)
-	  .exec();
+        Options::get_instance().get_timeout_open_max())(
+        Options::get_instance().get_timeout_idle())(changeset)
+      .exec();
 
       if (r.affected_rows() != 1)
 	throw http::server_error("Cannot update changeset");
@@ -324,7 +327,7 @@ void ApiDB_Changeset_Updater::changeset_insert_cs ()
               RETURNING id 
    )");
 
-    pqxx::result r = m.exec_prepared ("create_changeset", uid, IDLE_TIMEOUT);
+    pqxx::result r = m.exec_prepared ("create_changeset", uid, Options::get_instance().get_timeout_idle());
     if (r.affected_rows () != 1)
       throw http::server_error ("Cannot create changeset");
 

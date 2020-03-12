@@ -1,7 +1,8 @@
 #ifndef WAY_HPP
 #define WAY_HPP
 
-#include "osmobject.hpp"
+#include "cgimap/options.hpp"
+#include "cgimap/api06/changeset_upload/osmobject.hpp"
 
 #include <string>
 #include <vector>
@@ -24,15 +25,15 @@ public:
     osm_nwr_signed_id_t _waynode = 0;
 
     try {
-	_waynode = std::stol(waynode);
+      _waynode = std::stol(waynode);
     } catch (std::invalid_argument& e) {
-	throw xml_error("Way node is not numeric");
+      throw xml_error("Way node is not numeric");
     } catch (std::out_of_range& e) {
-	throw xml_error("Way node value is too large");
+      throw xml_error("Way node value is too large");
     }
 
     if (_waynode == 0) {
-	throw xml_error("Way node value may not be 0");
+      throw xml_error("Way node value may not be 0");
     }
 
     add_way_node(_waynode);
@@ -55,12 +56,12 @@ public:
                 .str());
       }
 
-      if (m_way_nodes.size() > WAY_MAX_NODES) {
+      if (m_way_nodes.size() > Options::get_instance().get_way_max_nodes()) {
         throw http::bad_request(
             (boost::format(
                  "You tried to add %1% nodes to way %2%, however only "
                  "%3% are allowed") %
-             m_way_nodes.size() % (has_id() ? id() : 0) % WAY_MAX_NODES)
+             m_way_nodes.size() % (has_id() ? id() : 0) % Options::get_instance().get_way_max_nodes())
                 .str());
       }
 
