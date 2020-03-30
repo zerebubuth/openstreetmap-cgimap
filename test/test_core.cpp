@@ -692,12 +692,16 @@ int main(int argc, char *argv[]) {
 
   try {
     po::variables_map vm;
+    vm.insert(std::make_pair(std::string("backend"),
+                             po::variable_value("staticxml", false)));
     vm.insert(std::make_pair(std::string("file"),
                              po::variable_value(data_file.native(), false)));
 
+    Options::get_instance().override_options(vm);
+
     std::shared_ptr<backend> data_backend = make_staticxml_backend();
     std::shared_ptr<data_selection::factory> factory =
-        data_backend->create(vm);
+        data_backend->create();
     null_rate_limiter limiter;
     routes route;
 

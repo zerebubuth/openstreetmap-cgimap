@@ -100,9 +100,12 @@ void test_database::setup() {
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     vm.notify();
-    m_readonly_factory = apidb->create(vm);
-    m_update_factory = apidb->create_data_update(vm);
-    m_oauth_store = apidb->create_oauth_store(vm);
+
+    Options::get_instance().override_options(vm);
+
+    m_readonly_factory = apidb->create();
+    m_update_factory = apidb->create_data_update();
+    m_oauth_store = apidb->create_oauth_store();
   }
 }
 
