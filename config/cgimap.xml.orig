@@ -20,7 +20,7 @@
       <!-- For type="apidb" -->
       <cachesize maximum="1000000"/>
       <apidb_write disable="false"/>
-      <apidb charset="utf8" host="127.0.0.1" port="5432" dbname="openstreetmap" username="" password=""/>
+      <apidb charset="" host="" port="" dbname="" username="" password=""/>
       <!-- If different from default
       <oauth charset="" host="" port="" dbname="" username="" password=""/>
       <update charset="" host="" port="" dbname="" username="" password=""/>
