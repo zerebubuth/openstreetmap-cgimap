@@ -1,6 +1,7 @@
 #include "cgimap/config.hpp"
 #include "cgimap/oauth.hpp"
 #include "cgimap/http.hpp"
+#include "cgimap/options.hpp"
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/time.hpp"
 

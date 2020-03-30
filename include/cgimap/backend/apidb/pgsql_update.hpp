@@ -8,7 +8,6 @@
 
 #include <memory>
 #include <pqxx/pqxx>
-#include <boost/program_options.hpp>
 
 class pgsql_update : public data_update {
 
@@ -39,7 +38,7 @@ public:
    */
   class factory : public data_update::factory {
   public:
-    factory(const boost::program_options::variables_map &);
+    factory();
     virtual ~factory();
     virtual std::shared_ptr<data_update> make_data_update(Transaction_Owner_Base& to);
     virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction();

@@ -7,7 +7,6 @@
 #include "cgimap/backend/apidb/transaction_manager.hpp"
 
 #include <pqxx/pqxx>
-#include <boost/program_options.hpp>
 #include <chrono>
 #include <memory>
 #include <set>
@@ -72,7 +71,7 @@ public:
    */
   class factory : public data_selection::factory {
   public:
-    factory(const boost::program_options::variables_map &);
+    factory();
     virtual ~factory();
     virtual std::shared_ptr<data_selection> make_selection(Transaction_Owner_Base& );
     virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction();

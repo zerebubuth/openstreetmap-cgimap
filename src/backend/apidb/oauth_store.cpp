@@ -1,50 +1,39 @@
 #include "cgimap/backend/apidb/oauth_store.hpp"
 #include "cgimap/logger.hpp"
-
-namespace po = boost::program_options;
+#include "cgimap/options.hpp"
 
 namespace {
-std::string connect_db_str(const po::variables_map &options) {
+std::string connect_db_str() {
   // build the connection string.
   std::ostringstream ostr;
 
-  if (options.count("dbname") == 0 &&
-      options.count("oauth-dbname") == 0) {
-    throw std::runtime_error("Must provide either one of --dbname or "
-                             "--oauth-dbname to configure database "
+  const Options &config_options = Options::get_instance();
+  const Options::BackendType type = Options::BackendType::Oauth;
+
+  if (config_options.get_backend_dbname(type).empty()) {
+    throw std::runtime_error("Must provide either one of dbname or "
+                             "oauth-dbname to configure database "
                              "name for OAuth connections.");
   }
 
-#define CONNOPT(a,b)                                                 \
-  if (options.count("oauth-" a)) {                                   \
-    ostr << " " << (b "=") << options["oauth-" a].as<std::string>(); \
-  } else if (options.count(a)) {                                     \
-    ostr << " " << (b "=") << options[a].as<std::string>();          \
-  }
+  ostr << " " << "dbname=" << config_options.get_backend_dbname(type);
+  ostr << " " << "host=" << config_options.get_backend_host(type);
+  ostr << " " << "user=" << config_options.get_backend_username(type);
+  ostr << " " << "password=" << config_options.get_backend_password(type);
+  ostr << " " << "port=" << config_options.get_backend_port(type);
 
-  CONNOPT("dbname", "dbname");
-  CONNOPT("host", "host");
-  CONNOPT("username", "user");
-  CONNOPT("password", "password");
-  CONNOPT("dbport", "port");
-
-#undef CONNOPT
   return ostr.str();
 }
 
 } // anonymous namespace
 
-oauth_store::oauth_store(const po::variables_map &opts)
-  : m_connection(connect_db_str(opts))
+oauth_store::oauth_store()
+  : m_connection(connect_db_str())
   , m_errorhandler(m_connection)
 {
 
   // set the connections to use the appropriate charset.
-  std::string db_charset = opts["charset"].as<std::string>();
-  if (opts.count("oauth-charset")) {
-    db_charset = opts["oauth-charset"].as<std::string>();
-  }
-  m_connection.set_client_encoding(db_charset);
+  m_connection.set_client_encoding(Options::get_instance().get_backend_charset(Options::BackendType::Oauth));
 
   logger::message("Preparing OAuth prepared statements.");
 

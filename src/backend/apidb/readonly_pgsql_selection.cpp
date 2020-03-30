@@ -15,31 +15,29 @@
 
 #include <boost/algorithm/string/trim.hpp>
 
-
-namespace po = boost::program_options;
 using std::set;
 using std::stringstream;
 using std::list;
 using std::vector;
 using std::shared_ptr;
 
-
 namespace {
-std::string connect_db_str(const po::variables_map &options) {
+std::string connect_db_str() {
   // build the connection string.
   std::ostringstream ostr;
-  ostr << "dbname=" << options["dbname"].as<std::string>();
-  if (options.count("host")) {
-    ostr << " host=" << options["host"].as<std::string>();
+  const Options &config_options = Options::get_instance();
+  ostr << "dbname=" << config_options.get_backend_dbname();
+  if (!config_options.get_backend_host().empty()) {
+    ostr << " host=" << config_options.get_backend_host();
   }
-  if (options.count("username")) {
-    ostr << " user=" << options["username"].as<std::string>();
+  if (!config_options.get_backend_username().empty()) {
+    ostr << " user=" << config_options.get_backend_username();
   }
-  if (options.count("password")) {
-    ostr << " password=" << options["password"].as<std::string>();
+  if (!config_options.get_backend_password().empty()) {
+    ostr << " password=" << config_options.get_backend_password();
   }
-  if (options.count("dbport")) {
-    ostr << " port=" << options["dbport"].as<std::string>();
+  if (!config_options.get_backend_port().empty()) {
+    ostr << " port=" << config_options.get_backend_port();
   }
 
   return ostr.str();
@@ -393,12 +391,13 @@ int readonly_pgsql_selection::select_nodes_from_bbox(const bbox &bounds,
   m.exec("set enable_mergejoin=false");
   m.exec("set enable_hashjoin=false");
 
+  const Options &config_options = Options::get_instance();
   return insert_results(
       m.exec_prepared("visible_node_in_bbox", tiles,
-            int(bounds.minlat * Options::get_instance().get_bbox_scale()),
-            int(bounds.maxlat * Options::get_instance().get_bbox_scale()),
-            int(bounds.minlon * Options::get_instance().get_bbox_scale()),
-            int(bounds.maxlon * Options::get_instance().get_bbox_scale()), (max_nodes + 1)),
+            int(bounds.minlat * config_options.get_bbox_scale()),
+            int(bounds.maxlat * config_options.get_bbox_scale()),
+            int(bounds.minlon * config_options.get_bbox_scale()),
+            int(bounds.maxlon * config_options.get_bbox_scale()), (max_nodes + 1)),
       sel_nodes);
 }
 
@@ -774,20 +773,21 @@ bool readonly_pgsql_selection::get_user_id_pass(const std::string& user_name, os
   return true;
 }
 
-readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
-    : m_connection(connect_db_str(opts)),
-      m_cache_connection(connect_db_str(opts)),
+readonly_pgsql_selection::factory::factory()
+    : m_connection(connect_db_str()),
+      m_cache_connection(connect_db_str()),
       m_errorhandler(m_connection),
       m_cache_errorhandler(m_cache_connection),
       m_cache_tx(m_cache_connection, "changeset_cache"),
       m_cache(std::bind(fetch_changesets, std::ref(m_cache_tx), std::placeholders::_1),
-              opts["cachesize"].as<size_t>()) {
+              Options::get_instance().get_changeset_cache_size()) {
 
   check_postgres_version(m_connection);
 
+  std::string charset = Options::get_instance().get_backend_charset();
   // set the connections to use the appropriate charset.
-  m_connection.set_client_encoding(opts["charset"].as<std::string>());
-  m_cache_connection.set_client_encoding(opts["charset"].as<std::string>());
+  m_connection.set_client_encoding(charset);
+  m_cache_connection.set_client_encoding(charset);
 
   // set the connection to use readonly transaction.
   m_connection.set_variable("default_transaction_read_only", "true");

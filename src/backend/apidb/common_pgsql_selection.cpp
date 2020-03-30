@@ -62,11 +62,12 @@ void extract_changeset(const pqxx_tuple &row,
   auto min_lon = extract_optional<int64_t>(row["min_lon"]);
   auto max_lon = extract_optional<int64_t>(row["max_lon"]);
 
+  const Options &config_options = Options::get_instance();
   if (bool(min_lat) && bool(min_lon) && bool(max_lat) && bool(max_lon)) {
-    elem.bounding_box = bbox(double(*min_lat) / Options::get_instance().get_bbox_scale(),
-                             double(*min_lon) / Options::get_instance().get_bbox_scale(),
-                             double(*max_lat) / Options::get_instance().get_bbox_scale(),
-                             double(*max_lon) / Options::get_instance().get_bbox_scale());
+    elem.bounding_box = bbox(double(*min_lat) / config_options.get_bbox_scale(),
+                             double(*min_lon) / config_options.get_bbox_scale(),
+                             double(*max_lat) / config_options.get_bbox_scale(),
+                             double(*max_lon) / config_options.get_bbox_scale());
   } else {
     elem.bounding_box = boost::none;
   }

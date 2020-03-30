@@ -19,39 +19,31 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
-
-namespace po = boost::program_options;
 using std::set;
 using std::list;
 using std::vector;
 using std::shared_ptr;
 
 namespace {
-std::string connect_db_str(const po::variables_map &options) {
+std::string connect_db_str() {
   // build the connection string.
   std::ostringstream ostr;
 
-  if (options.count("dbname") == 0 &&
-      options.count("update-dbname") == 0) {
-    throw std::runtime_error("Must provide either one of --dbname or "
-                             "--update-dbname to configure database "
+  const Options &config_options = Options::get_instance();
+  const Options::BackendType type = Options::BackendType::Update;
+
+  if (config_options.get_backend_dbname(type).empty()) {
+    throw std::runtime_error("Must provide either one of dbname or "
+                             "update-dbname to configure database "
                              "name for update (API write) connections.");
   }
 
-#define CONNOPT(a,b)                                                    \
-  if (options.count("update-" a)) {                                     \
-    ostr << " " << (b "=") << options["update-" a].as<std::string>();   \
-  } else if (options.count(a)) {                                        \
-    ostr << " " << (b "=") << options[a].as<std::string>();             \
-  }
+  ostr << " " << "dbname=" << config_options.get_backend_dbname(type);
+  ostr << " " << "host=" << config_options.get_backend_host(type);
+  ostr << " " << "user=" << config_options.get_backend_username(type);
+  ostr << " " << "password=" << config_options.get_backend_password(type);
+  ostr << " " << "port=" << config_options.get_backend_port(type);
 
-  CONNOPT("dbname", "dbname");
-  CONNOPT("host", "host");
-  CONNOPT("username", "user");
-  CONNOPT("password", "password");
-  CONNOPT("dbport", "port");
-
-#undef CONNOPT
   return ostr.str();
 }
 
@@ -143,22 +135,20 @@ void pgsql_update::commit() {
 }
 
 
-pgsql_update::factory::factory(const po::variables_map &opts)
-    : m_connection(connect_db_str(opts)), m_api_write_disabled(false)
+pgsql_update::factory::factory()
+    : m_connection(connect_db_str()), m_api_write_disabled(false)
       ,m_errorhandler(m_connection)
  {
 
   check_postgres_version(m_connection);
 
+  const Options &config_options = Options::get_instance();
   // set the connections to use the appropriate charset.
-  std::string db_charset = opts["charset"].as<std::string>();
-  if (opts.count("update-charset")) {
-     db_charset = opts["update-charset"].as<std::string>();
-  }
+  std::string db_charset = config_options.get_backend_charset(Options::BackendType::Update);
   m_connection.set_client_encoding(db_charset);
 
   // set the connection to readonly transaction, if disable-api-write flag is set
-  if (opts.count("disable-api-write") != 0) {
+  if (config_options.get_disable_api_write()) {
     m_api_write_disabled = true;
     m_connection.set_variable("default_transaction_read_only", "true");
   }

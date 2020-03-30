@@ -91,6 +91,17 @@ static string environment_option_name(string name){
 }
 
 /**
+ * Parse the options file for configuration options
+ */
+static void load_configuration(po::variables_map &options) {
+  Options &config_options = Options::get_instance();
+  if (options.count("configfile") != 0)
+    config_options.parse_file(options["configfile"].as<string>());
+  else
+    config_options.parse_file();
+}
+
+/**
  * parse the comment line and environment for options.
  */
 static void get_options(int argc, char **argv, po::variables_map &options) {
@@ -99,11 +110,12 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
   // clang-format off
   desc.add_options()
     ("help", "display this help and exit")
+    ("settings", "display configuration settings and exit")
     ("daemon", "run as a daemon")
-    ("instances", po::value<int>()->default_value(5), "number of daemon instances to run")
+    ("instances", po::value<int>()->default_value(Options::MAX_INSTANCES), "number of daemon instances to run")
     ("pidfile", po::value<string>(), "file to write pid to")
     ("logfile", po::value<string>(), "file to write log messages to")
-    ("configfile", po::value<string>()->default_value("/usr/local/etc/cgimap/cgimap.xml"), "configuration file")
+    ("configfile", po::value<string>()->default_value(Options::CONFIG_FILE_PATH), "configuration file")
     ("memcache", po::value<string>(), "memcache server specification")
     ("ratelimit", po::value<int>(), "average number of bytes/s to allow each client")
     ("maxdebt", po::value<int>(), "maximum debt (in Mb) to allow each client before rate limiting")
@@ -125,20 +137,21 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
     exit(1);
   }
 
+  // load configuration
+  load_configuration(options);
+  // override the configuration with commandline arguments
+  Options &config_options = Options::get_instance();
+  config_options.override_options(options);
+
+  if (options.count("settings")) {
+    std::cout << Options::get_instance().get_configuration_options() << std::endl;
+    exit(1);
+  }
+
   // for ability to accept both the old --port option in addition to socket if not available.
-  if (options.count("daemon") != 0 && options.count("socket") == 0 && options.count("port") == 0) {
+  if (config_options.get_run_as_daemon() && config_options.get_socket_path().empty()) {
     throw runtime_error("an FCGI port number or UNIX socket is required in daemon mode");
   }
-}
-
-/**
- * Parse the options file for configuration options
- */
-static void load_configuration(po::variables_map &options) {
-  if (options.count("configfile") != 0)
-    Options::get_instance().parse_file(options["configfile"].as<string>());
-  else
-    Options::get_instance().parse_file();
 }
 
 /**
@@ -148,9 +161,11 @@ static void load_configuration(po::variables_map &options) {
 static void process_requests(int socket, const po::variables_map &options) {
   // generator string - identifies the cgimap instance.
   string generator = get_generator_string();
+
+  const Options &config_options = Options::get_instance();
   // open any log file
-  if (options.count("logfile")) {
-    logger::initialise(options["logfile"].as<string>());
+  if (!config_options.get_log_file_path().empty()) {
+    logger::initialise(config_options.get_log_file_path());
   }
 
   // create the rate limiter
@@ -164,11 +179,11 @@ static void process_requests(int socket, const po::variables_map &options) {
 
   // create a factory for data selections - the mechanism for actually
   // getting at data.
-  std::shared_ptr<data_selection::factory> factory = create_backend(options);
+  std::shared_ptr<data_selection::factory> factory = create_backend();
 
-  std::shared_ptr<data_update::factory> update_factory = create_update_backend(options);
+  std::shared_ptr<data_update::factory> update_factory = create_update_backend();
 
-  std::shared_ptr<oauth::store> oauth_store = create_oauth_store(options);
+  std::shared_ptr<oauth::store> oauth_store = create_oauth_store();
 
   logger::message("Initialised");
 
@@ -176,8 +191,8 @@ static void process_requests(int socket, const po::variables_map &options) {
   while (!terminate_requested) {
     // process any reload request
     if (reload_requested) {
-      if (options.count("logfile")) {
-        logger::initialise(options["logfile"].as<string>());
+      if (!config_options.get_log_file_path().empty()) {
+        logger::initialise(config_options.get_log_file_path());
       }
 
       reload_requested = false;
@@ -270,37 +285,20 @@ int main(int argc, char **argv) {
     // get options
     get_options(argc, argv, options);
 
-    // load configuration
-    load_configuration(options);
+    const Options &config_options = Options::get_instance();
 
     // get the socket to use
-    if (options.count("socket")) {
-      if ((socket = fcgi_request::open_socket(options["socket"].as<string>(), 5)) < 0) {
+    if (!config_options.get_socket_path().empty()) {
+      if ((socket = fcgi_request::open_socket(config_options.get_socket_path(), 5)) < 0) {
         throw runtime_error("Couldn't open FCGX socket.");
-      }
-      // fall back to the old --port option if socket isn't available.
-    } else if (options.count("port")) {
-      std::ostringstream sock_str;
-      sock_str << ":" << options["port"].as<int>();
-      if ((socket = fcgi_request::open_socket(sock_str.str(), 5)) < 0) {
-        throw runtime_error("Couldn't open FCGX socket (from port).");
       }
     } else {
       socket = 0;
     }
 
     // are we supposed to run as a daemon?
-    if (options.count("daemon")) {
-      size_t instances = 0;
-      {
-        int opt_instances = options["instances"].as<int>();
-        if (opt_instances > 0) {
-          instances = opt_instances;
-        } else {
-          throw std::runtime_error(
-              "Number of instances must be strictly positive.");
-        }
-      }
+    if (config_options.get_run_as_daemon()) {
+      size_t instances = config_options.get_max_instances();
 
       bool children_terminated = false;
       std::set<pid_t> children;
@@ -309,8 +307,8 @@ int main(int argc, char **argv) {
       daemonise();
 
       // record our pid if requested
-      if (options.count("pidfile")) {
-        std::ofstream pidfile(options["pidfile"].as<string>().c_str());
+      if (!config_options.get_pid_file_path().empty()) {
+        std::ofstream pidfile(config_options.get_pid_file_path());
         pidfile << getpid() << std::endl;
       }
 
@@ -353,13 +351,13 @@ int main(int argc, char **argv) {
       }
 
       // remove any pid file
-      if (options.count("pidfile")) {
-        remove(options["pidfile"].as<string>().c_str());
+      if (!config_options.get_pid_file_path().empty()) {
+        remove(config_options.get_pid_file_path().c_str());
       }
     } else {
       // record our pid if requested
-      if (options.count("pidfile")) {
-        std::ofstream pidfile(options["pidfile"].as<string>().c_str());
+      if (!config_options.get_pid_file_path().empty()) {
+        std::ofstream pidfile(config_options.get_pid_file_path());
         pidfile << getpid() << std::endl;
       }
 
@@ -367,8 +365,8 @@ int main(int argc, char **argv) {
       process_requests(socket, options);
 
       // remove any pid file
-      if (options.count("pidfile")) {
-        remove(options["pidfile"].as<string>().c_str());
+      if (!config_options.get_pid_file_path().empty()) {
+        remove(config_options.get_pid_file_path().c_str());
       }
     }
   } catch (const pqxx::sql_error &er) {

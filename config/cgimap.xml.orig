@@ -1,14 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <cgimap copyright="OpenStreetMap and contributors" attribution="http://www.openstreetmap.org/copyright" license="http://opendatacommons.org/licenses/odbl/1-0/">
   <settings>
-    <map_nodes maximum="50000"/>
-    <area maximum="0.25"/>
-    <changeset maximum_elements="10000"/>
-    <waynodes maximum="2000"/>
-    <relation_members maximum="32000"/>
-    <element_tags maximum="5000"/>
-    <bbox scale="10000000"/>
-    <timeout open="1 day" idle="1 hour"/>
-    <input_buffer maximum="50000000"/>
+    <general>
+      <instances maximum="5"/>
+      <pidfile path="/var/run/cgimap.pid"/>
+      <logfile path="/var/log/cgimap/cgimap.log"/>
+      <socket path=":8000"/>
+      <memcache spec=""/>
+      <ratelimit rate="102400" maxdebt="262144000"/>
+      <bbox scale="10000000"/>
+      <input_buffer maximum="50000000"/>
+      <runas daemon="false"/>
+    </general>
+    <backend type="apidb">
+      <!-- For type="staticxml" -->
+      <!--
+      <staticxml path=""/>
+      -->
+      <!-- For type="apidb" -->
+      <cachesize maximum="1000000"/>
+      <apidb_write disable="false"/>
+      <apidb charset="utf8" host="127.0.0.1" port="5432" dbname="openstreetmap" username="" password=""/>
+      <!-- If different from default
+      <oauth charset="" host="" port="" dbname="" username="" password=""/>
+      <update charset="" host="" port="" dbname="" username="" password=""/>
+      -->
+    </backend>
+    <map>
+      <nodes maximum="50000"/>
+      <area maximum="0.25"/>
+    </map>
+    <changeset>
+      <timeout open="1 day" idle="1 hour"/>
+    </changeset>
+    <changeset_upload>
+      <changeset maximum_elements="10000"/>
+      <waynodes maximum="2000"/>
+    </changeset_upload>
   </settings>
 </cgimap>

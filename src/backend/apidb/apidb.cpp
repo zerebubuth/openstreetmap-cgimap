@@ -3,6 +3,7 @@
 #include "cgimap/backend/apidb/pgsql_update.hpp"
 #include "cgimap/backend/apidb/oauth_store.hpp"
 #include "cgimap/backend.hpp"
+#include "cgimap/options.hpp"
 
 #include <memory>
 #include <sstream>
@@ -11,22 +12,21 @@ namespace po = boost::program_options;
 using std::shared_ptr;
 using std::string;
 
-#define CACHE_SIZE 100000
-
 namespace {
 struct apidb_backend : public backend {
-  apidb_backend() : m_name("apidb"), m_options("ApiDB backend options") {
+  apidb_backend() : m_name(Options::BACKEND_TYPE_APIDB), m_options("ApiDB backend options") {
+    const Options &config_options = Options::get_instance();
     // clang-format off
     m_options.add_options()
       ("dbname", po::value<string>(), "database name")
       ("host", po::value<string>(), "database server host")
       ("username", po::value<string>(), "database user name")
       ("password", po::value<string>(), "database password")
-      ("charset", po::value<string>()->default_value("utf8"),
+      ("charset", po::value<string>()->default_value(Options::DEFAULT_CHARSET),
        "database character set")
       ("readonly", "(obsolete parameter, read only backend is always assumed)")
       ("disable-api-write", "disable API write operations")
-      ("cachesize", po::value<size_t>()->default_value(CACHE_SIZE),
+      ("cachesize", po::value<size_t>()->default_value(Options::CHANGESET_CACHE_SIZE),
        "maximum size of changeset cache")
       ("dbport", po::value<string>(),
        "database port number or UNIX socket file name")
@@ -61,29 +61,28 @@ struct apidb_backend : public backend {
   const string &name() const { return m_name; }
   const po::options_description &options() const { return m_options; }
 
-  shared_ptr<data_selection::factory> create(const po::variables_map &opts) {
+  shared_ptr<data_selection::factory> create() {
 
-    if (opts.count("dbname") == 0) {
+    if (Options::get_instance().get_backend_dbname().empty()) {
       throw std::runtime_error("database name not specified");
     }
 
-    return std::make_shared<readonly_pgsql_selection::factory>(opts);
+    return std::make_shared<readonly_pgsql_selection::factory>();
   }
 
-  shared_ptr<data_update::factory> create_data_update(const po::variables_map &opts) {
+  shared_ptr<data_update::factory> create_data_update() {
 
-    if (opts.count("dbname") == 0) {
+    if (Options::get_instance().get_backend_dbname().empty()) {
       throw std::runtime_error("database name not specified");
     }
 
-    return std::make_shared<pgsql_update::factory>(opts);
+    return std::make_shared<pgsql_update::factory>();
   }
 
 
-  std::shared_ptr<oauth::store> create_oauth_store(
-    const po::variables_map &opts) {
+  std::shared_ptr<oauth::store> create_oauth_store() {
     shared_ptr<oauth::store> store =
-      std::make_shared<oauth_store>(opts);
+      std::make_shared<oauth_store>();
     return store;
   }
 

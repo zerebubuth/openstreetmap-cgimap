@@ -38,9 +38,9 @@ struct registry {
   bool add(shared_ptr<backend> ptr);
   void setup_options(int argc, char *argv[], po::options_description &desc);
   void output_options(std::ostream &out);
-  shared_ptr<data_selection::factory> create(const po::variables_map &options);
-  shared_ptr<data_update::factory> create_data_update(const po::variables_map &options);
-  shared_ptr<oauth::store> create_oauth_store(const boost::program_options::variables_map &opts);
+  shared_ptr<data_selection::factory> create();
+  shared_ptr<data_update::factory> create_data_update();
+  shared_ptr<oauth::store> create_oauth_store();
 
 private:
   using backend_map_t = std::map<std::string, shared_ptr<backend> >;
@@ -116,49 +116,52 @@ void registry::output_options(std::ostream &out) {
 }
 
 shared_ptr<data_selection::factory>
-registry::create(const po::variables_map &options) {
+registry::create() {
   shared_ptr<backend> ptr = default_backend;
 
-  if (options.count("backend")) {
+  const Options &config_options = Options::get_instance();
+  if (!config_options.get_backend_type().empty()) {
     auto itr =
-        backends.find(options["backend"].as<std::string>());
+        backends.find(config_options.get_backend_type());
     if (itr != backends.end()) {
       ptr = itr->second;
     }
   }
 
-  return ptr->create(options);
+  return ptr->create();
 }
 
 shared_ptr<data_update::factory>
-registry::create_data_update(const po::variables_map &options) {
+registry::create_data_update() {
   shared_ptr<backend> ptr = default_backend;
 
-  if (options.count("backend")) {
+  const Options &config_options = Options::get_instance();
+  if (!config_options.get_backend_type().empty()) {
     auto itr =
-        backends.find(options["backend"].as<std::string>());
+        backends.find(config_options.get_backend_type());
     if (itr != backends.end()) {
       ptr = itr->second;
     }
   }
 
-  return ptr->create_data_update(options);
+  return ptr->create_data_update();
 }
 
 
 std::shared_ptr<oauth::store>
-registry::create_oauth_store(const boost::program_options::variables_map &options) {
+registry::create_oauth_store() {
   shared_ptr<backend> ptr = default_backend;
 
-  if (options.count("backend")) {
+  const Options &config_options = Options::get_instance();
+  if (!config_options.get_backend_type().empty()) {
     auto itr =
-        backends.find(options["backend"].as<std::string>());
+        backends.find(config_options.get_backend_type());
     if (itr != backends.end()) {
       ptr = itr->second;
     }
   }
 
-  return ptr->create_oauth_store(options);
+  return ptr->create_oauth_store();
 }
 
 registry *registry_ptr = NULL;
@@ -197,31 +200,31 @@ void output_backend_options(std::ostream &out) {
 }
 
 shared_ptr<data_selection::factory>
-create_backend(const po::variables_map &options) {
+create_backend() {
   std::unique_lock<std::mutex> lock(registry_mut);
   if (registry_ptr == NULL) {
     registry_ptr = new registry;
   }
 
-  return registry_ptr->create(options);
+  return registry_ptr->create();
 }
 
 shared_ptr<data_update::factory>
-create_update_backend(const po::variables_map &options) {
+create_update_backend() {
   std::unique_lock<std::mutex> lock(registry_mut);
   if (registry_ptr == NULL) {
     registry_ptr = new registry;
   }
 
-  return registry_ptr->create_data_update(options);
+  return registry_ptr->create_data_update();
 }
 
 std::shared_ptr<oauth::store>
-create_oauth_store(const po::variables_map &options) {
+create_oauth_store() {
   std::unique_lock<std::mutex> lock(registry_mut);
   if (registry_ptr == NULL) {
     registry_ptr = new registry;
   }
 
-  return registry_ptr->create_oauth_store(options);
+  return registry_ptr->create_oauth_store();
 }

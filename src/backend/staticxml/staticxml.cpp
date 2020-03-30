@@ -1,5 +1,6 @@
 #include "cgimap/backend/staticxml/staticxml.hpp"
 #include "cgimap/backend.hpp"
+#include "cgimap/options.hpp"
 #include "cgimap/output_formatter.hpp"
 #include "cgimap/api06/id_version.hpp"
 
@@ -791,7 +792,7 @@ private:
 
 struct staticxml_backend : public backend {
   staticxml_backend()
-      : m_name("staticxml"), m_options("Static XML backend options") {
+      : m_name(Options::BACKEND_TYPE_STATICXML), m_options("Static XML backend options") {
     m_options.add_options()("file", po::value<string>(),
                             "file to load static OSM XML from.");
   }
@@ -800,18 +801,17 @@ struct staticxml_backend : public backend {
   const string &name() const { return m_name; }
   const po::options_description &options() const { return m_options; }
 
-  shared_ptr<data_selection::factory> create(const po::variables_map &opts) {
-    std::string file = opts["file"].as<std::string>();
+  shared_ptr<data_selection::factory> create() {
+    std::string file = Options::get_instance().get_staticxml_path();
     return std::make_shared<factory>(file);
   }
 
-  shared_ptr<data_update::factory> create_data_update(const po::variables_map &) {
+  shared_ptr<data_update::factory> create_data_update() {
     return nullptr;   // Data update operations not supported by staticxml backend
   }
 
 
-  std::shared_ptr<oauth::store> create_oauth_store(
-    const po::variables_map &) {
+  std::shared_ptr<oauth::store> create_oauth_store() {
     return std::shared_ptr<oauth::store>();
   }
 

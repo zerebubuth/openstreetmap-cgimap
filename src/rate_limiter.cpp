@@ -1,6 +1,7 @@
 #include <vector>
 #include <libmemcached/memcached.h>
 
+#include "cgimap/options.hpp"
 #include "cgimap/rate_limiter.hpp"
 
 rate_limiter::~rate_limiter() = default;
@@ -21,7 +22,8 @@ struct memcached_rate_limiter::state {
 
 memcached_rate_limiter::memcached_rate_limiter(
     const boost::program_options::variables_map &options) {
-  if (options.count("memcache") && (ptr = memcached_create(NULL)) != NULL) {
+  const Options &config_options = Options::get_instance();
+  if (!config_options.get_memcache_spec().empty() && (ptr = memcached_create(NULL)) != NULL) {
     memcached_server_st *server_list;
 
     memcached_behavior_set(ptr, MEMCACHED_BEHAVIOR_NO_BLOCK, 1);
@@ -29,7 +31,7 @@ memcached_rate_limiter::memcached_rate_limiter(
     // memcached_behavior_set(ptr, MEMCACHED_BEHAVIOR_SUPPORT_CAS, 1);
 
     server_list =
-        memcached_servers_parse(options["memcache"].as<std::string>().c_str());
+        memcached_servers_parse(config_options.get_memcache_spec().c_str());
 
     memcached_server_push(ptr, server_list);
 
@@ -38,17 +40,8 @@ memcached_rate_limiter::memcached_rate_limiter(
     ptr = NULL;
   }
 
-  if (options.count("ratelimit")) {
-    bytes_per_sec = options["ratelimit"].as<int>();
-  } else {
-    bytes_per_sec = 100 * 1024;
-  }
-
-  if (options.count("maxdebt")) {
-    max_bytes = options["maxdebt"].as<int>() * 1024 * 1024;
-  } else {
-    max_bytes = 250 * 1024 * 1024;
-  }
+  bytes_per_sec = config_options.get_rate_limit();
+  max_bytes = config_options.get_max_debt();
 }
 
 memcached_rate_limiter::~memcached_rate_limiter() {

@@ -3,13 +3,12 @@
 
 #include "cgimap/oauth.hpp"
 #include <pqxx/pqxx>
-#include <boost/program_options.hpp>
 
 /**
  */
 class oauth_store : public oauth::store {
 public:
-  oauth_store(const boost::program_options::variables_map &);
+  oauth_store();
   virtual ~oauth_store();
 
   boost::optional<std::string> consumer_secret(const std::string &consumer_key);

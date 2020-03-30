@@ -53,8 +53,9 @@ void ApiDB_Changeset_Updater::lock_current_changeset(bool check_max_elements_lim
 void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
 					       const bbox_t bbox) {
 
+  const Options &config_options = Options::get_instance();
   // Don't raise an exception when reaching exactly changeset max elements!
-  if (cs_num_changes + num_new_changes > Options::get_instance().get_changeset_max_elements()) {
+  if (cs_num_changes + num_new_changes > config_options.get_changeset_max_elements()) {
 
       auto r = m.exec(
 	  R"(SELECT to_char((now() at time zone 'utc'),'YYYY-MM-DD HH24:MI:SS "UTC"') as current_time)");
@@ -107,16 +108,16 @@ void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
       auto r =
         m.prepared("changeset_update")(cs_num_changes)(cs_bbox.minlat)(
           cs_bbox.minlon)(cs_bbox.maxlat)(cs_bbox.maxlon)(
-          Options::get_instance().get_timeout_open_max())(
-          Options::get_instance().get_timeout_idle())(changeset)
+          config_options.get_timeout_open_max())(
+          config_options.get_timeout_idle())(changeset)
       .exec();
 
       if (r.affected_rows() != 1)
 	throw http::server_error("Cannot update changeset");
   } else {
       auto r = m.prepared("changeset_update")(cs_num_changes)()()()()(
-        Options::get_instance().get_timeout_open_max())(
-        Options::get_instance().get_timeout_idle())(changeset)
+        config_options.get_timeout_open_max())(
+        config_options.get_timeout_idle())(changeset)
       .exec();
 
       if (r.affected_rows() != 1)

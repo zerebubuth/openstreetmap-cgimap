@@ -103,21 +103,28 @@ CGImap with lighttpd you will need to install lighttpd:
 
 	sudo apt-get install lighttpd
 
-Edit the supplied lighttpd.config file to include your CGImap path and run it with the lighttpd like
+Edit the supplied `config/lighttpd.conf` file to include your CGImap path and run it with the lighttpd like
 
-	/usr/sbin/lighttpd -f lighttpd.conf
+	/usr/sbin/lighttpd -f config/lighttpd.conf
 
 You can then access the running instance at `http://localhost:31337/api/0.6/map?bbox=...`
 
 The api.osm.org instance runs CGImap as a daemon and Apache with
 [mod_fastcgi_handler](https://github.com/hollow/mod_fastcgi_handler).
 An init.d script to run CGImap as a daemon is supplied in
-scripts/cgimap.init. To use it modify the paths and environment
+`config/cgimap.init`. To use it modify the paths and environment
 variables to suit your installation, copy it to `/etc/init.d/cgibin` and
 change the mode to 755, and owner:group to root:root.
 
 An example of this can be found in
 [OSM Chef](http://git.openstreetmap.org/chef.git/blob/HEAD:/cookbooks/web/recipes/cgimap.rb).
+
+For more recent operating systems using systemd instead of init
+`config/cgimap.service` is provided to run CGImap as a daemon.  To
+use it modify the paths, set environment variables or the settings
+in the config file, copy it to `/etc/systemd/system/cgimap.service`.
+Change the mode to 755, and owner:group to root:root.  To enable the service us
+`systemctl enable cgimap` and to start the service `systemctl start cgimap`.
 
 Typically you will need to modify the database connection parameters and path
 to the executable. See `./openstreetmap-cgimap --help` for a list of options.
@@ -125,14 +132,35 @@ To convert a command line option to an environment variable append `CGIMAP_` to
 the option and capatalize it. For example, the option `--dbname` becomes the
 environment variable `CGIMAP_DBNAME`.
 
+These connection parameters (and other settings) can be passed to the executable via
+command line arguements or in the XML configuration file located at `config/cgimap.xml.orig`.
+The location of this file can be set with the `--configfile` option or `make install`
+installs the file to `/usr/local/etc/cgimap/cgimap.xml.orig` and can be updated and renamed
+to `/usr/local/etc/cgimap/cgimap.xml` which is the default location that the cgimap
+executable looks for the file for configurations.
+
+There are other options that can be updated within the cgimap configuration file but
+the main one that must be updated is the `<apidb>` element and its attributes.
+
+    <backend type="apidb">
+      <!-- For type="apidb" -->
+      <apidb charset="utf8" host="127.0.0.1" port="5432" dbname="openstreetmap" username="vagrant" password="vagrant"/>
+      <!-- If different from default
+      <oauth charset="" host="" port="" dbname="" username="" password=""/>
+      <update charset="" host="" port="" dbname="" username="" password=""/>
+       -->
+    </backend>
+
+Command line arguments override any configuration settings set within the `cgimap.xml` file.
+
 Fcgi programs can be deployed with Apache using `mod_fastcgi_handler`,
 `mod_fcgid`, `mod_fastcgi`, and on recent versions `mod_proxy_fcgi`. A sample
 Apache configuration file that will work in conjunction with CGImap as a
-daemon is supplied in `scripts/cgibin.conf`. To use this on a Ubuntu-based
+daemon is supplied in `scripts/cgimap.conf`. To use this on a Ubuntu-based
 system you need to copy the cofiguration to where Apache will read it and
 create an api directory:
 
-    sudo cp scripts/cgimap.conf /etc/apache2/sites-available/cgimap
+    sudo cp config/cgimap.conf /etc/apache2/sites-available/cgimap
     sudo chmod 644 /etc/apache2/sites-available/cgimap
     sudo chown root:root /etc/apache2/sites-available/cgimap
     sudo mkdir /var/www/api
