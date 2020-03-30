@@ -16,13 +16,7 @@ std::string connect_db_str() {
                              "name for OAuth connections.");
   }
 
-  ostr << " " << "dbname=" << config_options.get_backend_dbname(type);
-  ostr << " " << "host=" << config_options.get_backend_host(type);
-  ostr << " " << "user=" << config_options.get_backend_username(type);
-  ostr << " " << "password=" << config_options.get_backend_password(type);
-  ostr << " " << "port=" << config_options.get_backend_port(type);
-
-  return ostr.str();
+  return config_options.get_connect_db_str(type);
 }
 
 } // anonymous namespace

@@ -23,24 +23,7 @@ using std::shared_ptr;
 
 namespace {
 std::string connect_db_str() {
-  // build the connection string.
-  std::ostringstream ostr;
-  const Options &config_options = Options::get_instance();
-  ostr << "dbname=" << config_options.get_backend_dbname();
-  if (!config_options.get_backend_host().empty()) {
-    ostr << " host=" << config_options.get_backend_host();
-  }
-  if (!config_options.get_backend_username().empty()) {
-    ostr << " user=" << config_options.get_backend_username();
-  }
-  if (!config_options.get_backend_password().empty()) {
-    ostr << " password=" << config_options.get_backend_password();
-  }
-  if (!config_options.get_backend_port().empty()) {
-    ostr << " port=" << config_options.get_backend_port();
-  }
-
-  return ostr.str();
+  return Options::get_instance().get_connect_db_str(Options::BackendType::Default);
 }
 
 inline data_selection::visibility_t

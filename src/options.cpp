@@ -108,6 +108,21 @@ void Options::parse_file(const std::string &options_path) {
     logger::message("Options file not found, using defaults.");
 }
 
+std::string Options::get_connect_db_str(BackendType type) const {
+  //  Build the connection string.
+  std::ostringstream ostr;
+  ostr << "dbname=" << get_backend_dbname(type);
+  if (!get_backend_host(type).empty())
+    ostr << " host=" << get_backend_host(type);
+  if (!get_backend_username(type).empty())
+    ostr << " user=" << get_backend_username(type);
+  if (!get_backend_password(type).empty())
+    ostr << " password=" << get_backend_password(type);
+  if (!get_backend_port(type).empty())
+    ostr << " port=" << get_backend_port(type);
+  return ostr.str();
+}
+
 void Options::on_start_element(const char *element, const char **attrs) {
   //  Check the main groupings and update the state
   if (!std::strcmp(element, "general")) {

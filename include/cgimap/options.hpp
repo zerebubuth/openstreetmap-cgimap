@@ -66,6 +66,7 @@ public:
     Oauth,
     Update
   };
+  std::string get_connect_db_str(BackendType type = BackendType::Default) const;
   const std::string& get_backend_charset(BackendType type = BackendType::Default) const
   { return get_server_info_by_type(type)->charset; }
   const std::string& get_backend_host(BackendType type = BackendType::Default) const

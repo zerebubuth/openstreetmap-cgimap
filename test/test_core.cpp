@@ -693,7 +693,7 @@ int main(int argc, char *argv[]) {
   try {
     po::variables_map vm;
     vm.insert(std::make_pair(std::string("backend"),
-                             po::variable_value("staticxml", false)));
+                             po::variable_value(std::string("staticxml"), false)));
     vm.insert(std::make_pair(std::string("file"),
                              po::variable_value(data_file.native(), false)));
 
