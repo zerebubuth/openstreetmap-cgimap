@@ -1711,7 +1711,7 @@ namespace {
         }
       }
 
-      // Delete two relation with references to each other
+      // Delete two relations with references to each other
       {
 	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
         auto sel = tdb.get_data_selection();
@@ -1732,8 +1732,31 @@ namespace {
         if (sel->check_relation_visibility(relation_id_2) != data_selection::deleted) {
   	  throw std::runtime_error("Relation should be deleted, but isn't");
         }
+
+        ++relation_version_1;
+        ++relation_version_2;
       }
 
+      // Revert deletion of two relations with master/child relationship
+      {
+	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+        auto sel = tdb.get_data_selection();
+        auto upd = tdb.get_data_update();
+        auto rel_updater = upd->get_relation_updater(change_tracking);
+
+
+        try {
+	  rel_updater->modify_relation(1, relation_id_1, relation_version_1,
+					  { {"Relation", static_cast<osm_nwr_signed_id_t>(relation_id_2), ""} }, {});
+	  rel_updater->modify_relation(1, relation_id_2, relation_version_2,
+					  {}, {});
+	  rel_updater->process_modify_relations();
+
+	  upd->commit();
+	} catch (http::exception& e) {
+	    throw std::runtime_error((boost::format("Revert deletion of master/child relations: HTTP Exception unexpected: %1% ") % e.what()).str());
+	}
+      }
 
       // Try to delete already deleted relation (if-unused not set)
       {
