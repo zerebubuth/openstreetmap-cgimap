@@ -151,6 +151,16 @@ private:
   void delete_current_relation_members(const std::vector<osm_nwr_id_t> &ids);
 
   void delete_current_relation_tags(const std::vector<osm_nwr_id_t> &ids);
+  void
+  remove_blocked_relations_from_deletion_list (
+      std::set<osm_nwr_id_t> relations_to_exclude_from_deletion,
+      std::map<osm_nwr_id_t, osm_nwr_signed_id_t> &id_to_old_id,
+      std::vector<relation_t> &updated_relations);
+
+  void
+  extend_deletion_block_to_relation_children (
+      const std::set<osm_nwr_id_t> & direct_relation_ids, std::set<osm_nwr_id_t> ids_if_unused,
+      std::set<osm_nwr_id_t> &relations_to_exclude_from_deletion);
 
   Transaction_Manager &m;
   std::shared_ptr<api06::OSMChange_Tracking> ct;
