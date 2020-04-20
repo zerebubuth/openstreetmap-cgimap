@@ -109,7 +109,8 @@ private:
   std::set<osm_nwr_id_t>
   determine_already_deleted_relations(const std::vector<relation_t> &relations);
 
-  void lock_future_members(const std::vector<relation_t> &relations);
+  void lock_future_members(const std::vector<relation_t> &relations,
+			   const std::vector<osm_nwr_id_t>& already_locked_relations);
 
   std::set<osm_nwr_id_t>
   relations_with_new_relation_members(const std::vector<relation_t> &relations);

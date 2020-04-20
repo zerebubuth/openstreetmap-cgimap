@@ -135,7 +135,7 @@ void ApiDB_Relation_Updater::process_new_relations() {
   ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
 
   lock_current_relations(ids);
-  lock_future_members(create_relations);
+  lock_future_members(create_relations, ids);
 
   insert_new_current_relation_tags(create_relations);
   insert_new_current_relation_members(create_relations);
@@ -183,7 +183,7 @@ void ApiDB_Relation_Updater::process_modify_relations() {
 
     check_current_relation_versions(modify_relations_package);
 
-    lock_future_members(modify_relations_package);
+    lock_future_members(modify_relations_package, ids);
 
     // Analyse required updates to the bbox before applying changes to the
     // database
@@ -684,7 +684,8 @@ ApiDB_Relation_Updater::determine_already_deleted_relations(
 }
 
 void ApiDB_Relation_Updater::lock_future_members(
-    const std::vector<relation_t> &relations) {
+    const std::vector<relation_t> &relations,
+    const std::vector<osm_nwr_id_t>& already_locked_relations) {
 
   // Ids for Shared Locking
   std::vector<osm_nwr_id_t> node_ids;
@@ -697,8 +698,21 @@ void ApiDB_Relation_Updater::lock_future_members(
         node_ids.push_back(rm.member_id);
       else if (rm.member_type == "Way")
         way_ids.push_back(rm.member_id);
-      else if (rm.member_type == "Relation")
-        relation_ids.push_back(rm.member_id);
+      else if (rm.member_type == "Relation") {
+
+        /*  Only lock relations which haven't been previously locked by lock_current_relations.
+         *  Although, lock_current_relations did not check if those relations are visible,
+         *  we only lock future members in case of creating or modifying relations.
+         *  Newly created relations are visible by default (v1), modified relations will
+         *  be set to visible by update_current_relations before committing.
+         */
+
+        if (std::find(already_locked_relations.begin(),
+                      already_locked_relations.end(),
+                      rm.member_id) == already_locked_relations.end()) {
+          relation_ids.push_back(rm.member_id);
+        }
+      }
     }
   }
 
@@ -715,9 +729,6 @@ void ApiDB_Relation_Updater::lock_future_members(
   std::sort(relation_ids.begin(), relation_ids.end());
   relation_ids.erase(std::unique(relation_ids.begin(), relation_ids.end()),
                      relation_ids.end());
-
-  // TODO: check if we should exclude our own list of relation ids from the
-  // check
 
   // sequence nodes/way/relations??
 
