@@ -161,6 +161,9 @@ private:
   extend_deletion_block_to_relation_children (
       const std::set<osm_nwr_id_t> & direct_relation_ids, std::set<osm_nwr_id_t> ids_if_unused,
       std::set<osm_nwr_id_t> &relations_to_exclude_from_deletion);
+  std::set<osm_nwr_id_t>
+  collect_recursive_relation_rel_member_ids (
+      const std::set<osm_nwr_id_t> &direct_relation_ids);
 
   Transaction_Manager &m;
   std::shared_ptr<api06::OSMChange_Tracking> ct;
