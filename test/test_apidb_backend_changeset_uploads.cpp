@@ -1830,6 +1830,96 @@ namespace {
   	    throw std::runtime_error("Expected HTTP 404 Not found");
         }
       }
+
+      {
+
+	// Deleting child/parent in three level nested relations
+
+        // Test case for https://github.com/zerebubuth/openstreetmap-cgimap/issues/223
+
+	osm_nwr_id_t relation_l3_id_1;
+	osm_version_t relation_l3_version_1;
+	osm_nwr_id_t relation_l3_id_2;
+	osm_version_t relation_l3_version_2;
+	osm_nwr_id_t relation_l3_id_3;
+	osm_version_t relation_l3_version_3;
+
+
+	// Create three relations with grandparent/parent/child relationship
+	{
+	  auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+
+	  auto upd = tdb.get_data_update();
+	  auto rel_updater = upd->get_relation_updater(change_tracking);
+
+	  try {
+	      rel_updater->add_relation(1, -1, { }, {{"key1", "value1"}});
+	      rel_updater->add_relation(1, -2, { { "Relation", -1, "role2" }}, {{"key2", "value2"}});
+	      rel_updater->add_relation(1, -3, { { "Relation", -2, "role3" }}, {{"key3", "value3"}});
+	      rel_updater->process_new_relations();
+	  } catch (http::exception& e) {
+	      std::cerr << e.what() << std::endl;
+	      throw std::runtime_error("Create three relations w/ grandparent/parent/child: HTTP Exception unexpected");
+	  }
+
+	  upd->commit();
+
+	  if (change_tracking->created_relation_ids.size() != 3)
+	    throw std::runtime_error("Expected 3 entry in created_relation_ids");
+
+	  relation_l3_id_1 = change_tracking->created_relation_ids[0].new_id;
+	  relation_l3_version_1 = change_tracking->created_relation_ids[0].new_version;
+
+	  relation_l3_id_2 = change_tracking->created_relation_ids[1].new_id;
+	  relation_l3_version_2 = change_tracking->created_relation_ids[1].new_version;
+
+	  relation_l3_id_3 = change_tracking->created_relation_ids[2].new_id;
+	  relation_l3_version_3 = change_tracking->created_relation_ids[2].new_version;
+	}
+
+	// Try to delete child/parent relations which still belong to grandparent relation, if-unused set
+	{
+	  auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	  auto sel = tdb.get_data_selection();
+	  auto upd = tdb.get_data_update();
+	  auto rel_updater = upd->get_relation_updater(change_tracking);
+
+	  try {
+	      rel_updater->delete_relation(1, relation_l3_id_1, relation_l3_version_1, true);
+	      rel_updater->delete_relation(1, relation_l3_id_2, relation_l3_version_2, true);
+	      rel_updater->process_delete_relations();
+	  } catch (http::exception& e) {
+	      throw std::runtime_error("HTTP Exception unexpected");
+	  }
+
+	  if (change_tracking->skip_deleted_relation_ids.size() != 2)
+	    throw std::runtime_error("Expected 2 entries in skip_deleted_relation_ids level 3 relations");
+
+	  if (change_tracking->skip_deleted_relation_ids[0].new_version != 1)
+	    throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_relation_ids level 3 relations, level 0")
+	  % 1).str());
+
+	  if (change_tracking->skip_deleted_relation_ids[0].new_id != relation_l3_id_1)
+	    throw std::runtime_error((boost::format("Expected new id == %1% in skip_deleted_relation_ids level 3 relations, level 0")
+	  % relation_l3_id_1).str());
+
+	  if (change_tracking->skip_deleted_relation_ids[1].new_version != 1)
+	    throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_relation_ids level 3 relations, level 1")
+	  % 1).str());
+
+	  if (change_tracking->skip_deleted_relation_ids[1].new_id != relation_l3_id_2)
+	    throw std::runtime_error((boost::format("Expected new id == %1% in skip_deleted_relation_ids level 3 relations, level 1")
+	  % relation_l3_id_2).str());
+
+	  if (change_tracking->deleted_relation_ids.size() > 0)
+	    throw std::runtime_error("Expected 0 entries in deleted_relation_ids level 3 relations");
+
+	}
+
+
+      }
+
+
     }
 
   void test_changeset_update(test_database &tdb) {
