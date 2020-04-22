@@ -135,7 +135,7 @@ void ApiDB_Relation_Updater::process_new_relations() {
   ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
 
   lock_current_relations(ids);
-  lock_future_members(create_relations);
+  lock_future_members(create_relations, ids);
 
   insert_new_current_relation_tags(create_relations);
   insert_new_current_relation_members(create_relations);
@@ -183,7 +183,7 @@ void ApiDB_Relation_Updater::process_modify_relations() {
 
     check_current_relation_versions(modify_relations_package);
 
-    lock_future_members(modify_relations_package);
+    lock_future_members(modify_relations_package, ids);
 
     // Analyse required updates to the bbox before applying changes to the
     // database
@@ -684,7 +684,8 @@ ApiDB_Relation_Updater::determine_already_deleted_relations(
 }
 
 void ApiDB_Relation_Updater::lock_future_members(
-    const std::vector<relation_t> &relations) {
+    const std::vector<relation_t> &relations,
+    const std::vector<osm_nwr_id_t>& already_locked_relations) {
 
   // Ids for Shared Locking
   std::vector<osm_nwr_id_t> node_ids;
@@ -697,8 +698,21 @@ void ApiDB_Relation_Updater::lock_future_members(
         node_ids.push_back(rm.member_id);
       else if (rm.member_type == "Way")
         way_ids.push_back(rm.member_id);
-      else if (rm.member_type == "Relation")
-        relation_ids.push_back(rm.member_id);
+      else if (rm.member_type == "Relation") {
+
+        /*  Only lock relations which haven't been previously locked by lock_current_relations.
+         *  Although, lock_current_relations did not check if those relations are visible,
+         *  we only lock future members in case of creating or modifying relations.
+         *  Newly created relations are visible by default (v1), modified relations will
+         *  be set to visible by update_current_relations before committing.
+         */
+
+        if (std::find(already_locked_relations.begin(),
+                      already_locked_relations.end(),
+                      rm.member_id) == already_locked_relations.end()) {
+          relation_ids.push_back(rm.member_id);
+        }
+      }
     }
   }
 
@@ -715,9 +729,6 @@ void ApiDB_Relation_Updater::lock_future_members(
   std::sort(relation_ids.begin(), relation_ids.end());
   relation_ids.erase(std::unique(relation_ids.begin(), relation_ids.end()),
                      relation_ids.end());
-
-  // TODO: check if we should exclude our own list of relation ids from the
-  // check
 
   // sequence nodes/way/relations??
 
@@ -1404,41 +1415,172 @@ void ApiDB_Relation_Updater::save_current_relation_members_to_history(
       m.exec_prepared("current_relation_members_to_history", ids);
 }
 
+void
+ApiDB_Relation_Updater::remove_blocked_relations_from_deletion_list (
+    std::set<osm_nwr_id_t> relations_to_exclude_from_deletion,
+    std::map<osm_nwr_id_t, osm_nwr_signed_id_t> &id_to_old_id,
+    std::vector<relation_t> &updated_relations)
+{
+  // Prepare updated list of relations, which no longer contains objects that are
+  // still in use by relations. We will simply skip those relations from now on
+
+  if (relations_to_exclude_from_deletion.empty())
+    return;
+
+  updated_relations.erase(std::remove_if(updated_relations.begin(), updated_relations.end(),
+			    [&](const relation_t &a) {
+				    return relations_to_exclude_from_deletion.find(a.id) !=
+					   relations_to_exclude_from_deletion.end(); }),
+			    updated_relations.end());
+
+  // Return old_id, new_id and current version to the caller in case of
+  // if-unused, so it's clear that the delete operation was *not* executed,
+  // but simply skipped
+  m.prepare("still_referenced_relations", "SELECT id, version FROM current_relations WHERE id = ANY($1)");
+
+  auto r = m.exec_prepared ("still_referenced_relations", relations_to_exclude_from_deletion);
+
+  if (r.affected_rows() != relations_to_exclude_from_deletion.size())
+    throw http::server_error (
+	"Could not get details about still referenced relations");
+
+  for (const auto &row : r) {
+    // We have identified a node that is still used in a way or relation.
+    // However, the caller has indicated via if-unused flag that deletion
+    // should not lead to an error. All we can do now is to return old_id,
+    // new_id and the current version to the caller
+    ct->skip_deleted_relation_ids.push_back(
+	  { id_to_old_id[row["id"].as<osm_nwr_id_t>()],
+	    row["id"].as< osm_nwr_id_t>(),
+	    row["version"].as<osm_version_t>() });
+  }
+}
+
+std::set<osm_nwr_id_t>
+ApiDB_Relation_Updater::collect_recursive_relation_rel_member_ids (
+    const std::set<osm_nwr_id_t> &direct_relation_ids)
+{
+  // Calculate transitive closure of all relation ids' relation member children
+
+  std::set<osm_nwr_id_t> calc_relation_children_ids; // list of relation ids for which member relations are to be extracted
+  std::set<osm_nwr_id_t> transitive_relation_children_ids; // transitive list of all relation members
+
+  if (direct_relation_ids.empty())
+    return transitive_relation_children_ids;
+
+  calc_relation_children_ids = direct_relation_ids;
+
+  m.prepare("calc_child_relation_ids_for_relation_ids",
+      R"(
+           WITH relations_to_check (id) AS (
+              SELECT * FROM
+                UNNEST( CAST($1 AS bigint[]) )
+           )
+           SELECT DISTINCT current_relation_members.member_id
+           FROM current_relations
+             INNER JOIN relations_to_check c
+                     ON current_relations.id = c.id
+             INNER JOIN current_relation_members
+                     ON current_relation_members.relation_id = current_relations.id
+                    AND current_relation_members.member_type = 'Relation'
+       )");
+
+  // Recursively iterate over list of relation ids and extract relation member ids
+  do {
+    std::set<osm_nwr_id_t> next_iteration_relation_ids;
+
+    auto r_children = m.exec_prepared("calc_child_relation_ids_for_relation_ids", calc_relation_children_ids);
+
+    for (const auto &row : r_children) {
+      auto rel_id = row["member_id"].as<osm_nwr_id_t> ();
+      auto res = transitive_relation_children_ids.insert (rel_id);
+
+      // Relation members are only added to next iteration if we haven't processed them before
+      if (res.second)
+        next_iteration_relation_ids.insert (rel_id);
+    }
+
+    calc_relation_children_ids.swap(next_iteration_relation_ids);
+
+  } while (!calc_relation_children_ids.empty()); // stop processing if we didn't find new relations
+
+  return transitive_relation_children_ids;
+}
+
+void
+ApiDB_Relation_Updater::extend_deletion_block_to_relation_children (
+    const std::set<osm_nwr_id_t> & direct_relation_ids, std::set<osm_nwr_id_t> ids_if_unused,
+    std::set<osm_nwr_id_t> &relations_to_exclude_from_deletion)
+{
+
+  if (direct_relation_ids.empty() || ids_if_unused.empty())
+    return;
+
+  /*
+   Assuming again that we want to delete relations 9 and 10, where relation 10 is member of
+   an (external) relation 11. The called provided an "if-unsued="true".
+   As we didn't throw an error message earlier on, we need to figure out all relations
+   that may not be deleted.
+
+   Following our previous example, relation_still_referenced_by_relation
+   would only mark relation 10 to have an outside dependency on relation 11.
+
+   Relation 9 ---(member of)---> Relation 10 ---(member of)---> Relation 11
+
+   Relation 10 was already be skipped earlier on by being added
+   to relations_to_exclude_from_deletion. However, we cannot not assume
+   it's safe to delete relation 9, because it is still a member of relation 10.
+
+   More generally, we need to calculate the transitive closure of all relation ids'
+   children that have previously found be dependent on an external relation.
+
+   Those relation ids need to be excluded from deletion, in case they have a relation id
+   in ids_if_unused (=caller has set the "if_used" flag to true)
+  */
+
+  auto transitive_relation_children_ids = collect_recursive_relation_rel_member_ids(direct_relation_ids);
+
+  // Mark all child relations of still referenced relations to be excluded from deletion
+  for (const auto id : transitive_relation_children_ids) {
+    if (ids_if_unused.find(id) != ids_if_unused.end()) {
+      relations_to_exclude_from_deletion.insert(id);
+    }
+  }
+}
+
 std::vector<ApiDB_Relation_Updater::relation_t>
 ApiDB_Relation_Updater::is_relation_still_referenced(
     const std::vector<relation_t> &relations) {
 
   /*
-   * Check if relation id is still referenced by "outside" relations,
-   * i.e. relations, that are not in the list of relations to be checked
-   *
-   * Assuming, we have two relations with parent/child relationships
-   * and we want to delete both of them. As there are no outside
-   * relationships, deleting is safe.
-   *
-   * Note: Current rails based implementation doesn't support this use case!)
-   *
-   * Example with dependencies to relations outside of "ids"
-   * ---------------------------------------------------------
-   *
-   * current_relations: ids:  9, 10, 11
-   *
-   * current_relation_members:   relation_id   -   member_id
-   *                                10                 9
-   *                                11                10
-   *
-   * Check if relations still referenced for rels 9 + 10 --> returns only 11
-   *
+    Check if relation id is still referenced by "outside" relations,
+    i.e. relations, that are not in the list of relations to be checked
+
+    Assuming, we have two relations with parent/child relationships
+    and we want to delete both of them. As there are no outside
+    relationships, deleting is safe.
+
+    Note: Current rails based implementation doesn't support this use case!)
+
+    Example with dependencies to relations outside of "ids"
+    ---------------------------------------------------------
+
+    current_relations: ids:  9, 10, 11
+
+    current_relation_members:   relation_id   -   member_id
+                                   10                 9
+                                   11                10
+
+    Check if relations still referenced for rels 9 + 10 --> returns only 11
+
    */
 
   if (relations.empty())
     return relations;
 
   std::vector<osm_nwr_id_t> ids;
-  std::set<osm_nwr_id_t>
-      ids_if_unused; // relation ids where if-used flag is set
-  std::set<osm_nwr_id_t>
-      ids_without_if_unused; // relation ids without if-used flag
+  std::set<osm_nwr_id_t>    ids_if_unused; // relation ids where if-used flag is set
+  std::set<osm_nwr_id_t>    ids_without_if_unused; // relation ids without if-used flag
   std::map<osm_nwr_id_t, osm_nwr_signed_id_t> id_to_old_id;
 
   for (const auto &rel : relations) {
@@ -1453,6 +1595,10 @@ ApiDB_Relation_Updater::is_relation_still_referenced(
 
   std::vector<relation_t> updated_relations = relations;
   std::set<osm_nwr_id_t> relations_to_exclude_from_deletion;
+
+  // Determine relation ids in our list of relations ids, which appear as a relation member
+  // in relations outside of our list of relations
+  // (direct external dependencies for our list of relations)
 
   m.prepare("relation_still_referenced_by_relation",
             R"(
@@ -1506,48 +1652,21 @@ ApiDB_Relation_Updater::is_relation_still_referenced(
     }
   }
 
-  // Prepare updated list of ways, which no longer contains object that are
-  // still in use by relations
-  // We will simply skip those nodes from now on
-
-  if (!relations_to_exclude_from_deletion.empty()) {
-    updated_relations.erase(
-        std::remove_if(updated_relations.begin(), updated_relations.end(),
-                       [&](const relation_t &a) {
-                         return relations_to_exclude_from_deletion.find(a.id) !=
-                                relations_to_exclude_from_deletion.end();
-                       }),
-        updated_relations.end());
-
-    // Return old_id, new_id and current version to the caller in case of
-    // if-unused, so it's clear that the delete operation was *not* executed,
-    // but simply skipped
-
-    m.prepare("still_referenced_relations",
-              "SELECT id, version FROM current_relations WHERE id = ANY($1)");
-
-    pqxx::result r = m.exec_prepared("still_referenced_relations", relations_to_exclude_from_deletion);
-
-    if (r.affected_rows() != relations_to_exclude_from_deletion.size())
-      throw http::server_error(
-          "Could not get details about still referenced relations");
-
-    std::set<osm_nwr_id_t> result;
-
-    for (const auto &row : r) {
-      result.insert(row["id"].as<osm_nwr_id_t>());
-
-      // We have identified a node that is still used in a way or relation.
-      // However, the caller has indicated via if-unused flag that deletion
-      // should not lead to an error. All we can do now is to return old_id,
-      // new_id and the current version to the caller
-
-      ct->skip_deleted_relation_ids.push_back(
-          { id_to_old_id[row["id"].as<osm_nwr_id_t>()],
-	    row["id"].as<osm_nwr_id_t>(),
-            row["version"].as<osm_version_t>() });
-    }
+  // Relation ids with direct dependency on external relations
+  std::set<osm_nwr_id_t> direct_relation_ids;
+  for (const auto &row : r) {
+    auto rel_id = row["member_id"].as<osm_nwr_id_t> ();
+    direct_relation_ids.insert (rel_id);
   }
+
+  // if-used="true" requires children of relations with direct dependency
+  // on external relations to be excluded from deletion
+  extend_deletion_block_to_relation_children(direct_relation_ids, ids_if_unused, relations_to_exclude_from_deletion);
+
+  // Prepare updated list of relations, which no longer contains relations that are
+  // still in use by other relations. We will simply skip those relations from now on.
+  remove_blocked_relations_from_deletion_list(
+      relations_to_exclude_from_deletion, id_to_old_id, updated_relations);
 
   return updated_relations;
 }
