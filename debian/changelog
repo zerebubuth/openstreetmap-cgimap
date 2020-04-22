@@ -1,3 +1,11 @@
+openstreetmap-cgimap (0.8.2-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.8.2
+  * Fix relations referencing deleted elements (#226)
+  * Fix: revert deleted master/child relations (#225)
+
+ -- mmd osm <mmd.osm@gmail.com>  Wed, 22 Apr 2020 19:51:11 +0000
+
 openstreetmap-cgimap (0.8.1-1~bionic1) bionic; urgency=medium
 
   * Released version 0.8.1
