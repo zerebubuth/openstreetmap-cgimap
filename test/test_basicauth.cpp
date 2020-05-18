@@ -75,9 +75,9 @@ public:
   void write_changesets(output_formatter &formatter,
                         const std::chrono::system_clock::time_point &now) {}
 
-  visibility_t check_node_visibility(osm_nwr_id_t id) {}
-  visibility_t check_way_visibility(osm_nwr_id_t id) {}
-  visibility_t check_relation_visibility(osm_nwr_id_t id) {}
+  visibility_t check_node_visibility(osm_nwr_id_t id) { return non_exist; }
+  visibility_t check_way_visibility(osm_nwr_id_t id) { return non_exist; }
+  visibility_t check_relation_visibility(osm_nwr_id_t id) { return non_exist; }
 
   int select_nodes(const std::vector<osm_nwr_id_t> &) { return 0; }
   int select_ways(const std::vector<osm_nwr_id_t> &) { return 0; }
