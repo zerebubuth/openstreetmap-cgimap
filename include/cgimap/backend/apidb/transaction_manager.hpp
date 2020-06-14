@@ -59,9 +59,6 @@ public:
 
   void prepare(const std::string &name, const std::string &);
 
-  pqxx::prepare::invocation
-  prepared(const std::string &statement = std::string());
-
   pqxx::result exec(const std::string &query,
                     const std::string &description = std::string());
   void commit();
