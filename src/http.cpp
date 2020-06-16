@@ -1,5 +1,6 @@
 #include "cgimap/config.hpp"
 #include "cgimap/http.hpp"
+#include "cgimap/options.hpp"
 #include <vector>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
@@ -309,8 +310,8 @@ unsigned long parse_content_length(const std::string &content_length_str) {
     throw http::bad_request("CONTENT_LENGTH: extra characters at end of input");
   } else if (length < 0) {
     throw http::bad_request("CONTENT_LENGTH: invalid value");
-  } else if (length > STDIN_MAX)
-    throw http::payload_too_large((boost::format("CONTENT_LENGTH exceeds limit of %1% bytes") % STDIN_MAX).str());
+  } else if (length > global_settings::get_payload_max_size())
+    throw http::payload_too_large((boost::format("CONTENT_LENGTH exceeds limit of %1% bytes") % global_settings::get_payload_max_size()).str());
 
   return length;
 }

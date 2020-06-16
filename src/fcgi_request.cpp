@@ -1,6 +1,7 @@
 #include "cgimap/fcgi_request.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
+#include "cgimap/options.hpp"
 #include "cgimap/output_buffer.hpp"
 #include "cgimap/request_helpers.hpp"
 
@@ -101,8 +102,8 @@ const std::string fcgi_request::get_payload() {
 	  throw http::bad_request("Payload cannot be decompressed according to Content-Encoding");
       }
 
-      if (result.length() > STDIN_MAX)
-         throw http::payload_too_large((boost::format("Payload exceeds limit of %1% bytes") % STDIN_MAX).str());
+      if (result.length() > global_settings::get_payload_max_size())
+         throw http::payload_too_large((boost::format("Payload exceeds limit of %1% bytes") % global_settings::get_payload_max_size()).str());
   }
 
   if (content_length > 0 && result_length != content_length)

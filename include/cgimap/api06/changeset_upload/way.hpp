@@ -2,6 +2,7 @@
 #define WAY_HPP
 
 #include "osmobject.hpp"
+#include "cgimap/options.hpp"
 
 #include <string>
 #include <vector>
@@ -55,12 +56,12 @@ public:
                 .str());
       }
 
-      if (m_way_nodes.size() > WAY_MAX_NODES) {
+      if (m_way_nodes.size() > global_settings::get_way_max_nodes()) {
         throw http::bad_request(
             (boost::format(
                  "You tried to add %1% nodes to way %2%, however only "
                  "%3% are allowed") %
-             m_way_nodes.size() % (has_id() ? id() : 0) % WAY_MAX_NODES)
+             m_way_nodes.size() % (has_id() ? id() : 0) % global_settings::get_way_max_nodes())
                 .str());
       }
 
