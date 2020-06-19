@@ -109,7 +109,7 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
     ("maxdebt", po::value<int>(), "maximum debt (in Mb) to allow each client before rate limiting")
     ("port", po::value<int>(), "FCGI port number (e.g. 8000) to listen on. This option is for backwards compatibility, please use --socket for new configurations.")
     ("socket", po::value<string>(), "FCGI port number (e.g. :8000) or UNIX socket to listen on")
-    ("config", po::value<string>(), "Config file")
+    ("configfile", po::value<string>(), "Config file")
     ;
   // clang-format on
 
@@ -136,8 +136,8 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
   po::store(po::parse_command_line(argc, argv, desc), options);
   po::store(po::parse_environment(desc, environment_option_name), options);
 
-  if (options.count("config")) {
-    auto config_fname = options["config"].as<std::string>();
+  if (options.count("configfile")) {
+    auto config_fname = options["configfile"].as<std::string>();
     std::ifstream ifs(config_fname.c_str());
     if(ifs.fail()) {
        throw std::runtime_error("Error opening config file: " + config_fname);

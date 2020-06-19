@@ -22,7 +22,6 @@ map_responder::map_responder(mime::type mt, bbox b, data_selection_ptr &x)
   // are in or used by elements in the bbox
   int num_nodes = sel->select_nodes_from_bbox(b, global_settings::get_map_max_nodes());
 
-  // TODO: make configurable parameter?
   if (num_nodes > global_settings::get_map_max_nodes()) {
     throw http::bad_request(
         (format("You requested too many nodes (limit is %1%). "
