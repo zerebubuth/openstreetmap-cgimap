@@ -1,4 +1,5 @@
 
+#include "cgimap/options.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_input_format.hpp"
 #include "cgimap/api06/changeset_upload/parser_callback.hpp"
 
@@ -651,7 +652,7 @@ void test_way() {
   {
     std::ostringstream os;
 
-    for (int i = 1; i <= WAY_MAX_NODES + 1; i++) {
+    for (int i = 1; i <= global_settings::get_way_max_nodes() + 1; i++) {
       os << (boost::format(R"(<nd ref="-%1%"/>)") % i).str();
 
       try {
@@ -660,7 +661,7 @@ void test_way() {
                  R"(<osmChange><create><way changeset="858" id="-1">%1%</way></create></osmChange>)") %
              os.str())
                 .str());
-        if (i > WAY_MAX_NODES)
+        if (i > global_settings::get_way_max_nodes())
           throw std::runtime_error(
               "test_way::020: Expected exception for way max nodes exceeded");
       } catch (http::exception &e) {
@@ -668,12 +669,12 @@ void test_way() {
           throw std::runtime_error("test_way::020: Expected HTTP 400");
         const std::string expected = (boost::format(
             "You tried to add %1% nodes to way %2%, however only "
-            "%3% are allowed") % i % -1 % WAY_MAX_NODES).str();
+            "%3% are allowed") % i % -1 % global_settings::get_way_max_nodes()).str();
         const std::string actual = std::string(e.what()).substr(0, expected.size());
         if (actual != expected)
           throw std::runtime_error(
               "test_node::040: Expected: you tried to add x nodes to way, got: " + actual);
-        if (i <= WAY_MAX_NODES)
+        if (i <= global_settings::get_way_max_nodes())
           throw std::runtime_error(
               "test_way::020: Unexpected exception for way "
               "max nodes below limit");

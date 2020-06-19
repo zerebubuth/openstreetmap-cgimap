@@ -7,16 +7,17 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include <cmath>
-#include <fstream>
-#include <stdexcept>
-#include <vector>
-#include <map>
-#include <string>
-#include <memory>
 #include <algorithm>
 #include <cerrno>
 #include <csignal>
+#include <cmath>
+#include <fstream>
+#include <map>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <sstream>
+#include <vector>
 #include <sys/wait.h>
 
 #include "cgimap/bbox.hpp"
@@ -31,6 +32,7 @@
 #include "cgimap/choose_formatter.hpp"
 #include "cgimap/backend.hpp"
 #include "cgimap/fcgi_request.hpp"
+#include "cgimap/options.hpp"
 #include "cgimap/process_request.hpp"
 #include "cgimap/config.hpp"
 
@@ -107,14 +109,42 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
     ("maxdebt", po::value<int>(), "maximum debt (in Mb) to allow each client before rate limiting")
     ("port", po::value<int>(), "FCGI port number (e.g. 8000) to listen on. This option is for backwards compatibility, please use --socket for new configurations.")
     ("socket", po::value<string>(), "FCGI port number (e.g. :8000) or UNIX socket to listen on")
+    ("configfile", po::value<string>(), "Config file")
     ;
   // clang-format on
 
   // add the backend options to the options description
   setup_backend_options(argc, argv, desc);
 
+  po::options_description expert("Expert settings");
+
+  // clang-format off
+  expert.add_options()
+    ("max_payload_size", po::value<int>(), "Maximum size of HTTP body payload accepted by uploads, after decompression (in bytes)")
+    ("map_nodes_max", po::value<int>(), "Maximum number of nodes returned by the /map endpoint")
+    ("map_area_max", po::value<double>(), "Maximum permitted area for /map endpoint")
+    ("changeset_timeout_open_max", po::value<string>(), "Maximum permitted open time period for a changeset")
+    ("changeset_timeout_idle", po::value<string>(), "Time period that a changeset will remain open after the last edit")
+    ("changeset_max_elements", po::value<int>(), "Maximum number of elements permitted in one changeset")
+    ("way_max_nodes", po::value<int>(), "Maximum number of nodes permitted in a way")
+    ("scale", po::value<int>(), "Conversion factor from double lat/lon format to internal int format used for database persistence")
+    ;
+  // clang-format on
+
+  desc.add(expert);
+
   po::store(po::parse_command_line(argc, argv, desc), options);
   po::store(po::parse_environment(desc, environment_option_name), options);
+
+  if (options.count("configfile")) {
+    auto config_fname = options["configfile"].as<std::string>();
+    std::ifstream ifs(config_fname.c_str());
+    if(ifs.fail()) {
+       throw std::runtime_error("Error opening config file: " + config_fname);
+    }
+    po::store(po::parse_config_file(ifs, desc), options);
+  }
+
   po::notify(options);
 
   if (options.count("help")) {
@@ -257,6 +287,9 @@ int main(int argc, char **argv) {
 
     // get options
     get_options(argc, argv, options);
+
+    // set global_settings based on provided options
+    global_settings::set_configuration(std::unique_ptr<global_settings_base>(new global_settings_via_options(options)));
 
     // get the socket to use
     if (options.count("socket")) {

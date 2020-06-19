@@ -3,6 +3,7 @@
 #include "cgimap/backend/apidb/pgsql_update.hpp"
 #include "cgimap/backend/apidb/oauth_store.hpp"
 #include "cgimap/backend.hpp"
+#include "cgimap/options.hpp"
 
 #include <memory>
 #include <sstream>
@@ -11,7 +12,6 @@ namespace po = boost::program_options;
 using std::shared_ptr;
 using std::string;
 
-#define CACHE_SIZE 100000
 
 namespace {
 struct apidb_backend : public backend {
@@ -26,7 +26,7 @@ struct apidb_backend : public backend {
        "database character set")
       ("readonly", "(obsolete parameter, read only backend is always assumed)")
       ("disable-api-write", "disable API write operations")
-      ("cachesize", po::value<size_t>()->default_value(CACHE_SIZE),
+      ("cachesize", po::value<size_t>()->default_value(100000),
        "maximum size of changeset cache")
       ("dbport", po::value<string>(),
        "database port number or UNIX socket file name")

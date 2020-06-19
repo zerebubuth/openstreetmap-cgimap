@@ -10,6 +10,7 @@
 #include "cgimap/config.hpp"
 #include "cgimap/time.hpp"
 #include "cgimap/oauth.hpp"
+#include "cgimap/options.hpp"
 #include "cgimap/rate_limiter.hpp"
 #include "cgimap/routes.hpp"
 #include "cgimap/process_request.hpp"
@@ -1941,7 +1942,7 @@ namespace {
       try {
 	auto upd = tdb.get_data_update();
 	auto changeset_updater = upd->get_changeset_updater(1, 1);
-	changeset_updater->update_changeset(CHANGESET_MAX_ELEMENTS, {});  // use undefined bbox
+	changeset_updater->update_changeset(global_settings::get_changeset_max_elements(), {});  // use undefined bbox
       } catch (http::exception & e) {
 	  throw std::runtime_error("test_changeset_update:001 - HTTP Exception unexpected");
       }
@@ -1950,7 +1951,7 @@ namespace {
       try {
 	auto upd = tdb.get_data_update();
 	auto changeset_updater = upd->get_changeset_updater(1, 1);
-	changeset_updater->update_changeset(CHANGESET_MAX_ELEMENTS + 1, {});
+	changeset_updater->update_changeset(global_settings::get_changeset_max_elements() + 1, {});
       } catch (http::exception &e) {
 	  if (e.code() != 409)
 	    throw std::runtime_error("test_changeset_update:002 - Expected HTTP 409 Conflict");

@@ -138,6 +138,7 @@ libcgimap_core_la_SOURCES=\
 	mime_types.cpp \
         basicauth.cpp \
 	oauth.cpp \
+        options.cpp \
 	osm_responder.cpp \
 	osm_current_responder.cpp \
 	osm_diffresult_responder.cpp \
