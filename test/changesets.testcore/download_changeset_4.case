@@ -5,7 +5,7 @@ Request-URI: /api/0.6/changeset/4/download
 Date: 2017-03-13T09:54:00Z
 ---
 Status: 200 OK
-Content-Type: text/xml; charset=utf-8
+Content-Type: application/xml; charset=utf-8
 !Content-Disposition: 
 ---
 <osmChange version="0.6" generator="***" copyright="***" attribution="***" license="***">

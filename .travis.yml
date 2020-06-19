@@ -1,23 +1,63 @@
-sudo: required
-dist: bionic
 language: cpp
-compiler: gcc
 cache: ccache
-addons:
-  postgresql: 9.5
-  apt:
-    packages:
-      - libboost-dev
-      - libboost-filesystem-dev
-      - libboost-locale-dev
-      - libboost-program-options-dev
-      - libboost-system-dev
-      - libcrypto++-dev
-      - libfcgi-dev
-      - libmemcached-dev
-      - libpqxx-dev
-      - libxml2-dev
-      - libyajl-dev
+jobs:
+   include:
+     - dist: bionic
+       os: linux
+       compiler: gcc
+       addons:
+         postgresql: 9.5
+         apt:
+           packages:
+            - libboost-dev
+            - libboost-filesystem-dev
+            - libboost-locale-dev
+            - libboost-program-options-dev
+            - libboost-system-dev
+            - libcrypto++-dev
+            - libfcgi-dev
+            - libmemcached-dev
+            - libpqxx-dev
+            - libxml2-dev
+            - libyajl-dev
+     - dist: bionic
+       os: linux
+       compiler: gcc
+       addons:
+         postgresql: 11
+         apt:
+           packages:
+            - libboost-dev
+            - libboost-filesystem-dev
+            - libboost-locale-dev
+            - libboost-program-options-dev
+            - libboost-system-dev
+            - libcrypto++-dev
+            - libfcgi-dev
+            - libmemcached-dev
+            - libpqxx-dev
+            - libxml2-dev
+            - libyajl-dev
+     - dist: focal
+       os: linux
+       compiler: gcc
+       addons:
+         postgresql: 12
+         apt:
+           packages:
+            - libboost-dev
+            - libboost-filesystem-dev
+            - libboost-locale-dev
+            - libboost-program-options-dev
+            - libboost-system-dev
+            - libcrypto++-dev
+            - libfcgi-dev
+            - libmemcached-dev
+            - libpqxx-dev
+            - libxml2-dev
+            - libyajl-dev
+            - postgresql-12
+            - postgresql-client-12
 script:
   - ./autogen.sh
   - ./configure --enable-yajl CC="ccache gcc" CXX="ccache g++"

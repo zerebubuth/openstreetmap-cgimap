@@ -28,6 +28,9 @@ Currently, CGImap implements:
 * multiple node, way and relation specific version fetches,
 * relations for element (node, way, relation),
 * ways for node,
+* create changeset,
+* update changeset,
+* close changeset,
 * changeset downloads,
 * changeset uploads.
 
@@ -52,8 +55,7 @@ If you're running a Debian or Ubuntu system these can be installed
 using the following command:
 
     sudo apt-get install libxml2-dev libpqxx-dev libfcgi-dev \
-      libboost-dev libboost-regex-dev libboost-program-options-dev \
-      libboost-date-time-dev libboost-filesystem-dev \
+      libboost-dev libboost-program-options-dev libboost-filesystem-dev \
       libboost-system-dev libboost-locale-dev libmemcached-dev \
       libcrypto++-dev
 
@@ -67,8 +69,7 @@ with Ubuntu 18.04) - you may already have many or all of these - is:
 
     sudo apt-get install git build-essential automake autoconf libtool
 
-If you want to enable the experimental JSON format, then you'll also
-need:
+If you want to enable the OSM API JSON format, then you'll also need:
 
     sudo apt-get install libyajl-dev
 
@@ -81,7 +82,7 @@ Then change to the source code directory to configure and build:
 
     cd openstreetmap-cgimap/
     ./autogen.sh
-    ./configure
+    ./configure [--enable-yajl]
     make
 
 You should now have a "./openstreetmap-cgimap" executable in the current
@@ -191,3 +192,5 @@ CGImap contains code from and is partly based on the following:
   by TomH.
 * [GNU CGICC](http://www.gnu.org/software/cgicc/)
   by Stephen F. Booth and Sebastien Diaz.
+* [libxml++](https://gitlab.gnome.org/GNOME/libxmlplusplus/)
+  by The libxml++ development team

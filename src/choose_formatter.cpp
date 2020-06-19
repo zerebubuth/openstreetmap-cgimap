@@ -118,9 +118,10 @@ struct http_accept_grammar
 };
 /*
       = lit("* / *")      [_val = mime::any_type]
-      | lit("text/xml") [_val = mime::text_xml]
+      | lit("text/xml") [_val = mime::application_xml]
+      | lit("application/xml") [_val = mime::application_xml]
 #ifdef HAVE_YAJL
-      | lit("text/json")[_val = mime::text_json]
+      | lit("application/json")[_val = mime::application_json]
 #endif
       ;
 */
@@ -262,13 +263,13 @@ shared_ptr<output_formatter> create_formatter(request &req,
                                               shared_ptr<output_buffer> out) {
   shared_ptr<output_formatter> o_formatter;
 
-  if (best_type == mime::text_xml) {
+  if (best_type == mime::application_xml) {
     auto *xwriter = new xml_writer(out, true);
     o_formatter = shared_ptr<output_formatter>(new xml_formatter(xwriter));
 
 #ifdef HAVE_YAJL
-  } else if (best_type == mime::text_json) {
-    auto *jwriter = new json_writer(out, true);
+  } else if (best_type == mime::application_json) {
+    auto *jwriter = new json_writer(out, false);
     o_formatter = shared_ptr<output_formatter>(new json_formatter(jwriter));
 #endif
 

@@ -1,5 +1,5 @@
 # ===========================================================================
-#    http://www.gnu.org/software/autoconf-archive/ax_boost_filesystem.html
+#   https://www.gnu.org/software/autoconf-archive/ax_boost_filesystem.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -31,7 +31,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 26
+#serial 27
 
 AC_DEFUN([AX_BOOST_FILESYSTEM],
 [
@@ -77,7 +77,6 @@ AC_DEFUN([AX_BOOST_FILESYSTEM],
 					       ax_cv_boost_filesystem=yes, ax_cv_boost_filesystem=no)
          AC_LANG_POP([C++])
 		])
-		ax_lib=""
 		if test "x$ax_cv_boost_filesystem" = "xyes"; then
 			AC_DEFINE(HAVE_BOOST_FILESYSTEM,,[define if the Boost::Filesystem library is available])
             BOOSTLIBDIR=`echo $BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`

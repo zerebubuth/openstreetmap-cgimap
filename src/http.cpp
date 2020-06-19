@@ -95,7 +95,10 @@ conflict::conflict(const string &message)
     : exception(409, "Conflict", message) {}
 
 precondition_failed::precondition_failed(const string &message)
-    : exception(412, "Precondition Failed", message) {}
+    : exception(412, "Precondition Failed", message),
+      fullstring("Precondition failed: " + message) {}
+
+const char *precondition_failed::what() const noexcept { return fullstring.c_str(); }
 
 payload_too_large::payload_too_large(const string &message)
     : exception(413, "Payload Too Large", message) {}

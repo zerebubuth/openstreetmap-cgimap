@@ -1,7 +1,7 @@
 Request-Method: GET
 Request-URI: /api/0.6/map?bbox=-0.01,-0.01,-0.0005,-0.0005
 ---
-Content-Type: text/xml; charset=utf-8
+Content-Type: application/xml; charset=utf-8
 Content-Disposition: attachment; filename="map.osm"
 Status: 200 OK
 ---

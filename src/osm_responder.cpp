@@ -11,9 +11,9 @@ osm_responder::~osm_responder() = default;
 
 list<mime::type> osm_responder::types_available() const {
   list<mime::type> types;
-  types.push_back(mime::text_xml);
+  types.push_back(mime::application_xml);
 #ifdef HAVE_YAJL
-  types.push_back(mime::text_json);
+  types.push_back(mime::application_json);
 #endif
   return types;
 }

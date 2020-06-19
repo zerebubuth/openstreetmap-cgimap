@@ -21,39 +21,32 @@ const char *test_database::setup_error::what() const noexcept {
 }
 
 namespace {
+
 // reads a file of SQL statements, splits on ';' and tries to
 // execute them in a transaction.
-struct file_read_transactor : public pqxx::transactor<pqxx::work> {
-  file_read_transactor(const std::string &filename) : m_filename(filename) {}
+std::string read_file_contents(const std::string &filename) {
 
-  void operator()(pqxx::work &w) {
-    std::streamsize size = fs::file_size(m_filename);
-    std::string big_query(size, '\0');
-    std::ifstream in(m_filename.c_str());
-    in.read(&big_query[0], size);
-    if (in.fail() || (size != in.gcount())) {
-      throw std::runtime_error("Unable to read input SQL file.");
-    }
-    w.exec(big_query);
+  std::streamsize size = fs::file_size(filename);
+  std::string query(size, '\0');
+  std::ifstream in(filename.c_str());
+  in.read(&query[0], size);
+  if (in.fail() || (size != in.gcount())) {
+    throw std::runtime_error("Unable to read input SQL file.");
   }
+  return query;
+}
 
-  std::string m_filename;
-};
+void exec_sql_string(pqxx::connection& conn, const std::string &s) {
 
-struct truncate_all_tables : public pqxx::transactor<pqxx::work> {
-  void operator()(pqxx::work &w) {
-    w.exec("TRUNCATE TABLE users CASCADE");
-  }
-};
+  pqxx::work w{conn};
+  w.exec(s);
+  w.commit();
+}
 
-struct sql_string : public pqxx::transactor<pqxx::work> {
-  std::string m_sql;
-  sql_string(const std::string &s) : m_sql(s) {}
+void truncate_all_tables(pqxx::connection& conn) {
 
-  void operator()(pqxx::work &w) {
-    w.exec(m_sql);
-  }
-};
+  exec_sql_string(conn, "TRUNCATE TABLE users CASCADE");
+}
 
 } // anonymous namespace
 
@@ -165,7 +158,7 @@ void test_database::run(
   try {
     // clear out database before using it!
     pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
-    conn.perform(truncate_all_tables());
+    truncate_all_tables(conn);
 
     func(*this);
 
@@ -183,7 +176,7 @@ void test_database::run_update(
   try {
     // clear out database before using it!
     pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
-    conn.perform(truncate_all_tables());
+    truncate_all_tables(conn);
 
     func(*this);
 
@@ -228,9 +221,9 @@ std::shared_ptr<oauth::store> test_database::get_oauth_store() {
 
 void test_database::run_sql(const std::string &sql) {
   pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
-  conn.perform(sql_string(sql));
+  exec_sql_string(conn, sql);
 }
 
 void test_database::setup_schema(pqxx::connection &conn) {
-  conn.perform(file_read_transactor("test/structure.sql"));
+  exec_sql_string(conn, read_file_contents("test/structure.sql"));
 }

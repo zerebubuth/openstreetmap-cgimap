@@ -131,6 +131,9 @@ public:
 class precondition_failed : public exception {
 public:
   precondition_failed(const std::string &message);
+  const char *what() const noexcept;
+private:
+  std::string fullstring;
 };
 
 /**
