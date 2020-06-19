@@ -82,7 +82,7 @@ void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
 
    */
 
-  m.prepare("changeset_update",
+  m.prepare("changeset_update_w_bbox",
 	    R"( 
        UPDATE changesets 
        SET num_changes = ($1 :: integer),
@@ -102,19 +102,31 @@ void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
 
        )");
 
+  m.prepare("changeset_update",
+	    R"(
+       UPDATE changesets
+       SET num_changes = ($1 :: integer),
+           closed_at =
+             CASE
+                WHEN (closed_at - created_at) >
+                     (($2 ::interval) - ($3 ::interval)) THEN
+                  created_at + ($3 ::interval)
+                ELSE
+                  now() at time zone 'utc' + ($3 ::interval)
+             END
+       WHERE id = $4
+
+       )");
+
   if (valid_bbox) {
       auto r =
-	  m.prepared("changeset_update")(cs_num_changes)(cs_bbox.minlat)(
-	      cs_bbox.minlon)(cs_bbox.maxlat)(cs_bbox.maxlon)(MAX_TIME_OPEN)(
-		  IDLE_TIMEOUT)(changeset)
-		  .exec();
+	  m.exec_prepared("changeset_update_w_bbox", cs_num_changes, cs_bbox.minlat, cs_bbox.minlon,
+			  cs_bbox.maxlat, cs_bbox.maxlon, MAX_TIME_OPEN, IDLE_TIMEOUT, changeset);
 
       if (r.affected_rows() != 1)
 	throw http::server_error("Cannot update changeset");
   } else {
-      auto r = m.prepared("changeset_update")(cs_num_changes)()()()()(
-	  MAX_TIME_OPEN)(IDLE_TIMEOUT)(changeset)
-	  .exec();
+      auto r = m.exec_prepared("changeset_update", cs_num_changes, MAX_TIME_OPEN, IDLE_TIMEOUT, changeset);
 
       if (r.affected_rows() != 1)
 	throw http::server_error("Cannot update changeset");
@@ -183,7 +195,7 @@ void ApiDB_Changeset_Updater::api_close_changeset()
 void ApiDB_Changeset_Updater::lock_cs(bool& is_closed, std::string& closed_at, std::string& current_time)
 {
   // Only lock changeset if it belongs to user_id = uid
-  m.prepare (
+  m.prepare(
       "changeset_current_lock",
       R"( SELECT id, 
 		 user_id,
@@ -200,7 +212,7 @@ void ApiDB_Changeset_Updater::lock_cs(bool& is_closed, std::string& closed_at, s
 	  FOR UPDATE 
      )");
 
-  auto r = m.prepared ("changeset_current_lock")(changeset)(uid).exec ();
+  auto r = m.exec_prepared("changeset_current_lock", changeset, uid);
   if (r.affected_rows () != 1)
     throw http::conflict ("The user doesn't own that changeset");
 

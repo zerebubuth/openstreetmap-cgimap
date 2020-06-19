@@ -282,6 +282,7 @@ std::ostream &operator<<(std::ostream &out, const test_formatter::way_t &w) {
     out << "\"" << v.first << "\" => \"" << v.second << "\", ";
   }
   out << "})";
+  return out;
 }
 
 std::ostream &operator<<(std::ostream &out, const member_info &m) {
@@ -302,4 +303,5 @@ std::ostream &operator<<(std::ostream &out, const test_formatter::relation_t &r)
     out << "\"" << v.first << "\" => \"" << v.second << "\", ";
   }
   out << "})";
+  return out;
 }
