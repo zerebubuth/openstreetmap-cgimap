@@ -120,14 +120,14 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
 
   // clang-format off
   expert.add_options()
-    ("max_payload_size", po::value<int>(), "Maximum size of HTTP body payload accepted by uploads, after decompression (in bytes)")
-    ("map_nodes_max", po::value<int>(), "Maximum number of nodes returned by the /map endpoint")
-    ("map_area_max", po::value<double>(), "Maximum permitted area for /map endpoint")
-    ("changeset_timeout_open_max", po::value<string>(), "Maximum permitted open time period for a changeset")
-    ("changeset_timeout_idle", po::value<string>(), "Time period that a changeset will remain open after the last edit")
-    ("changeset_max_elements", po::value<int>(), "Maximum number of elements permitted in one changeset")
-    ("way_max_nodes", po::value<int>(), "Maximum number of nodes permitted in a way")
-    ("scale", po::value<int>(), "Conversion factor from double lat/lon format to internal int format used for database persistence")
+    ("max-payload", po::value<long>(), "max size of HTTP payload allowed for uploads, after decompression (in bytes)")
+    ("map-nodes", po::value<int>(), "max number of nodes allowed for /map endpoint")
+    ("map-area", po::value<double>(), "max area size allowed for /map endpoint")
+    ("changeset-timeout-open", po::value<string>(), "max open time period for a changeset")
+    ("changeset-timeout-idle", po::value<string>(), "time period a changeset will remain open after last edit")
+    ("max-changeset-elements", po::value<int>(), "max number of elements allowed in one changeset")
+    ("max-way-nodes", po::value<int>(), "max number of nodes allowed in one way (!!)")
+    ("scale", po::value<long>(), "conversion factor from double lat/lon to internal int format (!!)")
     ;
   // clang-format on
 
