@@ -18,7 +18,7 @@ struct apidb_backend : public backend {
   apidb_backend() : m_name("apidb"), m_options("ApiDB backend options") {
     // clang-format off
     m_options.add_options()
-      ("dbname", po::value<string>(), "database name")
+      ("dbname", po::value<string>()->required(), "database name")
       ("host", po::value<string>(), "database server host")
       ("username", po::value<string>(), "database user name")
       ("password", po::value<string>(), "database password")
@@ -63,18 +63,10 @@ struct apidb_backend : public backend {
 
   shared_ptr<data_selection::factory> create(const po::variables_map &opts) {
 
-    if (opts.count("dbname") == 0) {
-      throw std::runtime_error("database name not specified");
-    }
-
     return std::make_shared<readonly_pgsql_selection::factory>(opts);
   }
 
   shared_ptr<data_update::factory> create_data_update(const po::variables_map &opts) {
-
-    if (opts.count("dbname") == 0) {
-      throw std::runtime_error("database name not specified");
-    }
 
     return std::make_shared<pgsql_update::factory>(opts);
   }
