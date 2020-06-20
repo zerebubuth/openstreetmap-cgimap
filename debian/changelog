@@ -1,3 +1,9 @@
+openstreetmap-cgimap (0.8.2-1~focal1) focal; urgency=medium
+
+  * Focal test build
+
+ -- mmd osm <mmd.osm@gmail.com>  Sat, 20 Jun 2020 13:42:54 +0000
+
 openstreetmap-cgimap (0.8.2-1~bionic1) bionic; urgency=medium
 
   * Released version 0.8.2
