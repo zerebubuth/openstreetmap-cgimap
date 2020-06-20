@@ -109,16 +109,16 @@ public:
   }
 
 private:
-  void init_fallback_values(const global_settings_base & def);
-  void set_new_options(const po::variables_map & options);
-  void set_payload_max_size(const po::variables_map & options);
-  void set_map_max_nodes(const po::variables_map & options);
-  void set_map_area_max(const po::variables_map & options);
-  void set_changeset_timeout_open_max(const po::variables_map & options);
-  void set_changeset_timeout_idle(const po::variables_map & options);
-  void set_changeset_max_elements(const po::variables_map & options);
-  void set_way_max_nodes(const po::variables_map & options);
-  void set_scale(const po::variables_map & options);
+  void init_fallback_values(const global_settings_base &def);
+  void set_new_options(const po::variables_map &options);
+  void set_payload_max_size(const po::variables_map &options);
+  void set_map_max_nodes(const po::variables_map &options);
+  void set_map_area_max(const po::variables_map &options);
+  void set_changeset_timeout_open_max(const po::variables_map &options);
+  void set_changeset_timeout_idle(const po::variables_map &options);
+  void set_changeset_max_elements(const po::variables_map &options);
+  void set_way_max_nodes(const po::variables_map &options);
+  void set_scale(const po::variables_map &options);
   bool validate_timeout(const std::string &timeout) const;
 
   long m_payload_max_size;
