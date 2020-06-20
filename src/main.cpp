@@ -7,16 +7,17 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include <cmath>
-#include <fstream>
-#include <stdexcept>
-#include <vector>
-#include <map>
-#include <string>
-#include <memory>
 #include <algorithm>
 #include <cerrno>
 #include <csignal>
+#include <cmath>
+#include <fstream>
+#include <map>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <sstream>
+#include <vector>
 #include <sys/wait.h>
 
 #include "cgimap/bbox.hpp"
@@ -31,6 +32,7 @@
 #include "cgimap/choose_formatter.hpp"
 #include "cgimap/backend.hpp"
 #include "cgimap/fcgi_request.hpp"
+#include "cgimap/options.hpp"
 #include "cgimap/process_request.hpp"
 #include "cgimap/config.hpp"
 
@@ -107,14 +109,42 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
     ("maxdebt", po::value<int>(), "maximum debt (in Mb) to allow each client before rate limiting")
     ("port", po::value<int>(), "FCGI port number (e.g. 8000) to listen on. This option is for backwards compatibility, please use --socket for new configurations.")
     ("socket", po::value<string>(), "FCGI port number (e.g. :8000) or UNIX socket to listen on")
+    ("configfile", po::value<string>(), "Config file")
     ;
   // clang-format on
 
   // add the backend options to the options description
   setup_backend_options(argc, argv, desc);
 
+  po::options_description expert("Expert settings");
+
+  // clang-format off
+  expert.add_options()
+    ("max-payload", po::value<long>(), "max size of HTTP payload allowed for uploads, after decompression (in bytes)")
+    ("map-nodes", po::value<int>(), "max number of nodes allowed for /map endpoint")
+    ("map-area", po::value<double>(), "max area size allowed for /map endpoint")
+    ("changeset-timeout-open", po::value<string>(), "max open time period for a changeset")
+    ("changeset-timeout-idle", po::value<string>(), "time period a changeset will remain open after last edit")
+    ("max-changeset-elements", po::value<int>(), "max number of elements allowed in one changeset")
+    ("max-way-nodes", po::value<int>(), "max number of nodes allowed in one way (!!)")
+    ("scale", po::value<long>(), "conversion factor from double lat/lon to internal int format (!!)")
+    ;
+  // clang-format on
+
+  desc.add(expert);
+
   po::store(po::parse_command_line(argc, argv, desc), options);
   po::store(po::parse_environment(desc, environment_option_name), options);
+
+  if (options.count("configfile")) {
+    auto config_fname = options["configfile"].as<std::string>();
+    std::ifstream ifs(config_fname.c_str());
+    if(ifs.fail()) {
+       throw std::runtime_error("Error opening config file: " + config_fname);
+    }
+    po::store(po::parse_config_file(ifs, desc), options);
+  }
+
   po::notify(options);
 
   if (options.count("help")) {
@@ -258,6 +288,9 @@ int main(int argc, char **argv) {
     // get options
     get_options(argc, argv, options);
 
+    // set global_settings based on provided options
+    global_settings::set_configuration(std::unique_ptr<global_settings_base>(new global_settings_via_options(options)));
+
     // get the socket to use
     if (options.count("socket")) {
       if ((socket = fcgi_request::open_socket(options["socket"].as<string>(), 5)) < 0) {
@@ -356,6 +389,9 @@ int main(int argc, char **argv) {
         remove(options["pidfile"].as<string>().c_str());
       }
     }
+  } catch (const po::error & e) {
+    std::cerr << "Error: " << e.what() << "\n(\"openstreetmap-cgimap --help\" for help)" << std::endl;
+    return 1;
   } catch (const pqxx::sql_error &er) {
     // Catch-all for query related postgres exceptions
     std::cerr << "Error: " << er.what() << std::endl
@@ -369,7 +405,7 @@ int main(int argc, char **argv) {
 
   } catch (const std::exception &e) {
     logger::message(e.what());
-    std::cerr << "Exception: " << e.what() << std::endl;
+    std::cerr << "Error: " << e.what() << std::endl;
     return 1;
   }
 

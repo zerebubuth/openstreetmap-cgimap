@@ -4,6 +4,7 @@
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
+#include "cgimap/options.hpp"
 
 #include <boost/format.hpp>
 #include <pqxx/pqxx>
@@ -42,7 +43,7 @@ void ApiDB_Changeset_Updater::lock_current_changeset(bool check_max_elements_lim
   // Some clients try to send further changes, although the changeset already
   // holds the maximum number of elements. As this is futile, we raise an error
   // as early as possible.
-  if (check_max_elements_limit && cs_num_changes >= CHANGESET_MAX_ELEMENTS)
+  if (check_max_elements_limit && cs_num_changes >= global_settings::get_changeset_max_elements())
     throw http::conflict((boost::format("The changeset %1% was closed at %2%") %
 	changeset % current_time)
 			 .str());
@@ -52,8 +53,8 @@ void ApiDB_Changeset_Updater::lock_current_changeset(bool check_max_elements_lim
 void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
 					       const bbox_t bbox) {
 
-  // Don't raise an exception when reaching exactly CHANGESET_MAX_ELEMENTS!
-  if (cs_num_changes + num_new_changes > CHANGESET_MAX_ELEMENTS) {
+  // Don't raise an exception when reaching exactly changeset_max_elements!
+  if (cs_num_changes + num_new_changes > global_settings::get_changeset_max_elements()) {
 
       auto r = m.exec(
 	  R"(SELECT to_char((now() at time zone 'utc'),'YYYY-MM-DD HH24:MI:SS "UTC"') as current_time)");
@@ -82,7 +83,7 @@ void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
 
    */
 
-  m.prepare("changeset_update",
+  m.prepare("changeset_update_w_bbox",
 	    R"( 
        UPDATE changesets 
        SET num_changes = ($1 :: integer),
@@ -102,20 +103,33 @@ void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
 
        )");
 
-  if (valid_bbox) {
-      auto r =
-	  m.prepared("changeset_update")(cs_num_changes)(cs_bbox.minlat)(
-	      cs_bbox.minlon)(cs_bbox.maxlat)(cs_bbox.maxlon)(MAX_TIME_OPEN)(
-		  IDLE_TIMEOUT)(changeset)
-		  .exec();
+  m.prepare("changeset_update",
+	    R"(
+       UPDATE changesets
+       SET num_changes = ($1 :: integer),
+           closed_at =
+             CASE
+                WHEN (closed_at - created_at) >
+                     (($2 ::interval) - ($3 ::interval)) THEN
+                  created_at + ($3 ::interval)
+                ELSE
+                  now() at time zone 'utc' + ($3 ::interval)
+             END
+       WHERE id = $4
 
+       )");
+
+  if (valid_bbox) {
+      auto r = m.exec_prepared("changeset_update_w_bbox", cs_num_changes, cs_bbox.minlat, cs_bbox.minlon,
+			  cs_bbox.maxlat, cs_bbox.maxlon,
+			  global_settings::get_changeset_timeout_open_max(),
+			  global_settings::get_changeset_timeout_idle(), changeset);
       if (r.affected_rows() != 1)
 	throw http::server_error("Cannot update changeset");
   } else {
-      auto r = m.prepared("changeset_update")(cs_num_changes)()()()()(
-	  MAX_TIME_OPEN)(IDLE_TIMEOUT)(changeset)
-	  .exec();
-
+      auto r = m.exec_prepared("changeset_update", cs_num_changes,
+			       global_settings::get_changeset_timeout_open_max(),
+			       global_settings::get_changeset_timeout_idle(), changeset);
       if (r.affected_rows() != 1)
 	throw http::server_error("Cannot update changeset");
   }
@@ -183,7 +197,7 @@ void ApiDB_Changeset_Updater::api_close_changeset()
 void ApiDB_Changeset_Updater::lock_cs(bool& is_closed, std::string& closed_at, std::string& current_time)
 {
   // Only lock changeset if it belongs to user_id = uid
-  m.prepare (
+  m.prepare(
       "changeset_current_lock",
       R"( SELECT id, 
 		 user_id,
@@ -200,7 +214,7 @@ void ApiDB_Changeset_Updater::lock_cs(bool& is_closed, std::string& closed_at, s
 	  FOR UPDATE 
      )");
 
-  auto r = m.prepared ("changeset_current_lock")(changeset)(uid).exec ();
+  auto r = m.exec_prepared("changeset_current_lock", changeset, uid);
   if (r.affected_rows () != 1)
     throw http::conflict ("The user doesn't own that changeset");
 
@@ -324,7 +338,7 @@ void ApiDB_Changeset_Updater::changeset_insert_cs ()
               RETURNING id 
    )");
 
-    pqxx::result r = m.exec_prepared ("create_changeset", uid, IDLE_TIMEOUT);
+    pqxx::result r = m.exec_prepared ("create_changeset", uid, global_settings::get_changeset_timeout_idle());
     if (r.affected_rows () != 1)
       throw http::server_error ("Cannot create changeset");
 

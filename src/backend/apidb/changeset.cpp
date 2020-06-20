@@ -23,8 +23,12 @@ std::map<osm_changeset_id_t, changeset *> fetch_changesets(pqxx::transaction_bas
       "SELECT c.id, u.data_public, u.display_name, u.id from users u "
                    "join changesets c on u.id=c.user_id where c.id = ANY($1)");
 
+#if PQXX_VERSION_MAJOR >= 6
+  pqxx::result res = w.exec_prepared("extract_changeset_userdetails", ids);
+#else
   pqxx::result res =
       w.prepared("extract_changeset_userdetails")(ids).exec();
+#endif
 
   for (const auto & r : res) {
 

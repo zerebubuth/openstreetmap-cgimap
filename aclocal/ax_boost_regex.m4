@@ -1,5 +1,5 @@
 # ===========================================================================
-#      http://www.gnu.org/software/autoconf-archive/ax_boost_regex.html
+#      https://www.gnu.org/software/autoconf-archive/ax_boost_regex.html
 # ===========================================================================
 #
 # SYNOPSIS
@@ -30,7 +30,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 22
+#serial 23
 
 AC_DEFUN([AX_BOOST_REGEX],
 [
@@ -71,7 +71,6 @@ AC_DEFUN([AX_BOOST_REGEX],
                    ax_cv_boost_regex=yes, ax_cv_boost_regex=no)
          AC_LANG_POP([C++])
 		])
-		ax_lib=""
 		if test "x$ax_cv_boost_regex" = "xyes"; then
 			AC_DEFINE(HAVE_BOOST_REGEX,,[define if the Boost::Regex library is available])
             BOOSTLIBDIR=`echo $BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`

@@ -1,6 +1,6 @@
-# ============================================================================
-#  http://www.gnu.org/software/autoconf-archive/ax_boost_program_options.html
-# ============================================================================
+# =============================================================================
+#  https://www.gnu.org/software/autoconf-archive/ax_boost_program_options.html
+# =============================================================================
 #
 # SYNOPSIS
 #
@@ -29,7 +29,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 24
+#serial 25
 
 AC_DEFUN([AX_BOOST_PROGRAM_OPTIONS],
 [
@@ -70,7 +70,6 @@ AC_DEFUN([AX_BOOST_PROGRAM_OPTIONS],
                            ax_cv_boost_program_options=yes, ax_cv_boost_program_options=no)
 					AC_LANG_POP([C++])
 		])
-		ax_lib=""
 		if test "$ax_cv_boost_program_options" = yes; then
 				AC_DEFINE(HAVE_BOOST_PROGRAM_OPTIONS,,[define if the Boost::PROGRAM_OPTIONS library is available])
                   BOOSTLIBDIR=`echo $BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`

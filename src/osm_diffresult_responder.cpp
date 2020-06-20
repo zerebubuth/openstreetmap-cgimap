@@ -20,7 +20,10 @@ namespace {
 	return element_type_way;
       case object_type::relation:
 	return element_type_relation;
+
     }
+
+    throw std::runtime_error("Unhandled object_type in as_elem_type.");
   }
 
 }

@@ -4,6 +4,7 @@
 #include "infix_ostream_iterator.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
+#include "cgimap/options.hpp"
 
 #include <algorithm>
 #include <clocale>
@@ -14,16 +15,6 @@
 #include <set>
 #include <sstream>
 #include <string>
-
-
-
-const int CHANGESET_MAX_ELEMENTS = 10000;
-const int WAY_MAX_NODES = 2000;
-const long SCALE = 10000000;
-
-const std::string MAX_TIME_OPEN = "1 day";
-const std::string IDLE_TIMEOUT = "1 hour";
-
 
 
 inline size_t unicode_strlen(const std::string & s)
@@ -92,10 +83,16 @@ public:
 	long maxlat;
 	long maxlon;
 
-	bbox_t() : minlat(200 * SCALE), minlon(200 * SCALE), maxlat(-200 * SCALE), maxlon(-200 * SCALE) {};
+	bbox_t() : minlat(200 * global_settings::get_scale()),
+	           minlon(200 * global_settings::get_scale()),
+		   maxlat(-200 * global_settings::get_scale()),
+		   maxlon(-200 * global_settings::get_scale()) {};
 
 	bbox_t(double _minlat, double _minlon, double _maxlat, double _maxlon) :
-	  minlat(_minlat * SCALE), minlon(_minlon * SCALE), maxlat(_maxlat * SCALE), maxlon(_maxlon * SCALE) {};
+	  minlat(_minlat * global_settings::get_scale()),
+	  minlon(_minlon * global_settings::get_scale()),
+	  maxlat(_maxlat * global_settings::get_scale()),
+	  maxlon(_maxlon * global_settings::get_scale()) {};
 
 	void expand(const bbox_t& bbox)
 	{
