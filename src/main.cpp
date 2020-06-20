@@ -389,6 +389,9 @@ int main(int argc, char **argv) {
         remove(options["pidfile"].as<string>().c_str());
       }
     }
+  } catch (const po::error & e) {
+    std::cerr << "Error: " << e.what() << "\n(\"openstreetmap-cgimap --help\" for help)" << std::endl;
+    return 1;
   } catch (const pqxx::sql_error &er) {
     // Catch-all for query related postgres exceptions
     std::cerr << "Error: " << er.what() << std::endl
@@ -402,7 +405,7 @@ int main(int argc, char **argv) {
 
   } catch (const std::exception &e) {
     logger::message(e.what());
-    std::cerr << "Exception: " << e.what() << std::endl;
+    std::cerr << "Error: " << e.what() << std::endl;
     return 1;
   }
 
