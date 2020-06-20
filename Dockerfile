@@ -1,7 +1,10 @@
 # vim:set ft=dockerfile:
-FROM ubuntu:18.04 AS builder
+FROM ubuntu:20.04 AS builder
 
-RUN apt-get update -qq && apt-get install -y gcc g++ make autoconf automake libtool \
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update -qq && \
+    apt-get install -y gcc g++ make autoconf automake libtool \
        libfcgi-dev libxml2-dev libmemcached-dev \
        libboost-program-options-dev libboost-system-dev \
        libboost-filesystem-dev libboost-locale-dev libcrypto++-dev libyajl-dev \
@@ -21,11 +24,12 @@ RUN ./autogen.sh && \
     make && \
     strip openstreetmap-cgimap
 
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
-RUN apt-get update -qq && apt-get install -y \
-       libfcgi-bin libmemcached11 libboost-locale1.65.1 libboost-program-options1.65.1 \
-       libxml2 libcrypto++6 libyajl2 libpqxx-4.0v5 zlib1g \
+RUN apt-get update -qq && \
+    apt-get install -y \
+       libfcgi-bin libmemcached11 libboost-locale1.71.0 libboost-program-options1.71.0 \
+       libxml2 libcrypto++6 libyajl2 libpqxx-6.4 zlib1g \
        --no-install-recommends && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
