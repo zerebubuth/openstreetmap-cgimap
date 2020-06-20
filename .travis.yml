@@ -20,6 +20,9 @@ jobs:
             - libpqxx-dev
             - libxml2-dev
             - libyajl-dev
+            - postgresql-all
+            - postgresql-common
+            - postgresql-server-dev-all
      - dist: bionic
        os: linux
        compiler: gcc
@@ -38,6 +41,9 @@ jobs:
             - libpqxx-dev
             - libxml2-dev
             - libyajl-dev
+            - postgresql-all
+            - postgresql-common
+            - postgresql-server-dev-all
      - dist: focal
        os: linux
        compiler: gcc
@@ -58,6 +64,9 @@ jobs:
             - libyajl-dev
             - postgresql-12
             - postgresql-client-12
+            - postgresql-all
+            - postgresql-common
+            - postgresql-server-dev-all
 script:
   - ./autogen.sh
   - ./configure --enable-yajl CC="ccache gcc" CXX="ccache g++"
