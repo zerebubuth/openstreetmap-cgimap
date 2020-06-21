@@ -4,6 +4,7 @@
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
 #include "cgimap/backend/apidb/utils.hpp"
 #include "cgimap/logger.hpp"
+#include "cgimap/options.hpp"
 #include "cgimap/backend/apidb/quad_tile.hpp"
 #include "cgimap/infix_ostream_iterator.hpp"
 
@@ -393,9 +394,12 @@ int readonly_pgsql_selection::select_nodes_from_bbox(const bbox &bounds,
   m.exec("set enable_hashjoin=false");
 
   return insert_results(
-      m.exec_prepared("visible_node_in_bbox", tiles, int(bounds.minlat * SCALE),
-            int(bounds.maxlat * SCALE), int(bounds.minlon * SCALE),
-            int(bounds.maxlon * SCALE), (max_nodes + 1)),
+      m.exec_prepared("visible_node_in_bbox", tiles,
+		      int(bounds.minlat * global_settings::get_scale()),
+		      int(bounds.maxlat * global_settings::get_scale()),
+		      int(bounds.minlon * global_settings::get_scale()),
+		      int(bounds.maxlon * global_settings::get_scale()),
+		      (max_nodes + 1)),
       sel_nodes);
 }
 

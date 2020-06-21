@@ -792,7 +792,7 @@ private:
 struct staticxml_backend : public backend {
   staticxml_backend()
       : m_name("staticxml"), m_options("Static XML backend options") {
-    m_options.add_options()("file", po::value<string>(),
+    m_options.add_options()("file", po::value<string>()->required(),
                             "file to load static OSM XML from.");
   }
   virtual ~staticxml_backend() = default;

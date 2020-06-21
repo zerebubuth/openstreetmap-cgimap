@@ -128,6 +128,7 @@ TESTS += \
 	test/test_apidb_backend_changesets \
 	test/test_apidb_backend_changeset_downloads \
 	test/test_apidb_backend_changeset_uploads
+LOG_COMPILER=pg_virtualenv
 endif
 TEST_EXTENSIONS = .testcore
 TESTCORE_LOG_COMPILER = test/test_core

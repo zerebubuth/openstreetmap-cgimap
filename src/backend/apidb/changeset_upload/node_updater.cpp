@@ -7,6 +7,8 @@
 #include "cgimap/backend/apidb/quad_tile.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
+#include "cgimap/options.hpp"
+
 
 #include <algorithm>
 #include <cmath>
@@ -34,8 +36,8 @@ void ApiDB_Node_Updater::add_node(double lat, double lon,
 
   node_t new_node{};
   new_node.version = 1;
-  new_node.lat = round(lat * SCALE);
-  new_node.lon = round(lon * SCALE);
+  new_node.lat = round(lat * global_settings::get_scale());
+  new_node.lon = round(lon * global_settings::get_scale());
   new_node.tile = xy2tile(lon2x(lon), lat2y(lat));
   new_node.changeset_id = changeset_id;
   new_node.old_id = old_id;
@@ -58,8 +60,8 @@ void ApiDB_Node_Updater::modify_node(double lat, double lon,
   modify_node.id = id;
   modify_node.old_id = id;
   modify_node.version = version;
-  modify_node.lat = round(lat * SCALE);
-  modify_node.lon = round(lon * SCALE);
+  modify_node.lat = round(lat * global_settings::get_scale());
+  modify_node.lon = round(lon * global_settings::get_scale());
   modify_node.tile = xy2tile(lon2x(lon), lat2y(lat));
   modify_node.changeset_id = changeset_id;
   for (const auto &tag : tags)
