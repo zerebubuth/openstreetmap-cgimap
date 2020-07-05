@@ -143,11 +143,13 @@ namespace api06 {
 	throw xml_error(
 	    "You need to supply a changeset to be able to make a change");
 
-      if (m_tags.size() > OSM_ELEMENT_MAX_TAGS)
+      if ((global_settings::get_element_max_tags()) &&
+	  m_tags.size() > *global_settings::get_element_max_tags()) {
 	  throw xml_error(
 	      (boost::format("OSM element exceeds limit of %1% tags")
-                 % OSM_ELEMENT_MAX_TAGS)
+                 % *global_settings::get_element_max_tags())
 		  .str());
+      }
 
       return (m_changeset && m_id && m_version);
     }
