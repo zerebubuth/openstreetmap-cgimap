@@ -1,0 +1,13 @@
+[Unit]
+Description=CGImap implementation of the OpenStreetMap editing API
+Documentation=https://github.com/zerebubuth/openstreetmap-cgimap
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/usr/local/bin/openstreetmap-cgimap --daemon
+PIDFile=/var/run/cgimap.pid
+
+[Install]
+WantedBy=multi-user.target
+Alias=cgimap
