@@ -73,7 +73,7 @@ struct test_database {
 
   // run a (possible set of) SQL strings against the database.
   // intended for setting up data that the test needs.
-  void run_sql(const std::string &sql);
+  int run_sql(const std::string &sql);
 
 private:
   // create a random, and hopefully unique, database name.
