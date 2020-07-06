@@ -1,10 +1,8 @@
-CGImap
-======
+# CGImap
 
 [![Build Status](https://travis-ci.org/zerebubuth/openstreetmap-cgimap.svg?branch=master)](https://travis-ci.org/zerebubuth/openstreetmap-cgimap)
 
-Overview
---------
+## Overview
 
 CGImap is a C++ implementation of some parts of the OpenStreetMap
 API as an FCGI process. The rails implementation of the "map" call
@@ -37,24 +35,24 @@ Currently, CGImap implements:
 Note that changeset metadata isn't the same thing as the changeset
 download (i.e: `osmChange` data).
 
-Requirements
-------------
+## Requirements
 
 CGImap uses a PostgreSQL server for the APIDB backend. A minimum server version of 9.4 is required.
 
 CGImap depends on the following libraries. Versions used during
-development are in brackets. Other versions may work, but YMMV.
+development are in brackets. Respective library versions for Ubuntu 18.04 and Ubuntu 20.04 are supported at this time. Other versions may work, but YMMV.
 
 * libxml2     (2.9.3+dfsg1-1ubuntu0.2)
 * libpqxx-4.0 (4.0.1+dfsg-3ubuntu2)
 * libfcgi     (2.4.0-8.3)
 * libboost    (1.58.0+dfsg-5ubuntu3.1)
 * libcrypto++ (5.6.1-9)
+* zlib1g-dev  (1:1.2.11.dfsg-0ubuntu2)
 
 If you're running a Debian or Ubuntu system these can be installed
 using the following command:
 
-    sudo apt-get install libxml2-dev libpqxx-dev libfcgi-dev \
+    sudo apt-get install libxml2-dev libpqxx-dev libfcgi-dev zlib1g-dev \
       libboost-dev libboost-program-options-dev libboost-filesystem-dev \
       libboost-system-dev libboost-locale-dev libmemcached-dev \
       libcrypto++-dev
@@ -65,7 +63,7 @@ The build system used is GNU Make, using pkg-config to provide some of
 the flags.
 
 Note that the full set of packages needed from a fresh install (tested
-with Ubuntu 18.04) - you may already have many or all of these - is:
+with Ubuntu 18.04 and 20.04) - you may already have many or all of these - is:
 
     sudo apt-get install git build-essential automake autoconf libtool
 
@@ -88,18 +86,16 @@ Then change to the source code directory to configure and build:
 You should now have a "./openstreetmap-cgimap" executable in the current
 directory.
 
-Setup
------
+## Setup
 
 To run CGImap binary, use the command:
 
     ./openstreetmap-cgimap --socket :54321 --backend apidb \
       --dbname openstreetmap
 
-Note: CGImap has to be used with a fastcgi enabled server like lighttpd, apache2 etc. See the instructions below to use CGImap with lighttpd or apache2.
+Note: CGImap has to be used with a FastCGI enabled server like lighttpd, apache2 etc. See the instructions below to use CGImap with lighttpd or apache2.
 
-A sample lighttd.conf file is provided, which can be used to test. To test
-CGImap with lighttpd you will need to install lighttpd:
+A sample lighttd.conf file is provided, which can be used for testing purposes only. To test CGImap with lighttpd you will need to install lighttpd:
 
 	sudo apt-get install lighttpd
 
@@ -111,24 +107,62 @@ You can then access the running instance at `http://localhost:31337/api/0.6/map?
 
 The api.osm.org instance runs CGImap as a daemon and Apache with
 [mod_fastcgi_handler](https://github.com/hollow/mod_fastcgi_handler).
+
+### Specifying configuration options
+
+Typically you will need to modify the database connection parameters and path
+to the executable. See `./openstreetmap-cgimap --help` for a list of options.
+
+To convert a command line option to an environment variable append `CGIMAP_` to
+the option and capatalize it. For example, the option `--dbname` becomes the
+environment variable `CGIMAP_DBNAME`.
+
+Besides environment variables and command line options, CGImap configuration settings can also be provided in an INI-style config file. Use command line parameter `--configfile` to define the file location.
+
+Example:
+
+```ini
+dbname=openstreetmap
+host=localhost
+username=user
+password=pass
+
+#update-host=127.0.0.1
+#update-dbname=openstreetmap
+#ratelimit=100000
+
+# Expert settings (should be left to their default values in most cases)
+# see --help for further details
+#
+#map-area=10
+#disable-api-write=
+#max-payload=50000000
+
+```
+
+### Automatic startup as Daemon Service
+
 An init.d script to run CGImap as a daemon is supplied in
 scripts/cgimap.init. To use it modify the paths and environment
 variables to suit your installation, copy it to `/etc/init.d/cgibin` and
 change the mode to 755, and owner:group to root:root.
 
+For more recent operating systems using systemd instead of init
+`scripts/cgimap.service` is provided to run CGImap as a daemon.  To
+use it modify the paths, set environment variables or the settings
+in the config file, copy it to `/etc/systemd/system/cgimap.service`.
+Change the mode to 755, and owner:group to root:root.  To enable the service use
+`systemctl enable cgimap` and to start the service `systemctl start cgimap`.
+
 An example of this can be found in
 [OSM Chef](http://git.openstreetmap.org/chef.git/blob/HEAD:/cookbooks/web/recipes/cgimap.rb).
 
-Typically you will need to modify the database connection parameters and path
-to the executable. See `./openstreetmap-cgimap --help` for a list of options.
-To convert a command line option to an environment variable append `CGIMAP_` to
-the option and capatalize it. For example, the option `--dbname` becomes the
-environment variable `CGIMAP_DBNAME`.
+### Configuring Apache as FastCGI proxy
 
 Fcgi programs can be deployed with Apache using `mod_fastcgi_handler`,
 `mod_fcgid`, `mod_fastcgi`, and on recent versions `mod_proxy_fcgi`. A sample
 Apache configuration file that will work in conjunction with CGImap as a
-daemon is supplied in `scripts/cgibin.conf`. To use this on a Ubuntu-based
+daemon is supplied in `scripts/cgimap.conf`. To use this on a Ubuntu-based
 system you need to copy the cofiguration to where Apache will read it and
 create an api directory:
 
@@ -141,8 +175,18 @@ create an api directory:
 
 The apache modules mod_proxy and mod_fastcgi_handler must also be enabled.
 
-Database Permissions
---------------------
+## Docker
+
+This repository includes a `Dockerfile`, which can be used to build a cgimap image based on Ubuntu 20.04:
+
+    docker build . -t cgimap
+
+Due to the multi-stage build process, Docker version 17.05 or higher is required. The resulting cgimap image has a total size of about 140MB. `openstreetmap-cgimap` is built as a static binary.
+
+https://github.com/zerebubuth/openstreetmap-cgimap/pull/213 has additional configuration details on how to use the cgimap image in a complete development environment, which includes the Rails port, a Postgresql DB, lighttpd as reverse proxy, and openstreetmap-cgimap.
+
+
+## Database Permissions
 
 The read only apidb backend requires permissions to SELECT on the Postgres server.
 OAuth and update database connections require additional permissions to INSERT/UPDATE/DELETE
@@ -153,20 +197,16 @@ CGImap to avoid any possibility of data corruption. Care has been
 taken programming CGImap but, as with most C++ applications, there is
 the chance of an exploitable flaw leading to complete pwnage.
 
-Testing
--------
+## Testing
 
-To run the test suite using `make check` you will need additional
-packages installed:
+To run the test suite using `make check` you will need additional packages installed:
 
-    sudo apt-get install postgresql postgresql-contrib postgis
+    sudo apt-get install postgresql-all postgresql-common postgresql-server-dev-all
 
-And you will need to be able to create databases as your user:
+Test cases are executed under `pg_virtualenv`, i.e. no further steps are needed to create databases as your user.
 
-    sudo -u postgres createuser -s $USER
 
-Formatting
-----------
+## Formatting
 
 The CGImap code is formatted using
 [clang-format](http://clang.llvm.org/docs/ClangFormat.html) in a style
@@ -181,8 +221,7 @@ whole set of source files by running:
 
 Ideally, this should be done before committing each set of changes.
 
-Acknowledgements
-----------------
+## Acknowledgements
 
 CGImap contains code from and is partly based on the following:
 
