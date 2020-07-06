@@ -17,6 +17,8 @@ void global_settings_via_options::init_fallback_values(const global_settings_bas
   m_changeset_max_elements = def.get_changeset_max_elements();
   m_way_max_nodes = def.get_way_max_nodes();
   m_scale = def.get_scale();
+  m_relation_max_members = def.get_relation_max_members();
+  m_element_max_tags = def.get_element_max_tags();
 }
 
 void global_settings_via_options::set_new_options(const po::variables_map &options) {
@@ -29,6 +31,8 @@ void global_settings_via_options::set_new_options(const po::variables_map &optio
   set_changeset_max_elements(options);
   set_way_max_nodes(options);
   set_scale(options);
+  set_relation_max_members(options);
+  set_element_max_tags(options);
 }
 
 void global_settings_via_options::set_payload_max_size(const po::variables_map &options)  {
@@ -95,6 +99,23 @@ void global_settings_via_options::set_scale(const po::variables_map &options) {
       throw std::invalid_argument("scale must be a positive number");
   }
 }
+
+void global_settings_via_options::set_relation_max_members(const po::variables_map &options) {
+  if (options.count("max-relation-members")) {
+    m_relation_max_members = options["max-relation-members"].as<int>();
+    if (m_relation_max_members <= 0)
+      throw std::invalid_argument("max-relation-members must be a positive number");
+  }
+}
+
+void global_settings_via_options::set_element_max_tags(const po::variables_map &options) {
+  if (options.count("max-element-tags")) {
+    m_element_max_tags = options["max-element-tags"].as<int>();
+    if (m_element_max_tags <= 0)
+      throw std::invalid_argument("max-element-tags must be a positive number");
+  }
+}
+
 
 bool global_settings_via_options::validate_timeout(const std::string &timeout) const {
   std::smatch sm;

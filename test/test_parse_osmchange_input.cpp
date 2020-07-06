@@ -2,8 +2,10 @@
 #include "cgimap/options.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_input_format.hpp"
 #include "cgimap/api06/changeset_upload/parser_callback.hpp"
+#include "cgimap/util.hpp"
 
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <stdexcept>
 
@@ -24,6 +26,23 @@ public:
 
   bool start_executed;
   bool end_executed;
+};
+
+class global_settings_test_class : public global_settings_default {
+
+public:
+
+  boost::optional<int> get_relation_max_members() const override {
+     return m_relation_max_members;
+  }
+
+  boost::optional<int> get_element_max_tags() const override {
+     return m_element_max_tags;
+  }
+
+  boost::optional<int> m_relation_max_members{boost::none};
+  boost::optional<int> m_element_max_tags{boost::none};
+
 };
 
 std::string repeat(const std::string &input, size_t num) {
@@ -896,6 +915,73 @@ void test_large_message() {
   }
 }
 
+void test_object_limits() {
+
+  auto test_settings = std::unique_ptr<global_settings_test_class>(new global_settings_test_class());
+  test_settings->m_element_max_tags = 5000;
+  test_settings->m_relation_max_members = 32000;
+
+  global_settings::set_configuration(std::move(test_settings));
+
+  if (global_settings::get_element_max_tags()) {
+
+    // Check maximum number of tags per element
+    for (int i = *global_settings::get_element_max_tags(); i <= *global_settings::get_element_max_tags() + 1; i++) {
+       std::ostringstream os;
+
+       for (int x = 0; x < i; x++)
+	 os << "<tag k='amenity_" << x << "' v='cafe' />";
+
+      try {
+	process_testmsg(
+	    (boost::format(
+		 R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">%1%</node></create></osmChange>)") %
+		os.str()).str());
+	if (i > *global_settings::get_element_max_tags())
+	  throw std::runtime_error("test_node::120: Expected exception for max number of tags exceeded");
+      } catch (http::exception &e) {
+	if (e.code() != 400)
+	  throw std::runtime_error("test_node::120: Expected HTTP 400");
+	if (i <= *global_settings::get_element_max_tags())
+	  throw std::runtime_error("test_node::120: Unexpected exception max. tags not yet exceeded");
+      }
+    }
+  }
+  else {
+      throw std::runtime_error("test_node::120: Unexpected exception max. tags not executed");
+  }
+
+
+  if (global_settings::get_relation_max_members()) {
+
+    // Check maximum number of members in relation
+    for (int i = *global_settings::get_relation_max_members();
+	i <= *global_settings::get_relation_max_members() + 1; i++) {
+      auto v = repeat(R"(<member type="node" role="demo" ref="123"/>)", i);
+
+      try {
+	process_testmsg(
+	    (boost::format(
+		 R"(<osmChange><create><relation changeset="858" id="-1">%1%"</relation></create></osmChange>)") %
+	     v).str());
+	if (i > *global_settings::get_relation_max_members())
+	  throw std::runtime_error("test_relation::011: Expected exception for "
+				   "maximum number of members in relation exceeded");
+      } catch (http::exception &e) {
+	if (e.code() != 400)
+	  throw std::runtime_error("test_relation::011: Expected HTTP 400");
+	if (i <= *global_settings::get_relation_max_members())
+	  throw std::runtime_error("test_relation::011: Unexpected exception for "
+				   "maximum number of members in relation not exceeded");
+      }
+    }
+  }
+  else {
+      throw std::runtime_error("test_relation::011: Unexpected exception max relation members not executed");
+  }
+
+}
+
 int main(int argc, char *argv[]) {
   try {
     test_osmchange_structure();
@@ -904,6 +990,7 @@ int main(int argc, char *argv[]) {
     test_relation();
     test_invalid_data();
     test_large_message();
+    test_object_limits();
 
   } catch (const std::exception &ex) {
     std::cerr << "EXCEPTION: " << ex.what() << std::endl;

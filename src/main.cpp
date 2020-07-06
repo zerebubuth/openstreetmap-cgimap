@@ -126,8 +126,10 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
     ("changeset-timeout-open", po::value<string>(), "max open time period for a changeset")
     ("changeset-timeout-idle", po::value<string>(), "time period a changeset will remain open after last edit")
     ("max-changeset-elements", po::value<int>(), "max number of elements allowed in one changeset")
-    ("max-way-nodes", po::value<int>(), "max number of nodes allowed in one way (!!)")
-    ("scale", po::value<long>(), "conversion factor from double lat/lon to internal int format (!!)")
+    ("max-way-nodes", po::value<int>(), "max number of nodes allowed in one way")
+    ("scale", po::value<long>(), "conversion factor from double lat/lon to internal int format")
+    ("max-relation-members", po::value<int>(), "max number of relation members per relation")
+    ("max-element-tags", po::value<int>(), "max number of tags per OSM element")
     ;
   // clang-format on
 
