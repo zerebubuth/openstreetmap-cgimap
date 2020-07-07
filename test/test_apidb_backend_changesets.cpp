@@ -329,7 +329,8 @@ void init_changesets(test_database &tdb) {
 	  (53, 31, now() at time zone 'utc' - '12 hour' ::interval,
                now() at time zone 'utc' - '11 hour' ::interval, 10000),
 	  (54, 32, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 0),
-	  (55, 32, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 0);
+	  (55, 32, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 0),
+	  (56, 31, now() at time zone 'utc' - '23 hours' :: interval, now() at time zone 'utc' + '10 minutes' ::interval, 10000);
 
       INSERT INTO changeset_tags(changeset_id, k, v)
          VALUES
@@ -673,6 +674,35 @@ void test_changeset_update(test_database &tdb) {
 	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
 
 	assert_equal<int>(req.response_status(), 409, "should have received HTTP status 409 Conflict");
+    }
+
+    // Changeset which is open for 23 hours, and will close in 10 minutes
+    // Expected result: "closed date - creation date" must be exactly 24 hours after update (assuming default settings)
+    {
+	// set up request headers from test case
+	test_request req;
+	req.set_header("REQUEST_METHOD", "PUT");
+	req.set_header("REQUEST_URI", "/api/0.6/changeset/56");
+	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+	req.set_payload(R"( <osm>
+			      <changeset>
+				<tag k="tag1" v="value1"/>
+				<tag k="tag2" v="value2"/>
+				<tag k="tag3" v="value3"/>
+			      </changeset>
+			    </osm>  )" );
+
+	// execute the request
+	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+
+	assert_equal<int>(req.response_status(), 200, "should have received HTTP status 200 OK");
+
+	int rows = tdb.run_sql(R"( select * from changesets where closed_at - created_at = '24 hours' ::interval and id = 56;  )");
+
+	assert_equal<int>(rows, 1, "Changeset 56 should be closed exactly 24 hours after creation");
+
     }
 
 

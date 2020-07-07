@@ -36,12 +36,15 @@ std::string read_file_contents(const std::string &filename) {
   return query;
 }
 
-void exec_sql_string(pqxx::connection& conn, const std::string &s) {
+int exec_sql_string(pqxx::connection& conn, const std::string &s) {
 
   pqxx::work w{conn};
-  w.exec(s);
+  int row_count = w.exec(s).size();
   w.commit();
+  return row_count;
 }
+
+
 
 void truncate_all_tables(pqxx::connection& conn) {
 
@@ -219,9 +222,9 @@ std::shared_ptr<oauth::store> test_database::get_oauth_store() {
   return m_oauth_store;
 }
 
-void test_database::run_sql(const std::string &sql) {
+int test_database::run_sql(const std::string &sql) {
   pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
-  exec_sql_string(conn, sql);
+  return exec_sql_string(conn, sql);
 }
 
 void test_database::setup_schema(pqxx::connection &conn) {
