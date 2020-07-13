@@ -1,8 +1,15 @@
-openstreetmap-cgimap (0.8.2-1~focal1) focal; urgency=medium
+openstreetmap-cgimap (0.8.3-1~focal1) focal; urgency=medium
 
-  * Focal test build
+  * Released version 0.8.3
+  * Updated Dockerfile and lighttpd.conf (#213)
+  * Make compile time constants configurable via program options (#232)
+  * Program options can be set via new command line parameter --configfile (#232)
+  * Provide option to enforce limits for tags and relation members (#174)
+  * Use pg_virtualenv for unit tests
+  * Ubuntu 20.04 (Focal) adjustments for libpqxx deprecation warnings (#229)
+  * Fix closed_at timestamp when changeset is open >23h (#236)
 
- -- mmd osm <mmd.osm@gmail.com>  Sat, 20 Jun 2020 13:42:54 +0000
+ -- mmd osm <mmd.osm@gmail.com>  Mon, 13 Jul 2020 19:36:57 +0000
 
 openstreetmap-cgimap (0.8.2-1~bionic1) bionic; urgency=medium
 
