@@ -95,7 +95,7 @@ void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
              CASE
                 WHEN (closed_at - created_at) > 
                      (($6 ::interval) - ($7 ::interval)) THEN
-                  created_at + ($7 ::interval)
+                  created_at + ($6 ::interval)
                 ELSE 
                   now() at time zone 'utc' + ($7 ::interval)
              END
@@ -111,7 +111,7 @@ void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
              CASE
                 WHEN (closed_at - created_at) >
                      (($2 ::interval) - ($3 ::interval)) THEN
-                  created_at + ($3 ::interval)
+                  created_at + ($2 ::interval)
                 ELSE
                   now() at time zone 'utc' + ($3 ::interval)
              END

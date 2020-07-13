@@ -1,12 +1,9 @@
+#include "cgimap/options.hpp"
 #include "cgimap/output_formatter.hpp"
 #include "cgimap/time.hpp"
 
 #include <chrono>
 
-// maximum number of element versions which can be associated
-// with a single changeset. this is hard-coded in the API,
-// see app/models/changeset.rb for the details.
-#define MAX_CHANGESET_ELEMENTS (50000)
 
 element_info::element_info()
   : id(0), version(0), changeset(0),
@@ -52,7 +49,7 @@ changeset_info::changeset_info(
 
 bool changeset_info::is_open_at(const std::chrono::system_clock::time_point &now) const {
   const std::chrono::system_clock::time_point closed_at_time = parse_time(closed_at);
-  return (closed_at_time > now) && (num_changes < MAX_CHANGESET_ELEMENTS);
+  return (closed_at_time > now) && (num_changes <= global_settings::get_changeset_max_elements());  // according to changeset.rb, is_open
 }
 
 bool changeset_comment_info::operator==(const changeset_comment_info &other) const {

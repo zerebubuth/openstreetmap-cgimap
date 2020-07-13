@@ -11,9 +11,6 @@ using std::string;
 using std::auto_ptr;
 using std::map;
 
-constexpr double MAX_AREA  = 0.25;
-constexpr int    MAX_NODES = 50000;
-
 namespace api07 {
 
 map_responder::map_responder(mime::type mt, bbox b, data_selection_ptr &x)
@@ -88,7 +85,6 @@ bbox map_handler::validate_request(request &req) {
                             "minima must be less than the maxima.");
   }
 
-  // TODO: make configurable parameter?
   if (bounds.area() > global_settings::get_map_area_max()) {
     throw http::bad_request(
         (boost::format("The maximum bbox size is %1%, and your request "

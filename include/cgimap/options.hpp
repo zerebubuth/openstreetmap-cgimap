@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <regex>
+#include <boost/optional.hpp>
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
@@ -20,6 +21,8 @@ public:
   virtual int get_changeset_max_elements() const = 0;
   virtual int get_way_max_nodes() const = 0;
   virtual long get_scale() const = 0;
+  virtual boost::optional<int> get_relation_max_members() const = 0;
+  virtual boost::optional<int> get_element_max_tags() const = 0;
 };
 
 class global_settings_default : public global_settings_base {
@@ -55,6 +58,14 @@ public:
 
   long get_scale() const override {
      return 10000000L;
+  }
+
+  boost::optional<int> get_relation_max_members() const override {
+     return boost::none;  // default: unlimited
+  }
+
+  boost::optional<int> get_element_max_tags() const override {
+     return boost::none;  // default: unlimited
   }
 };
 
@@ -108,6 +119,14 @@ public:
      return m_scale;
   }
 
+  boost::optional<int> get_relation_max_members() const override {
+     return m_relation_max_members;
+  }
+
+  boost::optional<int> get_element_max_tags() const override {
+     return m_element_max_tags;
+  }
+
 private:
   void init_fallback_values(const global_settings_base &def);
   void set_new_options(const po::variables_map &options);
@@ -119,6 +138,8 @@ private:
   void set_changeset_max_elements(const po::variables_map &options);
   void set_way_max_nodes(const po::variables_map &options);
   void set_scale(const po::variables_map &options);
+  void set_relation_max_members(const po::variables_map &options);
+  void set_element_max_tags(const po::variables_map &options);
   bool validate_timeout(const std::string &timeout) const;
 
   long m_payload_max_size;
@@ -129,6 +150,8 @@ private:
   int m_changeset_max_elements;
   int m_way_max_nodes;
   long m_scale;
+  boost::optional<int> m_relation_max_members;
+  boost::optional<int> m_element_max_tags;
 };
 
 class global_settings final {
@@ -161,6 +184,12 @@ public:
 
   // Conversion factor from double lat/lon format to internal int format used for db persistence
   static long get_scale() { return settings->get_scale(); }
+
+  // Maximum number of relation members for an OSM object (may be unlimited)
+  static boost::optional<int> get_relation_max_members() { return settings->get_relation_max_members(); }
+
+  // Maximum number of tags for an OSM object (may be unlimited)
+  static boost::optional<int> get_element_max_tags() { return settings->get_element_max_tags(); }
 
 private:
   static std::unique_ptr<global_settings_base> settings;  // gets initialized with global_settings_default instance
