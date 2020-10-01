@@ -147,13 +147,13 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
     po::store(po::parse_config_file(ifs, desc), options);
   }
 
-  po::notify(options);
-
   if (options.count("help")) {
     std::cout << desc << std::endl;
     output_backend_options(std::cout);
     exit(1);
   }
+
+  po::notify(options);
 
   // for ability to accept both the old --port option in addition to socket if not available.
   if (options.count("daemon") != 0 && options.count("socket") == 0 && options.count("port") == 0) {
@@ -205,7 +205,7 @@ static void process_requests(int socket, const po::variables_map &options) {
 
     // get the next request
     if (req.accept_r() >= 0) {
-	std::chrono::system_clock::time_point now(std::chrono::system_clock::now());
+      std::chrono::system_clock::time_point now(std::chrono::system_clock::now());
       req.set_current_time(now);
       process_request(req, limiter, generator, route, factory, update_factory, oauth_store);
     }
