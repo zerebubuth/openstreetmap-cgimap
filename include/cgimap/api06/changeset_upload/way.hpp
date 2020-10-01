@@ -25,15 +25,15 @@ public:
     osm_nwr_signed_id_t _waynode = 0;
 
     try {
-	_waynode = std::stol(waynode);
+      _waynode = std::stol(waynode);
     } catch (std::invalid_argument& e) {
-	throw xml_error("Way node is not numeric");
+      throw xml_error("Way node is not numeric");
     } catch (std::out_of_range& e) {
-	throw xml_error("Way node value is too large");
+      throw xml_error("Way node value is too large");
     }
 
     if (_waynode == 0) {
-	throw xml_error("Way node value may not be 0");
+      throw xml_error("Way node value may not be 0");
     }
 
     add_way_node(_waynode);
