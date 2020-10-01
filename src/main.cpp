@@ -75,23 +75,6 @@ static string get_generator_string() {
 }
 
 /**
- * convert an environment variable name to an option name
- */
-static string environment_option_name(string name){
-  string option;
-
-  if (name.substr(0, 7) == "CGIMAP_") {
-    std::transform(name.begin() + 7, name.end(),
-                   std::back_inserter(option),
-                   [](unsigned char c) {
-                     return c == '_' ? '-' : std::tolower(c);
-                   });
-  }
-
-  return option;
-}
-
-/**
  * parse the comment line and environment for options.
  */
 static void get_options(int argc, char **argv, po::variables_map &options) {
@@ -136,7 +119,24 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
   desc.add(expert);
 
   po::store(po::parse_command_line(argc, argv, desc), options);
-  po::store(po::parse_environment(desc, environment_option_name), options);
+  po::store(po::parse_environment(desc,
+    [desc](const std::string &name) {
+          std::string option;
+          // convert an environment variable name to an option name
+          if (name.substr(0, 7) == "CGIMAP_") {
+            std::transform(name.begin() + 7, name.end(),
+                           std::back_inserter(option),
+                           [](unsigned char c) {
+                           return c == '_' ? '-' : std::tolower(c);
+                   });
+            for (const auto &d : desc.options()) {
+              if (d->long_name() == option)
+                return option;
+            }
+            std::cout << "Ignoring unknown environment variable: " << name << std::endl;
+          }
+          return std::string("");
+        }), options);
 
   if (options.count("configfile")) {
     auto config_fname = options["configfile"].as<std::string>();
@@ -147,13 +147,13 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
     po::store(po::parse_config_file(ifs, desc), options);
   }
 
+  po::notify(options);
+
   if (options.count("help")) {
     std::cout << desc << std::endl;
     output_backend_options(std::cout);
     exit(1);
   }
-
-  po::notify(options);
 
   // for ability to accept both the old --port option in addition to socket if not available.
   if (options.count("daemon") != 0 && options.count("socket") == 0 && options.count("port") == 0) {
