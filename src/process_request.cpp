@@ -472,8 +472,15 @@ boost::optional<osm_user_id_t> determine_user_id (request& req,
   // Try to authenticate user via Basic Auth
   boost::optional<osm_user_id_t>  user_id = basicauth::authenticate_user (req, selection);
 
+  if (!store)
+    return user_id;
+
+  // Try to authenticate user via OAuth2 Bearer Token
+  if (!user_id)
+     user_id = oauth2::validate_bearer_token (req, store, allow_api_write);
+
   // Try to authenticate user via OAuth token
-  if (!user_id && store)
+  if (!user_id)
     {
       oauth::validity::validity oauth_valid = oauth::is_valid_signature (
 	  req, *store, *store, *store);
