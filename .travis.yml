@@ -64,7 +64,6 @@ jobs:
             - libyajl-dev
             - postgresql-12
             - postgresql-client-12
-            - postgresql-all
             - postgresql-common
             - postgresql-server-dev-all
 script:
