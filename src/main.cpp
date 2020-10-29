@@ -119,8 +119,16 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
   desc.add(expert);
 
   po::store(po::parse_command_line(argc, argv, desc), options);
+
+  // Show help after parsing command line parameters
+  if (options.count("help")) {
+    std::cout << desc << std::endl;
+    output_backend_options(std::cout);
+    exit(1);
+  }
+
   po::store(po::parse_environment(desc,
-    [desc](const std::string &name) {
+    [&desc](const std::string &name) {
           std::string option;
           // convert an environment variable name to an option name
           if (name.substr(0, 7) == "CGIMAP_") {
@@ -148,12 +156,6 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
   }
 
   po::notify(options);
-
-  if (options.count("help")) {
-    std::cout << desc << std::endl;
-    output_backend_options(std::cout);
-    exit(1);
-  }
 
   // for ability to accept both the old --port option in addition to socket if not available.
   if (options.count("daemon") != 0 && options.count("socket") == 0 && options.count("port") == 0) {
