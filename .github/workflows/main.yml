@@ -1,0 +1,13 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build Docker images
+        uses: docker/build-push-action@v2.1.0
