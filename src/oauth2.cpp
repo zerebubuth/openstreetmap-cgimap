@@ -65,8 +65,6 @@ namespace oauth2 {
       throw http::unauthorized("token_revoked");
     }
 
-    //HTTP 403: Invalid Scope?
-
     return user_id;
   }
 }

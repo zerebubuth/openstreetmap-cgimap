@@ -88,10 +88,46 @@ struct test_oauth2
   }
 
   boost::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) {
-    expired = false;
-    revoked = false;
-    allow_api_write = false;
+
+    // Note: original token ids have been sha256 hashed, token_id hash values can be generated using
+    // echo -n "6GGXRGoDog0i6mRyrBonFmJORQhWZMhZH5WNWLd0qcs" | sha256sum
+
+    // valid token - api write not allowed
+    if (token_id == "deb2029737bcfaaf9e937aea6b5d585a1bf93be9d21672d0f98c479c52592130") { // "6GGXRGoDog0i6mRyrBonFmJORQhWZMhZH5WNWLd0qcs"
+      expired = false;
+      revoked = false;
+      allow_api_write = false;
+      return osm_user_id_t{1};
+
+    // valid token - api_write allowed
+    } else if (token_id == "4a25cbf4d3f6a3bc3b0cbc4c3b7eaf4ae596203b0226f607cd5b4512d2245350") { // "H4TeKXzE_VLHUT33n6x__yZ8BAaQLwfxQNcADu7BMMA"
+      expired = false;
+      revoked = false;
+      allow_api_write = true;
+      return osm_user_id_t{2};
+
+    // invalid token
+    } else if (token_id == "f3565d87316a9f5eb134f3d129e76fc82798d4ede12b59f4b3f2094aa61b0ce2") { // "nFRBLFyNXPKY1fiTHAIfVsjQYkCD2KoRuH66upvueaQ"
+      return boost::none;
+
+    // expired token for user 3
+    } else if (token_id == "42ad2fc9589b134e57cecab938873490aebfb0c7c6430f3c62485a693c6be62d") { // "pwnMeCjSmIfQ9hXVYfAyFLFnE9VOADNvwGMKv4Ylaf0"
+      expired = true;
+      revoked = false;
+      allow_api_write = false;
+      return osm_user_id_t{3};
+
+    // revoked token for user 4
+    } else if (token_id == "4ea5b956c8882db030a5a799cb45eb933bb6dd2f196a44f68167d96fbc8ec3f1") { // "hCXrz5B5fCBHusp0EuD2IGwYSxS8bkAnVw2_aLEdxig"
+      expired = false;
+      revoked = true;
+      allow_api_write = false;
+      return osm_user_id_t{4};
+    }
+
+    // default: invalid token
     return boost::none;
+
   }
 
   std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t id) {
@@ -107,7 +143,7 @@ struct test_oauth2
 
 
 
-void test_authenticate_user() {
+void test_validate_bearer_token() {
 
   std::shared_ptr<oauth::store> store = std::make_shared<test_oauth2>();
 
@@ -115,7 +151,7 @@ void test_authenticate_user() {
     bool allow_api_write;
     test_request req;
     auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{}, "Missing Header");
+    assert_equal<boost::optional<osm_user_id_t> >(res, boost::none, "Missing Header");
   }
 
   {
@@ -123,52 +159,89 @@ void test_authenticate_user() {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","");
     auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{}, "Empty AUTH header");
-  }
-/*
-  {
-    test_request req;
-    req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzpwYXNzd29yZA==");
-    auto res = oauth2::validate_bearer_token(req, store);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{4711}, "Known user with correct password");
+    assert_equal<boost::optional<osm_user_id_t> >(res, boost::none, "Empty AUTH header");
   }
 
-  // Test with known user and incorrect password
+  // Test valid bearer token, no api_write
   {
+    bool allow_api_write;
     test_request req;
-    req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzppbmNvcnJlY3Q=");
+    req.set_header("HTTP_AUTHORIZATION","Bearer 6GGXRGoDog0i6mRyrBonFmJORQhWZMhZH5WNWLd0qcs");
+    auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
+    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{1}, "Bearer token for user 1");
+    assert_equal<bool>(allow_api_write, false, "Bearer token for user 1, allow_api_write");
+  }
+
+  // Test valid bearer token, api_write_allowed
+  {
+    bool allow_api_write;
+    test_request req;
+    req.set_header("HTTP_AUTHORIZATION","Bearer H4TeKXzE_VLHUT33n6x__yZ8BAaQLwfxQNcADu7BMMA");
+    auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
+    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{2}, "Bearer token for user 2");
+    assert_equal<bool>(allow_api_write, true, "Bearer token for user 2, allow_api_write");
+  }
+
+
+  // Test bearer token invalid format
+  {
+    bool allow_api_write;
+    test_request req;
+    req.set_header("HTTP_AUTHORIZATION","Bearer 6!#c23.-;<<>>");
+    auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
+    assert_equal<boost::optional<osm_user_id_t> >(res, boost::none, "Invalid bearer format");
+  }
+
+  // Test invalid bearer token
+  {
+    bool allow_api_write;
+    test_request req;
     try {
-      auto res = oauth2::validate_bearer_token(req, store);
-      throw std::runtime_error("Known user, incorrect password: expected http unauthorized exception");
-
-    } catch (http::exception &e) {
-      if (e.code() != 401)
-        throw std::runtime_error(
-            "Known user / incorrect password: Expected HTTP 401");
+      req.set_header("HTTP_AUTHORIZATION","Bearer nFRBLFyNXPKY1fiTHAIfVsjQYkCD2KoRuH66upvueaQ");
+      auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
+      throw std::runtime_error("test_authenticate_user::001: Expected exception");
+    } catch (http::unauthorized &e) {
+      if (std::string(e.what()) != "invalid_token") {
+        throw std::runtime_error("test_authenticate_user::001: Expected invalid_token");
+      }
     }
   }
 
-  // Test with unknown user and incorrect password
+  // Test expired bearer token
   {
+    bool allow_api_write;
     test_request req;
-    req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzI6aW5jb3JyZWN0");
     try {
-      auto res = oauth2::validate_bearer_token(req, store);
-      throw std::runtime_error("Unknown user / incorrect password: expected http unauthorized exception");
-
-    } catch (http::exception &e) {
-      if (e.code() != 401)
-        throw std::runtime_error(
-            "Unknown user / incorrect password: Expected HTTP 401");
+      req.set_header("HTTP_AUTHORIZATION","Bearer pwnMeCjSmIfQ9hXVYfAyFLFnE9VOADNvwGMKv4Ylaf0");
+      auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
+      throw std::runtime_error("test_authenticate_user::002: Expected exception");
+    } catch (http::unauthorized &e) {
+      if (std::string(e.what()) != "token_expired") {
+        throw std::runtime_error("test_authenticate_user::002: Expected token_expired");
+      }
     }
   }
-*/
+
+  // Test revoked bearer token
+  {
+    bool allow_api_write;
+    test_request req;
+    try {
+      req.set_header("HTTP_AUTHORIZATION","Bearer hCXrz5B5fCBHusp0EuD2IGwYSxS8bkAnVw2_aLEdxig");
+      auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
+      throw std::runtime_error("test_authenticate_user::003: Expected exception");
+    } catch (http::unauthorized &e) {
+      if (std::string(e.what()) != "token_revoked") {
+        throw std::runtime_error("test_authenticate_user::003: Expected token_revoked");
+      }
+    }
+  }
 }
 
 
 int main() {
   try {
-    ANNOTATE_EXCEPTION(test_authenticate_user());
+    ANNOTATE_EXCEPTION(test_validate_bearer_token());
   } catch (const std::exception &e) {
     std::cerr << "EXCEPTION: " << e.what() << std::endl;
     return 1;

@@ -47,162 +47,130 @@ void assert_equal(const T& a, const T&b, const std::string &message) {
   }
 }
 
-void test_nonce_store(test_database &tdb) {
-  tdb.run_sql("");
+
+
+void test_user_id_for_oauth2_token(test_database &tdb) {
+  tdb.run_sql(R"(
+    INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) 
+    VALUES 
+      (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true),
+      (2, 'user_2@example.com', '', '2021-03-12T01:33:43Z', 'user_2', true);
+
+   INSERT INTO oauth_applications (id, owner_type, owner_id, name, uid, secret, redirect_uri, scopes, confidential, created_at, updated_at) 
+       VALUES (3, 'User', 1, 'App 1', 'dHKmvGkmuoMjqhCNmTJkf-EcnA61Up34O1vOHwTSvU8', '965136b8fb8d00e2faa2faaaed99c0ec10225518d0c8d9fb1d2af701e87eb68c', 
+              'http://demo.localhost:3000', 'write_api read_gpx', false, '2021-04-12 17:53:30', '2021-04-12 17:53:30');
+
+   INSERT INTO oauth_applications (id, owner_type, owner_id, name, uid, secret, redirect_uri, scopes, confidential, created_at, updated_at)
+       VALUES (4, 'User', 2, 'App 2', 'WNr9KjjzA9uNCXXBHG1AReR2jdottwlKYOz7CLgjUAk', 'cdd6f17bc32eb96b33839db59ae5873777e95864cd936ae445f2dedec8787212',
+              'http://localhost:3000/demo', 'write_prefs write_diary', true, '2021-04-13 18:59:11', '2021-04-13 18:59:11');
+
+   INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
+       VALUES (67, 1, 3, '4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8', NULL, NULL, NULL, '2021-04-14 19:38:21', 'write_api', '');
+
+   INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
+       VALUES (68, 1, 3, '1187c28b93ab4a14e3df6a61ef46a24d7d4d7964c1d56eb2bfd197b059798c1d', NULL, NULL, '2021-04-15 06:11:01', '2021-04-14 22:06:58', 'write_api', '');
+
+   INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
+       VALUES (69, 1, 3, '9d3e411efa288369a509d8798d17b2a669f331452cdd5d86cd696dad46517e6d', NULL, NULL, NULL, '2021-04-14 19:38:21', 'read_prefs write_api', '');
+
+   INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
+       VALUES (70, 1, 3, 'e466d2ba2ff5da35fdaa7547eb6c27ae0461c7a4acc05476c0a33b1b1d0788cd', NULL, NULL, NULL, '2021-04-14 19:38:21', 'read_prefs read_gpx', '');
+
+   INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
+       VALUES (71, 1, 3, 'f0e6f310ee3a9362fe00cee4328ad318a1fa6c770b2e19975271da99a6407476', NULL, 3600, NULL, now() at time zone 'utc' - '2 hours' :: interval, 'write_api', '');
+
+   INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
+       VALUES (72, 1, 3, 'b1294a183bf64f4d9a97f24ed84ce88e3ab6e7ada78114d6e600bdb63831237b', NULL, 3600, NULL, now() at time zone 'utc' - '30 minutes' :: interval, 'write_api', ''); 
+
+
+  )");
+
   std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
 
-  // can use a nonce
-  assert_equal<bool>(true, store->use_nonce("abcdef", 0), "first use of nonce");
+  // Note: these unit tests are using sha256 hashed tokens. Also see test_oauth2.cpp for
+  // oauth2::validate_bearer_token tests, which include auth token hash calculation
 
-  // can't use it twice
-  assert_equal<bool>(false, !store->use_nonce("abcdef", 0),
-                     "second use of the same nonce");
+  // Valid token w/ write API scope
+  {
+    bool allow_api_write;
+    bool expired;
+    bool revoked;
+    const auto user_id = store->get_user_id_for_oauth2_token("4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8", expired, revoked, allow_api_write);
+    assert_equal<boost::optional<osm_user_id_t> >(user_id, boost::optional<osm_user_id_t>{1}, "test_apidb_backend_oauth2::001 - user id");
+    assert_equal<boost::optional<bool> >(allow_api_write, true, "test_apidb_backend_oauth2::001 - allow_api_write");
+    assert_equal<boost::optional<bool> >(expired, false, "test_apidb_backend_oauth2::001 - expired");
+    assert_equal<boost::optional<bool> >(revoked, false, "test_apidb_backend_oauth2::001 - revoked");
+  }
 
-  // can use the same nonce with a different timestamp
-  assert_equal<bool>(true, store->use_nonce("abcdef", 1),
-                     "use of nonce with a different timestamp");
+  // Invalid (non existing) token
+  {
+    bool allow_api_write;
+    bool expired;
+    bool revoked;
+    const auto user_id = store->get_user_id_for_oauth2_token("a6ee343e3417915c87f492aac2a7b638647ef576e2a03256bbf1854c7e06c163", expired, revoked, allow_api_write);
+    assert_equal<boost::optional<osm_user_id_t> >(user_id, boost::none, "test_apidb_backend_oauth2::002");
+  }
 
-  // or the same timestamp with a different nonce
-  assert_equal<bool>(true, store->use_nonce("abcdeg", 0),
-                     "use of nonce with a different nonce string");
-}
+  // Revoked token
+  {
+    bool allow_api_write;
+    bool expired;
+    bool revoked;
+    const auto user_id = store->get_user_id_for_oauth2_token("1187c28b93ab4a14e3df6a61ef46a24d7d4d7964c1d56eb2bfd197b059798c1d", expired, revoked, allow_api_write);
+    assert_equal<boost::optional<osm_user_id_t> >(user_id, boost::optional<osm_user_id_t>{1}, "test_apidb_backend_oauth2::003 - user id");
+    assert_equal<boost::optional<bool> >(allow_api_write, true, "test_apidb_backend_oauth2::003 - allow_api_write");
+    assert_equal<boost::optional<bool> >(expired, false, "test_apidb_backend_oauth2::003 - expired");
+    assert_equal<boost::optional<bool> >(revoked, true, "test_apidb_backend_oauth2::003 - revoked");
+  }
 
-void test_allow_read_api(test_database &tdb) {
-  tdb.run_sql(
-    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-    "VALUES "
-    "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true); "
+  // Two scopes, including write_api
+  {
+    bool allow_api_write;
+    bool expired;
+    bool revoked;
+    const auto user_id = store->get_user_id_for_oauth2_token("4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8", expired, revoked, allow_api_write);
+    assert_equal<boost::optional<osm_user_id_t> >(user_id, boost::optional<osm_user_id_t>{1}, "test_apidb_backend_oauth2::004 - user id");
+    assert_equal<boost::optional<bool> >(allow_api_write, true, "test_apidb_backend_oauth2::004 - allow_api_write");
+    assert_equal<boost::optional<bool> >(expired, false, "test_apidb_backend_oauth2::004 - expired");
+    assert_equal<boost::optional<bool> >(revoked, false, "test_apidb_backend_oauth2::004 - revoked");
+  }
 
-    "INSERT INTO client_applications "
-    "  (id, name, user_id, allow_read_prefs, key, secret) "
-    "VALUES "
-    "  (1, 'test_client_application', 1, true, "
-    "   'x3tHSMbotPe5fBlItMbg', '1NZRJ0u2o7OilPDe60nfZsKJTC7RUZPrNfYwGBjATw'); "
+  // Two scopes, not write_api
+  {
+    bool allow_api_write;
+    bool expired;
+    bool revoked;
+    const auto user_id = store->get_user_id_for_oauth2_token("e466d2ba2ff5da35fdaa7547eb6c27ae0461c7a4acc05476c0a33b1b1d0788cd", expired, revoked, allow_api_write);
+    assert_equal<boost::optional<osm_user_id_t> >(user_id, boost::optional<osm_user_id_t>{1}, "test_apidb_backend_oauth2::005 - user id");
+    assert_equal<boost::optional<bool> >(allow_api_write, false, "test_apidb_backend_oauth2::005 - allow_api_write");
+    assert_equal<boost::optional<bool> >(expired, false, "test_apidb_backend_oauth2::005 - expired");
+    assert_equal<boost::optional<bool> >(revoked, false, "test_apidb_backend_oauth2::005 - revoked");
+  }
 
-    "INSERT INTO oauth_tokens "
-    "  (id, user_id, client_application_id, allow_read_prefs, token, secret, "
-    "   created_at, authorized_at, invalidated_at) "
-    "VALUES "
-    // valid key
-    "  (1, 1, 1, true, "
-    "   'OfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA', "
-    "   'fFCKdXsLxeHPlgrIPr5fZSpXKnDuLw0GvJTzeE99', "
-    "   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', NULL), "
-    // not authorized
-    "  (2, 1, 1, true, "
-    "   'wpNsXPhrgWl4ELPjPbhfwjjSbNk9npsKoNrMGFlC', "
-    "   'NZskvUUYlOuCsPKuMbSTz5eMpVJVI3LsyW11Z2Uq', "
-    "   '2016-07-11T19:12:00Z', NULL, NULL), "
-    // invalidated
-    "  (3, 1, 1, true, "
-    "   'Rzcm5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf', "
-    "   '2UxsEFziZGv64hdWN3Qa90Vb6v1aovVxaTTQIn1D', "
-    "   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z'); "
-    "");
-  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+  // expired token
+  {
+    bool allow_api_write;
+    bool expired;
+    bool revoked;
+    const auto user_id = store->get_user_id_for_oauth2_token("f0e6f310ee3a9362fe00cee4328ad318a1fa6c770b2e19975271da99a6407476", expired, revoked, allow_api_write);
+    assert_equal<boost::optional<osm_user_id_t> >(user_id, boost::optional<osm_user_id_t>{1}, "test_apidb_backend_oauth2::006 - user id");
+    assert_equal<boost::optional<bool> >(allow_api_write, true, "test_apidb_backend_oauth2::006 - allow_api_write");
+    assert_equal<boost::optional<bool> >(expired, true, "test_apidb_backend_oauth2::006 - expired");
+    assert_equal<boost::optional<bool> >(revoked, false, "test_apidb_backend_oauth2::006 - revoked");
+  }
 
-  assert_equal<bool>(
-    true, store->allow_read_api("OfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA"),
-    "valid token allows reading API");
+  // token to expire in about 30 minutes
+  {
+    bool allow_api_write;
+    bool expired;
+    bool revoked;
+    const auto user_id = store->get_user_id_for_oauth2_token("b1294a183bf64f4d9a97f24ed84ce88e3ab6e7ada78114d6e600bdb63831237b", expired, revoked, allow_api_write);
+    assert_equal<boost::optional<osm_user_id_t> >(user_id, boost::optional<osm_user_id_t>{1}, "test_apidb_backend_oauth2::006 - user id");
+    assert_equal<boost::optional<bool> >(allow_api_write, true, "test_apidb_backend_oauth2::007 - allow_api_write");
+    assert_equal<boost::optional<bool> >(expired, false, "test_apidb_backend_oauth2::007 - expired");
+    assert_equal<boost::optional<bool> >(revoked, false, "test_apidb_backend_oauth2::007 - revoked");
+  }
 
-  assert_equal<bool>(
-    false, store->allow_read_api("wpNsXPhrgWl4ELPjPbhfwjjSbNk9npsKoNrMGFlC"),
-    "non-authorized token does not allow reading API");
-
-  assert_equal<bool>(
-    false, store->allow_read_api("Rzcm5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf"),
-    "invalid token does not allow reading API");
-}
-
-void test_allow_write_api(test_database &tdb) {
-  tdb.run_sql(
-    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-    "VALUES "
-    "  (11, 'user_11@example.com', '', '2013-11-14T02:10:00Z', 'user_11', true); "
-
-    "INSERT INTO client_applications "
-    "  (id, name, user_id, allow_read_prefs, allow_write_api, key, secret) "
-    "VALUES "
-    "  (111, 'test_client_application111', 11, true, true, "
-    "   'x3tHSMbotPe5fBlItMbg', '1NZRJ0u2o7OilPDe60nfZsKJTC7RUZPrNfYwGBjATw'); "
-
-    "INSERT INTO oauth_tokens "
-    "  (id, user_id, client_application_id, allow_read_prefs, allow_write_api, token, secret, "
-    "   created_at, authorized_at, invalidated_at) "
-    "VALUES "
-    // write api permitted
-    "  (11, 11, 111, true, true,"
-    "   'AfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA', "
-    "   'fFCKdXsLxeHPlgrIPr5fZSpXKnDuLw0GvJTzeE99', "
-    "   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', NULL), "
-    // write api not permitted
-    "  (12, 11, 111, true, false,"
-    "   'ApNsXPhrgWl4ELPjPbhfwjjSbNk9npsKoNrMGFlC', "
-    "   'NZskvUUYlOuCsPKuMbSTz5eMpVJVI3LsyW11Z2Uq', "
-    "   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', NULL); "
-    "");
-  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
-
-  assert_equal<bool>(
-    true, store->allow_write_api("AfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA"),
-    "valid token and api write permitted allows writing API");
-
-  assert_equal<bool>(
-    false, store->allow_write_api("ApNsXPhrgWl4ELPjPbhfwjjSbNk9npsKoNrMGFlC"),
-    "valid token and api write not permitted does not allow writing API");
-}
-
-
-void test_get_user_id_for_token(test_database &tdb) {
-  tdb.run_sql(
-    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-    "VALUES "
-    "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true); "
-
-    "INSERT INTO client_applications "
-    "  (id, name, user_id, allow_read_prefs, key, secret) "
-    "VALUES "
-    "  (1, 'test_client_application', 1, true, "
-    "   'x3tHSMbotPe5fBlItMbg', '1NZRJ0u2o7OilPDe60nfZsKJTC7RUZPrNfYwGBjATw'); "
-
-    "INSERT INTO oauth_tokens "
-    "  (id, user_id, client_application_id, allow_read_prefs, token, secret, "
-    "   created_at, authorized_at, invalidated_at) "
-    "VALUES "
-    // valid key
-    "  (1, 1, 1, true, "
-    "   'OfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA', "
-    "   'fFCKdXsLxeHPlgrIPr5fZSpXKnDuLw0GvJTzeE99', "
-    "   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', NULL), "
-    // not authorized
-    "  (2, 1, 1, true, "
-    "   'wpNsXPhrgWl4ELPjPbhfwjjSbNk9npsKoNrMGFlC', "
-    "   'NZskvUUYlOuCsPKuMbSTz5eMpVJVI3LsyW11Z2Uq', "
-    "   '2016-07-11T19:12:00Z', NULL, NULL), "
-    // invalidated
-    "  (3, 1, 1, true, "
-    "   'Rzcm5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf', "
-    "   '2UxsEFziZGv64hdWN3Qa90Vb6v1aovVxaTTQIn1D', "
-    "   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z'); "
-    "");
-  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
-
-  assert_equal<boost::optional<osm_user_id_t> >(
-    1, store->get_user_id_for_token("OfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA"),
-    "valid token belongs to user 1");
-
-  assert_equal<boost::optional<osm_user_id_t> >(
-    1, store->get_user_id_for_token("wpNsXPhrgWl4ELPjPbhfwjjSbNk9npsKoNrMGFlC"),
-    "non-authorized token belongs to user 1");
-
-  assert_equal<boost::optional<osm_user_id_t> >(
-    1, store->get_user_id_for_token("Rzcm5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf"),
-    "invalid token belongs to user 1");
-
-  assert_equal<boost::optional<osm_user_id_t> >(
-    boost::none,
-    store->get_user_id_for_token("____5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf"),
-    "non-existent token does not belong to anyone");
 }
 
 class empty_data_selection
@@ -274,59 +242,74 @@ private:
   std::set<std::string> m_keys_seen;
 };
 
-void test_oauth_end_to_end(test_database &tdb) {
-  tdb.run_sql(
-    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-    "VALUES "
-    "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true); "
 
-    "INSERT INTO client_applications "
-    "  (id, name, user_id, allow_read_prefs, key, secret) "
-    "VALUES "
-    "  (1, 'test_client_application', 1, true, "
-    "   'x3tHSMbotPe5fBlItMbg', '1NZRJ0u2o7OilPDe60nfZsKJTC7RUZPrNfYwGBjATw'); "
+void create_changeset(test_database &tdb, std::shared_ptr<oauth::store> store, std::string token, int expected_response_code) {
 
-    "INSERT INTO oauth_tokens "
-    "  (id, user_id, client_application_id, allow_read_prefs, token, secret, "
-    "   created_at, authorized_at, invalidated_at) "
-    "VALUES "
-    "  (4, 1, 1, true, "
-    "   '15zpwgGjdjBu1DD65X7kcHzaWqfQpvqmMtqa3ZIO', "
-    "   'H3Vb9Kgf4LpTyVlft5xsI9MwzknQsTu6CkHE0qK3', "
-    "   '2016-10-07T00:00:00Z', '2016-10-07T00:00:00Z', NULL); "
-    "");
-  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+  // Test valid token, create empty changeset
+  recording_rate_limiter limiter;
+  std::string generator("test_apidb_backend.cpp");
+  routes route;
+
+  auto sel_factory = tdb.get_data_selection_factory();
+  auto upd_factory = tdb.get_data_update_factory();
+
+  test_request req;
+  req.set_header("SCRIPT_URL", "/api/0.6/changeset/create");
+  req.set_header("SCRIPT_URI",
+		 "http://www.openstreetmap.org/api/0.6/changeset/create");
+  req.set_header("HTTP_HOST", "www.openstreetmap.org");
+  req.set_header("HTTP_ACCEPT_ENCODING",
+		 "gzip;q=1.0,deflate;q=0.6,identity;q=0.3");
+  req.set_header("HTTP_ACCEPT", "*/*");
+  req.set_header("HTTP_USER_AGENT", "OAuth gem v0.4.7");
+  req.set_header("HTTP_AUTHORIZATION","Bearer " + token);
+  req.set_header("HTTP_X_REQUEST_ID", "V-eaKX8AAQEAAF4UzHwAAAHt");
+  req.set_header("HTTP_X_FORWARDED_HOST", "www.openstreetmap.org");
+  req.set_header("HTTP_X_FORWARDED_SERVER", "www.openstreetmap.org");
+  req.set_header("HTTP_CONNECTION", "Keep-Alive");
+  req.set_header("SERVER_NAME", "www.openstreetmap.org");
+  req.set_header("SERVER_ADDR", "127.0.0.1");
+  req.set_header("SERVER_PORT", "80");
+  req.set_header("REMOTE_ADDR", "127.0.0.1");
+  req.set_header("DOCUMENT_ROOT", "/srv/www.openstreetmap.org/rails/public");
+  req.set_header("REQUEST_SCHEME", "http");
+  req.set_header("SERVER_PROTOCOL", "HTTP/1.1");
+  req.set_header("REQUEST_METHOD", "PUT");
+  req.set_header("QUERY_STRING", "");
+  req.set_header("REQUEST_URI", "/api/0.6/changeset/create");
+  req.set_header("SCRIPT_NAME", "/api/0.6/changeset/create");
+
+  req.set_payload(R"( <osm><changeset><tag k="created_by" v="JOSM 1.61"/><tag k="comment" v="Just adding some streetnames"/></changeset></osm> )" );
+
+  process_request(req, limiter, generator, route, sel_factory, upd_factory, store);
+
+  assert_equal<int>(expected_response_code, req.response_status(), "response status");
+};
+
+void fetch_relation(test_database &tdb, std::shared_ptr<oauth::store> store, std::string token, int expected_response_code) {
 
   recording_rate_limiter limiter;
   std::string generator("test_apidb_backend.cpp");
   routes route;
-  std::shared_ptr<data_selection::factory> factory =
-    std::make_shared<empty_data_selection::factory>();
+  std::shared_ptr<data_selection::factory> factory = std::make_shared<empty_data_selection::factory>();
 
   test_request req;
   req.set_header("SCRIPT_URL", "/api/0.6/relation/165475/full");
   req.set_header("SCRIPT_URI",
-                 "http://www.openstreetmap.org/api/0.6/relation/165475/full");
+		 "http://www.openstreetmap.org/api/0.6/relation/165475/full");
   req.set_header("HTTP_HOST", "www.openstreetmap.org");
   req.set_header("HTTP_ACCEPT_ENCODING",
-                 "gzip;q=1.0,deflate;q=0.6,identity;q=0.3");
+		 "gzip;q=1.0,deflate;q=0.6,identity;q=0.3");
   req.set_header("HTTP_ACCEPT", "*/*");
   req.set_header("HTTP_USER_AGENT", "OAuth gem v0.4.7");
-  req.set_header("HTTP_AUTHORIZATION",
-                 "OAuth oauth_consumer_key=\"x3tHSMbotPe5fBlItMbg\", "
-                 "oauth_nonce=\"dvu3eTk8i1uvj8zQ8Wef91UF6ngQdlTA3xQ2vEf7xU\", "
-                 "oauth_signature=\"ewKFprItE5uaDHKFu3IVzuEHbno%3D\", "
-                 "oauth_signature_method=\"HMAC-SHA1\", "
-                 "oauth_timestamp=\"1475844649\", "
-                 "oauth_token=\"15zpwgGjdjBu1DD65X7kcHzaWqfQpvqmMtqa3ZIO\", "
-                 "oauth_version=\"1.0\"");
+  req.set_header("HTTP_AUTHORIZATION","Bearer " + token);
   req.set_header("HTTP_X_REQUEST_ID", "V-eaKX8AAQEAAF4UzHwAAAHt");
   req.set_header("HTTP_X_FORWARDED_HOST", "www.openstreetmap.org");
   req.set_header("HTTP_X_FORWARDED_SERVER", "www.openstreetmap.org");
   req.set_header("HTTP_CONNECTION", "Keep-Alive");
   req.set_header("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin");
   req.set_header("SERVER_SIGNATURE", "<address>Apache/2.4.18 (Ubuntu) Server "
-                 "at www.openstreetmap.org Port 80</address>");
+		 "at www.openstreetmap.org Port 80</address>");
   req.set_header("SERVER_SOFTWARE", "Apache/2.4.18 (Ubuntu)");
   req.set_header("SERVER_NAME", "www.openstreetmap.org");
   req.set_header("SERVER_ADDR", "127.0.0.1");
@@ -340,53 +323,47 @@ void test_oauth_end_to_end(test_database &tdb) {
   req.set_header("REQUEST_URI", "/api/0.6/relation/165475/full");
   req.set_header("SCRIPT_NAME", "/api/0.6/relation/165475/full");
 
-  assert_equal<boost::optional<std::string> >(
-    std::string("ewKFprItE5uaDHKFu3IVzuEHbno="),
-    oauth::detail::hashed_signature(req, *store),
-    "hashed signatures");
-
   process_request(req, limiter, generator, route, factory, std::shared_ptr<data_update::factory>(nullptr), store);
 
-  assert_equal<int>(404, req.response_status(), "response status");
-  assert_equal<bool>(false, limiter.saw_key("addr:127.0.0.1"),
-                     "saw addr:127.0.0.1 as a rate limit key");
-  assert_equal<bool>(true, limiter.saw_key("user:1"),
-                     "saw user:1 as a rate limit key");
+  assert_equal<int>(expected_response_code, req.response_status(), "response status");
 }
 
-void test_oauth_get_roles_for_user(test_database &tdb) {
-  tdb.run_sql(
-    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-    "VALUES "
-    "  (1, 'user_1@example.com', '', '2017-02-20T11:41:00Z', 'user_1', true), "
-    "  (2, 'user_2@example.com', '', '2017-02-20T11:41:00Z', 'user_2', true), "
-    "  (3, 'user_3@example.com', '', '2017-02-20T11:41:00Z', 'user_3', true); "
 
-    "INSERT INTO user_roles (id, user_id, role, granter_id) "
-    "VALUES "
-    "  (1, 1, 'administrator', 1), "
-    "  (2, 1, 'moderator', 1), "
-    "  (3, 2, 'moderator', 1);"
-    "");
+void test_oauth2_end_to_end(test_database &tdb) {
+  tdb.run_sql(R"(
+    INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) 
+    VALUES 
+      (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true),
+      (2, 'user_2@example.com', '', '2021-03-12T01:33:43Z', 'user_2', true);
+
+    INSERT INTO oauth_applications (id, owner_type, owner_id, name, uid, secret, redirect_uri, scopes, confidential, created_at, updated_at) 
+       VALUES (3, 'User', 1, 'App 1', 'dHKmvGkmuoMjqhCNmTJkf-EcnA61Up34O1vOHwTSvU8', '965136b8fb8d00e2faa2faaaed99c0ec10225518d0c8d9fb1d2af701e87eb68c', 
+              'http://demo.localhost:3000', 'write_api read_gpx', false, '2021-04-12 17:53:30', '2021-04-12 17:53:30');
+
+    INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
+       VALUES (67, 1, 3, '4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8', NULL, NULL, NULL, '2021-04-14 19:38:21.991429', 'write_api', '');
+
+    INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
+       VALUES (72, 1, 3, '4ea5b956c8882db030a5a799cb45eb933bb6dd2f196a44f68167d96fbc8ec3f1', NULL, NULL, NULL, '2021-04-14 19:38:21.991429', 'read_prefs', '');
+ 
+  )");
+
   std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
 
-  using roles_t = std::set<osm_user_role_t>;
+  // Test valid token -> HTTP 404 not found, due to unknown relation
+  fetch_relation(tdb, store, "1yi2RI2WhIVMLoLaDLg0nrPJPU4WQSIX4Hh_jxfRRxI", 404);
 
-  // user 3 has no roles -> should return empty set
-  assert_equal<roles_t>(roles_t(), store->get_roles_for_user(3),
-    "roles for normal user");
+  // Test unknown token -> HTTP 401 Unauthorized
+  fetch_relation(tdb, store, "8JrrmoKSUtzBhmenUUQF27PVdQn2QY8YdRfosu3R-Dc", 401);
 
-  // user 2 is a moderator
-  assert_equal<roles_t>(
-    roles_t({osm_user_role_t::moderator}),
-    store->get_roles_for_user(2),
-    "roles for moderator user");
+  // Test valid token, create empty changeset
 
-  // user 1 is an administrator and a moderator
-  assert_equal<roles_t>(
-    roles_t({osm_user_role_t::moderator, osm_user_role_t::administrator}),
-    store->get_roles_for_user(1),
-    "roles for admin+moderator user");
+  // missing write_api scope --> http::unauthorized ("You have not granted the modify map permission")
+  create_changeset(tdb, store, "hCXrz5B5fCBHusp0EuD2IGwYSxS8bkAnVw2_aLEdxig", 401);
+
+  // includes write_api scope
+  create_changeset(tdb, store, "1yi2RI2WhIVMLoLaDLg0nrPJPU4WQSIX4Hh_jxfRRxI", 200);
+
 }
 
 } // anonymous namespace
@@ -396,25 +373,11 @@ int main(int, char **) {
     test_database tdb;
     tdb.setup();
 
- /*
     tdb.run(std::function<void(test_database&)>(
-        &test_nonce_store));
+        &test_user_id_for_oauth2_token));
 
     tdb.run(std::function<void(test_database&)>(
-        &test_allow_read_api));
-
-    tdb.run(std::function<void(test_database&)>(
-        &test_allow_write_api));
-
-    tdb.run(std::function<void(test_database&)>(
-        &test_get_user_id_for_token));
-
-    tdb.run(std::function<void(test_database&)>(
-        &test_oauth_end_to_end));
-
-    tdb.run(std::function<void(test_database&)>(
-        &test_oauth_get_roles_for_user));
-*/
+        &test_oauth2_end_to_end));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;

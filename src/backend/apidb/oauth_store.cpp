@@ -185,6 +185,30 @@ oauth_store::get_user_id_for_token(const std::string &token_id) {
   }
 }
 
+std::set<osm_user_role_t>
+oauth_store::get_roles_for_user(osm_user_id_t id) {
+  std::set<osm_user_role_t> roles;
+
+  pqxx::work w(m_connection, "oauth_get_user_id_for_token");
+
+#if PQXX_VERSION_MAJOR >= 6
+  pqxx::result res = w.exec_prepared("roles_for_user", id);
+#else
+  pqxx::result res = w.prepared("roles_for_user")(id).exec();
+#endif
+
+  for (const auto &tuple : res) {
+    auto role = tuple[0].as<std::string>();
+    if (role == "moderator") {
+      roles.insert(osm_user_role_t::moderator);
+    } else if (role == "administrator") {
+      roles.insert(osm_user_role_t::administrator);
+    }
+  }
+
+  return roles;
+}
+
 boost::optional<osm_user_id_t> oauth_store::get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) {
 
   m_connection.prepare("oauth2_access_token",
@@ -217,28 +241,4 @@ boost::optional<osm_user_id_t> oauth_store::get_user_id_for_oauth2_token(const s
     allow_api_write = false;
     return boost::none;
   }
-}
-
-std::set<osm_user_role_t>
-oauth_store::get_roles_for_user(osm_user_id_t id) {
-  std::set<osm_user_role_t> roles;
-
-  pqxx::work w(m_connection, "oauth_get_user_id_for_token");
-
-#if PQXX_VERSION_MAJOR >= 6
-  pqxx::result res = w.exec_prepared("roles_for_user", id);
-#else
-  pqxx::result res = w.prepared("roles_for_user")(id).exec();
-#endif
-
-  for (const auto &tuple : res) {
-    auto role = tuple[0].as<std::string>();
-    if (role == "moderator") {
-      roles.insert(osm_user_role_t::moderator);
-    } else if (role == "administrator") {
-      roles.insert(osm_user_role_t::administrator);
-    }
-  }
-
-  return roles;
 }
