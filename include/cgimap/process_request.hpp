@@ -8,6 +8,7 @@
 #include "cgimap/routes.hpp"
 #include "cgimap/basicauth.hpp"
 #include "cgimap/oauth.hpp"
+#include "cgimap/oauth2.hpp"
 #include <string>
 
 /**

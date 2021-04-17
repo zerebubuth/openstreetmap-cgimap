@@ -629,6 +629,13 @@ struct test_oauth
     return roles;
   }
 
+  boost::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) {
+    expired = false;
+    revoked = false;
+    allow_api_write = false;
+    return boost::none;
+  }
+
 private:
   std::map<std::string, std::string> m_consumers, m_tokens;
   std::map<std::string, osm_user_id_t> m_users;
