@@ -35,7 +35,7 @@ namespace oauth2 {
     std::smatch sm;
 
     try {
-	std::regex r("Bearer ([A-Za-z0-9~_\\-\\.\\+\\/]+)");
+	std::regex r("Bearer ([A-Za-z0-9~_\\-\\.\\+\\/]+=*)");   // according to RFC 6750, section 2.1
 
 	if (!std::regex_match(auth_header, sm, r))
 	  return boost::none;
