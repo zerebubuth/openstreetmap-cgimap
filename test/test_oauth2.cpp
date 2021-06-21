@@ -99,8 +99,8 @@ struct test_oauth2
       allow_api_write = false;
       return osm_user_id_t{1};
 
-    // valid token - api_write allowed
-    } else if (token_id == "4a25cbf4d3f6a3bc3b0cbc4c3b7eaf4ae596203b0226f607cd5b4512d2245350") { // "H4TeKXzE_VLHUT33n6x__yZ8BAaQLwfxQNcADu7BMMA"
+    // valid token including all allowed chars & padding chars - api_write allowed
+    } else if (token_id == "b708e84f9f2135b2ebd4a87529a6d0da976939e37958ac63f5790d8e3f4eb7db") { // "H4TeKX-zE_VLH.UT33_n6x__yZ8~BA~aQL+wfxQN/cADu7BMMA====="
       expired = false;
       revoked = false;
       allow_api_write = true;
@@ -172,11 +172,11 @@ void test_validate_bearer_token() {
     assert_equal<bool>(allow_api_write, false, "Bearer token for user 1, allow_api_write");
   }
 
-  // Test valid bearer token, api_write_allowed
+  // Test valid token including all allowed chars & padding chars - api_write allowed
   {
     bool allow_api_write;
     test_request req;
-    req.set_header("HTTP_AUTHORIZATION","Bearer H4TeKXzE_VLHUT33n6x__yZ8BAaQLwfxQNcADu7BMMA");
+    req.set_header("HTTP_AUTHORIZATION","Bearer H4TeKX-zE_VLH.UT33_n6x__yZ8~BA~aQL+wfxQN/cADu7BMMA=====");
     auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
     assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{2}, "Bearer token for user 2");
     assert_equal<bool>(allow_api_write, true, "Bearer token for user 2, allow_api_write");
