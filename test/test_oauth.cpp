@@ -272,6 +272,13 @@ struct test_secret_store
     return boost::none;
   }
 
+  boost::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) {
+    expired = false;
+    revoked = false;
+    allow_api_write = false;
+    return boost::none;
+  }
+
   std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t) {
     return std::set<osm_user_role_t>();
   }

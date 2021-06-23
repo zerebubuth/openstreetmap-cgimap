@@ -562,6 +562,9 @@ validity::validity is_valid_signature(
   }
 }
 
+secret_store::~secret_store() = default;
+nonce_store::~nonce_store() = default;
+token_store::~token_store() = default;
 store::~store() = default;
 
 } // namespace oauth
