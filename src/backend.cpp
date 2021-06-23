@@ -104,7 +104,7 @@ void registry::setup_options(int argc, char *argv[],
         ptr = itr->second;
       }
       else {
-	throw std::runtime_error((boost::format("unknown backend provided, available options are: %1%") %
+        throw std::runtime_error((boost::format("unknown backend provided, available options are: %1%") %
 	       all_backends.str()).str());
       }
     }

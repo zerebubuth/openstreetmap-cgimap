@@ -14,11 +14,12 @@ cgimap_include_HEADERS = \
 	include/cgimap/data_update.hpp \
 	include/cgimap/handler.hpp \
 	include/cgimap/http.hpp \
-        include/cgimap/infix_ostream_iterator.hpp \
+	include/cgimap/infix_ostream_iterator.hpp \
 	include/cgimap/logger.hpp \
 	include/cgimap/mime_types.hpp \
-        include/cgimap/basicauth.hpp \
+	include/cgimap/basicauth.hpp \
 	include/cgimap/oauth.hpp \
+	include/cgimap/oauth2.hpp \
 	include/cgimap/output_buffer.hpp \
 	include/cgimap/output_formatter.hpp \
 	include/cgimap/process_request.hpp \
@@ -67,15 +68,15 @@ cgimap_api06_include_HEADERS = \
 
 cgimap_api06_changeset_upload_includedir=$(includedir)/cgimap/api06/changeset_upload
 cgimap_api06_changeset_upload_include_HEADERS = \
-        include/cgimap/api06/changeset_upload/changeset_updater.hpp \
-        include/cgimap/api06/changeset_upload/node_updater.hpp \
+	include/cgimap/api06/changeset_upload/changeset_updater.hpp \
+	include/cgimap/api06/changeset_upload/node_updater.hpp \
 	include/cgimap/api06/changeset_upload/osmchange_handler.hpp \
 	include/cgimap/api06/changeset_upload/osmchange_input_format.hpp \
 	include/cgimap/api06/changeset_upload/osmchange_tracking.hpp \
-        include/cgimap/api06/changeset_upload/osmobject.hpp \
-        include/cgimap/api06/changeset_upload/relation.hpp \
-        include/cgimap/api06/changeset_upload/relation_updater.hpp \
-        include/cgimap/api06/changeset_upload/way_updater.hpp 
+	include/cgimap/api06/changeset_upload/osmobject.hpp \
+	include/cgimap/api06/changeset_upload/relation.hpp \
+	include/cgimap/api06/changeset_upload/relation_updater.hpp \
+	include/cgimap/api06/changeset_upload/way_updater.hpp
 
 if ENABLE_APIDB
 cgimap_apidb_includedir=$(includedir)/cgimap/backend/apidb
@@ -108,7 +109,7 @@ endif
 
 TESTS = test/map.testcore test/node.testcore test/anon.testcore test/way.testcore test/relation.testcore
 TESTS += test/empty.testcore test/way_full.testcore test/relation_full.testcore
-TESTS += test/test_parse_id_list test/test_basicauth test/test_oauth test/test_http test/test_parse_time
+TESTS += test/test_parse_id_list test/test_basicauth test/test_oauth test/test_oauth2 test/test_http test/test_parse_time
 TESTS += test/changesets.testcore test/message.testcore test/routes.testcore
 TESTS += test/redactions.testcore
 TESTS += test/test_parse_osmchange_input
@@ -124,6 +125,7 @@ if ENABLE_APIDB
 TESTS += \
 	test/test_apidb_backend_nodes \
 	test/test_apidb_backend_oauth \
+	test/test_apidb_backend_oauth2 \
 	test/test_apidb_backend_historic \
 	test/test_apidb_backend_changesets \
 	test/test_apidb_backend_changeset_downloads \

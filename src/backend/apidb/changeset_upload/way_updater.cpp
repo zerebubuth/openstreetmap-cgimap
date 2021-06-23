@@ -29,7 +29,7 @@ ApiDB_Way_Updater::~ApiDB_Way_Updater() = default;
 void ApiDB_Way_Updater::add_way(osm_changeset_id_t changeset_id,
                                 osm_nwr_signed_id_t old_id,
                                 const api06::WayNodeList &nodes,
-				const api06::TagList &tags) {
+                                const api06::TagList &tags) {
 
   way_t new_way{};
   new_way.version = 1;

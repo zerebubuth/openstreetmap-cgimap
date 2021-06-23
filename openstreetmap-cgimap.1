@@ -9,6 +9,7 @@ openstreetmap-cgimap \- FCGI version of the OpenStreetMap API
 [\fB\-\-instances \fIINSTANCES\fR]
 [\fB\-\-pidfile \fIPIDFILE\fR]
 [\fB\-\-logfile \fILOGFILE\fR]
+[\fB\-\-configfile \fICONFIGFILE\fR]
 [\fB\-\-memcache \fISPEC\fR]
 [\fB\-\-ratelimit \fILIMIT\fR]
 [\fB\-\-maxdebt \fIDEBT\fR]
@@ -25,12 +26,19 @@ openstreetmap-cgimap \- FCGI version of the OpenStreetMap API
 [\fB\-\-cachesize \fISIZE\fR]
 [\fB\-\-dbport \fIPORT\fR]
 ] [
-[\fB\-\-dbname \fIDBNAME\fR]
-[\fB\-\-host \fIHOST\fR]
-[\fB\-\-username \fIUSER\fR]
-[\fB\-\-password \fIPASS\fR]
-[\fB\-\-charset \fICHARSET\fR]
-[\fB\-\-dbport \fIPORT\fR]
+[\fB\-\-oauth\-dbname \fIOAUTHDBNAME\fR]
+[\fB\-\-oauth\-host \fIOAUTHHOST\fR]
+[\fB\-\-oauth\-username \fIOAUTHUSER\fR]
+[\fB\-\-oauth\-password \fIOAUTHPASS\fR]
+[\fB\-\-oauth\-charset \fIOAUTHCHARSET\fR]
+[\fB\-\-oauth\-dbport \fIOAUTHPORT\fR]
+] [
+[\fB\-\-update\-dbname \fIUPDATEDBNAME\fR]
+[\fB\-\-update\-host \fIUPDATEHOST\fR]
+[\fB\-\-update\-username \fIUPDATEUSER\fR]
+[\fB\-\-update\-password \fIUPDATEPASS\fR]
+[\fB\-\-update\-charset \fIUPDATECHARSET\fR]
+[\fB\-\-update\-dbport \fIUPDATEPORT\fR]
 ] [
 [\fB\-\-file \fIFILE\fR]
 ]
@@ -103,6 +111,42 @@ Default is 1000.
 .TP
 .BR \-\-dbport =\fIPORT\fR
 Database port number or UNIX socket file name.
+.TP
+.BR \-\-oauth\-dbname =\fIOAUTHDBNAME\fR
+Database name to use for OAuth, if different from \-\-dbname.
+.TP
+.BR \-\-oauth\-host =\fIOAUTHHOST\fR
+Database server host to use for OAuth, if different from \-\-host.
+.TP
+.BR \-\-oauth\-username =\fIOAUTHUSER\fR
+Database user name to use for OAuth, if different from \-\-username.
+.TP
+.BR \-\-oauth\-password =\fIOAUTHPASS\fR
+Database password to use for OAuth, if different from \-\-password.
+.TP
+.BR \-\-oauth\-charset =\fIOAUTHCHARSET\fR
+Database character set to use for OAuth, if different from \-\-charset.
+.TP
+.BR \-\-oauth\-dbport =\fIOAUTHPORT\fR
+Database port number or UNIX socket file name to use for OAuth, if different from \-\-dbport.
+.TP
+.BR \-\-update\-dbname =\fIUPDATEDBNAME\fR
+Database name to use for API write operations, if different from \-\-dbname.
+.TP
+.BR \-\-update\-host =\fIUPDATEHOST\fR
+Database server host to use for API write operations, if different from \-\-host.
+.TP
+.BR \-\-update\-username =\fIUPDATEUSER\fR
+Database user name to use for API write operations, if different from \-\-username.
+.TP
+.BR \-\-update\-password =\fIUPDATEPASS\fR
+Database password to use for API write operations, if different from \-\-password.
+.TP
+.BR \-\-update\-charset =\fIUPDATECHARSET\fR
+Database character set to use for API write operations, if different from \-\-charset.
+.TP
+.BR \-\-update\-dbport =\fIUPDATEPORT\fR
+Database port number or UNIX socket file name to use for API write operations, if different from \-\-dbport.
 .SS Static XML backend options:
 .TP
 .BR \-\-file =\fIFILE\fR
