@@ -47,11 +47,19 @@ namespace oauth2 {
       return boost::none;
     }
 
-    const auto bearer_token_hashed = sha256_hash(sm[1]);
+    const auto bearer_token = sm[1];
 
     bool expired;
     bool revoked;
-    const auto user_id = store->get_user_id_for_oauth2_token(bearer_token_hashed, expired, revoked, allow_api_write);
+
+    // Check token as plain text first
+    auto user_id = store->get_user_id_for_oauth2_token(bearer_token, expired, revoked, allow_api_write);
+
+    // Fallback to sha256-hashed token
+    if (boost::none == user_id) {
+      const auto bearer_token_hashed = sha256_hash(bearer_token);
+      user_id = store->get_user_id_for_oauth2_token(bearer_token_hashed, expired, revoked, allow_api_write);
+    }
 
     if (boost::none == user_id) {
       throw http::unauthorized("invalid_token");
