@@ -125,6 +125,14 @@ struct test_oauth2
       return osm_user_id_t{4};
     }
 
+    // valid token (plain) - api write not allowed
+    if (token_id == "0LbSEAVj4jQhr-TfNaCUhn4JSAvXmXepNaL9aSAUsVQ") {
+      expired = false;
+      revoked = false;
+      allow_api_write = false;
+      return osm_user_id_t{5};
+    }
+
     // default: invalid token
     return boost::none;
 
@@ -235,6 +243,16 @@ void test_validate_bearer_token() {
         throw std::runtime_error("test_authenticate_user::003: Expected token_revoked");
       }
     }
+  }
+
+  // Test valid bearer token, no api_write
+  {
+    bool allow_api_write;
+    test_request req;
+    req.set_header("HTTP_AUTHORIZATION","Bearer 0LbSEAVj4jQhr-TfNaCUhn4JSAvXmXepNaL9aSAUsVQ");
+    auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
+    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{5}, "Bearer token for user 5");
+    assert_equal<bool>(allow_api_write, false, "Bearer token for user 5, allow_api_write");
   }
 }
 

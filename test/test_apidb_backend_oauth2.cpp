@@ -87,8 +87,9 @@ void test_user_id_for_oauth2_token(test_database &tdb) {
 
   std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
 
-  // Note: these unit tests are using sha256 hashed tokens. Also see test_oauth2.cpp for
-  // oauth2::validate_bearer_token tests, which include auth token hash calculation
+  // Note: Tokens in this unit tests are considered to be opaque strings, tokens are used for db lookups as-is.
+  // It doesn't matter if they have been previously stored as plain or sha256-hashed tokens.
+  // Also see test_oauth2.cpp for oauth2::validate_bearer_token tests, which include auth token hash calculation
 
   // Valid token w/ write API scope
   {
@@ -330,6 +331,10 @@ void fetch_relation(test_database &tdb, std::shared_ptr<oauth::store> store, std
 
 
 void test_oauth2_end_to_end(test_database &tdb) {
+
+  // token 1yi2RI2WhIVMLoLaDLg0nrPJPU4WQSIX4Hh_jxfRRxI is stored in plain text in oauth_access_tokens table,
+  // all others as sha256-hash value
+
   tdb.run_sql(R"(
     INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) 
     VALUES 
@@ -341,7 +346,7 @@ void test_oauth2_end_to_end(test_database &tdb) {
               'http://demo.localhost:3000', 'write_api read_gpx', false, '2021-04-12 17:53:30', '2021-04-12 17:53:30');
 
     INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
-       VALUES (67, 1, 3, '4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8', NULL, NULL, NULL, '2021-04-14 19:38:21.991429', 'write_api', '');
+       VALUES (67, 1, 3, '1yi2RI2WhIVMLoLaDLg0nrPJPU4WQSIX4Hh_jxfRRxI', NULL, NULL, NULL, '2021-04-14 19:38:21.991429', 'write_api', '');
 
     INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
        VALUES (72, 1, 3, '4ea5b956c8882db030a5a799cb45eb933bb6dd2f196a44f68167d96fbc8ec3f1', NULL, NULL, NULL, '2021-04-14 19:38:21.991429', 'read_prefs', '');
