@@ -19,6 +19,7 @@ cgimap_include_HEADERS = \
 	include/cgimap/mime_types.hpp \
 	include/cgimap/basicauth.hpp \
 	include/cgimap/oauth.hpp \
+	include/cgimap/oauth2.hpp \
 	include/cgimap/output_buffer.hpp \
 	include/cgimap/output_formatter.hpp \
 	include/cgimap/process_request.hpp \
@@ -108,7 +109,7 @@ endif
 
 TESTS = test/map.testcore test/node.testcore test/anon.testcore test/way.testcore test/relation.testcore
 TESTS += test/empty.testcore test/way_full.testcore test/relation_full.testcore
-TESTS += test/test_parse_id_list test/test_basicauth test/test_oauth test/test_http test/test_parse_time
+TESTS += test/test_parse_id_list test/test_basicauth test/test_oauth test/test_oauth2 test/test_http test/test_parse_time
 TESTS += test/changesets.testcore test/message.testcore test/routes.testcore
 TESTS += test/redactions.testcore
 TESTS += test/test_parse_osmchange_input
@@ -124,6 +125,7 @@ if ENABLE_APIDB
 TESTS += \
 	test/test_apidb_backend_nodes \
 	test/test_apidb_backend_oauth \
+	test/test_apidb_backend_oauth2 \
 	test/test_apidb_backend_historic \
 	test/test_apidb_backend_changesets \
 	test/test_apidb_backend_changeset_downloads \
