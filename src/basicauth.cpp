@@ -9,12 +9,14 @@
 #include <cryptopp/secblock.h>
 #include <cryptopp/sha.h>
 #include <sys/types.h>
+#include <argon2.h>
 #include <cassert>
 #include <iostream>
 #include <regex>
 #include <string>
 
 #include <boost/algorithm/string.hpp>
+
 
 #include "cgimap/basicauth.hpp"
 
@@ -28,6 +30,10 @@ bool PasswordHash::check(const std::string& pass_crypt,
   std::string hashed_candidate;
 
   if (pass_salt.empty()) {
+
+      if (is_valid_argon2(pass_crypt, candidate))
+	return true;
+
       const auto digest = md5_hash(candidate);
       return (boost::iequals(digest, pass_crypt));
   }
@@ -94,6 +100,16 @@ std::string PasswordHash::base64decode(const std::string& s) {
   return result;
 }
 
+bool PasswordHash::is_valid_argon2(const std::string& pass_crypt, const std::string& candidate)
+{
+  // Argon2 public APIs don't support a secret (pepper) at this time without re-implementing parts of argon2,
+  // hence using argon2_verify without secret for the time being.
+  // Upstream issue: https://github.com/P-H-C/phc-winner-argon2/issues/314
+  // Also assuming id algorithm as discussed in https://github.com/openstreetmap/openstreetmap-website/pull/3353
+
+  return (argon2_verify(pass_crypt.c_str(), candidate.c_str(), candidate.size(), Argon2_id) == ARGON2_OK);
+}
+
 
 namespace basicauth {
 
@@ -132,7 +148,7 @@ namespace basicauth {
     std::string auth;
 
     try {
-       auth = pwd_hash.base64decode(sm[1]);
+       auth = PasswordHash::base64decode(sm[1]);
     } catch (...) {
       return boost::optional<osm_user_id_t>{};
     }
@@ -157,7 +173,7 @@ namespace basicauth {
     if (!user_exists)
       throw http::unauthorized("Incorrect user or password");
 
-    if (pwd_hash.check(pass_crypt, pass_salt, candidate))
+    if (PasswordHash::check(pass_crypt, pass_salt, candidate))
       return boost::optional<osm_user_id_t>{user_id};
     else
       throw http::unauthorized("Incorrect user or password");
