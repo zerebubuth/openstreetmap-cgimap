@@ -107,6 +107,13 @@ public:
 	return true;
     }
 
+    if (user_name == "argon2") {
+	user_id = 4712;
+        pass_crypt = "$argon2id$v=19$m=65536,t=1,p=1$KXGHWfWMf5H5kY4uU3ua8A$YroVvX6cpJpljTio62k19C6UpuIPtW7me2sxyU2dyYg";
+        pass_salt = "";
+	return true;
+    }
+
     return false;
   }
 
@@ -128,55 +135,64 @@ public:
 
 void test_password_hash() {
 
-  PasswordHash pwd_hash;
-
   // test_md5_without_salt
-  assert_equal<bool>(pwd_hash.check("5f4dcc3b5aa765d61d8327deb882cf99", "",
+  assert_equal<bool>(PasswordHash::check("5f4dcc3b5aa765d61d8327deb882cf99", "",
                              "password"), true);
 
-  assert_equal<bool>(pwd_hash.check("5f4dcc3b5aa765d61d8327deb882cf99", "", "wrong"), false);
+  assert_equal<bool>(PasswordHash::check("5f4dcc3b5aa765d61d8327deb882cf99", "", "wrong"), false);
 
   // test_md5_with_salt
-  assert_equal<bool>(pwd_hash.check("67a1e09bb1f83f5007dc119c14d663aa", "salt",
+  assert_equal<bool>(PasswordHash::check("67a1e09bb1f83f5007dc119c14d663aa", "salt",
                              "password"), true);
-  assert_equal<bool>(pwd_hash.check("67a1e09bb1f83f5007dc119c14d663aa", "salt",
+  assert_equal<bool>(PasswordHash::check("67a1e09bb1f83f5007dc119c14d663aa", "salt",
                              "wrong"), false);
-  assert_equal<bool>(pwd_hash.check("67a1e09bb1f83f5007dc119c14d663aa", "wrong",
+  assert_equal<bool>(PasswordHash::check("67a1e09bb1f83f5007dc119c14d663aa", "wrong",
                              "password"), false);
 
   // test_pbkdf2_1000_32_sha512
-  assert_equal<bool>(pwd_hash.check(
+  assert_equal<bool>(PasswordHash::check(
              "ApT/28+FsTBLa/J8paWfgU84SoRiTfeY8HjKWhgHy08=",
              "sha512!1000!HR4z+hAvKV2ra1gpbRybtoNzm/CNKe4cf7bPKwdUNrk=",
              "password"), true);
 
-  assert_equal<bool>(pwd_hash.check(
+  assert_equal<bool>(PasswordHash::check(
              "ApT/28+FsTBLa/J8paWfgU84SoRiTfeY8HjKWhgHy08=",
              "sha512!1000!HR4z+hAvKV2ra1gpbRybtoNzm/CNKe4cf7bPKwdUNrk=",
              "wrong"), false);
 
-  assert_equal<bool>(pwd_hash.check(
+  assert_equal<bool>(PasswordHash::check(
              "ApT/28+FsTBLa/J8paWfgU84SoRiTfeY8HjKWhgHy08=",
              "sha512!1000!HR4z+hAvKV2ra1gwrongtoNzm/CNKe4cf7bPKwdUNrk=",
              "password"), false);
 
   // test_pbkdf2_10000_32_sha512
-  assert_equal<bool>(pwd_hash.check(
+  assert_equal<bool>(PasswordHash::check(
              "3wYbPiOxk/tU0eeIDjUhdvi8aDP3AbFtwYKKxF1IhGg=",
              "sha512!10000!OUQLgtM7eD8huvanFT5/WtWaCwdOdrir8QOtFwxhO0A=",
              "password"), true);
 
-  assert_equal<bool>(pwd_hash.check(
+  assert_equal<bool>(PasswordHash::check(
              "3wYbPiOxk/tU0eeIDjUhdvi8aDP3AbFtwYKKxF1IhGg=",
              "sha512!10000!OUQLgtM7eD8huvanFT5/WtWaCwdOdrir8QOtFwxhO0A=",
              "wrong"), false);
 
-  assert_equal<bool>(pwd_hash.check(
+  assert_equal<bool>(PasswordHash::check(
              "3wYbPiOxk/tU0eeIDjUhdvi8aDP3AbFtwYKKxF1IhGg=",
              "sha512!10000!OUQLgtMwronguvanFT5/WtWaCwdOdrir8QOtFwxhO0A=",
              "password"), false);
 
+  // test argon2
+  assert_equal<bool>(PasswordHash::check(
+             "$argon2id$v=19$m=65536,t=1,p=1$KXGHWfWMf5H5kY4uU3ua8A$YroVvX6cpJpljTio62k19C6UpuIPtW7me2sxyU2dyYg",
+             "",
+             "password"), true);
+
+  assert_equal<bool>(PasswordHash::check(
+             "$argon2id$v=19$m=65536,t=1,p=1$KXGHWfWMf5H5kY4uU3ua8A$YroVvX6cpJpljTio62k19C6UpuIPtW7me2sxyU2dyYg",
+             "",
+             "wrong"), false);
 }
+
 
 void test_authenticate_user() {
 
@@ -229,6 +245,13 @@ void test_authenticate_user() {
 
   {
     test_request req;
+    req.set_header("HTTP_AUTHORIZATION","Basic YXJnb24yOnBhc3N3b3Jk");
+    auto res = basicauth::authenticate_user(req, sel);
+    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{4712}, "Known user with correct password, argon2");
+  }
+
+  {
+    test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic TotalCrapData==");
     auto res = basicauth::authenticate_user(req, sel);
     assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{}, "Crap data");
@@ -238,6 +261,21 @@ void test_authenticate_user() {
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzppbmNvcnJlY3Q=");
+    try {
+      auto res = basicauth::authenticate_user(req, sel);
+      throw std::runtime_error("Known user, incorrect password: expected http unauthorized exception");
+
+    } catch (http::exception &e) {
+      if (e.code() != 401)
+        throw std::runtime_error(
+            "Known user / incorrect password: Expected HTTP 401");
+    }
+  }
+
+  // Test with known user and incorrect password, argon2
+  {
+    test_request req;
+    req.set_header("HTTP_AUTHORIZATION","Basic YXJnb24yOndyb25n");
     try {
       auto res = basicauth::authenticate_user(req, sel);
       throw std::runtime_error("Known user, incorrect password: expected http unauthorized exception");
@@ -271,7 +309,6 @@ int main() {
   try {
     ANNOTATE_EXCEPTION(test_password_hash());
     ANNOTATE_EXCEPTION(test_authenticate_user());
-
 
   } catch (const std::exception &e) {
     std::cerr << "EXCEPTION: " << e.what() << std::endl;

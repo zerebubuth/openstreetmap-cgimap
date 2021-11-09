@@ -10,20 +10,22 @@
 
 class PasswordHash {
  public:
-  bool check(const std::string& pass_crypt,
+  static bool check(const std::string& pass_crypt,
 		    const std::string& pass_salt,
                     const std::string& candidate);
 
-  std::string base64decode(const std::string& s);
+  static std::string base64decode(const std::string& s);
 
  private:
   template <class T>
-  std::string PBKDF2_HMAC_SHA_string(const std::string& pass,
+  static std::string PBKDF2_HMAC_SHA_string(const std::string& pass,
                                      const std::string& salt,
                                      const uint iterations,
                                      const uint outputBytes);
 
-  std::string md5_hash(const std::string& s);
+  static std::string md5_hash(const std::string& s);
+
+  static bool is_valid_argon2(const std::string& pass_crypt, const std::string& candidate);
 };
 
 namespace basicauth {

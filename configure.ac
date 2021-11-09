@@ -30,6 +30,9 @@ PKG_CHECK_MODULES(LIBPQXX, libpqxx >= 4.0)
 AC_SUBST(LIBPQXX_CFLAGS)
 AC_SUBST(LIBPQXX_LIBS)
 
+PKG_CHECK_MODULES([ARGON2], [libargon2])
+AC_SUBST(argon2_lib, [", libargon2"])
+
 #m4_include([aclocal/ax_boost_base.m4])
 #m4_include([aclocal/ax_boost_system.m4])
 #m4_include([aclocal/ax_boost_program_options.m4])
