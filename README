@@ -48,6 +48,7 @@ development are in brackets. Respective library versions for Ubuntu 18.04 and Ub
 * libboost    (1.58.0+dfsg-5ubuntu3.1)
 * libcrypto++ (5.6.1-9)
 * zlib1g-dev  (1:1.2.11.dfsg-0ubuntu2)
+* libargon2-dev
 
 If you're running a Debian or Ubuntu system these can be installed
 using the following command:
@@ -55,7 +56,7 @@ using the following command:
     sudo apt-get install libxml2-dev libpqxx-dev libfcgi-dev zlib1g-dev \
       libboost-dev libboost-program-options-dev libboost-filesystem-dev \
       libboost-system-dev libboost-locale-dev libmemcached-dev \
-      libcrypto++-dev
+      libcrypto++-dev libargon2-dev
 
 Note that C++11 is _required_ to build CGImap.
 

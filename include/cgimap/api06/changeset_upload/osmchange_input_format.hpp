@@ -27,7 +27,10 @@ class OSMChangeXMLParser : private xmlpp::SaxParser {
 
 public:
   explicit OSMChangeXMLParser(Parser_Callback *callback)
-      : m_callback(callback) {}
+      : m_callback(callback) {
+
+    m_context.push_back(context::root);
+  }
 
   OSMChangeXMLParser(const OSMChangeXMLParser &) = delete;
   OSMChangeXMLParser &operator=(const OSMChangeXMLParser &) = delete;
@@ -49,7 +52,9 @@ protected:
 
   void on_start_element(const char *element, const char **attrs) override {
 
-    switch (m_context) {
+    assert (!m_context.empty());
+
+    switch (m_context.back()) {
     case context::root:
       if (!std::strcmp(element, "osmChange")) {
         m_callback->start_document();
@@ -60,18 +65,16 @@ protected:
               .str()
         };
       }
-      m_context = context::top;
+      m_context.push_back(context::top);
       break;
 
     case context::top:
 
       if (!std::strcmp(element, "create")) {
-        m_context = context::in_create;
-        m_operation_context = context::in_create;
+        m_context.push_back(context::in_create);
         m_operation = operation::op_create;
       } else if (!std::strcmp(element, "modify")) {
-        m_context = context::in_modify;
-        m_operation_context = context::in_modify;
+        m_context.push_back(context::in_modify);
         m_operation = operation::op_modify;
       } else if (!std::strcmp(element, "delete")) {
         m_if_unused = false;
@@ -81,8 +84,7 @@ protected:
             m_if_unused = true;
           }
         });
-        m_context = context::in_delete;
-        m_operation_context = context::in_delete;
+        m_context.push_back(context::in_delete);
         m_operation = operation::op_delete;
       } else {
         throw xml_error{
@@ -102,15 +104,15 @@ protected:
         m_node.reset(new Node{});
         init_object(*m_node, attrs);
         init_node(*m_node, attrs);
-        m_context = context::node;
+        m_context.push_back(context::node);
       } else if (!std::strcmp(element, "way")) {
         m_way.reset(new Way{});
         init_object(*m_way, attrs);
-        m_context = context::way;
+        m_context.push_back(context::way);
       } else if (!std::strcmp(element, "relation")) {
         m_relation.reset(new Relation{});
         init_object(*m_relation, attrs);
-        m_context = context::relation;
+        m_context.push_back(context::relation);
       } else {
         throw xml_error{
           (boost::format(
@@ -122,15 +124,13 @@ protected:
       break;
 
     case context::node:
-      m_last_context = context::node;
-      m_context = context::in_object;
+      m_context.push_back(context::in_object);
       if (!std::strcmp(element, "tag")) {
         add_tag(*m_node, attrs);
       }
       break;
     case context::way:
-      m_last_context = context::way;
-      m_context = context::in_object;
+      m_context.push_back(context::in_object);
       if (!std::strcmp(element, "nd")) {
 	bool ref_found = false;
         check_attributes(attrs, [&](const char *name, const char *value) {
@@ -149,8 +149,7 @@ protected:
       }
       break;
     case context::relation:
-      m_last_context = context::relation;
-      m_context = context::in_object;
+      m_context.push_back(context::in_object);
       if (!std::strcmp(element, "member")) {
         RelationMember member;
         check_attributes(attrs, [&member](const char *name, const char *value) {
@@ -181,33 +180,32 @@ protected:
 
   void on_end_element(const char *element) override {
 
-    switch (m_context) {
+    assert (!m_context.empty());
+
+    switch (m_context.back()) {
     case context::root:
       assert(false);
       break;
     case context::top:
       assert(!std::strcmp(element, "osmChange"));
-      m_context = context::root;
+      m_context.pop_back();
       m_operation = operation::op_undefined;
       m_callback->end_document();
       break;
     case context::in_create:
       assert(!std::strcmp(element, "create"));
-      m_context = context::top;
-      m_operation_context = context::top;
       m_operation = operation::op_undefined;
+      m_context.pop_back();
       break;
     case context::in_modify:
       assert(!std::strcmp(element, "modify"));
-      m_context = context::top;
-      m_operation_context = context::top;
       m_operation = operation::op_undefined;
+      m_context.pop_back();
       break;
     case context::in_delete:
       assert(!std::strcmp(element, "delete"));
-      m_context = context::top;
-      m_operation_context = context::top;
       m_operation = operation::op_undefined;
+      m_context.pop_back();
       m_if_unused = false;
       break;
     case context::node:
@@ -221,7 +219,7 @@ protected:
       }
       m_callback->process_node(*m_node, m_operation, m_if_unused);
       m_node.reset(new Node{});
-      m_context = m_operation_context;
+      m_context.pop_back();
       break;
     case context::way:
       assert(!std::strcmp(element, "way"));
@@ -235,7 +233,7 @@ protected:
 
       m_callback->process_way(*m_way, m_operation, m_if_unused);
       m_way.reset(new Way{});
-      m_context = m_operation_context;
+      m_context.pop_back();
       break;
     case context::relation:
       assert(!std::strcmp(element, "relation"));
@@ -248,10 +246,10 @@ protected:
       }
       m_callback->process_relation(*m_relation, m_operation, m_if_unused);
       m_relation.reset(new Relation{});
-      m_context = m_operation_context;
+      m_context.pop_back();
       break;
     case context::in_object:
-      m_context = m_last_context;
+      m_context.pop_back();
       break;
     }
   }
@@ -393,11 +391,9 @@ private:
       .str() };
   }
 
-  context m_context = context::root;
-  context m_operation_context = context::root;
-  context m_last_context = context::root;
-
   operation m_operation = operation::op_undefined;
+
+  std::vector<context> m_context;
 
   Parser_Callback *m_callback;
 

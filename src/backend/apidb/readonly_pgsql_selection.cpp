@@ -745,13 +745,13 @@ bool readonly_pgsql_selection::get_user_id_pass(const std::string& user_name, os
   std::string email = boost::algorithm::trim_copy(user_name);
 
   m.prepare("get_user_id_pass",
-    R"(SELECT id, pass_crypt, pass_salt FROM users
+    R"(SELECT id, pass_crypt, COALESCE(pass_salt, '') as pass_salt FROM users
            WHERE (email = $1 OR display_name = $2)
              AND (status = 'active' or status = 'confirmed') LIMIT 1
       )");
 
   m.prepare("get_user_id_pass_case_insensitive",
-    R"(SELECT id, pass_crypt, pass_salt FROM users
+    R"(SELECT id, pass_crypt, COALESCE(pass_salt, '') as pass_salt FROM users
            WHERE (LOWER(email) = LOWER($1) OR LOWER(display_name) = LOWER($2))
              AND (status = 'active' or status = 'confirmed')
       )");

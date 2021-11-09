@@ -314,11 +314,18 @@ void init_changesets(test_database &tdb) {
 
   // Prepare users, changesets
 
+  // Note: previously used credentials for user id 31:
+  //
+  // pass_crypt:    '3wYbPiOxk/tU0eeIDjUhdvi8aDP3AbFtwYKKxF1IhGg='
+  // pass_salt:     'sha512!10000!OUQLgtM7eD8huvanFT5/WtWaCwdOdrir8QOtFwxhO0A='
+  //
+  // Those are still being used in test_apidb_backend_changeset_uploads.cpp
+
   tdb.run_sql(R"(
 	 INSERT INTO users (id, email, pass_crypt, pass_salt, creation_time, display_name, data_public, status)
 	 VALUES
-	   (31, 'demo@example.com', '3wYbPiOxk/tU0eeIDjUhdvi8aDP3AbFtwYKKxF1IhGg=',
-                                   'sha512!10000!OUQLgtM7eD8huvanFT5/WtWaCwdOdrir8QOtFwxhO0A=',
+	   (31, 'demo@example.com', '$argon2id$v=19$m=65536,t=1,p=1$KXGHWfWMf5H5kY4uU3ua8A$YroVvX6cpJpljTio62k19C6UpuIPtW7me2sxyU2dyYg',
+                                   null,
                                    '2013-11-14T02:10:00Z', 'demo', true, 'confirmed'),
 	   (32, 'user_2@example.com', '', '', '2013-11-14T02:10:00Z', 'user_2', false, 'active');
 
