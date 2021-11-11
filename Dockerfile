@@ -31,7 +31,7 @@ FROM ubuntu:20.04
 RUN apt-get update -qq && \
     apt-get install -y \
        libfcgi-bin libmemcached11 libboost-locale1.71.0 libboost-program-options1.71.0 \
-       libxml2 libcrypto++6 libyajl2 libpqxx-6.4 zlib1g argon2 \
+       libxml2 libcrypto++6 libyajl2 libpqxx-6.4 zlib1g libargon2-1 \
        --no-install-recommends && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
