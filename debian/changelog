@@ -1,3 +1,11 @@
+openstreetmap-cgimap (0.8.6-1~focal1) focal; urgency=medium
+
+  * Released version 0.8.6
+  * Add support for Argon2 password hashing (#251)
+  * Simplify xml parser context handling (#249)
+
+ -- mmd osm <mmd.osm@gmail.com>  Sun, 14 Nov 2021 19:42:01 +0000
+
 openstreetmap-cgimap (0.8.5-1~focal1) focal; urgency=medium
 
   * Released version 0.8.5
