@@ -5,6 +5,7 @@
 #include "cgimap/types.hpp"
 #include "cgimap/mime_types.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <list>
 #include <vector>

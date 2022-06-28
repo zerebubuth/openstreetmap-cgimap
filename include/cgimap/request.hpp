@@ -3,6 +3,7 @@
 
 #include "cgimap/http.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <string>
 #include <vector>
