@@ -83,7 +83,7 @@ void extract_tags(const pqxx_tuple &row, tags_t &tags) {
     throw std::runtime_error("Mismatch in tags key and value size");
   }
 
-  for(int i=0; i<keys.size(); i++)
+  for(std::size_t i=0; i<keys.size(); i++)
      tags.push_back(std::make_pair(keys[i], values[i]));
 }
 
@@ -134,7 +134,7 @@ void extract_members(const pqxx_tuple &row, members_t &members) {
     throw std::runtime_error("Mismatch in members types, ids and roles size");
   }
 
-  for (int i=0; i<ids.size(); i++) {
+  for (std::size_t i=0; i<ids.size(); i++) {
     member.type = type_from_name(types[i].c_str());
     member.ref = boost::lexical_cast<osm_nwr_id_t>(ids[i]);
     member.role = roles[i];
@@ -156,7 +156,7 @@ void extract_comments(const pqxx_tuple &row, comments_t &comments) {
     throw std::runtime_error("Mismatch in comments author_id, display_name, body and created_at size");
   }
 
-  for (int i=0; i<author_id.size(); i++) {
+  for (std::size_t i=0; i<author_id.size(); i++) {
     comment.author_id = boost::lexical_cast<osm_nwr_id_t>(author_id[i]);
     comment.author_display_name = display_name[i];
     comment.body = body[i];

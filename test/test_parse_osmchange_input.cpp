@@ -32,16 +32,16 @@ class global_settings_test_class : public global_settings_default {
 
 public:
 
-  boost::optional<int> get_relation_max_members() const override {
+  boost::optional<uint32_t> get_relation_max_members() const override {
      return m_relation_max_members;
   }
 
-  boost::optional<int> get_element_max_tags() const override {
+  boost::optional<uint32_t> get_element_max_tags() const override {
      return m_element_max_tags;
   }
 
-  boost::optional<int> m_relation_max_members{boost::none};
-  boost::optional<int> m_element_max_tags{boost::none};
+  boost::optional<uint32_t> m_relation_max_members{boost::none};
+  boost::optional<uint32_t> m_element_max_tags{boost::none};
 
 };
 
@@ -671,7 +671,7 @@ void test_way() {
   {
     std::ostringstream os;
 
-    for (int i = 1; i <= global_settings::get_way_max_nodes() + 1; i++) {
+    for (uint32_t i = 1; i <= global_settings::get_way_max_nodes() + 1; i++) {
       os << (boost::format(R"(<nd ref="-%1%"/>)") % i).str();
 
       try {
@@ -926,10 +926,10 @@ void test_object_limits() {
   if (global_settings::get_element_max_tags()) {
 
     // Check maximum number of tags per element
-    for (int i = *global_settings::get_element_max_tags(); i <= *global_settings::get_element_max_tags() + 1; i++) {
+    for (uint32_t i = *global_settings::get_element_max_tags(); i <= *global_settings::get_element_max_tags() + 1; i++) {
        std::ostringstream os;
 
-       for (int x = 0; x < i; x++)
+       for (uint32_t x = 0; x < i; x++)
 	 os << "<tag k='amenity_" << x << "' v='cafe' />";
 
       try {
@@ -955,7 +955,7 @@ void test_object_limits() {
   if (global_settings::get_relation_max_members()) {
 
     // Check maximum number of members in relation
-    for (int i = *global_settings::get_relation_max_members();
+    for (uint32_t i = *global_settings::get_relation_max_members();
 	i <= *global_settings::get_relation_max_members() + 1; i++) {
       auto v = repeat(R"(<member type="node" role="demo" ref="123"/>)", i);
 

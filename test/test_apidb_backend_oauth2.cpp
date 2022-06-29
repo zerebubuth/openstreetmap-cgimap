@@ -20,23 +20,6 @@
 
 namespace {
 
-std::ostream &operator<<(
-  std::ostream &out, const std::set<osm_user_role_t> &roles) {
-
-  out << "{";
-  bool first = true;
-  for (osm_user_role_t r : roles) {
-    if (first) { first = false; } else { out << ", "; }
-    if (r == osm_user_role_t::moderator) {
-      out << "moderator";
-    } else if (r == osm_user_role_t::administrator) {
-      out << "administrator";
-    }
-  }
-  out << "}";
-  return out;
-}
-
 template <typename T>
 void assert_equal(const T& a, const T&b, const std::string &message) {
   if (a != b) {
@@ -285,7 +268,7 @@ void create_changeset(test_database &tdb, std::shared_ptr<oauth::store> store, s
   process_request(req, limiter, generator, route, sel_factory, upd_factory, store);
 
   assert_equal<int>(expected_response_code, req.response_status(), "response status");
-};
+}
 
 void fetch_relation(test_database &tdb, std::shared_ptr<oauth::store> store, std::string token, int expected_response_code) {
 

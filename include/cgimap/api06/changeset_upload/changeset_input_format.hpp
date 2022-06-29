@@ -76,6 +76,9 @@ namespace api06 {
 	    throw xml_error{ "Unknown element, expecting tag" };
 	  break;
 
+	case context::in_tag:
+	  // intentionally not implemented
+	  break;
       }
     }
 

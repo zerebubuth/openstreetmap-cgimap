@@ -207,6 +207,8 @@ private:
     case element_type_relation:
       fmt.write_relation(e.m_info, e.m_members, e.m_tags);
       break;
+    case element_type_changeset:
+      break;
     }
   }
 };

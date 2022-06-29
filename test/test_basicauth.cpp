@@ -30,19 +30,13 @@
     }                                           \
   }
 
-Transaction_Owner_Void::Transaction_Owner_Void() {};
+Transaction_Owner_Void::Transaction_Owner_Void() {}
 
 pqxx::transaction_base& Transaction_Owner_Void::get_transaction() {
   throw std::runtime_error("get_transaction is not supported by Transaction_Owner_Void");
 }
 
 namespace {
-
-void assert_true(bool value) {
-  if (!value) {
-    throw std::runtime_error("Test failed: Expecting true, but got false.");
-  }
-}
 
 template <typename T>
 void assert_equal(const T &actual, const T &expected) {
@@ -262,7 +256,7 @@ void test_authenticate_user() {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzppbmNvcnJlY3Q=");
     try {
-      auto res = basicauth::authenticate_user(req, sel);
+      static_cast<void>(basicauth::authenticate_user(req, sel));
       throw std::runtime_error("Known user, incorrect password: expected http unauthorized exception");
 
     } catch (http::exception &e) {
@@ -277,7 +271,7 @@ void test_authenticate_user() {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic YXJnb24yOndyb25n");
     try {
-      auto res = basicauth::authenticate_user(req, sel);
+      static_cast<void>(basicauth::authenticate_user(req, sel));
       throw std::runtime_error("Known user, incorrect password: expected http unauthorized exception");
 
     } catch (http::exception &e) {
@@ -292,7 +286,7 @@ void test_authenticate_user() {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzI6aW5jb3JyZWN0");
     try {
-      auto res = basicauth::authenticate_user(req, sel);
+      static_cast<void>(basicauth::authenticate_user(req, sel));
       throw std::runtime_error("Unknown user / incorrect password: expected http unauthorized exception");
 
     } catch (http::exception &e) {

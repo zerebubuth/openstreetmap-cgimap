@@ -30,8 +30,9 @@ enum action_type {
 };
 
 struct element_info {
-  element_info();
-  element_info(const element_info &);
+
+  element_info() = default;
+
   element_info(osm_nwr_id_t id_, osm_nwr_id_t version_,
                osm_changeset_id_t changeset_,
                const std::string &timestamp_,
@@ -39,19 +40,21 @@ struct element_info {
                const boost::optional<std::string> &display_name_,
                bool visible_,
                boost::optional<osm_redaction_id_t> redaction_ = boost::none);
+
   // Standard meanings
-  osm_nwr_id_t id, version;
-  osm_changeset_id_t changeset;
+  osm_nwr_id_t id = 0;
+  osm_nwr_id_t version = 0;
+  osm_changeset_id_t changeset = 0;
   std::string timestamp;
   // Anonymous objects will not have uids or display names
   boost::optional<osm_user_id_t> uid;
-  boost::optional<std::string> display_name;
+  boost::optional<std::string> display_name{};
   // If an object has been deleted
-  bool visible;
+  bool visible = false;
   // If an object has administratively hidden in a "redaction". note that this
   // is never output - if it is present, then the element should not be
   // displayed except to moderators.
-  boost::optional<osm_redaction_id_t> redaction;
+  boost::optional<osm_redaction_id_t> redaction = boost::none;
 };
 
 struct changeset_info {

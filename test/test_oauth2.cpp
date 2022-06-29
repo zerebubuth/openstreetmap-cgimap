@@ -38,19 +38,13 @@
     }                                           \
   }
 
-Transaction_Owner_Void::Transaction_Owner_Void() {};
+Transaction_Owner_Void::Transaction_Owner_Void() {}
 
 pqxx::transaction_base& Transaction_Owner_Void::get_transaction() {
   throw std::runtime_error("get_transaction is not supported by Transaction_Owner_Void");
 }
 
 namespace {
-
-void assert_true(bool value) {
-  if (!value) {
-    throw std::runtime_error("Test failed: Expecting true, but got false.");
-  }
-}
 
 
 template <typename T>
@@ -206,7 +200,7 @@ void test_validate_bearer_token() {
     test_request req;
     try {
       req.set_header("HTTP_AUTHORIZATION","Bearer nFRBLFyNXPKY1fiTHAIfVsjQYkCD2KoRuH66upvueaQ");
-      auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
+      static_cast<void>(oauth2::validate_bearer_token(req, store, allow_api_write));
       throw std::runtime_error("test_authenticate_user::001: Expected exception");
     } catch (http::unauthorized &e) {
       if (std::string(e.what()) != "invalid_token") {
@@ -221,7 +215,7 @@ void test_validate_bearer_token() {
     test_request req;
     try {
       req.set_header("HTTP_AUTHORIZATION","Bearer pwnMeCjSmIfQ9hXVYfAyFLFnE9VOADNvwGMKv4Ylaf0");
-      auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
+      static_cast<void>(oauth2::validate_bearer_token(req, store, allow_api_write));
       throw std::runtime_error("test_authenticate_user::002: Expected exception");
     } catch (http::unauthorized &e) {
       if (std::string(e.what()) != "token_expired") {
@@ -236,7 +230,7 @@ void test_validate_bearer_token() {
     test_request req;
     try {
       req.set_header("HTTP_AUTHORIZATION","Bearer hCXrz5B5fCBHusp0EuD2IGwYSxS8bkAnVw2_aLEdxig");
-      auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
+      static_cast<void>(oauth2::validate_bearer_token(req, store, allow_api_write));
       throw std::runtime_error("test_authenticate_user::003: Expected exception");
     } catch (http::unauthorized &e) {
       if (std::string(e.what()) != "token_revoked") {

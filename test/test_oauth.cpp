@@ -25,12 +25,6 @@
 
 namespace {
 
-void assert_true(bool value) {
-  if (!value) {
-    throw std::runtime_error("Test failed: Expecting true, but got false.");
-  }
-}
-
 template <typename T>
 void assert_equal(const T &actual, const T &expected) {
   if (!(actual == expected)) {

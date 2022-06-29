@@ -256,8 +256,9 @@ namespace {
       auto bbox = node_updater->bbox();
       auto bbox_expected = bbox_t(minlat, minlon, maxlat, maxlon);
 
-      if (!(bbox == bbox_expected))
+      if (!(bbox == bbox_expected)) {
         throw std::runtime_error("Bbox does not match expected size");
+      }
 
       upd->commit();
 
@@ -299,7 +300,7 @@ namespace {
       if (change_tracking->deleted_node_ids.size() != 1)
 	throw std::runtime_error("Expected 1 entry in deleted_node_ids");
 
-      if (change_tracking->deleted_node_ids[0] != node_id) {
+      if (change_tracking->deleted_node_ids[0] != static_cast<osm_nwr_signed_id_t>(node_id)) {
 	  throw std::runtime_error("Expected node_id in deleted_node_ids");
       }
 
@@ -756,7 +757,7 @@ namespace {
         if (change_tracking->deleted_way_ids.size() != 1)
   	throw std::runtime_error("Expected 1 entry in deleted_way_ids");
 
-        if (change_tracking->deleted_way_ids[0] != way_id) {
+        if (change_tracking->deleted_way_ids[0] != static_cast<osm_nwr_signed_id_t>(way_id)) {
   	  throw std::runtime_error("Expected way_id in deleted_way_ids");
         }
         {
@@ -1064,7 +1065,7 @@ namespace {
           // we don't want to find out about deviating timestamps here...
           assert_equal<test_formatter::relation_t>(
               test_formatter::relation_t(
-        	  element_info(r_id, 1, 1, f.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
+        	  element_info(r_id, r_version, 1, f.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
 		  members_t(
 		      {
             { element_type_node, n_new_ids[0], "role1" },
@@ -1091,7 +1092,7 @@ namespace {
 
           assert_equal<test_formatter::relation_t>(
               test_formatter::relation_t(
-        	  element_info(r_id, 1, 1, f2.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
+        	  element_info(r_id, r_version, 1, f2.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
 		  members_t(
 		      {
             { element_type_node, n_new_ids[0], "role1" },
@@ -1679,7 +1680,7 @@ namespace {
         if (change_tracking->deleted_relation_ids.size() != 1)
   	throw std::runtime_error("Expected 1 entry in deleted_relation_ids");
 
-        if (change_tracking->deleted_relation_ids[0] != relation_id) {
+        if (change_tracking->deleted_relation_ids[0] != static_cast<osm_nwr_signed_id_t>(relation_id)) {
   	  throw std::runtime_error("Expected way_id in deleted_relation_ids");
         }
 
@@ -1842,9 +1843,6 @@ namespace {
 	osm_version_t relation_l3_version_1;
 	osm_nwr_id_t relation_l3_id_2;
 	osm_version_t relation_l3_version_2;
-	osm_nwr_id_t relation_l3_id_3;
-	osm_version_t relation_l3_version_3;
-
 
 	// Create three relations with grandparent/parent/child relationship
 	{
@@ -1874,8 +1872,8 @@ namespace {
 	  relation_l3_id_2 = change_tracking->created_relation_ids[1].new_id;
 	  relation_l3_version_2 = change_tracking->created_relation_ids[1].new_version;
 
-	  relation_l3_id_3 = change_tracking->created_relation_ids[2].new_id;
-	  relation_l3_version_3 = change_tracking->created_relation_ids[2].new_version;
+	  // osm_nwr_id_t relation_l3_id_3 = change_tracking->created_relation_ids[2].new_id;
+	  // osm_version_t relation_l3_version_3 = change_tracking->created_relation_ids[2].new_version;
 	}
 
 	// Try to delete child/parent relations which still belong to grandparent relation, if-unused set

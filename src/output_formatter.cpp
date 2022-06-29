@@ -5,13 +5,6 @@
 #include <chrono>
 
 
-element_info::element_info()
-  : id(0), version(0), changeset(0),
-    timestamp(), uid(), display_name(),
-    visible(false), redaction(boost::none) {}
-
-element_info::element_info(const element_info &other)
-   = default;
 
 element_info::element_info(osm_nwr_id_t id_, osm_nwr_id_t version_,
                            osm_changeset_id_t changeset_,
