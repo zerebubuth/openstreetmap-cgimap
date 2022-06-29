@@ -115,8 +115,6 @@ namespace basicauth {
 
   boost::optional<osm_user_id_t> authenticate_user(request &req, std::shared_ptr<data_selection>& selection)
   {
-    PasswordHash pwd_hash;
-
     std::string user_name;
     std::string candidate;
 
