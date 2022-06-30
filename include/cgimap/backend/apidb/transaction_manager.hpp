@@ -67,14 +67,7 @@ public:
   pqxx::result exec_prepared(const std::string &statement, Args&&... args) {
 
     auto start = std::chrono::steady_clock::now();
-
-#if PQXX_VERSION_MAJOR >= 6
     pqxx::result res = m_txn.exec_prepared(statement, std::forward<Args>(args)...);
-#else
-    pqxx::prepare::invocation inv = m_txn.prepared(statement);
-    pqxx::prepare::invocation inv_with_params = pass_param<Args...>(inv, std::forward<Args>(args)...);
-    pqxx::result res = inv_with_params.exec();
-#endif
 
     auto end = std::chrono::steady_clock::now();
 
@@ -89,19 +82,6 @@ public:
   }
 
 private:
-
-  template<typename Arg>
-  pqxx::prepare::invocation pass_param(pqxx::prepare::invocation& in, Arg&& arg)
-  {
-    return(in(std::forward<Arg>(arg)));
-  }
-
-  template<typename Arg, typename... Args>
-  pqxx::prepare::invocation pass_param(pqxx::prepare::invocation& in, Arg&& arg, Args&&... args)
-  {
-    return (pass_param<Args...>(in(std::forward<Arg>(arg)), std::forward<Args>(args)...));
-  }
-
   pqxx::transaction_base & m_txn;
 };
 
