@@ -264,18 +264,15 @@ shared_ptr<output_formatter> create_formatter(request &req,
   shared_ptr<output_formatter> o_formatter;
 
   if (best_type == mime::application_xml) {
-    auto *xwriter = new xml_writer(out, true);
-    o_formatter = shared_ptr<output_formatter>(new xml_formatter(xwriter));
+    o_formatter = shared_ptr<output_formatter>(new xml_formatter(std::unique_ptr<xml_writer>(new xml_writer(out, true))));
 
 #ifdef HAVE_YAJL
   } else if (best_type == mime::application_json) {
-    auto *jwriter = new json_writer(out, false);
-    o_formatter = shared_ptr<output_formatter>(new json_formatter(jwriter));
+    o_formatter = shared_ptr<output_formatter>(new json_formatter(std::unique_ptr<json_writer>(new json_writer(out, false))));
 #endif
 
   } else if (best_type == mime::text_plain) {
-      auto *twriter = new text_writer(out, true);
-      o_formatter = shared_ptr<output_formatter>(new text_formatter(twriter));
+      o_formatter = shared_ptr<output_formatter>(new text_formatter(std::unique_ptr<text_writer>(new text_writer(out, true))));
   } else {
     ostringstream ostr;
     ostr << "Could not create formatter for MIME type `"

@@ -20,8 +20,7 @@ private:
   void write_common(const element_info &elem);
 
 public:
-  // NOTE: takes ownership of the writer!
-  json_formatter(json_writer *w);
+  json_formatter(std::unique_ptr<json_writer> w);
   virtual ~json_formatter();
 
   mime::type mime_type() const;

@@ -28,7 +28,7 @@ const std::string &element_type_name(element_type elt) {
 
 } // anonymous namespace
 
-xml_formatter::xml_formatter(xml_writer *w) : writer(w) {}
+xml_formatter::xml_formatter(std::unique_ptr<xml_writer> w) : writer(std::move(w)) {}
 
 xml_formatter::~xml_formatter() = default;
 
