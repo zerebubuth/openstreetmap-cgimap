@@ -2,8 +2,8 @@
 #define OPTIONS_HPP
 
 #include <memory>
+#include <optional>
 #include <regex>
-#include <boost/optional.hpp>
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
@@ -21,8 +21,8 @@ public:
   virtual uint32_t get_changeset_max_elements() const = 0;
   virtual uint32_t get_way_max_nodes() const = 0;
   virtual int64_t get_scale() const = 0;
-  virtual boost::optional<uint32_t> get_relation_max_members() const = 0;
-  virtual boost::optional<uint32_t> get_element_max_tags() const = 0;
+  virtual std::optional<uint32_t> get_relation_max_members() const = 0;
+  virtual std::optional<uint32_t> get_element_max_tags() const = 0;
 };
 
 class global_settings_default : public global_settings_base {
@@ -60,12 +60,12 @@ public:
      return 10000000L;
   }
 
-  boost::optional<uint32_t> get_relation_max_members() const override {
-     return boost::none;  // default: unlimited
+  std::optional<uint32_t> get_relation_max_members() const override {
+     return {};  // default: unlimited
   }
 
-  boost::optional<uint32_t> get_element_max_tags() const override {
-     return boost::none;  // default: unlimited
+  std::optional<uint32_t> get_element_max_tags() const override {
+     return {};  // default: unlimited
   }
 };
 
@@ -119,11 +119,11 @@ public:
      return m_scale;
   }
 
-  boost::optional<uint32_t> get_relation_max_members() const override {
+  std::optional<uint32_t> get_relation_max_members() const override {
      return m_relation_max_members;
   }
 
-  boost::optional<uint32_t> get_element_max_tags() const override {
+  std::optional<uint32_t> get_element_max_tags() const override {
      return m_element_max_tags;
   }
 
@@ -150,8 +150,8 @@ private:
   uint32_t m_changeset_max_elements;
   uint32_t m_way_max_nodes;
   int64_t m_scale;
-  boost::optional<uint32_t> m_relation_max_members;
-  boost::optional<uint32_t> m_element_max_tags;
+  std::optional<uint32_t> m_relation_max_members;
+  std::optional<uint32_t> m_element_max_tags;
 };
 
 class global_settings final {
@@ -186,10 +186,10 @@ public:
   static int64_t get_scale() { return settings->get_scale(); }
 
   // Maximum number of relation members for an OSM object (may be unlimited)
-  static boost::optional<uint32_t> get_relation_max_members() { return settings->get_relation_max_members(); }
+  static std::optional<uint32_t> get_relation_max_members() { return settings->get_relation_max_members(); }
 
   // Maximum number of tags for an OSM object (may be unlimited)
-  static boost::optional<uint32_t> get_element_max_tags() { return settings->get_element_max_tags(); }
+  static std::optional<uint32_t> get_element_max_tags() { return settings->get_element_max_tags(); }
 
 private:
   static std::unique_ptr<global_settings_base> settings;  // gets initialized with global_settings_default instance

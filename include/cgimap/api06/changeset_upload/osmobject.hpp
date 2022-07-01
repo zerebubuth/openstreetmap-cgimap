@@ -5,8 +5,8 @@
 #include "cgimap/util.hpp"
 
 #include <boost/format.hpp>
-#include <boost/optional.hpp>
 #include <map>
+#include <optional>
 
 namespace api06 {
 
@@ -163,9 +163,9 @@ namespace api06 {
     }
 
   private:
-    boost::optional<osm_changeset_id_t> m_changeset;
-    boost::optional<osm_nwr_signed_id_t> m_id;
-    boost::optional<osm_version_t> m_version;
+    std::optional<osm_changeset_id_t> m_changeset;
+    std::optional<osm_nwr_signed_id_t> m_id;
+    std::optional<osm_version_t> m_version;
 
     std::map<std::string, std::string> m_tags;
   };

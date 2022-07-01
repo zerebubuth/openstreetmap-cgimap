@@ -280,8 +280,8 @@ std::string list_methods(method m) {
   return result.str();
 }
 
-boost::optional<method> parse_method(const std::string &s) {
-  boost::optional<method> result;
+std::optional<method> parse_method(const std::string &s) {
+  std::optional<method> result;
 
   for (auto const &pair : METHODS) {
     if (pair.second == s) {

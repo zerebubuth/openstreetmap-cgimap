@@ -16,7 +16,7 @@
 #include <list>
 #include <map>
 #include <limits>
-#include <boost/optional.hpp>
+#include <optional>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -37,7 +37,7 @@ using std::runtime_error;
 using std::map;
 using std::numeric_limits;
 using std::make_pair;
-using boost::optional;
+
 using std::shared_ptr;
 using boost::lexical_cast;
 using std::string;

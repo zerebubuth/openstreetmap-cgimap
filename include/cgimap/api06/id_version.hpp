@@ -2,7 +2,7 @@
 #define API06_ID_VERSION_HPP
 
 #include "cgimap/types.hpp"
-#include <boost/optional.hpp>
+#include <optional>
 
 namespace api06 {
 
@@ -20,7 +20,7 @@ struct id_version {
   inline bool operator<(const id_version &other) const {
     return (id < other.id) ||
       ((id == other.id) && bool(version) &&
-       (!bool(other.version) || (version.get() < other.version.get())));
+       (!bool(other.version) || (*version < *other.version)));
   }
   inline bool operator<=(const id_version &other) const {
     return operator<(other) || operator==(other);
@@ -33,7 +33,7 @@ struct id_version {
   }
 
   osm_nwr_id_t id;
-  boost::optional<uint32_t> version;
+  std::optional<uint32_t> version;
 };
 
 } // namespace api06

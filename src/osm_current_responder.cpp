@@ -8,7 +8,7 @@ using std::list;
 using std::shared_ptr;
 
 osm_current_responder::osm_current_responder(mime::type mt, data_selection_ptr &s,
-                                             boost::optional<bbox> b)
+                                             std::optional<bbox> b)
     : osm_responder(mt, b), sel(s) {}
 
 osm_current_responder::~osm_current_responder() = default;
@@ -22,7 +22,7 @@ void osm_current_responder::write(shared_ptr<output_formatter> formatter,
   try {
     fmt.start_document(generator, "osm");
     if (bounds) {
-      fmt.write_bounds(bounds.get());
+      fmt.write_bounds(*bounds);
     }
 
     // write all selected changesets

@@ -5,7 +5,6 @@
 #include "cgimap/bbox.hpp"
 #include "cgimap/data_selection.hpp"
 
-#include <boost/optional.hpp>
 #include <sstream>
 
 /**

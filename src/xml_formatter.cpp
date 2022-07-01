@@ -118,8 +118,8 @@ void xml_formatter::write_common(const element_info &elem) {
   writer->attribute("changeset", elem.changeset);
   writer->attribute("timestamp", elem.timestamp);
   if (elem.display_name && elem.uid) {
-    writer->attribute("user", elem.display_name.get());
-    writer->attribute("uid", elem.uid.get());
+    writer->attribute("user", *elem.display_name);
+    writer->attribute("uid", *elem.uid);
   }
 }
 
@@ -187,8 +187,8 @@ void xml_formatter::write_changeset(const changeset_info &elem,
   writer->attribute("open", is_open);
 
   if (bool(elem.display_name) && bool(elem.uid)) {
-    writer->attribute("user", elem.display_name.get());
-    writer->attribute("uid", elem.uid.get());
+    writer->attribute("user", *elem.display_name);
+    writer->attribute("uid", *elem.uid);
   }
 
   if (elem.bounding_box) {

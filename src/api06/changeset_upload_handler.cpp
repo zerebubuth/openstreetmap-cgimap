@@ -24,7 +24,7 @@ namespace api06 {
 
 changeset_upload_responder::changeset_upload_responder(
     mime::type mt, data_update_ptr & upd, osm_changeset_id_t id_, const std::string &payload,
-    boost::optional<osm_user_id_t> user_id)
+    std::optional<osm_user_id_t> user_id)
     : osm_diffresult_responder(mt) {
 
   osm_changeset_id_t changeset = id_;
@@ -76,7 +76,7 @@ changeset_upload_handler::responder(data_selection_ptr &) const {
 }
 
 responder_ptr_t changeset_upload_handler::responder(
-    data_update_ptr & upd, const std::string &payload, boost::optional<osm_user_id_t> user_id) const {
+    data_update_ptr & upd, const std::string &payload, std::optional<osm_user_id_t> user_id) const {
   return responder_ptr_t(
       new changeset_upload_responder(mime_type, upd, id, payload, user_id));
 }

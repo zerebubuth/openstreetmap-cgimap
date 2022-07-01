@@ -6,8 +6,6 @@
 #include <fstream>
 #include <iomanip>
 
-#include <boost/optional/optional_io.hpp>
-
 
 namespace {
 
@@ -112,7 +110,7 @@ test_formatter::changeset_t::changeset_t(const changeset_info &info,
 }
 
 bool test_formatter::changeset_t::operator==(const changeset_t &other) const {
-#define CMP(sym) { if ((sym) != other. sym) { return false; } }
+#define CMP(sym) { if (!(sym == other.sym)) { return false; } }
   CMP(m_info.id);
   CMP(m_info.created_at);
   CMP(m_info.closed_at);
@@ -210,8 +208,8 @@ std::ostream &operator<<(std::ostream &out, const element_info &elem) {
       << "version=" << elem.version << ", "
       << "changeset=" << elem.changeset << ", "
       << "timestamp=" << elem.timestamp << ", "
-      << "uid=" << elem.uid << ", "
-      << "display_name=" << elem.display_name << ", "
+      << "uid=" << elem.uid.value_or(0) << ", "
+      << "display_name=" << elem.display_name.value_or("") << ", "
       << "visible=" << elem.visible << ")";
   return out;
 }
@@ -243,9 +241,9 @@ std::ostream &operator<<(std::ostream &out, const test_formatter::changeset_t &c
       << "id=" << c.m_info.id << ", "
       << "created_at=\"" << c.m_info.created_at << "\", "
       << "closed_at=\"" << c.m_info.closed_at << "\", "
-      << "uid=" << c.m_info.uid << ", "
-      << "display_name=\"" << c.m_info.display_name << "\", "
-      << "bounding_box=" << c.m_info.bounding_box << ", "
+      << "uid=" << *c.m_info.uid << ", "
+      << "display_name=\"" << c.m_info.display_name.value_or("") << "\", "
+      << "bounding_box=" << c.m_info.bounding_box.value_or(bbox{}) << ", "
       << "num_changes=" << c.m_info.num_changes << ", "
       << "comments_count=" << c.m_info.comments_count << "), "
       << "tags{";

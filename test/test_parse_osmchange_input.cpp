@@ -32,16 +32,16 @@ class global_settings_test_class : public global_settings_default {
 
 public:
 
-  boost::optional<uint32_t> get_relation_max_members() const override {
+  std::optional<uint32_t> get_relation_max_members() const override {
      return m_relation_max_members;
   }
 
-  boost::optional<uint32_t> get_element_max_tags() const override {
+  std::optional<uint32_t> get_element_max_tags() const override {
      return m_element_max_tags;
   }
 
-  boost::optional<uint32_t> m_relation_max_members{boost::none};
-  boost::optional<uint32_t> m_element_max_tags{boost::none};
+  std::optional<uint32_t> m_relation_max_members{};
+  std::optional<uint32_t> m_element_max_tags{};
 
 };
 

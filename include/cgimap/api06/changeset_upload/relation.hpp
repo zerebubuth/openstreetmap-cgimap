@@ -5,8 +5,9 @@
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
 
+#include <optional>
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/optional.hpp>
+
 
 namespace api06 {
 
@@ -82,8 +83,8 @@ public:
 
 private:
   std::string m_role;
-  boost::optional<osm_nwr_signed_id_t> m_ref;
-  boost::optional<std::string> m_type;
+  std::optional<osm_nwr_signed_id_t> m_ref;
+  std::optional<std::string> m_type;
 };
 
 class Relation : public OSMObject {

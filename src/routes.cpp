@@ -44,15 +44,16 @@
 #include "cgimap/http.hpp"
 #include "cgimap/mime_types.hpp"
 
+#include <optional>
+
 #include <boost/algorithm/string.hpp>
-#include <boost/optional.hpp>
 
 using std::list;
 using std::string;
 using std::pair;
 using std::shared_ptr;
 using std::unique_ptr;
-using boost::optional;
+
 using boost::fusion::make_cons;
 using boost::fusion::invoke;
 
@@ -161,7 +162,7 @@ struct router {
     // than a list at this point. also means the semantics for rule matching are
     // pretty clear - the first match wins.
 
-    boost::optional<http::method> maybe_method =
+    std::optional<http::method> maybe_method =
 	http::parse_method(fcgi_get_env(params, "REQUEST_METHOD"));
 
     if (!maybe_method)

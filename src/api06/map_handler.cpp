@@ -18,7 +18,7 @@ using std::vector;
 namespace api06 {
 
 map_responder::map_responder(mime::type mt, bbox b, data_selection_ptr &x)
-    : osm_current_responder(mt, x, boost::optional<bbox>(b)) {
+    : osm_current_responder(mt, x, std::optional<bbox>(b)) {
   // create temporary tables of nodes, ways and relations which
   // are in or used by elements in the bbox
   uint32_t num_nodes = sel->select_nodes_from_bbox(b, global_settings::get_map_max_nodes());

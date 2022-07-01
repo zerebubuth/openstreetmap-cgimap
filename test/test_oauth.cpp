@@ -4,13 +4,19 @@
 #include <stdexcept>
 #include <cstring>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <set>
 #include <tuple>
 
 #include <boost/date_time/posix_time/conversion.hpp>
-#include <boost/optional.hpp>
-#include <boost/optional/optional_io.hpp>
+
+
+template<typename T>
+std::ostream& operator<<(std::ostream& os, std::optional<T> const& opt)
+{
+  return opt ? os << opt.value() : os;
+}
 
 #define ANNOTATE_EXCEPTION(stmt)                \
   {                                             \
@@ -41,8 +47,8 @@ struct test_request : public request {
                const std::string &port,
                const std::string &path,
                const std::string &get_params,
-               const boost::optional<time_t> &timestamp,
-               const boost::optional<std::string> &auth_header);
+               const std::optional<time_t> &timestamp,
+               const std::optional<std::string> &auth_header);
   virtual ~test_request();
 
   const char *get_param(const char *key);
@@ -61,7 +67,7 @@ protected:
 private:
   std::string method, scheme, authority, port, path, get_params;
   std::chrono::system_clock::time_point timestamp;
-  boost::optional<std::string> auth_header;
+  std::optional<std::string> auth_header;
 };
 
 test_request::test_request(const std::string &method_,
@@ -70,8 +76,8 @@ test_request::test_request(const std::string &method_,
                            const std::string &port_,
                            const std::string &path_,
                            const std::string &get_params_,
-                           const boost::optional<time_t> &timestamp_,
-                           const boost::optional<std::string> &auth_header_)
+                           const std::optional<time_t> &timestamp_,
+                           const std::optional<std::string> &auth_header_)
   : method(method_), scheme(scheme_), authority(authority_), port(port_),
     path(path_), get_params(get_params_), auth_header(auth_header_) {
   if (bool(timestamp_)) {
@@ -129,7 +135,7 @@ std::chrono::system_clock::time_point test_request::get_current_time() const {
 } // anonymous namespace
 
 void oauth_check_signature_base_string() {
-  boost::optional<std::string> auth_header = std::string(R"(OAuth realm="http://photos.example.net/", oauth_consumer_key="dpf43f3p2l4k3l03", oauth_token="nnch734d00sl2jdk", oauth_signature_method="HMAC-SHA1", oauth_signature="tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D", oauth_timestamp="1191242096", oauth_nonce="kllo9940pd9333jh", oauth_version="1.0")");
+  std::optional<std::string> auth_header = std::string(R"(OAuth realm="http://photos.example.net/", oauth_consumer_key="dpf43f3p2l4k3l03", oauth_token="nnch734d00sl2jdk", oauth_signature_method="HMAC-SHA1", oauth_signature="tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D", oauth_timestamp="1191242096", oauth_nonce="kllo9940pd9333jh", oauth_version="1.0")");
   test_request req(
     "GET",
     "http", "photos.example.net", "80", "photos", "file=vacation.jpg&size=original",
@@ -140,18 +146,18 @@ void oauth_check_signature_base_string() {
     oauth::detail::normalise_request_url(req),
     "http://photos.example.net/photos");
 
-  assert_equal<boost::optional<std::string> >(
+  assert_equal<std::optional<std::string> >(
     oauth::detail::normalise_request_parameters(req),
     std::string("file=vacation.jpg&oauth_consumer_key=dpf43f3p2l4k3l03&oauth_nonce=kllo9940pd9333jh&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1191242096&oauth_token=nnch734d00sl2jdk&oauth_version=1.0&size=original"));
 
-  assert_equal<boost::optional<std::string> >(
+  assert_equal<std::optional<std::string> >(
     oauth::detail::signature_base_string(req),
     std::string("GET&http%3A%2F%2Fphotos.example.net%2Fphotos&file%3Dvacation.jpg%26oauth_consumer_key%3Ddpf43f3p2l4k3l03%26oauth_nonce%3Dkllo9940pd9333jh%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1191242096%26oauth_token%3Dnnch734d00sl2jdk%26oauth_version%3D1.0%26size%3Doriginal"));
 }
 
 void oauth_check_signature_base_string2() {
   // generated using http://nouncer.com/oauth/signature.html
-  boost::optional<std::string> auth_header = std::string(R"(OAuth realm="http://PHOTOS.example.net:8001/Photos", oauth_consumer_key="dpf43f3%2B%2Bp%2B%232l4k3l03", oauth_token="nnch734d%280%290sl2jdk", oauth_nonce="kllo~9940~pd9333jh", oauth_timestamp="1191242096", oauth_signature_method="HMAC-SHA1", oauth_version="1.0", oauth_signature="tTFyqivhutHiglPvmyilZlHm5Uk%3D")");
+  std::optional<std::string> auth_header = std::string(R"(OAuth realm="http://PHOTOS.example.net:8001/Photos", oauth_consumer_key="dpf43f3%2B%2Bp%2B%232l4k3l03", oauth_token="nnch734d%280%290sl2jdk", oauth_nonce="kllo~9940~pd9333jh", oauth_timestamp="1191242096", oauth_signature_method="HMAC-SHA1", oauth_version="1.0", oauth_signature="tTFyqivhutHiglPvmyilZlHm5Uk%3D")");
   test_request req(
     "GET",
     "http", "PHOTOS.example.net", "8001", "Photos", "photo%20size=300%25&title=Back%20of%20%24100%20Dollars%20Bill",
@@ -162,18 +168,18 @@ void oauth_check_signature_base_string2() {
     oauth::detail::normalise_request_url(req),
     "http://photos.example.net:8001/Photos");
 
-  assert_equal<boost::optional<std::string> >(
+  assert_equal<std::optional<std::string> >(
     oauth::detail::normalise_request_parameters(req),
     std::string("oauth_consumer_key=dpf43f3%2B%2Bp%2B%232l4k3l03&oauth_nonce=kllo~9940~pd9333jh&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1191242096&oauth_token=nnch734d%280%290sl2jdk&oauth_version=1.0&photo%20size=300%25&title=Back%20of%20%24100%20Dollars%20Bill"));
 
-  assert_equal<boost::optional<std::string> >(
+  assert_equal<std::optional<std::string> >(
     oauth::detail::signature_base_string(req),
     std::string("GET&http%3A%2F%2Fphotos.example.net%3A8001%2FPhotos&oauth_consumer_key%3Ddpf43f3%252B%252Bp%252B%25232l4k3l03%26oauth_nonce%3Dkllo~9940~pd9333jh%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1191242096%26oauth_token%3Dnnch734d%25280%25290sl2jdk%26oauth_version%3D1.0%26photo%2520size%3D300%2525%26title%3DBack%2520of%2520%2524100%2520Dollars%2520Bill"));
 }
 
 void oauth_check_signature_base_string3() {
   // generated using http://nouncer.com/oauth/signature.html
-  boost::optional<std::string> auth_header = std::string(R"(OAuth realm="https://www.example.com/path", oauth_consumer_key="abcdef", oauth_token="bcdefg", oauth_nonce="123456", oauth_timestamp="1443648660", oauth_signature_method="HMAC-SHA1", oauth_version="1.0", oauth_signature="TWS6VYOQSpNZt6%2FTNp%2Bgbgbnfaw%3D")");
+  std::optional<std::string> auth_header = std::string(R"(OAuth realm="https://www.example.com/path", oauth_consumer_key="abcdef", oauth_token="bcdefg", oauth_nonce="123456", oauth_timestamp="1443648660", oauth_signature_method="HMAC-SHA1", oauth_version="1.0", oauth_signature="TWS6VYOQSpNZt6%2FTNp%2Bgbgbnfaw%3D")");
   test_request req(
     "POST",
     "https", "www.example.com", "443", "path", "",
@@ -184,18 +190,18 @@ void oauth_check_signature_base_string3() {
     oauth::detail::normalise_request_url(req),
     "https://www.example.com/path");
 
-  assert_equal<boost::optional<std::string> >(
+  assert_equal<std::optional<std::string> >(
     oauth::detail::normalise_request_parameters(req),
     std::string("oauth_consumer_key=abcdef&oauth_nonce=123456&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1443648660&oauth_token=bcdefg&oauth_version=1.0"));
 
-  assert_equal<boost::optional<std::string> >(
+  assert_equal<std::optional<std::string> >(
     oauth::detail::signature_base_string(req),
     std::string("POST&https%3A%2F%2Fwww.example.com%2Fpath&oauth_consumer_key%3Dabcdef%26oauth_nonce%3D123456%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1443648660%26oauth_token%3Dbcdefg%26oauth_version%3D1.0"));
 }
 
 void oauth_check_signature_base_string4() {
   // generated using http://nouncer.com/oauth/signature.html
-  boost::optional<std::string> auth_header = std::string(R"(OAuth realm="http://example.com/request", oauth_consumer_key="9djdj82h48djs9d2", oauth_token="kkk9d7dh3k39sjv7", oauth_nonce="7d8f3e4a", oauth_timestamp="137131201", oauth_signature_method="HMAC-SHA1", oauth_version="1.0", oauth_signature="InXuTE4pXaeiQxfEYTM4Cs8Fuds%3D")");
+  std::optional<std::string> auth_header = std::string(R"(OAuth realm="http://example.com/request", oauth_consumer_key="9djdj82h48djs9d2", oauth_token="kkk9d7dh3k39sjv7", oauth_nonce="7d8f3e4a", oauth_timestamp="137131201", oauth_signature_method="HMAC-SHA1", oauth_version="1.0", oauth_signature="InXuTE4pXaeiQxfEYTM4Cs8Fuds%3D")");
   test_request req(
     "POST",
     "http", "example.com", "80", "request", "b5=%3D%253D&a3=a&c%40=&a2=r%20b&c2&a3=2+q",
@@ -206,11 +212,11 @@ void oauth_check_signature_base_string4() {
     oauth::detail::normalise_request_url(req),
     "http://example.com/request");
 
-  assert_equal<boost::optional<std::string> >(
+  assert_equal<std::optional<std::string> >(
     oauth::detail::normalise_request_parameters(req),
     std::string("a2=r%20b&a3=2%20q&a3=a&b5=%3D%253D&c%40=&c2=&oauth_consumer_key=9djdj82h48djs9d2&oauth_nonce=7d8f3e4a&oauth_signature_method=HMAC-SHA1&oauth_timestamp=137131201&oauth_token=kkk9d7dh3k39sjv7&oauth_version=1.0"));
 
-  assert_equal<boost::optional<std::string> >(
+  assert_equal<std::optional<std::string> >(
     oauth::detail::signature_base_string(req),
     std::string("POST&http%3A%2F%2Fexample.com%2Frequest&a2%3Dr%2520b%26a3%3D2%2520q%26a3%3Da%26b5%3D%253D%25253D%26c%2540%3D%26c2%3D%26oauth_consumer_key%3D9djdj82h48djs9d2%26oauth_nonce%3D7d8f3e4a%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D137131201%26oauth_token%3Dkkk9d7dh3k39sjv7%26oauth_version%3D1.0"));
 }
@@ -229,18 +235,18 @@ struct test_secret_store
     , m_token_secret(token_secret) {
   }
 
-  boost::optional<std::string> consumer_secret(const std::string &key) {
+  std::optional<std::string> consumer_secret(const std::string &key) {
     if (key == m_consumer_key) {
       return m_consumer_secret;
     }
-    return boost::none;
+    return {};
   }
 
-  boost::optional<std::string> token_secret(const std::string &id) {
+  std::optional<std::string> token_secret(const std::string &id) {
     if (id == m_token_id) {
       return m_token_secret;
     }
-    return boost::none;
+    return {};
   }
 
   bool use_nonce(const std::string &nonce,
@@ -262,15 +268,15 @@ struct test_secret_store
     return id == m_token_id;
   }
 
-  boost::optional<osm_user_id_t> get_user_id_for_token(const std::string &id) {
-    return boost::none;
+  std::optional<osm_user_id_t> get_user_id_for_token(const std::string &id) {
+    return {};
   }
 
-  boost::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) {
+  std::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) {
     expired = false;
     revoked = false;
     allow_api_write = false;
-    return boost::none;
+    return {};
   }
 
   std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t) {
@@ -325,7 +331,7 @@ void oauth_check_hmac_sha1() {
 
 void oauth_check_signature_hmac_sha1_1() {
   // generated using http://nouncer.com/oauth/signature.html
-  boost::optional<std::string> auth_header = std::string(R"(OAuth realm="http://PHOTOS.example.net:8001/Photos", oauth_consumer_key="dpf43f3%2B%2Bp%2B%232l4k3l03", oauth_token="nnch734d%280%290sl2jdk", oauth_nonce="kllo~9940~pd9333jh", oauth_timestamp="1191242096", oauth_signature_method="HMAC-SHA1", oauth_version="1.0", oauth_signature="MH9NDodF4I%2FV6GjYYVChGaKCtnk%3D")");
+  std::optional<std::string> auth_header = std::string(R"(OAuth realm="http://PHOTOS.example.net:8001/Photos", oauth_consumer_key="dpf43f3%2B%2Bp%2B%232l4k3l03", oauth_token="nnch734d%280%290sl2jdk", oauth_nonce="kllo~9940~pd9333jh", oauth_timestamp="1191242096", oauth_signature_method="HMAC-SHA1", oauth_version="1.0", oauth_signature="MH9NDodF4I%2FV6GjYYVChGaKCtnk%3D")");
   test_request req(
     "GET",
     "http", "PHOTOS.example.net", "8001", "Photos", "type=%C3%97%C2%90%C3%97%E2%80%A2%C3%97%CB%9C%C3%97%E2%80%A2%C3%97%E2%80%98%C3%97%E2%80%A2%C3%97%C2%A1&scenario=%C3%97%C2%AA%C3%97%C2%90%C3%97%E2%80%A2%C3%97%C2%A0%C3%97%E2%80%9D",
@@ -336,24 +342,24 @@ void oauth_check_signature_hmac_sha1_1() {
     oauth::detail::normalise_request_url(req),
     "http://photos.example.net:8001/Photos");
 
-  assert_equal<boost::optional<std::string> >(
+  assert_equal<std::optional<std::string> >(
     oauth::detail::normalise_request_parameters(req),
     std::string("oauth_consumer_key=dpf43f3%2B%2Bp%2B%232l4k3l03&oauth_nonce=kllo~9940~pd9333jh&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1191242096&oauth_token=nnch734d%280%290sl2jdk&oauth_version=1.0&scenario=%C3%97%C2%AA%C3%97%C2%90%C3%97%E2%80%A2%C3%97%C2%A0%C3%97%E2%80%9D&type=%C3%97%C2%90%C3%97%E2%80%A2%C3%97%CB%9C%C3%97%E2%80%A2%C3%97%E2%80%98%C3%97%E2%80%A2%C3%97%C2%A1"));
 
-  assert_equal<boost::optional<std::string> >(
+  assert_equal<std::optional<std::string> >(
     oauth::detail::signature_base_string(req),
     std::string("GET&http%3A%2F%2Fphotos.example.net%3A8001%2FPhotos&oauth_consumer_key%3Ddpf43f3%252B%252Bp%252B%25232l4k3l03%26oauth_nonce%3Dkllo~9940~pd9333jh%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1191242096%26oauth_token%3Dnnch734d%25280%25290sl2jdk%26oauth_version%3D1.0%26scenario%3D%25C3%2597%25C2%25AA%25C3%2597%25C2%2590%25C3%2597%25E2%2580%25A2%25C3%2597%25C2%25A0%25C3%2597%25E2%2580%259D%26type%3D%25C3%2597%25C2%2590%25C3%2597%25E2%2580%25A2%25C3%2597%25CB%259C%25C3%2597%25E2%2580%25A2%25C3%2597%25E2%2580%2598%25C3%2597%25E2%2580%25A2%25C3%2597%25C2%25A1"));
 
   test_secret_store store("dpf43f3++p+#2l4k3l03", "kd9@4h%%4f93k423kf44",
                           "nnch734d(0)0sl2jdk",   "pfkkd#hi9_sl-3r=4s00");
-  assert_equal<boost::optional<std::string> >(
+  assert_equal<std::optional<std::string> >(
     oauth::detail::hashed_signature(req, store),
     std::string("MH9NDodF4I/V6GjYYVChGaKCtnk="));
 }
 
 void oauth_check_signature_plaintext_1() {
   // generated using http://nouncer.com/oauth/signature.html
-  boost::optional<std::string> auth_header = std::string(R"(OAuth realm="http://PHOTOS.example.net:8001/Photos", oauth_consumer_key="dpf43f3%2B%2Bp%2B%23%26l4k3l03", oauth_token="nnch73%26d%280%290sl2jdk", oauth_nonce="kllo~9940~pd9333jh", oauth_timestamp="1191242096", oauth_signature_method="PLAINTEXT", oauth_version="1.0", oauth_signature="kd9%25404h%2525%2525%2526f93k423kf44%26pfkkd%2523hi9_s%2526-3r%253D4s00")");
+  std::optional<std::string> auth_header = std::string(R"(OAuth realm="http://PHOTOS.example.net:8001/Photos", oauth_consumer_key="dpf43f3%2B%2Bp%2B%23%26l4k3l03", oauth_token="nnch73%26d%280%290sl2jdk", oauth_nonce="kllo~9940~pd9333jh", oauth_timestamp="1191242096", oauth_signature_method="PLAINTEXT", oauth_version="1.0", oauth_signature="kd9%25404h%2525%2525%2526f93k423kf44%26pfkkd%2523hi9_s%2526-3r%253D4s00")");
   test_request req(
     "GET",
     "http", "PHOTOS.example.net", "8001", "Photos", "photo%20size=300%25&title=Back%20of%20%24100%20Dollars%20Bill",
@@ -366,13 +372,13 @@ void oauth_check_signature_plaintext_1() {
 
   test_secret_store store("dpf43f3++p+#&l4k3l03", "kd9@4h%%&f93k423kf44",
                           "nnch73&d(0)0sl2jdk",   "pfkkd#hi9_s&-3r=4s00");
-  assert_equal<boost::optional<std::string> >(
+  assert_equal<std::optional<std::string> >(
     oauth::detail::hashed_signature(req, store),
     std::string("kd9%404h%25%25%26f93k423kf44&pfkkd%23hi9_s%26-3r%3D4s00"));
 }
 
 void oauth_check_valid_signature_header() {
-  boost::optional<std::string> auth_header = std::string(R"(OAuth realm="http://photos.example.net/", oauth_consumer_key="dpf43f3p2l4k3l03", oauth_token="nnch734d00sl2jdk", oauth_signature_method="HMAC-SHA1", oauth_signature="tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D", oauth_timestamp="1191242096", oauth_nonce="kllo9940pd9333jh", oauth_version="1.0")");
+  std::optional<std::string> auth_header = std::string(R"(OAuth realm="http://photos.example.net/", oauth_consumer_key="dpf43f3p2l4k3l03", oauth_token="nnch734d00sl2jdk", oauth_signature_method="HMAC-SHA1", oauth_signature="tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D", oauth_timestamp="1191242096", oauth_nonce="kllo9940pd9333jh", oauth_version="1.0")");
   test_request req(
     "GET",
     "http", "photos.example.net", "80", "photos", "file=vacation.jpg&size=original",
@@ -388,7 +394,7 @@ void oauth_check_valid_signature_header() {
 }
 
 void oauth_check_invalid_signature_header() {
-  boost::optional<std::string> auth_header = std::string(R"(OAuth realm="http://photos.example.net/", oauth_consumer_key="dpf43f3p2l4k3l03", oauth_token="nnch734d00sl2jdk", oauth_signature_method="HMAC-SHA1", oauth_signature="tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D", oauth_timestamp="1191242096", oauth_nonce="kllo9940pd9333jh", oauth_version="1.0")");
+  std::optional<std::string> auth_header = std::string(R"(OAuth realm="http://photos.example.net/", oauth_consumer_key="dpf43f3p2l4k3l03", oauth_token="nnch734d00sl2jdk", oauth_signature_method="HMAC-SHA1", oauth_signature="tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D", oauth_timestamp="1191242096", oauth_nonce="kllo9940pd9333jh", oauth_version="1.0")");
   test_request req(
     "GET",
     "http", "photos.example.net", "80", "photo", "file=vacation.jpg&size=original",
@@ -405,8 +411,8 @@ void oauth_check_valid_signature_params() {
   test_request req(
     "GET",
     "http", "photos.example.net", "80", "photos", "file=vacation.jpg&size=original&oauth_consumer_key=dpf43f3p2l4k3l03&oauth_token=nnch734d00sl2jdk&oauth_signature_method=HMAC-SHA1&oauth_signature=tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D&oauth_timestamp=1191242096&oauth_nonce=kllo9940pd9333jh&oauth_version=1.0",
-    boost::none,
-    boost::none);
+    {},
+    {});
 
   test_secret_store store("dpf43f3p2l4k3l03", "kd94hf93k423kf44",
                           "nnch734d00sl2jdk", "pfkkdhi9sl3r4s00");
@@ -419,8 +425,8 @@ void oauth_check_missing_signature() {
   test_request req(
     "GET",
     "http", "photos.example.net", "80", "photos", "file=vacation.jpg&size=original",
-    boost::none,
-    boost::none);
+    {},
+    {});
 
   test_secret_store store("dpf43f3p2l4k3l03", "kd94hf93k423kf44",
                           "nnch734d00sl2jdk", "pfkkdhi9sl3r4s00");
@@ -429,14 +435,14 @@ void oauth_check_missing_signature() {
 }
 
 void oauth_check_valid_signature_header_2() {
-  boost::optional<std::string> auth_header = std::string(R"(OAuth oauth_consumer_key="x3tHSMbotPe5fBlItMbg", oauth_nonce="ZGsGj6qzGYUhSLHJWUC8tyW6RbxOQuX4mv6PKj0mU", oauth_signature="H%2Fxl6jdk4dC0WaONfohWfZhcHYA%3D", oauth_signature_method="HMAC-SHA1", oauth_timestamp="1475754589", oauth_token="15zpwgGjdjBu1DD65X7kcHzaWqfQpvqmMtqa3ZIO", oauth_version="1.0")");
+  std::optional<std::string> auth_header = std::string(R"(OAuth oauth_consumer_key="x3tHSMbotPe5fBlItMbg", oauth_nonce="ZGsGj6qzGYUhSLHJWUC8tyW6RbxOQuX4mv6PKj0mU", oauth_signature="H%2Fxl6jdk4dC0WaONfohWfZhcHYA%3D", oauth_signature_method="HMAC-SHA1", oauth_timestamp="1475754589", oauth_token="15zpwgGjdjBu1DD65X7kcHzaWqfQpvqmMtqa3ZIO", oauth_version="1.0")");
   test_request req(
     "GET",
     "http", "www.openstreetmap.org", "80", "/api/0.6/relation/165475/full", "",
     1475754589,
     auth_header);
 
-  assert_equal<boost::optional<std::string> >(
+  assert_equal<std::optional<std::string> >(
     oauth::detail::signature_base_string(req),
     std::string("GET&http%3A%2F%2Fwww.openstreetmap.org%2Fapi%2F0.6%2Frelation%2F165475%2Ffull&oauth_consumer_key%3Dx3tHSMbotPe5fBlItMbg%26oauth_nonce%3DZGsGj6qzGYUhSLHJWUC8tyW6RbxOQuX4mv6PKj0mU%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1475754589%26oauth_token%3D15zpwgGjdjBu1DD65X7kcHzaWqfQpvqmMtqa3ZIO%26oauth_version%3D1.0"));
 
@@ -447,7 +453,7 @@ void oauth_check_valid_signature_header_2() {
 
   test_secret_store store(consumer_key, consumer_secret, token_id, token_secret);
 
-  assert_equal<boost::optional<std::string> >(
+  assert_equal<std::optional<std::string> >(
     oauth::detail::hashed_signature(req, store),
     std::string("H/xl6jdk4dC0WaONfohWfZhcHYA="));
 
@@ -457,7 +463,7 @@ void oauth_check_valid_signature_header_2() {
 }
 
 void oauth_check_almost_expired_signature() {
-  boost::optional<std::string> auth_header = std::string(R"(OAuth realm="http://photos.example.net/", oauth_consumer_key="dpf43f3p2l4k3l03", oauth_token="nnch734d00sl2jdk", oauth_signature_method="HMAC-SHA1", oauth_signature="tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D", oauth_timestamp="1191242096", oauth_nonce="kllo9940pd9333jh", oauth_version="1.0")");
+  std::optional<std::string> auth_header = std::string(R"(OAuth realm="http://photos.example.net/", oauth_consumer_key="dpf43f3p2l4k3l03", oauth_token="nnch734d00sl2jdk", oauth_signature_method="HMAC-SHA1", oauth_signature="tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D", oauth_timestamp="1191242096", oauth_nonce="kllo9940pd9333jh", oauth_version="1.0")");
   test_request req(
     "GET",
     "http", "photos.example.net", "80", "photos", "file=vacation.jpg&size=original",
@@ -474,7 +480,7 @@ void oauth_check_almost_expired_signature() {
 }
 
 void oauth_check_expired_signature() {
-  boost::optional<std::string> auth_header = std::string(R"(OAuth realm="http://photos.example.net/", oauth_consumer_key="dpf43f3p2l4k3l03", oauth_token="nnch734d00sl2jdk", oauth_signature_method="HMAC-SHA1", oauth_signature="tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D", oauth_timestamp="1191242096", oauth_nonce="kllo9940pd9333jh", oauth_version="1.0")");
+  std::optional<std::string> auth_header = std::string(R"(OAuth realm="http://photos.example.net/", oauth_consumer_key="dpf43f3p2l4k3l03", oauth_token="nnch734d00sl2jdk", oauth_signature_method="HMAC-SHA1", oauth_signature="tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D", oauth_timestamp="1191242096", oauth_nonce="kllo9940pd9333jh", oauth_version="1.0")");
   test_request req(
     "GET",
     "http", "photos.example.net", "80", "photos", "file=vacation.jpg&size=original",
@@ -491,7 +497,7 @@ void oauth_check_expired_signature() {
 }
 
 void oauth_check_bad_quoting() {
-  boost::optional<std::string> auth_header = std::string(R"(OAuth %3Cdummy%20id="'-1'%2F%3E", oauth_consumer_key="U84xxVrHBewaYHehTpaV0Rk3nGhahzRj0zntCe1N", oauth_nonce="Xw1WlI", oauth_signature="32gRmihzmdV47jW2juAL7mIpXkA%3D", oauth_signature_method="HMAC-SHA1", oauth_timestamp="1526814151", oauth_token="FLfg7mbQlV6TAcBSY58YgQz39mpcWgj47J3PZPEx")");
+  std::optional<std::string> auth_header = std::string(R"(OAuth %3Cdummy%20id="'-1'%2F%3E", oauth_consumer_key="U84xxVrHBewaYHehTpaV0Rk3nGhahzRj0zntCe1N", oauth_nonce="Xw1WlI", oauth_signature="32gRmihzmdV47jW2juAL7mIpXkA%3D", oauth_signature_method="HMAC-SHA1", oauth_timestamp="1526814151", oauth_token="FLfg7mbQlV6TAcBSY58YgQz39mpcWgj47J3PZPEx")");
   test_request req(
     "GET",
     "http", "localhost", "31337", "api/0.6/changeset/876/download", "",

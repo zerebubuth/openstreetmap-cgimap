@@ -36,7 +36,7 @@ struct first_equals {
 BOOST_FUSION_ADAPT_STRUCT(
   api06::id_version,
   (uint64_t, id)
-  (boost::optional<uint32_t>, version)
+  (std::optional<uint32_t>, version)
   )
 
 namespace {

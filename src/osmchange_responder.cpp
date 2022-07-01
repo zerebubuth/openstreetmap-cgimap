@@ -217,7 +217,7 @@ private:
 
 osmchange_responder::osmchange_responder(
   mime::type mt, data_selection_ptr &s)
-  : osm_responder(mt, boost::none), sel(s) {
+  : osm_responder(mt, {}), sel(s) {
 }
 
 osmchange_responder::~osmchange_responder() = default;

@@ -1,7 +1,6 @@
 #include <iostream>
 #include <stdexcept>
 #include <boost/format.hpp>
-#include <boost/optional/optional_io.hpp>
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
@@ -67,14 +66,14 @@ void test_negative_changeset_ids(test_database &tdb) {
   assert_equal<size_t>(f.m_nodes.size(), 2, "number of nodes written");
   assert_equal<test_formatter::node_t>(
     test_formatter::node_t(
-      element_info(6, 1, 0, "2016-04-16T15:09:00Z", boost::none, boost::none, true),
+      element_info(6, 1, 0, "2016-04-16T15:09:00Z", {}, {}, true),
       9.0, 9.0,
       tags_t()
       ),
     f.m_nodes[0], "first node written");
   assert_equal<test_formatter::node_t>(
     test_formatter::node_t(
-      element_info(7, 1, -1, "2016-04-16T15:09:00Z", boost::none, boost::none, true),
+      element_info(7, 1, -1, "2016-04-16T15:09:00Z", {}, {}, true),
       9.0, 9.0,
       tags_t()
       ),
@@ -114,7 +113,7 @@ void test_changeset(test_database &tdb) {
         "2013-11-14T03:10:00Z", // closed_at
         1, // uid
         std::string("user_1"), // display_name
-        boost::none, // bounding box
+        {}, // bounding box
         2, // num_changes
         0 // comments_count
         ),
@@ -156,9 +155,9 @@ void test_nonpublic_changeset(test_database &tdb) {
         4, // ID
         "2013-11-14T02:10:00Z", // created_at
         "2013-11-14T03:10:00Z", // closed_at
-        boost::none, // uid
-        boost::none, // display_name
-        boost::none, // bounding box
+        {}, // uid
+        {}, // display_name
+        {}, // bounding box
         1, // num_changes
         0 // comments_count
         ),
@@ -210,7 +209,7 @@ void test_changeset_with_tags(test_database &tdb) {
         "2013-11-14T03:10:00Z", // closed_at
         1, // uid
         std::string("user_1"), // display_name
-        boost::none, // bounding box
+        {}, // bounding box
         1, // num_changes
         0 // comments_count
         ),
@@ -260,7 +259,7 @@ void check_changeset_with_comments_impl(
         "2013-11-14T03:10:00Z", // closed_at
         1, // uid
         std::string("user_1"), // display_name
-        boost::none, // bounding box
+        {}, // bounding box
         0, // num_changes
         1 // comments_count
         ),
@@ -530,7 +529,7 @@ void test_changeset_create(test_database &tdb) {
 	      f.m_changesets.front().m_info.closed_at, // closed_at
 	      31, // uid
 	      std::string("demo"), // display_name
-	      boost::none, // bounding box
+	      {}, // bounding box
 	      0, // num_changes
 	      0 // comments_count
 	      ),
@@ -760,7 +759,7 @@ void test_changeset_update(test_database &tdb) {
 	      f.m_changesets.front().m_info.closed_at, // closed_at
 	      31, // uid
 	      std::string("demo"), // display_name
-	      boost::none, // bounding box
+	      {}, // bounding box
 	      10000, // num_changes
 	      0 // comments_count
 	      ),

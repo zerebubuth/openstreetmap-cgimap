@@ -5,7 +5,7 @@
 #include "cgimap/bbox.hpp"
 #include "cgimap/data_selection.hpp"
 
-#include <boost/optional.hpp>
+#include <optional>
 #include <sstream>
 
 /**
@@ -22,7 +22,7 @@ public:
   // construct, passing the mime type down to the responder.
   // optional bounds are stored at this level, but available to derived classes.
   osm_responder(mime::type,
-                boost::optional<bbox> bounds = boost::optional<bbox>());
+                std::optional<bbox> bounds = std::optional<bbox>());
 
   virtual ~osm_responder();
 
@@ -37,7 +37,7 @@ public:
 protected:
   // optional bounds element - this is only for information and has no effect on
   // behaviour other than whether the bounds element gets written.
-  boost::optional<bbox> bounds;
+  std::optional<bbox> bounds;
 
   // quick hack to provide extra response headers like Content-Disposition.
   std::ostringstream extra_headers;

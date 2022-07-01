@@ -14,7 +14,7 @@ public:
   // construct, passing the mime type down to the responder.
   // optional bounds are stored at this level, but available to derived classes.
   osm_current_responder(mime::type, data_selection_ptr &s,
-                        boost::optional<bbox> bounds = boost::optional<bbox>());
+                        std::optional<bbox> bounds = std::optional<bbox>());
 
   virtual ~osm_current_responder();
 

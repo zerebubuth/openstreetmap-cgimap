@@ -578,21 +578,21 @@ struct test_oauth
 
   virtual ~test_oauth() = default;
 
-  boost::optional<std::string> consumer_secret(const std::string &consumer_key) {
+  std::optional<std::string> consumer_secret(const std::string &consumer_key) {
     auto itr = m_consumers.find(consumer_key);
     if (itr != m_consumers.end()) {
       return itr->second;
     } else {
-      return boost::none;
+      return {};
     }
   }
 
-  boost::optional<std::string> token_secret(const std::string &token_id) {
+  std::optional<std::string> token_secret(const std::string &token_id) {
     auto itr = m_tokens.find(token_id);
     if (itr != m_tokens.end()) {
       return itr->second;
     } else {
-      return boost::none;
+      return {};
     }
   }
 
@@ -611,12 +611,12 @@ struct test_oauth
     return true;
   }
 
-  boost::optional<osm_user_id_t> get_user_id_for_token(const std::string &token_id) {
+  std::optional<osm_user_id_t> get_user_id_for_token(const std::string &token_id) {
     auto itr = m_users.find(token_id);
     if (itr != m_users.end()) {
       return itr->second;
     } else {
-      return boost::none;
+      return {};
     }
   }
 
@@ -629,11 +629,11 @@ struct test_oauth
     return roles;
   }
 
-  boost::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) {
+  std::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) {
     expired = false;
     revoked = false;
     allow_api_write = false;
-    return boost::none;
+    return {};
   }
 
 private:

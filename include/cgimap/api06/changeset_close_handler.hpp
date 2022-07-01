@@ -13,7 +13,7 @@ class changeset_close_responder : public text_responder {
 public:
   changeset_close_responder(mime::type, data_update_ptr &, osm_changeset_id_t,
                              const std::string &,
-                             boost::optional<osm_user_id_t>);
+                             std::optional<osm_user_id_t>);
   ~changeset_close_responder();
 };
 
@@ -27,7 +27,7 @@ public:
 
   responder_ptr_t responder(data_update_ptr &,
 			    const std::string &payload,
-                            boost::optional<osm_user_id_t> user_id) const;
+                            std::optional<osm_user_id_t> user_id) const;
   bool requires_selection_after_update() const;
 
 private:

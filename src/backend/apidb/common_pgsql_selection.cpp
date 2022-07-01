@@ -25,15 +25,15 @@ void extract_elem(const pqxx_tuple &row, element_info &elem,
     elem.uid = cs->user_id;
     elem.display_name = cs->display_name;
   } else {
-    elem.uid = boost::none;
-    elem.display_name = boost::none;
+    elem.uid = {};
+    elem.display_name = {};
   }
 }
 
 template <typename T>
-boost::optional<T> extract_optional(const pqxx_field &f) {
+std::optional<T> extract_optional(const pqxx_field &f) {
   if (f.is_null()) {
-    return boost::none;
+    return {};
   } else {
     return f.as<T>();
   }
@@ -52,8 +52,8 @@ void extract_changeset(const pqxx_tuple &row,
     elem.uid = cs->user_id;
     elem.display_name = cs->display_name;
   } else {
-    elem.uid = boost::none;
-    elem.display_name = boost::none;
+    elem.uid = {};
+    elem.display_name = {};
   }
 
   auto min_lat = extract_optional<int64_t>(row["min_lat"]);
@@ -67,7 +67,7 @@ void extract_changeset(const pqxx_tuple &row,
                              double(*max_lat) / global_settings::get_scale(),
                              double(*max_lon) / global_settings::get_scale());
   } else {
-    elem.bounding_box = boost::none;
+    elem.bounding_box = {};
   }
 
   elem.num_changes = row["num_changes"].as<size_t>();

@@ -97,7 +97,7 @@ oauth_store::oauth_store(const po::variables_map &opts)
 
 oauth_store::~oauth_store() = default;
 
-boost::optional<std::string>
+std::optional<std::string>
 oauth_store::consumer_secret(const std::string &consumer_key) {
   pqxx::work w(m_connection, "oauth_get_consumer_secret_for_key");
   pqxx::result res = w.exec_prepared("consumer_secret_for_key", consumer_key);
@@ -106,11 +106,11 @@ oauth_store::consumer_secret(const std::string &consumer_key) {
     return res[0][0].as<std::string>();
 
   } else {
-    return boost::none;
+    return {};
   }
 }
 
-boost::optional<std::string>
+std::optional<std::string>
 oauth_store::token_secret(const std::string &token_id) {
   pqxx::work w(m_connection, "oauth_get_token_secret_for_id");
   pqxx::result res = w.exec_prepared("token_secret_for_id", token_id);
@@ -119,7 +119,7 @@ oauth_store::token_secret(const std::string &token_id) {
     return res[0][0].as<std::string>();
 
   } else {
-    return boost::none;
+    return {};
   }
 }
 
@@ -147,7 +147,7 @@ oauth_store::allow_write_api(const std::string &token_id) {
   return res.affected_rows() > 0 && res[0][0].as<bool>();
 }
 
-boost::optional<osm_user_id_t>
+std::optional<osm_user_id_t>
 oauth_store::get_user_id_for_token(const std::string &token_id) {
   pqxx::work w(m_connection, "oauth_get_user_id_for_token");
   pqxx::result res = w.exec_prepared("token_belongs_to", token_id);
@@ -157,7 +157,7 @@ oauth_store::get_user_id_for_token(const std::string &token_id) {
     return uid;
 
   } else {
-    return boost::none;
+    return {};
   }
 }
 
@@ -180,7 +180,7 @@ oauth_store::get_roles_for_user(osm_user_id_t id) {
   return roles;
 }
 
-boost::optional<osm_user_id_t> oauth_store::get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) {
+std::optional<osm_user_id_t> oauth_store::get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) {
 
   m_connection.prepare("oauth2_access_token",
     R"(SELECT resource_owner_id as user_id,
@@ -206,6 +206,6 @@ boost::optional<osm_user_id_t> oauth_store::get_user_id_for_oauth2_token(const s
     expired = true;
     revoked = true;
     allow_api_write = false;
-    return boost::none;
+    return {};
   }
 }

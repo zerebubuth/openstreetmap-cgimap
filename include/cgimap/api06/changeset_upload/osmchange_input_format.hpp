@@ -17,6 +17,7 @@
 #include <cstring>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
 #include "parsers/saxparser.hpp"
@@ -347,8 +348,8 @@ private:
 
   void add_tag(OSMObject &o, const char **attrs) {
 
-    boost::optional<std::string> k;
-    boost::optional<std::string> v;
+    std::optional<std::string> k;
+    std::optional<std::string> v;
 
     check_attributes(attrs, [&k, &v](const char *name, const char *value) {
 
