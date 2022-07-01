@@ -215,9 +215,9 @@ libcgimap_core_la_SOURCES+=\
 	api06/changeset_upload/osmchange_tracking.cpp
 
 
-if ENABLE_API07
-libcgimap_core_la_SOURCES+=api07/map_handler.cpp
-endif
+#if ENABLE_API07
+#libcgimap_core_la_SOURCES+=api07/map_handler.cpp
+#endif
 
 if HAVE_YAJL
 libcgimap_core_la_SOURCES+=json_formatter.cpp json_writer.cpp

@@ -101,11 +101,11 @@ cgimap_staticxml_includedir=$(includedir)/cgimap/backend/staticxml
 cgimap_staticxml_include_HEADERS = \
 	include/cgimap/backend/staticxml/staticxml.hpp
 
-if ENABLE_API07
-cgimap_api07_includedir=$(includedir)/cgimap/api07
-cgimap_api07_include_HEADERS = \
-	include/cgimap/api07/map_handler.hpp
-endif
+#if ENABLE_API07
+#cgimap_api07_includedir=$(includedir)/cgimap/api07
+#cgimap_api07_include_HEADERS = \
+#	include/cgimap/api07/map_handler.hpp
+#endif
 
 TESTS = test/map.testcore test/node.testcore test/anon.testcore test/way.testcore test/relation.testcore
 TESTS += test/empty.testcore test/way_full.testcore test/relation_full.testcore
