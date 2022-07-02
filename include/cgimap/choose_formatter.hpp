@@ -18,7 +18,7 @@ mime::type choose_best_mime_type(request &req, responder_ptr_t hptr);
  * creates and initialises an output formatter which matches the MIME type
  * passed in as an argument.
  */
-std::shared_ptr<output_formatter>
+std::unique_ptr<output_formatter>
 create_formatter(request &req, mime::type best_type,
                  std::shared_ptr<output_buffer>);
 

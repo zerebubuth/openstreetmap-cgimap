@@ -22,7 +22,7 @@ class responder {
 public:
   responder(mime::type);
   virtual ~responder();
-  virtual void write(std::shared_ptr<output_formatter> f,
+  virtual void write(output_formatter& f,
                      const std::string &generator,
                      const std::chrono::system_clock::time_point &now) = 0;
 

@@ -229,11 +229,8 @@ list<mime::type> osmchange_responder::types_available() const {
 }
 
 void osmchange_responder::write(
-  shared_ptr<output_formatter> formatter,
+  output_formatter& fmt,
   const std::string &generator, const std::chrono::system_clock::time_point &now) {
-
-  // TODO: is it possible that formatter can be null?
-  output_formatter &fmt = *formatter;
 
   fmt.start_document(generator, "osmChange");
   try {

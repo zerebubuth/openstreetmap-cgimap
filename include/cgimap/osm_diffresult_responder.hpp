@@ -19,7 +19,7 @@ public:
   virtual ~osm_diffresult_responder();
 
 
-  void write(std::shared_ptr<output_formatter> f,
+  void write(output_formatter& f,
              const std::string &generator,
              const std::chrono::system_clock::time_point &now);
 

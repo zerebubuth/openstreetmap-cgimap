@@ -23,7 +23,7 @@ public:
   // timestamp, then wraps them in <create>/<modify>/<delete> to create an
   // approximation of a diff. the reliance on timestamp means it's entirely
   // likely that some documents may be poorly formed.
-  void write(std::shared_ptr<output_formatter> f,
+  void write(output_formatter& f,
              const std::string &generator,
              const std::chrono::system_clock::time_point &now);
 

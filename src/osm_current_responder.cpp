@@ -13,11 +13,10 @@ osm_current_responder::osm_current_responder(mime::type mt, data_selection_ptr &
 
 osm_current_responder::~osm_current_responder() = default;
 
-void osm_current_responder::write(shared_ptr<output_formatter> formatter,
+void osm_current_responder::write(output_formatter& fmt,
                                   const std::string &generator,
                                   const std::chrono::system_clock::time_point &now) {
-  // TODO: is it possible that formatter can be null?
-  output_formatter &fmt = *formatter;
+
 
   try {
     fmt.start_document(generator, "osm");

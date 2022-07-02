@@ -201,12 +201,11 @@ process_get_request(request &req, handler_ptr_t handler,
   shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
 
   // create the correct mime type output formatter.
-  shared_ptr<output_formatter> o_formatter =
-      create_formatter(req, best_mime_type, out);
+  auto o_formatter = create_formatter(req, best_mime_type, out);
 
   try {
     // call to write the response
-    responder->write(o_formatter, generator, req.get_current_time());
+    responder->write(*o_formatter, generator, req.get_current_time());
 
     // ensure the request is finished
     req.finish();
@@ -302,11 +301,11 @@ process_post_put_request(request &req, handler_ptr_t handler,
   shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
 
   // create the correct mime type output formatter.
-  shared_ptr<output_formatter> o_formatter = create_formatter(req, best_mime_type, out);
+  auto o_formatter = create_formatter(req, best_mime_type, out);
 
   try {
 //    // call to write the response
-    responder->write(o_formatter, generator, req.get_current_time());
+    responder->write(*o_formatter, generator, req.get_current_time());
 
     // ensure the request is finished
     req.finish();
