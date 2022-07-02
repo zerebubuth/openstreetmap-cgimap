@@ -73,7 +73,7 @@ void test_user_id_for_oauth2_token(test_database &tdb) {
 
   )");
 
-  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+  auto store = tdb.get_oauth_store();
 
   // Note: Tokens in this unit tests are considered to be opaque strings, tokens are used for db lookups as-is.
   // It doesn't matter if they have been previously stored as plain or sha256-hashed tokens.
@@ -284,7 +284,7 @@ void fetch_relation(test_database &tdb, std::shared_ptr<oauth::store> store, std
   recording_rate_limiter limiter;
   std::string generator("test_apidb_backend.cpp");
   routes route;
-  std::shared_ptr<data_selection::factory> factory = std::make_shared<empty_data_selection::factory>();
+  auto factory = std::make_shared<empty_data_selection::factory>();
 
   test_request req;
   req.set_header("SCRIPT_URL", "/api/0.6/relation/165475/full");
@@ -345,7 +345,7 @@ void test_oauth2_end_to_end(test_database &tdb) {
  
   )");
 
-  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+  auto store = tdb.get_oauth_store();
 
   // Test valid token -> HTTP 404 not found, due to unknown relation
   fetch_relation(tdb, store, "1yi2RI2WhIVMLoLaDLg0nrPJPU4WQSIX4Hh_jxfRRxI", 404);

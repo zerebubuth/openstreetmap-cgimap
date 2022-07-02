@@ -702,9 +702,8 @@ int main(int argc, char *argv[]) {
     vm.insert(std::make_pair(std::string("file"),
                              po::variable_value(data_file.native(), false)));
 
-    std::shared_ptr<backend> data_backend = make_staticxml_backend();
-    std::shared_ptr<data_selection::factory> factory =
-        data_backend->create(vm);
+    auto data_backend = make_staticxml_backend();
+    auto factory = data_backend->create(vm);
     null_rate_limiter limiter;
     routes route;
 

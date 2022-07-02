@@ -45,7 +45,7 @@ void test_negative_changeset_ids(test_database &tdb) {
     "  (6, 90000000, 90000000,  0, true,  '2016-04-16T15:09:00Z', 3229120632, 1), "
     "  (7, 90000000, 90000000, -1, true,  '2016-04-16T15:09:00Z', 3229120632, 1); "
     );
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   assert_equal<data_selection::visibility_t>(
     sel->check_node_visibility(6), data_selection::exists,
@@ -90,7 +90,7 @@ void test_changeset(test_database &tdb) {
     "VALUES "
     "  (1, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 2);"
     );
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   std::vector<osm_changeset_id_t> ids;
   ids.push_back(1);
@@ -134,7 +134,7 @@ void test_nonpublic_changeset(test_database &tdb) {
     "VALUES "
     "  (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 1);"
     );
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   std::vector<osm_changeset_id_t> ids;
   ids.push_back(4);
@@ -183,7 +183,7 @@ void test_changeset_with_tags(test_database &tdb) {
     "  (2, 'test_key', 'test_value'), "
     "  (2, 'test_key2', 'test_value2'); "
     );
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   std::vector<osm_changeset_id_t> ids;
   ids.push_back(2);
@@ -221,22 +221,22 @@ void test_changeset_with_tags(test_database &tdb) {
 }
 
 void check_changeset_with_comments_impl(
-  std::shared_ptr<data_selection> sel,
+  data_selection& sel,
   bool include_discussion) {
 
   std::vector<osm_changeset_id_t> ids;
   ids.push_back(3);
-  int num = sel->select_changesets(ids);
+  int num = sel.select_changesets(ids);
   assert_equal<int>(num, 1, "should have selected one changeset.");
 
   if (include_discussion) {
-    sel->select_changeset_discussions();
+    sel.select_changeset_discussions();
   }
 
   std::chrono::system_clock::time_point t = parse_time("2015-09-05T20:38:00Z");
 
   test_formatter f;
-  sel->write_changesets(f, t);
+  sel.write_changesets(f, t);
   assert_equal<size_t>(f.m_changesets.size(), 1,
                        "should have written one changeset.");
 
@@ -288,8 +288,8 @@ void test_changeset_with_comments(test_database &tdb) {
     );
 
   try {
-    std::shared_ptr<data_selection> sel = tdb.get_data_selection();
-    check_changeset_with_comments_impl(sel, false);
+    auto sel = tdb.get_data_selection();
+    check_changeset_with_comments_impl(*sel, false);
 
   } catch (const std::exception &e) {
     std::ostringstream ostr;
@@ -298,8 +298,8 @@ void test_changeset_with_comments(test_database &tdb) {
   }
 
   try {
-    std::shared_ptr<data_selection> sel = tdb.get_data_selection();
-    check_changeset_with_comments_impl(sel, true);
+    auto sel = tdb.get_data_selection();
+    check_changeset_with_comments_impl(*sel, true);
 
   } catch (const std::exception &e) {
     std::ostringstream ostr;
@@ -506,7 +506,7 @@ void test_changeset_create(test_database &tdb) {
 	assert_equal<int>(req.response_status(), 200, "should have received HTTP status 200 OK");
 	assert_equal<std::string>(req.body().str(), "500", "should have received changeset id 500");
 
-	std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+	auto sel = tdb.get_data_selection();
 
 	int num = sel->select_changesets({500});
 	assert_equal<int>(num, 1, "should have selected changeset 10.");
@@ -735,7 +735,7 @@ void test_changeset_update(test_database &tdb) {
 
 	assert_equal<int>(req.response_status(), 200, "should have received HTTP status 200 OK");
 
-	std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+	auto sel = tdb.get_data_selection();
 
 	int num = sel->select_changesets({52});
 	assert_equal<int>(num, 1, "should have selected changeset 52.");

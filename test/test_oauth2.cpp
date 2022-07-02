@@ -152,7 +152,7 @@ struct test_oauth2
 
 void test_validate_bearer_token() {
 
-  std::shared_ptr<oauth::store> store = std::make_shared<test_oauth2>();
+  auto store = std::make_shared<test_oauth2>();
 
   {
     bool allow_api_write;

@@ -50,7 +50,7 @@ void test_historic_elements(test_database &tdb) {
     "  (3, 0, 0, 2, true,  '2015-03-02T18:27:00Z', 3221225472, 1, NULL), "
     "  (3, 0, 0, 2, false, '2015-03-02T18:27:00Z', 3221225472, 2, NULL); "
     "");
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   std::vector<osm_edition_t> editions;
   editions.push_back(std::make_pair(osm_nwr_id_t(3), osm_version_t(1)));
@@ -101,7 +101,7 @@ void test_historic_dup(test_database &tdb) {
     "  (3, 0, 0, 2, true,  '2015-03-02T18:27:00Z', 3221225472, 1, NULL), "
     "  (3, 0, 0, 2, false, '2015-03-02T18:27:00Z', 3221225472, 2, NULL); "
     "");
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   std::vector<osm_edition_t> editions;
   editions.push_back(std::make_pair(osm_nwr_id_t(3), osm_version_t(2)));
@@ -163,7 +163,7 @@ void test_historic_dup_way(test_database &tdb) {
     "  (1, 1, 3, 1), "
     "  (1, 1, 2, 2); "
     "");
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   std::vector<osm_edition_t> editions;
   editions.push_back(std::make_pair(osm_nwr_id_t(1), osm_version_t(2)));
@@ -230,7 +230,7 @@ void test_historic_dup_relation(test_database &tdb) {
     "  (1, 'Node', 3, 'foo', 1, 2), "
     "  (1, 'Node', 3, 'bar', 1, 1); "
     "");
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   std::vector<osm_edition_t> editions;
   editions.push_back(std::make_pair(osm_nwr_id_t(1), osm_version_t(2)));
@@ -289,7 +289,7 @@ void test_node_history(test_database &tdb) {
     "  (3, 2, 'key2_1', 'value4'), "
     "  (3, 2, 'key2_2', 'value5'); "
     "");
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   std::vector<osm_nwr_id_t> ids;
   ids.push_back(3);
@@ -364,7 +364,7 @@ void test_way_history(test_database &tdb) {
     "  (1, 2, 'key2_1', 'value4'), "
     "  (1, 2, 'key2_2', 'value5'); "
     "");
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   std::vector<osm_nwr_id_t> ids;
   ids.push_back(1);
@@ -441,7 +441,7 @@ void test_relation_history(test_database &tdb) {
     "  (1, 2, 'key2_1', 'value4'), "
     "  (1, 2, 'key2_2', 'value5'); "
     "");
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   std::vector<osm_nwr_id_t> ids;
   ids.push_back(1);
@@ -502,7 +502,7 @@ void test_node_with_history_redacted(test_database &tdb) {
     "  (3, 0, 0, 2, true, '2017-02-04T16:56:00Z', 3221225472, 1, 1), "
     "  (3, 0, 0, 2, true, '2017-02-04T16:57:00Z', 3221225472, 2, NULL); "
     "");
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   // as a normal user, the redactions should not be visible
   {
@@ -584,7 +584,7 @@ void test_historical_nodes_redacted(test_database &tdb) {
     "  (3, 0, 0, 2, true, '2017-02-04T16:56:00Z', 3221225472, 1, 1), "
     "  (3, 0, 0, 2, true, '2017-02-04T16:57:00Z', 3221225472, 2, NULL); "
     "");
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   // as a normal user, the redactions should not be visible
   {
@@ -665,7 +665,7 @@ void test_way_with_history_redacted(test_database &tdb) {
     "  (1, 1, 3, 1), "
     "  (1, 1, 2, 2); "
     "");
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   // as a normal user, the redactions should not be visible
   {
@@ -760,7 +760,7 @@ void test_historical_ways_redacted(test_database &tdb) {
     "  (1, 1, 3, 1), "
     "  (1, 1, 2, 2); "
     "");
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   // as a normal user, the redactions should not be visible
   {
@@ -842,7 +842,7 @@ void test_relation_with_history_redacted(test_database &tdb) {
     "  (1, 'Node', 3, 'foo', 1, 2), "
     "  (1, 'Node', 3, 'bar', 1, 1); "
     "");
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   // as a normal user, the redactions should not be visible
   {
@@ -946,7 +946,7 @@ void test_historical_relations_redacted(test_database &tdb) {
     "  (1, 'Node', 3, 'foo', 1, 2), "
     "  (1, 'Node', 3, 'bar', 1, 1); "
     "");
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   // as a normal user, the redactions should not be visible
   {
@@ -1064,7 +1064,7 @@ void test_historic_way_node_order(test_database &tdb) {
     "  (1, 2,  9,  7), "
     "  (1, 2, 10,  8); "
     "");
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   std::vector<osm_nwr_id_t> ids;
   ids.push_back(1);

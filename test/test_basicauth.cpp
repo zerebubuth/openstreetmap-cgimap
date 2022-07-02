@@ -196,8 +196,7 @@ void test_password_hash() {
 
 void test_authenticate_user() {
 
-  std::shared_ptr<data_selection::factory> factory =
-    std::make_shared<basicauth_test_data_selection::factory>();
+  auto factory = std::make_shared<basicauth_test_data_selection::factory>();
 
   auto txn_readonly = factory->get_default_transaction();
   auto sel = factory->make_selection(*txn_readonly);
