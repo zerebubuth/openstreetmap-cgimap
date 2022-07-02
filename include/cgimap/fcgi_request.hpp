@@ -12,7 +12,7 @@ struct fcgi_request : public request {
   const std::string get_payload() override;
 
   // getting and setting the current time
-  std::chrono::system_clock::time_point get_current_time() const;
+  std::chrono::system_clock::time_point get_current_time() const override;
   // need to be able to set the time, since the fcgi_request is
   // actually wrapping the whole socket and so persists over
   // several calls.
@@ -20,7 +20,7 @@ struct fcgi_request : public request {
 
   int accept_r();
   static int open_socket(const std::string &, int);
-  void dispose();
+  void dispose() override;
 
 protected:
   void write_header_info(int status, const request::headers_t &headers);

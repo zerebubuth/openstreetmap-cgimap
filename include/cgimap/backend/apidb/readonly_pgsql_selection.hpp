@@ -74,8 +74,8 @@ public:
   public:
     factory(const boost::program_options::variables_map &);
     virtual ~factory();
-    virtual std::shared_ptr<data_selection> make_selection(Transaction_Owner_Base& );
-    virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction();
+    std::shared_ptr<data_selection> make_selection(Transaction_Owner_Base&) override;
+    std::unique_ptr<Transaction_Owner_Base> get_default_transaction() override;
 
   private:
     pqxx::connection m_connection, m_cache_connection;
@@ -99,7 +99,7 @@ private:
   std::set<osm_changeset_id_t> sel_changesets;
   std::set<osm_nwr_id_t> sel_nodes, sel_ways, sel_relations;
   std::set<osm_edition_t> sel_historic_nodes, sel_historic_ways, sel_historic_relations;
-  cache<osm_changeset_id_t, changeset> &cc;
+  cache<osm_changeset_id_t, changeset> & cc;
 };
 
 #endif /* READONLY_PGSQL_SELECTION_HPP */

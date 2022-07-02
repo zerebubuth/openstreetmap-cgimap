@@ -24,8 +24,8 @@ public:
   way_full_handler(request &req, osm_nwr_id_t id);
   ~way_full_handler();
 
-  std::string log_name() const;
-  responder_ptr_t responder(data_selection &x) const;
+  std::string log_name() const override;
+  responder_ptr_t responder(data_selection &x) const override;
 
 private:
   osm_nwr_id_t id;

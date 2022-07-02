@@ -25,8 +25,8 @@ public:
   nodes_handler(request &req);
   ~nodes_handler();
 
-  std::string log_name() const;
-  responder_ptr_t responder(data_selection &x) const;
+  std::string log_name() const override;
+  responder_ptr_t responder(data_selection &x) const override;
 
 private:
   std::vector<id_version> ids;

@@ -22,8 +22,8 @@ public:
   changeset_download_handler(request &req, osm_changeset_id_t id);
   ~changeset_download_handler();
 
-  std::string log_name() const;
-  responder_ptr_t responder(data_selection &x) const;
+  std::string log_name() const override;
+  responder_ptr_t responder(data_selection &x) const override;
 
 private:
   osm_changeset_id_t id;

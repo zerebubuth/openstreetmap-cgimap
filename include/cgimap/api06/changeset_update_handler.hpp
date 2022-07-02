@@ -41,13 +41,13 @@ public:
   changeset_update_handler(request &req, osm_changeset_id_t id);
   ~changeset_update_handler();
 
-  std::string log_name() const;
-  responder_ptr_t responder(data_selection &x) const;
+  std::string log_name() const override;
+  responder_ptr_t responder(data_selection &x) const override;
 
   responder_ptr_t responder(data_update &,
 			    const std::string &payload,
-                            std::optional<osm_user_id_t> user_id) const;
-  bool requires_selection_after_update() const;
+                            std::optional<osm_user_id_t> user_id) const override;
+  bool requires_selection_after_update() const override;
 
 private:
   osm_changeset_id_t id;

@@ -21,8 +21,8 @@ public:
   way_history_handler(request &, osm_nwr_id_t);
   ~way_history_handler();
 
-  std::string log_name() const;
-  responder_ptr_t responder(data_selection &) const;
+  std::string log_name() const override;
+  responder_ptr_t responder(data_selection &) const override;
 
 private:
   osm_nwr_id_t id;
