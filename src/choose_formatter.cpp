@@ -260,7 +260,7 @@ mime::type choose_best_mime_type(request &req, responder_ptr_t hptr) {
 
 std::unique_ptr<output_formatter> create_formatter(request &req,
                                               mime::type best_type,
-                                              shared_ptr<output_buffer> out) {
+                                              output_buffer& out) {
 
 
   if (best_type == mime::application_xml) {

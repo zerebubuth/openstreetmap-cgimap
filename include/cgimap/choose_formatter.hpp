@@ -20,6 +20,6 @@ mime::type choose_best_mime_type(request &req, responder_ptr_t hptr);
  */
 std::unique_ptr<output_formatter>
 create_formatter(request &req, mime::type best_type,
-                 std::shared_ptr<output_buffer>);
+                 output_buffer&);
 
 #endif /* CHOOSE_FORMATTER_HPP */

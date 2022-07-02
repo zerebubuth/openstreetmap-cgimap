@@ -6,27 +6,23 @@
 #include "cgimap/text_writer.hpp"
 
 
-text_writer::text_writer(const std::string &file_name, bool indent) {
-}
-
 // create a new text writer using writer callback functions
-text_writer::text_writer(std::shared_ptr<output_buffer> &o, bool indent) : out(o) {
+text_writer::text_writer(output_buffer &o, bool indent) : out(o) {
 
 }
 
 
 text_writer::~text_writer() noexcept {
 
-  if (out != nullptr) {
-      try {
-        out->close();
-      } catch (...) {
-        // don't do anything here or we risk FUBARing the entire program.
-        // it might not be possible to end the document because the output
-        // stream went away. if so, then there is nothing to do but try
-        // and reclaim the extra memory.
-      }
+  try {
+    out.close();
+  } catch (...) {
+    // don't do anything here or we risk FUBARing the entire program.
+    // it might not be possible to end the document because the output
+    // stream went away. if so, then there is nothing to do but try
+    // and reclaim the extra memory.
   }
+
 }
 
 void text_writer::start(const std::string &name) {
@@ -35,7 +31,7 @@ void text_writer::start(const std::string &name) {
 
 
 void text_writer::text(const std::string &t) {
-  out->write(t.c_str(), t.size());
+  out.write(t.c_str(), t.size());
 }
 
 void text_writer::end() {
@@ -43,7 +39,7 @@ void text_writer::end() {
 }
 
 void text_writer::flush() {
-  out->flush();
+  out.flush();
 
 }
 

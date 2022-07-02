@@ -18,7 +18,7 @@ public:
   json_writer& operator=(json_writer &&) = default;
 
   // create a json writer using a callback object for output
-  json_writer(std::shared_ptr<output_buffer> &out, bool indent = false);
+  json_writer(output_buffer &out, bool indent = false);
 
   // closes and flushes the buffer
   ~json_writer() noexcept;
@@ -46,7 +46,7 @@ private:
   // PIMPL idiom
   struct pimpl_;
   std::unique_ptr<pimpl_> pimpl;
-  std::shared_ptr<output_buffer> out;
+  output_buffer& out;
 };
 
 #endif /* JSON_WRITER_HPP */
