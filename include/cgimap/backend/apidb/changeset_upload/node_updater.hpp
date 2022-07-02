@@ -16,7 +16,7 @@ class ApiDB_Node_Updater : public api06::Node_Updater {
 
 public:
   ApiDB_Node_Updater(Transaction_Manager &_m,
-                     std::shared_ptr<api06::OSMChange_Tracking> _ct);
+		     api06::OSMChange_Tracking &ct);
 
   virtual ~ApiDB_Node_Updater();
 
@@ -99,7 +99,7 @@ private:
   void delete_current_node_tags(const std::vector<osm_nwr_id_t> &ids);
 
   Transaction_Manager &m;
-  std::shared_ptr<api06::OSMChange_Tracking> ct;
+  api06::OSMChange_Tracking &ct;
 
   std::vector<node_t> create_nodes;
   std::vector<node_t> modify_nodes;

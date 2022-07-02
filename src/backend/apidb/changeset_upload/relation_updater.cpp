@@ -19,8 +19,8 @@
 using boost::format;
 
 ApiDB_Relation_Updater::ApiDB_Relation_Updater(
-    Transaction_Manager &_m, std::shared_ptr<api06::OSMChange_Tracking> _ct)
-    : m_bbox(), m(_m), ct(std::move(_ct)) {}
+    Transaction_Manager &_m, api06::OSMChange_Tracking &ct)
+    : m_bbox(), m(_m), ct(ct) {}
 
 ApiDB_Relation_Updater::~ApiDB_Relation_Updater() = default;
 
@@ -52,7 +52,7 @@ void ApiDB_Relation_Updater::add_relation(osm_changeset_id_t changeset_id,
 
   create_relations.push_back(new_relation);
 
-  ct->osmchange_orig_sequence.push_back(
+  ct.osmchange_orig_sequence.push_back(
       { operation::op_create, object_type::relation, new_relation.old_id,
         new_relation.version, false });
 }
@@ -87,7 +87,7 @@ void ApiDB_Relation_Updater::modify_relation(osm_changeset_id_t changeset_id,
 
   modify_relations.push_back(modify_relation);
 
-  ct->osmchange_orig_sequence.push_back(
+  ct.osmchange_orig_sequence.push_back(
       { operation::op_modify, object_type::relation, modify_relation.old_id,
         modify_relation.version, false });
 }
@@ -105,7 +105,7 @@ void ApiDB_Relation_Updater::delete_relation(osm_changeset_id_t changeset_id,
   delete_relation.if_unused = if_unused;
   delete_relations.push_back(delete_relation);
 
-  ct->osmchange_orig_sequence.push_back(
+  ct.osmchange_orig_sequence.push_back(
       { operation::op_delete, object_type::relation, delete_relation.old_id,
         delete_relation.version, if_unused });
 }
@@ -122,8 +122,8 @@ void ApiDB_Relation_Updater::process_new_relations() {
   delete_tmp_create_relations();
 
   // Use new_ids as a result of inserting nodes/ways in tmp table
-  replace_old_ids_in_relations(create_relations, ct->created_node_ids,
-                               ct->created_way_ids, ct->created_relation_ids);
+  replace_old_ids_in_relations(create_relations, ct.created_node_ids,
+                               ct.created_way_ids, ct.created_relation_ids);
 
   std::vector<osm_nwr_id_t> ids;
 
@@ -152,8 +152,8 @@ void ApiDB_Relation_Updater::process_new_relations() {
 void ApiDB_Relation_Updater::process_modify_relations() {
 
   // Use new_ids as a result of inserting nodes/ways/relations in tmp table
-  replace_old_ids_in_relations(modify_relations, ct->created_node_ids,
-                               ct->created_way_ids, ct->created_relation_ids);
+  replace_old_ids_in_relations(modify_relations, ct.created_node_ids,
+                               ct.created_way_ids, ct.created_relation_ids);
 
   std::vector<osm_nwr_id_t> ids;
 
@@ -261,8 +261,8 @@ void ApiDB_Relation_Updater::process_delete_relations() {
   std::vector<osm_nwr_id_t> ids_visible_unreferenced;
 
   // Use new_ids as a result of inserting nodes/ways/relations in tmp table
-  replace_old_ids_in_relations(delete_relations, ct->created_node_ids,
-                               ct->created_way_ids, ct->created_relation_ids);
+  replace_old_ids_in_relations(delete_relations, ct.created_node_ids,
+                               ct.created_way_ids, ct.created_relation_ids);
 
   for (const auto &id : delete_relations)
     ids.push_back(id.id);
@@ -489,7 +489,7 @@ void ApiDB_Relation_Updater::insert_new_relations_to_tmp_table(
         "Could not create all new relations in temporary table");
 
   for (const auto &row : r)
-    ct->created_relation_ids.push_back(
+    ct.created_relation_ids.push_back(
         { row["old_id"].as<osm_nwr_signed_id_t>(), row["id"].as<osm_nwr_id_t>(),
           1 });
 }
@@ -673,7 +673,7 @@ ApiDB_Relation_Updater::determine_already_deleted_relations(
 
     if (ids_if_unused.find(id) != ids_if_unused.end()) {
 
-      ct->skip_deleted_relation_ids.push_back(
+      ct.skip_deleted_relation_ids.push_back(
           { id_to_old_id[row["id"].as<osm_nwr_id_t>()],
 	    row["id"].as<osm_nwr_id_t>(),
             row["version"].as<osm_version_t>() });
@@ -1270,12 +1270,12 @@ void ApiDB_Relation_Updater::update_current_relations(
   // update modified/deleted relations table
   for (const auto &row : r) {
     if (visible) {
-      ct->modified_relation_ids.push_back(
+      ct.modified_relation_ids.push_back(
           { id_to_old_id[row["id"].as<osm_nwr_id_t>()],
 	    row["id"].as<osm_nwr_id_t>(),
             row["version"].as<osm_version_t>() });
     } else {
-      ct->deleted_relation_ids.push_back({ id_to_old_id[row["id"].as<osm_nwr_id_t>()] });
+      ct.deleted_relation_ids.push_back({ id_to_old_id[row["id"].as<osm_nwr_id_t>()] });
     }
   }
 }
@@ -1449,7 +1449,7 @@ ApiDB_Relation_Updater::remove_blocked_relations_from_deletion_list (
     // However, the caller has indicated via if-unused flag that deletion
     // should not lead to an error. All we can do now is to return old_id,
     // new_id and the current version to the caller
-    ct->skip_deleted_relation_ids.push_back(
+    ct.skip_deleted_relation_ids.push_back(
 	  { id_to_old_id[row["id"].as<osm_nwr_id_t>()],
 	    row["id"].as< osm_nwr_id_t>(),
 	    row["version"].as<osm_version_t>() });
@@ -1695,8 +1695,8 @@ void ApiDB_Relation_Updater::delete_current_relation_tags(
 }
 
 uint32_t ApiDB_Relation_Updater::get_num_changes() {
-  return (ct->created_relation_ids.size() + ct->modified_relation_ids.size() +
-          ct->deleted_relation_ids.size());
+  return (ct.created_relation_ids.size() + ct.modified_relation_ids.size() +
+          ct.deleted_relation_ids.size());
 }
 
 bbox_t ApiDB_Relation_Updater::bbox() { return m_bbox; }

@@ -30,7 +30,7 @@ changeset_upload_responder::changeset_upload_responder(
   osm_changeset_id_t changeset = id_;
   osm_user_id_t uid = *user_id;
 
-  auto change_tracking = std::make_shared<OSMChange_Tracking>();
+  OSMChange_Tracking change_tracking{};
 
   auto changeset_updater = upd->get_changeset_updater(changeset, uid);
   auto node_updater = upd->get_node_updater(change_tracking);
@@ -47,7 +47,7 @@ changeset_upload_responder::changeset_upload_responder(
   parser.process_message(payload);
 
   // store diffresult for output handling in class osm_diffresult_responder
-  m_diffresult = change_tracking->assemble_diffresult();
+  m_diffresult = change_tracking.assemble_diffresult();
 
   changeset_updater->update_changeset(handler.get_num_changes(),
                                       handler.get_bbox());

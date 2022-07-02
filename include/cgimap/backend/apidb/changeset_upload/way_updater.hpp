@@ -20,7 +20,7 @@ class ApiDB_Way_Updater : public api06::Way_Updater {
 
 public:
   ApiDB_Way_Updater(Transaction_Manager &_m,
-                    std::shared_ptr<api06::OSMChange_Tracking> _ct);
+		    api06::OSMChange_Tracking &ct);
 
   virtual ~ApiDB_Way_Updater();
 
@@ -121,7 +121,7 @@ private:
   void delete_current_way_nodes(std::vector<osm_nwr_id_t> ids);
 
   Transaction_Manager &m;
-  std::shared_ptr<api06::OSMChange_Tracking> ct;
+  api06::OSMChange_Tracking &ct;
 
   std::vector<way_t> create_ways;
   std::vector<way_t> modify_ways;
