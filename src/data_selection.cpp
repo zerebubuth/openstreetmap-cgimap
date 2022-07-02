@@ -2,7 +2,7 @@
 
 data_selection::~data_selection() = default;
 
-
+/*
 int data_selection::select_historical_nodes(const std::vector<osm_edition_t> &) {
   return 0;
 }
@@ -43,6 +43,7 @@ int data_selection::select_changesets(const std::vector<osm_changeset_id_t> &) {
 void data_selection::select_changeset_discussions() {
 }
 
+*/
 
 data_selection::factory::~factory() = default;
 

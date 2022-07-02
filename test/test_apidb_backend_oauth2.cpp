@@ -172,33 +172,42 @@ public:
   void write_ways(output_formatter &formatter) {}
   void write_relations(output_formatter &formatter) {}
   void write_changesets(output_formatter &formatter,
-                        const std::chrono::system_clock::time_point &now) {}
+                        const std::chrono::system_clock::time_point &now) override {}
 
-  visibility_t check_node_visibility(osm_nwr_id_t id) { return non_exist; }
-  visibility_t check_way_visibility(osm_nwr_id_t id) { return non_exist; }
-  visibility_t check_relation_visibility(osm_nwr_id_t id) { return non_exist; }
+  visibility_t check_node_visibility(osm_nwr_id_t id) override { return non_exist; }
+  visibility_t check_way_visibility(osm_nwr_id_t id) override { return non_exist; }
+  visibility_t check_relation_visibility(osm_nwr_id_t id) override { return non_exist; }
 
-  int select_nodes(const std::vector<osm_nwr_id_t> &) { return 0; }
-  int select_ways(const std::vector<osm_nwr_id_t> &) { return 0; }
-  int select_relations(const std::vector<osm_nwr_id_t> &) { return 0; }
-  int select_nodes_from_bbox(const bbox &bounds, int max_nodes) { return 0; }
-  void select_nodes_from_relations() {}
-  void select_ways_from_nodes() {}
-  void select_ways_from_relations() {}
-  void select_relations_from_ways() {}
-  void select_nodes_from_way_nodes() {}
-  void select_relations_from_nodes() {}
-  void select_relations_from_relations(bool drop_relations = false) {}
-  void select_relations_members_of_relations() {}
-  int select_changesets(const std::vector<osm_changeset_id_t> &) { return 0; }
-  void select_changeset_discussions() {}
-  void drop_nodes() {}
-  void drop_ways() {}
-  void drop_relations() {}
+  int select_nodes(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_ways(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_relations(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_nodes_from_bbox(const bbox &bounds, int max_nodes) override { return 0; }
+  void select_nodes_from_relations() override {}
+  void select_ways_from_nodes() override {}
+  void select_ways_from_relations() override {}
+  void select_relations_from_ways() override {}
+  void select_nodes_from_way_nodes() override {}
+  void select_relations_from_nodes() override {}
+  void select_relations_from_relations(bool drop_relations = false) override {}
+  void select_relations_members_of_relations() override {}
+  int select_changesets(const std::vector<osm_changeset_id_t> &) override { return 0; }
+  void select_changeset_discussions() override {}
+  void drop_nodes() override {}
+  void drop_ways() override {}
+  void drop_relations() override {}
 
   bool supports_user_details() const override { return false; }
   bool is_user_blocked(const osm_user_id_t) override { return true; }
   bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &) override { return false; };
+
+  int select_historical_nodes(const std::vector<osm_edition_t> &) override { return 0; }
+  int select_nodes_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_historical_ways(const std::vector<osm_edition_t> &) override { return 0; }
+  int select_ways_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_historical_relations(const std::vector<osm_edition_t> &) override { return 0; }
+  int select_relations_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  void set_redactions_visible(bool) override {}
+  int select_historical_by_changesets(const std::vector<osm_changeset_id_t> &) override { return 0; }
 
   struct factory
     : public data_selection::factory {

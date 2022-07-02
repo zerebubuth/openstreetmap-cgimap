@@ -34,7 +34,7 @@ public:
 
   /// does this data selection support changesets?
   virtual void write_changesets(output_formatter &formatter,
-                                const std::chrono::system_clock::time_point &now);
+                                const std::chrono::system_clock::time_point &now) = 0;
 
   /******************* information functions *******************/
 
@@ -102,48 +102,48 @@ public:
 
   /// select the given (id, version) versions of nodes, returning the number of
   /// nodes added to the selected set.
-  virtual int select_historical_nodes(const std::vector<osm_edition_t> &);
+  virtual int select_historical_nodes(const std::vector<osm_edition_t> &) = 0;
 
   /// select all versions of the node with the given IDs. returns the number of
   /// distinct (id, version) pairs selected.
-  virtual int select_nodes_with_history(const std::vector<osm_nwr_id_t> &);
+  virtual int select_nodes_with_history(const std::vector<osm_nwr_id_t> &) = 0;
 
   /// select the given (id, version) versions of ways, returning the number of
   /// ways added to the selected set.
-  virtual int select_historical_ways(const std::vector<osm_edition_t> &);
+  virtual int select_historical_ways(const std::vector<osm_edition_t> &) = 0;
 
   /// select all versions of the way with the given IDs. returns the number of
   /// distinct (id, version) pairs selected.
-  virtual int select_ways_with_history(const std::vector<osm_nwr_id_t> &);
+  virtual int select_ways_with_history(const std::vector<osm_nwr_id_t> &) = 0;
 
   /// select the given (id, version) versions of relations, returning the number
   /// of relations added to the selected set.
-  virtual int select_historical_relations(const std::vector<osm_edition_t> &);
+  virtual int select_historical_relations(const std::vector<osm_edition_t> &) = 0;
 
   /// select all versions of the relation with the given IDs. returns the number
   /// of distinct (id, version) pairs selected.
-  virtual int select_relations_with_history(const std::vector<osm_nwr_id_t> &);
+  virtual int select_relations_with_history(const std::vector<osm_nwr_id_t> &) = 0;
 
   /// if true, then include redactions in returned data. should default to
   /// false.
-  virtual void set_redactions_visible(bool visible);
+  virtual void set_redactions_visible(bool visible) = 0;
 
   /// select all versions of nodes, ways and relations which were added as part
   /// of any of the changesets with the given IDs. returns the number of
   /// distinct (element_type, id, version) tuples selected.
   virtual int select_historical_by_changesets(
-    const std::vector<osm_changeset_id_t> &);
+    const std::vector<osm_changeset_id_t> &) = 0;
 
   /****************** changeset functions **********************/
 
   /// select specified changesets, returning the number of
   /// changesets selected.
-  virtual int select_changesets(const std::vector<osm_changeset_id_t> &);
+  virtual int select_changesets(const std::vector<osm_changeset_id_t> &) = 0;
 
   /// select the changeset discussions as well. this effectively
   /// just sets a flag - by default, discussions are not included,
   /// if this is called then discussions will be included.
-  virtual void select_changeset_discussions();
+  virtual void select_changeset_discussions() = 0;
 
   /****************** user functions **********************/
 
