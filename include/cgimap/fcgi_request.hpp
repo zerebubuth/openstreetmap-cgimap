@@ -8,8 +8,8 @@
 struct fcgi_request : public request {
   fcgi_request(int socket, const std::chrono::system_clock::time_point &now);
   virtual ~fcgi_request();
-  const char *get_param(const char *key);
-  const std::string get_payload();
+  const char *get_param(const char *key) const override;
+  const std::string get_payload() override;
 
   // getting and setting the current time
   std::chrono::system_clock::time_point get_current_time() const;

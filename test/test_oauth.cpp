@@ -51,8 +51,8 @@ struct test_request : public request {
                const std::optional<std::string> &auth_header);
   virtual ~test_request();
 
-  const char *get_param(const char *key);
-  const std::string get_payload();
+  const char *get_param(const char *key) const override;
+  const std::string get_payload() override;
 
   void dispose();
 
@@ -87,7 +87,7 @@ test_request::test_request(const std::string &method_,
 
 test_request::~test_request() = default;
 
-const char *test_request::get_param(const char *key) {
+const char *test_request::get_param(const char *key) const {
   if (std::strncmp(key, "HTTP_AUTHORIZATION", 19) == 0) {
     return bool(auth_header) ? (auth_header->c_str()) : NULL;
   } else if (std::strncmp(key, "PATH_INFO", 10) == 0) {

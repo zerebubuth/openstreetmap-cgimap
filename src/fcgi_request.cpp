@@ -61,7 +61,7 @@ fcgi_request::fcgi_request(int socket, const std::chrono::system_clock::time_poi
 
 fcgi_request::~fcgi_request() { FCGX_Free(&m_impl->req, true); }
 
-const char *fcgi_request::get_param(const char *key) {
+const char *fcgi_request::get_param(const char *key) const {
   return FCGX_GetParam(key, m_impl->req.envp);
 }
 

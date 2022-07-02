@@ -113,7 +113,7 @@ bool PasswordHash::is_valid_argon2(const std::string& pass_crypt, const std::str
 
 namespace basicauth {
 
-  [[nodiscard]] std::optional<osm_user_id_t> authenticate_user(request &req, data_selection& selection)
+  [[nodiscard]] std::optional<osm_user_id_t> authenticate_user(const request &req, data_selection& selection)
   {
     std::string user_name;
     std::string candidate;

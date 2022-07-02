@@ -64,8 +64,8 @@ public:
   int select_historical_by_changesets(const std::vector<osm_changeset_id_t> &) override;
 
   bool supports_user_details() const override;
-  bool is_user_blocked(const osm_user_id_t) const override;
-  bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &) const override;
+  bool is_user_blocked(const osm_user_id_t) override;
+  bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &) override;
 
   /**
    * a factory for the creation of read-only selections

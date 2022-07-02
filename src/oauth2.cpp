@@ -24,7 +24,7 @@ inline std::string sha256_hash(const std::string& s) {
 
 namespace oauth2 {
 
-  [[nodiscard]] std::optional<osm_user_id_t> validate_bearer_token(request &req, oauth::store* store, bool& allow_api_write)
+  [[nodiscard]] std::optional<osm_user_id_t> validate_bearer_token(const request &req, oauth::store* store, bool& allow_api_write)
   {
     const char * auth_hdr = req.get_param ("HTTP_AUTHORIZATION");
     if (auth_hdr == nullptr)

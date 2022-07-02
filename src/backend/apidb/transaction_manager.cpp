@@ -17,7 +17,7 @@ pqxx::transaction_base& Transaction_Owner_ReadWrite::get_transaction() { return 
 Transaction_Manager::Transaction_Manager(Transaction_Owner_Base &to) : m_txn{ to.get_transaction() } {}
 
 void Transaction_Manager::prepare(const std::string &name,
-                                  const std::string &definition) const {
+                                  const std::string &definition) {
   m_txn.conn().prepare(name, definition);
 }
 

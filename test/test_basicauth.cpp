@@ -96,9 +96,9 @@ public:
   void drop_relations() {}
 
   bool supports_user_details() const override { return false; }
-  bool is_user_blocked(const osm_user_id_t) const override { return true; }
+  bool is_user_blocked(const osm_user_id_t) override { return true; }
   bool get_user_id_pass(const std::string& user_name, osm_user_id_t & user_id,
-				std::string & pass_crypt, std::string & pass_salt) const override {
+				std::string & pass_crypt, std::string & pass_salt) override {
 
     if (user_name == "demo") {
 	user_id = 4711;

@@ -602,8 +602,8 @@ struct static_data_selection : public data_selection {
   }
 
   bool supports_user_details() const override { return false; }
-  bool is_user_blocked(const osm_user_id_t) const override { return true; }
-  bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &) const override { return false; };
+  bool is_user_blocked(const osm_user_id_t) override { return true; }
+  bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &) override { return false; };
 
 private:
   template <typename T>

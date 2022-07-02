@@ -29,7 +29,7 @@ namespace {
 
 void validate_user_db_update_permission (
     const std::optional<osm_user_id_t>& user_id,
-    const data_selection& selection, bool allow_api_write)
+    data_selection& selection, bool allow_api_write)
 {
   if (!user_id)
     throw http::unauthorized ("User is not authorized");
@@ -176,7 +176,7 @@ process_get_request(request &req, handler_ptr_t handler,
                     data_selection& selection,
                     const string &ip, const string &generator) {
   // request start logging
-  string request_name = handler->log_name();
+  const std::string request_name = handler->log_name();
   logger::message(format("Started request for %1% from %2%") % request_name %
                   ip);
 
@@ -187,7 +187,7 @@ process_get_request(request &req, handler_ptr_t handler,
   std::shared_ptr<http::encoding> encoding = get_encoding(req);
 
   // figure out best mime type
-  mime::type best_mime_type = choose_best_mime_type(req, responder);
+  const mime::type best_mime_type = choose_best_mime_type(req, responder);
 
   // TODO: use handler/responder to setup response headers.
   // write the response header
@@ -243,7 +243,7 @@ process_post_put_request(request &req, handler_ptr_t handler,
                     std::optional<osm_user_id_t> user_id,
                     const string &ip, const string &generator) {
   // request start logging
-  string request_name = handler->log_name();
+  const std::string request_name = handler->log_name();
   logger::message(format("Started request for %1% from %2%") % request_name %
                   ip);
 
@@ -261,7 +261,7 @@ process_post_put_request(request &req, handler_ptr_t handler,
 
   auto data_update = update_factory.make_data_update(*rw_transaction);
 
-  check_db_readonly_mode (*data_update);
+  check_db_readonly_mode(*data_update);
 
   // Executing the responder constructor is expected to call db commit()
   // rw_transaction is no longer usable after this point
@@ -285,7 +285,7 @@ process_post_put_request(request &req, handler_ptr_t handler,
   std::shared_ptr<http::encoding> encoding = get_encoding(req);
 
 //  // figure out best mime type
-  mime::type best_mime_type = choose_best_mime_type(req, responder);
+  const mime::type best_mime_type = choose_best_mime_type(req, responder);
 
   //mime::type best_mime_type = mime::type::text_xml;
 
@@ -340,7 +340,7 @@ process_head_request(request &req, handler_ptr_t handler,
                      data_selection& selection,
                      const string &ip) {
   // request start logging
-  string request_name = handler->log_name();
+  const std::string request_name = handler->log_name();
   logger::message(format("Started HEAD request for %1% from %2%") %
                   request_name % ip);
 
@@ -357,7 +357,7 @@ process_head_request(request &req, handler_ptr_t handler,
   std::shared_ptr<http::encoding> encoding = get_encoding(req);
 
   // figure out best mime type
-  mime::type best_mime_type = choose_best_mime_type(req, responder);
+  const mime::type best_mime_type = choose_best_mime_type(req, responder);
 
   // TODO: use handler/responder to setup response headers.
   // write the response header
@@ -527,7 +527,7 @@ void process_request(request &req, rate_limiter &limiter,
     bool allow_api_write = true;
 
     // get the client IP address
-    string ip = fcgi_get_env(req, "REMOTE_ADDR");
+    const std::string ip = fcgi_get_env(req, "REMOTE_ADDR");
 
     // fetch and parse the request method
     std::optional<http::method> maybe_method =  http::parse_method(fcgi_get_env(req, "REQUEST_METHOD"));

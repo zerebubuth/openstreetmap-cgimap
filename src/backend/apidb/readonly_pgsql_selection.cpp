@@ -728,7 +728,7 @@ bool readonly_pgsql_selection::supports_user_details() const {
   return true;
 }
 
-bool readonly_pgsql_selection::is_user_blocked(const osm_user_id_t id) const {
+bool readonly_pgsql_selection::is_user_blocked(const osm_user_id_t id) {
 
   m.prepare("check_user_blocked",
     R"(SELECT id FROM "user_blocks" 
@@ -740,7 +740,7 @@ bool readonly_pgsql_selection::is_user_blocked(const osm_user_id_t id) const {
 }
 
 bool readonly_pgsql_selection::get_user_id_pass(const std::string& user_name, osm_user_id_t & id,
-						 std::string & pass_crypt, std::string & pass_salt) const {
+						 std::string & pass_crypt, std::string & pass_salt) {
 
   std::string email = boost::algorithm::trim_copy(user_name);
 

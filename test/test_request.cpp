@@ -30,7 +30,7 @@ test_request::test_request() : m_status(-1), m_payload{}  {}
 
 test_request::~test_request() = default;
 
-const char *test_request::get_param(const char *key) {
+const char *test_request::get_param(const char *key) const {
   std::string key_str(key);
   auto itr = m_params.find(key_str);
   if (itr != m_params.end()) {

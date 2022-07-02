@@ -57,14 +57,14 @@ class Transaction_Manager {
 public:
   explicit Transaction_Manager(Transaction_Owner_Base &to);
 
-  void prepare(const std::string &name, const std::string &) const;
+  void prepare(const std::string &name, const std::string &);
 
   pqxx::result exec(const std::string &query,
                     const std::string &description = std::string());
   void commit();
 
   template<typename... Args>
-  pqxx::result exec_prepared(const std::string &statement, Args&&... args) const {
+  pqxx::result exec_prepared(const std::string &statement, Args&&... args) {
 
     auto start = std::chrono::steady_clock::now();
     pqxx::result res = m_txn.exec_prepared(statement, std::forward<Args>(args)...);
