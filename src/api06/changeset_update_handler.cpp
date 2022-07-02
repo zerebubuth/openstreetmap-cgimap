@@ -23,7 +23,7 @@ changeset_update_responder::changeset_update_responder(
     data_update_ptr & upd,
     osm_changeset_id_t changeset_id,
     const std::string &payload,
-    boost::optional<osm_user_id_t> user_id)
+    std::optional<osm_user_id_t> user_id)
     : text_responder(mt),
       id(changeset_id){
 
@@ -73,7 +73,7 @@ changeset_update_handler::responder(data_selection_ptr &sel) const {
 }
 
 responder_ptr_t changeset_update_handler::responder(
-    data_update_ptr & upd, const std::string &payload, boost::optional<osm_user_id_t> user_id) const {
+    data_update_ptr & upd, const std::string &payload, std::optional<osm_user_id_t> user_id) const {
   return responder_ptr_t(
       new changeset_update_responder(mime_type, upd, id, payload, user_id));
 }

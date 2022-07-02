@@ -1,7 +1,6 @@
 #include <iostream>
 #include <stdexcept>
 #include <boost/format.hpp>
-#include <boost/optional/optional_io.hpp>
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
@@ -113,7 +112,7 @@ void test_single_nodes(test_database &tdb) {
     f.m_nodes[2], "third node written");
   assert_equal<test_formatter::node_t>(
     test_formatter::node_t(
-      element_info(4, 1, 4, "2015-03-02T19:25:00Z", boost::none, boost::none, true),
+      element_info(4, 1, 4, "2015-03-02T19:25:00Z", {}, {}, true),
       0.0, 0.0,
       tags_t()
       ),

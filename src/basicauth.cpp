@@ -113,10 +113,8 @@ bool PasswordHash::is_valid_argon2(const std::string& pass_crypt, const std::str
 
 namespace basicauth {
 
-  boost::optional<osm_user_id_t> authenticate_user(request &req, std::shared_ptr<data_selection>& selection)
+  [[nodiscard]] std::optional<osm_user_id_t> authenticate_user(request &req, std::shared_ptr<data_selection>& selection)
   {
-    PasswordHash pwd_hash;
-
     std::string user_name;
     std::string candidate;
 
@@ -126,7 +124,7 @@ namespace basicauth {
 
     const char * auth_hdr = req.get_param ("HTTP_AUTHORIZATION");
     if (auth_hdr == nullptr)
-      return boost::optional<osm_user_id_t>{};
+      return std::optional<osm_user_id_t>{};
 
     auto auth_header = std::string(auth_hdr);
 
@@ -136,13 +134,13 @@ namespace basicauth {
 	std::regex r("[Bb][Aa][Ss][Ii][Cc] ([A-Za-z0-9\\+\\/]+=*).*");
 
 	if (!std::regex_match(auth_header, sm, r))
-	  return boost::optional<osm_user_id_t>{};
+	  return std::optional<osm_user_id_t>{};
 
 	if (sm.size() != 2)
-	  return boost::optional<osm_user_id_t>{};
+	  return std::optional<osm_user_id_t>{};
 
     } catch (std::regex_error&) {
-      return boost::optional<osm_user_id_t>{};
+      return std::optional<osm_user_id_t>{};
     }
 
     std::string auth;
@@ -150,23 +148,23 @@ namespace basicauth {
     try {
        auth = PasswordHash::base64decode(sm[1]);
     } catch (...) {
-      return boost::optional<osm_user_id_t>{};
+      return std::optional<osm_user_id_t>{};
     }
 
     auto pos = auth.find(":");
 
     if (pos == std::string::npos)
-      return boost::optional<osm_user_id_t>{};
+      return std::optional<osm_user_id_t>{};
 
     try {
       user_name = auth.substr(0, pos);
       candidate = auth.substr(pos + 1);
     } catch (std::out_of_range&) {
-       return boost::optional<osm_user_id_t>{};
+       return std::optional<osm_user_id_t>{};
     }
 
     if (user_name.empty() || candidate.empty())
-      return boost::optional<osm_user_id_t>{};
+      return std::optional<osm_user_id_t>{};
 
     auto user_exists = selection->get_user_id_pass(user_name, user_id, pass_crypt, pass_salt);
 
@@ -174,7 +172,7 @@ namespace basicauth {
       throw http::unauthorized("Incorrect user or password");
 
     if (PasswordHash::check(pass_crypt, pass_salt, candidate))
-      return boost::optional<osm_user_id_t>{user_id};
+      return std::optional<osm_user_id_t>{user_id};
     else
       throw http::unauthorized("Incorrect user or password");
 

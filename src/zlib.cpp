@@ -141,7 +141,7 @@ std::string ZLibBaseDecompressor::decompress(const std::string& input) {
   if (!use_decompression)
     return input;
 
-  for (auto offset = 0; offset < input.length(); offset += ZLIB_COMPLETE_CHUNK) {
+  for (std::size_t offset = 0; offset < input.length(); offset += ZLIB_COMPLETE_CHUNK) {
 
     unsigned int bytes_left = input.length() - offset;
     unsigned int bytes_wanted = std::min(ZLIB_COMPLETE_CHUNK, bytes_left);
@@ -164,6 +164,7 @@ std::string ZLibBaseDecompressor::decompress(const std::string& input) {
       switch (ret) {
       case Z_NEED_DICT:
           ret = Z_DATA_ERROR;
+          [[fallthrough]];
           /* no break */
       case Z_DATA_ERROR:
       case Z_MEM_ERROR:

@@ -16,7 +16,7 @@
 #include <list>
 #include <map>
 #include <limits>
-#include <boost/optional.hpp>
+#include <optional>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -37,7 +37,7 @@ using std::runtime_error;
 using std::map;
 using std::numeric_limits;
 using std::make_pair;
-using boost::optional;
+
 using std::shared_ptr;
 using boost::lexical_cast;
 using std::string;
@@ -258,32 +258,26 @@ mime::type choose_best_mime_type(request &req, responder_ptr_t hptr) {
   return best_type;
 }
 
-shared_ptr<output_formatter> create_formatter(request &req,
+std::unique_ptr<output_formatter> create_formatter(request &req,
                                               mime::type best_type,
                                               shared_ptr<output_buffer> out) {
-  shared_ptr<output_formatter> o_formatter;
+
 
   if (best_type == mime::application_xml) {
-    auto *xwriter = new xml_writer(out, true);
-    o_formatter = shared_ptr<output_formatter>(new xml_formatter(xwriter));
+    return std::unique_ptr<output_formatter>(new xml_formatter(std::unique_ptr<xml_writer>(new xml_writer(out, true))));
 
 #ifdef HAVE_YAJL
   } else if (best_type == mime::application_json) {
-    auto *jwriter = new json_writer(out, false);
-    o_formatter = shared_ptr<output_formatter>(new json_formatter(jwriter));
+      return std::unique_ptr<output_formatter>(new json_formatter(std::unique_ptr<json_writer>(new json_writer(out, false))));
 #endif
-
   } else if (best_type == mime::text_plain) {
-      auto *twriter = new text_writer(out, true);
-      o_formatter = shared_ptr<output_formatter>(new text_formatter(twriter));
-  } else {
-    ostringstream ostr;
-    ostr << "Could not create formatter for MIME type `"
-         << mime::to_string(best_type) << "'.";
-    throw runtime_error(ostr.str());
+      return std::unique_ptr<output_formatter>(new text_formatter(std::unique_ptr<text_writer>(new text_writer(out, true))));
   }
 
-  return o_formatter;
+  ostringstream ostr;
+  ostr << "Could not create formatter for MIME type `"
+       << mime::to_string(best_type) << "'.";
+  throw runtime_error(ostr.str());
 }
 
 

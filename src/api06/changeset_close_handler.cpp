@@ -19,7 +19,7 @@ namespace api06 {
 
 changeset_close_responder::changeset_close_responder(
     mime::type mt, data_update_ptr & upd, osm_changeset_id_t id_, const std::string &payload,
-    boost::optional<osm_user_id_t> user_id)
+    std::optional<osm_user_id_t> user_id)
     : text_responder(mt) {
 
   osm_changeset_id_t changeset = id_;
@@ -53,7 +53,7 @@ changeset_close_handler::responder(data_selection_ptr &) const {
 }
 
 responder_ptr_t changeset_close_handler::responder(
-    data_update_ptr & upd, const std::string &payload, boost::optional<osm_user_id_t> user_id) const {
+    data_update_ptr & upd, const std::string &payload, std::optional<osm_user_id_t> user_id) const {
   return responder_ptr_t(
       new changeset_close_responder(mime_type, upd, id, payload, user_id));
 }

@@ -25,15 +25,15 @@ void extract_elem(const pqxx_tuple &row, element_info &elem,
     elem.uid = cs->user_id;
     elem.display_name = cs->display_name;
   } else {
-    elem.uid = boost::none;
-    elem.display_name = boost::none;
+    elem.uid = {};
+    elem.display_name = {};
   }
 }
 
 template <typename T>
-boost::optional<T> extract_optional(const pqxx_field &f) {
+std::optional<T> extract_optional(const pqxx_field &f) {
   if (f.is_null()) {
-    return boost::none;
+    return {};
   } else {
     return f.as<T>();
   }
@@ -52,8 +52,8 @@ void extract_changeset(const pqxx_tuple &row,
     elem.uid = cs->user_id;
     elem.display_name = cs->display_name;
   } else {
-    elem.uid = boost::none;
-    elem.display_name = boost::none;
+    elem.uid = {};
+    elem.display_name = {};
   }
 
   auto min_lat = extract_optional<int64_t>(row["min_lat"]);
@@ -67,7 +67,7 @@ void extract_changeset(const pqxx_tuple &row,
                              double(*max_lat) / global_settings::get_scale(),
                              double(*max_lon) / global_settings::get_scale());
   } else {
-    elem.bounding_box = boost::none;
+    elem.bounding_box = {};
   }
 
   elem.num_changes = row["num_changes"].as<size_t>();
@@ -83,7 +83,7 @@ void extract_tags(const pqxx_tuple &row, tags_t &tags) {
     throw std::runtime_error("Mismatch in tags key and value size");
   }
 
-  for(int i=0; i<keys.size(); i++)
+  for(std::size_t i=0; i<keys.size(); i++)
      tags.push_back(std::make_pair(keys[i], values[i]));
 }
 
@@ -134,7 +134,7 @@ void extract_members(const pqxx_tuple &row, members_t &members) {
     throw std::runtime_error("Mismatch in members types, ids and roles size");
   }
 
-  for (int i=0; i<ids.size(); i++) {
+  for (std::size_t i=0; i<ids.size(); i++) {
     member.type = type_from_name(types[i].c_str());
     member.ref = boost::lexical_cast<osm_nwr_id_t>(ids[i]);
     member.role = roles[i];
@@ -156,7 +156,7 @@ void extract_comments(const pqxx_tuple &row, comments_t &comments) {
     throw std::runtime_error("Mismatch in comments author_id, display_name, body and created_at size");
   }
 
-  for (int i=0; i<author_id.size(); i++) {
+  for (std::size_t i=0; i<author_id.size(); i++) {
     comment.author_id = boost::lexical_cast<osm_nwr_id_t>(author_id[i]);
     comment.author_display_name = display_name[i];
     comment.body = body[i];

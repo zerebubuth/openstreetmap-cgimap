@@ -33,12 +33,10 @@ osm_diffresult_responder::osm_diffresult_responder(mime::type mt)
 
 osm_diffresult_responder::~osm_diffresult_responder() = default;
 
-void osm_diffresult_responder::write(shared_ptr<output_formatter> formatter,
+void osm_diffresult_responder::write(output_formatter& fmt,
                                      const std::string &generator,
                                      const std::chrono::system_clock::time_point &) {
 
-  // TODO: is it possible that formatter can be null?
-  output_formatter &fmt = *formatter;
 
   try {
     fmt.start_document(generator, "diffResult");

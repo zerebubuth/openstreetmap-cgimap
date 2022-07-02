@@ -19,7 +19,7 @@ class ApiDB_Relation_Updater : public api06::Relation_Updater {
 
 public:
   ApiDB_Relation_Updater(Transaction_Manager &_m,
-                         std::shared_ptr<api06::OSMChange_Tracking> _ct);
+			 api06::OSMChange_Tracking &ct);
 
   virtual ~ApiDB_Relation_Updater();
 
@@ -166,7 +166,7 @@ private:
       const std::set<osm_nwr_id_t> &direct_relation_ids);
 
   Transaction_Manager &m;
-  std::shared_ptr<api06::OSMChange_Tracking> ct;
+  api06::OSMChange_Tracking &ct;
 
   std::vector<relation_t> create_relations;
   std::vector<relation_t> modify_relations;

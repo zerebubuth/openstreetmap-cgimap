@@ -28,7 +28,7 @@ namespace po = boost::program_options;
 namespace {
 
 void validate_user_db_update_permission (
-    const boost::optional<osm_user_id_t>& user_id,
+    const std::optional<osm_user_id_t>& user_id,
     const std::shared_ptr<data_selection>& selection, bool allow_api_write)
 {
   if (!user_id)
@@ -201,12 +201,11 @@ process_get_request(request &req, handler_ptr_t handler,
   shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
 
   // create the correct mime type output formatter.
-  shared_ptr<output_formatter> o_formatter =
-      create_formatter(req, best_mime_type, out);
+  auto o_formatter = create_formatter(req, best_mime_type, out);
 
   try {
     // call to write the response
-    responder->write(o_formatter, generator, req.get_current_time());
+    responder->write(*o_formatter, generator, req.get_current_time());
 
     // ensure the request is finished
     req.finish();
@@ -241,7 +240,7 @@ std::tuple<string, size_t>
 process_post_put_request(request &req, handler_ptr_t handler,
                     std::shared_ptr<data_selection::factory> factory,
                     std::shared_ptr<data_update::factory> update_factory,
-                    boost::optional<osm_user_id_t> user_id,
+                    std::optional<osm_user_id_t> user_id,
                     const string &ip, const string &generator) {
   // request start logging
   string request_name = handler->log_name();
@@ -302,11 +301,11 @@ process_post_put_request(request &req, handler_ptr_t handler,
   shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
 
   // create the correct mime type output formatter.
-  shared_ptr<output_formatter> o_formatter = create_formatter(req, best_mime_type, out);
+  auto o_formatter = create_formatter(req, best_mime_type, out);
 
   try {
 //    // call to write the response
-    responder->write(o_formatter, generator, req.get_current_time());
+    responder->write(*o_formatter, generator, req.get_current_time());
 
     // ensure the request is finished
     req.finish();
@@ -464,13 +463,13 @@ bool show_redactions_requested(request &req) {
 
 
 // Determine user id and allow_api_write flag based on Basic Auth or OAuth header
-boost::optional<osm_user_id_t> determine_user_id (request& req,
+std::optional<osm_user_id_t> determine_user_id (request& req,
 			        std::shared_ptr<data_selection>& selection,
 			        std::shared_ptr<oauth::store>& store,
 			        bool& allow_api_write)
 {
   // Try to authenticate user via Basic Auth
-  boost::optional<osm_user_id_t>  user_id = basicauth::authenticate_user (req, selection);
+  std::optional<osm_user_id_t>  user_id = basicauth::authenticate_user (req, selection);
 
   if (!store)
     return user_id;
@@ -531,14 +530,14 @@ void process_request(request &req, rate_limiter &limiter,
     string ip = fcgi_get_env(req, "REMOTE_ADDR");
 
     // fetch and parse the request method
-    boost::optional<http::method> maybe_method =  http::parse_method(fcgi_get_env(req, "REQUEST_METHOD"));
+    std::optional<http::method> maybe_method =  http::parse_method(fcgi_get_env(req, "REQUEST_METHOD"));
 
     auto default_transaction = factory->get_default_transaction();
 
     // create a data selection for the request
     auto selection = factory->make_selection(*default_transaction);
 
-    boost::optional<osm_user_id_t> user_id = determine_user_id (req, selection, store, allow_api_write);
+    std::optional<osm_user_id_t> user_id = determine_user_id (req, selection, store, allow_api_write);
 
     // Initially assume IP based client key
     string client_key = addr_prefix + ip;

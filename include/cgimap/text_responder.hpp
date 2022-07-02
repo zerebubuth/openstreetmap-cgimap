@@ -5,7 +5,6 @@
 #include "cgimap/bbox.hpp"
 #include "cgimap/data_selection.hpp"
 
-#include <boost/optional.hpp>
 #include <sstream>
 
 /**
@@ -28,7 +27,7 @@ public:
   // quick hack to add headers to the response
   std::string extra_response_headers() const;
 
-  void write(std::shared_ptr<output_formatter> f,
+  void write(output_formatter& f,
              const std::string &generator,
              const std::chrono::system_clock::time_point &now);
 

@@ -4,7 +4,7 @@
 using std::list;
 using std::shared_ptr;
 
-osm_responder::osm_responder(mime::type mt, boost::optional<bbox> b)
+osm_responder::osm_responder(mime::type mt, std::optional<bbox> b)
     : responder(mt), bounds(b) {}
 
 osm_responder::~osm_responder() = default;

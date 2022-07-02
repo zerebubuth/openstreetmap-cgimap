@@ -1,6 +1,7 @@
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/zlib.hpp"
 #include <sstream>
+#include <cassert>
 #include <cstring>
 
 using std::string;

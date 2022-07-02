@@ -1,6 +1,7 @@
 #include "test_request.hpp"
 #include "cgimap/request_helpers.hpp"
 
+#include <cassert>
 
 test_output_buffer::test_output_buffer(std::ostream &out, std::ostream &body)
   : m_out(out), m_body(body), m_written(0) {

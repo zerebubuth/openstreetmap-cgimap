@@ -1,7 +1,6 @@
 #include <iostream>
 #include <stdexcept>
 #include <boost/format.hpp>
-#include <boost/optional/optional_io.hpp>
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
@@ -35,6 +34,12 @@ std::ostream &operator<<(
   }
   out << "}";
   return out;
+}
+
+template<typename T>
+std::ostream& operator<<(std::ostream& os, std::optional<T> const& opt)
+{
+  return opt ? os << opt.value() : os;
 }
 
 template <typename T>
@@ -187,20 +192,20 @@ void test_get_user_id_for_token(test_database &tdb) {
     "");
   std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
 
-  assert_equal<boost::optional<osm_user_id_t> >(
+  assert_equal<std::optional<osm_user_id_t> >(
     1, store->get_user_id_for_token("OfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA"),
     "valid token belongs to user 1");
 
-  assert_equal<boost::optional<osm_user_id_t> >(
+  assert_equal<std::optional<osm_user_id_t> >(
     1, store->get_user_id_for_token("wpNsXPhrgWl4ELPjPbhfwjjSbNk9npsKoNrMGFlC"),
     "non-authorized token belongs to user 1");
 
-  assert_equal<boost::optional<osm_user_id_t> >(
+  assert_equal<std::optional<osm_user_id_t> >(
     1, store->get_user_id_for_token("Rzcm5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf"),
     "invalid token belongs to user 1");
 
-  assert_equal<boost::optional<osm_user_id_t> >(
-    boost::none,
+  assert_equal<std::optional<osm_user_id_t> >(
+    {},
     store->get_user_id_for_token("____5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf"),
     "non-existent token does not belong to anyone");
 }
@@ -340,7 +345,7 @@ void test_oauth_end_to_end(test_database &tdb) {
   req.set_header("REQUEST_URI", "/api/0.6/relation/165475/full");
   req.set_header("SCRIPT_NAME", "/api/0.6/relation/165475/full");
 
-  assert_equal<boost::optional<std::string> >(
+  assert_equal<std::optional<std::string> >(
     std::string("ewKFprItE5uaDHKFu3IVzuEHbno="),
     oauth::detail::hashed_signature(req, *store),
     "hashed signatures");

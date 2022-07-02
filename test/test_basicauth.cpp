@@ -5,19 +5,23 @@
 #include <stdexcept>
 #include <cstring>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <set>
 
 #include <boost/date_time/posix_time/conversion.hpp>
-#include <boost/optional.hpp>
-#include <boost/optional/optional_io.hpp>
-#include <boost/tuple/tuple.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
 
 #include "cgimap/basicauth.hpp"
 #include "test_request.hpp"
 
 #include "cgimap/backend/apidb/transaction_manager.hpp"
+
+template<typename T>
+std::ostream& operator<<(std::ostream& os, std::optional<T> const& opt)
+{
+  return opt ? os << opt.value() : os;
+}
+
 
 #define ANNOTATE_EXCEPTION(stmt)                \
   {                                             \
@@ -30,19 +34,13 @@
     }                                           \
   }
 
-Transaction_Owner_Void::Transaction_Owner_Void() {};
+Transaction_Owner_Void::Transaction_Owner_Void() {}
 
 pqxx::transaction_base& Transaction_Owner_Void::get_transaction() {
   throw std::runtime_error("get_transaction is not supported by Transaction_Owner_Void");
 }
 
 namespace {
-
-void assert_true(bool value) {
-  if (!value) {
-    throw std::runtime_error("Test failed: Expecting true, but got false.");
-  }
-}
 
 template <typename T>
 void assert_equal(const T &actual, const T &expected) {
@@ -205,56 +203,56 @@ void test_authenticate_user() {
   {
     test_request req;
     auto res = basicauth::authenticate_user(req, sel);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{}, "Missing Header");
+    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "Missing Header");
   }
 
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","");
     auto res = basicauth::authenticate_user(req, sel);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{}, "Empty AUTH header");
+    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "Empty AUTH header");
   }
 
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ");
     auto res = basicauth::authenticate_user(req, sel);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{}, "Empty AUTH header");
+    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "Empty AUTH header");
   }
 
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbw==");
     auto res = basicauth::authenticate_user(req, sel);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{}, "User without password");
+    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "User without password");
   }
 
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzo=");
     auto res = basicauth::authenticate_user(req, sel);
-    assert_equal<boost::optional<osm_user_id_t> >(res,boost::optional<osm_user_id_t>{}, "User and colon without password");
+    assert_equal<std::optional<osm_user_id_t> >(res,std::optional<osm_user_id_t>{}, "User and colon without password");
   }
 
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzpwYXNzd29yZA==");
     auto res = basicauth::authenticate_user(req, sel);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{4711}, "Known user with correct password");
+    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{4711}, "Known user with correct password");
   }
 
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic YXJnb24yOnBhc3N3b3Jk");
     auto res = basicauth::authenticate_user(req, sel);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{4712}, "Known user with correct password, argon2");
+    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{4712}, "Known user with correct password, argon2");
   }
 
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic TotalCrapData==");
     auto res = basicauth::authenticate_user(req, sel);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{}, "Crap data");
+    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "Crap data");
   }
 
   // Test with known user and incorrect password
@@ -262,7 +260,7 @@ void test_authenticate_user() {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzppbmNvcnJlY3Q=");
     try {
-      auto res = basicauth::authenticate_user(req, sel);
+      static_cast<void>(basicauth::authenticate_user(req, sel));
       throw std::runtime_error("Known user, incorrect password: expected http unauthorized exception");
 
     } catch (http::exception &e) {
@@ -277,7 +275,7 @@ void test_authenticate_user() {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic YXJnb24yOndyb25n");
     try {
-      auto res = basicauth::authenticate_user(req, sel);
+      static_cast<void>(basicauth::authenticate_user(req, sel));
       throw std::runtime_error("Known user, incorrect password: expected http unauthorized exception");
 
     } catch (http::exception &e) {
@@ -292,7 +290,7 @@ void test_authenticate_user() {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzI6aW5jb3JyZWN0");
     try {
-      auto res = basicauth::authenticate_user(req, sel);
+      static_cast<void>(basicauth::authenticate_user(req, sel));
       throw std::runtime_error("Unknown user / incorrect password: expected http unauthorized exception");
 
     } catch (http::exception &e) {

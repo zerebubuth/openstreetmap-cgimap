@@ -7,6 +7,7 @@
 
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
+#include <functional>
 #include <sstream>
 #include <unordered_set>
 
@@ -86,7 +87,7 @@ T get_attribute(const char *name, size_t len, const xmlChar **attributes) {
 }
 
 template <typename T>
-boost::optional<T> opt_attribute(const char *name, size_t len,
+std::optional<T> opt_attribute(const char *name, size_t len,
                                  const xmlChar **attributes) {
   while (*attributes != NULL) {
     if (strncmp(((const char *)(*attributes++)), name, len) == 0) {
@@ -94,7 +95,7 @@ boost::optional<T> opt_attribute(const char *name, size_t len,
     }
     ++attributes;
   }
-  return boost::none;
+  return {};
 }
 
 void parse_info(element_info &info, const xmlChar **attributes) {
@@ -115,7 +116,7 @@ void parse_changeset_info(changeset_info &info, const xmlChar **attributes) {
   info.uid = opt_attribute<osm_user_id_t>("uid", 4, attributes);
   info.display_name = opt_attribute<std::string>("user", 5, attributes);
 
-  const boost::optional<double>
+  const std::optional<double>
     min_lat = opt_attribute<double>("min_lat", 8, attributes),
     min_lon = opt_attribute<double>("min_lon", 8, attributes),
     max_lat = opt_attribute<double>("max_lat", 8, attributes),
@@ -125,7 +126,7 @@ void parse_changeset_info(changeset_info &info, const xmlChar **attributes) {
       bool(max_lon)) {
     info.bounding_box = bbox(*min_lat, *min_lon, *max_lat, *max_lon);
   } else {
-    info.bounding_box = boost::none;
+    info.bounding_box = {};
   }
 
   info.num_changes = get_attribute<size_t>("num_changes", 11, attributes);
@@ -412,9 +413,9 @@ struct static_data_selection : public data_selection {
 
   virtual void select_nodes_from_relations() {
     for (osm_nwr_id_t id : m_relations) {
-      boost::optional<const relation &> r = find_current<relation>(id);
+      auto r = find_current<relation>(id);
       if (r) {
-        for (const member_info &m : r->m_members) {
+        for (const member_info &m : r->get().m_members) {
           if (m.type == element_type_node) {
             m_nodes.insert(m.ref);
           }
@@ -443,9 +444,9 @@ struct static_data_selection : public data_selection {
 
   virtual void select_ways_from_relations() {
     for (osm_nwr_id_t id : m_relations) {
-      boost::optional<const relation &> r = find_current<relation>(id);
+      auto r = find_current<relation>(id);
       if (r) {
-        for (const member_info &m : r->m_members) {
+        for (const member_info &m : r->get().m_members) {
           if (m.type == element_type_way) {
             m_ways.insert(m.ref);
           }
@@ -474,9 +475,9 @@ struct static_data_selection : public data_selection {
 
   virtual void select_nodes_from_way_nodes() {
     for (osm_nwr_id_t id : m_ways) {
-      boost::optional<const way &> w = find_current<way>(id);
+      auto w = find_current<way>(id);
       if (w) {
-        m_nodes.insert(w->m_nodes.begin(), w->m_nodes.end());
+        m_nodes.insert(w->get().m_nodes.begin(), w->get().m_nodes.end());
       }
     }
   }
@@ -520,9 +521,9 @@ struct static_data_selection : public data_selection {
 
   virtual void select_relations_members_of_relations() {
     for (osm_nwr_id_t id : m_relations) {
-      boost::optional<const relation &> r = find_current<relation>(id);
+      auto r = find_current<relation>(id);
       if (r) {
-        for (const member_info &m : r->m_members) {
+        for (const member_info &m : r->get().m_members) {
           if (m.type == element_type_relation) {
             m_relations.insert(m.ref);
           }
@@ -605,7 +606,7 @@ private:
   const std::map<id_version, T> &map_of() const;
 
   template <typename T>
-  boost::optional<const T&> find_current(osm_nwr_id_t id) const {
+  std::optional<std::reference_wrapper<const T> > find_current(osm_nwr_id_t id) const {
     using element_map_t = std::map<id_version, T>;
     id_version idv(id);
     const element_map_t &m = map_of<T>();
@@ -614,25 +615,25 @@ private:
       if (itr != m.begin()) {
         --itr;
         if (itr->first.id == id) {
-          return itr->second;
+          return std::optional< std::reference_wrapper<const T> >{itr->second};
         }
       }
     }
-    return boost::none;
+    return {};
   }
 
   template <typename T>
-  boost::optional<const T &> find(osm_edition_t edition) const {
+  std::optional<std::reference_wrapper<const T> > find(osm_edition_t edition) const {
     using element_map_t = std::map<id_version, T>;
     id_version idv(edition.first, edition.second);
     const element_map_t &m = map_of<T>();
     if (!m.empty()) {
       auto itr = m.find(idv);
       if (itr != m.end()) {
-        return itr->second;
+        return std::optional< std::reference_wrapper<const T> >{itr->second};
       }
     }
-    return boost::none;
+    return {};
   }
 
   template <typename T>
@@ -642,7 +643,7 @@ private:
     std::set<osm_edition_t> editions = historic_ids;
 
     for (osm_nwr_id_t id : current_ids) {
-      boost::optional<const T &> maybe = find_current<T>(id);
+      auto maybe = find_current<T>(id);
       if (maybe) {
         const T &t = *maybe;
         editions.insert(std::make_pair(id, t.m_info.version));
@@ -650,7 +651,7 @@ private:
     }
 
     for (osm_edition_t ed : editions) {
-      boost::optional<const T &> maybe = find<T>(ed);
+      auto maybe = find<T>(ed);
       if (maybe) {
         const T &t = *maybe;
         write_element(t, formatter);
@@ -660,9 +661,9 @@ private:
 
   template <typename T>
   visibility_t check_visibility(osm_nwr_id_t &id) {
-    boost::optional<const T &> maybe = find_current<T>(id);
+    auto maybe = find_current<T>(id);
     if (maybe) {
-      if (maybe->m_info.visible) {
+      if (maybe->get().m_info.visible) {
         return data_selection::exists;
       } else {
         return data_selection::deleted;
@@ -677,7 +678,7 @@ private:
              const std::vector<osm_nwr_id_t> select_ids) const {
     int selected = 0;
     for (osm_nwr_id_t id : select_ids) {
-      boost::optional<const T &> t = find_current<T>(id);
+      auto t = find_current<T>(id);
       if (t) {
         found_ids.insert(id);
         ++selected;
@@ -691,9 +692,9 @@ private:
                         const std::vector<osm_edition_t> &select_eds) const {
     int selected = 0;
     for (osm_edition_t ed : select_eds) {
-      boost::optional<const T &> t = find<T>(ed);
+      auto t = find<T>(ed);
       if (t) {
-        auto is_redacted = bool(t->m_info.redaction);
+        auto is_redacted = bool(t->get().m_info.redaction);
         if (!is_redacted || m_redactions_visible) {
           found_eds.insert(ed);
           ++selected;

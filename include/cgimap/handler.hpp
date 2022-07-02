@@ -22,7 +22,7 @@ class responder {
 public:
   responder(mime::type);
   virtual ~responder();
-  virtual void write(std::shared_ptr<output_formatter> f,
+  virtual void write(output_formatter& f,
                      const std::string &generator,
                      const std::chrono::system_clock::time_point &now) = 0;
 
@@ -78,7 +78,7 @@ public:
     http::method methods = http::method::POST | http::method::OPTIONS);
 
   // Responder used to update the database
-  virtual responder_ptr_t responder(data_update_ptr &, const std::string & payload, boost::optional<osm_user_id_t> user_id) const = 0;
+  virtual responder_ptr_t responder(data_update_ptr &, const std::string & payload, std::optional<osm_user_id_t> user_id) const = 0;
 
   // Optional responder to return XML response back to caller of the API method
   virtual responder_ptr_t responder(data_selection_ptr &) const = 0;

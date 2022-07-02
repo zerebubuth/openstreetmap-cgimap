@@ -25,13 +25,13 @@ public:
   get_changeset_updater(osm_changeset_id_t _changeset, osm_user_id_t _uid) = 0;
 
   virtual std::unique_ptr<api06::Node_Updater>
-  get_node_updater(std::shared_ptr<api06::OSMChange_Tracking> _ct) = 0;
+  get_node_updater(api06::OSMChange_Tracking &ct) = 0;
 
   virtual std::unique_ptr<api06::Way_Updater>
-  get_way_updater(std::shared_ptr<api06::OSMChange_Tracking> _ct) = 0;
+  get_way_updater(api06::OSMChange_Tracking &ct) = 0;
 
   virtual std::unique_ptr<api06::Relation_Updater>
-  get_relation_updater(std::shared_ptr<api06::OSMChange_Tracking> _ct) = 0;
+  get_relation_updater(api06::OSMChange_Tracking &ct) = 0;
 
   virtual void
   commit() = 0;

@@ -9,14 +9,13 @@
  */
 class text_formatter : public output_formatter {
 private:
-  std::shared_ptr<text_writer> writer;
+  std::unique_ptr<text_writer> writer;
 
   void write_tags(const tags_t &tags);
   void write_common(const element_info &elem);
 
 public:
-  // NOTE: takes ownership of the writer!
-  text_formatter(text_writer *w);
+  text_formatter(std::unique_ptr<text_writer> w);
   virtual ~text_formatter();
 
   mime::type mime_type() const;

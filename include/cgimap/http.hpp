@@ -6,7 +6,7 @@
 #include <vector>
 #include <bitset>
 #include <stdexcept>
-#include <boost/optional.hpp>
+#include <optional>
 #include <ostream>
 #include "cgimap/config.hpp"
 
@@ -287,9 +287,9 @@ inline method& operator|=(method& a, method b)
 // return a comma-delimited string describing the methods.
 std::string list_methods(method m);
 
-// parse a single method string into a http::method enum, or return boost::none
+// parse a single method string into a http::method enum, or return none
 // if it's not a known value.
-boost::optional<method> parse_method(const std::string &);
+std::optional<method> parse_method(const std::string &);
 
 // parse CONTENT_LENGTH HTTP header
 unsigned long parse_content_length(const std::string &);

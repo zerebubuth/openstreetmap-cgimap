@@ -3,8 +3,8 @@
 
 #include "osmobject.hpp"
 
-#include <boost/optional.hpp>
 #include <iostream>
+#include <optional>
 
 namespace api06 {
 
@@ -75,8 +75,8 @@ public:
   std::string get_type_name() { return "Node"; }
 
 private:
-  boost::optional<double> m_lat;
-  boost::optional<double> m_lon;
+  std::optional<double> m_lat;
+  std::optional<double> m_lon;
   using OSMObject::is_valid;
 };
 

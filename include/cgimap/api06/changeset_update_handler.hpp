@@ -16,7 +16,7 @@ public:
 			     data_update_ptr &,
 			     osm_changeset_id_t id_,
                              const std::string & payload,
-			     boost::optional<osm_user_id_t> user_id);
+			     std::optional<osm_user_id_t> user_id);
   ~changeset_update_responder();
 
 private:
@@ -46,7 +46,7 @@ public:
 
   responder_ptr_t responder(data_update_ptr &,
 			    const std::string &payload,
-                            boost::optional<osm_user_id_t> user_id) const;
+                            std::optional<osm_user_id_t> user_id) const;
   bool requires_selection_after_update() const;
 
 private:
