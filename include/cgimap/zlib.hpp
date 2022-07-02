@@ -61,12 +61,13 @@ public:
   * @param input Any amount of data to decompress.
   * @retval std::string containing the decompressed data.
   */
-  virtual std::string decompress(const std::string& input);
+  std::string decompress(const std::string& input);
+  ~ZLibBaseDecompressor();
 
 protected:
   ZLibBaseDecompressor();
   ZLibBaseDecompressor(int windowBits);
-  ~ZLibBaseDecompressor();
+
 
 private:
   char inbuf[ZLIB_COMPLETE_CHUNK];
@@ -78,19 +79,16 @@ private:
 class ZLibDecompressor : public ZLibBaseDecompressor {
 public:
   ZLibDecompressor();
-  virtual ~ZLibDecompressor();
 };
 
 class GZipDecompressor : public ZLibBaseDecompressor {
 public:
   GZipDecompressor();
-  virtual ~GZipDecompressor();
 };
 
 class IdentityDecompressor : public ZLibBaseDecompressor {
 public:
   IdentityDecompressor();
-  virtual ~IdentityDecompressor();
 };
 
 #endif /* ZLIB_HPP */

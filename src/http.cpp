@@ -236,18 +236,18 @@ shared_ptr<encoding> choose_encoding(const string &accept_encoding) {
   }
 }
 
-shared_ptr<ZLibBaseDecompressor> get_content_encoding_handler(const std::string &content_encoding) {
+std::unique_ptr<ZLibBaseDecompressor> get_content_encoding_handler(const std::string &content_encoding) {
 
   if (content_encoding.empty())
-    return shared_ptr<IdentityDecompressor>(new IdentityDecompressor());
+    return std::unique_ptr<IdentityDecompressor>(new IdentityDecompressor());
 
   if (content_encoding == "identity")
-      return shared_ptr<IdentityDecompressor>(new IdentityDecompressor());
+      return std::unique_ptr<IdentityDecompressor>(new IdentityDecompressor());
 #ifdef HAVE_LIBZ
   else if (content_encoding == "gzip")
-    return shared_ptr<GZipDecompressor>(new GZipDecompressor());
+    return std::unique_ptr<GZipDecompressor>(new GZipDecompressor());
   else if (content_encoding == "deflate")
-    return shared_ptr<ZLibDecompressor>(new ZLibDecompressor());
+    return std::unique_ptr<ZLibDecompressor>(new ZLibDecompressor());
   throw http::unsupported_media_type("Supported Content-Encodings include 'gzip' and 'deflate'");
 
 #else

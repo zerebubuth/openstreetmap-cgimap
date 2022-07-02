@@ -267,8 +267,7 @@ public:
 std::shared_ptr<http::encoding>
 choose_encoding(const std::string &accept_encoding);
 
-std::shared_ptr<ZLibBaseDecompressor>
-get_content_encoding_handler(const std::string &content_encoding);
+std::unique_ptr<ZLibBaseDecompressor> get_content_encoding_handler(const std::string &content_encoding);
 
 
 

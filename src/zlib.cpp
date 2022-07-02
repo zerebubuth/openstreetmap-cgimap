@@ -181,15 +181,10 @@ std::string ZLibBaseDecompressor::decompress(const std::string& input) {
 
 GZipDecompressor::GZipDecompressor() : ZLibBaseDecompressor(15+16) { }
 
-GZipDecompressor::~GZipDecompressor() = default;
-
 ZLibDecompressor::ZLibDecompressor() : ZLibBaseDecompressor(15) { }
-
-ZLibDecompressor::~ZLibDecompressor() = default;
 
 IdentityDecompressor::IdentityDecompressor() : ZLibBaseDecompressor() { }
 
-IdentityDecompressor::~IdentityDecompressor() = default;
 
 
 
