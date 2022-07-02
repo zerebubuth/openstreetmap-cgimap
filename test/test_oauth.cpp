@@ -54,15 +54,15 @@ struct test_request : public request {
   const char *get_param(const char *key) const override;
   const std::string get_payload() override;
 
-  void dispose();
+  void dispose() override;
 
-  std::chrono::system_clock::time_point get_current_time() const;
+  std::chrono::system_clock::time_point get_current_time() const override;
 
 protected:
-  void write_header_info(int status, const headers_t &headers);
+  void write_header_info(int status, const headers_t &headers) override;
 
-  std::shared_ptr<output_buffer> get_buffer_internal();
-  void finish_internal();
+  std::shared_ptr<output_buffer> get_buffer_internal() override;
+  void finish_internal() override;
 
 private:
   std::string method, scheme, authority, port, path, get_params;

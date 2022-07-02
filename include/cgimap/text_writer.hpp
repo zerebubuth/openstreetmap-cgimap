@@ -16,7 +16,6 @@ public:
   text_writer(const text_writer &) = delete;
   text_writer& operator=(const text_writer &) = delete;
   text_writer(text_writer &&) = default;
-  text_writer& operator=(text_writer &&) = default;
 
   // create a new text writer using writer callback functions
   text_writer(output_buffer &out, bool indent = false);

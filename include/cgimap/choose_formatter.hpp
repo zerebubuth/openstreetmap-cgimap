@@ -19,7 +19,6 @@ mime::type choose_best_mime_type(request &req, responder& hptr);
  * passed in as an argument.
  */
 std::unique_ptr<output_formatter>
-create_formatter(request &req, mime::type best_type,
-                 output_buffer&);
+create_formatter(mime::type best_type, output_buffer&);
 
 #endif /* CHOOSE_FORMATTER_HPP */

@@ -2,49 +2,6 @@
 
 data_selection::~data_selection() = default;
 
-/*
-int data_selection::select_historical_nodes(const std::vector<osm_edition_t> &) {
-  return 0;
-}
-
-int data_selection::select_nodes_with_history(const std::vector<osm_nwr_id_t> &) {
-  return 0;
-}
-
-int data_selection::select_historical_ways(const std::vector<osm_edition_t> &) {
-  return 0;
-}
-
-int data_selection::select_ways_with_history(const std::vector<osm_nwr_id_t> &) {
-  return 0;
-}
-
-int data_selection::select_historical_relations(const std::vector<osm_edition_t> &) {
-  return 0;
-}
-int data_selection::select_relations_with_history(const std::vector<osm_nwr_id_t> &) {
-  return 0;
-}
-
-void data_selection::set_redactions_visible(bool) {}
-
-int data_selection::select_historical_by_changesets(const std::vector<osm_changeset_id_t> &) {
-  return 0;
-}
-
-
-void data_selection::write_changesets(output_formatter &, const std::chrono::system_clock::time_point &) {
-}
-
-int data_selection::select_changesets(const std::vector<osm_changeset_id_t> &) {
-  return 0;
-}
-
-void data_selection::select_changeset_discussions() {
-}
-
-*/
-
 data_selection::factory::~factory() = default;
 
 

@@ -201,7 +201,7 @@ process_get_request(request &req, handler_ptr_t handler,
   std::shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
 
   // create the correct mime type output formatter.
-  auto o_formatter = create_formatter(req, best_mime_type, *out);
+  auto o_formatter = create_formatter(best_mime_type, *out);
 
   try {
     // call to write the response
@@ -301,7 +301,7 @@ process_post_put_request(request &req, handler_ptr_t handler,
   std::shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
 
   // create the correct mime type output formatter.
-  auto o_formatter = create_formatter(req, best_mime_type, *out);
+  auto o_formatter = create_formatter(best_mime_type, *out);
 
   try {
 //    // call to write the response

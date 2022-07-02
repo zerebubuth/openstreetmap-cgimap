@@ -15,7 +15,6 @@ public:
   json_writer(const json_writer &) = delete;
   json_writer& operator=(const json_writer &) = delete;
   json_writer(json_writer &&) = default;
-  json_writer& operator=(json_writer &&) = default;
 
   // create a json writer using a callback object for output
   json_writer(output_buffer &out, bool indent = false);

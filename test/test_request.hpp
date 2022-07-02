@@ -48,7 +48,7 @@ struct test_request : public request {
   std::stringstream &body();
   std::stringstream &header();
 
-  std::chrono::system_clock::time_point get_current_time() const;
+  std::chrono::system_clock::time_point get_current_time() const override;
   void set_current_time(const std::chrono::system_clock::time_point &now);
 
   int response_status() const;

@@ -168,9 +168,9 @@ public:
 
   virtual ~empty_data_selection() = default;
 
-  void write_nodes(output_formatter &formatter) {}
-  void write_ways(output_formatter &formatter) {}
-  void write_relations(output_formatter &formatter) {}
+  void write_nodes(output_formatter &formatter) override {}
+  void write_ways(output_formatter &formatter) override {}
+  void write_relations(output_formatter &formatter) override {}
   void write_changesets(output_formatter &formatter,
                         const std::chrono::system_clock::time_point &now) override {}
 

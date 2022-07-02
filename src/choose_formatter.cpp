@@ -258,26 +258,27 @@ mime::type choose_best_mime_type(request &req, responder& hptr) {
   return best_type;
 }
 
-std::unique_ptr<output_formatter> create_formatter(request &req,
-                                              mime::type best_type,
-                                              output_buffer& out) {
+std::unique_ptr<output_formatter> create_formatter(mime::type best_type, output_buffer& out) {
 
 
-  if (best_type == mime::application_xml) {
-    return std::unique_ptr<output_formatter>(new xml_formatter(std::unique_ptr<xml_writer>(new xml_writer(out, true))));
+  switch (best_type) {
+    case mime::application_xml:
+      return std::unique_ptr<output_formatter>(new xml_formatter(std::unique_ptr<xml_writer>(new xml_writer(out, true))));
 
 #ifdef HAVE_YAJL
-  } else if (best_type == mime::application_json) {
+    case mime::application_json:
       return std::unique_ptr<output_formatter>(new json_formatter(std::unique_ptr<json_writer>(new json_writer(out, false))));
 #endif
-  } else if (best_type == mime::text_plain) {
+    case mime::text_plain:
       return std::unique_ptr<output_formatter>(new text_formatter(std::unique_ptr<text_writer>(new text_writer(out, true))));
+
+    default:
+      ostringstream ostr;
+      ostr << "Could not create formatter for MIME type `"
+           << mime::to_string(best_type) << "'.";
+      throw runtime_error(ostr.str());
   }
 
-  ostringstream ostr;
-  ostr << "Could not create formatter for MIME type `"
-       << mime::to_string(best_type) << "'.";
-  throw runtime_error(ostr.str());
 }
 
 

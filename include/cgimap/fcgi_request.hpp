@@ -23,9 +23,9 @@ struct fcgi_request : public request {
   void dispose() override;
 
 protected:
-  void write_header_info(int status, const request::headers_t &headers);
-  std::shared_ptr<output_buffer> get_buffer_internal();
-  void finish_internal();
+  void write_header_info(int status, const request::headers_t &headers) override;
+  std::shared_ptr<output_buffer> get_buffer_internal() override;
+  void finish_internal() override;
 
 private:
   struct pimpl;
