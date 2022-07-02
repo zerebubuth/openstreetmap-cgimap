@@ -19,7 +19,7 @@
 using std::runtime_error;
 using std::string;
 using std::ostringstream;
-using std::shared_ptr;
+
 using boost::format;
 
 namespace al = boost::algorithm;
@@ -29,13 +29,13 @@ namespace {
 
 void validate_user_db_update_permission (
     const std::optional<osm_user_id_t>& user_id,
-    const std::shared_ptr<data_selection>& selection, bool allow_api_write)
+    const data_selection& selection, bool allow_api_write)
 {
   if (!user_id)
     throw http::unauthorized ("User is not authorized");
 
-  if (selection->supports_user_details ()
-      && selection->is_user_blocked (*user_id))
+  if (selection.supports_user_details ()
+      && selection.is_user_blocked (*user_id))
     throw http::forbidden (
 	"Your access to the API has been blocked. Please log-in to the web interface to find out more.");
 
@@ -43,9 +43,9 @@ void validate_user_db_update_permission (
     throw http::unauthorized ("You have not granted the modify map permission");
 }
 
-void check_db_readonly_mode (const std::shared_ptr<data_update>& data_update)
+void check_db_readonly_mode (const data_update& data_update)
 {
-  if (data_update->is_api_write_disabled())
+  if (data_update.is_api_write_disabled())
     throw http::bad_request (
 	"Server is currently in read only mode, no database changes allowed at this time");
 }
@@ -173,7 +173,7 @@ void process_not_allowed(request &req, const http::method_not_allowed& e) {
  */
 std::tuple<string, size_t>
 process_get_request(request &req, handler_ptr_t handler,
-                    data_selection_ptr selection,
+                    data_selection& selection,
                     const string &ip, const string &generator) {
   // request start logging
   string request_name = handler->log_name();
@@ -184,7 +184,7 @@ process_get_request(request &req, handler_ptr_t handler,
   responder_ptr_t responder = handler->responder(selection);
 
   // get encoding to use
-  shared_ptr<http::encoding> encoding = get_encoding(req);
+  std::shared_ptr<http::encoding> encoding = get_encoding(req);
 
   // figure out best mime type
   mime::type best_mime_type = choose_best_mime_type(req, responder);
@@ -198,7 +198,7 @@ process_get_request(request &req, handler_ptr_t handler,
      .add_header("Cache-Control", "private, max-age=0, must-revalidate");
 
   // create the XML writer with the FCGI streams as output
-  shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
+  std::shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
 
   // create the correct mime type output formatter.
   auto o_formatter = create_formatter(req, best_mime_type, out);
@@ -238,8 +238,8 @@ process_get_request(request &req, handler_ptr_t handler,
  */
 std::tuple<string, size_t>
 process_post_put_request(request &req, handler_ptr_t handler,
-                    std::shared_ptr<data_selection::factory> factory,
-                    std::shared_ptr<data_update::factory> update_factory,
+                    data_selection::factory& factory,
+                    data_update::factory& update_factory,
                     std::optional<osm_user_id_t> user_id,
                     const string &ip, const string &generator) {
   // request start logging
@@ -257,32 +257,32 @@ process_post_put_request(request &req, handler_ptr_t handler,
   responder_ptr_t responder;
 
   // Step 1: execute database update
-  auto rw_transaction = update_factory->get_default_transaction();
+  auto rw_transaction = update_factory.get_default_transaction();
 
-  auto data_update = update_factory->make_data_update(*rw_transaction);
+  auto data_update = update_factory.make_data_update(*rw_transaction);
 
-  check_db_readonly_mode (data_update);
+  check_db_readonly_mode (*data_update);
 
   // Executing the responder constructor is expected to call db commit()
   // rw_transaction is no longer usable after this point
-  responder = pe_handler->responder(data_update, payload, user_id);
+  responder = pe_handler->responder(*data_update, payload, user_id);
 
   // Step 2 (optional): read back result from database to generate response
 
   // Create a new read only transaction based on the update factory
   // (which possibly uses a different db/user compared to the data_selection factory)
-  auto read_only_transaction = update_factory->get_read_only_transaction();
+  auto read_only_transaction = update_factory.get_read_only_transaction();
   // create a data selection for the request
-  auto data_selection = factory->make_selection(*read_only_transaction);
+  auto data_selection = factory.make_selection(*read_only_transaction);
 
   // Instantiate data selection based responder, if required to produce the output message
   // This instance replaces the previous responder instance, which is no longer needed.
   if (pe_handler->requires_selection_after_update()) {
-      responder = pe_handler->responder(data_selection);
+      responder = pe_handler->responder(*data_selection);
   }
 
   // get encoding to use
-  shared_ptr<http::encoding> encoding = get_encoding(req);
+  std::shared_ptr<http::encoding> encoding = get_encoding(req);
 
 //  // figure out best mime type
   mime::type best_mime_type = choose_best_mime_type(req, responder);
@@ -298,7 +298,7 @@ process_post_put_request(request &req, handler_ptr_t handler,
      .add_header("Cache-Control", "private, max-age=0, must-revalidate");
 
   // create the XML writer with the FCGI streams as output
-  shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
+  std::shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
 
   // create the correct mime type output formatter.
   auto o_formatter = create_formatter(req, best_mime_type, out);
@@ -337,7 +337,7 @@ process_post_put_request(request &req, handler_ptr_t handler,
  */
 std::tuple<string, size_t>
 process_head_request(request &req, handler_ptr_t handler,
-                     data_selection_ptr selection,
+                     data_selection& selection,
                      const string &ip) {
   // request start logging
   string request_name = handler->log_name();
@@ -354,7 +354,7 @@ process_head_request(request &req, handler_ptr_t handler,
   responder_ptr_t responder = handler->responder(selection);
 
   // get encoding to use
-  shared_ptr<http::encoding> encoding = get_encoding(req);
+  std::shared_ptr<http::encoding> encoding = get_encoding(req);
 
   // figure out best mime type
   mime::type best_mime_type = choose_best_mime_type(req, responder);
@@ -464,8 +464,8 @@ bool show_redactions_requested(request &req) {
 
 // Determine user id and allow_api_write flag based on Basic Auth or OAuth header
 std::optional<osm_user_id_t> determine_user_id (request& req,
-			        std::shared_ptr<data_selection>& selection,
-			        std::shared_ptr<oauth::store>& store,
+			        data_selection& selection,
+			        oauth::store* store,
 			        bool& allow_api_write)
 {
   // Try to authenticate user via Basic Auth
@@ -517,9 +517,9 @@ std::optional<osm_user_id_t> determine_user_id (request& req,
  */
 void process_request(request &req, rate_limiter &limiter,
                      const string &generator, routes &route,
-                     std::shared_ptr<data_selection::factory> factory,
-                     std::shared_ptr<data_update::factory> update_factory,
-                     std::shared_ptr<oauth::store> store) {
+                     data_selection::factory& factory,
+                     data_update::factory* update_factory,
+                     oauth::store* store) {
   try {
 
     std::set<osm_user_role_t> user_roles;
@@ -532,12 +532,12 @@ void process_request(request &req, rate_limiter &limiter,
     // fetch and parse the request method
     std::optional<http::method> maybe_method =  http::parse_method(fcgi_get_env(req, "REQUEST_METHOD"));
 
-    auto default_transaction = factory->get_default_transaction();
+    auto default_transaction = factory.get_default_transaction();
 
     // create a data selection for the request
-    auto selection = factory->make_selection(*default_transaction);
+    auto selection = factory.make_selection(*default_transaction);
 
-    std::optional<osm_user_id_t> user_id = determine_user_id (req, selection, store, allow_api_write);
+    std::optional<osm_user_id_t> user_id = determine_user_id (req, *selection, store, allow_api_write);
 
     // Initially assume IP based client key
     string client_key = addr_prefix + ip;
@@ -585,34 +585,34 @@ void process_request(request &req, rate_limiter &limiter,
     switch (method) {
 
       case http::method::GET:
-	std::tie(request_name, bytes_written) = process_get_request(req, handler, selection, ip, generator);
+	std::tie(request_name, bytes_written) = process_get_request(req, handler, *selection, ip, generator);
 	break;
 
       case http::method::HEAD:
-	std::tie(request_name, bytes_written) = process_head_request(req, handler, selection, ip);
+	std::tie(request_name, bytes_written) = process_head_request(req, handler, *selection, ip);
 	break;
 
       case http::method::POST:
 	{
-	  validate_user_db_update_permission(user_id, selection, allow_api_write);
+	  validate_user_db_update_permission(user_id, *selection, allow_api_write);
 
 	  if (update_factory == nullptr)
 	    throw http::bad_request("Backend does not support POST requests");
 
 	  std::tie(request_name, bytes_written) =
-	      process_post_put_request(req, handler, factory, update_factory, user_id, ip, generator);
+	      process_post_put_request(req, handler, factory, *update_factory, user_id, ip, generator);
 	}
 	break;
 
       case http::method::PUT:
 	{
-	  validate_user_db_update_permission(user_id, selection, allow_api_write);
+	  validate_user_db_update_permission(user_id, *selection, allow_api_write);
 
 	  if (update_factory == nullptr)
 	    throw http::bad_request("Backend does not support PUT requests");
 
 	  std::tie(request_name, bytes_written) =
-	      process_post_put_request(req, handler, factory, update_factory, user_id, ip, generator);
+	      process_post_put_request(req, handler, factory, *update_factory, user_id, ip, generator);
 	}
 	break;
 

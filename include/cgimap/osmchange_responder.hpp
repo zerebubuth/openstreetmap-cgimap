@@ -11,7 +11,7 @@ class osmchange_responder : public osm_responder {
 public:
   // construct, passing the mime type down to the responder.
   // optional bounds are stored at this level, but available to derived classes.
-  osmchange_responder(mime::type, data_selection_ptr &s);
+  osmchange_responder(mime::type, data_selection &s);
 
   virtual ~osmchange_responder();
 
@@ -29,7 +29,7 @@ public:
 
 protected:
   // selection of elements to be written out
-  data_selection_ptr sel;
+  data_selection& sel;
 };
 
 #endif /* OSMCHANGE_RESPONDER_HPP */

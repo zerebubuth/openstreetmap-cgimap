@@ -106,7 +106,7 @@ pgsql_update::pgsql_update(
 
 pgsql_update::~pgsql_update() = default;
 
-bool pgsql_update::is_api_write_disabled() {
+bool pgsql_update::is_api_write_disabled() const {
   return m_readonly;
 }
 

@@ -12,18 +12,18 @@ namespace api06 {
 
 changeset_responder::changeset_responder(mime::type mt, osm_changeset_id_t id_,
                                          bool include_discussion_,
-                                         data_selection_ptr &w_)
+                                         data_selection &w_)
   : osm_current_responder(mt, w_), id(id_),
     include_discussion(include_discussion_) {
 
-  if (sel->select_changesets({id}) == 0) {
+  if (sel.select_changesets({id}) == 0) {
     std::ostringstream error;
     error << "Changeset " << id << " was not found.";
     throw http::not_found(error.str());
   }
 
   if (include_discussion) {
-    sel->select_changeset_discussions();
+    sel.select_changeset_discussions();
   }
 }
 
@@ -57,7 +57,7 @@ changeset_handler::~changeset_handler() = default;
 
 std::string changeset_handler::log_name() const { return "changeset"; }
 
-responder_ptr_t changeset_handler::responder(data_selection_ptr &w) const {
+responder_ptr_t changeset_handler::responder(data_selection &w) const {
   return responder_ptr_t(new changeset_responder(mime_type, id, include_discussion, w));
 }
 

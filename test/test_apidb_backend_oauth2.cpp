@@ -196,6 +196,10 @@ public:
   void drop_ways() {}
   void drop_relations() {}
 
+  bool supports_user_details() const override { return false; }
+  bool is_user_blocked(const osm_user_id_t) const override { return true; }
+  bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &) const override { return false; };
+
   struct factory
     : public data_selection::factory {
     virtual ~factory() = default;
@@ -270,7 +274,7 @@ void create_changeset(test_database &tdb, std::shared_ptr<oauth::store> store, s
 
   req.set_payload(R"( <osm><changeset><tag k="created_by" v="JOSM 1.61"/><tag k="comment" v="Just adding some streetnames"/></changeset></osm> )" );
 
-  process_request(req, limiter, generator, route, sel_factory, upd_factory, store);
+  process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), store.get());
 
   assert_equal<int>(expected_response_code, req.response_status(), "response status");
 }
@@ -312,7 +316,7 @@ void fetch_relation(test_database &tdb, std::shared_ptr<oauth::store> store, std
   req.set_header("REQUEST_URI", "/api/0.6/relation/165475/full");
   req.set_header("SCRIPT_NAME", "/api/0.6/relation/165475/full");
 
-  process_request(req, limiter, generator, route, factory, std::shared_ptr<data_update::factory>(nullptr), store);
+  process_request(req, limiter, generator, route, *factory, nullptr, store.get());
 
   assert_equal<int>(expected_response_code, req.response_status(), "response status");
 }

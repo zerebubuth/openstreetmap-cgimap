@@ -13,7 +13,7 @@ namespace api06 {
 
 class nodes_responder : public osm_current_responder {
 public:
-  nodes_responder(mime::type, std::vector<id_version>, data_selection_ptr &);
+  nodes_responder(mime::type, std::vector<id_version>, data_selection &);
   ~nodes_responder();
 
 private:
@@ -26,7 +26,7 @@ public:
   ~nodes_handler();
 
   std::string log_name() const;
-  responder_ptr_t responder(data_selection_ptr &x) const;
+  responder_ptr_t responder(data_selection &x) const;
 
 private:
   std::vector<id_version> ids;

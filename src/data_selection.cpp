@@ -43,19 +43,6 @@ int data_selection::select_changesets(const std::vector<osm_changeset_id_t> &) {
 void data_selection::select_changeset_discussions() {
 }
 
-bool data_selection::supports_user_details() {
-  return false;
-}
-
-bool data_selection::is_user_blocked(const osm_user_id_t) {
-
-  return false;
-}
-
-bool data_selection::get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &) {
-  return false;
-}
-
 
 data_selection::factory::~factory() = default;
 

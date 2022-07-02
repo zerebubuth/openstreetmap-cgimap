@@ -36,7 +36,7 @@ public:
   virtual void
   commit() = 0;
 
-  virtual bool is_api_write_disabled() = 0;
+  virtual bool is_api_write_disabled() const = 0;
 
   /**
    * factory for the creation of data updates. this abstracts away
@@ -57,7 +57,5 @@ public:
   };
 };
 
-using factory_update_ptr = std::shared_ptr<data_update::factory>;
-using data_update_ptr = std::shared_ptr<data_update>;
 
 #endif /* DATA_UPDATE_HPP */

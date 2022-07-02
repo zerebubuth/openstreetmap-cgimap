@@ -8,10 +8,10 @@ using std::vector;
 
 namespace api06 {
 
-way_responder::way_responder(mime::type mt, osm_nwr_id_t id_, data_selection_ptr &w_)
+way_responder::way_responder(mime::type mt, osm_nwr_id_t id_, data_selection &w_)
     : osm_current_responder(mt, w_), id(id_) {
 
-  if (sel->select_ways({id}) == 0) {
+  if (sel.select_ways({id}) == 0) {
     std::ostringstream error;
     error << "Way " << id << " was not found.";
     throw http::not_found(error.str());
@@ -27,12 +27,12 @@ way_handler::~way_handler() = default;
 
 std::string way_handler::log_name() const { return "way"; }
 
-responder_ptr_t way_handler::responder(data_selection_ptr &x) const {
+responder_ptr_t way_handler::responder(data_selection &x) const {
   return responder_ptr_t(new way_responder(mime_type, id, x));
 }
 
 void way_responder::check_visibility() {
-  if (sel->check_way_visibility(id) == data_selection::deleted) {
+  if (sel.check_way_visibility(id) == data_selection::deleted) {
     // TODO: fix error message / throw structure to emit better error message
     throw http::gone();
   }

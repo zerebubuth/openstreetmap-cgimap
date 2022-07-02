@@ -157,7 +157,7 @@ void test_validate_bearer_token() {
   {
     bool allow_api_write;
     test_request req;
-    auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
+    auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
     assert_equal<std::optional<osm_user_id_t> >(res, {}, "Missing Header");
   }
 
@@ -165,7 +165,7 @@ void test_validate_bearer_token() {
     bool allow_api_write;
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","");
-    auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
+    auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
     assert_equal<std::optional<osm_user_id_t> >(res, {}, "Empty AUTH header");
   }
 
@@ -174,7 +174,7 @@ void test_validate_bearer_token() {
     bool allow_api_write;
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Bearer 6GGXRGoDog0i6mRyrBonFmJORQhWZMhZH5WNWLd0qcs");
-    auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
+    auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
     assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{1}, "Bearer token for user 1");
     assert_equal<bool>(allow_api_write, false, "Bearer token for user 1, allow_api_write");
   }
@@ -184,7 +184,7 @@ void test_validate_bearer_token() {
     bool allow_api_write;
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Bearer H4TeKX-zE_VLH.UT33_n6x__yZ8~BA~aQL+wfxQN/cADu7BMMA=====");
-    auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
+    auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
     assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{2}, "Bearer token for user 2");
     assert_equal<bool>(allow_api_write, true, "Bearer token for user 2, allow_api_write");
   }
@@ -195,7 +195,7 @@ void test_validate_bearer_token() {
     bool allow_api_write;
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Bearer 6!#c23.-;<<>>");
-    auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
+    auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
     assert_equal<std::optional<osm_user_id_t> >(res, {}, "Invalid bearer format");
   }
 
@@ -205,7 +205,7 @@ void test_validate_bearer_token() {
     test_request req;
     try {
       req.set_header("HTTP_AUTHORIZATION","Bearer nFRBLFyNXPKY1fiTHAIfVsjQYkCD2KoRuH66upvueaQ");
-      static_cast<void>(oauth2::validate_bearer_token(req, store, allow_api_write));
+      static_cast<void>(oauth2::validate_bearer_token(req, store.get(), allow_api_write));
       throw std::runtime_error("test_authenticate_user::001: Expected exception");
     } catch (http::unauthorized &e) {
       if (std::string(e.what()) != "invalid_token") {
@@ -220,7 +220,7 @@ void test_validate_bearer_token() {
     test_request req;
     try {
       req.set_header("HTTP_AUTHORIZATION","Bearer pwnMeCjSmIfQ9hXVYfAyFLFnE9VOADNvwGMKv4Ylaf0");
-      static_cast<void>(oauth2::validate_bearer_token(req, store, allow_api_write));
+      static_cast<void>(oauth2::validate_bearer_token(req, store.get(), allow_api_write));
       throw std::runtime_error("test_authenticate_user::002: Expected exception");
     } catch (http::unauthorized &e) {
       if (std::string(e.what()) != "token_expired") {
@@ -235,7 +235,7 @@ void test_validate_bearer_token() {
     test_request req;
     try {
       req.set_header("HTTP_AUTHORIZATION","Bearer hCXrz5B5fCBHusp0EuD2IGwYSxS8bkAnVw2_aLEdxig");
-      static_cast<void>(oauth2::validate_bearer_token(req, store, allow_api_write));
+      static_cast<void>(oauth2::validate_bearer_token(req, store.get(), allow_api_write));
       throw std::runtime_error("test_authenticate_user::003: Expected exception");
     } catch (http::unauthorized &e) {
       if (std::string(e.what()) != "token_revoked") {
@@ -249,7 +249,7 @@ void test_validate_bearer_token() {
     bool allow_api_write;
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Bearer 0LbSEAVj4jQhr-TfNaCUhn4JSAvXmXepNaL9aSAUsVQ");
-    auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
+    auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
     assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{5}, "Bearer token for user 5");
     assert_equal<bool>(allow_api_write, false, "Bearer token for user 5, allow_api_write");
   }

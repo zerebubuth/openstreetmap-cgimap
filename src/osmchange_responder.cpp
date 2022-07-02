@@ -216,7 +216,7 @@ private:
 } // anonymous namespace
 
 osmchange_responder::osmchange_responder(
-  mime::type mt, data_selection_ptr &s)
+  mime::type mt, data_selection &s)
   : osm_responder(mt, {}), sel(s) {
 }
 
@@ -236,9 +236,9 @@ void osmchange_responder::write(
   try {
     sorting_formatter sorter;
 
-    sel->write_nodes(sorter);
-    sel->write_ways(sorter);
-    sel->write_relations(sorter);
+    sel.write_nodes(sorter);
+    sel.write_ways(sorter);
+    sel.write_relations(sorter);
 
     sorter.write(fmt);
 

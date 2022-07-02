@@ -244,6 +244,10 @@ public:
   void drop_ways() {}
   void drop_relations() {}
 
+  bool supports_user_details() const override { return false; }
+  bool is_user_blocked(const osm_user_id_t) const override { return true; }
+  bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &) const override { return false; };
+
   struct factory
     : public data_selection::factory {
     virtual ~factory() = default;
@@ -350,7 +354,7 @@ void test_oauth_end_to_end(test_database &tdb) {
     oauth::detail::hashed_signature(req, *store),
     "hashed signatures");
 
-  process_request(req, limiter, generator, route, factory, std::shared_ptr<data_update::factory>(nullptr), store);
+  process_request(req, limiter, generator, route, *factory, nullptr, store.get());
 
   assert_equal<int>(404, req.response_status(), "response status");
   assert_equal<bool>(false, limiter.saw_key("addr:127.0.0.1"),

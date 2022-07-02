@@ -10,7 +10,7 @@ namespace api06 {
 
 class relation_version_responder : public osm_current_responder {
 public:
-  relation_version_responder(mime::type, osm_nwr_id_t, osm_version_t v, data_selection_ptr &);
+  relation_version_responder(mime::type, osm_nwr_id_t, osm_version_t v, data_selection &);
   ~relation_version_responder();
 
 private:
@@ -26,7 +26,7 @@ public:
   ~relation_version_handler();
 
   std::string log_name() const;
-  responder_ptr_t responder(data_selection_ptr &x) const;
+  responder_ptr_t responder(data_selection &x) const;
 
 private:
   osm_nwr_id_t id;

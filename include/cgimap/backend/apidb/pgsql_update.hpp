@@ -31,7 +31,7 @@ public:
 
   void commit();
 
-  bool is_api_write_disabled();
+  bool is_api_write_disabled() const;
 
   /**
    * abstracts the creation of transactions for the

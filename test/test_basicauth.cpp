@@ -95,8 +95,10 @@ public:
   void drop_ways() {}
   void drop_relations() {}
 
+  bool supports_user_details() const override { return false; }
+  bool is_user_blocked(const osm_user_id_t) const override { return true; }
   bool get_user_id_pass(const std::string& user_name, osm_user_id_t & user_id,
-				std::string & pass_crypt, std::string & pass_salt) {
+				std::string & pass_crypt, std::string & pass_salt) const override {
 
     if (user_name == "demo") {
 	user_id = 4711;
@@ -202,56 +204,56 @@ void test_authenticate_user() {
 
   {
     test_request req;
-    auto res = basicauth::authenticate_user(req, sel);
+    auto res = basicauth::authenticate_user(req, *sel);
     assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "Missing Header");
   }
 
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","");
-    auto res = basicauth::authenticate_user(req, sel);
+    auto res = basicauth::authenticate_user(req, *sel);
     assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "Empty AUTH header");
   }
 
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ");
-    auto res = basicauth::authenticate_user(req, sel);
+    auto res = basicauth::authenticate_user(req, *sel);
     assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "Empty AUTH header");
   }
 
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbw==");
-    auto res = basicauth::authenticate_user(req, sel);
+    auto res = basicauth::authenticate_user(req, *sel);
     assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "User without password");
   }
 
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzo=");
-    auto res = basicauth::authenticate_user(req, sel);
+    auto res = basicauth::authenticate_user(req, *sel);
     assert_equal<std::optional<osm_user_id_t> >(res,std::optional<osm_user_id_t>{}, "User and colon without password");
   }
 
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzpwYXNzd29yZA==");
-    auto res = basicauth::authenticate_user(req, sel);
+    auto res = basicauth::authenticate_user(req, *sel);
     assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{4711}, "Known user with correct password");
   }
 
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic YXJnb24yOnBhc3N3b3Jk");
-    auto res = basicauth::authenticate_user(req, sel);
+    auto res = basicauth::authenticate_user(req, *sel);
     assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{4712}, "Known user with correct password, argon2");
   }
 
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic TotalCrapData==");
-    auto res = basicauth::authenticate_user(req, sel);
+    auto res = basicauth::authenticate_user(req, *sel);
     assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "Crap data");
   }
 
@@ -260,7 +262,7 @@ void test_authenticate_user() {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzppbmNvcnJlY3Q=");
     try {
-      static_cast<void>(basicauth::authenticate_user(req, sel));
+      static_cast<void>(basicauth::authenticate_user(req, *sel));
       throw std::runtime_error("Known user, incorrect password: expected http unauthorized exception");
 
     } catch (http::exception &e) {
@@ -275,7 +277,7 @@ void test_authenticate_user() {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic YXJnb24yOndyb25n");
     try {
-      static_cast<void>(basicauth::authenticate_user(req, sel));
+      static_cast<void>(basicauth::authenticate_user(req, *sel));
       throw std::runtime_error("Known user, incorrect password: expected http unauthorized exception");
 
     } catch (http::exception &e) {
@@ -290,7 +292,7 @@ void test_authenticate_user() {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzI6aW5jb3JyZWN0");
     try {
-      static_cast<void>(basicauth::authenticate_user(req, sel));
+      static_cast<void>(basicauth::authenticate_user(req, *sel));
       throw std::runtime_error("Unknown user / incorrect password: expected http unauthorized exception");
 
     } catch (http::exception &e) {

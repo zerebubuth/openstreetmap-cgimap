@@ -10,7 +10,7 @@ namespace api06 {
 
 class node_relations_responder : public osm_current_responder {
 public:
-  node_relations_responder(mime::type, osm_nwr_id_t, data_selection_ptr &);
+  node_relations_responder(mime::type, osm_nwr_id_t, data_selection &);
   ~node_relations_responder();
 
 private:
@@ -25,7 +25,7 @@ public:
   ~node_relations_handler();
 
   std::string log_name() const;
-  responder_ptr_t responder(data_selection_ptr &x) const;
+  responder_ptr_t responder(data_selection &x) const;
 
 private:
   osm_nwr_id_t id;
