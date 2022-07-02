@@ -129,8 +129,8 @@ public:
   struct factory
     : public data_selection::factory {
     virtual ~factory() = default;
-    virtual std::shared_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
-      return std::make_shared<basicauth_test_data_selection>();
+    virtual std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
+      return std::make_unique<basicauth_test_data_selection>();
     }
     virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() {
       return std::unique_ptr<Transaction_Owner_Void>(new Transaction_Owner_Void());

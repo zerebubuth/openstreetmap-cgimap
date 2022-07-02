@@ -782,8 +782,8 @@ struct factory : public data_selection::factory {
 
   virtual ~factory() = default;
 
-  virtual std::shared_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
-    return std::make_shared<static_data_selection>(m_database);
+  virtual std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
+    return std::make_unique<static_data_selection>(m_database);
   }
 
   virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() {

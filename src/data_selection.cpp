@@ -1,8 +1,6 @@
 #include "cgimap/data_selection.hpp"
 
-data_selection::~data_selection() = default;
 
-data_selection::factory::~factory() = default;
 
 
 std::vector<std::string> psql_array_to_vector(std::string str) {

@@ -797,9 +797,9 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
 readonly_pgsql_selection::factory::~factory() = default;
 
 
-std::shared_ptr<data_selection>
+std::unique_ptr<data_selection>
 readonly_pgsql_selection::factory::make_selection(Transaction_Owner_Base& to) {
-  return std::make_shared<readonly_pgsql_selection>(to,
+  return std::make_unique<readonly_pgsql_selection>(to,
 						    std::ref(m_cache));
 }
 

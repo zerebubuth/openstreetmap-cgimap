@@ -74,7 +74,7 @@ public:
   public:
     factory(const boost::program_options::variables_map &);
     virtual ~factory();
-    std::shared_ptr<data_selection> make_selection(Transaction_Owner_Base&) override;
+    std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) override;
     std::unique_ptr<Transaction_Owner_Base> get_default_transaction() override;
 
   private:

@@ -19,7 +19,7 @@ class data_selection {
 public:
   enum visibility_t { exists, deleted, non_exist };
 
-  virtual ~data_selection();
+  virtual ~data_selection() = default;
 
   /******************* output functions ************************/
 
@@ -163,11 +163,11 @@ public:
    * a database connection.
    */
   struct factory {
-    virtual ~factory();
+    virtual ~factory() = default;
 
     /// get a handle to a selection which can be used to build up
     /// a working set of data.
-    virtual std::shared_ptr<data_selection> make_selection(Transaction_Owner_Base&) = 0;
+    virtual std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) = 0;
 
     virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() = 0;
   };
@@ -177,6 +177,5 @@ public:
 // https://www.postgresql.org/docs/current/static/arrays.html#ARRAYS-IO
 std::vector<std::string> psql_array_to_vector(std::string str);
 
-using factory_ptr = std::shared_ptr<data_selection::factory>;
 
 #endif /* DATA_SELECTION_HPP */
