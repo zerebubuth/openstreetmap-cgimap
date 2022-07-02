@@ -38,7 +38,7 @@ private:
   mime::type mime_type;
 };
 
-using responder_ptr_t = std::shared_ptr<responder>;
+using responder_ptr_t = std::unique_ptr<responder>;
 
 /**
  * object which is able to validate and create responders from

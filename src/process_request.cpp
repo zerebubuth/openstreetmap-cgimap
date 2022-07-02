@@ -187,7 +187,7 @@ process_get_request(request &req, handler_ptr_t handler,
   std::shared_ptr<http::encoding> encoding = get_encoding(req);
 
   // figure out best mime type
-  const mime::type best_mime_type = choose_best_mime_type(req, responder);
+  const mime::type best_mime_type = choose_best_mime_type(req, *responder);
 
   // TODO: use handler/responder to setup response headers.
   // write the response header
@@ -285,7 +285,7 @@ process_post_put_request(request &req, handler_ptr_t handler,
   std::shared_ptr<http::encoding> encoding = get_encoding(req);
 
 //  // figure out best mime type
-  const mime::type best_mime_type = choose_best_mime_type(req, responder);
+  const mime::type best_mime_type = choose_best_mime_type(req, *responder);
 
   //mime::type best_mime_type = mime::type::text_xml;
 
@@ -357,7 +357,7 @@ process_head_request(request &req, handler_ptr_t handler,
   std::shared_ptr<http::encoding> encoding = get_encoding(req);
 
   // figure out best mime type
-  const mime::type best_mime_type = choose_best_mime_type(req, responder);
+  const mime::type best_mime_type = choose_best_mime_type(req, *responder);
 
   // TODO: use handler/responder to setup response headers.
   // write the response header
