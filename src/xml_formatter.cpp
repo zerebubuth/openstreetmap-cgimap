@@ -4,7 +4,6 @@
 #include <stdexcept>
 
 using std::string;
-using std::shared_ptr;
 using std::transform;
 
 namespace {

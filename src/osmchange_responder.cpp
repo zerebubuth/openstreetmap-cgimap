@@ -6,7 +6,6 @@
 #include <boost/format.hpp>
 
 using std::list;
-using std::shared_ptr;
 
 namespace {
 

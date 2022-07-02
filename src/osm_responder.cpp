@@ -2,7 +2,6 @@
 #include "cgimap/osm_responder.hpp"
 
 using std::list;
-using std::shared_ptr;
 
 osm_responder::osm_responder(mime::type mt, std::optional<bbox> b)
     : responder(mt), bounds(b) {}

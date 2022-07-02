@@ -24,7 +24,6 @@ namespace po = boost::program_options;
 using std::set;
 using std::list;
 using std::vector;
-using std::shared_ptr;
 
 namespace {
 std::string connect_db_str(const po::variables_map &options) {
@@ -166,9 +165,9 @@ pgsql_update::factory::factory(const po::variables_map &opts)
 
 pgsql_update::factory::~factory() = default;
 
-std::shared_ptr<data_update>
+std::unique_ptr<data_update>
 pgsql_update::factory::make_data_update(Transaction_Owner_Base& to) {
-  return std::make_shared<pgsql_update>(to, m_api_write_disabled);
+  return std::make_unique<pgsql_update>(to, m_api_write_disabled);
 }
 
 std::unique_ptr<Transaction_Owner_Base>

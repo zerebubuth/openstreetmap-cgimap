@@ -49,7 +49,7 @@ public:
 
     /// get a handle to a selection which can be used to build up
     /// a working set of data.
-    virtual std::shared_ptr<data_update> make_data_update(Transaction_Owner_Base&) = 0;
+    virtual std::unique_ptr<data_update> make_data_update(Transaction_Owner_Base&) = 0;
 
     virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() = 0;
 

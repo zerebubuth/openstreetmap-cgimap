@@ -41,7 +41,7 @@ public:
   public:
     factory(const boost::program_options::variables_map &);
     virtual ~factory();
-    std::shared_ptr<data_update> make_data_update(Transaction_Owner_Base& to) override;
+    std::unique_ptr<data_update> make_data_update(Transaction_Owner_Base& to) override;
     std::unique_ptr<Transaction_Owner_Base> get_default_transaction() override;
     std::unique_ptr<Transaction_Owner_Base> get_read_only_transaction() override;
 

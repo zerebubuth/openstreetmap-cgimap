@@ -21,7 +21,6 @@ using std::set;
 using std::stringstream;
 using std::list;
 using std::vector;
-using std::shared_ptr;
 
 
 namespace {

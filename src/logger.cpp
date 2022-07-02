@@ -11,11 +11,10 @@ using std::ostream;
 using std::ofstream;
 using boost::format;
 
-using std::shared_ptr;
 
 namespace logger {
 
-static shared_ptr<ostream> stream;
+static std::shared_ptr<ostream> stream;
 static pid_t pid;
 
 void initialise(const string &filename) {

@@ -5,7 +5,6 @@
 #include <boost/format.hpp>
 
 using std::list;
-using std::shared_ptr;
 
 osm_current_responder::osm_current_responder(mime::type mt, data_selection &s,
                                              std::optional<bbox> b)

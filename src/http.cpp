@@ -15,7 +15,6 @@ namespace al = boost::algorithm;
 using std::string;
 using std::vector;
 using std::pair;
-using std::shared_ptr;
 
 namespace {
 /**
@@ -170,7 +169,7 @@ vector<pair<string, string> > parse_params(const string &p) {
   return queryKVPairs;
 }
 
-shared_ptr<encoding> choose_encoding(const string &accept_encoding) {
+std::shared_ptr<encoding> choose_encoding(const string &accept_encoding) {
   vector<string> encodings;
 
   al::split(encodings, accept_encoding, al::is_any_of(","));
@@ -221,15 +220,15 @@ shared_ptr<encoding> choose_encoding(const string &accept_encoding) {
 #ifdef ENABLE_DEFLATE
   if (deflate_quality > 0.0 && deflate_quality >= gzip_quality &&
       deflate_quality >= identity_quality) {
-    return shared_ptr<deflate>(new deflate());
+    return std::shared_ptr<deflate>(new deflate());
   } else
 #endif /* ENABLE_DEFLATE */
       if (gzip_quality > 0.0 && gzip_quality >= identity_quality) {
-    return shared_ptr<gzip>(new gzip());
+    return std::shared_ptr<gzip>(new gzip());
   }
 #endif /* HAVE_LIBZ */
   else if (identity_quality > 0.0) {
-    return shared_ptr<identity>(new identity());
+    return std::shared_ptr<identity>(new identity());
   } else {
     throw http::not_acceptable("No acceptable content encoding found. Only "
                                "identity and gzip are supported.");

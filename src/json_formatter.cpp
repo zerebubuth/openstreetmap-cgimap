@@ -4,7 +4,6 @@
 
 #include <chrono>
 
-using std::shared_ptr;
 using std::string;
 using std::transform;
 
