@@ -54,7 +54,7 @@ std::string repeat(const std::string &input, size_t num) {
 void process_testmsg(const std::string &payload) {
 
   Test_Parser_Callback cb;
-  api06::OSMChangeXMLParser parser(&cb);
+  api06::OSMChangeXMLParser parser(cb);
   parser.process_message(payload);
 }
 
