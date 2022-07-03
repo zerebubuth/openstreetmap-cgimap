@@ -2,7 +2,6 @@
 #include "cgimap/config.hpp"
 
 using std::list;
-using std::shared_ptr;
 
 text_responder::text_responder(mime::type mt)
     : responder(mt), output_text{}  {}

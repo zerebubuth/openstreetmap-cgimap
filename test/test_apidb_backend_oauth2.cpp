@@ -73,7 +73,7 @@ void test_user_id_for_oauth2_token(test_database &tdb) {
 
   )");
 
-  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+  auto store = tdb.get_oauth_store();
 
   // Note: Tokens in this unit tests are considered to be opaque strings, tokens are used for db lookups as-is.
   // It doesn't matter if they have been previously stored as plain or sha256-hashed tokens.
@@ -168,39 +168,52 @@ public:
 
   virtual ~empty_data_selection() = default;
 
-  void write_nodes(output_formatter &formatter) {}
-  void write_ways(output_formatter &formatter) {}
-  void write_relations(output_formatter &formatter) {}
+  void write_nodes(output_formatter &formatter) override {}
+  void write_ways(output_formatter &formatter) override {}
+  void write_relations(output_formatter &formatter) override {}
   void write_changesets(output_formatter &formatter,
-                        const std::chrono::system_clock::time_point &now) {}
+                        const std::chrono::system_clock::time_point &now) override {}
 
-  visibility_t check_node_visibility(osm_nwr_id_t id) { return non_exist; }
-  visibility_t check_way_visibility(osm_nwr_id_t id) { return non_exist; }
-  visibility_t check_relation_visibility(osm_nwr_id_t id) { return non_exist; }
+  visibility_t check_node_visibility(osm_nwr_id_t id) override { return non_exist; }
+  visibility_t check_way_visibility(osm_nwr_id_t id) override { return non_exist; }
+  visibility_t check_relation_visibility(osm_nwr_id_t id) override { return non_exist; }
 
-  int select_nodes(const std::vector<osm_nwr_id_t> &) { return 0; }
-  int select_ways(const std::vector<osm_nwr_id_t> &) { return 0; }
-  int select_relations(const std::vector<osm_nwr_id_t> &) { return 0; }
-  int select_nodes_from_bbox(const bbox &bounds, int max_nodes) { return 0; }
-  void select_nodes_from_relations() {}
-  void select_ways_from_nodes() {}
-  void select_ways_from_relations() {}
-  void select_relations_from_ways() {}
-  void select_nodes_from_way_nodes() {}
-  void select_relations_from_nodes() {}
-  void select_relations_from_relations(bool drop_relations = false) {}
-  void select_relations_members_of_relations() {}
-  int select_changesets(const std::vector<osm_changeset_id_t> &) { return 0; }
-  void select_changeset_discussions() {}
-  void drop_nodes() {}
-  void drop_ways() {}
-  void drop_relations() {}
+  int select_nodes(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_ways(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_relations(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_nodes_from_bbox(const bbox &bounds, int max_nodes) override { return 0; }
+  void select_nodes_from_relations() override {}
+  void select_ways_from_nodes() override {}
+  void select_ways_from_relations() override {}
+  void select_relations_from_ways() override {}
+  void select_nodes_from_way_nodes() override {}
+  void select_relations_from_nodes() override {}
+  void select_relations_from_relations(bool drop_relations = false) override {}
+  void select_relations_members_of_relations() override {}
+  int select_changesets(const std::vector<osm_changeset_id_t> &) override { return 0; }
+  void select_changeset_discussions() override {}
+  void drop_nodes() override {}
+  void drop_ways() override {}
+  void drop_relations() override {}
+
+  bool supports_user_details() const override { return false; }
+  bool is_user_blocked(const osm_user_id_t) override { return true; }
+  bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &) override { return false; };
+
+  int select_historical_nodes(const std::vector<osm_edition_t> &) override { return 0; }
+  int select_nodes_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_historical_ways(const std::vector<osm_edition_t> &) override { return 0; }
+  int select_ways_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_historical_relations(const std::vector<osm_edition_t> &) override { return 0; }
+  int select_relations_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  void set_redactions_visible(bool) override {}
+  int select_historical_by_changesets(const std::vector<osm_changeset_id_t> &) override { return 0; }
 
   struct factory
     : public data_selection::factory {
     virtual ~factory() = default;
-    virtual std::shared_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
-      return std::make_shared<empty_data_selection>();
+    virtual std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
+      return std::make_unique<empty_data_selection>();
     }
     virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() {
       {
@@ -270,7 +283,7 @@ void create_changeset(test_database &tdb, std::shared_ptr<oauth::store> store, s
 
   req.set_payload(R"( <osm><changeset><tag k="created_by" v="JOSM 1.61"/><tag k="comment" v="Just adding some streetnames"/></changeset></osm> )" );
 
-  process_request(req, limiter, generator, route, sel_factory, upd_factory, store);
+  process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), store.get());
 
   assert_equal<int>(expected_response_code, req.response_status(), "response status");
 }
@@ -280,7 +293,7 @@ void fetch_relation(test_database &tdb, std::shared_ptr<oauth::store> store, std
   recording_rate_limiter limiter;
   std::string generator("test_apidb_backend.cpp");
   routes route;
-  std::shared_ptr<data_selection::factory> factory = std::make_shared<empty_data_selection::factory>();
+  auto factory = std::make_shared<empty_data_selection::factory>();
 
   test_request req;
   req.set_header("SCRIPT_URL", "/api/0.6/relation/165475/full");
@@ -312,7 +325,7 @@ void fetch_relation(test_database &tdb, std::shared_ptr<oauth::store> store, std
   req.set_header("REQUEST_URI", "/api/0.6/relation/165475/full");
   req.set_header("SCRIPT_NAME", "/api/0.6/relation/165475/full");
 
-  process_request(req, limiter, generator, route, factory, std::shared_ptr<data_update::factory>(nullptr), store);
+  process_request(req, limiter, generator, route, *factory, nullptr, store.get());
 
   assert_equal<int>(expected_response_code, req.response_status(), "response status");
 }
@@ -341,7 +354,7 @@ void test_oauth2_end_to_end(test_database &tdb) {
  
   )");
 
-  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+  auto store = tdb.get_oauth_store();
 
   // Test valid token -> HTTP 404 not found, due to unknown relation
   fetch_relation(tdb, store, "1yi2RI2WhIVMLoLaDLg0nrPJPU4WQSIX4Hh_jxfRRxI", 404);

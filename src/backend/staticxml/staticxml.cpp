@@ -337,22 +337,22 @@ struct static_data_selection : public data_selection {
     : m_db(db)
     , m_include_changeset_comments(false)
     , m_redactions_visible(false) {}
-  virtual ~static_data_selection() = default;
+  ~static_data_selection() = default;
 
-  virtual void write_nodes(output_formatter &formatter) {
+  void write_nodes(output_formatter &formatter) override {
     write_elements<node>(m_historic_nodes, m_nodes, formatter);
   }
 
-  virtual void write_ways(output_formatter &formatter) {
+  void write_ways(output_formatter &formatter) override {
     write_elements<way>(m_historic_ways, m_ways, formatter);
   }
 
-  virtual void write_relations(output_formatter &formatter) {
+  void write_relations(output_formatter &formatter) override {
     write_elements<relation>(m_historic_relations, m_relations, formatter);
   }
 
-  virtual void write_changesets(output_formatter &formatter,
-                                const std::chrono::system_clock::time_point &now) {
+  void write_changesets(output_formatter &formatter,
+                                const std::chrono::system_clock::time_point &now) override {
     for (osm_changeset_id_t id : m_changesets) {
       auto itr = m_db->m_changesets.find(id);
       if (itr != m_db->m_changesets.end()) {
@@ -364,31 +364,31 @@ struct static_data_selection : public data_selection {
     }
   }
 
-  virtual visibility_t check_node_visibility(osm_nwr_id_t id) {
+  visibility_t check_node_visibility(osm_nwr_id_t id) override {
     return check_visibility<node>(id);
   }
 
-  virtual visibility_t check_way_visibility(osm_nwr_id_t id) {
+  visibility_t check_way_visibility(osm_nwr_id_t id) override {
     return check_visibility<way>(id);
   }
 
-  virtual visibility_t check_relation_visibility(osm_nwr_id_t id) {
+  visibility_t check_relation_visibility(osm_nwr_id_t id) override {
     return check_visibility<relation>(id);
   }
 
-  virtual int select_nodes(const std::vector<osm_nwr_id_t> &ids) {
+  int select_nodes(const std::vector<osm_nwr_id_t> &ids) override {
     return select<node>(m_nodes, ids);
   }
 
-  virtual int select_ways(const std::vector<osm_nwr_id_t> &ids) {
+  int select_ways(const std::vector<osm_nwr_id_t> &ids) override {
     return select<way>(m_ways, ids);
   }
 
-  virtual int select_relations(const std::vector<osm_nwr_id_t> &ids) {
+  int select_relations(const std::vector<osm_nwr_id_t> &ids) override {
     return select<relation>(m_relations, ids);
   }
 
-  virtual int select_nodes_from_bbox(const bbox &bounds, int max_nodes) {
+  int select_nodes_from_bbox(const bbox &bounds, int max_nodes) override {
     using node_map_t = std::map<id_version, node>;
     int selected = 0;
     const node_map_t::const_iterator end = m_db->m_nodes.end();
@@ -411,7 +411,7 @@ struct static_data_selection : public data_selection {
     return selected;
   }
 
-  virtual void select_nodes_from_relations() {
+  void select_nodes_from_relations() override {
     for (osm_nwr_id_t id : m_relations) {
       auto r = find_current<relation>(id);
       if (r) {
@@ -424,7 +424,7 @@ struct static_data_selection : public data_selection {
     }
   }
 
-  virtual void select_ways_from_nodes() {
+  void select_ways_from_nodes() override {
     using way_map_t = std::map<id_version, way>;
     const way_map_t::const_iterator end = m_db->m_ways.end();
     for (way_map_t::const_iterator itr = m_db->m_ways.begin();
@@ -442,7 +442,7 @@ struct static_data_selection : public data_selection {
     }
   }
 
-  virtual void select_ways_from_relations() {
+  void select_ways_from_relations() override {
     for (osm_nwr_id_t id : m_relations) {
       auto r = find_current<relation>(id);
       if (r) {
@@ -455,7 +455,7 @@ struct static_data_selection : public data_selection {
     }
   }
 
-  virtual void select_relations_from_ways() {
+  void select_relations_from_ways() override {
     using relation_map_t = std::map<id_version, relation>;
     const relation_map_t::const_iterator end = m_db->m_relations.end();
     for (relation_map_t::const_iterator itr = m_db->m_relations.begin();
@@ -473,7 +473,7 @@ struct static_data_selection : public data_selection {
     }
   }
 
-  virtual void select_nodes_from_way_nodes() {
+  void select_nodes_from_way_nodes() override {
     for (osm_nwr_id_t id : m_ways) {
       auto w = find_current<way>(id);
       if (w) {
@@ -482,7 +482,7 @@ struct static_data_selection : public data_selection {
     }
   }
 
-  virtual void select_relations_from_nodes() {
+  void select_relations_from_nodes() override {
     using relation_map_t = std::map<id_version, relation>;
     const relation_map_t::const_iterator end = m_db->m_relations.end();
     for (relation_map_t::const_iterator itr = m_db->m_relations.begin();
@@ -498,7 +498,7 @@ struct static_data_selection : public data_selection {
     }
   }
 
-  virtual void select_relations_from_relations(bool drop_relations = false) {
+  void select_relations_from_relations(bool drop_relations = false) override {
     std::set<osm_nwr_id_t> tmp_relations;
     using relation_map_t = std::map<id_version, relation>;
     const relation_map_t::const_iterator end = m_db->m_relations.end();
@@ -519,7 +519,7 @@ struct static_data_selection : public data_selection {
     m_relations.insert(tmp_relations.begin(), tmp_relations.end());
   }
 
-  virtual void select_relations_members_of_relations() {
+  void select_relations_members_of_relations() override {
     for (osm_nwr_id_t id : m_relations) {
       auto r = find_current<relation>(id);
       if (r) {
@@ -532,36 +532,36 @@ struct static_data_selection : public data_selection {
     }
   }
 
-  virtual int select_historical_nodes(const std::vector<osm_edition_t> &editions) {
+  int select_historical_nodes(const std::vector<osm_edition_t> &editions) override {
     return select_historical<node>(m_historic_nodes, editions);
   }
 
-  virtual int select_nodes_with_history(const std::vector<osm_nwr_id_t> &ids) {
+  int select_nodes_with_history(const std::vector<osm_nwr_id_t> &ids) override {
     return select_historical_all<node>(m_historic_nodes, ids);
   }
 
-  virtual int select_historical_ways(const std::vector<osm_edition_t> &editions) {
+  int select_historical_ways(const std::vector<osm_edition_t> &editions) override  {
     return select_historical<way>(m_historic_ways, editions);
   }
 
-  virtual int select_ways_with_history(const std::vector<osm_nwr_id_t> &ids) {
+  int select_ways_with_history(const std::vector<osm_nwr_id_t> &ids) override {
     return select_historical_all<way>(m_historic_ways, ids);
   }
 
-  virtual int select_historical_relations(const std::vector<osm_edition_t> &editions) {
+  int select_historical_relations(const std::vector<osm_edition_t> &editions) override {
     return select_historical<relation>(m_historic_relations, editions);
   }
 
-  virtual int select_relations_with_history(const std::vector<osm_nwr_id_t> &ids) {
+  int select_relations_with_history(const std::vector<osm_nwr_id_t> &ids) override {
     return select_historical_all<relation>(m_historic_relations, ids);
   }
 
-  virtual void set_redactions_visible(bool visible) {
+  void set_redactions_visible(bool visible) override {
     m_redactions_visible = visible;
   }
 
-  virtual int select_historical_by_changesets(
-    const std::vector<osm_changeset_id_t> &ids) {
+  int select_historical_by_changesets(
+    const std::vector<osm_changeset_id_t> &ids) override {
 
     std::unordered_set<osm_changeset_id_t> changesets(ids.begin(), ids.end());
 
@@ -573,19 +573,19 @@ struct static_data_selection : public data_selection {
     return selected;
   }
 
-  virtual void drop_nodes() {
+  void drop_nodes() override {
     m_nodes.clear();
   }
 
-  virtual void drop_ways() {
+  void drop_ways() override {
     m_ways.clear();
   }
 
-  virtual void drop_relations() {
+  void drop_relations() override {
     m_relations.clear();
   }
 
-  virtual int select_changesets(const std::vector<osm_changeset_id_t> &ids) {
+  int select_changesets(const std::vector<osm_changeset_id_t> &ids) override {
     int selected = 0;
     for (osm_changeset_id_t id : ids) {
       auto itr = m_db->m_changesets.find(id);
@@ -597,9 +597,13 @@ struct static_data_selection : public data_selection {
     return selected;
   }
 
-  virtual void select_changeset_discussions() {
+  void select_changeset_discussions() override {
     m_include_changeset_comments = true;
   }
+
+  bool supports_user_details() const override { return false; }
+  bool is_user_blocked(const osm_user_id_t) override { return true; }
+  bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &) override { return false; };
 
 private:
   template <typename T>
@@ -778,8 +782,8 @@ struct factory : public data_selection::factory {
 
   virtual ~factory() = default;
 
-  virtual std::shared_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
-    return std::make_shared<static_data_selection>(m_database);
+  virtual std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
+    return std::make_unique<static_data_selection>(m_database);
   }
 
   virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() {

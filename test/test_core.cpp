@@ -488,7 +488,7 @@ void run_test(fs::path test_case, rate_limiter &limiter,
     setup_request_headers(req, in);
 
     // execute the request
-    process_request(req, limiter, generator, route, factory, std::shared_ptr<data_update::factory>(nullptr), store);
+    process_request(req, limiter, generator, route, *factory, nullptr, store.get());
 
     // compare the result to what we're expecting
     try {
@@ -702,9 +702,8 @@ int main(int argc, char *argv[]) {
     vm.insert(std::make_pair(std::string("file"),
                              po::variable_value(data_file.native(), false)));
 
-    std::shared_ptr<backend> data_backend = make_staticxml_backend();
-    std::shared_ptr<data_selection::factory> factory =
-        data_backend->create(vm);
+    auto data_backend = make_staticxml_backend();
+    auto factory = data_backend->create(vm);
     null_rate_limiter limiter;
     routes route;
 

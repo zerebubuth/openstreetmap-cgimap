@@ -16,8 +16,8 @@
  */
 void process_request(request &req, rate_limiter &limiter,
                      const std::string &generator, routes &route,
-                     std::shared_ptr<data_selection::factory> factory,
-                     std::shared_ptr<data_update::factory> update_factory,
-                     std::shared_ptr<oauth::store> store);
+                     data_selection::factory& factory,
+                     data_update::factory* update_factory,
+                     oauth::store* store);
 
 #endif /* PROCESS_REQUEST_HPP */

@@ -51,18 +51,18 @@ struct test_request : public request {
                const std::optional<std::string> &auth_header);
   virtual ~test_request();
 
-  const char *get_param(const char *key);
-  const std::string get_payload();
+  const char *get_param(const char *key) const override;
+  const std::string get_payload() override;
 
-  void dispose();
+  void dispose() override;
 
-  std::chrono::system_clock::time_point get_current_time() const;
+  std::chrono::system_clock::time_point get_current_time() const override;
 
 protected:
-  void write_header_info(int status, const headers_t &headers);
+  void write_header_info(int status, const headers_t &headers) override;
 
-  std::shared_ptr<output_buffer> get_buffer_internal();
-  void finish_internal();
+  std::shared_ptr<output_buffer> get_buffer_internal() override;
+  void finish_internal() override;
 
 private:
   std::string method, scheme, authority, port, path, get_params;
@@ -87,7 +87,7 @@ test_request::test_request(const std::string &method_,
 
 test_request::~test_request() = default;
 
-const char *test_request::get_param(const char *key) {
+const char *test_request::get_param(const char *key) const {
   if (std::strncmp(key, "HTTP_AUTHORIZATION", 19) == 0) {
     return bool(auth_header) ? (auth_header->c_str()) : NULL;
   } else if (std::strncmp(key, "PATH_INFO", 10) == 0) {

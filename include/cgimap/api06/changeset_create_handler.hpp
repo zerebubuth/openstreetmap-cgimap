@@ -11,7 +11,7 @@ namespace api06 {
 
 class changeset_create_responder : public text_responder {
 public:
-  changeset_create_responder(mime::type, data_update_ptr &,
+  changeset_create_responder(mime::type, data_update &,
                              const std::string &,
                              std::optional<osm_user_id_t>);
   ~changeset_create_responder();
@@ -22,13 +22,13 @@ public:
   changeset_create_handler(request &req);
   ~changeset_create_handler();
 
-  std::string log_name() const;
-  responder_ptr_t responder(data_selection_ptr &x) const;
+  std::string log_name() const override;
+  responder_ptr_t responder(data_selection &x) const override;
 
-  responder_ptr_t responder(data_update_ptr &,
+  responder_ptr_t responder(data_update &,
 			    const std::string &payload,
-                            std::optional<osm_user_id_t> user_id) const;
-  bool requires_selection_after_update() const;
+                            std::optional<osm_user_id_t> user_id) const override;
+  bool requires_selection_after_update() const override;
 };
 
 } // namespace api06

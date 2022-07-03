@@ -9,7 +9,7 @@ namespace api06 {
 
 class node_history_responder : public osm_current_responder {
 public:
-  node_history_responder(mime::type, osm_nwr_id_t, data_selection_ptr &);
+  node_history_responder(mime::type, osm_nwr_id_t, data_selection &);
   ~node_history_responder();
 
 private:
@@ -21,8 +21,8 @@ public:
   node_history_handler(request &, osm_nwr_id_t);
   ~node_history_handler();
 
-  std::string log_name() const;
-  responder_ptr_t responder(data_selection_ptr &) const;
+  std::string log_name() const override;
+  responder_ptr_t responder(data_selection &) const override;
 
 private:
   osm_nwr_id_t id;

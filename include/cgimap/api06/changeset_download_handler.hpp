@@ -10,7 +10,7 @@ namespace api06 {
 
 class changeset_download_responder : public osmchange_responder {
 public:
-  changeset_download_responder(mime::type, osm_changeset_id_t, data_selection_ptr &);
+  changeset_download_responder(mime::type, osm_changeset_id_t, data_selection &);
   ~changeset_download_responder();
 
 private:
@@ -22,8 +22,8 @@ public:
   changeset_download_handler(request &req, osm_changeset_id_t id);
   ~changeset_download_handler();
 
-  std::string log_name() const;
-  responder_ptr_t responder(data_selection_ptr &x) const;
+  std::string log_name() const override;
+  responder_ptr_t responder(data_selection &x) const override;
 
 private:
   osm_changeset_id_t id;

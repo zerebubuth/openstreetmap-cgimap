@@ -16,14 +16,9 @@ public:
   text_writer(const text_writer &) = delete;
   text_writer& operator=(const text_writer &) = delete;
   text_writer(text_writer &&) = default;
-  text_writer& operator=(text_writer &&) = default;
-
-  // create a new text writer writing to file_name, which can be
-  // "-" for stdout.
-  text_writer(const std::string &file_name, bool indent = false);
 
   // create a new text writer using writer callback functions
-  text_writer(std::shared_ptr<output_buffer> &out, bool indent = false);
+  text_writer(output_buffer &out, bool indent = false);
 
   // closes and flushes the text writer
   ~text_writer() noexcept;
@@ -43,7 +38,7 @@ public:
   void error(const std::string &);
 
 private:
-  std::shared_ptr<output_buffer> out;
+  output_buffer& out;
 
 };
 

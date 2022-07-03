@@ -31,7 +31,7 @@ struct request {
 
   // get the value associated with a key in the request headers. returns NULL if
   // the key could not be found. this function can be called at any time.
-  virtual const char *get_param(const char *key) = 0;
+  virtual const char *get_param(const char *key) const = 0;
 
   // get the current time of the request.
   virtual std::chrono::system_clock::time_point get_current_time() const = 0;

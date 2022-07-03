@@ -21,7 +21,6 @@ using std::set;
 using std::stringstream;
 using std::list;
 using std::vector;
-using std::shared_ptr;
 
 
 namespace {
@@ -724,7 +723,7 @@ void readonly_pgsql_selection::select_changeset_discussions() {
   include_changeset_discussions = true;
 }
 
-bool readonly_pgsql_selection::supports_user_details() {
+bool readonly_pgsql_selection::supports_user_details() const {
   return true;
 }
 
@@ -797,9 +796,9 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
 readonly_pgsql_selection::factory::~factory() = default;
 
 
-std::shared_ptr<data_selection>
+std::unique_ptr<data_selection>
 readonly_pgsql_selection::factory::make_selection(Transaction_Owner_Base& to) {
-  return std::make_shared<readonly_pgsql_selection>(to,
+  return std::make_unique<readonly_pgsql_selection>(to,
 						    std::ref(m_cache));
 }
 

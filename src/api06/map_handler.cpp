@@ -17,11 +17,11 @@ using std::vector;
 
 namespace api06 {
 
-map_responder::map_responder(mime::type mt, bbox b, data_selection_ptr &x)
+map_responder::map_responder(mime::type mt, bbox b, data_selection &x)
     : osm_current_responder(mt, x, std::optional<bbox>(b)) {
   // create temporary tables of nodes, ways and relations which
   // are in or used by elements in the bbox
-  uint32_t num_nodes = sel->select_nodes_from_bbox(b, global_settings::get_map_max_nodes());
+  uint32_t num_nodes = sel.select_nodes_from_bbox(b, global_settings::get_map_max_nodes());
 
   if (num_nodes > global_settings::get_map_max_nodes()) {
     throw http::bad_request(
@@ -31,11 +31,11 @@ map_responder::map_responder(mime::type mt, bbox b, data_selection_ptr &x)
   }
   // Short-circuit empty areas
   if (num_nodes > 0) {
-    sel->select_ways_from_nodes();
-    sel->select_nodes_from_way_nodes();
-    sel->select_relations_from_ways();
-    sel->select_relations_from_nodes();
-    sel->select_relations_from_relations();
+    sel.select_ways_from_nodes();
+    sel.select_nodes_from_way_nodes();
+    sel.select_relations_from_ways();
+    sel.select_relations_from_nodes();
+    sel.select_relations_from_relations();
   }
 }
 
@@ -67,7 +67,7 @@ string map_handler::log_name() const {
           bounds.minlat % bounds.maxlon % bounds.maxlat).str();
 }
 
-responder_ptr_t map_handler::responder(data_selection_ptr &x) const {
+responder_ptr_t map_handler::responder(data_selection &x) const {
   return responder_ptr_t(new map_responder(mime_type, bounds, x));
 }
 

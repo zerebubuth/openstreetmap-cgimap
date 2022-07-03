@@ -113,7 +113,7 @@ bool PasswordHash::is_valid_argon2(const std::string& pass_crypt, const std::str
 
 namespace basicauth {
 
-  [[nodiscard]] std::optional<osm_user_id_t> authenticate_user(request &req, std::shared_ptr<data_selection>& selection)
+  [[nodiscard]] std::optional<osm_user_id_t> authenticate_user(const request &req, data_selection& selection)
   {
     std::string user_name;
     std::string candidate;
@@ -166,7 +166,7 @@ namespace basicauth {
     if (user_name.empty() || candidate.empty())
       return std::optional<osm_user_id_t>{};
 
-    auto user_exists = selection->get_user_id_pass(user_name, user_id, pass_crypt, pass_salt);
+    auto user_exists = selection.get_user_id_pass(user_name, user_id, pass_crypt, pass_salt);
 
     if (!user_exists)
       throw http::unauthorized("Incorrect user or password");

@@ -11,7 +11,7 @@ namespace api06 {
 
 class changeset_upload_responder : public osm_diffresult_responder {
 public:
-  changeset_upload_responder(mime::type, data_update_ptr &, osm_changeset_id_t,
+  changeset_upload_responder(mime::type, data_update &, osm_changeset_id_t,
                              const std::string &,
                              std::optional<osm_user_id_t>);
   ~changeset_upload_responder();
@@ -22,13 +22,13 @@ public:
   changeset_upload_handler(request &req, osm_changeset_id_t id);
   ~changeset_upload_handler();
 
-  std::string log_name() const;
-  responder_ptr_t responder(data_selection_ptr &x) const;
+  std::string log_name() const override;
+  responder_ptr_t responder(data_selection &x) const override;
 
-  responder_ptr_t responder(data_update_ptr &,
+  responder_ptr_t responder(data_update &,
 			    const std::string &payload,
-                            std::optional<osm_user_id_t> user_id) const;
-  bool requires_selection_after_update() const;
+                            std::optional<osm_user_id_t> user_id) const override;
+  bool requires_selection_after_update() const override;
 
 private:
   osm_changeset_id_t id;

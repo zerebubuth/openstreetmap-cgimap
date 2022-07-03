@@ -23,7 +23,7 @@
 namespace api06 {
 
 changeset_upload_responder::changeset_upload_responder(
-    mime::type mt, data_update_ptr & upd, osm_changeset_id_t id_, const std::string &payload,
+    mime::type mt, data_update& upd, osm_changeset_id_t id_, const std::string &payload,
     std::optional<osm_user_id_t> user_id)
     : osm_diffresult_responder(mt) {
 
@@ -32,10 +32,10 @@ changeset_upload_responder::changeset_upload_responder(
 
   OSMChange_Tracking change_tracking{};
 
-  auto changeset_updater = upd->get_changeset_updater(changeset, uid);
-  auto node_updater = upd->get_node_updater(change_tracking);
-  auto way_updater = upd->get_way_updater(change_tracking);
-  auto relation_updater = upd->get_relation_updater(change_tracking);
+  auto changeset_updater = upd.get_changeset_updater(changeset, uid);
+  auto node_updater = upd.get_node_updater(change_tracking);
+  auto way_updater = upd.get_way_updater(change_tracking);
+  auto relation_updater = upd.get_relation_updater(change_tracking);
 
   changeset_updater->lock_current_changeset(true);
 
@@ -52,7 +52,7 @@ changeset_upload_responder::changeset_upload_responder(
   changeset_updater->update_changeset(handler.get_num_changes(),
                                       handler.get_bbox());
 
-  upd->commit();
+  upd.commit();
 }
 
 changeset_upload_responder::~changeset_upload_responder() = default;
@@ -70,13 +70,13 @@ std::string changeset_upload_handler::log_name() const {
 }
 
 responder_ptr_t
-changeset_upload_handler::responder(data_selection_ptr &) const {
+changeset_upload_handler::responder(data_selection &) const {
   throw http::server_error(
       "changeset_upload_handler: data_selection unsupported");
 }
 
 responder_ptr_t changeset_upload_handler::responder(
-    data_update_ptr & upd, const std::string &payload, std::optional<osm_user_id_t> user_id) const {
+    data_update & upd, const std::string &payload, std::optional<osm_user_id_t> user_id) const {
   return responder_ptr_t(
       new changeset_upload_responder(mime_type, upd, id, payload, user_id));
 }

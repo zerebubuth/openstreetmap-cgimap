@@ -173,20 +173,20 @@ namespace {
  */
 class fcgi_output_buffer : public output_buffer {
 public:
-  virtual int write(const char *buffer, int len) {
+  int write(const char *buffer, int len) override {
     w += len;
     return r.put(buffer, len);
   }
 
-  virtual int close() {
+  int close() override {
     // we don't actually close the request output, as that happens
     // automatically on the next call to accept.
     return 0;
   }
 
-  virtual int written() { return w; }
+  int written() override { return w; }
 
-  virtual void flush() {
+  void flush() override {
     // there's a note that says this causes too many writes and decreases
     // efficiency, but we're only calling it once...
     r.flush();

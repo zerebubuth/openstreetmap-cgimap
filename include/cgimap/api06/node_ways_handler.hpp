@@ -10,7 +10,7 @@ namespace api06 {
 
 class node_ways_responder : public osm_current_responder {
 public:
-  node_ways_responder(mime::type, osm_nwr_id_t, data_selection_ptr &);
+  node_ways_responder(mime::type, osm_nwr_id_t, data_selection &);
   ~node_ways_responder();
 
 private:
@@ -24,8 +24,8 @@ public:
   node_ways_handler(request &req, osm_nwr_id_t id);
   ~node_ways_handler();
 
-  std::string log_name() const;
-  responder_ptr_t responder(data_selection_ptr &x) const;
+  std::string log_name() const override;
+  responder_ptr_t responder(data_selection &x) const override;
 
 private:
   osm_nwr_id_t id;

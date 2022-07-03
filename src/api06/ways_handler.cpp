@@ -15,7 +15,7 @@ using std::string;
 namespace api06 {
 
 ways_responder::ways_responder(mime::type mt, vector<id_version> ids_,
-                               data_selection_ptr &w_)
+                               data_selection &w_)
     : osm_current_responder(mt, w_), ids(ids_) {
   vector<osm_nwr_id_t> current_ids;
   vector<osm_edition_t> historic_ids;
@@ -28,9 +28,9 @@ ways_responder::ways_responder(mime::type mt, vector<id_version> ids_,
     }
   }
 
-  size_t num_selected = sel->select_ways(current_ids);
+  size_t num_selected = sel.select_ways(current_ids);
   if (!historic_ids.empty()) {
-    num_selected += sel->select_historical_ways(historic_ids);
+    num_selected += sel.select_historical_ways(historic_ids);
   }
 
   if (num_selected != ids.size()) {
@@ -52,7 +52,7 @@ std::string ways_handler::log_name() const {
   return msg.str();
 }
 
-responder_ptr_t ways_handler::responder(data_selection_ptr &x) const {
+responder_ptr_t ways_handler::responder(data_selection &x) const {
   return responder_ptr_t(new ways_responder(mime_type, ids, x));
 }
 

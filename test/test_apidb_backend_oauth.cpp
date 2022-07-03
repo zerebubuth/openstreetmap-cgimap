@@ -54,7 +54,7 @@ void assert_equal(const T& a, const T&b, const std::string &message) {
 
 void test_nonce_store(test_database &tdb) {
   tdb.run_sql("");
-  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+  auto store = tdb.get_oauth_store();
 
   // can use a nonce
   assert_equal<bool>(true, store->use_nonce("abcdef", 0), "first use of nonce");
@@ -104,7 +104,7 @@ void test_allow_read_api(test_database &tdb) {
     "   '2UxsEFziZGv64hdWN3Qa90Vb6v1aovVxaTTQIn1D', "
     "   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z'); "
     "");
-  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+  auto store = tdb.get_oauth_store();
 
   assert_equal<bool>(
     true, store->allow_read_api("OfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA"),
@@ -146,7 +146,7 @@ void test_allow_write_api(test_database &tdb) {
     "   'NZskvUUYlOuCsPKuMbSTz5eMpVJVI3LsyW11Z2Uq', "
     "   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', NULL); "
     "");
-  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+  auto store = tdb.get_oauth_store();
 
   assert_equal<bool>(
     true, store->allow_write_api("AfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA"),
@@ -190,7 +190,7 @@ void test_get_user_id_for_token(test_database &tdb) {
     "   '2UxsEFziZGv64hdWN3Qa90Vb6v1aovVxaTTQIn1D', "
     "   '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z', '2016-07-11T19:12:00Z'); "
     "");
-  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+  auto store = tdb.get_oauth_store();
 
   assert_equal<std::optional<osm_user_id_t> >(
     1, store->get_user_id_for_token("OfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA"),
@@ -216,39 +216,53 @@ public:
 
   virtual ~empty_data_selection() = default;
 
-  void write_nodes(output_formatter &formatter) {}
-  void write_ways(output_formatter &formatter) {}
-  void write_relations(output_formatter &formatter) {}
+  void write_nodes(output_formatter &formatter) override {}
+  void write_ways(output_formatter &formatter) override {}
+  void write_relations(output_formatter &formatter) override {}
   void write_changesets(output_formatter &formatter,
-                        const std::chrono::system_clock::time_point &now) {}
+                        const std::chrono::system_clock::time_point &now) override {}
 
-  visibility_t check_node_visibility(osm_nwr_id_t id) { return non_exist; }
-  visibility_t check_way_visibility(osm_nwr_id_t id) { return non_exist; }
-  visibility_t check_relation_visibility(osm_nwr_id_t id) { return non_exist; }
+  visibility_t check_node_visibility(osm_nwr_id_t id) override { return non_exist; }
+  visibility_t check_way_visibility(osm_nwr_id_t id) override { return non_exist; }
+  visibility_t check_relation_visibility(osm_nwr_id_t id) override { return non_exist; }
 
-  int select_nodes(const std::vector<osm_nwr_id_t> &) { return 0; }
-  int select_ways(const std::vector<osm_nwr_id_t> &) { return 0; }
-  int select_relations(const std::vector<osm_nwr_id_t> &) { return 0; }
-  int select_nodes_from_bbox(const bbox &bounds, int max_nodes) { return 0; }
-  void select_nodes_from_relations() {}
-  void select_ways_from_nodes() {}
-  void select_ways_from_relations() {}
-  void select_relations_from_ways() {}
-  void select_nodes_from_way_nodes() {}
-  void select_relations_from_nodes() {}
-  void select_relations_from_relations(bool drop_relations = false) {}
-  void select_relations_members_of_relations() {}
-  int select_changesets(const std::vector<osm_changeset_id_t> &) { return 0; }
-  void select_changeset_discussions() {}
-  void drop_nodes() {}
-  void drop_ways() {}
-  void drop_relations() {}
+  int select_nodes(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_ways(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_relations(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_nodes_from_bbox(const bbox &bounds, int max_nodes) override { return 0; }
+  void select_nodes_from_relations() override {}
+  void select_ways_from_nodes() override {}
+  void select_ways_from_relations() override {}
+  void select_relations_from_ways() override {}
+  void select_nodes_from_way_nodes() override {}
+  void select_relations_from_nodes() override {}
+  void select_relations_from_relations(bool drop_relations = false) override {}
+  void select_relations_members_of_relations() override {}
+  int select_changesets(const std::vector<osm_changeset_id_t> &) override { return 0; }
+  void select_changeset_discussions() override {}
+  void drop_nodes() override {}
+  void drop_ways() override {}
+  void drop_relations() override {}
+
+  bool supports_user_details() const override { return false; }
+  bool is_user_blocked(const osm_user_id_t) override { return true; }
+  bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &) override { return false; };
+
+  int select_historical_nodes(const std::vector<osm_edition_t> &) override { return 0; }
+  int select_nodes_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_historical_ways(const std::vector<osm_edition_t> &) override { return 0; }
+  int select_ways_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_historical_relations(const std::vector<osm_edition_t> &) override { return 0; }
+  int select_relations_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  void set_redactions_visible(bool) override {}
+  int select_historical_by_changesets(const std::vector<osm_changeset_id_t> &) override { return 0; }
+
 
   struct factory
     : public data_selection::factory {
     virtual ~factory() = default;
-    virtual std::shared_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
-      return std::make_shared<empty_data_selection>();
+    virtual std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
+      return std::make_unique<empty_data_selection>();
     }
     virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() {
       {
@@ -300,13 +314,12 @@ void test_oauth_end_to_end(test_database &tdb) {
     "   'H3Vb9Kgf4LpTyVlft5xsI9MwzknQsTu6CkHE0qK3', "
     "   '2016-10-07T00:00:00Z', '2016-10-07T00:00:00Z', NULL); "
     "");
-  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+  auto store = tdb.get_oauth_store();
 
   recording_rate_limiter limiter;
   std::string generator("test_apidb_backend.cpp");
   routes route;
-  std::shared_ptr<data_selection::factory> factory =
-    std::make_shared<empty_data_selection::factory>();
+  auto factory = std::make_shared<empty_data_selection::factory>();
 
   test_request req;
   req.set_header("SCRIPT_URL", "/api/0.6/relation/165475/full");
@@ -350,7 +363,7 @@ void test_oauth_end_to_end(test_database &tdb) {
     oauth::detail::hashed_signature(req, *store),
     "hashed signatures");
 
-  process_request(req, limiter, generator, route, factory, std::shared_ptr<data_update::factory>(nullptr), store);
+  process_request(req, limiter, generator, route, *factory, nullptr, store.get());
 
   assert_equal<int>(404, req.response_status(), "response status");
   assert_equal<bool>(false, limiter.saw_key("addr:127.0.0.1"),
@@ -373,7 +386,7 @@ void test_oauth_get_roles_for_user(test_database &tdb) {
     "  (2, 1, 'moderator', 1), "
     "  (3, 2, 'moderator', 1);"
     "");
-  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+  auto store = tdb.get_oauth_store();
 
   using roles_t = std::set<osm_user_role_t>;
 
