@@ -39,10 +39,9 @@ changeset_upload_responder::changeset_upload_responder(
 
   changeset_updater->lock_current_changeset(true);
 
-  OSMChange_Handler handler(std::move(node_updater), std::move(way_updater),
-                            std::move(relation_updater), changeset);
+  OSMChange_Handler handler(*node_updater, *way_updater, *relation_updater, changeset);
 
-  OSMChangeXMLParser parser(&handler);
+  OSMChangeXMLParser parser(handler);
 
   parser.process_message(payload);
 

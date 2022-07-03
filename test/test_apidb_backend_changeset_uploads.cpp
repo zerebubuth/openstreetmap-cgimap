@@ -1970,10 +1970,9 @@ namespace {
 
     changeset_updater->lock_current_changeset(true);
 
-    api06::OSMChange_Handler handler(std::move(node_updater), std::move(way_updater),
-                                     std::move(relation_updater), changeset);
+    api06::OSMChange_Handler handler(*node_updater, *way_updater, *relation_updater, changeset);
 
-    api06::OSMChangeXMLParser parser(&handler);
+    api06::OSMChangeXMLParser parser(handler);
 
     parser.process_message(payload);
 

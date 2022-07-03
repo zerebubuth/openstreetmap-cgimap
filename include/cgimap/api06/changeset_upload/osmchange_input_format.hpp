@@ -27,7 +27,7 @@ namespace api06 {
 class OSMChangeXMLParser : private xmlpp::SaxParser {
 
 public:
-  explicit OSMChangeXMLParser(Parser_Callback *callback)
+  explicit OSMChangeXMLParser(Parser_Callback& callback)
       : m_callback(callback) {
 
     m_context.push_back(context::root);
@@ -58,7 +58,7 @@ protected:
     switch (m_context.back()) {
     case context::root:
       if (!std::strcmp(element, "osmChange")) {
-        m_callback->start_document();
+        m_callback.start_document();
       } else {
         throw xml_error{
           (boost::format("Unknown top-level element %1%, expecting osmChange") %
@@ -191,7 +191,7 @@ protected:
       assert(!std::strcmp(element, "osmChange"));
       m_context.pop_back();
       m_operation = operation::op_undefined;
-      m_callback->end_document();
+      m_callback.end_document();
       break;
     case context::in_create:
       assert(!std::strcmp(element, "create"));
@@ -218,7 +218,7 @@ protected:
               .str()
         };
       }
-      m_callback->process_node(*m_node, m_operation, m_if_unused);
+      m_callback.process_node(*m_node, m_operation, m_if_unused);
       m_node.reset(new Node{});
       m_context.pop_back();
       break;
@@ -232,7 +232,7 @@ protected:
         };
       }
 
-      m_callback->process_way(*m_way, m_operation, m_if_unused);
+      m_callback.process_way(*m_way, m_operation, m_if_unused);
       m_way.reset(new Way{});
       m_context.pop_back();
       break;
@@ -245,7 +245,7 @@ protected:
               .str()
         };
       }
-      m_callback->process_relation(*m_relation, m_operation, m_if_unused);
+      m_callback.process_relation(*m_relation, m_operation, m_if_unused);
       m_relation.reset(new Relation{});
       m_context.pop_back();
       break;
@@ -396,7 +396,7 @@ private:
 
   std::vector<context> m_context;
 
-  Parser_Callback *m_callback;
+  Parser_Callback& m_callback;
 
   std::unique_ptr<Node> m_node{};
   std::unique_ptr<Way> m_way{};
