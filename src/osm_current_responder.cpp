@@ -10,7 +10,6 @@ osm_current_responder::osm_current_responder(mime::type mt, data_selection &s,
                                              std::optional<bbox> b)
     : osm_responder(mt, b), sel(s) {}
 
-osm_current_responder::~osm_current_responder() = default;
 
 void osm_current_responder::write(output_formatter& fmt,
                                   const std::string &generator,

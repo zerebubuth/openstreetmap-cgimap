@@ -18,11 +18,7 @@ way_relations_responder::way_relations_responder(mime::type mt, osm_nwr_id_t id_
   sel.drop_ways();
 }
 
-way_relations_responder::~way_relations_responder() {}
-
 way_relations_handler::way_relations_handler(request &, osm_nwr_id_t id_) : id(id_) {}
-
-way_relations_handler::~way_relations_handler() {}
 
 std::string way_relations_handler::log_name() const { return "way/relations"; }
 

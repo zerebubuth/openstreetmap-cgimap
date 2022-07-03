@@ -32,7 +32,6 @@ changeset_close_responder::changeset_close_responder(
   upd.commit();
 }
 
-changeset_close_responder::~changeset_close_responder() = default;
 
 changeset_close_handler::changeset_close_handler(request &,
                                                    osm_changeset_id_t id_)
@@ -40,7 +39,6 @@ changeset_close_handler::changeset_close_handler(request &,
                               http::method::PUT | http::method::OPTIONS),
       id(id_) {}
 
-changeset_close_handler::~changeset_close_handler() = default;
 
 std::string changeset_close_handler::log_name() const {
   return ((boost::format("changeset/close %1%") % id).str());

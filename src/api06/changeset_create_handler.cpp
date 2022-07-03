@@ -38,13 +38,9 @@ changeset_create_responder::changeset_create_responder(
   upd.commit();
 }
 
-changeset_create_responder::~changeset_create_responder() = default;
-
 changeset_create_handler::changeset_create_handler(request &)
     : payload_enabled_handler(mime::text_plain,
                               http::method::PUT | http::method::OPTIONS) {}
-
-changeset_create_handler::~changeset_create_handler() = default;
 
 std::string changeset_create_handler::log_name() const {
   return ((boost::format("changeset/create")).str());

@@ -51,16 +51,10 @@ changeset_update_sel_responder::changeset_update_sel_responder(
 }
 
 
-changeset_update_responder::~changeset_update_responder() = default;
-
-changeset_update_sel_responder::~changeset_update_sel_responder() = default;
-
 changeset_update_handler::changeset_update_handler(request &req, osm_changeset_id_t id_)
     : payload_enabled_handler(mime::application_xml,
                               http::method::PUT | http::method::OPTIONS),
       id(id_) {}
-
-changeset_update_handler::~changeset_update_handler() = default;
 
 std::string changeset_update_handler::log_name() const {
   return ((boost::format("changeset/update %1%") % id).str());

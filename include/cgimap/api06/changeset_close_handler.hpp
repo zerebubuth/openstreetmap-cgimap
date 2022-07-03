@@ -14,13 +14,11 @@ public:
   changeset_close_responder(mime::type, data_update &, osm_changeset_id_t,
                              const std::string &,
                              std::optional<osm_user_id_t>);
-  ~changeset_close_responder();
 };
 
 class changeset_close_handler : public payload_enabled_handler {
 public:
   changeset_close_handler(request &req, osm_changeset_id_t id);
-  ~changeset_close_handler();
 
   std::string log_name() const override;
   responder_ptr_t responder(data_selection &x) const override;

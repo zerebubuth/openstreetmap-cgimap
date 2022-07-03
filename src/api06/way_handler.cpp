@@ -19,11 +19,7 @@ way_responder::way_responder(mime::type mt, osm_nwr_id_t id_, data_selection &w_
   check_visibility();
 }
 
-way_responder::~way_responder() = default;
-
 way_handler::way_handler(request &, osm_nwr_id_t id_) : id(id_) {}
-
-way_handler::~way_handler() = default;
 
 std::string way_handler::log_name() const { return "way"; }
 

@@ -39,11 +39,11 @@ struct test_request : public request {
   }
 
 protected:
-  void write_header_info(int status, const headers_t &headers) {}
-  std::shared_ptr<output_buffer> get_buffer_internal() {
+  void write_header_info(int status, const headers_t &headers) override {}
+  std::shared_ptr<output_buffer> get_buffer_internal() override {
     return std::shared_ptr<output_buffer>();
   }
-  void finish_internal() {}
+  void finish_internal() override {}
 
 private:
   std::map<std::string, std::string> m_params;

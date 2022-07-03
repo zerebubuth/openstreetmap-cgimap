@@ -17,7 +17,6 @@ public:
 			     osm_changeset_id_t id_,
                              const std::string & payload,
 			     std::optional<osm_user_id_t> user_id);
-  ~changeset_update_responder();
 
 private:
   osm_changeset_id_t id;
@@ -28,7 +27,6 @@ public:
   changeset_update_sel_responder(mime::type,
 			     data_selection & sel,
 			     osm_changeset_id_t id_);
-  ~changeset_update_sel_responder();
 
 private:
   data_selection& sel;
@@ -39,7 +37,6 @@ private:
 class changeset_update_handler : public payload_enabled_handler {
 public:
   changeset_update_handler(request &req, osm_changeset_id_t id);
-  ~changeset_update_handler();
 
   std::string log_name() const override;
   responder_ptr_t responder(data_selection &x) const override;

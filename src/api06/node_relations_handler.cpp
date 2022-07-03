@@ -18,11 +18,7 @@ node_relations_responder::node_relations_responder(mime::type mt, osm_nwr_id_t i
   sel.drop_nodes();
 }
 
-node_relations_responder::~node_relations_responder() {}
-
 node_relations_handler::node_relations_handler(request &, osm_nwr_id_t id_) : id(id_) {}
-
-node_relations_handler::~node_relations_handler() {}
 
 std::string node_relations_handler::log_name() const { return "node/relations"; }
 
