@@ -11,7 +11,6 @@ namespace api06 {
 class relation_responder : public osm_current_responder {
 public:
   relation_responder(mime::type, osm_nwr_id_t, data_selection &);
-  ~relation_responder();
 
 private:
   osm_nwr_id_t id;
@@ -22,7 +21,6 @@ private:
 class relation_handler : public handler {
 public:
   relation_handler(request &req, osm_nwr_id_t id);
-  ~relation_handler();
 
   std::string log_name() const override;
   responder_ptr_t responder(data_selection &x) const override;

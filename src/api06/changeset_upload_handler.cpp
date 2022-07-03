@@ -54,15 +54,11 @@ changeset_upload_responder::changeset_upload_responder(
   upd.commit();
 }
 
-changeset_upload_responder::~changeset_upload_responder() = default;
-
 changeset_upload_handler::changeset_upload_handler(request &,
                                                    osm_changeset_id_t id_)
     : payload_enabled_handler(mime::unspecified_type,
                               http::method::POST | http::method::OPTIONS),
       id(id_) {}
-
-changeset_upload_handler::~changeset_upload_handler() = default;
 
 std::string changeset_upload_handler::log_name() const {
   return ((boost::format("changeset/upload %1%") % id).str());

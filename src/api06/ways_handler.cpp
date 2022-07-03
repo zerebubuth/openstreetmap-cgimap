@@ -38,11 +38,7 @@ ways_responder::ways_responder(mime::type mt, vector<id_version> ids_,
   }
 }
 
-ways_responder::~ways_responder() = default;
-
 ways_handler::ways_handler(request &req) : ids(validate_request(req)) {}
-
-ways_handler::~ways_handler() = default;
 
 std::string ways_handler::log_name() const {
   stringstream msg;

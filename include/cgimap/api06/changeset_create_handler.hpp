@@ -14,13 +14,11 @@ public:
   changeset_create_responder(mime::type, data_update &,
                              const std::string &,
                              std::optional<osm_user_id_t>);
-  ~changeset_create_responder();
 };
 
 class changeset_create_handler : public payload_enabled_handler {
 public:
   changeset_create_handler(request &req);
-  ~changeset_create_handler();
 
   std::string log_name() const override;
   responder_ptr_t responder(data_selection &x) const override;

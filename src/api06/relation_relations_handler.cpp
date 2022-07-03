@@ -19,11 +19,7 @@ relation_relations_responder::relation_relations_responder(mime::type mt, osm_nw
     sel.drop_relations();
 }
 
-relation_relations_responder::~relation_relations_responder() {}
-
 relation_relations_handler::relation_relations_handler(request &, osm_nwr_id_t id_) : id(id_) {}
-
-relation_relations_handler::~relation_relations_handler() {}
 
 std::string relation_relations_handler::log_name() const { return "relation/relations"; }
 

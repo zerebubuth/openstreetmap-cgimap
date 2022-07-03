@@ -39,8 +39,6 @@ map_responder::map_responder(mime::type mt, bbox b, data_selection &x)
   }
 }
 
-map_responder::~map_responder() = default;
-
 map_handler::map_handler(request &req) : bounds(validate_request(req)) {
   // map calls typically have a Content-Disposition header saying that
   // what's coming back is an attachment.
@@ -59,8 +57,6 @@ map_handler::map_handler(request &req) : bounds(validate_request(req)) {
   //
   req.add_success_header("Content-Disposition", "attachment; filename=\"map.osm\"");
 }
-
-map_handler::~map_handler() = default;
 
 string map_handler::log_name() const {
   return (boost::format("map(%1%,%2%,%3%,%4%)") % bounds.minlon %

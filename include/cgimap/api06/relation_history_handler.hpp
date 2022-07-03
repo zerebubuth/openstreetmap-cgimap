@@ -10,7 +10,6 @@ namespace api06 {
 class relation_history_responder : public osm_current_responder {
 public:
   relation_history_responder(mime::type, osm_nwr_id_t, data_selection &);
-  ~relation_history_responder();
 
 private:
   osm_nwr_id_t id;
@@ -19,7 +18,6 @@ private:
 class relation_history_handler : public handler {
 public:
   relation_history_handler(request &, osm_nwr_id_t);
-  ~relation_history_handler();
 
   std::string log_name() const override;
   responder_ptr_t responder(data_selection &) const override;

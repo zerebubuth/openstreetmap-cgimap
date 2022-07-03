@@ -16,8 +16,6 @@ public:
   osm_current_responder(mime::type, data_selection &s,
                         std::optional<bbox> bounds = std::optional<bbox>());
 
-  virtual ~osm_current_responder();
-
   // writes whatever is in the tmp_nodes/ways/relations tables to the given
   // formatter.
   void write(output_formatter& f,

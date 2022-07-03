@@ -26,8 +26,6 @@ relation_full_responder::relation_full_responder(mime::type mt_, osm_nwr_id_t id
   sel.select_relations_members_of_relations();
 }
 
-relation_full_responder::~relation_full_responder() = default;
-
 void relation_full_responder::check_visibility() {
   switch (sel.check_relation_visibility(id)) {
 
@@ -53,8 +51,6 @@ relation_full_handler::relation_full_handler(request &, osm_nwr_id_t id_)
       (boost::format("starting relation/full handler with id = %1%") % id)
           .str());
 }
-
-relation_full_handler::~relation_full_handler() = default;
 
 std::string relation_full_handler::log_name() const { return "relation/full"; }
 
