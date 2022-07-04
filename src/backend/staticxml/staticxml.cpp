@@ -12,7 +12,7 @@
 #include <unordered_set>
 
 namespace po = boost::program_options;
-using std::shared_ptr;
+
 using std::string;
 using api06::id_version;
 
@@ -805,19 +805,19 @@ struct staticxml_backend : public backend {
   const string &name() const { return m_name; }
   const po::options_description &options() const { return m_options; }
 
-  shared_ptr<data_selection::factory> create(const po::variables_map &opts) {
+  std::unique_ptr<data_selection::factory> create(const po::variables_map &opts) {
     std::string file = opts["file"].as<std::string>();
-    return std::make_shared<factory>(file);
+    return std::make_unique<factory>(file);
   }
 
-  shared_ptr<data_update::factory> create_data_update(const po::variables_map &) {
+  std::unique_ptr<data_update::factory> create_data_update(const po::variables_map &) {
     return nullptr;   // Data update operations not supported by staticxml backend
   }
 
 
-  std::shared_ptr<oauth::store> create_oauth_store(
+  std::unique_ptr<oauth::store> create_oauth_store(
     const po::variables_map &) {
-    return std::shared_ptr<oauth::store>();
+    return std::unique_ptr<oauth::store>();
   }
 
 private:
@@ -827,6 +827,6 @@ private:
 
 } // anonymous namespace
 
-std::shared_ptr<backend> make_staticxml_backend() {
-  return std::make_shared<staticxml_backend>();
+std::unique_ptr<backend> make_staticxml_backend() {
+  return std::make_unique<staticxml_backend>();
 }

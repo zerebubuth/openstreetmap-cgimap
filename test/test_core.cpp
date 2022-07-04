@@ -478,8 +478,8 @@ void check_response(std::istream &expected, std::istream &actual) {
  */
 void run_test(fs::path test_case, rate_limiter &limiter,
               const std::string &generator, routes &route,
-              std::shared_ptr<data_selection::factory> factory,
-              std::shared_ptr<oauth::store> store) {
+              data_selection::factory& factory,
+              oauth::store* store) {
   try {
     test_request req;
 
@@ -488,7 +488,7 @@ void run_test(fs::path test_case, rate_limiter &limiter,
     setup_request_headers(req, in);
 
     // execute the request
-    process_request(req, limiter, generator, route, *factory, nullptr, store.get());
+    process_request(req, limiter, generator, route, factory, nullptr, store);
 
     // compare the result to what we're expecting
     try {
@@ -653,7 +653,7 @@ int main(int argc, char *argv[]) {
   fs::path oauth_file = test_directory / "oauth.json";
   std::vector<fs::path> test_cases;
 
-  std::shared_ptr<oauth::store> store;
+  std::unique_ptr<oauth::store> store;
 
   try {
     if (fs::is_directory(test_directory) == false) {
@@ -685,7 +685,7 @@ int main(int argc, char *argv[]) {
           ((boost::format("%1%, while reading expected JSON.") % ex.what()).str());
       }
 
-      store = std::make_shared<test_oauth>(config);
+      store = std::make_unique<test_oauth>(config);
     }
 
   } catch (const std::exception &e) {
@@ -710,7 +710,7 @@ int main(int argc, char *argv[]) {
     for (fs::path test_case : test_cases) {
       std::string generator =
           (boost::format(PACKAGE_STRING " (test %1%)") % test_case).str();
-      run_test(test_case, limiter, generator, route, factory, store);
+      run_test(test_case, limiter, generator, route, *factory, store.get());
     }
 
   } catch (const std::exception &e) {
