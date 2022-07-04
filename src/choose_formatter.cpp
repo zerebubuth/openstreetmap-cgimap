@@ -262,14 +262,14 @@ std::unique_ptr<output_formatter> create_formatter(mime::type best_type, output_
 
   switch (best_type) {
     case mime::application_xml:
-      return std::unique_ptr<output_formatter>(new xml_formatter(std::unique_ptr<xml_writer>(new xml_writer(out, true))));
+      return std::make_unique<xml_formatter>(std::make_unique<xml_writer>(out, true));
 
 #ifdef HAVE_YAJL
     case mime::application_json:
-      return std::unique_ptr<output_formatter>(new json_formatter(std::unique_ptr<json_writer>(new json_writer(out, false))));
+      return std::make_unique<json_formatter>(std::make_unique<json_writer>(out, false));
 #endif
     case mime::text_plain:
-      return std::unique_ptr<output_formatter>(new text_formatter(std::unique_ptr<text_writer>(new text_writer(out, true))));
+      return std::make_unique<text_formatter>(std::make_unique<text_writer>(out, true));
 
     default:
       ostringstream ostr;

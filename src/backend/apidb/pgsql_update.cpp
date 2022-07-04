@@ -112,29 +112,25 @@ bool pgsql_update::is_api_write_disabled() const {
 std::unique_ptr<api06::Changeset_Updater>
 pgsql_update::get_changeset_updater(osm_changeset_id_t changeset, osm_user_id_t uid)
 {
-  std::unique_ptr<api06::Changeset_Updater> changeset_updater(new ApiDB_Changeset_Updater(m, changeset, uid));
-  return changeset_updater;
+  return std::make_unique<ApiDB_Changeset_Updater>(m, changeset, uid);
 }
 
 std::unique_ptr<api06::Node_Updater>
 pgsql_update::get_node_updater(api06::OSMChange_Tracking &ct)
 {
-  std::unique_ptr<api06::Node_Updater> node_updater(new ApiDB_Node_Updater(m, ct));
-  return node_updater;
+  return std::make_unique<ApiDB_Node_Updater>(m, ct);
 }
 
 std::unique_ptr<api06::Way_Updater>
 pgsql_update::get_way_updater(api06::OSMChange_Tracking &ct)
 {
-  std::unique_ptr<api06::Way_Updater> way_updater(new ApiDB_Way_Updater(m, ct));
-  return way_updater;
+  return std::make_unique<ApiDB_Way_Updater>(m, ct);
 }
 
 std::unique_ptr<api06::Relation_Updater>
 pgsql_update::get_relation_updater(api06::OSMChange_Tracking &ct)
 {
-  std::unique_ptr<api06::Relation_Updater> relation_updater(new ApiDB_Relation_Updater(m, ct));
-  return relation_updater;
+  return std::make_unique<ApiDB_Relation_Updater>(m, ct);
 }
 
 void pgsql_update::commit() {
@@ -173,12 +169,12 @@ pgsql_update::factory::make_data_update(Transaction_Owner_Base& to) {
 std::unique_ptr<Transaction_Owner_Base>
 pgsql_update::factory::get_default_transaction()
 {
-  return std::unique_ptr<Transaction_Owner_ReadWrite>(new Transaction_Owner_ReadWrite(std::ref(m_connection)));
+  return std::make_unique<Transaction_Owner_ReadWrite>(std::ref(m_connection));
 }
 
 std::unique_ptr<Transaction_Owner_Base>
 pgsql_update::factory::get_read_only_transaction()
 {
-  return std::unique_ptr<Transaction_Owner_ReadOnly>(new Transaction_Owner_ReadOnly(std::ref(m_connection)));
+  return std::make_unique<Transaction_Owner_ReadOnly>(std::ref(m_connection));
 }
 

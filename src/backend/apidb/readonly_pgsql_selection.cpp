@@ -805,7 +805,7 @@ readonly_pgsql_selection::factory::make_selection(Transaction_Owner_Base& to) {
 std::unique_ptr<Transaction_Owner_Base>
 readonly_pgsql_selection::factory::get_default_transaction()
 {
-  return std::unique_ptr<Transaction_Owner_ReadOnly>(new Transaction_Owner_ReadOnly(std::ref(m_connection)));
+  return std::make_unique<Transaction_Owner_ReadOnly>(std::ref(m_connection));
 }
 
 

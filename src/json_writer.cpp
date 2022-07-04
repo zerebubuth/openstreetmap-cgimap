@@ -35,7 +35,7 @@ static void wrap_write(void *context, const char *str, unsigned int len) {
 }
 
 json_writer::json_writer(output_buffer &out, bool indent)
-    : pimpl(std::unique_ptr<pimpl_>(new pimpl_())), out(out) {
+    : pimpl(std::make_unique<pimpl_>()), out(out) {
 #ifdef HAVE_YAJL2
   pimpl->gen = yajl_gen_alloc(NULL);
 

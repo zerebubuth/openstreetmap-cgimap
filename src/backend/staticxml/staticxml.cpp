@@ -787,7 +787,7 @@ struct factory : public data_selection::factory {
   }
 
   virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() {
-    return std::unique_ptr<Transaction_Owner_Void>(new Transaction_Owner_Void());
+    return std::make_unique<Transaction_Owner_Void>();
   }
 
 private:

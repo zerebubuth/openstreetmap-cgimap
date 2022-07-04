@@ -56,7 +56,7 @@ fcgi_request::fcgi_request(int socket, const std::chrono::system_clock::time_poi
     throw runtime_error("Couldn't initialise FCGX request structure.");
   }
   m_impl->now = now;
-  m_buffer = std::shared_ptr<output_buffer>(new fcgi_buffer(m_impl->req));
+  m_buffer = std::make_shared<fcgi_buffer>(m_impl->req);
 }
 
 fcgi_request::~fcgi_request() { FCGX_Free(&m_impl->req, true); }

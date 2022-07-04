@@ -291,7 +291,7 @@ int main(int argc, char **argv) {
     get_options(argc, argv, options);
 
     // set global_settings based on provided options
-    global_settings::set_configuration(std::unique_ptr<global_settings_base>(new global_settings_via_options(options)));
+    global_settings::set_configuration(std::make_unique<global_settings_via_options>(options));
 
     // get the socket to use
     if (options.count("socket")) {
