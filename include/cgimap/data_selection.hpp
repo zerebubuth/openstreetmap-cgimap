@@ -21,6 +21,11 @@ public:
 
   virtual ~data_selection() = default;
 
+  data_selection() = default;
+
+  data_selection(const data_selection&) = delete;
+  data_selection& operator=(const data_selection&) = delete;
+
   /******************* output functions ************************/
 
   /// write the nodes to an output formatter
@@ -164,6 +169,11 @@ public:
    */
   struct factory {
     virtual ~factory() = default;
+
+    factory() = default;
+
+    factory(const factory&) = delete;
+    factory& operator=(const factory&) = delete;
 
     /// get a handle to a selection which can be used to build up
     /// a working set of data.
