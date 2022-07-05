@@ -168,26 +168,13 @@ void process_not_allowed(request &req, const http::method_not_allowed& e) {
      .finish();
 }
 
-/**
- * process a GET request.
- */
-std::tuple<string, size_t>
-process_get_request(request &req, handler_ptr_t handler,
-                    data_selection& selection,
-                    const string &ip, const string &generator) {
-  // request start logging
-  const std::string request_name = handler->log_name();
-  logger::message(format("Started request for %1% from %2%") % request_name %
-                  ip);
-
-  // constructor of responder handles dynamic validation (i.e: with db access).
-  responder_ptr_t responder = handler->responder(selection);
-
+std::size_t generate_response(request &req, responder &responder, const string &generator)
+{
   // get encoding to use
   auto encoding = get_encoding(req);
 
   // figure out best mime type
-  const mime::type best_mime_type = choose_best_mime_type(req, *responder);
+  const mime::type best_mime_type = choose_best_mime_type(req, responder);
 
   // TODO: use handler/responder to setup response headers.
   // write the response header
@@ -197,7 +184,7 @@ process_get_request(request &req, handler_ptr_t handler,
      .add_header("Content-Encoding", encoding->name())
      .add_header("Cache-Control", "private, max-age=0, must-revalidate");
 
-  // create the XML writer with the FCGI streams as output
+  // create the XML/JSON/text writer with the FCGI streams as output
   auto out = encoding->buffer(req.get_buffer());
 
   // create the correct mime type output formatter.
@@ -205,7 +192,7 @@ process_get_request(request &req, handler_ptr_t handler,
 
   try {
     // call to write the response
-    responder->write(*o_formatter, generator, req.get_current_time());
+    responder.write(*o_formatter, generator, req.get_current_time());
 
     // ensure the request is finished
     req.finish();
@@ -228,10 +215,28 @@ process_get_request(request &req, handler_ptr_t handler,
     o_formatter->error(e.what());
   }
 
-  return std::make_tuple(request_name, out->written());
+  return out->written();
 }
 
+/**
+ * process a GET request.
+ */
+std::tuple<string, size_t>
+process_get_request(request &req, handler_ptr_t handler,
+                    data_selection& selection,
+                    const string &ip, const string &generator) {
+  // request start logging
+  const std::string request_name = handler->log_name();
+  logger::message(format("Started request for %1% from %2%") % request_name % ip);
 
+  // Collect all object ids (nodes/ways/relations/...) for the respective endpoint
+  responder_ptr_t responder = handler->responder(selection);
+
+  // Generate full XML/JSON/text response message for previously collected object ids
+  std::size_t bytes_written = generate_response(req, *responder, generator);
+
+  return std::make_tuple(request_name, bytes_written);
+}
 
 /**
  * process a POST/PUT request.
@@ -242,16 +247,17 @@ process_post_put_request(request &req, handler_ptr_t handler,
                     data_update::factory& update_factory,
                     std::optional<osm_user_id_t> user_id,
                     const string &ip, const string &generator) {
+
+  std::size_t bytes_written = 0;
+
   // request start logging
   const std::string request_name = handler->log_name();
-  logger::message(format("Started request for %1% from %2%") % request_name %
-                  ip);
+  logger::message(format("Started request for %1% from %2%") % request_name % ip);
 
   auto pe_handler = std::static_pointer_cast< payload_enabled_handler >(handler);
 
   if (pe_handler == nullptr)
     throw http::server_error("HTTP method is not payload enabled");
-
 
   auto payload = req.get_payload();
   responder_ptr_t responder;
@@ -263,72 +269,30 @@ process_post_put_request(request &req, handler_ptr_t handler,
 
   check_db_readonly_mode(*data_update);
 
-  // Executing the responder constructor is expected to call db commit()
-  // rw_transaction is no longer usable after this point
+  // Executing the responder constructor will process the payload, perform database CRUD operations
+  // as needed and eventually calls db commit()
+  // Note: due to the database commit, rw_transaction can no longer be used
   responder = pe_handler->responder(*data_update, payload, user_id);
 
-  // Step 2 (optional): read back result from database to generate response
-
-  // Create a new read only transaction based on the update factory
-  // (which possibly uses a different db/user compared to the data_selection factory)
-  auto read_only_transaction = update_factory.get_read_only_transaction();
-  // create a data selection for the request
-  auto data_selection = factory.make_selection(*read_only_transaction);
-
-  // Instantiate data selection based responder, if required to produce the output message
-  // This instance replaces the previous responder instance, which is no longer needed.
+  // Step 2: do we need to read back some data from the database to generate a response?
   if (pe_handler->requires_selection_after_update()) {
-      responder = pe_handler->responder(*data_selection);
+
+    // Create a new read only transaction based on the update factory
+    // (might use a different db/user than what the data_selection factory would use)
+    auto read_only_transaction = update_factory.get_read_only_transaction();
+
+    // create a data selection for the request
+    auto data_selection = factory.make_selection(*read_only_transaction);
+    auto sel_responder = pe_handler->responder(*data_selection);
+    bytes_written = generate_response(req, *sel_responder, generator);
+  }
+  else
+  {
+    // Step 1 already collected all data needed to generate a response message
+    bytes_written = generate_response(req, *responder, generator);
   }
 
-  // get encoding to use
-  auto encoding = get_encoding(req);
-
-//  // figure out best mime type
-  const mime::type best_mime_type = choose_best_mime_type(req, *responder);
-
-  //mime::type best_mime_type = mime::type::text_xml;
-
-  // TODO: use handler/responder to setup response headers.
-  // write the response header
-  req.status(200)
-     .add_header("Content-Type", (boost::format("%1%; charset=utf-8") %
-                                  mime::to_string(best_mime_type)).str())
-     .add_header("Content-Encoding", encoding->name())
-     .add_header("Cache-Control", "private, max-age=0, must-revalidate");
-
-  // create the XML writer with the FCGI streams as output
-  auto out = encoding->buffer(req.get_buffer());
-
-  // create the correct mime type output formatter.
-  auto o_formatter = create_formatter(best_mime_type, *out);
-
-  try {
-//    // call to write the response
-    responder->write(*o_formatter, generator, req.get_current_time());
-
-    // ensure the request is finished
-    req.finish();
-
-    // make sure all bytes have been written. note that the writer can
-    // throw an exception here, leaving the xml document in a
-    // half-written state...
-    o_formatter->flush();
-    out->flush();
-
-  } catch (const output_writer::write_error &e) {
-    // don't do anything - just go on to the next request.
-    logger::message(format("Caught write error, aborting request: %1%") %
-                    e.what());
-
-  } catch (const std::exception &e) {
-    // errors here are unrecoverable (fatal to the request but maybe
-    // not fatal to the process) since we already started writing to
-    // the client.
-    o_formatter->error(e.what());
-  }
-
-  return std::make_tuple(request_name, out->written());
+  return std::make_tuple(request_name, bytes_written);
 }
 
 
@@ -530,7 +494,7 @@ void process_request(request &req, rate_limiter &limiter,
     const std::string ip = fcgi_get_env(req, "REMOTE_ADDR");
 
     // fetch and parse the request method
-    std::optional<http::method> maybe_method =  http::parse_method(fcgi_get_env(req, "REQUEST_METHOD"));
+    std::optional<http::method> maybe_method = http::parse_method(fcgi_get_env(req, "REQUEST_METHOD"));
 
     auto default_transaction = factory.get_default_transaction();
 
@@ -593,23 +557,12 @@ void process_request(request &req, rate_limiter &limiter,
 	break;
 
       case http::method::POST:
-	{
-	  validate_user_db_update_permission(user_id, *selection, allow_api_write);
-
-	  if (update_factory == nullptr)
-	    throw http::bad_request("Backend does not support POST requests");
-
-	  std::tie(request_name, bytes_written) =
-	      process_post_put_request(req, handler, factory, *update_factory, user_id, ip, generator);
-	}
-	break;
-
       case http::method::PUT:
 	{
 	  validate_user_db_update_permission(user_id, *selection, allow_api_write);
 
 	  if (update_factory == nullptr)
-	    throw http::bad_request("Backend does not support PUT requests");
+	    throw http::bad_request("Backend does not support given HTTP method");
 
 	  std::tie(request_name, bytes_written) =
 	      process_post_put_request(req, handler, factory, *update_factory, user_id, ip, generator);

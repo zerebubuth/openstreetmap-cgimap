@@ -222,7 +222,7 @@ std::string mime_types_to_string(const std::list<mime::type> mime_types)
 
 }
 
-mime::type choose_best_mime_type(request &req, responder& hptr) {
+mime::type choose_best_mime_type(request &req, const responder& hptr) {
   // figure out what, if any, the Accept-able resource mime types are
   acceptable_types types = header_mime_type(req);
   const list<mime::type> types_available = hptr.types_available();
