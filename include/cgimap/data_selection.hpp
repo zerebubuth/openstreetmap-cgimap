@@ -26,6 +26,9 @@ public:
   data_selection(const data_selection&) = delete;
   data_selection& operator=(const data_selection&) = delete;
 
+  data_selection(data_selection&&) = delete;
+  data_selection& operator=(data_selection&&) = delete;
+
   /******************* output functions ************************/
 
   /// write the nodes to an output formatter
@@ -174,6 +177,9 @@ public:
 
     factory(const factory&) = delete;
     factory& operator=(const factory&) = delete;
+
+    factory(factory&&) = delete;
+    factory& operator=(factory&&) = delete;
 
     /// get a handle to a selection which can be used to build up
     /// a working set of data.

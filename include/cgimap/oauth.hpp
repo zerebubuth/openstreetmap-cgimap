@@ -63,6 +63,9 @@ struct store
 
   store(const store&) = delete;
   store& operator=(const store&) = delete;
+
+  store(store&&) = delete;
+  store& operator=(store&&) = delete;
 };
 
 namespace validity {

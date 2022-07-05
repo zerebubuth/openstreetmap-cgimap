@@ -26,6 +26,9 @@ public:
   data_update(const data_update&) = delete;
   data_update& operator=(const data_update&) = delete;
 
+  data_update(data_update&&) = delete;
+  data_update& operator=(data_update&&) = delete;
+
   virtual std::unique_ptr<api06::Changeset_Updater>
   get_changeset_updater(osm_changeset_id_t _changeset, osm_user_id_t _uid) = 0;
 
@@ -56,6 +59,9 @@ public:
 
     factory(const factory&) = delete;
     factory& operator=(const factory&) = delete;
+
+    factory(factory&&) = delete;
+    factory& operator=(factory&&) = delete;
 
     /// get a handle to a selection which can be used to build up
     /// a working set of data.
