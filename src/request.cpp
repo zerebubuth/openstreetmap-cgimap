@@ -42,20 +42,20 @@ request& request::add_success_header(const std::string &key, const std::string &
   return *this;
 }
 
-std::shared_ptr<output_buffer> request::get_buffer() {
+output_buffer& request::get_buffer() {
   check_workflow(status_BODY);
   return get_buffer_internal();
 }
 
 int request::put(const char *ptr, int len) {
-  return get_buffer()->write(ptr, len);
+  return get_buffer().write(ptr, len);
 }
 
 int request::put(const std::string &str) {
-  return get_buffer()->write(str.c_str(), str.size());
+  return get_buffer().write(str.c_str(), str.size());
 }
 
-void request::flush() { get_buffer()->flush(); }
+void request::flush() { get_buffer().flush(); }
 
 void request::finish() {
   check_workflow(status_FINISHED);

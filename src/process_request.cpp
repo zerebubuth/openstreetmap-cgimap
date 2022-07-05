@@ -184,7 +184,7 @@ process_get_request(request &req, handler_ptr_t handler,
   responder_ptr_t responder = handler->responder(selection);
 
   // get encoding to use
-  std::shared_ptr<http::encoding> encoding = get_encoding(req);
+  auto encoding = get_encoding(req);
 
   // figure out best mime type
   const mime::type best_mime_type = choose_best_mime_type(req, *responder);
@@ -198,7 +198,7 @@ process_get_request(request &req, handler_ptr_t handler,
      .add_header("Cache-Control", "private, max-age=0, must-revalidate");
 
   // create the XML writer with the FCGI streams as output
-  std::shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
+  auto out = encoding->buffer(req.get_buffer());
 
   // create the correct mime type output formatter.
   auto o_formatter = create_formatter(best_mime_type, *out);
@@ -247,7 +247,7 @@ process_post_put_request(request &req, handler_ptr_t handler,
   logger::message(format("Started request for %1% from %2%") % request_name %
                   ip);
 
-  std::shared_ptr< payload_enabled_handler > pe_handler = std::static_pointer_cast< payload_enabled_handler >(handler);
+  auto pe_handler = std::static_pointer_cast< payload_enabled_handler >(handler);
 
   if (pe_handler == nullptr)
     throw http::server_error("HTTP method is not payload enabled");
@@ -282,7 +282,7 @@ process_post_put_request(request &req, handler_ptr_t handler,
   }
 
   // get encoding to use
-  std::shared_ptr<http::encoding> encoding = get_encoding(req);
+  auto encoding = get_encoding(req);
 
 //  // figure out best mime type
   const mime::type best_mime_type = choose_best_mime_type(req, *responder);
@@ -298,7 +298,7 @@ process_post_put_request(request &req, handler_ptr_t handler,
      .add_header("Cache-Control", "private, max-age=0, must-revalidate");
 
   // create the XML writer with the FCGI streams as output
-  std::shared_ptr<output_buffer> out = encoding->buffer(req.get_buffer());
+  auto out = encoding->buffer(req.get_buffer());
 
   // create the correct mime type output formatter.
   auto o_formatter = create_formatter(best_mime_type, *out);
@@ -354,7 +354,7 @@ process_head_request(request &req, handler_ptr_t handler,
   responder_ptr_t responder = handler->responder(selection);
 
   // get encoding to use
-  std::shared_ptr<http::encoding> encoding = get_encoding(req);
+  auto encoding = get_encoding(req);
 
   // figure out best mime type
   const mime::type best_mime_type = choose_best_mime_type(req, *responder);

@@ -51,7 +51,6 @@
 using std::list;
 using std::string;
 using std::pair;
-using std::shared_ptr;
 using std::unique_ptr;
 
 using boost::fusion::make_cons;

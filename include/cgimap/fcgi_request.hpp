@@ -24,13 +24,13 @@ struct fcgi_request : public request {
 
 protected:
   void write_header_info(int status, const request::headers_t &headers) override;
-  std::shared_ptr<output_buffer> get_buffer_internal() override;
+  output_buffer& get_buffer_internal() override;
   void finish_internal() override;
 
 private:
   struct pimpl;
   std::unique_ptr<pimpl> m_impl;
-  std::shared_ptr<output_buffer> m_buffer;
+  std::unique_ptr<output_buffer> m_buffer;
 };
 
 #endif /* FCGI_REQUEST_HPP */

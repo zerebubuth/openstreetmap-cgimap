@@ -26,7 +26,7 @@ public:
   /**
    * Methods.
    */
-  zlib_output_buffer(std::shared_ptr<output_buffer> o, mode m);
+  zlib_output_buffer(output_buffer& o, mode m);
   zlib_output_buffer(const zlib_output_buffer &old);
   virtual ~zlib_output_buffer();
   int write(const char *buffer, int len) override;
@@ -37,7 +37,7 @@ public:
 private:
   void flush_output();
 
-  std::shared_ptr<output_buffer> out;
+  output_buffer& out;
   // keep track of bytes written because the z_stream struct doesn't seem to
   // update unless its flushed.
   size_t bytes_in;

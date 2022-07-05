@@ -55,7 +55,7 @@ struct test_request : public request {
 
 protected:
   void write_header_info(int status, const headers_t &headers) override;
-  std::shared_ptr<output_buffer> get_buffer_internal() override;
+  output_buffer& get_buffer_internal() override;
   void finish_internal() override;
 
 private:
@@ -66,6 +66,7 @@ private:
   std::map<std::string, std::string> m_params;
   std::chrono::system_clock::time_point m_now;
   std::string m_payload;
+  std::unique_ptr<test_output_buffer> test_ob_buffer;
 };
 
 #endif /* TEST_TEST_REQUEST_HPP */

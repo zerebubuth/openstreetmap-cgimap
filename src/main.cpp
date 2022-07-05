@@ -47,7 +47,6 @@ using std::vector;
 using std::string;
 using std::map;
 using std::ostringstream;
-using std::shared_ptr;
 using boost::format;
 
 namespace al = boost::algorithm;

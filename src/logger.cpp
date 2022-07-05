@@ -14,12 +14,11 @@ using boost::format;
 
 namespace logger {
 
-static std::shared_ptr<ostream> stream;
+static std::unique_ptr<ostream> stream;
 static pid_t pid;
 
 void initialise(const string &filename) {
-  stream = std::shared_ptr<ostream>(
-      new ofstream(filename.c_str(), std::ios_base::out | std::ios_base::app));
+  stream = std::make_unique<ofstream>(filename.c_str(), std::ios_base::out | std::ios_base::app);
   pid = getpid();
 }
 

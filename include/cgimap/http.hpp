@@ -224,12 +224,13 @@ private:
   const std::string name_;
 
 public:
-  encoding(const std::string &name) : name_(name){};
+  encoding(const std::string &name) : name_(name){}
   virtual ~encoding() = default;
+
   const std::string &name() const { return name_; };
-  virtual std::shared_ptr<output_buffer>
-  buffer(std::shared_ptr<output_buffer> out) {
-    return out;
+
+  virtual std::unique_ptr<output_buffer>  buffer(output_buffer& out) {
+    return std::make_unique<identity_output_buffer>(out);
   }
 };
 
@@ -241,21 +242,18 @@ public:
 #ifdef HAVE_LIBZ
 class deflate : public encoding {
 public:
-  deflate() : encoding("deflate"){};
-  virtual std::shared_ptr<output_buffer>
-  buffer(std::shared_ptr<output_buffer> out) {
-    return std::shared_ptr<zlib_output_buffer>(
-        new zlib_output_buffer(out, zlib_output_buffer::zlib));
+  deflate() : encoding("deflate"){}
+
+  std::unique_ptr<output_buffer> buffer(output_buffer& out) override {
+    return std::make_unique<zlib_output_buffer>(out, zlib_output_buffer::zlib);
   }
 };
 
 class gzip : public encoding {
 public:
-  gzip() : encoding("gzip"){};
-  virtual std::shared_ptr<output_buffer>
-  buffer(std::shared_ptr<output_buffer> out) {
-    return std::shared_ptr<zlib_output_buffer>(
-        new zlib_output_buffer(out, zlib_output_buffer::gzip));
+  gzip() : encoding("gzip"){}
+  std::unique_ptr<output_buffer> buffer(output_buffer& out) override {
+    return std::make_unique<zlib_output_buffer>(out, zlib_output_buffer::gzip);
   }
 };
 #endif /* HAVE_LIBZ */
@@ -264,8 +262,7 @@ public:
  * Parses an Accept-Encoding header and returns the chosen
  * encoding.
  */
-std::shared_ptr<http::encoding>
-choose_encoding(const std::string &accept_encoding);
+std::unique_ptr<http::encoding> choose_encoding(const std::string &accept_encoding);
 
 std::unique_ptr<ZLibBaseDecompressor> get_content_encoding_handler(const std::string &content_encoding);
 

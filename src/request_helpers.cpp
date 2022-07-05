@@ -88,13 +88,13 @@ std::string get_request_path(request &req) {
 /**
  * get encoding to use for response.
  */
-std::shared_ptr<http::encoding> get_encoding(request &req) {
+std::unique_ptr<http::encoding> get_encoding(request &req) {
   const char *accept_encoding = req.get_param("HTTP_ACCEPT_ENCODING");
 
   if (accept_encoding) {
     return http::choose_encoding(string(accept_encoding));
   } else {
-    return std::shared_ptr<http::identity>(new http::identity());
+    return std::make_unique<http::identity>();
   }
 }
 
@@ -203,6 +203,6 @@ private:
 
 } // anonymous namespace
 
-std::shared_ptr<output_buffer> make_output_buffer(request &req) {
-  return std::shared_ptr<output_buffer>(new fcgi_output_buffer(req));
+std::unique_ptr<output_buffer> make_output_buffer(request &req) {
+  return std::make_unique<fcgi_output_buffer>(req);
 }
