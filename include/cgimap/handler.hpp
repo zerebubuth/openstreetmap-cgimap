@@ -69,7 +69,7 @@ protected:
   http::method m_allowed_methods;
 };
 
-using handler_ptr_t = std::shared_ptr<handler>;
+using handler_ptr_t = std::unique_ptr<handler>;
 
 
 class payload_enabled_handler : public handler {

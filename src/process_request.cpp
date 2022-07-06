@@ -150,9 +150,9 @@ void respond_error(const http::exception &e, request &r) {
  * Return a 405 error.
  */
 
-void process_not_allowed(request &req, handler_ptr_t handler) {
+void process_not_allowed(request &req, handler& handler) {
   req.status(405)
-     .add_header("Allow", http::list_methods(handler->allowed_methods()))
+     .add_header("Allow", http::list_methods(handler.allowed_methods()))
      .add_header("Content-Type", "text/html")
      .add_header("Content-Length", "0")
      .add_header("Cache-Control", "no-cache")
@@ -222,15 +222,15 @@ std::size_t generate_response(request &req, responder &responder, const string &
  * process a GET request.
  */
 std::tuple<string, size_t>
-process_get_request(request &req, handler_ptr_t handler,
+process_get_request(request &req, handler& handler,
                     data_selection& selection,
                     const string &ip, const string &generator) {
   // request start logging
-  const std::string request_name = handler->log_name();
+  const std::string request_name = handler.log_name();
   logger::message(format("Started request for %1% from %2%") % request_name % ip);
 
   // Collect all object ids (nodes/ways/relations/...) for the respective endpoint
-  responder_ptr_t responder = handler->responder(selection);
+  responder_ptr_t responder = handler.responder(selection);
 
   // Generate full XML/JSON/text response message for previously collected object ids
   std::size_t bytes_written = generate_response(req, *responder, generator);
@@ -242,7 +242,7 @@ process_get_request(request &req, handler_ptr_t handler,
  * process a POST/PUT request.
  */
 std::tuple<string, size_t>
-process_post_put_request(request &req, handler_ptr_t handler,
+process_post_put_request(request &req, handler& handler,
                     data_selection::factory& factory,
                     data_update::factory& update_factory,
                     std::optional<osm_user_id_t> user_id,
@@ -251,45 +251,49 @@ process_post_put_request(request &req, handler_ptr_t handler,
   std::size_t bytes_written = 0;
 
   // request start logging
-  const std::string request_name = handler->log_name();
+  const std::string request_name = handler.log_name();
   logger::message(format("Started request for %1% from %2%") % request_name % ip);
 
-  auto pe_handler = std::static_pointer_cast< payload_enabled_handler >(handler);
+  try {
 
-  if (pe_handler == nullptr)
+    payload_enabled_handler& pe_handler = dynamic_cast< payload_enabled_handler& >(handler);
+
+    auto payload = req.get_payload();
+    responder_ptr_t responder;
+
+    // Step 1: execute database update
+    auto rw_transaction = update_factory.get_default_transaction();
+
+    auto data_update = update_factory.make_data_update(*rw_transaction);
+
+    check_db_readonly_mode(*data_update);
+
+    // Executing the responder constructor will process the payload, perform database CRUD operations
+    // as needed and eventually calls db commit()
+    // Note: due to the database commit, rw_transaction can no longer be used
+    responder = pe_handler.responder(*data_update, payload, user_id);
+
+    // Step 2: do we need to read back some data from the database to generate a response?
+    if (pe_handler.requires_selection_after_update()) {
+
+      // Create a new read only transaction based on the update factory
+      // (might use a different db/user than what the data_selection factory would use)
+      auto read_only_transaction = update_factory.get_read_only_transaction();
+
+      // create a data selection for the request
+      auto data_selection = factory.make_selection(*read_only_transaction);
+      auto sel_responder = pe_handler.responder(*data_selection);
+      bytes_written = generate_response(req, *sel_responder, generator);
+    }
+    else
+    {
+      // Step 1 already collected all data needed to generate a response message
+      bytes_written = generate_response(req, *responder, generator);
+    }
+
+  } catch(std::bad_cast&) {
+    // This may not happen, see static_assert in routes.cpp
     throw http::server_error("HTTP method is not payload enabled");
-
-  auto payload = req.get_payload();
-  responder_ptr_t responder;
-
-  // Step 1: execute database update
-  auto rw_transaction = update_factory.get_default_transaction();
-
-  auto data_update = update_factory.make_data_update(*rw_transaction);
-
-  check_db_readonly_mode(*data_update);
-
-  // Executing the responder constructor will process the payload, perform database CRUD operations
-  // as needed and eventually calls db commit()
-  // Note: due to the database commit, rw_transaction can no longer be used
-  responder = pe_handler->responder(*data_update, payload, user_id);
-
-  // Step 2: do we need to read back some data from the database to generate a response?
-  if (pe_handler->requires_selection_after_update()) {
-
-    // Create a new read only transaction based on the update factory
-    // (might use a different db/user than what the data_selection factory would use)
-    auto read_only_transaction = update_factory.get_read_only_transaction();
-
-    // create a data selection for the request
-    auto data_selection = factory.make_selection(*read_only_transaction);
-    auto sel_responder = pe_handler->responder(*data_selection);
-    bytes_written = generate_response(req, *sel_responder, generator);
-  }
-  else
-  {
-    // Step 1 already collected all data needed to generate a response message
-    bytes_written = generate_response(req, *responder, generator);
   }
 
   return std::make_tuple(request_name, bytes_written);
@@ -300,11 +304,11 @@ process_post_put_request(request &req, handler_ptr_t handler,
  * process a HEAD request.
  */
 std::tuple<string, size_t>
-process_head_request(request &req, handler_ptr_t handler,
+process_head_request(request &req, handler& handler,
                      data_selection& selection,
                      const string &ip) {
   // request start logging
-  const std::string request_name = handler->log_name();
+  const std::string request_name = handler.log_name();
   logger::message(format("Started HEAD request for %1% from %2%") %
                   request_name % ip);
 
@@ -315,7 +319,7 @@ process_head_request(request &req, handler_ptr_t handler,
   // them unmodified
 
   // constructor of responder handles dynamic validation (i.e: with db access).
-  responder_ptr_t responder = handler->responder(selection);
+  responder_ptr_t responder = handler.responder(selection);
 
   // get encoding to use
   auto encoding = get_encoding(req);
@@ -341,7 +345,7 @@ process_head_request(request &req, handler_ptr_t handler,
  * process an OPTIONS request.
  */
 std::tuple<string, size_t> process_options_request(
-  request &req, handler_ptr_t handler) {
+  request &req, handler& handler) {
 
   static const string request_name = "OPTIONS";
   const char *origin = req.get_param("HTTP_ORIGIN");
@@ -528,7 +532,7 @@ void process_request(request &req, rate_limiter &limiter,
     // if handler doesn't accept this method, then return method not
     // allowed.
     if (!maybe_method || !handler->allows_method(*maybe_method)) {
-      process_not_allowed(req, handler);
+      process_not_allowed(req, *handler);
       return;
     }
     http::method method = *maybe_method;
@@ -549,11 +553,11 @@ void process_request(request &req, rate_limiter &limiter,
     switch (method) {
 
       case http::method::GET:
-	std::tie(request_name, bytes_written) = process_get_request(req, handler, *selection, ip, generator);
+	std::tie(request_name, bytes_written) = process_get_request(req, *handler, *selection, ip, generator);
 	break;
 
       case http::method::HEAD:
-	std::tie(request_name, bytes_written) = process_head_request(req, handler, *selection, ip);
+	std::tie(request_name, bytes_written) = process_head_request(req, *handler, *selection, ip);
 	break;
 
       case http::method::POST:
@@ -565,16 +569,16 @@ void process_request(request &req, rate_limiter &limiter,
 	    throw http::bad_request("Backend does not support given HTTP method");
 
 	  std::tie(request_name, bytes_written) =
-	      process_post_put_request(req, handler, factory, *update_factory, user_id, ip, generator);
+	      process_post_put_request(req, *handler, factory, *update_factory, user_id, ip, generator);
 	}
 	break;
 
       case http::method::OPTIONS:
-	std::tie(request_name, bytes_written) = process_options_request(req, handler);
+	std::tie(request_name, bytes_written) = process_options_request(req, *handler);
 	break;
 
       default:
-	process_not_allowed(req, handler);
+	process_not_allowed(req, *handler);
     }
 
     // update the rate limiter, if anything was written
