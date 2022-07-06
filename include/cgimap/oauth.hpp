@@ -4,7 +4,8 @@
 #include <optional>
 #include <string>
 #include <set>
-#include <boost/variant.hpp>
+#include <variant>
+
 #include "cgimap/request.hpp"
 #include "cgimap/types.hpp"
 
@@ -92,7 +93,7 @@ struct unauthorized {
   std::string reason;
 };
 
-using validity = boost::variant<
+using validity = std::variant<
   copacetic,
   not_signed,
   bad_request,

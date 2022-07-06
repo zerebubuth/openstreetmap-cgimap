@@ -18,6 +18,26 @@ std::ostream& operator<<(std::ostream& os, std::optional<T> const& opt)
   return opt ? os << opt.value() : os;
 }
 
+// see https://stackoverflow.com/questions/47168477/how-to-stream-stdvariant
+
+template<class T>
+struct streamer {
+    const T& val;
+};
+template<class T> streamer(T) -> streamer<T>;
+
+template<class T>
+std::ostream& operator<<(std::ostream& os, streamer<T> s) {
+    os << s.val;
+    return os;
+}
+
+template<class... Ts>
+std::ostream& operator<<(std::ostream& os, streamer<std::variant<Ts...>> sv) {
+   std::visit([&os](const auto& v) { os << streamer{v}; }, sv.val);
+   return os;
+}
+
 #define ANNOTATE_EXCEPTION(stmt)                \
   {                                             \
     try {                                       \
@@ -35,7 +55,7 @@ template <typename T>
 void assert_equal(const T &actual, const T &expected) {
   if (!(actual == expected)) {
     std::ostringstream ostr;
-    ostr << "Expected `" << expected << "', but got `" << actual << "'";
+    ostr << "Expected `" << streamer{expected} << "', but got `" << streamer{actual} << "'";
     throw std::runtime_error(ostr.str());
   }
 }
