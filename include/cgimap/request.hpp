@@ -64,7 +64,7 @@ struct request {
   // return a handle to the output buffer to write body output. this function
   // should only be called after setting the status and any custom response
   // headers.
-  std::shared_ptr<output_buffer> get_buffer();
+  output_buffer& get_buffer();
 
   // convenience functions to write body data. see `get_buffer()` for more
   // information on the constraints of calling this.
@@ -99,7 +99,7 @@ protected:
   // internal functions.
   // TODO: this is really bad design and indicates this should probably use
   // composition rather than inheritance.
-  virtual std::shared_ptr<output_buffer> get_buffer_internal() = 0;
+  virtual output_buffer& get_buffer_internal() = 0;
   virtual void finish_internal() = 0;
 
   // reset the state of the request back to blank for re-use.

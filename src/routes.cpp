@@ -51,7 +51,6 @@
 using std::list;
 using std::string;
 using std::pair;
-using std::shared_ptr;
 using std::unique_ptr;
 
 using boost::fusion::make_cons;
@@ -72,7 +71,7 @@ struct router {
                            handler_ptr_t &) = 0;
   };
 
-  using rule_ptr = std::shared_ptr<rule_base>;
+  using rule_ptr = std::unique_ptr<rule_base>;
 
   // concrete rule match / constructor class
   template <typename rule_t, typename func_t> struct rule : public rule_base {
@@ -170,7 +169,7 @@ struct router {
 
     // Process HEAD like GET, as per rfc2616: The HEAD method is identical to
     // GET except that the server MUST NOT return a message-body in the response.
-    for (auto rptr : rules_get) {
+    for (auto& rptr : rules_get) {
 	if (rptr->invoke_if(p, params, hptr)) {
 	    if (*maybe_method == http::method::GET    ||
 		*maybe_method == http::method::HEAD   ||
@@ -180,7 +179,7 @@ struct router {
 	}
     }
 
-    for (auto rptr : rules_post) {
+    for (auto& rptr : rules_post) {
 	if (rptr->invoke_if(p, params, hptr)) {
 	    if (*maybe_method == http::method::POST||
 		*maybe_method == http::method::OPTIONS)
@@ -189,7 +188,7 @@ struct router {
 	}
     }
 
-    for (auto rptr : rules_put) {
+    for (auto& rptr : rules_put) {
 	if (rptr->invoke_if(p, params, hptr)) {
 	    if (*maybe_method == http::method::PUT||
 		*maybe_method == http::method::OPTIONS)

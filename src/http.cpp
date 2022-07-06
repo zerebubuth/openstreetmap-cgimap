@@ -169,7 +169,7 @@ vector<pair<string, string> > parse_params(const string &p) {
   return queryKVPairs;
 }
 
-std::shared_ptr<encoding> choose_encoding(const string &accept_encoding) {
+std::unique_ptr<encoding> choose_encoding(const string &accept_encoding) {
   vector<string> encodings;
 
   al::split(encodings, accept_encoding, al::is_any_of(","));
@@ -220,15 +220,15 @@ std::shared_ptr<encoding> choose_encoding(const string &accept_encoding) {
 #ifdef ENABLE_DEFLATE
   if (deflate_quality > 0.0 && deflate_quality >= gzip_quality &&
       deflate_quality >= identity_quality) {
-    return std::shared_ptr<deflate>(new deflate());
+    return std:make_unique<deflate>();
   } else
 #endif /* ENABLE_DEFLATE */
       if (gzip_quality > 0.0 && gzip_quality >= identity_quality) {
-    return std::shared_ptr<gzip>(new gzip());
+    return std::make_unique<gzip>();
   }
 #endif /* HAVE_LIBZ */
   else if (identity_quality > 0.0) {
-    return std::shared_ptr<identity>(new identity());
+    return std::make_unique<identity>();
   } else {
     throw http::not_acceptable("No acceptable content encoding found. Only "
                                "identity and gzip are supported.");
@@ -238,15 +238,15 @@ std::shared_ptr<encoding> choose_encoding(const string &accept_encoding) {
 std::unique_ptr<ZLibBaseDecompressor> get_content_encoding_handler(const std::string &content_encoding) {
 
   if (content_encoding.empty())
-    return std::unique_ptr<IdentityDecompressor>(new IdentityDecompressor());
+    return std::make_unique<IdentityDecompressor>();
 
   if (content_encoding == "identity")
-      return std::unique_ptr<IdentityDecompressor>(new IdentityDecompressor());
+      return std::make_unique<IdentityDecompressor>();
 #ifdef HAVE_LIBZ
   else if (content_encoding == "gzip")
-    return std::unique_ptr<GZipDecompressor>(new GZipDecompressor());
+    return std::make_unique<GZipDecompressor>();
   else if (content_encoding == "deflate")
-    return std::unique_ptr<ZLibDecompressor>(new ZLibDecompressor());
+    return std::make_unique<ZLibDecompressor>();
   throw http::unsupported_media_type("Supported Content-Encodings include 'gzip' and 'deflate'");
 
 #else

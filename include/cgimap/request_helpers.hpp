@@ -30,7 +30,7 @@ std::string get_request_path(request &req);
 /**
  * get encoding to use for response.
  */
-std::shared_ptr<http::encoding> get_encoding(request &req);
+std::unique_ptr<http::encoding> get_encoding(request &req);
 
 /**
  * return a static string description for an HTTP status code.
@@ -41,6 +41,6 @@ const char *status_message(int code);
  * return shared pointer to a buffer object which can be
  * used to write to the response body.
  */
-std::shared_ptr<output_buffer> make_output_buffer(request &req);
+std::unique_ptr<output_buffer> make_output_buffer(request &req);
 
 #endif /* REQUEST_HELPERS_HPP */

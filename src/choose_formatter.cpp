@@ -222,7 +222,7 @@ std::string mime_types_to_string(const std::list<mime::type> mime_types)
 
 }
 
-mime::type choose_best_mime_type(request &req, responder& hptr) {
+mime::type choose_best_mime_type(request &req, const responder& hptr) {
   // figure out what, if any, the Accept-able resource mime types are
   acceptable_types types = header_mime_type(req);
   const list<mime::type> types_available = hptr.types_available();
@@ -262,14 +262,14 @@ std::unique_ptr<output_formatter> create_formatter(mime::type best_type, output_
 
   switch (best_type) {
     case mime::application_xml:
-      return std::unique_ptr<output_formatter>(new xml_formatter(std::unique_ptr<xml_writer>(new xml_writer(out, true))));
+      return std::make_unique<xml_formatter>(std::make_unique<xml_writer>(out, true));
 
 #ifdef HAVE_YAJL
     case mime::application_json:
-      return std::unique_ptr<output_formatter>(new json_formatter(std::unique_ptr<json_writer>(new json_writer(out, false))));
+      return std::make_unique<json_formatter>(std::make_unique<json_writer>(out, false));
 #endif
     case mime::text_plain:
-      return std::unique_ptr<output_formatter>(new text_formatter(std::unique_ptr<text_writer>(new text_writer(out, true))));
+      return std::make_unique<text_formatter>(std::make_unique<text_writer>(out, true));
 
     default:
       ostringstream ostr;

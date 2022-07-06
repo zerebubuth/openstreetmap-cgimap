@@ -6,7 +6,7 @@
 #include "cgimap/zlib.hpp"
 #include "cgimap/output_writer.hpp"
 
-zlib_output_buffer::zlib_output_buffer(std::shared_ptr<output_buffer> o,
+zlib_output_buffer::zlib_output_buffer(output_buffer& o,
                                        zlib_output_buffer::mode m)
     : out(o), bytes_in(0) {
   int windowBits;
@@ -85,7 +85,7 @@ int zlib_output_buffer::close() {
   }
 
   if (status == Z_STREAM_END) {
-    out->write(outbuf, sizeof(outbuf) - stream.avail_out);
+    out.write(outbuf, sizeof(outbuf) - stream.avail_out);
   } else {
     throw output_writer::write_error("deflate failed");
   }
@@ -94,13 +94,13 @@ int zlib_output_buffer::close() {
     throw output_writer::write_error("deflateEnd failed");
   }
 
-  return out->close();
+  return out.close();
 }
 
 int zlib_output_buffer::written() { return bytes_in; }
 
 void zlib_output_buffer::flush_output() {
-  out->write(outbuf, sizeof(outbuf) - stream.avail_out);
+  out.write(outbuf, sizeof(outbuf) - stream.avail_out);
 
   stream.next_out = (Bytef *)outbuf;
   stream.avail_out = sizeof(outbuf);

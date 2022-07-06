@@ -58,6 +58,14 @@ struct token_store {
 struct store
   : public secret_store, public nonce_store, public token_store {
   virtual ~store();
+
+  store() = default;
+
+  store(const store&) = delete;
+  store& operator=(const store&) = delete;
+
+  store(store&&) = delete;
+  store& operator=(store&&) = delete;
 };
 
 namespace validity {

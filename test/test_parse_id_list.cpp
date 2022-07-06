@@ -40,8 +40,8 @@ struct test_request : public request {
 
 protected:
   void write_header_info(int status, const headers_t &headers) override {}
-  std::shared_ptr<output_buffer> get_buffer_internal() override {
-    return std::shared_ptr<output_buffer>();
+  output_buffer& get_buffer_internal() override {
+    throw std::runtime_error("test_request::get_buffer_internal unimplemented.");
   }
   void finish_internal() override {}
 

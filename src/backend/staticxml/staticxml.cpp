@@ -12,7 +12,7 @@
 #include <unordered_set>
 
 namespace po = boost::program_options;
-using std::shared_ptr;
+
 using std::string;
 using api06::id_version;
 
@@ -289,7 +289,7 @@ struct xml_parser {
   bool m_in_text;
 };
 
-std::shared_ptr<database> parse_xml(const char *filename) {
+std::unique_ptr<database> parse_xml(const char *filename) {
   xmlSAXHandler handler;
   memset(&handler, 0, sizeof(handler));
 
@@ -300,7 +300,7 @@ std::shared_ptr<database> parse_xml(const char *filename) {
   handler.error = &xml_parser::error;
   handler.characters = &xml_parser::characters;
 
-  std::shared_ptr<database> db = std::make_shared<database>();
+  std::unique_ptr<database> db = std::make_unique<database>();
   xml_parser parser(db.get());
   int status = xmlSAXUserParseFile(&handler, &parser, filename);
   if (status != 0) {
@@ -333,7 +333,7 @@ inline void write_element<relation>(const relation &r, output_formatter &formatt
 }
 
 struct static_data_selection : public data_selection {
-  explicit static_data_selection(std::shared_ptr<database> db)
+  explicit static_data_selection(database& db)
     : m_db(db)
     , m_include_changeset_comments(false)
     , m_redactions_visible(false) {}
@@ -354,8 +354,8 @@ struct static_data_selection : public data_selection {
   void write_changesets(output_formatter &formatter,
                                 const std::chrono::system_clock::time_point &now) override {
     for (osm_changeset_id_t id : m_changesets) {
-      auto itr = m_db->m_changesets.find(id);
-      if (itr != m_db->m_changesets.end()) {
+      auto itr = m_db.m_changesets.find(id);
+      if (itr != m_db.m_changesets.end()) {
         const changeset &c = itr->second;
         formatter.write_changeset(
           c.m_info, c.m_tags, m_include_changeset_comments,
@@ -391,8 +391,8 @@ struct static_data_selection : public data_selection {
   int select_nodes_from_bbox(const bbox &bounds, int max_nodes) override {
     using node_map_t = std::map<id_version, node>;
     int selected = 0;
-    const node_map_t::const_iterator end = m_db->m_nodes.end();
-    for (node_map_t::const_iterator itr = m_db->m_nodes.begin();
+    const node_map_t::const_iterator end = m_db.m_nodes.end();
+    for (node_map_t::const_iterator itr = m_db.m_nodes.begin();
          itr != end; ++itr) {
       auto next = itr; ++next;
       const node &n = itr->second;
@@ -426,8 +426,8 @@ struct static_data_selection : public data_selection {
 
   void select_ways_from_nodes() override {
     using way_map_t = std::map<id_version, way>;
-    const way_map_t::const_iterator end = m_db->m_ways.end();
-    for (way_map_t::const_iterator itr = m_db->m_ways.begin();
+    const way_map_t::const_iterator end = m_db.m_ways.end();
+    for (way_map_t::const_iterator itr = m_db.m_ways.begin();
          itr != end; ++itr) {
       auto next = itr; ++next;
       const way &w = itr->second;
@@ -457,8 +457,8 @@ struct static_data_selection : public data_selection {
 
   void select_relations_from_ways() override {
     using relation_map_t = std::map<id_version, relation>;
-    const relation_map_t::const_iterator end = m_db->m_relations.end();
-    for (relation_map_t::const_iterator itr = m_db->m_relations.begin();
+    const relation_map_t::const_iterator end = m_db.m_relations.end();
+    for (relation_map_t::const_iterator itr = m_db.m_relations.begin();
          itr != end; ++itr) {
       auto next = itr; ++next;
       const relation &r = itr->second;
@@ -484,8 +484,8 @@ struct static_data_selection : public data_selection {
 
   void select_relations_from_nodes() override {
     using relation_map_t = std::map<id_version, relation>;
-    const relation_map_t::const_iterator end = m_db->m_relations.end();
-    for (relation_map_t::const_iterator itr = m_db->m_relations.begin();
+    const relation_map_t::const_iterator end = m_db.m_relations.end();
+    for (relation_map_t::const_iterator itr = m_db.m_relations.begin();
          itr != end; ++itr) {
       auto next = itr; ++next;
       const relation &r = itr->second;
@@ -501,8 +501,8 @@ struct static_data_selection : public data_selection {
   void select_relations_from_relations(bool drop_relations = false) override {
     std::set<osm_nwr_id_t> tmp_relations;
     using relation_map_t = std::map<id_version, relation>;
-    const relation_map_t::const_iterator end = m_db->m_relations.end();
-    for (relation_map_t::const_iterator itr = m_db->m_relations.begin();
+    const relation_map_t::const_iterator end = m_db.m_relations.end();
+    for (relation_map_t::const_iterator itr = m_db.m_relations.begin();
          itr != end; ++itr) {
       auto next = itr; ++next;
       const relation &r = itr->second;
@@ -588,8 +588,8 @@ struct static_data_selection : public data_selection {
   int select_changesets(const std::vector<osm_changeset_id_t> &ids) override {
     int selected = 0;
     for (osm_changeset_id_t id : ids) {
-      auto itr = m_db->m_changesets.find(id);
-      if (itr != m_db->m_changesets.end()) {
+      auto itr = m_db.m_changesets.find(id);
+      if (itr != m_db.m_changesets.end()) {
         m_changesets.insert(id);
         ++selected;
       }
@@ -754,7 +754,7 @@ private:
     return selected;
   }
 
-  std::shared_ptr<database> m_db;
+  database& m_db;
   std::set<osm_changeset_id_t> m_changesets;
   std::set<osm_nwr_id_t> m_nodes, m_ways, m_relations;
   std::set<osm_edition_t> m_historic_nodes, m_historic_ways, m_historic_relations;
@@ -763,17 +763,17 @@ private:
 
 template <>
 const std::map<id_version, node> &static_data_selection::map_of<node>() const {
-  return m_db->m_nodes;
+  return m_db.m_nodes;
 }
 
 template <>
 const std::map<id_version, way> &static_data_selection::map_of<way>() const {
-  return m_db->m_ways;
+  return m_db.m_ways;
 }
 
 template <>
 const std::map<id_version, relation> &static_data_selection::map_of<relation>() const {
-  return m_db->m_relations;
+  return m_db.m_relations;
 }
 
 struct factory : public data_selection::factory {
@@ -783,15 +783,15 @@ struct factory : public data_selection::factory {
   virtual ~factory() = default;
 
   virtual std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
-    return std::make_unique<static_data_selection>(m_database);
+    return std::make_unique<static_data_selection>(*m_database);
   }
 
   virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() {
-    return std::unique_ptr<Transaction_Owner_Void>(new Transaction_Owner_Void());
+    return std::make_unique<Transaction_Owner_Void>();
   }
 
 private:
-  std::shared_ptr<database> m_database;
+  std::unique_ptr<database> m_database;
 };
 
 struct staticxml_backend : public backend {
@@ -805,19 +805,19 @@ struct staticxml_backend : public backend {
   const string &name() const { return m_name; }
   const po::options_description &options() const { return m_options; }
 
-  shared_ptr<data_selection::factory> create(const po::variables_map &opts) {
+  std::unique_ptr<data_selection::factory> create(const po::variables_map &opts) {
     std::string file = opts["file"].as<std::string>();
-    return std::make_shared<factory>(file);
+    return std::make_unique<factory>(file);
   }
 
-  shared_ptr<data_update::factory> create_data_update(const po::variables_map &) {
+  std::unique_ptr<data_update::factory> create_data_update(const po::variables_map &) {
     return nullptr;   // Data update operations not supported by staticxml backend
   }
 
 
-  std::shared_ptr<oauth::store> create_oauth_store(
+  std::unique_ptr<oauth::store> create_oauth_store(
     const po::variables_map &) {
-    return std::shared_ptr<oauth::store>();
+    return std::unique_ptr<oauth::store>();
   }
 
 private:
@@ -827,6 +827,6 @@ private:
 
 } // anonymous namespace
 
-std::shared_ptr<backend> make_staticxml_backend() {
-  return std::make_shared<staticxml_backend>();
+std::unique_ptr<backend> make_staticxml_backend() {
+  return std::make_unique<staticxml_backend>();
 }

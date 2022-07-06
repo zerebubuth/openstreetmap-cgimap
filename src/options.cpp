@@ -4,7 +4,7 @@
 
 global_settings_base::~global_settings_base() = default;
 
-std::unique_ptr<global_settings_base> global_settings::settings = std::unique_ptr<global_settings_base>(new global_settings_default());
+std::unique_ptr<global_settings_base> global_settings::settings = std::make_unique<global_settings_default>();
 
 
 void global_settings_via_options::init_fallback_values(const global_settings_base &def) {

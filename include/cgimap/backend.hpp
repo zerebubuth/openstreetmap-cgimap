@@ -23,13 +23,13 @@ struct backend {
   virtual const boost::program_options::options_description &
   options() const = 0;
   // create a data selection factory from the arguments passed to cgimap.
-  virtual std::shared_ptr<data_selection::factory>
+  virtual std::unique_ptr<data_selection::factory>
   create(const boost::program_options::variables_map &) = 0;
   // create a data update factory from the arguments passed to cgimap.
-  virtual std::shared_ptr<data_update::factory>
+  virtual std::unique_ptr<data_update::factory>
   create_data_update(const boost::program_options::variables_map &) = 0;
   // create an oauth store based on arguments.
-  virtual std::shared_ptr<oauth::store>
+  virtual std::unique_ptr<oauth::store>
   create_oauth_store(const boost::program_options::variables_map &) = 0;
 };
 
@@ -40,19 +40,19 @@ void setup_backend_options(int argc, char *argv[],
 // prints the options for all backends.
 void output_backend_options(std::ostream &);
 // singleton call to create a backend from a given set of options.
-std::shared_ptr<data_selection::factory>
+std::unique_ptr<data_selection::factory>
 create_backend(const boost::program_options::variables_map &);
 
 // singleton call to create a backend from a given set of options.
-std::shared_ptr<data_update::factory>
+std::unique_ptr<data_update::factory>
 create_update_backend(const boost::program_options::variables_map &);
 
 // singleton call to create an OAuth store from options.
-std::shared_ptr<oauth::store>
+std::unique_ptr<oauth::store>
 create_oauth_store(const boost::program_options::variables_map &);
 
 // this function registers a backend for use when creating backends
 // from user-provided options.
-bool register_backend(std::shared_ptr<backend>);
+bool register_backend(std::unique_ptr<backend>);
 
 #endif /* BACKEND_HPP */
