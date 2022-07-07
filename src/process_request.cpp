@@ -10,6 +10,7 @@
 #include <memory>
 #include <sstream>
 #include <tuple>
+#include <variant>
 
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
@@ -377,7 +378,7 @@ std::tuple<string, size_t> process_options_request(
 const std::string addr_prefix("addr:");
 const std::string user_prefix("user:");
 
-struct is_copacetic : public boost::static_visitor<bool> {
+struct is_copacetic  {
   template <typename T>
   bool operator()(const T &) const { return false; }
 };
@@ -388,7 +389,7 @@ bool is_copacetic::operator()<oauth::validity::copacetic>(
   return true;
 }
 
-struct get_oauth_token : public boost::static_visitor<std::string> {
+struct get_oauth_token {
   template <typename T>
   std::string operator()(const T &) const {
     throw std::runtime_error("Type does not contain an OAuth token.");
@@ -401,7 +402,7 @@ std::string get_oauth_token::operator()<oauth::validity::copacetic>(
   return c.token;
 }
 
-struct oauth_status_response : public boost::static_visitor<void> {
+struct oauth_status_response  {
   void operator()(const oauth::validity::copacetic &) const {}
   void operator()(const oauth::validity::not_signed &) const {}
   void operator()(const oauth::validity::bad_request &) const {
@@ -451,9 +452,9 @@ std::optional<osm_user_id_t> determine_user_id (request& req,
     {
       oauth::validity::validity oauth_valid = oauth::is_valid_signature (
 	  req, *store, *store, *store);
-      if (boost::apply_visitor (is_copacetic (), oauth_valid))
+      if (std::visit(is_copacetic(), oauth_valid))
 	{
-	  string token = boost::apply_visitor (get_oauth_token (), oauth_valid);
+	  string token = std::visit(get_oauth_token(), oauth_valid);
 	  user_id = store->get_user_id_for_token (token);
 	  if (!user_id)
 	    {
@@ -470,7 +471,7 @@ std::optional<osm_user_id_t> determine_user_id (request& req,
 	}
       else
 	{
-	  boost::apply_visitor (oauth_status_response (), oauth_valid);
+	  std::visit(oauth_status_response(), oauth_valid);
 	  // if we got here then oauth_status_response didn't throw, which means
 	  // the request must have been unsigned.
 	}
