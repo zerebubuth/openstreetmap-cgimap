@@ -9,6 +9,7 @@
 #include <memory>
 #include <sstream>
 #include <vector>
+#include <pqxx/array.hxx>
 
 /**
  * represents a selected set of data which can be written out to
@@ -189,9 +190,7 @@ public:
   };
 };
 
-// parses psql array based on specs given
-// https://www.postgresql.org/docs/current/static/arrays.html#ARRAYS-IO
 std::vector<std::string> psql_array_to_vector(std::string str);
-
+std::vector<std::string> psql_array_to_vector(pqxx::array_parser&& parser);
 
 #endif /* DATA_SELECTION_HPP */
