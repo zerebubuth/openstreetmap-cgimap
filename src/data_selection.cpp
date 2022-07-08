@@ -1,55 +1,22 @@
 #include "cgimap/data_selection.hpp"
 
 
-
-
-std::vector<std::string> psql_array_to_vector(std::string str) {
-  std::vector<std::string> strs;
-  std::ostringstream value;
-  bool quotedValue = false, escaped = false, write = false;
-
-  if (str == "{NULL}" || str == "")
-    return strs;
-
-  for (unsigned int i=1; i<str.size(); i++) {
-    if (str[i]==',') {
-      if (quotedValue) {
-        value<<",";
-      } else {
-        write = true;
-      }
-    } else if (str[i]=='\"') {
-      if (escaped) {
-        value << "\"";
-        escaped = false;
-      } else if (quotedValue) {
-        quotedValue=false;
-      } else {
-        quotedValue = true;
-      }
-    } else if (str[i]=='\\'){
-      if (escaped) {
-        value << "\\";
-        escaped = false;
-      } else {
-        escaped = true;
-      }
-    } else if (str[i]=='}') {
-      if(quotedValue){
-        value << "}";
-      } else {
-        write = true;
-      }
-    } else {
-      value<<str[i];
-    }
-
-    if (write) {
-      strs.push_back(value.str());
-      value.str("");
-      value.clear();
-      write=false;
-    }
-  }
-  return strs;
+std::vector<std::string> psql_array_to_vector(std::string str)
+{
+  return psql_array_to_vector(pqxx::array_parser(str.c_str()));
 }
+
+std::vector<std::string> psql_array_to_vector(pqxx::array_parser&& parser) {
+  std::vector<std::string> result;
+
+  auto obj = parser.get_next();
+  while (obj.first != pqxx::array_parser::done)
+  {
+    if (obj.first == pqxx::array_parser::string_value) {
+      result.push_back(obj.second);
+    }
+    obj = parser.get_next();
+  }
+  return result;
+}
+
