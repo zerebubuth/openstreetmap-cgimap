@@ -9,6 +9,7 @@
 #include "cgimap/config.hpp"
 #include "cgimap/time.hpp"
 #include "cgimap/oauth.hpp"
+#include "cgimap/options.hpp"
 #include "cgimap/rate_limiter.hpp"
 #include "cgimap/routes.hpp"
 #include "cgimap/process_request.hpp"
@@ -18,6 +19,16 @@
 #include "test_request.hpp"
 
 namespace {
+
+class global_settings_test_no_oauth1 : public global_settings_default {
+
+public:
+
+  bool get_oauth_10_support() const override {
+    return false;
+  }
+};
+
 
 std::ostream &operator<<(
   std::ostream &out, const std::set<osm_user_role_t> &roles) {
@@ -319,7 +330,7 @@ void test_oauth_end_to_end(test_database &tdb) {
   recording_rate_limiter limiter;
   std::string generator("test_apidb_backend.cpp");
   routes route;
-  auto factory = std::make_shared<empty_data_selection::factory>();
+  auto factory = std::make_unique<empty_data_selection::factory>();
 
   test_request req;
   req.set_header("SCRIPT_URL", "/api/0.6/relation/165475/full");
@@ -407,6 +418,15 @@ void test_oauth_get_roles_for_user(test_database &tdb) {
     "roles for admin+moderator user");
 }
 
+void test_oauth_disabled_by_global_config(test_database &tdb) {
+
+  auto test_settings = std::unique_ptr<global_settings_test_no_oauth1>(new global_settings_test_no_oauth1());
+  global_settings::set_configuration(std::move(test_settings));
+
+  // TODO
+
+}
+
 } // anonymous namespace
 
 int main(int, char **) {
@@ -431,6 +451,9 @@ int main(int, char **) {
 
     tdb.run(std::function<void(test_database&)>(
         &test_oauth_get_roles_for_user));
+
+    tdb.run(std::function<void(test_database&)>(
+        &test_oauth_disabled_by_global_config));
 
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;

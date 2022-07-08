@@ -445,37 +445,37 @@ std::optional<osm_user_id_t> determine_user_id (request& req,
 
   // Try to authenticate user via OAuth2 Bearer Token
   if (!user_id)
-     user_id = oauth2::validate_bearer_token (req, store, allow_api_write);
+    user_id = oauth2::validate_bearer_token (req, store, allow_api_write);
 
-  // Try to authenticate user via OAuth token
-  if (!user_id)
+  // Try to authenticate user via OAuth 1.0a
+  if (!user_id && global_settings::get_oauth_10_support())
+  {
+    oauth::validity::validity oauth_valid = oauth::is_valid_signature (
+        req, *store, *store, *store);
+    if (std::visit(is_copacetic(), oauth_valid))
     {
-      oauth::validity::validity oauth_valid = oauth::is_valid_signature (
-	  req, *store, *store, *store);
-      if (std::visit(is_copacetic(), oauth_valid))
-	{
-	  string token = std::visit(get_oauth_token(), oauth_valid);
-	  user_id = store->get_user_id_for_token (token);
-	  if (!user_id)
-	    {
-	      // we can get here if there's a valid OAuth signature, with an
-	      // authorised token matching the secret stored in the database,
-	      // but that's not assigned to a user ID. perhaps this can
-	      // happen due to concurrent revocation? in any case, we don't
-	      // want to go any further.
-	      logger::message (
-		  format ("Unable to find user ID for token %1%.") % token);
-	      throw http::server_error ("Unable to find user ID for token.");
-	    }
-	  allow_api_write = store->allow_write_api (token);
-	}
-      else
-	{
-	  std::visit(oauth_status_response(), oauth_valid);
-	  // if we got here then oauth_status_response didn't throw, which means
-	  // the request must have been unsigned.
-	}
+      string token = std::visit(get_oauth_token(), oauth_valid);
+      user_id = store->get_user_id_for_token (token);
+      if (!user_id)
+      {
+        // we can get here if there's a valid OAuth signature, with an
+        // authorised token matching the secret stored in the database,
+        // but that's not assigned to a user ID. perhaps this can
+        // happen due to concurrent revocation? in any case, we don't
+        // want to go any further.
+        logger::message (
+            format ("Unable to find user ID for token %1%.") % token);
+        throw http::server_error ("Unable to find user ID for token.");
+      }
+      allow_api_write = store->allow_write_api (token);
     }
+    else
+    {
+      std::visit(oauth_status_response(), oauth_valid);
+      // if we got here then oauth_status_response didn't throw, which means
+      // the request must have been unsigned.
+    }
+  }
   return user_id;
 }
 

@@ -19,6 +19,7 @@
 
 
 #include "cgimap/basicauth.hpp"
+#include "cgimap/options.hpp"
 
 
 using namespace CryptoPP;
@@ -115,6 +116,11 @@ namespace basicauth {
 
   [[nodiscard]] std::optional<osm_user_id_t> authenticate_user(const request &req, data_selection& selection)
   {
+
+    // Basic auth disabled in global configuration settings?
+    if (!(global_settings::get_basic_auth_support()))
+      return {};
+
     std::string user_name;
     std::string candidate;
 
@@ -124,7 +130,7 @@ namespace basicauth {
 
     const char * auth_hdr = req.get_param ("HTTP_AUTHORIZATION");
     if (auth_hdr == nullptr)
-      return std::optional<osm_user_id_t>{};
+      return {};
 
     auto auth_header = std::string(auth_hdr);
 
@@ -134,13 +140,13 @@ namespace basicauth {
 	std::regex r("[Bb][Aa][Ss][Ii][Cc] ([A-Za-z0-9\\+\\/]+=*).*");
 
 	if (!std::regex_match(auth_header, sm, r))
-	  return std::optional<osm_user_id_t>{};
+	  return {};
 
 	if (sm.size() != 2)
-	  return std::optional<osm_user_id_t>{};
+	  return {};
 
     } catch (std::regex_error&) {
-      return std::optional<osm_user_id_t>{};
+      return {};
     }
 
     std::string auth;
@@ -148,23 +154,23 @@ namespace basicauth {
     try {
        auth = PasswordHash::base64decode(sm[1]);
     } catch (...) {
-      return std::optional<osm_user_id_t>{};
+      return {};
     }
 
     auto pos = auth.find(":");
 
     if (pos == std::string::npos)
-      return std::optional<osm_user_id_t>{};
+      return {};
 
     try {
       user_name = auth.substr(0, pos);
       candidate = auth.substr(pos + 1);
     } catch (std::out_of_range&) {
-       return std::optional<osm_user_id_t>{};
+       return {};
     }
 
     if (user_name.empty() || candidate.empty())
-      return std::optional<osm_user_id_t>{};
+      return {};
 
     auto user_exists = selection.get_user_id_pass(user_name, user_id, pass_crypt, pass_salt);
 

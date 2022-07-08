@@ -12,6 +12,7 @@
 #include <boost/date_time/posix_time/conversion.hpp>
 
 #include "cgimap/basicauth.hpp"
+#include "cgimap/options.hpp"
 #include "test_request.hpp"
 
 #include "cgimap/backend/apidb/transaction_manager.hpp"
@@ -136,6 +137,15 @@ public:
       return std::unique_ptr<Transaction_Owner_Void>(new Transaction_Owner_Void());
     }
   };
+};
+
+class global_settings_test_no_basic_auth : public global_settings_default {
+
+public:
+
+  bool get_basic_auth_support() const override {
+    return false;
+  }
 };
 
 } // anonymous namespace
@@ -309,7 +319,25 @@ void test_authenticate_user() {
             "Unknown user / incorrect password: Expected HTTP 401");
     }
   }
+}
 
+void test_basic_auth_disabled_by_global_config() {
+
+  auto factory = std::make_shared<basicauth_test_data_selection::factory>();
+
+  auto txn_readonly = factory->get_default_transaction();
+  auto sel = factory->make_selection(*txn_readonly);
+
+  // Known user with correct password, but basic auth has been disabled in global config settings
+  {
+    auto test_settings = std::unique_ptr<global_settings_test_no_basic_auth>(new global_settings_test_no_basic_auth());
+    global_settings::set_configuration(std::move(test_settings));
+
+    test_request req;
+    req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzpwYXNzd29yZA==");
+    auto res = basicauth::authenticate_user(req, *sel);
+    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "Known user with correct password, but basic auth disabled in global config");
+  }
 }
 
 
@@ -317,6 +345,7 @@ int main() {
   try {
     ANNOTATE_EXCEPTION(test_password_hash());
     ANNOTATE_EXCEPTION(test_authenticate_user());
+    ANNOTATE_EXCEPTION(test_basic_auth_disabled_by_global_config());
 
   } catch (const std::exception &e) {
     std::cerr << "EXCEPTION: " << e.what() << std::endl;
