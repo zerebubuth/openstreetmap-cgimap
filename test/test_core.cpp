@@ -8,7 +8,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/program_options.hpp>
-#include <boost/format.hpp>
+#include <fmt/core.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
@@ -134,21 +134,15 @@ void check_xmlattr(const pt::ptree &expected, const pt::ptree &actual) {
         std::string act_val = act_child->data();
         if ((exp_val != act_val) && (exp_val != "***")) {
           throw std::runtime_error(
-            (boost::format(
-              "Attribute `%1%' expected value `%2%', but got `%3%'") %
-             k % exp_val % act_val).str());
+            fmt::format(
+              "Attribute `{}' expected value `{}', but got `{}'",
+             k, exp_val,  act_val));
         }
       } else {
-        throw std::runtime_error(
-          (boost::format(
-            "Expected to find attribute `%1%', but it was missing.") %
-           k).str());
+        throw std::runtime_error(fmt::format("Expected to find attribute `{}', but it was missing.", k));
       }
     } else if (act_child) {
-      throw std::runtime_error(
-        (boost::format(
-          "Found attribute `%1%', but it was not expected to exist.") %
-           k).str());
+      throw std::runtime_error(fmt::format("Found attribute `{}', but it was not expected to exist.", k));
     }
   }
 }
@@ -197,8 +191,8 @@ void check_recursive_tree(const pt::ptree &expected, const pt::ptree &actual) {
       throw std::runtime_error(out.str());
     }
     if (exp_itr->first != act_itr->first) {
-      throw std::runtime_error((boost::format("Expected %1%, but got %2%") %
-                                exp_itr->first % act_itr->first).str());
+      throw std::runtime_error(fmt::format("Expected {}, but got {}",
+                                exp_itr->first, act_itr->first));
     }
     try {
       if (exp_itr->first == "<xmlattr>") {
@@ -207,8 +201,8 @@ void check_recursive_tree(const pt::ptree &expected, const pt::ptree &actual) {
         check_recursive_tree(exp_itr->second, act_itr->second);
       }
     } catch (const std::exception &ex) {
-      throw std::runtime_error((boost::format("%1%, in <%2%> element") %
-                                ex.what() % exp_itr->first).str());
+      throw std::runtime_error(fmt::format("{}, in <{}> element",
+                                ex.what(), exp_itr->first));
     }
     ++exp_itr;
     ++act_itr;
@@ -226,14 +220,14 @@ void check_content_body_xml(std::istream &expected, std::istream &actual) {
     pt::read_xml(expected, exp_tree);
   } catch (const std::exception &ex) {
     throw std::runtime_error(
-        (boost::format("%1%, while reading expected XML.") % ex.what()).str());
+        fmt::format("{}, while reading expected XML.", ex.what()));
   }
 
   try {
     pt::read_xml(actual, act_tree);
   } catch (const std::exception &ex) {
     throw std::runtime_error(
-        (boost::format("%1%, while reading actual XML.") % ex.what()).str());
+        fmt::format("{}, while reading actual XML.", ex.what()));
   }
 
   // and check the results for equality
@@ -259,8 +253,8 @@ void check_recursive_tree_json(const pt::ptree &expected,
 
   // check the actual data value
   if (expected.data() != actual.data()) {
-    throw std::runtime_error((boost::format("Expected '%1%', but got '%2%'") %
-                              expected.data() % actual.data()).str());
+    throw std::runtime_error(fmt::format("Expected '{}', but got '{}'",
+                              expected.data(), actual.data()));
   }
   std::cout << "attr match: " << expected.data() << "\n";
 
@@ -293,15 +287,15 @@ void check_recursive_tree_json(const pt::ptree &expected,
       throw std::runtime_error(out.str());
     }
     if (exp_itr->first != act_itr->first) {
-      throw std::runtime_error((boost::format("Expected %1%, but got %2%") %
-                                exp_itr->first % act_itr->first).str());
+      throw std::runtime_error(fmt::format("Expected {}, but got {}",
+                                exp_itr->first, act_itr->first));
     }
     try {
       std::cout << "recursing on item " << exp_itr->first << "\n";
       check_recursive_tree_json(exp_itr->second, act_itr->second);
     } catch (const std::exception &ex) {
-      throw std::runtime_error((boost::format("%1%, in \"%2%\" object") %
-                                ex.what() % exp_itr->first).str());
+      throw std::runtime_error(fmt::format("{}, in \"{}\" object",
+                                ex.what(), exp_itr->first));
     }
     ++exp_itr;
     ++act_itr;
@@ -320,14 +314,14 @@ void check_content_body_json(std::istream &expected, std::istream &actual) {
     pt::read_json(expected, exp_tree);
   } catch (const std::exception &ex) {
     throw std::runtime_error(
-        (boost::format("%1%, while reading expected JSON.") % ex.what()).str());
+        fmt::format("{}, while reading expected JSON.", ex.what()));
   }
 
   try {
     pt::read_json(actual, act_tree);
   } catch (const std::exception &ex) {
     throw std::runtime_error(
-        (boost::format("%1%, while reading actual JSON.") % ex.what()).str());
+        fmt::format("{}, while reading actual JSON.", ex.what()));
   }
 
   expected.seekg(0);
@@ -362,18 +356,16 @@ void check_content_body_plain(std::istream &expected, std::istream &actual) {
 
     if (exp_num != act_num) {
       throw std::runtime_error(
-        (boost::format("Expected to read %1% bytes, but read %2% in actual "
-                       "plain - responses are different sizes.")
-         % exp_num % act_num).str());
+        fmt::format("Expected to read {} bytes, but read {} in actual "
+                       "plain - responses are different sizes.", exp_num, act_num));
     }
 
     if (!std::equal(exp_buf, exp_buf + exp_num, act_buf)) {
       std::string exp(exp_buf, exp_buf + exp_num),
         act(act_buf, act_buf + act_num);
       throw std::runtime_error(
-        (boost::format("Returned content differs: expected \"%1%\", actual "
-                       "\"%2%\" - responses are different.")
-         % exp % act).str());
+        fmt::format("Returned content differs: expected \"{}\", actual "
+                       "\"{}\" - responses are different.", exp, act));
     }
 
     if (expected.eof() && actual.eof()) {
@@ -398,24 +390,24 @@ void check_headers(const dict &expected_headers,
       auto itr = actual_headers.find(val.first.substr(1));
       if (itr != actual_headers.end()) {
         throw std::runtime_error(
-          (boost::format(
-            "Expected not to find header `%1%', but it is present.") %
-           itr->first).str());
+          fmt::format(
+            "Expected not to find header `{}', but it is present.",
+           itr->first));
       }
     } else {
       auto itr = actual_headers.find(val.first);
       if (itr == actual_headers.end()) {
         throw std::runtime_error(
-          (boost::format("Expected header `%1%: %2%', but didn't find it in "
-                         "actual response.") %
-           val.first % val.second).str());
+          fmt::format("Expected header `{}: {}', but didn't find it in "
+                         "actual response.",
+           val.first, val.second));
       }
       if (!val.second.empty()) {
         if (val.second != itr->second) {
           throw std::runtime_error(
-            (boost::format(
-              "Header key `%1%'; expected `%2%' but got `%3%'.") %
-             val.first % val.second % itr->second).str());
+            fmt::format(
+              "Header key `{}'; expected `{}' but got `{}'.",
+             val.first, val.second, itr->second));
         }
       }
     }
@@ -463,8 +455,8 @@ void check_response(std::istream &expected, std::istream &actual) {
 
     } else {
       throw std::runtime_error(
-          (boost::format("Cannot yet handle tests with Content-Type: %1%.") %
-           content_type).str());
+          fmt::format("Cannot yet handle tests with Content-Type: {}.",
+           content_type));
     }
   }
 }
@@ -510,7 +502,7 @@ void run_test(fs::path test_case, rate_limiter &limiter,
 
   } catch (const std::exception &ex) {
     throw std::runtime_error(
-        (boost::format("%1%, in %2% test.") % ex.what() % test_case).str());
+        fmt::format("{}, in {} test.", ex.what(), test_case.string()));
   }
 }
 
@@ -682,7 +674,7 @@ int main(int argc, char *argv[]) {
         pt::read_json(oauth_file.string(), config);
       } catch (const std::exception &ex) {
         throw std::runtime_error
-          ((boost::format("%1%, while reading expected JSON.") % ex.what()).str());
+          (fmt::format("{}, while reading expected JSON.", ex.what()));
       }
 
       store = std::make_unique<test_oauth>(config);
@@ -708,8 +700,7 @@ int main(int argc, char *argv[]) {
     routes route;
 
     for (fs::path test_case : test_cases) {
-      std::string generator =
-          (boost::format(PACKAGE_STRING " (test %1%)") % test_case).str();
+      std::string generator = fmt::format(PACKAGE_STRING " (test {})", test_case.string());
       run_test(test_case, limiter, generator, route, *factory, store.get());
     }
 

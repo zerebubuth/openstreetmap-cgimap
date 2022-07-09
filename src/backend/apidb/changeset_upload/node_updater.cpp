@@ -19,9 +19,9 @@
 #include <utility>
 #include <vector>
 
-#include <boost/format.hpp>
+#include <fmt/core.h>
 
-using boost::format;
+
 
 ApiDB_Node_Updater::ApiDB_Node_Updater(Transaction_Manager &_m,
 				       api06::OSMChange_Tracking &ct)
@@ -239,8 +239,7 @@ void ApiDB_Node_Updater::replace_old_ids_in_nodes(
     auto res = map.insert( { i.old_id, i.new_id } );
     if (!res.second)
       throw http::bad_request(
-          (boost::format("Duplicate node placeholder id %1%.") % i.old_id)
-              .str());
+          fmt::format("Duplicate node placeholder id {}.", i.old_id));
   }
 
   for (auto &n : nodes) {
@@ -248,9 +247,7 @@ void ApiDB_Node_Updater::replace_old_ids_in_nodes(
       auto entry = map.find(n.old_id);
       if (entry == map.end())
         throw http::bad_request(
-            (boost::format("Placeholder id not found for node reference %1%") %
-             n.old_id)
-                .str());
+            fmt::format("Placeholder id not found for node reference {}", n.old_id));
       n.id = entry->second;
     }
   }
@@ -356,10 +353,7 @@ void ApiDB_Node_Updater::lock_current_nodes(
                         std::inserter(not_locked_ids, not_locked_ids.begin()));
 
     throw http::not_found(
-        (boost::format(
-             "The following node ids are not known on the database: %1%") %
-         to_string(not_locked_ids))
-            .str());
+        fmt::format("The following node ids are not known on the database: {}", to_string(not_locked_ids)));
   }
 }
 
@@ -432,11 +426,11 @@ void ApiDB_Node_Updater::check_current_node_versions(
 
   if (!r.empty()) {
     throw http::conflict(
-        (boost::format(
-             "Version mismatch: Provided %1%, server had: %2% of Node %3%") %
-         r[0]["expected_version"].as<osm_version_t>() %
-         r[0]["actual_version"].as<osm_version_t>() % r[0]["id"].as<osm_nwr_id_t>())
-            .str());
+        fmt::format(
+             "Version mismatch: Provided {}, server had: {} of Node {}",
+         r[0]["expected_version"].as<osm_version_t>(),
+         r[0]["actual_version"].as<osm_version_t>(),
+         r[0]["id"].as<osm_nwr_id_t>()));
   }
 }
 
@@ -483,8 +477,7 @@ std::set<osm_nwr_id_t> ApiDB_Node_Updater::determine_already_deleted_nodes(
     if (ids_without_if_unused.find(id) != ids_without_if_unused.end()) {
 
       throw http::gone(
-          (boost::format("The node with the id %1% has already been deleted") %
-           id).str());
+          fmt::format("The node with the id {} has already been deleted", id));
     }
 
     result.insert(id);
@@ -605,10 +598,10 @@ void ApiDB_Node_Updater::update_current_nodes(
                      [&](const node_t &n) { return n.id == unknown_id; });
 
     throw http::server_error(
-        (boost::format(
-             "Could not update Node %1% with version %2% on the database.") %
-         (*unknown_node).id % (*unknown_node).version)
-            .str());
+        fmt::format(
+             "Could not update Node {} with version {} on the database.",
+         (*unknown_node).id,
+         (*unknown_node).version));
   }
 
   // update modified nodes table
@@ -800,10 +793,9 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
         // Without the if-unused, such a situation would lead to an error, and
         // the whole diff upload would fail.
         throw http::precondition_failed(
-            (boost::format("Node %1% is still used by ways %2%.") %
-             row["node_id"].as<osm_nwr_id_t>() %
-             friendly_name(row["way_ids"].as<std::string>()))
-                .str());
+            fmt::format("Node {} is still used by ways {}.",
+             row["node_id"].as<osm_nwr_id_t>(),
+             friendly_name(row["way_ids"].as<std::string>())));
       }
 
       if (ids_if_unused.find(node_id) != ids_if_unused.end()) {
@@ -844,10 +836,9 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
         // Without the if-unused, such a situation would lead to an error, and
         // the whole diff upload would fail.
         throw http::precondition_failed(
-            (boost::format("Node %1% is still used by relations %2%.") %
-             row["member_id"].as<osm_nwr_id_t>() %
-             friendly_name(row["relation_ids"].as<std::string>()))
-                .str());
+            fmt::format("Node {} is still used by relations {}.",
+                row["member_id"].as<osm_nwr_id_t>(),
+                friendly_name(row["relation_ids"].as<std::string>())));
       }
 
       if (ids_if_unused.find(node_id) != ids_if_unused.end())

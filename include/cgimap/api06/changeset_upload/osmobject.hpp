@@ -4,7 +4,7 @@
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
 
-#include <boost/format.hpp>
+#include <fmt/core.h>
 #include <map>
 #include <optional>
 
@@ -107,33 +107,23 @@ namespace api06 {
     void add_tag(std::string key, std::string value) {
 
       if (key.empty()) {
-	  throw xml_error(
-	      (boost::format("Key may not be empty in %1%") % to_string())
-	      .str());
+	  throw xml_error(fmt::format("Key may not be empty in {}", to_string()));
       }
 
       if (unicode_strlen(key) > 255) {
 	  throw xml_error(
-	      (boost::format(
-		  "Key has more than 255 unicode characters in %1%") %
-		  to_string())
-		  .str());
+	      fmt::format("Key has more than 255 unicode characters in {}",  to_string()));
       }
 
       if (unicode_strlen(value) > 255) {
 	  throw xml_error(
-	      (boost::format(
-		  "Value has more than 255 unicode characters in %1%") %
-		  to_string())
-		  .str());
+	      fmt::format("Value has more than 255 unicode characters in {}", to_string()));
       }
 
       if (!(m_tags.insert(std::pair<std::string, std::string>(key, value)))
 	  .second) {
 	  throw xml_error(
-	      (boost::format("%1% has duplicate tags with key %2%") %
-		  to_string() % key)
-		  .str());
+	       fmt::format("{} has duplicate tags with key {}", to_string(), key));
       }
     }
 
@@ -146,9 +136,8 @@ namespace api06 {
       if ((global_settings::get_element_max_tags()) &&
 	  m_tags.size() > *global_settings::get_element_max_tags()) {
 	  throw xml_error(
-	      (boost::format("OSM element exceeds limit of %1% tags")
-                 % *global_settings::get_element_max_tags())
-		  .str());
+	      fmt::format("OSM element exceeds limit of {} tags",
+                 *global_settings::get_element_max_tags()));
       }
 
       return (m_changeset && m_id && m_version);
@@ -158,8 +147,7 @@ namespace api06 {
 
     virtual std::string to_string() {
 
-      return (boost::format("%1% %2%") % get_type_name() % ((m_id) ? *m_id : 0))
-	  .str();
+      return fmt::format("{} {}", get_type_name(), ((m_id) ? *m_id : 0));
     }
 
   private:

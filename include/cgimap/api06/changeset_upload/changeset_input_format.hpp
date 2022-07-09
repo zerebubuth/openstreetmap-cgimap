@@ -5,7 +5,7 @@
 #include "cgimap/util.hpp"
 
 #include <libxml/parser.h>
-#include <boost/format.hpp>
+#include <fmt/core.h>
 
 #include <algorithm>
 #include <cassert>
@@ -121,7 +121,7 @@ namespace api06 {
     void add_tag(std::string key, std::string value) {
 
       if (key.empty())
-	throw xml_error("Key may not be empty in %1%");
+	throw xml_error("Key may not be empty");
 
       if (unicode_strlen(key) > 255)
 	throw xml_error("Key has more than 255 unicode characters");
@@ -175,11 +175,10 @@ namespace api06 {
       if (location == nullptr)
         throw e;
 
-      throw TEx{ (boost::format("%1% at line %2%, column %3%") %
-    	e.what() %
-    	location->line %
-    	location->col )
-        .str() };
+      throw TEx{ fmt::format("{} at line {}, column {}",
+    	e.what(),
+    	location->line,
+    	location->col ) };
     }
 
     enum class context {

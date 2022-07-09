@@ -16,9 +16,9 @@
 #include <utility>
 #include <vector>
 
-#include <boost/format.hpp>
+#include <fmt/core.h>
 
-using boost::format;
+
 
 ApiDB_Way_Updater::ApiDB_Way_Updater(Transaction_Manager &_m,
 				     api06::OSMChange_Tracking &ct)
@@ -272,8 +272,7 @@ void ApiDB_Way_Updater::replace_old_ids_in_ways(
         std::pair<osm_nwr_signed_id_t, osm_nwr_id_t>(i.old_id, i.new_id));
     if (!res.second)
       throw http::bad_request(
-          (boost::format("Duplicate way placeholder id %1%.") % i.old_id)
-              .str());
+          fmt::format("Duplicate way placeholder id {}.", i.old_id));
   }
 
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_nodes;
@@ -282,8 +281,7 @@ void ApiDB_Way_Updater::replace_old_ids_in_ways(
         std::pair<osm_nwr_signed_id_t, osm_nwr_id_t>(i.old_id, i.new_id));
     if (!res.second)
       throw http::bad_request(
-          (boost::format("Duplicate node placeholder id %1%.") % i.old_id)
-              .str());
+          fmt::format("Duplicate node placeholder id {}.", i.old_id));
   }
 
   for (auto &cw : ways) {
@@ -292,9 +290,7 @@ void ApiDB_Way_Updater::replace_old_ids_in_ways(
       auto entry = map_ways.find(cw.old_id);
       if (entry == map_ways.end())
         throw http::bad_request(
-            (boost::format("Placeholder id not found for way reference %1%") %
-             cw.old_id)
-                .str());
+            fmt::format("Placeholder id not found for way reference {}", cw.old_id));
       cw.id = entry->second;
     }
 
@@ -303,10 +299,9 @@ void ApiDB_Way_Updater::replace_old_ids_in_ways(
         auto entry = map_nodes.find(wn.old_node_id);
         if (entry == map_nodes.end())
           throw http::bad_request(
-              (boost::format(
-                   "Placeholder node not found for reference %1% in way %2%") %
-               wn.old_node_id % cw.old_id)
-                  .str());
+              fmt::format(
+                   "Placeholder node not found for reference {} in way {}",
+               wn.old_node_id, cw.old_id));
         wn.node_id = entry->second;
       }
     }
@@ -431,9 +426,7 @@ void ApiDB_Way_Updater::lock_current_ways(
                         std::inserter(not_locked_ids, not_locked_ids.begin()));
 
     throw http::not_found(
-        (boost::format("The following way ids are unknown: %1%") %
-         to_string(not_locked_ids))
-            .str());
+        fmt::format("The following way ids are unknown: {}", to_string(not_locked_ids)));
   }
 }
 
@@ -505,11 +498,11 @@ void ApiDB_Way_Updater::check_current_way_versions(
 
   if (!r.empty()) {
     throw http::conflict(
-        (boost::format(
-             "Version mismatch: Provided %1%, server had: %2% of Way %3%") %
-         r[0]["expected_version"].as<osm_version_t>() %
-         r[0]["actual_version"].as<osm_version_t>() % r[0]["id"].as<osm_nwr_id_t>())
-            .str());
+        fmt::format(
+             "Version mismatch: Provided {}, server had: {} of Way {}",
+         r[0]["expected_version"].as<osm_version_t>(),
+         r[0]["actual_version"].as<osm_version_t>(),
+         r[0]["id"].as<osm_nwr_id_t>()));
   }
 }
 
@@ -554,8 +547,7 @@ std::set<osm_nwr_id_t> ApiDB_Way_Updater::determine_already_deleted_ways(
     // and the if-unused flag hasn't been set!
     if (ids_without_if_unused.find(id) != ids_without_if_unused.end()) {
       throw http::gone(
-          (boost::format("The way with the id %1% has already been deleted") %
-           id).str());
+          fmt::format("The way with the id {} has already been deleted", id));
     }
 
     result.insert(id);
@@ -627,10 +619,8 @@ void ApiDB_Way_Updater::lock_future_nodes(const std::vector<way_t> &ways) {
     auto it = absent_way_node_ids.begin();
 
     throw http::precondition_failed(
-        (boost::format("Way %1% requires the nodes with id in %2%, which "
-                       "either do not exist, or are not visible.") %
-         it->first % to_string(it->second))
-            .str());
+        fmt::format("Way {} requires the nodes with id in {}, which either do not exist, or are not visible.",
+         it->first, to_string(it->second)));
   }
 }
 
@@ -867,10 +857,9 @@ ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t> &ways) {
       // Without the if-unused, such a situation would lead to an error, and the
       // whole diff upload would fail.
       throw http::precondition_failed(
-          (boost::format("Way %1% is still used by relations %2%.") %
-           row["member_id"].as<osm_nwr_id_t>() %
-           friendly_name(row["relation_ids"].as<std::string>()))
-              .str());
+          fmt::format("Way {} is still used by relations {}.",
+           row["member_id"].as<osm_nwr_id_t>(),
+           friendly_name(row["relation_ids"].as<std::string>())));
     }
 
     if (ids_if_unused.find(way_id) != ids_if_unused.end()) {

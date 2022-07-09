@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <string>
 
-#include <boost/format.hpp>
+#include <fmt/core.h>
 
 #include <pqxx/pqxx>
 
@@ -24,7 +24,7 @@ struct test_database {
   // allow the test to be skipped, as people might not have or want an
   // apidb database set up on their local machines.
   struct setup_error : public std::exception {
-    setup_error(const boost::format &fmt);
+    setup_error(std::string fmt);
     ~setup_error() noexcept;
     virtual const char *what() const noexcept;
 

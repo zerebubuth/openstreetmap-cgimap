@@ -4,7 +4,7 @@
 #include "cgimap/logger.hpp"
 
 #include <chrono>
-#include <boost/format.hpp>
+#include <fmt/core.h>
 #include <pqxx/pqxx>
 
 #include <iostream>
@@ -73,11 +73,11 @@ public:
 
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
-    logger::message(boost::format("Executed prepared statement %1% in %2% ms, returning %3% rows, %4% affected rows")
-                               % statement
-			       % elapsed.count()
-			       % res.size()
-			       % res.affected_rows());
+    logger::message(fmt::format("Executed prepared statement {} in {} ms, returning {} rows, {} affected rows",
+                               statement,
+                               elapsed.count(),
+			       res.size(),
+			       res.affected_rows()));
     return res;
   }
 

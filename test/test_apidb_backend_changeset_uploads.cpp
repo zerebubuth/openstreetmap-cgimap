@@ -1,7 +1,7 @@
 #include <cstdio>
 #include <iostream>
 #include <stdexcept>
-#include <boost/format.hpp>
+#include <fmt/core.h>
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
@@ -27,10 +27,7 @@ namespace {
   template <typename T>
   void assert_equal(const T& a, const T&b, const std::string &message) {
     if (a != b) {
-	throw std::runtime_error(
-	    (boost::format(
-		"Expecting %1% to be equal, but %2% != %3%")
-	% message % a % b).str());
+      throw std::runtime_error(fmt::format("Expecting {} to be equal, but {} != {}", message, a, b));
     }
   }
 
@@ -160,9 +157,8 @@ namespace {
 	throw std::runtime_error("Expected new version == 2");
 
       if (change_tracking.modified_node_ids[0].new_id != node_id)
-	throw std::runtime_error((boost::format("Expected new_id == node_id, %1%, %2%")
-      % change_tracking.modified_node_ids[0].new_id
-      % node_id).str());
+	throw std::runtime_error(fmt::format("Expected new_id == node_id, {}, {}",
+                      change_tracking.modified_node_ids[0].new_id, node_id));
 
       node_version = change_tracking.modified_node_ids[0].new_version;
 
@@ -369,8 +365,8 @@ namespace {
 	throw std::runtime_error("Expected 1 entry in skip_deleted_node_ids");
 
       if (change_tracking.skip_deleted_node_ids[0].new_version != node_version)
-	throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_node_ids")
-                                 % node_version).str());
+	throw std::runtime_error(fmt::format("Expected new version == {} in skip_deleted_node_ids",
+                                 node_version));
     }
 
     // Delete non-existing node
@@ -573,9 +569,9 @@ namespace {
   	throw std::runtime_error("Expected new version == 2");
 
         if (change_tracking.modified_way_ids[0].new_id != way_id)
-  	throw std::runtime_error((boost::format("Expected new_id == way_id, %1%, %2%")
-                                   % change_tracking.modified_way_ids[0].new_id
-  				 % way_id).str());
+  	throw std::runtime_error(fmt::format("Expected new_id == way_id, {}, {}",
+                                   change_tracking.modified_way_ids[0].new_id,
+  				   way_id));
 
         way_version = change_tracking.modified_way_ids[0].new_version;
 
@@ -737,8 +733,7 @@ namespace {
   	throw std::runtime_error("Expected 1 entry in skip_deleted_node_ids");
 
         if (change_tracking.skip_deleted_node_ids[0].new_version != 1)
-  	throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_node_ids")
-                                   % 1).str());
+  	throw std::runtime_error(fmt::format("Expected new version == {} in skip_deleted_node_ids", 1));
 
       }
 
@@ -823,8 +818,7 @@ namespace {
   	throw std::runtime_error("Expected 1 entry in skip_deleted_way_ids");
 
         if (change_tracking.skip_deleted_way_ids[0].new_version != way_version)
-  	throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_way_ids")
-                                   % way_version).str());
+  	throw std::runtime_error(fmt::format("Expected new version == {} in skip_deleted_way_ids", way_version));
       }
 
       // Delete non-existing way
@@ -1301,9 +1295,9 @@ namespace {
   	throw std::runtime_error("Expected new version == 2");
 
         if (change_tracking.modified_relation_ids[0].new_id != relation_id)
-  	throw std::runtime_error((boost::format("Expected new_id == relation_id, %1%, %2%")
-                                   % change_tracking.modified_relation_ids[0].new_id
-  				 % relation_id).str());
+  	throw std::runtime_error(fmt::format("Expected new_id == relation_id, {}, {}",
+                                    change_tracking.modified_relation_ids[0].new_id,
+  				    relation_id));
 
         relation_version = change_tracking.modified_relation_ids[0].new_version;
 
@@ -1571,12 +1565,10 @@ namespace {
   	throw std::runtime_error("Expected 1 entry in skip_deleted_node_ids");
 
         if (change_tracking.skip_deleted_node_ids[0].new_version != 1)
-  	throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_node_ids")
-                                   % 1).str());
+  	throw std::runtime_error(fmt::format("Expected new version == {} in skip_deleted_node_ids", 1));
 
         if (change_tracking.skip_deleted_node_ids[0].new_id != node_new_ids[2])
-  	throw std::runtime_error((boost::format("Expected new id == %1% in skip_deleted_node_ids")
-                                   % node_new_ids[2]).str());
+  	throw std::runtime_error(fmt::format("Expected new id == {} in skip_deleted_node_ids", node_new_ids[2]));
       }
 
       // Try to delete way which still belongs to relation, if-unused not set
@@ -1614,12 +1606,10 @@ namespace {
   	throw std::runtime_error("Expected 1 entry in skip_deleted_way_ids");
 
         if (change_tracking.skip_deleted_way_ids[0].new_version != 1)
-  	throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_way_ids")
-                                   % 1).str());
+  	throw std::runtime_error(fmt::format("Expected new version == {} in skip_deleted_way_ids", 1));
 
         if (change_tracking.skip_deleted_way_ids[0].new_id != way_new_id)
-  	throw std::runtime_error((boost::format("Expected new id == %1% in skip_deleted_way_ids")
-                                   % way_new_id).str());
+  	throw std::runtime_error(fmt::format("Expected new id == {} in skip_deleted_way_ids", way_new_id));
       }
 
       // Try to delete relation which still belongs to relation, if-unused not set
@@ -1657,12 +1647,10 @@ namespace {
   	throw std::runtime_error("Expected 1 entry in skip_deleted_relation_ids");
 
         if (change_tracking.skip_deleted_relation_ids[0].new_version != 1)
-  	throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_relation_ids")
-                                   % 1).str());
+  	throw std::runtime_error(fmt::format("Expected new version == {} in skip_deleted_relation_ids", 1));
 
         if (change_tracking.skip_deleted_relation_ids[0].new_id != relation_id_1)
-  	throw std::runtime_error((boost::format("Expected new id == %1% in skip_deleted_relation_ids")
-                                   % relation_id_1).str());
+  	throw std::runtime_error(fmt::format("Expected new id == {} in skip_deleted_relation_ids", relation_id_1));
       }
 
 
@@ -1755,7 +1743,7 @@ namespace {
 
 	  upd->commit();
 	} catch (http::exception& e) {
-	    throw std::runtime_error((boost::format("Revert deletion of master/child relations: HTTP Exception unexpected: %1% ") % e.what()).str());
+	    throw std::runtime_error(fmt::format("Revert deletion of master/child relations: HTTP Exception unexpected: {} ", e.what()));
 	}
       }
 
@@ -1794,8 +1782,7 @@ namespace {
   	throw std::runtime_error("Expected 1 entry in skip_deleted_relation_ids");
 
         if (change_tracking.skip_deleted_relation_ids[0].new_version != relation_version)
-  	throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_relation_ids")
-                                   % relation_version).str());
+  	throw std::runtime_error(fmt::format("Expected new version == {} in skip_deleted_relation_ids", relation_version));
       }
 
       // Delete non-existing relation
@@ -1894,20 +1881,16 @@ namespace {
 	    throw std::runtime_error("Expected 2 entries in skip_deleted_relation_ids level 3 relations");
 
 	  if (change_tracking.skip_deleted_relation_ids[0].new_version != 1)
-	    throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_relation_ids level 3 relations, level 0")
-	  % 1).str());
+	    throw std::runtime_error(fmt::format("Expected new version == {} in skip_deleted_relation_ids level 3 relations, level 0", 1));
 
 	  if (change_tracking.skip_deleted_relation_ids[0].new_id != relation_l3_id_1)
-	    throw std::runtime_error((boost::format("Expected new id == %1% in skip_deleted_relation_ids level 3 relations, level 0")
-	  % relation_l3_id_1).str());
+	    throw std::runtime_error(fmt::format("Expected new id == {} in skip_deleted_relation_ids level 3 relations, level 0", relation_l3_id_1));
 
 	  if (change_tracking.skip_deleted_relation_ids[1].new_version != 1)
-	    throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_relation_ids level 3 relations, level 1")
-	  % 1).str());
+	    throw std::runtime_error(fmt::format("Expected new version == {} in skip_deleted_relation_ids level 3 relations, level 1", 1));
 
 	  if (change_tracking.skip_deleted_relation_ids[1].new_id != relation_l3_id_2)
-	    throw std::runtime_error((boost::format("Expected new id == %1% in skip_deleted_relation_ids level 3 relations, level 1")
-	  % relation_l3_id_2).str());
+	    throw std::runtime_error(fmt::format("Expected new id == {} in skip_deleted_relation_ids level 3 relations, level 1", relation_l3_id_2));
 
 	  if (change_tracking.deleted_relation_ids.size() > 0)
 	    throw std::runtime_error("Expected 0 entries in deleted_relation_ids level 3 relations");

@@ -61,7 +61,7 @@ changeset_upload_handler::changeset_upload_handler(request &,
       id(id_) {}
 
 std::string changeset_upload_handler::log_name() const {
-  return ((boost::format("changeset/upload %1%") % id).str());
+  return (fmt::format("changeset/upload {}", id));
 }
 
 responder_ptr_t

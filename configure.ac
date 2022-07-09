@@ -27,6 +27,10 @@ PKG_CHECK_MODULES(LIBPQXX, libpqxx >= 6.0)
 AC_SUBST(LIBPQXX_CFLAGS)
 AC_SUBST(LIBPQXX_LIBS)
 
+PKG_CHECK_MODULES(FMT, fmt >= 6.0)
+AC_SUBST(FMT_CFLAGS)
+AC_SUBST(FMT_LIBS)
+
 PKG_CHECK_MODULES([ARGON2], [libargon2])
 AC_SUBST(argon2_lib, [", libargon2"])
 
@@ -118,6 +122,7 @@ AC_MSG_RESULT($enable_apidb)
 AS_IF([test "x$enable_apidb" == xyes],
       [AC_DEFINE([ENABLE_APIDB], [1], [Define for APIDB backend support.])])
 AM_CONDITIONAL([ENABLE_APIDB], [test "x$enable_apidb" == xyes])
+
 
 AC_CONFIG_FILES([
 	Makefile

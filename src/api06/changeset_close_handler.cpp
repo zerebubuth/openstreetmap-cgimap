@@ -41,7 +41,7 @@ changeset_close_handler::changeset_close_handler(request &,
 
 
 std::string changeset_close_handler::log_name() const {
-  return ((boost::format("changeset/close %1%") % id).str());
+  return (fmt::format("changeset/close {}", id));
 }
 
 responder_ptr_t

@@ -8,7 +8,7 @@ RUN apt-get update -qq && \
        libfcgi-dev libxml2-dev libmemcached-dev \
        libboost-program-options-dev libboost-system-dev \
        libboost-filesystem-dev libboost-locale-dev libcrypto++-dev libyajl-dev \
-       libpqxx-dev zlib1g-dev libargon2-dev \
+       libpqxx-dev zlib1g-dev libargon2-dev libfmt-dev \
        postgresql-12 postgresql-server-dev-all \
        --no-install-recommends && \
     apt-get clean && \

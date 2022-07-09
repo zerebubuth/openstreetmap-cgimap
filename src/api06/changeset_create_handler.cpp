@@ -43,7 +43,7 @@ changeset_create_handler::changeset_create_handler(request &)
                               http::method::PUT | http::method::OPTIONS) {}
 
 std::string changeset_create_handler::log_name() const {
-  return ((boost::format("changeset/create")).str());
+  return "changeset/create";
 }
 
 responder_ptr_t

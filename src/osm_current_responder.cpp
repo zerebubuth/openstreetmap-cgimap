@@ -2,7 +2,7 @@
 #include "cgimap/logger.hpp"
 #include "cgimap/osm_current_responder.hpp"
 
-#include <boost/format.hpp>
+#include <fmt/core.h>
 
 using std::list;
 
@@ -43,8 +43,8 @@ void osm_current_responder::write(output_formatter& fmt,
     fmt.end_element_type(element_type_relation);
 
   } catch (const std::exception &e) {
-    logger::message(boost::format("Caught error in osm_current_responder: %1%") %
-                      e.what());
+    logger::message(fmt::format("Caught error in osm_current_responder: {}",
+                      e.what()));
     fmt.error(e);
   }
 

@@ -3,7 +3,7 @@
 #include "cgimap/osmchange_responder.hpp"
 
 #include <chrono>
-#include <boost/format.hpp>
+#include <fmt/core.h>
 
 using std::list;
 
@@ -242,8 +242,8 @@ void osmchange_responder::write(
     sorter.write(fmt);
 
   } catch (const std::exception &e) {
-    logger::message(boost::format("Caught error in osmchange_responder: %1%") %
-                          e.what());
+    logger::message(fmt::format("Caught error in osmchange_responder: {}",
+                          e.what()));
     fmt.error(e);
   }
 

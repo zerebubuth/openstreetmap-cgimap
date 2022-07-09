@@ -3,13 +3,15 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+ #include <unistd.h>
 
 #include "cgimap/logger.hpp"
+#include <fmt/core.h>
 
 using std::string;
 using std::ostream;
 using std::ofstream;
-using boost::format;
+
 
 
 namespace logger {
@@ -30,5 +32,6 @@ void message(const string &m) {
   }
 }
 
-void message(const format &m) { message(m.str()); }
+// void message(const fmt::format &m) { message(m.str()); }
+
 }

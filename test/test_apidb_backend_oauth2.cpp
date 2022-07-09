@@ -1,6 +1,6 @@
 #include <iostream>
 #include <stdexcept>
-#include <boost/format.hpp>
+#include <fmt/core.h>
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
@@ -25,13 +25,26 @@ std::ostream& operator<<(std::ostream& os, std::optional<T> const& opt)
   return opt ? os << opt.value() : os;
 }
 
+}
+
+template <> struct fmt::formatter<std::optional<osm_user_id_t>> {
+  template <typename FormatContext>
+  auto format(const std::optional<osm_user_id_t>& v, FormatContext& ctx) -> decltype(ctx.out()) {
+    // ctx.out() is an output iterator to write to.
+    std::ostringstream ostr;
+    ostr << v;
+    return format_to(ctx.out(), "{}", ostr.str());
+  }
+  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+};
+
+
+namespace {
+
 template <typename T>
 void assert_equal(const T& a, const T&b, const std::string &message) {
   if (a != b) {
-    std::ostringstream out;
-    out << "Expecting " << message << " to be equal, but "
-        << a << " != " << b;
-    throw std::runtime_error(out.str());
+    throw std::runtime_error(fmt::format("Expecting {} to be equal, but {} != {}", message, a, b));
   }
 }
 
@@ -85,10 +98,10 @@ void test_user_id_for_oauth2_token(test_database &tdb) {
     bool expired;
     bool revoked;
     const auto user_id = store->get_user_id_for_oauth2_token("4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8", expired, revoked, allow_api_write);
-    assert_equal<std::optional<osm_user_id_t> >(user_id, std::optional<osm_user_id_t>{1}, "test_apidb_backend_oauth2::001 - user id");
-    assert_equal<std::optional<bool> >(allow_api_write, true, "test_apidb_backend_oauth2::001 - allow_api_write");
-    assert_equal<std::optional<bool> >(expired, false, "test_apidb_backend_oauth2::001 - expired");
-    assert_equal<std::optional<bool> >(revoked, false, "test_apidb_backend_oauth2::001 - revoked");
+    assert_equal<std::optional<osm_user_id_t>>(user_id, 1, "test_apidb_backend_oauth2::001 - user id");
+    assert_equal<bool>(allow_api_write, true, "test_apidb_backend_oauth2::001 - allow_api_write");
+    assert_equal<bool>(expired, false, "test_apidb_backend_oauth2::001 - expired");
+    assert_equal<bool>(revoked, false, "test_apidb_backend_oauth2::001 - revoked");
   }
 
   // Invalid (non existing) token
@@ -97,7 +110,7 @@ void test_user_id_for_oauth2_token(test_database &tdb) {
     bool expired;
     bool revoked;
     const auto user_id = store->get_user_id_for_oauth2_token("a6ee343e3417915c87f492aac2a7b638647ef576e2a03256bbf1854c7e06c163", expired, revoked, allow_api_write);
-    assert_equal<std::optional<osm_user_id_t> >(user_id, {}, "test_apidb_backend_oauth2::002");
+    assert_equal<bool>(user_id.has_value(), false, "test_apidb_backend_oauth2::002");
   }
 
   // Revoked token
@@ -106,10 +119,10 @@ void test_user_id_for_oauth2_token(test_database &tdb) {
     bool expired;
     bool revoked;
     const auto user_id = store->get_user_id_for_oauth2_token("1187c28b93ab4a14e3df6a61ef46a24d7d4d7964c1d56eb2bfd197b059798c1d", expired, revoked, allow_api_write);
-    assert_equal<std::optional<osm_user_id_t> >(user_id, std::optional<osm_user_id_t>{1}, "test_apidb_backend_oauth2::003 - user id");
-    assert_equal<std::optional<bool> >(allow_api_write, true, "test_apidb_backend_oauth2::003 - allow_api_write");
-    assert_equal<std::optional<bool> >(expired, false, "test_apidb_backend_oauth2::003 - expired");
-    assert_equal<std::optional<bool> >(revoked, true, "test_apidb_backend_oauth2::003 - revoked");
+    assert_equal<std::optional<osm_user_id_t>>(user_id, 1, "test_apidb_backend_oauth2::003 - user id");
+    assert_equal<bool>(allow_api_write, true, "test_apidb_backend_oauth2::003 - allow_api_write");
+    assert_equal<bool>(expired, false, "test_apidb_backend_oauth2::003 - expired");
+    assert_equal<bool>(revoked, true, "test_apidb_backend_oauth2::003 - revoked");
   }
 
   // Two scopes, including write_api
@@ -118,10 +131,10 @@ void test_user_id_for_oauth2_token(test_database &tdb) {
     bool expired;
     bool revoked;
     const auto user_id = store->get_user_id_for_oauth2_token("4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8", expired, revoked, allow_api_write);
-    assert_equal<std::optional<osm_user_id_t> >(user_id, std::optional<osm_user_id_t>{1}, "test_apidb_backend_oauth2::004 - user id");
-    assert_equal<std::optional<bool> >(allow_api_write, true, "test_apidb_backend_oauth2::004 - allow_api_write");
-    assert_equal<std::optional<bool> >(expired, false, "test_apidb_backend_oauth2::004 - expired");
-    assert_equal<std::optional<bool> >(revoked, false, "test_apidb_backend_oauth2::004 - revoked");
+    assert_equal<std::optional<osm_user_id_t>>(user_id, 1, "test_apidb_backend_oauth2::004 - user id");
+    assert_equal<bool>(allow_api_write, true, "test_apidb_backend_oauth2::004 - allow_api_write");
+    assert_equal<bool>(expired, false, "test_apidb_backend_oauth2::004 - expired");
+    assert_equal<bool>(revoked, false, "test_apidb_backend_oauth2::004 - revoked");
   }
 
   // Two scopes, not write_api
@@ -130,10 +143,10 @@ void test_user_id_for_oauth2_token(test_database &tdb) {
     bool expired;
     bool revoked;
     const auto user_id = store->get_user_id_for_oauth2_token("e466d2ba2ff5da35fdaa7547eb6c27ae0461c7a4acc05476c0a33b1b1d0788cd", expired, revoked, allow_api_write);
-    assert_equal<std::optional<osm_user_id_t> >(user_id, std::optional<osm_user_id_t>{1}, "test_apidb_backend_oauth2::005 - user id");
-    assert_equal<std::optional<bool> >(allow_api_write, false, "test_apidb_backend_oauth2::005 - allow_api_write");
-    assert_equal<std::optional<bool> >(expired, false, "test_apidb_backend_oauth2::005 - expired");
-    assert_equal<std::optional<bool> >(revoked, false, "test_apidb_backend_oauth2::005 - revoked");
+    assert_equal<std::optional<osm_user_id_t>>(user_id, 1, "test_apidb_backend_oauth2::005 - user id");
+    assert_equal<bool>(allow_api_write, false, "test_apidb_backend_oauth2::005 - allow_api_write");
+    assert_equal<bool>(expired, false, "test_apidb_backend_oauth2::005 - expired");
+    assert_equal<bool>(revoked, false, "test_apidb_backend_oauth2::005 - revoked");
   }
 
   // expired token
@@ -142,10 +155,10 @@ void test_user_id_for_oauth2_token(test_database &tdb) {
     bool expired;
     bool revoked;
     const auto user_id = store->get_user_id_for_oauth2_token("f0e6f310ee3a9362fe00cee4328ad318a1fa6c770b2e19975271da99a6407476", expired, revoked, allow_api_write);
-    assert_equal<std::optional<osm_user_id_t> >(user_id, std::optional<osm_user_id_t>{1}, "test_apidb_backend_oauth2::006 - user id");
-    assert_equal<std::optional<bool> >(allow_api_write, true, "test_apidb_backend_oauth2::006 - allow_api_write");
-    assert_equal<std::optional<bool> >(expired, true, "test_apidb_backend_oauth2::006 - expired");
-    assert_equal<std::optional<bool> >(revoked, false, "test_apidb_backend_oauth2::006 - revoked");
+    assert_equal<std::optional<osm_user_id_t>>(user_id, 1, "test_apidb_backend_oauth2::006 - user id");
+    assert_equal<bool>(allow_api_write, true, "test_apidb_backend_oauth2::006 - allow_api_write");
+    assert_equal<bool>(expired, true, "test_apidb_backend_oauth2::006 - expired");
+    assert_equal<bool>(revoked, false, "test_apidb_backend_oauth2::006 - revoked");
   }
 
   // token to expire in about 30 minutes
@@ -154,10 +167,10 @@ void test_user_id_for_oauth2_token(test_database &tdb) {
     bool expired;
     bool revoked;
     const auto user_id = store->get_user_id_for_oauth2_token("b1294a183bf64f4d9a97f24ed84ce88e3ab6e7ada78114d6e600bdb63831237b", expired, revoked, allow_api_write);
-    assert_equal<std::optional<osm_user_id_t> >(user_id, std::optional<osm_user_id_t>{1}, "test_apidb_backend_oauth2::006 - user id");
-    assert_equal<std::optional<bool> >(allow_api_write, true, "test_apidb_backend_oauth2::007 - allow_api_write");
-    assert_equal<std::optional<bool> >(expired, false, "test_apidb_backend_oauth2::007 - expired");
-    assert_equal<std::optional<bool> >(revoked, false, "test_apidb_backend_oauth2::007 - revoked");
+    assert_equal<std::optional<osm_user_id_t>>(user_id, 1, "test_apidb_backend_oauth2::006 - user id");
+    assert_equal<bool>(allow_api_write, true, "test_apidb_backend_oauth2::007 - allow_api_write");
+    assert_equal<bool>(expired, false, "test_apidb_backend_oauth2::007 - expired");
+    assert_equal<bool>(revoked, false, "test_apidb_backend_oauth2::007 - revoked");
   }
 
 }

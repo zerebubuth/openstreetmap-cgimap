@@ -9,7 +9,7 @@
 
 #include "parsers/saxparser.hpp"
 
-#include <boost/format.hpp>
+#include <fmt/core.h>
 #include <libxml/parser.h>
 #include <libxml/parserInternals.h> // for xmlCreateFileParserCtxt
 
