@@ -88,8 +88,7 @@ void request::check_workflow(workflow_status this_stage) {
   } else if (m_workflow_status > this_stage) {
     // oops - workflow is more advanced than the function which called
     // this, so a workflow violation has occurred.
-    throw std::runtime_error(fmt::format("Can't move backwards in the request workflow from {} to "
-                                            "{}.",
+    throw std::runtime_error(fmt::format("Can't move backwards in the request workflow from {} to {}.",
                               m_workflow_status, this_stage));
   }
 }

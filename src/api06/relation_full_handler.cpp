@@ -48,7 +48,7 @@ void relation_full_responder::check_visibility() {
 relation_full_handler::relation_full_handler(request &, osm_nwr_id_t id_)
     : id(id_) {
   logger::message(
-      fmt::format("starting relation/full handler with id = {}", id));
+      fmt::format("starting relation/full handler with id = {:d}", id));
 }
 
 std::string relation_full_handler::log_name() const { return "relation/full"; }

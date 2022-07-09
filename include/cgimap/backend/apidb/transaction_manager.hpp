@@ -73,7 +73,7 @@ public:
 
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
-    logger::message(fmt::format("Executed prepared statement {} in {} ms, returning {} rows, {} affected rows",
+    logger::message(fmt::format("Executed prepared statement {} in {:d} ms, returning {:d} rows, {:d} affected rows",
                                statement,
                                elapsed.count(),
 			       res.size(),

@@ -587,7 +587,7 @@ void process_request(request &req, rate_limiter &limiter,
     // logging twice when an error is thrown.)
     auto end_time = std::chrono::high_resolution_clock::now();;
     auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-    logger::message(fmt::format("Completed request for {} from {} in {} ms returning {} bytes",
+    logger::message(fmt::format("Completed request for {} from {} in {:d} ms returning {:d} bytes",
                     request_name, ip,
 		    delta,
                     bytes_written));

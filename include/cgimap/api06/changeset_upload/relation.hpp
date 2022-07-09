@@ -117,7 +117,7 @@ public:
       if ((global_settings::get_relation_max_members()) &&
 	  m_relation_member.size() > *global_settings::get_relation_max_members()) {
         throw http::bad_request(
-             fmt::format("You tried to add {} members to relation {}, however only {} are allowed",
+             fmt::format("You tried to add {:d} members to relation {:d}, however only {:d} are allowed",
         	m_relation_member.size(),
         	(has_id() ? id() : 0),
         	*global_settings::get_relation_max_members()));

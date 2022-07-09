@@ -331,7 +331,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
         std::pair<osm_nwr_signed_id_t, osm_nwr_id_t>(i.old_id, i.new_id));
     if (!res.second)
       throw http::bad_request(
-          fmt::format("Duplicate relation placeholder id {}.", i.old_id));
+          fmt::format("Duplicate relation placeholder id {:d}.", i.old_id));
   }
 
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_ways;
@@ -340,7 +340,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
         std::pair<osm_nwr_signed_id_t, osm_nwr_id_t>(i.old_id, i.new_id));
     if (!res.second)
       throw http::bad_request(
-          fmt::format("Duplicate way placeholder id {}.", i.old_id));
+          fmt::format("Duplicate way placeholder id {:d}.", i.old_id));
   }
 
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_nodes;
@@ -349,7 +349,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
         std::pair<osm_nwr_signed_id_t, osm_nwr_id_t>(i.old_id, i.new_id));
     if (!res.second)
       throw http::bad_request(
-          fmt::format("Duplicate node placeholder id {}.", i.old_id));
+          fmt::format("Duplicate node placeholder id {:d}.", i.old_id));
   }
 
   // replace temporary ids
@@ -360,7 +360,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
       if (entry == map_relations.end())
         throw http::bad_request(
             fmt::format(
-                 "Placeholder id not found for relation reference {}",
+                 "Placeholder id not found for relation reference {:d}",
              cr.old_id));
 
       cr.id = entry->second;
@@ -372,14 +372,14 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
           auto entry = map_nodes.find(mbr.old_member_id);
           if (entry == map_nodes.end())
             throw http::bad_request(
-                fmt::format("Placeholder node not found for reference {} in relation {}",
+                fmt::format("Placeholder node not found for reference {:d} in relation {:d}",
                  mbr.old_member_id, cr.old_id));
           mbr.member_id = entry->second;
         } else if (mbr.member_type == "Way") {
           auto entry = map_ways.find(mbr.old_member_id);
           if (entry == map_ways.end())
             throw http::bad_request(
-                fmt::format("Placeholder way not found for reference {} in relation {}",
+                fmt::format("Placeholder way not found for reference {:d} in relation {:d}",
                  mbr.old_member_id, cr.old_id));
           mbr.member_id = entry->second;
 
@@ -387,7 +387,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
           auto entry = map_relations.find(mbr.old_member_id);
           if (entry == map_relations.end())
             throw http::bad_request(
-                fmt::format("Placeholder relation not found for reference {} in relation {}",
+                fmt::format("Placeholder relation not found for reference {:d} in relation {:d}",
                  mbr.old_member_id, cr.old_id));
           mbr.member_id = entry->second;
         }
@@ -436,7 +436,7 @@ void ApiDB_Relation_Updater::check_forward_relation_placeholders(
           if (entry == placeholder_ids.end())
             throw http::bad_request(
                 fmt::format("Placeholder relation not found for reference "
-                               "{} in relation {}",
+                               "{:d} in relation {:d}",
                  mbr.old_member_id, cr.old_id));
       }
     }
@@ -595,7 +595,7 @@ void ApiDB_Relation_Updater::check_current_relation_versions(
       m.exec_prepared("check_current_relation_versions", ids, versions);
 
   if (!r.empty()) {
-    throw http::conflict(fmt::format("Version mismatch: Provided {}, server had: {} of Relation {}",
+    throw http::conflict(fmt::format("Version mismatch: Provided {:d}, server had: {:d} of Relation {:d}",
                           r[0]["expected_version"].as<osm_version_t>(),
                           r[0]["actual_version"].as<osm_version_t>(),
                           r[0]["id"].as<osm_nwr_id_t>()));
@@ -645,7 +645,7 @@ ApiDB_Relation_Updater::determine_already_deleted_relations(
     // and the if-unused flag hasn't been set!
     if (ids_without_if_unused.find(id) != ids_without_if_unused.end()) {
       throw http::gone(
-          fmt::format("The relation with the id {} has already been deleted", id));
+          fmt::format("The relation with the id {:d} has already been deleted", id));
     }
 
     result.insert(id);
@@ -746,7 +746,7 @@ void ApiDB_Relation_Updater::lock_future_members(
       auto it = absent_rel_node_ids.begin();
 
       throw http::precondition_failed(
-          fmt::format("Relation {} requires the nodes with id in {}, "
+          fmt::format("Relation {:d} requires the nodes with id in {}, "
                          "which either do not exist, or are not visible.",
            it->first, to_string(it->second)));
     }
@@ -782,7 +782,7 @@ void ApiDB_Relation_Updater::lock_future_members(
       auto it = absent_rel_way_ids.begin();
 
       throw http::precondition_failed(
-          fmt::format("Relation {} requires the ways with id in {}, which "
+          fmt::format("Relation {:d} requires the ways with id in {}, which "
                          "either do not exist, or are not visible.",
            it->first, to_string(it->second)));
     }
@@ -817,7 +817,7 @@ void ApiDB_Relation_Updater::lock_future_members(
       auto it = absent_rel_rel_ids.begin();
 
       throw http::precondition_failed(
-          fmt::format("Relation {} requires the relations with id in {}, "
+          fmt::format("Relation {:d} requires the relations with id in {}, "
                          "which either do not exist, or are not visible.",
            it->first, to_string(it->second)));
     }
@@ -1615,7 +1615,7 @@ ApiDB_Relation_Updater::is_relation_still_referenced(
       // Without the if-unused, such a situation would lead to an error, and the
       // whole diff upload would fail.
       throw http::precondition_failed(
-          fmt::format("The relation {} is used in relations {}.",
+          fmt::format("The relation {:d} is used in relations {}.",
            row["member_id"].as<osm_nwr_id_t>(),
            friendly_name(row["relation_ids"].as<std::string>())));
     }

@@ -57,7 +57,7 @@ changeset_update_handler::changeset_update_handler(request &req, osm_changeset_i
       id(id_) {}
 
 std::string changeset_update_handler::log_name() const {
-  return (fmt::format("changeset/update {}", id));
+  return (fmt::format("changeset/update {:d}", id));
 }
 
 responder_ptr_t

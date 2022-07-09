@@ -67,7 +67,7 @@ static string get_generator_string() {
     throw std::runtime_error("gethostname returned error.");
   }
 
-  return (fmt::format(PACKAGE_STRING " ({} {})", getpid(), hostname));
+  return (fmt::format(PACKAGE_STRING " ({:d} {})", getpid(), hostname));
 }
 
 /**

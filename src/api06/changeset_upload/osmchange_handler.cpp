@@ -30,7 +30,7 @@ void OSMChange_Handler::check_osm_object(const OSMObject &o) const {
   if (o.changeset() != changeset)
     throw http::conflict(
         fmt::format(
-             "Changeset mismatch: Provided {} but only {} is allowed",
+             "Changeset mismatch: Provided {:d} but only {:d} is allowed",
          o.changeset(), changeset));
 }
 

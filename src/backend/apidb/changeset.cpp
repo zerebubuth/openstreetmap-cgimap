@@ -32,9 +32,9 @@ std::map<osm_changeset_id_t, changeset *> fetch_changesets(pqxx::transaction_bas
     // Multiple results for one changeset?
     if (result.find(cs) != result.end()) {
       logger::message(
-          fmt::format("ERROR: Request for user data associated with changeset {} failed: returned multiple rows.", cs));
+          fmt::format("ERROR: Request for user data associated with changeset {:d} failed: returned multiple rows.", cs));
       throw http::server_error(
-          fmt::format("Possible database inconsistency with changeset {}.", cs));
+          fmt::format("Possible database inconsistency with changeset {:d}.", cs));
     }
 
     int64_t user_id = r[3].as<int64_t>();
@@ -58,9 +58,9 @@ std::map<osm_changeset_id_t, changeset *> fetch_changesets(pqxx::transaction_bas
   for (const auto & id : ids) {
     if (result.find(id) == result.end()) {
       logger::message(
-          fmt::format("ERROR: Request for user data associated with changeset {} failed: returned 0 rows.", id));
+          fmt::format("ERROR: Request for user data associated with changeset {:d} failed: returned 0 rows.", id));
       throw http::server_error(
-          fmt::format("Possible database inconsistency with changeset {}.", id));
+          fmt::format("Possible database inconsistency with changeset {:d}.", id));
     }
   }
 

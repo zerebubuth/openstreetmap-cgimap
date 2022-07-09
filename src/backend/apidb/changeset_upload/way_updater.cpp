@@ -272,7 +272,7 @@ void ApiDB_Way_Updater::replace_old_ids_in_ways(
         std::pair<osm_nwr_signed_id_t, osm_nwr_id_t>(i.old_id, i.new_id));
     if (!res.second)
       throw http::bad_request(
-          fmt::format("Duplicate way placeholder id {}.", i.old_id));
+          fmt::format("Duplicate way placeholder id {:d}.", i.old_id));
   }
 
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_nodes;
@@ -281,7 +281,7 @@ void ApiDB_Way_Updater::replace_old_ids_in_ways(
         std::pair<osm_nwr_signed_id_t, osm_nwr_id_t>(i.old_id, i.new_id));
     if (!res.second)
       throw http::bad_request(
-          fmt::format("Duplicate node placeholder id {}.", i.old_id));
+          fmt::format("Duplicate node placeholder id {:d}.", i.old_id));
   }
 
   for (auto &cw : ways) {
@@ -290,7 +290,7 @@ void ApiDB_Way_Updater::replace_old_ids_in_ways(
       auto entry = map_ways.find(cw.old_id);
       if (entry == map_ways.end())
         throw http::bad_request(
-            fmt::format("Placeholder id not found for way reference {}", cw.old_id));
+            fmt::format("Placeholder id not found for way reference {:d}", cw.old_id));
       cw.id = entry->second;
     }
 
@@ -300,7 +300,7 @@ void ApiDB_Way_Updater::replace_old_ids_in_ways(
         if (entry == map_nodes.end())
           throw http::bad_request(
               fmt::format(
-                   "Placeholder node not found for reference {} in way {}",
+                   "Placeholder node not found for reference {:d} in way {:d}",
                wn.old_node_id, cw.old_id));
         wn.node_id = entry->second;
       }
@@ -499,7 +499,7 @@ void ApiDB_Way_Updater::check_current_way_versions(
   if (!r.empty()) {
     throw http::conflict(
         fmt::format(
-             "Version mismatch: Provided {}, server had: {} of Way {}",
+             "Version mismatch: Provided {:d}, server had: {:d} of Way {:d}",
          r[0]["expected_version"].as<osm_version_t>(),
          r[0]["actual_version"].as<osm_version_t>(),
          r[0]["id"].as<osm_nwr_id_t>()));
@@ -547,7 +547,7 @@ std::set<osm_nwr_id_t> ApiDB_Way_Updater::determine_already_deleted_ways(
     // and the if-unused flag hasn't been set!
     if (ids_without_if_unused.find(id) != ids_without_if_unused.end()) {
       throw http::gone(
-          fmt::format("The way with the id {} has already been deleted", id));
+          fmt::format("The way with the id {:d} has already been deleted", id));
     }
 
     result.insert(id);
@@ -619,7 +619,7 @@ void ApiDB_Way_Updater::lock_future_nodes(const std::vector<way_t> &ways) {
     auto it = absent_way_node_ids.begin();
 
     throw http::precondition_failed(
-        fmt::format("Way {} requires the nodes with id in {}, which either do not exist, or are not visible.",
+        fmt::format("Way {:d} requires the nodes with id in {}, which either do not exist, or are not visible.",
          it->first, to_string(it->second)));
   }
 }
@@ -857,7 +857,7 @@ ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t> &ways) {
       // Without the if-unused, such a situation would lead to an error, and the
       // whole diff upload would fail.
       throw http::precondition_failed(
-          fmt::format("Way {} is still used by relations {}.",
+          fmt::format("Way {:d} is still used by relations {}.",
            row["member_id"].as<osm_nwr_id_t>(),
            friendly_name(row["relation_ids"].as<std::string>())));
     }

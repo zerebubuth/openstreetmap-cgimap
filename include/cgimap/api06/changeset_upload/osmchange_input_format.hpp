@@ -372,7 +372,7 @@ private:
     if (location == nullptr)
       throw e;
 
-    throw TEx{ fmt::format("{} at line {}, column {}",
+    throw TEx{ fmt::format("{} at line {:d}, column {:d}",
   	e.what(),
   	location->line,
   	location->col ) };

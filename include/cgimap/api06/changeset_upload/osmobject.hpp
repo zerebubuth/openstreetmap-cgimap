@@ -147,7 +147,7 @@ namespace api06 {
 
     virtual std::string to_string() {
 
-      return fmt::format("{} {}", get_type_name(), ((m_id) ? *m_id : 0));
+      return fmt::format("{} {:d}", get_type_name(), ((m_id) ? *m_id : 0));
     }
 
   private:

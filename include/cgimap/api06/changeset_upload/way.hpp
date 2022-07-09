@@ -53,14 +53,14 @@ public:
     default:
       if (m_way_nodes.empty()) {
         throw http::precondition_failed(
-            fmt::format("Way {} must have at least one node",
+            fmt::format("Way {:d} must have at least one node",
              (has_id() ? id() : 0)));
       }
 
       if (m_way_nodes.size() > global_settings::get_way_max_nodes()) {
         throw http::bad_request(
              fmt::format(
-                 "You tried to add {} nodes to way {}, however only {} are allowed",
+                 "You tried to add {:d} nodes to way {:d}, however only {:d} are allowed",
              m_way_nodes.size(), (has_id() ? id() : 0), global_settings::get_way_max_nodes()));
       }
 

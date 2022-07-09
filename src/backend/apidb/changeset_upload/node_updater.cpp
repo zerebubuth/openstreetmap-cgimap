@@ -239,7 +239,7 @@ void ApiDB_Node_Updater::replace_old_ids_in_nodes(
     auto res = map.insert( { i.old_id, i.new_id } );
     if (!res.second)
       throw http::bad_request(
-          fmt::format("Duplicate node placeholder id {}.", i.old_id));
+          fmt::format("Duplicate node placeholder id {:d}.", i.old_id));
   }
 
   for (auto &n : nodes) {
@@ -247,7 +247,7 @@ void ApiDB_Node_Updater::replace_old_ids_in_nodes(
       auto entry = map.find(n.old_id);
       if (entry == map.end())
         throw http::bad_request(
-            fmt::format("Placeholder id not found for node reference {}", n.old_id));
+            fmt::format("Placeholder id not found for node reference {:d}", n.old_id));
       n.id = entry->second;
     }
   }
@@ -427,7 +427,7 @@ void ApiDB_Node_Updater::check_current_node_versions(
   if (!r.empty()) {
     throw http::conflict(
         fmt::format(
-             "Version mismatch: Provided {}, server had: {} of Node {}",
+             "Version mismatch: Provided {:d}, server had: {:d} of Node {:d}",
          r[0]["expected_version"].as<osm_version_t>(),
          r[0]["actual_version"].as<osm_version_t>(),
          r[0]["id"].as<osm_nwr_id_t>()));
@@ -477,7 +477,7 @@ std::set<osm_nwr_id_t> ApiDB_Node_Updater::determine_already_deleted_nodes(
     if (ids_without_if_unused.find(id) != ids_without_if_unused.end()) {
 
       throw http::gone(
-          fmt::format("The node with the id {} has already been deleted", id));
+          fmt::format("The node with the id {:d} has already been deleted", id));
     }
 
     result.insert(id);
@@ -599,7 +599,7 @@ void ApiDB_Node_Updater::update_current_nodes(
 
     throw http::server_error(
         fmt::format(
-             "Could not update Node {} with version {} on the database.",
+             "Could not update Node {:d} with version {:d} on the database.",
          (*unknown_node).id,
          (*unknown_node).version));
   }
@@ -793,7 +793,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
         // Without the if-unused, such a situation would lead to an error, and
         // the whole diff upload would fail.
         throw http::precondition_failed(
-            fmt::format("Node {} is still used by ways {}.",
+            fmt::format("Node {:d} is still used by ways {}.",
              row["node_id"].as<osm_nwr_id_t>(),
              friendly_name(row["way_ids"].as<std::string>())));
       }
@@ -836,7 +836,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
         // Without the if-unused, such a situation would lead to an error, and
         // the whole diff upload would fail.
         throw http::precondition_failed(
-            fmt::format("Node {} is still used by relations {}.",
+            fmt::format("Node {:d} is still used by relations {}.",
                 row["member_id"].as<osm_nwr_id_t>(),
                 friendly_name(row["relation_ids"].as<std::string>())));
       }

@@ -25,7 +25,7 @@ map_responder::map_responder(mime::type mt, bbox b, data_selection &x)
 
   if (num_nodes > global_settings::get_map_max_nodes()) {
     throw http::bad_request(
-        fmt::format("You requested too many nodes (limit is {}). "
+        fmt::format("You requested too many nodes (limit is {:d}). "
                 "Either request a smaller area, or use planet.osm",
             global_settings::get_map_max_nodes()));
   }
@@ -59,7 +59,7 @@ map_handler::map_handler(request &req) : bounds(validate_request(req)) {
 }
 
 string map_handler::log_name() const {
-  return (fmt::format("map({},{},{},{})", bounds.minlon,
+  return (fmt::format("map({:.7f},{:.7f},{:.7f},{:.7f})", bounds.minlon,
           bounds.minlat, bounds.maxlon, bounds.maxlat));
 }
 
@@ -99,7 +99,7 @@ bbox map_handler::validate_request(request &req) {
 
   if (bounds.area() > global_settings::get_map_area_max()) {
     throw http::bad_request(
-         fmt::format("The maximum bbox size is {}, and your request "
+         fmt::format("The maximum bbox size is {:f}, and your request "
                        "was too large. Either request a smaller area, or use "
                        "planet.osm",
          global_settings::get_map_area_max()));
