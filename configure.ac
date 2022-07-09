@@ -44,16 +44,16 @@ AC_SUBST(LIBMEMCACHED_CFLAGS)
 AC_SUBST(LIBMEMCACHED_LIBS)
 
 AX_BOOST_BASE([1.43], , [AC_MSG_ERROR([Boost libraries are required for building CGImap. Please install libboost-dev.])])
-AX_BOOST_SYSTEM
+#AX_BOOST_SYSTEM
 AX_BOOST_PROGRAM_OPTIONS
-AX_BOOST_FILESYSTEM
-AX_BOOST_LOCALE
+#AX_BOOST_FILESYSTEM
+#AX_BOOST_LOCALE
 
 # the boost libraries are required, not optional, but the
 # AX_BOOST_* checks only error if the headers aren't
 # available?
-AS_IF([test "x$BOOST_SYSTEM_LIB" == "x"],
-      [AC_MSG_ERROR([Boost::System library not detected, please install libboost-system-dev.])],)
+#AS_IF([test "x$BOOST_SYSTEM_LIB" == "x"],
+#      [AC_MSG_ERROR([Boost::System library not detected, please install libboost-system-dev.])],)
 AS_IF([test "x$BOOST_PROGRAM_OPTIONS_LIB" == "x"],
       [AC_MSG_ERROR([Boost::ProgramOptions library not detected, please install libboost-program-options-dev.])],)
 
