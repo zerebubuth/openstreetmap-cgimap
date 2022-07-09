@@ -28,7 +28,7 @@ namespace oauth2 {
   {
     const char * auth_hdr = req.get_param ("HTTP_AUTHORIZATION");
     if (auth_hdr == nullptr)
-      return {};
+      return std::nullopt;
 
     const auto auth_header = std::string(auth_hdr);
 
@@ -38,13 +38,13 @@ namespace oauth2 {
 	std::regex r("Bearer ([A-Za-z0-9~_\\-\\.\\+\\/]+=*)");   // according to RFC 6750, section 2.1
 
 	if (!std::regex_match(auth_header, sm, r))
-	  return {};
+	  return std::nullopt;
 
 	if (sm.size() != 2)
-	  return {};
+	  return std::nullopt;
 
     } catch (std::regex_error&) {
-      return {};
+      return std::nullopt;
     }
 
     const auto bearer_token = sm[1];
@@ -53,7 +53,7 @@ namespace oauth2 {
     bool revoked;
 
     if (!store)
-      return {};
+      return std::nullopt;
 
     // Check token as plain text first
     auto user_id = store->get_user_id_for_oauth2_token(bearer_token, expired, revoked, allow_api_write);
