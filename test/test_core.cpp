@@ -5,8 +5,6 @@
 #include "cgimap/config.hpp"
 #include "cgimap/time.hpp"
 
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>
 #include <boost/program_options.hpp>
 #include <fmt/core.h>
 #include <boost/algorithm/string.hpp>
@@ -14,12 +12,14 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
+#include <filesystem>
+#include <fstream>
 #include <vector>
 #include <sstream>
 
 #include "test_request.hpp"
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace po = boost::program_options;
 namespace al = boost::algorithm;
 namespace pt = boost::property_tree;
@@ -476,7 +476,7 @@ void run_test(fs::path test_case, rate_limiter &limiter,
     test_request req;
 
     // set up request headers from test case
-    fs::ifstream in(test_case);
+    std::ifstream in(test_case);
     setup_request_headers(req, in);
 
     // execute the request
@@ -661,7 +661,7 @@ int main(int argc, char *argv[]) {
     const fs::directory_iterator end;
     for (fs::directory_iterator itr(test_directory); itr != end; ++itr) {
       fs::path filename = itr->path();
-      std::string ext = fs::extension(filename);
+      std::string ext = filename.extension();
       if (ext == ".case") {
         test_cases.push_back(filename);
       }

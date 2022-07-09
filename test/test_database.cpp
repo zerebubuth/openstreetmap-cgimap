@@ -5,9 +5,9 @@
 #include <time.h>
 #include <sys/time.h>
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace po = boost::program_options;
 
 test_database::setup_error::setup_error(std::string str)
