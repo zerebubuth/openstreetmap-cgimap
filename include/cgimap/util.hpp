@@ -16,6 +16,8 @@
 #include <sstream>
 #include <string>
 
+#include <pqxx/array.hxx>
+
 
 inline size_t unicode_strlen(const std::string & s)
 {
@@ -55,13 +57,21 @@ inline std::string escape(std::string input)
 	return result;
 }
 
-// array_agg returns some curly brackets in the response. remove them for output
-// TODO: find a better way to do this.
-
-inline std::string friendly_name(const std::string & input)
+inline std::string friendly_name(pqxx::array_parser&& parser)
 {
+  std::string result;
 
-	return input.substr(1, input.size() - 2);
+  auto obj = parser.get_next();
+  while (obj.first != pqxx::array_parser::done)
+  {
+    if (obj.first == pqxx::array_parser::string_value) {
+      if (!result.empty())
+        result += ",";
+      result += obj.second;
+    }
+    obj = parser.get_next();
+  }
+  return result;
 }
 
 template <typename T>

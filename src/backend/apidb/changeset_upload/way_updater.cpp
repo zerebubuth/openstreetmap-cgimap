@@ -859,7 +859,7 @@ ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t> &ways) {
       throw http::precondition_failed(
           fmt::format("Way {:d} is still used by relations {}.",
            row["member_id"].as<osm_nwr_id_t>(),
-           friendly_name(row["relation_ids"].as<std::string>())));
+           friendly_name(row["relation_ids"].as_array())));
     }
 
     if (ids_if_unused.find(way_id) != ids_if_unused.end()) {
