@@ -16,7 +16,6 @@
 #include <sstream>
 #include <list>
 #include <vector>
-#include <boost/lexical_cast.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
 

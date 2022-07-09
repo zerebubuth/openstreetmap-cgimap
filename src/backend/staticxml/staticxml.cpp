@@ -6,7 +6,7 @@
 #include <libxml/parser.h>
 
 #include <fmt/core.h>
-#include <boost/lexical_cast.hpp>
+
 #include <functional>
 #include <sstream>
 #include <unordered_set>

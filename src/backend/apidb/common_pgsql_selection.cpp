@@ -90,7 +90,7 @@ void extract_nodes(const pqxx_tuple &row, nodes_t &nodes) {
   nodes.clear();
   auto ids = psql_array_to_vector(row["node_ids"].as_array());
   for (const auto & id : ids)
-    nodes.push_back(boost::lexical_cast<osm_nwr_id_t>(id));
+    nodes.push_back(std::stol(id));
 }
 
 element_type type_from_name(const char *name) {
@@ -135,7 +135,7 @@ void extract_members(const pqxx_tuple &row, members_t &members) {
 
   for (std::size_t i=0; i<ids.size(); i++) {
     member.type = type_from_name(types[i].c_str());
-    member.ref = boost::lexical_cast<osm_nwr_id_t>(ids[i]);
+    member.ref = std::stol(ids[i]);
     member.role = roles[i];
     members.push_back(member);
   }
@@ -156,7 +156,7 @@ void extract_comments(const pqxx_tuple &row, comments_t &comments) {
   }
 
   for (std::size_t i=0; i<author_id.size(); i++) {
-    comment.author_id = boost::lexical_cast<osm_nwr_id_t>(author_id[i]);
+    comment.author_id = std::stol(author_id[i]);
     comment.author_display_name = display_name[i];
     comment.body = body[i];
     comment.created_at = created_at[i];
