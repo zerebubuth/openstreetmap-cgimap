@@ -2,8 +2,8 @@
 #include "cgimap/http.hpp"
 
 #include <sstream>
+#include <fmt/core.h>
 
-using std::stringstream;
 using std::vector;
 
 namespace api06 {
@@ -12,9 +12,7 @@ way_responder::way_responder(mime::type mt, osm_nwr_id_t id_, data_selection &w_
     : osm_current_responder(mt, w_), id(id_) {
 
   if (sel.select_ways({id}) == 0) {
-    std::ostringstream error;
-    error << "Way " << id << " was not found.";
-    throw http::not_found(error.str());
+    throw http::not_found(fmt::format("Way {:d} was not found.", id));
   }
   check_visibility();
 }

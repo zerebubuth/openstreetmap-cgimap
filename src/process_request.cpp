@@ -12,15 +12,14 @@
 #include <tuple>
 #include <variant>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
 #include <fmt/core.h>
-#include <boost/algorithm/string.hpp>
+
 
 
 using std::runtime_error;
 using std::string;
-using std::ostringstream;
-
 
 
 namespace al = boost::algorithm;
@@ -70,14 +69,12 @@ void respond_401(const http::unauthorized &e, request &r) {
                   e.code(), e.what()));
 
   std::string message(e.what());
-  std::ostringstream message_size;
-  message_size << message.size();
 
   r.status(e.code())
     .add_header("Content-Type", "text/plain; charset=utf-8")
   // Header according to RFC 7617, section 2.1
     .add_header("WWW-Authenticate", R"(Basic realm="Web Password", charset="UTF-8")")
-    .add_header("Content-Length", message_size.str())
+    .add_header("Content-Length", std::to_string(message.size()))
     .add_header("Cache-Control", "no-cache")
     .put(message);      // output the message
 
@@ -91,8 +88,6 @@ void response_415(const http::unsupported_media_type&e, request &r) {
                   e.code(), e.what()));
 
   std::string message(e.what());
-  std::ostringstream message_size;
-  message_size << message.size();
 
   r.status(e.code())
     .add_header("Content-Type", "text/plain; charset=utf-8")
@@ -101,7 +96,7 @@ void response_415(const http::unsupported_media_type&e, request &r) {
 #else
     .add_header("Accept-Encoding", "identity")
 #endif
-    .add_header("Content-Length", message_size.str())
+    .add_header("Content-Length", std::to_string(message.size()))
     .add_header("Cache-Control", "no-cache")
     .put(message); // output the message
 
@@ -119,7 +114,7 @@ void respond_error(const http::exception &e, request &r) {
     r.status(200)
      .add_header("Content-Type", "application/xml; charset=utf-8");
 
-    ostringstream ostr;
+    std::ostringstream ostr;
     ostr << "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\r\n"
          << "<osmError>\r\n"
          << "<status>" << e.code() << " " << e.header() << "</status>\r\n"
@@ -133,12 +128,9 @@ void respond_error(const http::exception &e, request &r) {
     std::string message_error_header = message.substr(0, 250);                           // limit HTTP header to 250 chars
     std::replace(message_error_header.begin(), message_error_header.end(), '\n', ' ');   // replace newline by space (newlines screw up HTTP header)
 
-    std::ostringstream message_size;
-    message_size << message.size();
-
     r.status(e.code())
       .add_header("Content-Type", "text/plain")
-      .add_header("Content-Length", message_size.str())
+      .add_header("Content-Length", std::to_string(message.size()))
       .add_header("Error", message_error_header)
       .add_header("Cache-Control", "no-cache")
       .put(message);   // output the message as well
@@ -206,8 +198,7 @@ std::size_t generate_response(request &req, responder &responder, const string &
 
   } catch (const output_writer::write_error &e) {
     // don't do anything - just go on to the next request.
-    logger::message(fmt::format("Caught write error, aborting request: {}",
-                    e.what()));
+    logger::message(fmt::format("Caught write error, aborting request: {}", e.what()));
 
   } catch (const std::exception &e) {
     // errors here are unrecoverable (fatal to the request but maybe

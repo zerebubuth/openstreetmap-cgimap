@@ -4,7 +4,6 @@
 #include <sstream>
 #include <fmt/core.h>
 
-using std::stringstream;
 using std::vector;
 
 namespace api06 {
@@ -14,9 +13,7 @@ relation_full_responder::relation_full_responder(mime::type mt_, osm_nwr_id_t id
     : osm_current_responder(mt_, w_), id(id_) {
 
   if (sel.select_relations({id}) == 0) {
-    std::ostringstream error;
-    error << "Relation " << id << " was not found.";
-    throw http::not_found(error.str());
+    throw http::not_found(fmt::format("Relation {:d} was not found.", id));
   }
 
   check_visibility();
@@ -31,9 +28,7 @@ void relation_full_responder::check_visibility() {
 
   case data_selection::non_exist:
   {
-    std::ostringstream error;
-    error << "Relation " << id << " was not found.";
-    throw http::not_found(error.str());
+    throw http::not_found(fmt::format("Relation {:d} was not found.", id));
   }
 
   case data_selection::deleted:

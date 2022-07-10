@@ -72,20 +72,16 @@ void registry::setup_options(int argc, char *argv[],
                              "compile-time configuration error.");
   }
 
-  std::ostringstream all_backends;
-  bool first = true;
+  std::string all_backends;
+
   for (const backend_map_t::value_type &val : backends) {
-    if (first) {
-      first = false;
-    } else {
-      all_backends << ", ";
+    if (!all_backends.empty()) {
+      all_backends += ", ";
     }
-    all_backends << val.second->name();
+    all_backends += val.second->name();
   }
 
-  std::string description =
-      fmt::format("backend to use, available options are: {}",
-       all_backends.str());
+  std::string description = fmt::format("backend to use, available options are: {}", all_backends);
 
   desc.add_options()("backend", po::value<std::string>()->default_value(*default_backend),
                      description.c_str());
@@ -106,8 +102,7 @@ void registry::setup_options(int argc, char *argv[],
         backend = itr->first;
       }
       else {
-        throw std::runtime_error(fmt::format("unknown backend provided, available options are: {}",
-	       all_backends.str()));
+        throw std::runtime_error(fmt::format("unknown backend provided, available options are: {}", all_backends));
       }
     }
 

@@ -4,7 +4,6 @@
 #include <sstream>
 #include <fmt/core.h>
 
-using std::stringstream;
 using std::vector;
 
 namespace api06 {
@@ -14,9 +13,7 @@ way_full_responder::way_full_responder(mime::type mt_, osm_nwr_id_t id_,
     : osm_current_responder(mt_, w_), id(id_) {
 
   if (sel.select_ways({id}) == 0) {
-    std::ostringstream error;
-    error << "Way " << id << " was not found.";
-    throw http::not_found(error.str());
+    throw http::not_found(fmt::format("Way {:d} was not found.", id));
   }
   check_visibility();
   sel.select_nodes_from_way_nodes();
@@ -27,9 +24,7 @@ void way_full_responder::check_visibility() {
 
   case data_selection::non_exist:
   {
-    std::ostringstream error;
-    error << "Way " << id << " was not found.";
-    throw http::not_found(error.str());
+    throw http::not_found(fmt::format("Way {:d} was not found.", id));
   }
 
   case data_selection::deleted:

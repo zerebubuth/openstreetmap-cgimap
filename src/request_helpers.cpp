@@ -3,9 +3,9 @@
 #include <sstream>
 #include <cassert>
 #include <cstring>
+#include <fmt/core.h>
 
 using std::string;
-using std::ostringstream;
 
 string fcgi_get_env(request &req, const char *name, const char *default_value) {
   assert(name);
@@ -17,9 +17,7 @@ string fcgi_get_env(request &req, const char *name, const char *default_value) {
     if (default_value) {
       v = default_value;
     } else {
-      ostringstream ostr;
-      ostr << "request didn't set the $" << name << " environment variable.";
-      throw http::server_error(ostr.str());
+      throw http::server_error(fmt::format("request didn't set the ${} environment variable.", name));
     }
   }
 
@@ -37,10 +35,7 @@ string get_query_string(request &req) {
 
     if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
       // fail. something has obviously gone massively wrong.
-      ostringstream ostr;
-      ostr << "request didn't set the $QUERY_STRING or $REQUEST_URI "
-           << "environment variables.";
-      throw http::server_error(ostr.str());
+      throw http::server_error("request didn't set the $QUERY_STRING or $REQUEST_URI environment variables.");
     }
 
     const char *request_uri_end = request_uri + strlen(request_uri);
@@ -68,10 +63,7 @@ std::string get_request_path(request &req) {
   }
 
   if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
-    ostringstream ostr;
-    ostr << "request didn't set either the $REQUEST_URI or $PATH_INFO "
-            "environment variables.";
-    throw http::server_error(ostr.str());
+    throw http::server_error("request didn't set the $QUERY_STRING or $REQUEST_URI environment variables.");
   }
 
   const char *request_uri_end = request_uri + strlen(request_uri);
