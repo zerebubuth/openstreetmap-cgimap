@@ -4,6 +4,7 @@
 #include "cgimap/config.hpp"
 
 #include <sstream>
+#include <fmt/core.h>
 
 using std::stringstream;
 using std::vector;
@@ -15,9 +16,7 @@ changeset_download_responder::changeset_download_responder(
   : osmchange_responder(mt, w_), id(id_) {
 
   if (sel.select_changesets({id}) == 0) {
-    std::ostringstream error;
-    error << "Changeset " << id << " was not found.";
-    throw http::not_found(error.str());
+    throw http::not_found(fmt::format("Changeset {:d} was not found.", id));
   }
   sel.select_historical_by_changesets({id});
 }

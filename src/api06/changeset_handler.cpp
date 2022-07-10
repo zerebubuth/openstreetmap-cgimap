@@ -4,8 +4,8 @@
 #include "cgimap/config.hpp"
 
 #include <sstream>
+#include <fmt/core.h>
 
-using std::stringstream;
 using std::vector;
 
 namespace api06 {
@@ -17,9 +17,7 @@ changeset_responder::changeset_responder(mime::type mt, osm_changeset_id_t id_,
     include_discussion(include_discussion_) {
 
   if (sel.select_changesets({id}) == 0) {
-    std::ostringstream error;
-    error << "Changeset " << id << " was not found.";
-    throw http::not_found(error.str());
+    throw http::not_found(fmt::format("Changeset {:d} was not found.", id));
   }
 
   if (include_discussion) {
