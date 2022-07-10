@@ -28,7 +28,7 @@
 #include <boost/spirit/include/phoenix_operator.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/format.hpp>
+#include <fmt/core.h>
 
 using std::auto_ptr;
 using std::ostringstream;
@@ -42,7 +42,7 @@ using boost::lexical_cast;
 using std::string;
 using std::vector;
 using std::pair;
-using boost::format;
+
 
 namespace {
 
@@ -157,8 +157,8 @@ acceptable_types::acceptable_types(const std::string &accept_header) {
     }
 
   } else {
-    logger::message(format("Failed to parse accept header '%1%'") %
-                    accept_header);
+    logger::message(fmt::format("Failed to parse accept header '{}'",
+                    accept_header));
     throw http::bad_request("Accept header could not be parsed.");
   }
 }
@@ -233,20 +233,20 @@ mime::type choose_best_mime_type(request &req, const responder& hptr) {
   if (best_type != mime::unspecified_type) {
     // check that this doesn't conflict with anything in the Accept header.
     if (!hptr.is_available(best_type))
-      throw http::not_acceptable((boost::format("Acceptable formats for %1% are: %2%")
-                                % get_request_path(req)
-				% mime_types_to_string(types_available)).str());
+      throw http::not_acceptable(fmt::format("Acceptable formats for {} are: {}",
+                                get_request_path(req),
+				mime_types_to_string(types_available)));
     else if (!types.is_acceptable(best_type))
-      throw http::not_acceptable((boost::format("Acceptable formats for %1% are: %2%")
-				% get_request_path(req)
-				% mime_types_to_string({best_type})).str());
+      throw http::not_acceptable(fmt::format("Acceptable formats for {} are: {}",
+				get_request_path(req),
+				mime_types_to_string({best_type})));
   } else {
     best_type = types.most_acceptable_of(types_available);
     // if none were acceptable then...
     if (best_type == mime::unspecified_type) {
-	      throw http::not_acceptable((boost::format("Acceptable formats for %1% are: %2%")
-	                                % get_request_path(req)
-					% mime_types_to_string(types_available)).str());
+	      throw http::not_acceptable(fmt::format("Acceptable formats for {} are: {}",
+	                                get_request_path(req),
+					mime_types_to_string(types_available)));
     } else if (best_type == mime::any_type) {
       // choose the first of the available types if nothing is preferred.
       best_type = *(hptr.types_available().begin());

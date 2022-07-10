@@ -5,8 +5,8 @@
 
 #include <libxml/parser.h>
 
-#include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
+#include <fmt/core.h>
+
 #include <functional>
 #include <sstream>
 #include <unordered_set>
@@ -83,7 +83,7 @@ T get_attribute(const char *name, size_t len, const xmlChar **attributes) {
     ++attributes;
   }
   throw std::runtime_error(
-      (boost::format("Unable to find attribute %1%.") % name).str());
+      fmt::format("Unable to find attribute {}.", name));
 }
 
 template <typename T>
@@ -227,8 +227,7 @@ struct xml_parser {
           m.type = element_type_relation;
         } else {
           throw std::runtime_error(
-              (boost::format("Unknown member type `%1%'.") % member_type)
-                  .str());
+              fmt::format("Unknown member type `{}'.", member_type));
         }
 
         m.ref = get_attribute<osm_nwr_id_t>("ref", 4, attributes);
@@ -277,7 +276,7 @@ struct xml_parser {
     va_start(arg_ptr, fmt);
     vsnprintf(buffer, sizeof(buffer) - 1, fmt, arg_ptr);
     va_end(arg_ptr);
-    throw std::runtime_error((boost::format("XML ERROR: %1%") % buffer).str());
+    throw std::runtime_error(fmt::format("XML ERROR: {}", buffer));
   }
 
   database *m_db;
@@ -306,7 +305,7 @@ std::unique_ptr<database> parse_xml(const char *filename) {
   if (status != 0) {
     xmlErrorPtr err = xmlGetLastError();
     throw std::runtime_error(
-        (boost::format("XML ERROR: %1%.") % err->message).str());
+        fmt::format("XML ERROR: {}.", err->message));
   }
 
   xmlCleanupParser();

@@ -2,7 +2,7 @@
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
 #include <sstream>
-#include <boost/format.hpp>
+#include <fmt/core.h>
 
 using std::stringstream;
 using std::vector;
@@ -43,7 +43,7 @@ void way_full_responder::check_visibility() {
 
 way_full_handler::way_full_handler(request &, osm_nwr_id_t id_) : id(id_) {
   logger::message(
-      (boost::format("starting way/full handler with id = %1%") % id).str());
+      fmt::format("starting way/full handler with id = {:d}", id));
 }
 
 std::string way_full_handler::log_name() const { return "way/full"; }

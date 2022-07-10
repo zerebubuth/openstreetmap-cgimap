@@ -1,7 +1,7 @@
 #include "cgimap/backend.hpp"
 #include "cgimap/config.hpp"
 
-#include <boost/format.hpp>
+#include <fmt/core.h>
 #include <stdexcept>
 #include <mutex>
 
@@ -84,8 +84,8 @@ void registry::setup_options(int argc, char *argv[],
   }
 
   std::string description =
-      (boost::format("backend to use, available options are: %1%") %
-       all_backends.str()).str();
+      fmt::format("backend to use, available options are: {}",
+       all_backends.str());
 
   desc.add_options()("backend", po::value<std::string>()->default_value(*default_backend),
                      description.c_str());
@@ -106,8 +106,8 @@ void registry::setup_options(int argc, char *argv[],
         backend = itr->first;
       }
       else {
-        throw std::runtime_error((boost::format("unknown backend provided, available options are: %1%") %
-	       all_backends.str()).str());
+        throw std::runtime_error(fmt::format("unknown backend provided, available options are: {}",
+	       all_backends.str()));
       }
     }
 

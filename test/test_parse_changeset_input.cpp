@@ -144,9 +144,9 @@ void test_changeset_xml() {
 
     try {
       process_testmsg(
-          (boost::format(
-               R"(<osm><changeset><tag k="key" v="%1%"/></changeset></osm>)") %
-           v).str());
+          fmt::format(
+               R"(<osm><changeset><tag k="key" v="{}"/></changeset></osm>)",
+           v));
       if (i > 255)
         throw std::runtime_error("test_osmchange_structure::010: Expected exception for "
                                  "string length > 255 unicode characters");
@@ -170,9 +170,9 @@ void test_changeset_xml() {
 
     try {
       process_testmsg(
-          (boost::format(
-               R"(<osm><changeset><tag k="%1%" v="value"/></changeset></osm>)") %
-           v).str());
+          fmt::format(
+               R"(<osm><changeset><tag k="{}" v="value"/></changeset></osm>)",
+           v));
       if (i > 255)
         throw std::runtime_error("test_osmchange_structure::011: Expected exception for "
                                  "string length > 255 unicode characters");

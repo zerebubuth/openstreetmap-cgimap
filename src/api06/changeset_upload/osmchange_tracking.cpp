@@ -1,7 +1,7 @@
 
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 
-#include <boost/format.hpp>
+#include <fmt/core.h>
 
 namespace api06 {
 

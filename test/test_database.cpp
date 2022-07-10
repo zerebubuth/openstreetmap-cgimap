@@ -5,13 +5,13 @@
 #include <time.h>
 #include <sys/time.h>
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace po = boost::program_options;
 
-test_database::setup_error::setup_error(const boost::format &fmt)
-  : m_str(fmt.str()) {
+test_database::setup_error::setup_error(std::string str)
+  : m_str(str) {
 }
 
 test_database::setup_error::~setup_error() noexcept = default;
@@ -64,17 +64,15 @@ test_database::test_database() {
     pqxx::connection conn("dbname=postgres");
     pqxx::nontransaction w(conn);
 
-    w.exec((boost::format("CREATE DATABASE %1%") % db_name).str());
+    w.exec(fmt::format("CREATE DATABASE {}", db_name));
     w.commit();
     m_db_name = db_name;
 
   } catch (const std::exception &e) {
-    throw setup_error(boost::format("Unable to set up test database: %1%") %
-                      e.what());
+    throw setup_error(fmt::format("Unable to set up test database: {}", e.what()));
 
   } catch (...) {
-    throw setup_error(
-        boost::format("Unable to set up test database due to unknown error."));
+    throw setup_error("Unable to set up test database due to unknown error.");
   }
 }
 
@@ -84,7 +82,7 @@ test_database::test_database() {
  * and cause a rollback / table drop.
  */
 void test_database::setup() {
-  pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
+  pqxx::connection conn(fmt::format("dbname={}", m_db_name));
   setup_schema(conn);
 
   std::shared_ptr<backend> apidb = make_apidb_backend();
@@ -125,7 +123,7 @@ test_database::~test_database() {
       pqxx::connection conn("dbname=postgres");
       pqxx::nontransaction w(conn);
 
-      w.exec((boost::format("DROP DATABASE %1%") % m_db_name).str());
+      w.exec(fmt::format("DROP DATABASE {}", m_db_name));
       w.commit();
       m_db_name.clear();
 
@@ -160,14 +158,13 @@ void test_database::run(
 
   try {
     // clear out database before using it!
-    pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
+    pqxx::connection conn(fmt::format("dbname={}", m_db_name));
     truncate_all_tables(conn);
 
     func(*this);
 
   } catch (const std::exception &e) {
-    throw std::runtime_error(
-        (boost::format("%1%") % e.what()).str());
+    throw std::runtime_error(fmt::format("%1%", e.what()));
   }
   txn_owner_readonly.reset();
   txn_owner_readwrite.reset();
@@ -178,15 +175,14 @@ void test_database::run_update(
 
   try {
     // clear out database before using it!
-    pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
+    pqxx::connection conn(fmt::format("dbname={}", m_db_name));
     truncate_all_tables(conn);
 
     func(*this);
-
   } catch (const std::exception &e) {
-    throw std::runtime_error(
-        (boost::format("%1%, in update") % e.what()).str());
+    throw std::runtime_error(fmt::format("{}, in update", e.what()));
   }
+
   txn_owner_readonly.reset();
   txn_owner_readwrite.reset();
 }
@@ -223,7 +219,7 @@ std::shared_ptr<oauth::store> test_database::get_oauth_store() {
 }
 
 int test_database::run_sql(const std::string &sql) {
-  pqxx::connection conn((boost::format("dbname=%1%") % m_db_name).str());
+  pqxx::connection conn(fmt::format("dbname={}", m_db_name));
   return exec_sql_string(conn, sql);
 }
 

@@ -1,6 +1,6 @@
 #include <iostream>
 #include <stdexcept>
-#include <boost/format.hpp>
+#include <fmt/core.h>
 
 #include <boost/program_options.hpp>
 
@@ -23,10 +23,7 @@ namespace {
 template <typename T>
 void assert_equal(const T& a, const T&b, const std::string &message) {
   if (a != b) {
-    throw std::runtime_error(
-      (boost::format(
-        "Expecting %1% to be equal, but %2% != %3%")
-       % message % a % b).str());
+    throw std::runtime_error(fmt::format("Expecting {} to be equal, but {} != {}", message, a, b));
   }
 }
 

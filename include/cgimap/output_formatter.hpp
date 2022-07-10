@@ -9,6 +9,7 @@
 #include <chrono>
 #include <list>
 #include <optional>
+#include <sstream>
 #include <vector>
 #include <stdexcept>
 

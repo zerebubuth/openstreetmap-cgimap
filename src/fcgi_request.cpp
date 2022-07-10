@@ -103,7 +103,7 @@ const std::string fcgi_request::get_payload() {
       }
 
       if (result.length() > global_settings::get_payload_max_size())
-         throw http::payload_too_large((boost::format("Payload exceeds limit of %1% bytes") % global_settings::get_payload_max_size()).str());
+         throw http::payload_too_large((fmt::format("Payload exceeds limit of {:d} bytes", global_settings::get_payload_max_size())));
   }
 
   if (content_length > 0 && result_length != content_length)

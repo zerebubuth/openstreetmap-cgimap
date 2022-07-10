@@ -2,7 +2,7 @@
 #include "cgimap/http.hpp"
 #include "cgimap/options.hpp"
 #include <vector>
-#include <boost/format.hpp>
+#include <fmt/core.h>
 #include <boost/algorithm/string.hpp>
 
 #include <iterator> // for distance
@@ -310,7 +310,7 @@ unsigned long parse_content_length(const std::string &content_length_str) {
   } else if (length < 0) {
     throw http::bad_request("CONTENT_LENGTH: invalid value");
   } else if (length > global_settings::get_payload_max_size())
-    throw http::payload_too_large((boost::format("CONTENT_LENGTH exceeds limit of %1% bytes") % global_settings::get_payload_max_size()).str());
+    throw http::payload_too_large(fmt::format("CONTENT_LENGTH exceeds limit of {:d} bytes", global_settings::get_payload_max_size()));
 
   return length;
 }

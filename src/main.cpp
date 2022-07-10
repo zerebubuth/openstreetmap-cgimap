@@ -2,10 +2,8 @@
 #include <iostream>
 #include <sstream>
 
-#include <boost/lambda/lambda.hpp>
 #include <boost/program_options.hpp>
-#include <boost/format.hpp>
-#include <boost/algorithm/string.hpp>
+#include <fmt/core.h>
 
 #include <algorithm>
 #include <cerrno>
@@ -47,7 +45,7 @@ using std::vector;
 using std::string;
 using std::map;
 using std::ostringstream;
-using boost::format;
+
 
 namespace al = boost::algorithm;
 namespace po = boost::program_options;
@@ -69,8 +67,7 @@ static string get_generator_string() {
     throw std::runtime_error("gethostname returned error.");
   }
 
-  return (boost::format(PACKAGE_STRING " (%1% %2%)") % getpid() % hostname)
-      .str();
+  return (fmt::format(PACKAGE_STRING " ({:d} {})", getpid(), hostname));
 }
 
 /**

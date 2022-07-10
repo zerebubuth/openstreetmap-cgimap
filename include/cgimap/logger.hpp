@@ -1,7 +1,7 @@
 #ifndef LOGGER_HPP
 #define LOGGER_HPP
 
-#include <boost/format.hpp>
+#include <fmt/core.h>
 
 /**
  * Contains support for logging.
@@ -17,7 +17,6 @@ void initialise(const std::string &filename);
  * Log a message.
  */
 void message(const std::string &m);
-void message(const boost::format &m);
 }
 
 #endif /* LOGGER_HPP */

@@ -4,7 +4,7 @@
 
 #include "cgimap/api06/changeset_upload/osmchange_handler.hpp"
 
-#include <boost/format.hpp>
+#include <fmt/core.h>
 
 namespace api06 {
 
@@ -29,10 +29,9 @@ void OSMChange_Handler::check_osm_object(const OSMObject &o) const {
 
   if (o.changeset() != changeset)
     throw http::conflict(
-        (boost::format(
-             "Changeset mismatch: Provided %1% but only %2% is allowed") %
-         o.changeset() % changeset)
-            .str());
+        fmt::format(
+             "Changeset mismatch: Provided {:d} but only {:d} is allowed",
+         o.changeset(), changeset));
 }
 
 void OSMChange_Handler::process_node(const Node &node, operation op,

@@ -1,6 +1,6 @@
 #include <iostream>
 #include <stdexcept>
-#include <boost/format.hpp>
+#include <fmt/core.h>
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
@@ -17,6 +17,8 @@
 #include "test_formatter.hpp"
 #include "test_database.hpp"
 #include "test_request.hpp"
+
+using roles_t = std::set<osm_user_role_t>;
 
 namespace {
 
@@ -47,6 +49,23 @@ std::ostream &operator<<(
   return out;
 }
 
+}
+
+
+template <> struct fmt::formatter<roles_t> {
+  template <typename FormatContext>
+  auto format(const roles_t& r, FormatContext& ctx) -> decltype(ctx.out()) {
+    // ctx.out() is an output iterator to write to.
+    std::ostringstream ostr;
+    ostr << r;
+    return format_to(ctx.out(), "{}", ostr.str());
+  }
+  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+};
+
+namespace {
+
+
 template<typename T>
 std::ostream& operator<<(std::ostream& os, std::optional<T> const& opt)
 {
@@ -56,10 +75,7 @@ std::ostream& operator<<(std::ostream& os, std::optional<T> const& opt)
 template <typename T>
 void assert_equal(const T& a, const T&b, const std::string &message) {
   if (a != b) {
-    std::ostringstream out;
-    out << "Expecting " << message << " to be equal, but "
-        << a << " != " << b;
-    throw std::runtime_error(out.str());
+    throw std::runtime_error(fmt::format("Expecting {} to be equal, but {} != {}", message, a, b));
   }
 }
 
@@ -203,21 +219,21 @@ void test_get_user_id_for_token(test_database &tdb) {
     "");
   auto store = tdb.get_oauth_store();
 
-  assert_equal<std::optional<osm_user_id_t> >(
-    1, store->get_user_id_for_token("OfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA"),
+  assert_equal<osm_user_id_t >(
+    1, store->get_user_id_for_token("OfkxM4sSeyXjzgDTIOaJxcutsnqBoalr842NHOrA").value_or(0),
     "valid token belongs to user 1");
 
-  assert_equal<std::optional<osm_user_id_t> >(
-    1, store->get_user_id_for_token("wpNsXPhrgWl4ELPjPbhfwjjSbNk9npsKoNrMGFlC"),
+  assert_equal<osm_user_id_t >(
+    1, store->get_user_id_for_token("wpNsXPhrgWl4ELPjPbhfwjjSbNk9npsKoNrMGFlC").value_or(0),
     "non-authorized token belongs to user 1");
 
-  assert_equal<std::optional<osm_user_id_t> >(
-    1, store->get_user_id_for_token("Rzcm5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf"),
+  assert_equal<osm_user_id_t>(
+    1, store->get_user_id_for_token("Rzcm5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf").value_or(0),
     "invalid token belongs to user 1");
 
-  assert_equal<std::optional<osm_user_id_t> >(
-    {},
-    store->get_user_id_for_token("____5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf"),
+  assert_equal<bool>(
+    false,
+    store->get_user_id_for_token("____5aDiDgqgub8j96MfDaYyAc4cRwI9CmZB7HBf").has_value(),
     "non-existent token does not belong to anyone");
 }
 
@@ -369,9 +385,9 @@ void test_oauth_end_to_end(test_database &tdb) {
   req.set_header("REQUEST_URI", "/api/0.6/relation/165475/full");
   req.set_header("SCRIPT_NAME", "/api/0.6/relation/165475/full");
 
-  assert_equal<std::optional<std::string> >(
+  assert_equal<std::string>(
     std::string("ewKFprItE5uaDHKFu3IVzuEHbno="),
-    oauth::detail::hashed_signature(req, *store),
+    oauth::detail::hashed_signature(req, *store).value_or(""),
     "hashed signatures");
 
   process_request(req, limiter, generator, route, *factory, nullptr, store.get());
@@ -398,8 +414,6 @@ void test_oauth_get_roles_for_user(test_database &tdb) {
     "  (3, 2, 'moderator', 1);"
     "");
   auto store = tdb.get_oauth_store();
-
-  using roles_t = std::set<osm_user_role_t>;
 
   // user 3 has no roles -> should return empty set
   assert_equal<roles_t>(roles_t(), store->get_roles_for_user(3),

@@ -3,7 +3,7 @@
 
 #include <stdexcept>
 
-#include <boost/format.hpp>
+#include <fmt/core.h>
 
 namespace {
 // set the default HTTP response headers
@@ -88,10 +88,8 @@ void request::check_workflow(workflow_status this_stage) {
   } else if (m_workflow_status > this_stage) {
     // oops - workflow is more advanced than the function which called
     // this, so a workflow violation has occurred.
-    throw std::runtime_error((boost::format("Can't move backwards in the "
-                                            "request workflow from %1% to "
-                                            "%2%.") %
-                              m_workflow_status % this_stage).str());
+    throw std::runtime_error(fmt::format("Can't move backwards in the request workflow from {} to {}.",
+                              m_workflow_status, this_stage));
   }
 }
 

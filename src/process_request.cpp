@@ -13,7 +13,7 @@
 #include <variant>
 
 #include <boost/program_options.hpp>
-#include <boost/format.hpp>
+#include <fmt/core.h>
 #include <boost/algorithm/string.hpp>
 
 
@@ -21,7 +21,7 @@ using std::runtime_error;
 using std::string;
 using std::ostringstream;
 
-using boost::format;
+
 
 namespace al = boost::algorithm;
 namespace po = boost::program_options;
@@ -66,8 +66,8 @@ void respond_404(const http::not_found &e, request &r) {
 
 void respond_401(const http::unauthorized &e, request &r) {
   // According to rfc7235 we MUST send a WWW-Authenticate header field
-  logger::message(format("Returning with http error %1% with reason %2%") %
-                  e.code() % e.what());
+  logger::message(fmt::format("Returning with http error {} with reason {}",
+                  e.code(), e.what()));
 
   std::string message(e.what());
   std::ostringstream message_size;
@@ -87,8 +87,8 @@ void respond_401(const http::unauthorized &e, request &r) {
 void response_415(const http::unsupported_media_type&e, request &r) {
 
   // According to rfc7694
-  logger::message(format("Returning with http error %1% with reason %2%") %
-                  e.code() % e.what());
+  logger::message(fmt::format("Returning with http error {} with reason {}",
+                  e.code(), e.what()));
 
   std::string message(e.what());
   std::ostringstream message_size;
@@ -110,8 +110,8 @@ void response_415(const http::unsupported_media_type&e, request &r) {
 }
 
 void respond_error(const http::exception &e, request &r) {
-  logger::message(format("Returning with http error %1% with reason %2%") %
-                  e.code() % e.what());
+  logger::message(fmt::format("Returning with http error {} with reason {}",
+                  e.code(), e.what()));
 
   const char *error_format = r.get_param("HTTP_X_ERROR_FORMAT");
 
@@ -180,8 +180,8 @@ std::size_t generate_response(request &req, responder &responder, const string &
   // TODO: use handler/responder to setup response headers.
   // write the response header
   req.status(200)
-     .add_header("Content-Type", (boost::format("%1%; charset=utf-8") %
-                                  mime::to_string(best_mime_type)).str())
+     .add_header("Content-Type", fmt::format("{}; charset=utf-8",
+                                  mime::to_string(best_mime_type)))
      .add_header("Content-Encoding", encoding->name())
      .add_header("Cache-Control", "private, max-age=0, must-revalidate");
 
@@ -206,8 +206,8 @@ std::size_t generate_response(request &req, responder &responder, const string &
 
   } catch (const output_writer::write_error &e) {
     // don't do anything - just go on to the next request.
-    logger::message(format("Caught write error, aborting request: %1%") %
-                    e.what());
+    logger::message(fmt::format("Caught write error, aborting request: {}",
+                    e.what()));
 
   } catch (const std::exception &e) {
     // errors here are unrecoverable (fatal to the request but maybe
@@ -228,7 +228,7 @@ process_get_request(request &req, handler& handler,
                     const string &ip, const string &generator) {
   // request start logging
   const std::string request_name = handler.log_name();
-  logger::message(format("Started request for %1% from %2%") % request_name % ip);
+  logger::message(fmt::format("Started request for {} from {}", request_name, ip));
 
   // Collect all object ids (nodes/ways/relations/...) for the respective endpoint
   responder_ptr_t responder = handler.responder(selection);
@@ -253,7 +253,7 @@ process_post_put_request(request &req, handler& handler,
 
   // request start logging
   const std::string request_name = handler.log_name();
-  logger::message(format("Started request for %1% from %2%") % request_name % ip);
+  logger::message(fmt::format("Started request for {} from {}", request_name, ip));
 
   try {
 
@@ -310,8 +310,7 @@ process_head_request(request &req, handler& handler,
                      const string &ip) {
   // request start logging
   const std::string request_name = handler.log_name();
-  logger::message(format("Started HEAD request for %1% from %2%") %
-                  request_name % ip);
+  logger::message(fmt::format("Started HEAD request for {} from {}", request_name, ip));
 
   // We don't actually use the resulting data from the DB request,
   // but it might throw an error which results in a 404 or 410 response
@@ -331,8 +330,8 @@ process_head_request(request &req, handler& handler,
   // TODO: use handler/responder to setup response headers.
   // write the response header
   req.status(200)
-     .add_header("Content-Type", (boost::format("%1%; charset=utf-8") %
-                                  mime::to_string(best_mime_type)).str())
+     .add_header("Content-Type", fmt::format("{}; charset=utf-8",
+                                  mime::to_string(best_mime_type)))
      .add_header("Content-Encoding", encoding->name())
      .add_header("Cache-Control", "no-cache");
 
@@ -409,10 +408,7 @@ struct oauth_status_response  {
     throw http::bad_request("Bad OAuth request.");
   }
   void operator()(const oauth::validity::unauthorized &u) const {
-    std::ostringstream message;
-    message << "Unauthorized OAuth request, because "
-            << u.reason;
-    throw http::unauthorized(message.str());
+    throw http::unauthorized(fmt::format("Unauthorized OAuth request, because {}", u.reason));
   }
 };
 
@@ -464,7 +460,7 @@ std::optional<osm_user_id_t> determine_user_id (request& req,
         // happen due to concurrent revocation? in any case, we don't
         // want to go any further.
         logger::message (
-            format ("Unable to find user ID for token %1%.") % token);
+            fmt::format ("Unable to find user ID for token {}.", token));
         throw http::server_error ("Unable to find user ID for token.");
       }
       allow_api_write = store->allow_write_api (token);
@@ -514,14 +510,14 @@ void process_request(request &req, rate_limiter &limiter,
     // If user has been authenticated either via Basic Auth or OAuth,
     // set the client key and user roles accordingly
     if (user_id) {
-        client_key = (format("%1%%2%") % user_prefix % (*user_id)).str();
+        client_key = (fmt::format("{}{}", user_prefix, (*user_id)));
         if (store)
           user_roles = store->get_roles_for_user(*user_id);
     }
 
     // check whether the client is being rate limited
     if (!limiter.check(client_key)) {
-      logger::message(format("Rate limiter rejected request from %1%") % client_key);
+      logger::message(fmt::format("Rate limiter rejected request from {}", client_key));
       throw http::bandwidth_limit_exceeded("You have downloaded too much data. Please try again later.");
     }
 
@@ -591,10 +587,10 @@ void process_request(request &req, rate_limiter &limiter,
     // logging twice when an error is thrown.)
     auto end_time = std::chrono::high_resolution_clock::now();;
     auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-    logger::message(format("Completed request for %1% from %2% in %3% ms returning %4% bytes") %
-                    request_name % ip %
-		    delta %
-                    bytes_written);
+    logger::message(fmt::format("Completed request for {} from {} in {:d} ms returning {:d} bytes",
+                    request_name, ip,
+		    delta,
+                    bytes_written));
 
   } catch (const http::not_found &e) {
     // most errors are passed back giving the client a choice of whether to
