@@ -57,22 +57,6 @@ inline std::string escape(std::string input)
 	return result;
 }
 
-inline std::string friendly_name(pqxx::array_parser&& parser)
-{
-  std::string result;
-
-  auto obj = parser.get_next();
-  while (obj.first != pqxx::array_parser::done)
-  {
-    if (obj.first == pqxx::array_parser::string_value) {
-      if (!result.empty())
-        result += ",";
-      result += obj.second;
-    }
-    obj = parser.get_next();
-  }
-  return result;
-}
 
 template <typename T>
 inline std::string to_string(const std::set<T> &ids) {

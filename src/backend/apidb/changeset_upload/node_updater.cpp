@@ -5,6 +5,7 @@
 #include "cgimap/backend/apidb/changeset_upload/node_updater.hpp"
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
 #include "cgimap/backend/apidb/quad_tile.hpp"
+#include "cgimap/backend/apidb/utils.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
 #include "cgimap/options.hpp"

@@ -190,7 +190,5 @@ public:
   };
 };
 
-std::vector<std::string> psql_array_to_vector(std::string str);
-std::vector<std::string> psql_array_to_vector(pqxx::array_parser&& parser);
 
 #endif /* DATA_SELECTION_HPP */
