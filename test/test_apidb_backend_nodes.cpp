@@ -12,6 +12,7 @@
 #include "cgimap/rate_limiter.hpp"
 #include "cgimap/routes.hpp"
 #include "cgimap/process_request.hpp"
+#include "cgimap/backend/apidb/utils.hpp"
 
 #include "test_formatter.hpp"
 #include "test_database.hpp"

@@ -1,5 +1,6 @@
 #include "cgimap/backend/apidb/common_pgsql_selection.hpp"
 #include "cgimap/backend/apidb/apidb.hpp"
+#include "cgimap/backend/apidb/utils.hpp"
 
 #include <chrono>
 
