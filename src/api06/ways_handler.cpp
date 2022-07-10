@@ -59,7 +59,7 @@ responder_ptr_t ways_handler::responder(data_selection &x) const {
 vector<id_version> ways_handler::validate_request(request &req) {
   vector<id_version> myids = parse_id_list_params(req, "ways");
 
-  if (myids.size() < 1) {
+  if (myids.empty()) {
     throw http::bad_request(
       "The parameter ways is required, and must be "
       "of the form ways=ID[vVER][,ID[vVER][,ID[vVER]...]].");

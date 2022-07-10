@@ -60,7 +60,7 @@ responder_ptr_t nodes_handler::responder(data_selection &x) const {
 vector<id_version> nodes_handler::validate_request(request &req) {
   vector<id_version> ids = parse_id_list_params(req, "nodes");
 
-  if (ids.size() < 1) {
+  if (ids.empty()) {
     throw http::bad_request(
       "The parameter nodes is required, and must be "
       "of the form nodes=ID[vVER][,ID[vVER][,ID[vVER]...]].");

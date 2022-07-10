@@ -27,9 +27,7 @@ void relation_full_responder::check_visibility() {
   switch (sel.check_relation_visibility(id)) {
 
   case data_selection::non_exist:
-  {
     throw http::not_found(fmt::format("Relation {:d} was not found.", id));
-  }
 
   case data_selection::deleted:
     // TODO: fix error message / throw structure to emit better error message
