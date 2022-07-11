@@ -17,10 +17,11 @@ struct changeset {
   std::string display_name;
   osm_user_id_t user_id;
 
+  changeset() = default;
+
   changeset(bool dp, const std::string &dn, osm_user_id_t id);
 };
 
-std::map<osm_changeset_id_t, changeset *> fetch_changesets(pqxx::transaction_base &w,  std::set<osm_changeset_id_t> id);
 
 
 #endif /* CHANGESET_HPP */

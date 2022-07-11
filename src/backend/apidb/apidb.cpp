@@ -25,8 +25,6 @@ struct apidb_backend : public backend {
        "database character set")
       ("readonly", "(obsolete parameter, read only backend is always assumed)")
       ("disable-api-write", "disable API write operations")
-      ("cachesize", po::value<size_t>()->default_value(100000),
-       "maximum size of changeset cache")
       ("dbport", po::value<string>(),
        "database port number or UNIX socket file name")
       ("oauth-dbname", po::value<string>(),

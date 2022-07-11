@@ -3,7 +3,6 @@
 
 #include "cgimap/data_update.hpp"
 #include "cgimap/backend/apidb/changeset.hpp"
-#include "cgimap/backend/apidb/cache.hpp"
 #include "cgimap/backend/apidb/transaction_manager.hpp"
 
 #include <memory>

@@ -98,15 +98,15 @@ inline int insert_results(const pqxx::result &res, set<T> &elems) {
 } // anonymous namespace
 
 readonly_pgsql_selection::readonly_pgsql_selection(
-    Transaction_Owner_Base& to, cache<osm_changeset_id_t, changeset> &changeset_cache)
+    Transaction_Owner_Base& to)
     : m(to)
     , include_changeset_discussions(false)
-    , m_redactions_visible(false)
-    , cc(changeset_cache) {}
+    , m_redactions_visible(false) {}
 
 readonly_pgsql_selection::~readonly_pgsql_selection() = default;
 
 void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
+
   // get all nodes - they already contain their own tags, so
   // we don't need to do anything else.
 
@@ -119,13 +119,17 @@ void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
        "WHERE n.id = ANY($1) "
        "GROUP BY n.id ORDER BY n.id");
 
-
   logger::message("Fetching nodes");
   if (!sel_nodes.empty()) {
       // lambda function gets notified about each single element, allowing us to
       // remove all object versions from historic nodes, that are already
       // contained in current nodes
-    extract_nodes(m.exec_prepared("extract_nodes", sel_nodes),
+
+    auto result = m.exec_prepared("extract_nodes", sel_nodes);
+
+    fetch_changesets(extract_changeset_ids(result), cc);
+
+    extract_nodes(result,
 		  formatter,
 		  [&](const element_info& elem)
                     { sel_historic_nodes.erase(osm_edition_t(elem.id, elem.version)); },
@@ -145,12 +149,19 @@ void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
        "GROUP BY n.node_id, n.version ORDER BY n.node_id, n.version");
 
   if (!sel_historic_nodes.empty()) {
-    std::vector<osm_nwr_id_t> ids, versions;
+    std::vector<osm_nwr_id_t> ids;
+    std::vector<osm_nwr_id_t> versions;
+
     for (const auto &ed : sel_historic_nodes) {
       ids.emplace_back(ed.first);
       versions.emplace_back(ed.second);
     }
-    extract_nodes(m.exec_prepared("extract_historic_nodes", ids, versions),
+
+    auto result = m.exec_prepared("extract_historic_nodes", ids, versions);
+
+    fetch_changesets(extract_changeset_ids(result), cc);
+
+    extract_nodes(result,
 		  formatter,
 		  [&](const element_info&) {},
 		  cc);
@@ -158,6 +169,7 @@ void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
 }
 
 void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
+
   // grab the ways, way nodes and tags
   // way nodes and tags are on a separate connections so that the
   // entire result set can be streamed from a single query.
@@ -184,7 +196,12 @@ void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
       // lambda function gets notified about each single element, allowing us to
     // remove all object versions from historic ways, that are already
     // contained in current ways
-    extract_ways(m.exec_prepared("extract_ways", sel_ways),
+
+    auto result = m.exec_prepared("extract_ways", sel_ways);
+
+    fetch_changesets(extract_changeset_ids(result), cc);
+
+    extract_ways(result,
 		 formatter,
 		 [&](const element_info& elem)
 		    { sel_historic_ways.erase(osm_edition_t(elem.id, elem.version)); },
@@ -213,12 +230,19 @@ void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
        "ORDER BY w.way_id, w.version");
 
   if (!sel_historic_ways.empty()) {
-    std::vector<osm_nwr_id_t> ids, versions;
+    std::vector<osm_nwr_id_t> ids;
+    std::vector<osm_nwr_id_t> versions;
+
     for (const auto &ed : sel_historic_ways) {
       ids.emplace_back(ed.first);
       versions.emplace_back(ed.second);
     }
-    extract_ways(m.exec_prepared("extract_historic_ways", ids, versions),
+
+    auto result = m.exec_prepared("extract_historic_ways", ids, versions);
+
+    fetch_changesets(extract_changeset_ids(result), cc);
+
+    extract_ways(result,
 		 formatter,
 		 [&](const element_info&) {},
 		 cc);
@@ -226,6 +250,7 @@ void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
 }
 
 void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
+
   logger::message("Fetching relations");
 
   m.prepare("extract_relations",
@@ -248,10 +273,14 @@ void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
 
 
   if (!sel_relations.empty()) {
+    auto result = m.exec_prepared("extract_relations", sel_relations);
+
+    fetch_changesets(extract_changeset_ids(result), cc);
+
     // lambda function gets notified about each single element, allowing us to
     // remove all object versions from historic relations, that are already
     // contained in current relations
-    extract_relations(m.exec_prepared("extract_relations", sel_relations),
+    extract_relations(result,
 		      formatter,
 	              [&](const element_info& elem)
 		        { sel_historic_relations.erase(osm_edition_t(elem.id, elem.version)); },
@@ -280,12 +309,19 @@ void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
        "ORDER BY r.relation_id, r.version");
 
   if (!sel_historic_relations.empty()) {
-    std::vector<osm_nwr_id_t> ids, versions;
+    std::vector<osm_nwr_id_t> ids;
+    std::vector<osm_nwr_id_t> versions;
+
     for (const auto &ed : sel_historic_relations) {
       ids.emplace_back(ed.first);
       versions.emplace_back(ed.second);
     }
-    extract_relations(m.exec_prepared("extract_historic_relations", ids, versions),
+
+    auto result = m.exec_prepared("extract_historic_relations", ids, versions);
+
+    fetch_changesets(extract_changeset_ids(result), cc);
+
+    extract_relations(result,
 		      formatter,
 	              [&](const element_info&) {},
 		      cc);
@@ -319,6 +355,9 @@ void readonly_pgsql_selection::write_changesets(output_formatter &formatter,
       "WHERE c.id = ANY($1)");
 
   pqxx::result changesets = m.exec_prepared("extract_changesets", sel_changesets);
+
+  fetch_changesets(sel_changesets, cc);
+
   extract_changesets(changesets, formatter, cc, now, include_changeset_discussions);
 }
 
@@ -774,20 +813,82 @@ bool readonly_pgsql_selection::get_user_id_pass(const std::string& user_name, os
   return true;
 }
 
+std::set< osm_changeset_id_t > readonly_pgsql_selection::extract_changeset_ids(pqxx::result& result) {
+
+  std::set< osm_changeset_id_t > changeset_ids;
+  for (const auto & row : result) {
+    changeset_ids.insert(row["changeset_id"].as<osm_changeset_id_t>());
+  }
+  return changeset_ids;
+}
+
+void readonly_pgsql_selection::fetch_changesets(const std::set< osm_changeset_id_t >& all_ids, std::map<osm_changeset_id_t, changeset>& cc ) {
+
+  std::set< osm_changeset_id_t> ids;
+
+  // check if changeset is already contained in map
+  for (auto id: all_ids) {
+    if (cc.find(id) == cc.end()) {
+      ids.insert(id);
+    }
+  }
+
+  if (ids.empty())
+    return;
+
+  m.prepare("extract_changeset_userdetails",
+      "SELECT c.id, u.data_public, u.display_name, u.id from users u "
+                   "join changesets c on u.id=c.user_id where c.id = ANY($1)");
+
+  pqxx::result res = m.exec_prepared("extract_changeset_userdetails", ids);
+
+  for (const auto & r : res) {
+
+    osm_changeset_id_t cs = r[0].as<int64_t>();
+
+    // Multiple results for one changeset?
+    if (cc.find(cs) != cc.end()) {
+      logger::message(
+          fmt::format("ERROR: Request for user data associated with changeset {:d} failed: returned multiple rows.", cs));
+      throw http::server_error(
+          fmt::format("Possible database inconsistency with changeset {:d}.", cs));
+    }
+
+    int64_t user_id = r[3].as<int64_t>();
+    // apidb instances external to OSM don't have access to anonymous
+    // user information and so use an ID which isn't in use for any
+    // other user to indicate this - generally 0 or negative.
+    if (user_id <= 0) {
+      cc[cs] = changeset{false, "", 0};
+    } else {
+      cc[cs] = changeset{r[1].as<bool>(), r[2].as<std::string>(), osm_user_id_t(user_id)};
+    }
+  }
+
+  // although the above query should always return one row, it might
+  // happen that we get a weird changeset ID from somewhere, or the
+  // FK constraints might have failed. in this situation all we can
+  // really do is whine loudly and bail.
+
+  // Missing changeset in query result?
+  for (const auto & id : ids) {
+    if (cc.find(id) == cc.end()) {
+      logger::message(
+          fmt::format("ERROR: Request for user data associated with changeset {:d} failed: returned 0 rows.", id));
+      throw http::server_error(
+          fmt::format("Possible database inconsistency with changeset {:d}.", id));
+    }
+  }
+}
+
 readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
     : m_connection(connect_db_str(opts)),
-      m_cache_connection(connect_db_str(opts)),
-      m_errorhandler(m_connection),
-      m_cache_errorhandler(m_cache_connection),
-      m_cache_tx(m_cache_connection, "changeset_cache"),
-      m_cache(std::bind(fetch_changesets, std::ref(m_cache_tx), std::placeholders::_1),
-              opts["cachesize"].as<size_t>()) {
+      m_errorhandler(m_connection) {
 
   check_postgres_version(m_connection);
 
   // set the connections to use the appropriate charset.
   m_connection.set_client_encoding(opts["charset"].as<std::string>());
-  m_cache_connection.set_client_encoding(opts["charset"].as<std::string>());
 
   // set the connection to use readonly transaction.
   m_connection.set_variable("default_transaction_read_only", "true");
@@ -798,8 +899,7 @@ readonly_pgsql_selection::factory::~factory() = default;
 
 std::unique_ptr<data_selection>
 readonly_pgsql_selection::factory::make_selection(Transaction_Owner_Base& to) {
-  return std::make_unique<readonly_pgsql_selection>(to,
-						    std::ref(m_cache));
+  return std::make_unique<readonly_pgsql_selection>(to);
 }
 
 std::unique_ptr<Transaction_Owner_Base>
