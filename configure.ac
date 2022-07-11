@@ -17,7 +17,7 @@ AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 
 AC_HEADER_STDC
-AC_LANG_CPLUSPLUS
+AC_LANG([C++])
 
 PKG_CHECK_MODULES(LIBXML, libxml-2.0 >= 2.6.31)
 AC_SUBST(LIBXML_CFLAGS)
@@ -34,26 +34,16 @@ AC_SUBST(FMT_LIBS)
 PKG_CHECK_MODULES([ARGON2], [libargon2])
 AC_SUBST(argon2_lib, [", libargon2"])
 
-#m4_include([aclocal/ax_boost_base.m4])
-#m4_include([aclocal/ax_boost_system.m4])
-#m4_include([aclocal/ax_boost_program_options.m4])
-#m4_include([aclocal/ax_check_zlib.m4])
-
 PKG_CHECK_MODULES(LIBMEMCACHED, libmemcached >= 0.31)
 AC_SUBST(LIBMEMCACHED_CFLAGS)
 AC_SUBST(LIBMEMCACHED_LIBS)
 
 AX_BOOST_BASE([1.43], , [AC_MSG_ERROR([Boost libraries are required for building CGImap. Please install libboost-dev.])])
-#AX_BOOST_SYSTEM
 AX_BOOST_PROGRAM_OPTIONS
-#AX_BOOST_FILESYSTEM
-#AX_BOOST_LOCALE
 
 # the boost libraries are required, not optional, but the
 # AX_BOOST_* checks only error if the headers aren't
 # available?
-#AS_IF([test "x$BOOST_SYSTEM_LIB" == "x"],
-#      [AC_MSG_ERROR([Boost::System library not detected, please install libboost-system-dev.])],)
 AS_IF([test "x$BOOST_PROGRAM_OPTIONS_LIB" == "x"],
       [AC_MSG_ERROR([Boost::ProgramOptions library not detected, please install libboost-program-options-dev.])],)
 
@@ -61,17 +51,6 @@ AS_IF([test "x$BOOST_PROGRAM_OPTIONS_LIB" == "x"],
 AX_CHECK_ZLIB
 REQUIRE_FCGI
 REQUIRE_CRYPTOPP
-
-#AC_MSG_CHECKING([whether to enable experimental other API 0.6 calls])
-#AC_ARG_ENABLE([experimental],
-#	[AS_HELP_STRING([--enable-experimental],
-#		[Enable experimental other API 0.6 calls])],
-#	[enable_experimental="yes"],
-#	[enable_experimental="no"])
-#AC_MSG_RESULT($enable_experimental)
-#AS_IF([test "x$enable_experimental" == xyes],
-#	    [AC_DEFINE([ENABLE_EXPERIMENTAL], [1], [Define for experimental other API 0.6 calls.])])
-#AM_CONDITIONAL([ENABLE_EXPERIMENTAL], [test "x$enable_experimental" == xyes])
 
 AC_MSG_CHECKING(whether to enable JSON output using YAJL)
 AC_ARG_ENABLE(yajl,
