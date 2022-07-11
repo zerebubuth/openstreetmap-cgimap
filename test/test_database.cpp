@@ -164,7 +164,7 @@ void test_database::run(
     func(*this);
 
   } catch (const std::exception &e) {
-    throw std::runtime_error(fmt::format("%1%", e.what()));
+    throw std::runtime_error(fmt::format("{}", e.what()));
   }
   txn_owner_readonly.reset();
   txn_owner_readwrite.reset();

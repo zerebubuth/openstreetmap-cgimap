@@ -60,7 +60,7 @@ responder_ptr_t relations_handler::responder(data_selection &x) const {
 vector<id_version> relations_handler::validate_request(request &req) {
   vector<id_version> myids = parse_id_list_params(req, "relations");
 
-  if (myids.size() < 1) {
+  if (myids.empty()) {
     throw http::bad_request("The parameter relations is required, and must be "
                             "of the form relations=id[,id[,id...]].");
   }

@@ -11,7 +11,7 @@ using pqxx_tuple = pqxx::result::reference;
 using pqxx_field = pqxx::field;
 
 void extract_elem(const pqxx_tuple &row, element_info &elem,
-                  cache<osm_changeset_id_t, changeset> &changeset_cache) {
+                  std::map<osm_changeset_id_t, changeset> &changeset_cache) {
 
   elem.id        = row["id"].as<osm_nwr_id_t>();
   elem.version   = row["version"].as<int>();
@@ -19,11 +19,11 @@ void extract_elem(const pqxx_tuple &row, element_info &elem,
   elem.changeset = row["changeset_id"].as<osm_changeset_id_t>();
   elem.visible   = row["visible"].as<bool>();
 
-  auto cs = changeset_cache.get(elem.changeset);
+  changeset & cs = changeset_cache[elem.changeset];
 
-  if (cs->data_public) {
-    elem.uid = cs->user_id;
-    elem.display_name = cs->display_name;
+  if (cs.data_public) {
+    elem.uid = cs.user_id;
+    elem.display_name = cs.display_name;
   } else {
     elem.uid = {};
     elem.display_name = {};
@@ -41,16 +41,16 @@ std::optional<T> extract_optional(const pqxx_field &f) {
 
 void extract_changeset(const pqxx_tuple &row,
                        changeset_info &elem,
-                       cache<osm_changeset_id_t, changeset> &changeset_cache) {
+                       std::map<osm_changeset_id_t, changeset> &changeset_cache) {
   elem.id = row["id"].as<osm_changeset_id_t>();
   elem.created_at = row["created_at"].c_str();
   elem.closed_at = row["closed_at"].c_str();
 
-  auto cs = changeset_cache.get(elem.id);
+  const auto & cs = changeset_cache[elem.id];
 
-  if (cs->data_public) {
-    elem.uid = cs->user_id;
-    elem.display_name = cs->display_name;
+  if (cs.data_public) {
+    elem.uid = cs.user_id;
+    elem.display_name = cs.display_name;
   } else {
     elem.uid = {};
     elem.display_name = {};
@@ -212,18 +212,11 @@ template <typename T>
 void extract(
   const pqxx::result &rows, output_formatter &formatter,
   std::function<void(const element_info&)> notify,
-  cache<osm_changeset_id_t, changeset> &cc) {
+  std::map<osm_changeset_id_t, changeset> &cc) {
 
   element_info elem;
   typename T::extra_info extra;
   tags_t tags;
-
-  std::set<osm_changeset_id_t> changeset_ids;
-
-  for (const auto &row : rows)
-    changeset_ids.insert(row["changeset_id"].as<osm_changeset_id_t>());
-
-  cc.prefetch(changeset_ids);
 
   for (const auto &row : rows) {
     extract_elem(row, elem, cc);
@@ -239,14 +232,14 @@ void extract(
 void extract_nodes(
   const pqxx::result &rows, output_formatter &formatter,
   std::function<void(const element_info&)> notify,
-  cache<osm_changeset_id_t, changeset> &cc) {
+  std::map<osm_changeset_id_t, changeset> &cc) {
   extract<node>(rows, formatter, notify, cc);
 }
 
 void extract_ways(
   const pqxx::result &rows, output_formatter &formatter,
   std::function<void(const element_info&)> notify,
-  cache<osm_changeset_id_t, changeset> &cc) {
+  std::map<osm_changeset_id_t, changeset> &cc) {
   extract<way>(rows, formatter, notify, cc);
 }
 
@@ -255,13 +248,13 @@ void extract_ways(
 void extract_relations(
   const pqxx::result &rows, output_formatter &formatter,
   std::function<void(const element_info&)> notify,
-  cache<osm_changeset_id_t, changeset> &cc) {
+  std::map<osm_changeset_id_t, changeset> &cc) {
   extract<relation>(rows, formatter, notify, cc);
 }
 
 void extract_changesets(
   const pqxx::result &rows, output_formatter &formatter,
-  cache<osm_changeset_id_t, changeset> &cc, const std::chrono::system_clock::time_point &now,
+  std::map<osm_changeset_id_t, changeset> &cc, const std::chrono::system_clock::time_point &now,
   bool include_changeset_discussions) {
 
   changeset_info elem;

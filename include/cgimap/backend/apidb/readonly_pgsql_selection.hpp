@@ -3,7 +3,6 @@
 
 #include "cgimap/data_selection.hpp"
 #include "cgimap/backend/apidb/changeset.hpp"
-#include "cgimap/backend/apidb/cache.hpp"
 #include "cgimap/backend/apidb/transaction_manager.hpp"
 
 #include <pqxx/pqxx>
@@ -20,9 +19,10 @@
  * stored in-memory in cgimap's memory.
  */
 class readonly_pgsql_selection : public data_selection {
+
+
 public:
-  readonly_pgsql_selection(Transaction_Owner_Base& to,
-                           cache<osm_changeset_id_t, changeset> &changeset_cache);
+  readonly_pgsql_selection(Transaction_Owner_Base& to);
   ~readonly_pgsql_selection();
 
   void write_nodes(output_formatter &formatter) override;
@@ -67,6 +67,8 @@ public:
   bool is_user_blocked(const osm_user_id_t) override;
   bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &) override;
 
+
+
   /**
    * a factory for the creation of read-only selections
    */
@@ -78,13 +80,14 @@ public:
     std::unique_ptr<Transaction_Owner_Base> get_default_transaction() override;
 
   private:
-    pqxx::connection m_connection, m_cache_connection;
-    pqxx::quiet_errorhandler m_errorhandler, m_cache_errorhandler;
-    pqxx::nontransaction m_cache_tx;
-    cache<osm_changeset_id_t, changeset> m_cache;
+    pqxx::connection m_connection;
+    pqxx::quiet_errorhandler m_errorhandler;
   };
 
 private:
+  std::set< osm_changeset_id_t > extract_changeset_ids(pqxx::result& result);
+  void fetch_changesets(const std::set< osm_changeset_id_t >& ids, std::map<osm_changeset_id_t, changeset> & cc);
+
   Transaction_Manager m;
 
   // true if we want to include changeset discussions along with
@@ -99,7 +102,7 @@ private:
   std::set<osm_changeset_id_t> sel_changesets;
   std::set<osm_nwr_id_t> sel_nodes, sel_ways, sel_relations;
   std::set<osm_edition_t> sel_historic_nodes, sel_historic_ways, sel_historic_relations;
-  cache<osm_changeset_id_t, changeset> & cc;
+  std::map<osm_changeset_id_t, changeset> cc;
 };
 
 #endif /* READONLY_PGSQL_SELECTION_HPP */

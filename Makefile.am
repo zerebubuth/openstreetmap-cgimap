@@ -82,7 +82,6 @@ if ENABLE_APIDB
 cgimap_apidb_includedir=$(includedir)/cgimap/backend/apidb
 cgimap_apidb_include_HEADERS = \
 	include/cgimap/backend/apidb/apidb.hpp \
-	include/cgimap/backend/apidb/cache.hpp \
 	include/cgimap/backend/apidb/changeset.hpp \
 	include/cgimap/backend/apidb/quad_tile.hpp \
 	include/cgimap/backend/apidb/readonly_pgsql_selection.hpp \
