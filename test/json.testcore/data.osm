@@ -95,4 +95,12 @@
     <member type='way' ref='40191' role='outer' />
     <member type='way' ref='40058' role='outer' />
   </relation>
+  <relation visible="true" id='43362' timestamp='2013-09-25T02:00:00Z' uid='5' user='user_5' version='2' changeset='42'>
+    <member type='way' ref='40052' role='outer' />
+    <member type='way' ref='40056' role='outer' />
+    <member type='way' ref='40191' role='outer' />
+    <member type='way' ref='40058' role='outer' />
+    <member type='node' ref='40058' role='40075' />
+    <member type='relation' ref='43362' role='40075' />
+  </relation>
 </osm>

@@ -354,15 +354,16 @@ void check_content_body_plain(std::istream &expected, std::istream &actual) {
     size_t exp_num = expected.gcount();
     size_t act_num = actual.gcount();
 
+    std::string exp(exp_buf, exp_buf + exp_num);
+    std::string act(act_buf, act_buf + act_num);
+
     if (exp_num != act_num) {
       throw std::runtime_error(
         fmt::format("Expected to read {} bytes, but read {} in actual "
-                       "plain - responses are different sizes.", exp_num, act_num));
+                       "plain - responses are different sizes.\nexpected \"{}\", actual \"{}\"", exp_num, act_num, exp, act));
     }
 
     if (!std::equal(exp_buf, exp_buf + exp_num, act_buf)) {
-      std::string exp(exp_buf, exp_buf + exp_num),
-        act(act_buf, act_buf + act_num);
       throw std::runtime_error(
         fmt::format("Returned content differs: expected \"{}\", actual "
                        "\"{}\" - responses are different.", exp, act));
@@ -476,7 +477,7 @@ void run_test(fs::path test_case, rate_limiter &limiter,
     test_request req;
 
     // set up request headers from test case
-    std::ifstream in(test_case);
+    std::ifstream in(test_case, std::ios::binary);
     setup_request_headers(req, in);
 
     // execute the request

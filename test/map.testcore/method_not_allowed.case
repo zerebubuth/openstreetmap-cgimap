@@ -1,0 +1,10 @@
+Request-Method: PUT
+Request-URI: /api/0.6/map?bbox=-0.0005,-0.0005,0.0005,0.0005
+---
+Allow: GET, HEAD, OPTIONS
+Cache-Control: no-cache
+Content-Length: 0
+Content-Type: text/html
+Status: 405 Method Not Allowed
+---
+

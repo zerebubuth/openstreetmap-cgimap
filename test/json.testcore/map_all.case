@@ -350,7 +350,48 @@ Status: 200 OK
      "role": "outer"
     }
    ]
-  }
+  },
+  {
+   "type": "relation",
+   "id": 43362,
+   "timestamp": "2013-09-25T02:00:00Z",
+   "version": 2,
+   "changeset": 42,
+   "user": "user_5",
+   "uid": 5,
+   "members": [
+    {
+     "type": "way",
+     "ref": 40052,
+      "role": "outer"
+    },
+    {
+      "type": "way",
+      "ref": 40056,
+      "role": "outer"
+   },
+   {
+      "type": "way",
+      "ref": 40191,
+      "role": "outer"
+   },
+   {
+      "type": "way",
+      "ref": 40058,
+      "role": "outer"
+   },
+   {
+      "type": "node",
+      "ref": 40058,
+      "role": "40075"
+   },
+   {
+      "type": "relation",
+      "ref": 43362,
+      "role": "40075"
+   }
+   ]
+  }  
  ]
 }
 
