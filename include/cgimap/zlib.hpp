@@ -40,8 +40,8 @@ private:
   output_buffer& out;
   // keep track of bytes written because the z_stream struct doesn't seem to
   // update unless its flushed.
-  size_t bytes_in;
-  z_stream stream;
+  size_t bytes_in = 0;
+  z_stream stream{};
   char outbuf[4096];
 };
 
