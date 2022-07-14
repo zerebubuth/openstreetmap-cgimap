@@ -174,8 +174,8 @@ void ApiDB_Way_Updater::process_modify_ways() {
 
     // remove duplicates
     std::sort(ids_package.begin(), ids_package.end());
-    ids.erase(std::unique(ids_package.begin(), ids_package.end()),
-              ids_package.end());
+    ids_package.erase(std::unique(ids_package.begin(), ids_package.end()),
+                      ids_package.end());
 
     check_current_way_versions(modify_ways_package);
 

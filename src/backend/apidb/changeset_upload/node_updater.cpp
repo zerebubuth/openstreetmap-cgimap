@@ -152,8 +152,8 @@ void ApiDB_Node_Updater::process_modify_nodes() {
 
     // remove duplicates
     std::sort(ids_package.begin(), ids_package.end());
-    ids.erase(std::unique(ids_package.begin(), ids_package.end()),
-              ids_package.end());
+    ids_package.erase(std::unique(ids_package.begin(), ids_package.end()),
+                      ids_package.end());
 
     check_current_node_versions(modify_nodes_package);
 
