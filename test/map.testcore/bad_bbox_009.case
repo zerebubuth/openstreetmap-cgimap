@@ -1,0 +1,10 @@
+Request-Method: GET
+Request-URI: /api/0.6/map?bbox=0,-90.1,asdasd,-89.9
+---
+Cache-Control: no-cache
+Content-Length: 88
+Content-Type: text/plain
+Error: The parameter bbox is required, and must be of the form min_lon,min_lat,max_lon,max_lat.
+Status: 400 Bad Request
+---
+The parameter bbox is required, and must be of the form min_lon,min_lat,max_lon,max_lat.

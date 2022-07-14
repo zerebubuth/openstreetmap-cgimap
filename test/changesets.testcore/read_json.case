@@ -1,0 +1,36 @@
+Request-Method: GET
+Request-URI: /api/0.6/changeset/1.json
+Date: 2015-08-09T11:33:13Z
+---
+Status: 200 OK
+Content-Type: application/json; charset=utf-8
+Content-Encoding: identity
+Cache-Control: private, max-age=0, must-revalidate
+!Content-Disposition: 
+---
+{
+	"version": "0.6",
+	"generator": "***",
+	"copyright": "***",
+	"attribution": "***",
+	"license": "***",
+	"elements": [{
+		"type": "changeset",
+		"id": 1,
+		"created_at": "2015-08-09T10:33:13Z",
+		"closed_at": "2015-08-09T11:33:13Z",
+		"open": false,
+		"user": "FakeUser1",
+		"uid": 1,
+		"minlat": 51.5288506,
+		"minlon": -0.1465242,
+		"maxlat": 51.5288620,
+		"maxlon": -0.1464925,
+		"comments_count": 1,
+		"changes_count": 1,
+		"tags": {
+			"created_by": "manually"
+		}
+	}]
+}
+

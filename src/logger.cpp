@@ -32,6 +32,4 @@ void message(const string &m) {
   }
 }
 
-// void message(const fmt::format &m) { message(m.str()); }
-
 }
