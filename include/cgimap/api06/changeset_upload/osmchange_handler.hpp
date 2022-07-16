@@ -19,10 +19,10 @@ namespace api06 {
 class OSMChange_Handler : public Parser_Callback {
 
 public:
-  OSMChange_Handler(std::unique_ptr<Node_Updater> _node_updater,
-                    std::unique_ptr<Way_Updater> _way_updater,
-                    std::unique_ptr<Relation_Updater> _relation_updater,
-                    osm_changeset_id_t _changeset);
+  OSMChange_Handler(Node_Updater&,
+                    Way_Updater&,
+                    Relation_Updater&,
+                    osm_changeset_id_t changeset);
 
   virtual ~OSMChange_Handler() = default;
 
@@ -62,11 +62,11 @@ private:
 
   state current_state{ state::st_initial };
 
-  std::unique_ptr<Node_Updater> node_updater;
-  std::unique_ptr<Way_Updater> way_updater;
-  std::unique_ptr<Relation_Updater> relation_updater;
+  Node_Updater& node_updater;
+  Way_Updater& way_updater;
+  Relation_Updater& relation_updater;
 
-  osm_changeset_id_t m_changeset;
+  osm_changeset_id_t changeset;
 };
 
 } // namespace api06

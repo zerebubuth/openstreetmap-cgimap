@@ -9,7 +9,7 @@
 #include "cgimap/types.hpp"
 
 #include <libxml/parser.h>
-#include <boost/format.hpp>
+#include <fmt/core.h>
 
 #include <algorithm>
 #include <cassert>
@@ -17,6 +17,7 @@
 #include <cstring>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
 #include "parsers/saxparser.hpp"
@@ -26,7 +27,7 @@ namespace api06 {
 class OSMChangeXMLParser : private xmlpp::SaxParser {
 
 public:
-  explicit OSMChangeXMLParser(Parser_Callback *callback)
+  explicit OSMChangeXMLParser(Parser_Callback& callback)
       : m_callback(callback) {
 
     m_context.push_back(context::root);
@@ -57,12 +58,11 @@ protected:
     switch (m_context.back()) {
     case context::root:
       if (!std::strcmp(element, "osmChange")) {
-        m_callback->start_document();
+        m_callback.start_document();
       } else {
         throw xml_error{
-          (boost::format("Unknown top-level element %1%, expecting osmChange") %
+          fmt::format("Unknown top-level element {}, expecting osmChange",
            element)
-              .str()
         };
       }
       m_context.push_back(context::top);
@@ -88,10 +88,9 @@ protected:
         m_operation = operation::op_delete;
       } else {
         throw xml_error{
-          (boost::format(
-               "Unknown action %1%, choices are create, modify, delete") %
+           fmt::format(
+               "Unknown action {}, choices are create, modify, delete",
            element)
-              .str()
         };
       }
       break;
@@ -115,10 +114,9 @@ protected:
         m_context.push_back(context::relation);
       } else {
         throw xml_error{
-          (boost::format(
-               "Unknown element %1%, expecting node, way or relation") %
+          fmt::format(
+               "Unknown element {}, expecting node, way or relation",
            element)
-              .str()
         };
       }
       break;
@@ -140,10 +138,9 @@ protected:
           }
         });
         if (!ref_found)
-          throw xml_error{ (boost::format(
-                                "Missing mandatory ref field on way node %1%") %
-                            m_way->to_string())
-                               .str() };
+          throw xml_error{fmt::format(
+                                "Missing mandatory ref field on way node {}",
+                            m_way->to_string()) };
       } else if (!std::strcmp(element, "tag")) {
         add_tag(*m_way, attrs);
       }
@@ -162,10 +159,9 @@ protected:
           }
         });
         if (!member.is_valid()) {
-          throw xml_error{ (boost::format(
-                                "Missing mandatory field on relation member in %1%") %
-                            m_relation->to_string())
-                               .str() };
+          throw xml_error{ fmt::format(
+                                "Missing mandatory field on relation member in {}",
+                            m_relation->to_string()) };
         }
         m_relation->add_member(member);
       } else if (!std::strcmp(element, "tag")) {
@@ -190,7 +186,7 @@ protected:
       assert(!std::strcmp(element, "osmChange"));
       m_context.pop_back();
       m_operation = operation::op_undefined;
-      m_callback->end_document();
+      m_callback.end_document();
       break;
     case context::in_create:
       assert(!std::strcmp(element, "create"));
@@ -212,12 +208,11 @@ protected:
       assert(!std::strcmp(element, "node"));
       if (!m_node->is_valid(m_operation)) {
         throw xml_error{
-          (boost::format("%1% does not include all mandatory fields") %
+          fmt::format("{} does not include all mandatory fields",
            m_node->to_string())
-              .str()
         };
       }
-      m_callback->process_node(*m_node, m_operation, m_if_unused);
+      m_callback.process_node(*m_node, m_operation, m_if_unused);
       m_node.reset(new Node{});
       m_context.pop_back();
       break;
@@ -225,13 +220,12 @@ protected:
       assert(!std::strcmp(element, "way"));
       if (!m_way->is_valid(m_operation)) {
         throw xml_error{
-          (boost::format("%1% does not include all mandatory fields") %
+          fmt::format("{} does not include all mandatory fields",
            m_way->to_string())
-              .str()
         };
       }
 
-      m_callback->process_way(*m_way, m_operation, m_if_unused);
+      m_callback.process_way(*m_way, m_operation, m_if_unused);
       m_way.reset(new Way{});
       m_context.pop_back();
       break;
@@ -239,12 +233,11 @@ protected:
       assert(!std::strcmp(element, "relation"));
       if (!m_relation->is_valid(m_operation)) {
         throw xml_error{
-          (boost::format("%1% does not include all mandatory fields") %
+          fmt::format("{} does not include all mandatory fields",
            m_relation->to_string())
-              .str()
         };
       }
-      m_callback->process_relation(*m_relation, m_operation, m_if_unused);
+      m_callback.process_relation(*m_relation, m_operation, m_if_unused);
       m_relation.reset(new Relation{});
       m_context.pop_back();
       break;
@@ -308,9 +301,8 @@ private:
     }
 
     if (!object.has_changeset()) {
-      throw xml_error{ (boost::format("Changeset id is missing for %1%") %
-                        object.to_string())
-                           .str() };
+      throw xml_error{ fmt::format("Changeset id is missing for {}",
+                        object.to_string()) };
     }
 
     if (m_operation == operation::op_create) {
@@ -321,15 +313,13 @@ private:
                m_operation == operation::op_modify) {
       // objects for other operations must have a positive version number
       if (!object.has_version()) {
-        throw xml_error{ (boost::format(
-                              "Version is required when updating %1%") %
-                          object.to_string())
-                             .str() };
+        throw xml_error{ fmt::format(
+                              "Version is required when updating {}",
+                          object.to_string()) };
       }
       if (object.version() < 1) {
-        throw xml_error{ (boost::format("Invalid version number %1% in %2%") %
-                          object.version() % object.to_string())
-                             .str() };
+        throw xml_error{ fmt::format("Invalid version number {} in {}",
+                          object.version(), object.to_string()) };
       }
     }
   }
@@ -347,8 +337,8 @@ private:
 
   void add_tag(OSMObject &o, const char **attrs) {
 
-    boost::optional<std::string> k;
-    boost::optional<std::string> v;
+    std::optional<std::string> k;
+    std::optional<std::string> v;
 
     check_attributes(attrs, [&k, &v](const char *name, const char *value) {
 
@@ -361,16 +351,14 @@ private:
 
     if (!k)
       throw xml_error{
-        (boost::format("Mandatory field k missing in tag element for %1%") %
+        fmt::format("Mandatory field k missing in tag element for {}",
          o.to_string())
-            .str()
       };
 
     if (!v)
       throw xml_error{
-        (boost::format("Mandatory field v missing in tag element for %1%") %
+        fmt::format("Mandatory field v missing in tag element for {}",
          o.to_string())
-            .str()
       };
 
     o.add_tag(*k, *v);
@@ -384,18 +372,17 @@ private:
     if (location == nullptr)
       throw e;
 
-    throw TEx{ (boost::format("%1% at line %2%, column %3%") %
-  	e.what() %
-  	location->line %
-  	location->col )
-      .str() };
+    throw TEx{ fmt::format("{} at line {:d}, column {:d}",
+  	e.what(),
+  	location->line,
+  	location->col ) };
   }
 
   operation m_operation = operation::op_undefined;
 
   std::vector<context> m_context;
 
-  Parser_Callback *m_callback;
+  Parser_Callback& m_callback;
 
   std::unique_ptr<Node> m_node{};
   std::unique_ptr<Way> m_way{};

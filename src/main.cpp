@@ -2,10 +2,8 @@
 #include <iostream>
 #include <sstream>
 
-#include <boost/lambda/lambda.hpp>
 #include <boost/program_options.hpp>
-#include <boost/format.hpp>
-#include <boost/algorithm/string.hpp>
+#include <fmt/core.h>
 
 #include <algorithm>
 #include <cerrno>
@@ -47,8 +45,7 @@ using std::vector;
 using std::string;
 using std::map;
 using std::ostringstream;
-using std::shared_ptr;
-using boost::format;
+
 
 namespace al = boost::algorithm;
 namespace po = boost::program_options;
@@ -70,8 +67,7 @@ static string get_generator_string() {
     throw std::runtime_error("gethostname returned error.");
   }
 
-  return (boost::format(PACKAGE_STRING " (%1% %2%)") % getpid() % hostname)
-      .str();
+  return (fmt::format(PACKAGE_STRING " ({:d} {})", getpid(), hostname));
 }
 
 /**
@@ -113,6 +109,8 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
     ("scale", po::value<long>(), "conversion factor from double lat/lon to internal int format")
     ("max-relation-members", po::value<int>(), "max number of relation members per relation")
     ("max-element-tags", po::value<int>(), "max number of tags per OSM element")
+    ("basic_auth_support", po::value<bool>(), "enable HTTP basic authentication support")
+    ("oauth_10_support", po::value<bool>(), "enable legacy OAuth 1.0 support")
     ;
   // clang-format on
 
@@ -186,11 +184,9 @@ static void process_requests(int socket, const po::variables_map &options) {
 
   // create a factory for data selections - the mechanism for actually
   // getting at data.
-  std::shared_ptr<data_selection::factory> factory = create_backend(options);
-
-  std::shared_ptr<data_update::factory> update_factory = create_update_backend(options);
-
-  std::shared_ptr<oauth::store> oauth_store = create_oauth_store(options);
+  auto factory = create_backend(options);
+  auto update_factory = create_update_backend(options);
+  auto oauth_store = create_oauth_store(options);
 
   logger::message("Initialised");
 
@@ -209,7 +205,7 @@ static void process_requests(int socket, const po::variables_map &options) {
     if (req.accept_r() >= 0) {
       std::chrono::system_clock::time_point now(std::chrono::system_clock::now());
       req.set_current_time(now);
-      process_request(req, limiter, generator, route, factory, update_factory, oauth_store);
+      process_request(req, limiter, generator, route, *factory, update_factory.get(), oauth_store.get());
     }
   }
 
@@ -293,7 +289,7 @@ int main(int argc, char **argv) {
     get_options(argc, argv, options);
 
     // set global_settings based on provided options
-    global_settings::set_configuration(std::unique_ptr<global_settings_base>(new global_settings_via_options(options)));
+    global_settings::set_configuration(std::make_unique<global_settings_via_options>(options));
 
     // get the socket to use
     if (options.count("socket")) {

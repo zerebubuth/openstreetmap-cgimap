@@ -1,7 +1,7 @@
 #include <iostream>
 #include <stdexcept>
-#include <boost/format.hpp>
-#include <boost/optional/optional_io.hpp>
+#include <fmt/core.h>
+
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
@@ -23,10 +23,7 @@ namespace {
 template <typename T>
 void assert_equal(const T& a, const T&b, const std::string &message) {
   if (a != b) {
-    throw std::runtime_error(
-      (boost::format(
-        "Expecting %1% to be equal, but %2% != %3%")
-       % message % a % b).str());
+    throw std::runtime_error(fmt::format("Expecting {} to be equal, but {} != {}", message, a, b));
   }
 }
 
@@ -49,7 +46,7 @@ void test_changeset_select_node(test_database &tdb) {
     "VALUES "
     "  (1, 90000000, 90000000, 1, true,  '2017-03-19T19:13:00Z', 3229120632, 1, NULL);"
     );
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   std::vector<osm_changeset_id_t> ids;
   ids.push_back(1);
@@ -101,7 +98,7 @@ void test_changeset_select_way(test_database &tdb) {
     "  (1, 2, 1, 1), "
     "  (1, 1, 1, 1); "
     );
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   std::vector<osm_changeset_id_t> ids;
   ids.push_back(2);
@@ -159,7 +156,7 @@ void test_changeset_select_relation(test_database &tdb) {
     "VALUES "
     "  (1, 'Node', 1, 'foo', 1, 1); "
     );
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   std::vector<osm_changeset_id_t> ids;
   ids.push_back(2);
@@ -207,7 +204,7 @@ void test_changeset_redacted(test_database &tdb) {
     "  (1, 0, 0, 2, true,  '2017-03-19T20:18:00Z', 3221225472, 2, 1),"
     "  (1, 0, 0, 3, true,  '2017-03-19T20:18:00Z', 3221225472, 3, NULL);"
     );
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   {
     std::vector<osm_changeset_id_t> ids;

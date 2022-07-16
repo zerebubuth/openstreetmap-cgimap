@@ -16,10 +16,10 @@
 struct test_output_buffer : public output_buffer {
   explicit test_output_buffer(std::ostream &out, std::ostream &body);
   virtual ~test_output_buffer();
-  virtual int write(const char *buffer, int len);
-  virtual int written();
-  virtual int close();
-  virtual void flush();
+  int write(const char *buffer, int len) override;
+  int written() override;
+  int close() override;
+  void flush() override;
 
 private:
   std::ostream &m_out;
@@ -36,11 +36,11 @@ struct test_request : public request {
 
   /// implementation of request interface
   virtual ~test_request();
-  virtual const char *get_param(const char *key);
-  virtual const std::string get_payload();
+  const char *get_param(const char *key) const override;
+  const std::string get_payload() override;
   void set_payload(const std::string&);
 
-  virtual void dispose();
+  void dispose() override;
 
   /// getters and setters for the input headers and output response
   void set_header(const std::string &k, const std::string &v);
@@ -48,15 +48,15 @@ struct test_request : public request {
   std::stringstream &body();
   std::stringstream &header();
 
-  std::chrono::system_clock::time_point get_current_time() const;
+  std::chrono::system_clock::time_point get_current_time() const override;
   void set_current_time(const std::chrono::system_clock::time_point &now);
 
   int response_status() const;
 
 protected:
-  virtual void write_header_info(int status, const headers_t &headers);
-  virtual std::shared_ptr<output_buffer> get_buffer_internal();
-  virtual void finish_internal();
+  void write_header_info(int status, const headers_t &headers) override;
+  output_buffer& get_buffer_internal() override;
+  void finish_internal() override;
 
 private:
   int m_status;
@@ -66,6 +66,7 @@ private:
   std::map<std::string, std::string> m_params;
   std::chrono::system_clock::time_point m_now;
   std::string m_payload;
+  std::unique_ptr<test_output_buffer> test_ob_buffer;
 };
 
 #endif /* TEST_TEST_REQUEST_HPP */

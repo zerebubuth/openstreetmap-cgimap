@@ -4,7 +4,6 @@
 
 #include <chrono>
 
-using std::shared_ptr;
 using std::string;
 using std::transform;
 
@@ -28,7 +27,7 @@ const std::string &element_type_name(element_type elt) {
 
 } // anonymous namespace
 
-json_formatter::json_formatter(json_writer *w) : writer(w),
+json_formatter::json_formatter(std::unique_ptr<json_writer> w) : writer(std::move(w)),
     is_in_elements_array(false) {}
 
 json_formatter::~json_formatter() = default;
@@ -125,9 +124,9 @@ void json_formatter::write_common(const element_info &elem) {
   writer->entry_int(elem.changeset);
   if (elem.display_name && elem.uid) {
     writer->object_key("user");
-    writer->entry_string(elem.display_name.get());
+    writer->entry_string(*elem.display_name);
     writer->object_key("uid");
-    writer->entry_int(elem.uid.get());
+    writer->entry_int(*elem.uid);
   }
   // At this itme, only the map call is really supported for JSON output,
   // where all elements are expected to be visible.
@@ -237,9 +236,9 @@ void json_formatter::write_changeset(const changeset_info &elem,
 
   if (elem.display_name && bool(elem.uid)) {
     writer->object_key("user");
-    writer->entry_string(elem.display_name.get());
+    writer->entry_string(*elem.display_name);
     writer->object_key("uid");
-    writer->entry_int(elem.uid.get());
+    writer->entry_int(*elem.uid);
   }
 
   if (elem.bounding_box) {

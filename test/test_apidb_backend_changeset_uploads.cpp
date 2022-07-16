@@ -1,8 +1,7 @@
 #include <cstdio>
 #include <iostream>
 #include <stdexcept>
-#include <boost/format.hpp>
-#include <boost/optional/optional_io.hpp>
+#include <fmt/core.h>
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
@@ -28,10 +27,7 @@ namespace {
   template <typename T>
   void assert_equal(const T& a, const T&b, const std::string &message) {
     if (a != b) {
-	throw std::runtime_error(
-	    (boost::format(
-		"Expecting %1% to be equal, but %2% != %3%")
-	% message % a % b).str());
+      throw std::runtime_error(fmt::format("Expecting {} to be equal, but {} != {}", message, a, b));
     }
   }
 
@@ -54,7 +50,7 @@ namespace {
 
     // Create new node
     {
-      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+      api06::OSMChange_Tracking change_tracking{};
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
 
@@ -62,22 +58,22 @@ namespace {
       node_updater->process_new_nodes();
       upd->commit();
 
-      if (change_tracking->created_node_ids.size() != 1)
+      if (change_tracking.created_node_ids.size() != 1)
 	throw std::runtime_error("Expected 1 entry in created_node_ids");
 
 
-      if (change_tracking->created_node_ids[0].new_version != 1)
+      if (change_tracking.created_node_ids[0].new_version != 1)
 	throw std::runtime_error("Expected new version == 1");
 
-      if (change_tracking->created_node_ids[0].old_id != -1)
+      if (change_tracking.created_node_ids[0].old_id != -1)
 	throw std::runtime_error("Expected old_id == -1");
 
-      if (change_tracking->created_node_ids[0].new_id < 1)
+      if (change_tracking.created_node_ids[0].new_id < 1)
 	throw std::runtime_error("Expected positive new_id");
 
 
-      node_id = change_tracking->created_node_ids[0].new_id;
-      node_version = change_tracking->created_node_ids[0].new_version;
+      node_id = change_tracking.created_node_ids[0].new_id;
+      node_version = change_tracking.created_node_ids[0].new_version;
 
 
       {
@@ -127,7 +123,7 @@ namespace {
 
     // Create two nodes with the same old_id
     {
-      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+      api06::OSMChange_Tracking change_tracking{};
       auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
@@ -145,7 +141,7 @@ namespace {
 
     // Change existing node
     {
-      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+      api06::OSMChange_Tracking change_tracking{};
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
 
@@ -153,19 +149,18 @@ namespace {
       node_updater->process_modify_nodes();
       upd->commit();
 
-      if (change_tracking->modified_node_ids.size() != 1)
+      if (change_tracking.modified_node_ids.size() != 1)
 	throw std::runtime_error("Expected 1 entry in modified_node_ids");
 
 
-      if (change_tracking->modified_node_ids[0].new_version != 2)
+      if (change_tracking.modified_node_ids[0].new_version != 2)
 	throw std::runtime_error("Expected new version == 2");
 
-      if (change_tracking->modified_node_ids[0].new_id != node_id)
-	throw std::runtime_error((boost::format("Expected new_id == node_id, %1%, %2%")
-      % change_tracking->modified_node_ids[0].new_id
-      % node_id).str());
+      if (change_tracking.modified_node_ids[0].new_id != node_id)
+	throw std::runtime_error(fmt::format("Expected new_id == node_id, {}, {}",
+                      change_tracking.modified_node_ids[0].new_id, node_id));
 
-      node_version = change_tracking->modified_node_ids[0].new_version;
+      node_version = change_tracking.modified_node_ids[0].new_version;
 
       {
 	// verify current tables
@@ -212,7 +207,7 @@ namespace {
 
     // Change existing node with incorrect version number
     {
-      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+      api06::OSMChange_Tracking change_tracking{};
       auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
@@ -229,7 +224,7 @@ namespace {
 
     // Change existing node multiple times
     {
-      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+      api06::OSMChange_Tracking change_tracking{};
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
 
@@ -256,8 +251,9 @@ namespace {
       auto bbox = node_updater->bbox();
       auto bbox_expected = bbox_t(minlat, minlon, maxlat, maxlon);
 
-      if (!(bbox == bbox_expected))
+      if (!(bbox == bbox_expected)) {
         throw std::runtime_error("Bbox does not match expected size");
+      }
 
       upd->commit();
 
@@ -287,7 +283,7 @@ namespace {
 
     // Delete existing node
     {
-      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+      api06::OSMChange_Tracking change_tracking{};
 
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
@@ -296,10 +292,10 @@ namespace {
       node_updater->process_delete_nodes();
       upd->commit();
 
-      if (change_tracking->deleted_node_ids.size() != 1)
+      if (change_tracking.deleted_node_ids.size() != 1)
 	throw std::runtime_error("Expected 1 entry in deleted_node_ids");
 
-      if (change_tracking->deleted_node_ids[0] != node_id) {
+      if (change_tracking.deleted_node_ids[0] != static_cast<osm_nwr_signed_id_t>(node_id)) {
 	  throw std::runtime_error("Expected node_id in deleted_node_ids");
       }
 
@@ -336,7 +332,7 @@ namespace {
 
     // Try to delete already deleted node (if-unused not set)
     {
-      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+      api06::OSMChange_Tracking change_tracking{};
       auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
@@ -353,7 +349,7 @@ namespace {
 
     // Try to delete already deleted node (if-unused set)
     {
-      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+      api06::OSMChange_Tracking change_tracking{};
       auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
@@ -365,17 +361,17 @@ namespace {
 	  throw std::runtime_error("HTTP Exception unexpected");
       }
 
-      if (change_tracking->skip_deleted_node_ids.size() != 1)
+      if (change_tracking.skip_deleted_node_ids.size() != 1)
 	throw std::runtime_error("Expected 1 entry in skip_deleted_node_ids");
 
-      if (change_tracking->skip_deleted_node_ids[0].new_version != node_version)
-	throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_node_ids")
-                                 % node_version).str());
+      if (change_tracking.skip_deleted_node_ids[0].new_version != node_version)
+	throw std::runtime_error(fmt::format("Expected new version == {} in skip_deleted_node_ids",
+                                 node_version));
     }
 
     // Delete non-existing node
     {
-      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+      api06::OSMChange_Tracking change_tracking{};
       auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
@@ -392,7 +388,7 @@ namespace {
 
     // Modify non-existing node
     {
-      auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+      api06::OSMChange_Tracking change_tracking{};
       auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
       auto node_updater = upd->get_node_updater(change_tracking);
@@ -429,7 +425,7 @@ namespace {
 
       // Create new way with two nodes
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto upd = tdb.get_data_update();
         auto node_updater = upd->get_node_updater(change_tracking);
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -443,23 +439,23 @@ namespace {
 
         upd->commit();
 
-        if (change_tracking->created_way_ids.size() != 1)
+        if (change_tracking.created_way_ids.size() != 1)
   	throw std::runtime_error("Expected 1 entry in created_way_ids");
 
 
-        if (change_tracking->created_way_ids[0].new_version != 1)
+        if (change_tracking.created_way_ids[0].new_version != 1)
   	throw std::runtime_error("Expected new version == 1");
 
-        if (change_tracking->created_way_ids[0].old_id != -1)
+        if (change_tracking.created_way_ids[0].old_id != -1)
   	throw std::runtime_error("Expected old_id == -1");
 
-        if (change_tracking->created_way_ids[0].new_id < 1)
+        if (change_tracking.created_way_ids[0].new_id < 1)
   	throw std::runtime_error("Expected positive new_id");
 
-        way_id = change_tracking->created_way_ids[0].new_id;
-        way_version = change_tracking->created_way_ids[0].new_version;
+        way_id = change_tracking.created_way_ids[0].new_id;
+        way_version = change_tracking.created_way_ids[0].new_version;
 
-        for (const auto id : change_tracking->created_node_ids) {
+        for (const auto id : change_tracking.created_node_ids) {
            node_new_ids[-1 * id.old_id - 1] = id.new_id;
         }
 
@@ -513,7 +509,7 @@ namespace {
 
       // Create two ways with the same old_id
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto node_updater = upd->get_node_updater(change_tracking);
@@ -537,7 +533,7 @@ namespace {
 
       // Create way with unknown placeholder ids
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -555,7 +551,7 @@ namespace {
 
       // Change existing way
      {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+        api06::OSMChange_Tracking change_tracking{};
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
 
@@ -565,19 +561,19 @@ namespace {
         way_updater->process_modify_ways();
         upd->commit();
 
-        if (change_tracking->modified_way_ids.size() != 1)
+        if (change_tracking.modified_way_ids.size() != 1)
   	throw std::runtime_error("Expected 1 entry in modified_way_ids");
 
 
-        if (change_tracking->modified_way_ids[0].new_version != 2)
+        if (change_tracking.modified_way_ids[0].new_version != 2)
   	throw std::runtime_error("Expected new version == 2");
 
-        if (change_tracking->modified_way_ids[0].new_id != way_id)
-  	throw std::runtime_error((boost::format("Expected new_id == way_id, %1%, %2%")
-                                   % change_tracking->modified_way_ids[0].new_id
-  				 % way_id).str());
+        if (change_tracking.modified_way_ids[0].new_id != way_id)
+  	throw std::runtime_error(fmt::format("Expected new_id == way_id, {}, {}",
+                                   change_tracking.modified_way_ids[0].new_id,
+  				   way_id));
 
-        way_version = change_tracking->modified_way_ids[0].new_version;
+        way_version = change_tracking.modified_way_ids[0].new_version;
 
         {
           // verify current tables
@@ -624,7 +620,7 @@ namespace {
 
       // Change existing way with incorrect version number
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -641,7 +637,7 @@ namespace {
 
       // Change existing way with incorrect version number and non-existing node id
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -658,7 +654,7 @@ namespace {
 
       // Change existing way with unknown node id
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -675,7 +671,7 @@ namespace {
 
       // Change existing way with unknown placeholder node id
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -692,7 +688,7 @@ namespace {
 
       // TODO: Change existing way multiple times
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -704,7 +700,7 @@ namespace {
 
       // Try to delete node which still belongs to way, if-unused not set
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto node_updater = upd->get_node_updater(change_tracking);
@@ -721,7 +717,7 @@ namespace {
 
       // Try to delete node which still belongs to way, if-unused set
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto node_updater = upd->get_node_updater(change_tracking);
@@ -733,18 +729,17 @@ namespace {
   	  throw std::runtime_error("HTTP Exception unexpected");
         }
 
-        if (change_tracking->skip_deleted_node_ids.size() != 1)
+        if (change_tracking.skip_deleted_node_ids.size() != 1)
   	throw std::runtime_error("Expected 1 entry in skip_deleted_node_ids");
 
-        if (change_tracking->skip_deleted_node_ids[0].new_version != 1)
-  	throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_node_ids")
-                                   % 1).str());
+        if (change_tracking.skip_deleted_node_ids[0].new_version != 1)
+  	throw std::runtime_error(fmt::format("Expected new version == {} in skip_deleted_node_ids", 1));
 
       }
 
       // Delete existing way
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
 
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -753,10 +748,10 @@ namespace {
         way_updater->process_delete_ways();
         upd->commit();
 
-        if (change_tracking->deleted_way_ids.size() != 1)
+        if (change_tracking.deleted_way_ids.size() != 1)
   	throw std::runtime_error("Expected 1 entry in deleted_way_ids");
 
-        if (change_tracking->deleted_way_ids[0] != way_id) {
+        if (change_tracking.deleted_way_ids[0] != static_cast<osm_nwr_signed_id_t>(way_id)) {
   	  throw std::runtime_error("Expected way_id in deleted_way_ids");
         }
         {
@@ -790,7 +785,7 @@ namespace {
 
       // Try to delete already deleted node (if-unused not set)
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -807,7 +802,7 @@ namespace {
 
       // Try to delete already deleted node (if-unused set)
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -819,17 +814,16 @@ namespace {
   	  throw std::runtime_error("HTTP Exception unexpected");
         }
 
-        if (change_tracking->skip_deleted_way_ids.size() != 1)
+        if (change_tracking.skip_deleted_way_ids.size() != 1)
   	throw std::runtime_error("Expected 1 entry in skip_deleted_way_ids");
 
-        if (change_tracking->skip_deleted_way_ids[0].new_version != way_version)
-  	throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_way_ids")
-                                   % way_version).str());
+        if (change_tracking.skip_deleted_way_ids[0].new_version != way_version)
+  	throw std::runtime_error(fmt::format("Expected new version == {} in skip_deleted_way_ids", way_version));
       }
 
       // Delete non-existing way
       {
-        auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+        api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -846,7 +840,7 @@ namespace {
 
       // Modify non-existing way
       {
-        auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+        api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -888,7 +882,7 @@ namespace {
 
       // Create new relation with two nodes, and one way
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
 
         auto upd = tdb.get_data_update();
         auto node_updater = upd->get_node_updater(change_tracking);
@@ -905,12 +899,12 @@ namespace {
         way_updater->process_new_ways();
 
         // Remember new_ids for later tests. old_ids -1, -2, -3 are mapped to 0, 1, 2
-        for (const auto id : change_tracking->created_node_ids) {
+        for (const auto id : change_tracking.created_node_ids) {
            node_new_ids[-1 * id.old_id - 1] = id.new_id;
         }
 
         // Also remember the new_id for the way we are creating
-        way_new_id = change_tracking->created_way_ids[0].new_id;
+        way_new_id = change_tracking.created_way_ids[0].new_id;
 
         rel_updater->add_relation(1, -1,
 	  {
@@ -924,21 +918,21 @@ namespace {
 
         upd->commit();
 
-        if (change_tracking->created_relation_ids.size() != 1)
+        if (change_tracking.created_relation_ids.size() != 1)
   	throw std::runtime_error("Expected 1 entry in created_relation_ids");
 
 
-        if (change_tracking->created_relation_ids[0].new_version != 1)
+        if (change_tracking.created_relation_ids[0].new_version != 1)
   	throw std::runtime_error("Expected new version == 1");
 
-        if (change_tracking->created_relation_ids[0].old_id != -1)
+        if (change_tracking.created_relation_ids[0].old_id != -1)
   	throw std::runtime_error("Expected old_id == -1");
 
-        if (change_tracking->created_relation_ids[0].new_id < 1)
+        if (change_tracking.created_relation_ids[0].new_id < 1)
   	throw std::runtime_error("Expected positive new_id");
 
-        relation_id = change_tracking->created_relation_ids[0].new_id;
-        relation_version = change_tracking->created_relation_ids[0].new_version;
+        relation_id = change_tracking.created_relation_ids[0].new_id;
+        relation_version = change_tracking.created_relation_ids[0].new_version;
 
         {
           // verify current tables
@@ -1001,7 +995,7 @@ namespace {
 
       // Create new relation with two nodes, and one way, only placeholder ids
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto upd = tdb.get_data_update();
         auto node_updater = upd->get_node_updater(change_tracking);
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -1026,24 +1020,24 @@ namespace {
 
         upd->commit();
 
-        if (change_tracking->created_relation_ids.size() != 1)
+        if (change_tracking.created_relation_ids.size() != 1)
   	throw std::runtime_error("Expected 1 entry in created_relation_ids");
 
-        if (change_tracking->created_relation_ids[0].new_version != 1)
+        if (change_tracking.created_relation_ids[0].new_version != 1)
   	throw std::runtime_error("Expected new version == 1");
 
-        if (change_tracking->created_relation_ids[0].old_id != -1)
+        if (change_tracking.created_relation_ids[0].old_id != -1)
   	throw std::runtime_error("Expected old_id == -1");
 
-        if (change_tracking->created_relation_ids[0].new_id < 1)
+        if (change_tracking.created_relation_ids[0].new_id < 1)
   	throw std::runtime_error("Expected positive new_id");
 
-        auto r_id = change_tracking->created_relation_ids[0].new_id;
-        auto r_version = change_tracking->created_relation_ids[0].new_version;
+        auto r_id = change_tracking.created_relation_ids[0].new_id;
+        auto r_version = change_tracking.created_relation_ids[0].new_version;
 
         osm_nwr_id_t n_new_ids[2];
 
-        for (const auto id : change_tracking->created_node_ids) {
+        for (const auto id : change_tracking.created_node_ids) {
            n_new_ids[-1 * id.old_id - 1] = id.new_id;
         }
 
@@ -1064,12 +1058,12 @@ namespace {
           // we don't want to find out about deviating timestamps here...
           assert_equal<test_formatter::relation_t>(
               test_formatter::relation_t(
-        	  element_info(r_id, 1, 1, f.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
+        	  element_info(r_id, r_version, 1, f.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
 		  members_t(
 		      {
             { element_type_node, n_new_ids[0], "role1" },
 	    { element_type_node, n_new_ids[1], "role2" },
-	    { element_type_way,  change_tracking->created_way_ids[0].new_id, "" }
+	    { element_type_way,  change_tracking.created_way_ids[0].new_id, "" }
 		      }
 		  ),
 		  tags_t({{"boundary", "administrative"}})
@@ -1091,12 +1085,12 @@ namespace {
 
           assert_equal<test_formatter::relation_t>(
               test_formatter::relation_t(
-        	  element_info(r_id, 1, 1, f2.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
+        	  element_info(r_id, r_version, 1, f2.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
 		  members_t(
 		      {
             { element_type_node, n_new_ids[0], "role1" },
 	    { element_type_node, n_new_ids[1], "role2" },
-	    { element_type_way,  change_tracking->created_way_ids[0].new_id, "" }
+	    { element_type_way,  change_tracking.created_way_ids[0].new_id, "" }
 		      }
 		  ),
 		  tags_t({{"boundary", "administrative"}})
@@ -1108,7 +1102,7 @@ namespace {
 
       // Create two relations with the same old_id
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1127,7 +1121,7 @@ namespace {
 
       // Create one relation with self reference
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1146,7 +1140,7 @@ namespace {
 
       // Create two relations with references to each other
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1166,7 +1160,7 @@ namespace {
 
       // Create two relations with parent/child relationship
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
 
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1182,14 +1176,14 @@ namespace {
       
         upd->commit();
 
-        if (change_tracking->created_relation_ids.size() != 2)
+        if (change_tracking.created_relation_ids.size() != 2)
   	       throw std::runtime_error("Expected 2 entry in created_relation_ids");
 
-        relation_id_1 = change_tracking->created_relation_ids[0].new_id;
-        relation_version_1 = change_tracking->created_relation_ids[0].new_version;
+        relation_id_1 = change_tracking.created_relation_ids[0].new_id;
+        relation_version_1 = change_tracking.created_relation_ids[0].new_version;
 
-        relation_id_2 = change_tracking->created_relation_ids[1].new_id;
-        relation_version_2 = change_tracking->created_relation_ids[1].new_version;
+        relation_id_2 = change_tracking.created_relation_ids[1].new_id;
+        relation_version_2 = change_tracking.created_relation_ids[1].new_version;
 
         {
           auto sel = tdb.get_data_selection();
@@ -1224,7 +1218,7 @@ namespace {
 
       // Create relation with unknown node placeholder id
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1242,7 +1236,7 @@ namespace {
 
       // Create relation with unknown way placeholder id
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1260,7 +1254,7 @@ namespace {
 
       // Create relation with unknown relation placeholder id
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1278,7 +1272,7 @@ namespace {
 
       // Change existing relation
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1293,19 +1287,19 @@ namespace {
         rel_updater->process_modify_relations();
         upd->commit();
 
-        if (change_tracking->modified_relation_ids.size() != 1)
+        if (change_tracking.modified_relation_ids.size() != 1)
   	throw std::runtime_error("Expected 1 entry in modified_relation_ids");
 
 
-        if (change_tracking->modified_relation_ids[0].new_version != 2)
+        if (change_tracking.modified_relation_ids[0].new_version != 2)
   	throw std::runtime_error("Expected new version == 2");
 
-        if (change_tracking->modified_relation_ids[0].new_id != relation_id)
-  	throw std::runtime_error((boost::format("Expected new_id == relation_id, %1%, %2%")
-                                   % change_tracking->modified_relation_ids[0].new_id
-  				 % relation_id).str());
+        if (change_tracking.modified_relation_ids[0].new_id != relation_id)
+  	throw std::runtime_error(fmt::format("Expected new_id == relation_id, {}, {}",
+                                    change_tracking.modified_relation_ids[0].new_id,
+  				    relation_id));
 
-        relation_version = change_tracking->modified_relation_ids[0].new_version;
+        relation_version = change_tracking.modified_relation_ids[0].new_version;
 
         {
           // verify current tables
@@ -1361,7 +1355,7 @@ namespace {
 
       // Change existing relation with incorrect version number
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1379,7 +1373,7 @@ namespace {
 
       // Change existing relation with incorrect version number and non-existing node id
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1397,7 +1391,7 @@ namespace {
 
       // Change existing relation with unknown node id
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -1416,7 +1410,7 @@ namespace {
 
       // Change existing relation with unknown way id
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1434,7 +1428,7 @@ namespace {
 
       // Change existing relation with unknown relation id
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1452,7 +1446,7 @@ namespace {
 
       // Change existing relation with unknown node placeholder id
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -1472,7 +1466,7 @@ namespace {
 
       // Change existing relation with unknown way placeholder id
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1491,7 +1485,7 @@ namespace {
 
       // Change existing relation with unknown relation placeholder id
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1510,7 +1504,7 @@ namespace {
 
       // TODO: Change existing relation multiple times
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -1522,7 +1516,7 @@ namespace {
 
       // Preparation for next test case: create a new relation with node_new_ids[2] as only member
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
 
@@ -1538,7 +1532,7 @@ namespace {
 
       // Try to delete node which still belongs to relation, if-unused not set
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto node_updater = upd->get_node_updater(change_tracking);
@@ -1555,7 +1549,7 @@ namespace {
 
       // Try to delete node which still belongs to relation, if-unused set
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto node_updater = upd->get_node_updater(change_tracking);
@@ -1567,21 +1561,19 @@ namespace {
   	  throw std::runtime_error("HTTP Exception unexpected");
         }
 
-        if (change_tracking->skip_deleted_node_ids.size() != 1)
+        if (change_tracking.skip_deleted_node_ids.size() != 1)
   	throw std::runtime_error("Expected 1 entry in skip_deleted_node_ids");
 
-        if (change_tracking->skip_deleted_node_ids[0].new_version != 1)
-  	throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_node_ids")
-                                   % 1).str());
+        if (change_tracking.skip_deleted_node_ids[0].new_version != 1)
+  	throw std::runtime_error(fmt::format("Expected new version == {} in skip_deleted_node_ids", 1));
 
-        if (change_tracking->skip_deleted_node_ids[0].new_id != node_new_ids[2])
-  	throw std::runtime_error((boost::format("Expected new id == %1% in skip_deleted_node_ids")
-                                   % node_new_ids[2]).str());
+        if (change_tracking.skip_deleted_node_ids[0].new_id != node_new_ids[2])
+  	throw std::runtime_error(fmt::format("Expected new id == {} in skip_deleted_node_ids", node_new_ids[2]));
       }
 
       // Try to delete way which still belongs to relation, if-unused not set
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -1598,7 +1590,7 @@ namespace {
 
       // Try to delete way which still belongs to relation, if-unused set
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto way_updater = upd->get_way_updater(change_tracking);
@@ -1610,21 +1602,19 @@ namespace {
   	  throw std::runtime_error("HTTP Exception unexpected");
         }
 
-        if (change_tracking->skip_deleted_way_ids.size() != 1)
+        if (change_tracking.skip_deleted_way_ids.size() != 1)
   	throw std::runtime_error("Expected 1 entry in skip_deleted_way_ids");
 
-        if (change_tracking->skip_deleted_way_ids[0].new_version != 1)
-  	throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_way_ids")
-                                   % 1).str());
+        if (change_tracking.skip_deleted_way_ids[0].new_version != 1)
+  	throw std::runtime_error(fmt::format("Expected new version == {} in skip_deleted_way_ids", 1));
 
-        if (change_tracking->skip_deleted_way_ids[0].new_id != way_new_id)
-  	throw std::runtime_error((boost::format("Expected new id == %1% in skip_deleted_way_ids")
-                                   % way_new_id).str());
+        if (change_tracking.skip_deleted_way_ids[0].new_id != way_new_id)
+  	throw std::runtime_error(fmt::format("Expected new id == {} in skip_deleted_way_ids", way_new_id));
       }
 
       // Try to delete relation which still belongs to relation, if-unused not set
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1641,7 +1631,7 @@ namespace {
 
       // Try to delete relation which still belongs to relation, if-unused set
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1653,22 +1643,20 @@ namespace {
   	  throw std::runtime_error("HTTP Exception unexpected");
         }
 
-        if (change_tracking->skip_deleted_relation_ids.size() != 1)
+        if (change_tracking.skip_deleted_relation_ids.size() != 1)
   	throw std::runtime_error("Expected 1 entry in skip_deleted_relation_ids");
 
-        if (change_tracking->skip_deleted_relation_ids[0].new_version != 1)
-  	throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_relation_ids")
-                                   % 1).str());
+        if (change_tracking.skip_deleted_relation_ids[0].new_version != 1)
+  	throw std::runtime_error(fmt::format("Expected new version == {} in skip_deleted_relation_ids", 1));
 
-        if (change_tracking->skip_deleted_relation_ids[0].new_id != relation_id_1)
-  	throw std::runtime_error((boost::format("Expected new id == %1% in skip_deleted_relation_ids")
-                                   % relation_id_1).str());
+        if (change_tracking.skip_deleted_relation_ids[0].new_id != relation_id_1)
+  	throw std::runtime_error(fmt::format("Expected new id == {} in skip_deleted_relation_ids", relation_id_1));
       }
 
 
       // Delete existing relation
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
 
@@ -1676,10 +1664,10 @@ namespace {
         rel_updater->process_delete_relations();
         upd->commit();
 
-        if (change_tracking->deleted_relation_ids.size() != 1)
+        if (change_tracking.deleted_relation_ids.size() != 1)
   	throw std::runtime_error("Expected 1 entry in deleted_relation_ids");
 
-        if (change_tracking->deleted_relation_ids[0] != relation_id) {
+        if (change_tracking.deleted_relation_ids[0] != static_cast<osm_nwr_signed_id_t>(relation_id)) {
   	  throw std::runtime_error("Expected way_id in deleted_relation_ids");
         }
 
@@ -1714,7 +1702,7 @@ namespace {
 
       // Delete two relations with references to each other
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1724,7 +1712,7 @@ namespace {
         rel_updater->process_delete_relations();
         upd->commit();
 
-        if (change_tracking->deleted_relation_ids.size() != 2)
+        if (change_tracking.deleted_relation_ids.size() != 2)
   	throw std::runtime_error("Expected 2 entries in deleted_relation_ids");
 
         if (sel->check_relation_visibility(relation_id_1) != data_selection::deleted) {
@@ -1740,7 +1728,7 @@ namespace {
 
       // Revert deletion of two relations with master/child relationship
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1755,13 +1743,13 @@ namespace {
 
 	  upd->commit();
 	} catch (http::exception& e) {
-	    throw std::runtime_error((boost::format("Revert deletion of master/child relations: HTTP Exception unexpected: %1% ") % e.what()).str());
+	    throw std::runtime_error(fmt::format("Revert deletion of master/child relations: HTTP Exception unexpected: {} ", e.what()));
 	}
       }
 
       // Try to delete already deleted relation (if-unused not set)
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1778,7 +1766,7 @@ namespace {
 
       // Try to delete already deleted relation (if-unused set)
       {
-	auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1790,17 +1778,16 @@ namespace {
   	  throw std::runtime_error("HTTP Exception unexpected");
         }
 
-        if (change_tracking->skip_deleted_relation_ids.size() != 1)
+        if (change_tracking.skip_deleted_relation_ids.size() != 1)
   	throw std::runtime_error("Expected 1 entry in skip_deleted_relation_ids");
 
-        if (change_tracking->skip_deleted_relation_ids[0].new_version != relation_version)
-  	throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_relation_ids")
-                                   % relation_version).str());
+        if (change_tracking.skip_deleted_relation_ids[0].new_version != relation_version)
+  	throw std::runtime_error(fmt::format("Expected new version == {} in skip_deleted_relation_ids", relation_version));
       }
 
       // Delete non-existing relation
       {
-        auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+        api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1817,7 +1804,7 @@ namespace {
 
       // Modify non-existing relation
       {
-        auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+        api06::OSMChange_Tracking change_tracking{};
         auto sel = tdb.get_data_selection();
         auto upd = tdb.get_data_update();
         auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1842,13 +1829,10 @@ namespace {
 	osm_version_t relation_l3_version_1;
 	osm_nwr_id_t relation_l3_id_2;
 	osm_version_t relation_l3_version_2;
-	osm_nwr_id_t relation_l3_id_3;
-	osm_version_t relation_l3_version_3;
-
 
 	// Create three relations with grandparent/parent/child relationship
 	{
-	  auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	  api06::OSMChange_Tracking change_tracking{};
 
 	  auto upd = tdb.get_data_update();
 	  auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1865,22 +1849,22 @@ namespace {
 
 	  upd->commit();
 
-	  if (change_tracking->created_relation_ids.size() != 3)
+	  if (change_tracking.created_relation_ids.size() != 3)
 	    throw std::runtime_error("Expected 3 entry in created_relation_ids");
 
-	  relation_l3_id_1 = change_tracking->created_relation_ids[0].new_id;
-	  relation_l3_version_1 = change_tracking->created_relation_ids[0].new_version;
+	  relation_l3_id_1 = change_tracking.created_relation_ids[0].new_id;
+	  relation_l3_version_1 = change_tracking.created_relation_ids[0].new_version;
 
-	  relation_l3_id_2 = change_tracking->created_relation_ids[1].new_id;
-	  relation_l3_version_2 = change_tracking->created_relation_ids[1].new_version;
+	  relation_l3_id_2 = change_tracking.created_relation_ids[1].new_id;
+	  relation_l3_version_2 = change_tracking.created_relation_ids[1].new_version;
 
-	  relation_l3_id_3 = change_tracking->created_relation_ids[2].new_id;
-	  relation_l3_version_3 = change_tracking->created_relation_ids[2].new_version;
+	  // osm_nwr_id_t relation_l3_id_3 = change_tracking.created_relation_ids[2].new_id;
+	  // osm_version_t relation_l3_version_3 = change_tracking.created_relation_ids[2].new_version;
 	}
 
 	// Try to delete child/parent relations which still belong to grandparent relation, if-unused set
 	{
-	  auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+	  api06::OSMChange_Tracking change_tracking{};
 	  auto sel = tdb.get_data_selection();
 	  auto upd = tdb.get_data_update();
 	  auto rel_updater = upd->get_relation_updater(change_tracking);
@@ -1893,26 +1877,22 @@ namespace {
 	      throw std::runtime_error("HTTP Exception unexpected");
 	  }
 
-	  if (change_tracking->skip_deleted_relation_ids.size() != 2)
+	  if (change_tracking.skip_deleted_relation_ids.size() != 2)
 	    throw std::runtime_error("Expected 2 entries in skip_deleted_relation_ids level 3 relations");
 
-	  if (change_tracking->skip_deleted_relation_ids[0].new_version != 1)
-	    throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_relation_ids level 3 relations, level 0")
-	  % 1).str());
+	  if (change_tracking.skip_deleted_relation_ids[0].new_version != 1)
+	    throw std::runtime_error(fmt::format("Expected new version == {} in skip_deleted_relation_ids level 3 relations, level 0", 1));
 
-	  if (change_tracking->skip_deleted_relation_ids[0].new_id != relation_l3_id_1)
-	    throw std::runtime_error((boost::format("Expected new id == %1% in skip_deleted_relation_ids level 3 relations, level 0")
-	  % relation_l3_id_1).str());
+	  if (change_tracking.skip_deleted_relation_ids[0].new_id != relation_l3_id_1)
+	    throw std::runtime_error(fmt::format("Expected new id == {} in skip_deleted_relation_ids level 3 relations, level 0", relation_l3_id_1));
 
-	  if (change_tracking->skip_deleted_relation_ids[1].new_version != 1)
-	    throw std::runtime_error((boost::format("Expected new version == %1% in skip_deleted_relation_ids level 3 relations, level 1")
-	  % 1).str());
+	  if (change_tracking.skip_deleted_relation_ids[1].new_version != 1)
+	    throw std::runtime_error(fmt::format("Expected new version == {} in skip_deleted_relation_ids level 3 relations, level 1", 1));
 
-	  if (change_tracking->skip_deleted_relation_ids[1].new_id != relation_l3_id_2)
-	    throw std::runtime_error((boost::format("Expected new id == %1% in skip_deleted_relation_ids level 3 relations, level 1")
-	  % relation_l3_id_2).str());
+	  if (change_tracking.skip_deleted_relation_ids[1].new_id != relation_l3_id_2)
+	    throw std::runtime_error(fmt::format("Expected new id == {} in skip_deleted_relation_ids level 3 relations, level 1", relation_l3_id_2));
 
-	  if (change_tracking->deleted_relation_ids.size() > 0)
+	  if (change_tracking.deleted_relation_ids.size() > 0)
 	    throw std::runtime_error("Expected 0 entries in deleted_relation_ids level 3 relations");
 
 	}
@@ -1964,7 +1944,7 @@ namespace {
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
 
-    auto change_tracking = std::make_shared<api06::OSMChange_Tracking>();
+    api06::OSMChange_Tracking change_tracking{};
 
     auto changeset_updater = upd->get_changeset_updater(changeset, uid);
     auto node_updater = upd->get_node_updater(change_tracking);
@@ -1973,14 +1953,13 @@ namespace {
 
     changeset_updater->lock_current_changeset(true);
 
-    api06::OSMChange_Handler handler(std::move(node_updater), std::move(way_updater),
-                                     std::move(relation_updater), changeset);
+    api06::OSMChange_Handler handler(*node_updater, *way_updater, *relation_updater, changeset);
 
-    api06::OSMChangeXMLParser parser(&handler);
+    api06::OSMChangeXMLParser parser(handler);
 
     parser.process_message(payload);
 
-    auto diffresult = change_tracking->assemble_diffresult();
+    auto diffresult = change_tracking.assemble_diffresult();
 
     changeset_updater->update_changeset(handler.get_num_changes(),
                                         handler.get_bbox());
@@ -2178,7 +2157,7 @@ namespace {
              </osmChange>)" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
 	if (req.response_status() != 401)
 	  throw std::runtime_error("Expected HTTP 401 Unauthorized: wrong user/password");
@@ -2199,7 +2178,7 @@ namespace {
              </osmChange>)" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
 	if (req.response_status() != 200)
 	  throw std::runtime_error("Expected HTTP 200 OK: Log on with display name, different case");
@@ -2220,7 +2199,7 @@ namespace {
              </osmChange>)" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
 	if (req.response_status() != 200)
 	  throw std::runtime_error("Expected HTTP 200 OK: Log on with email address");
@@ -2241,7 +2220,7 @@ namespace {
              </osmChange>)" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
 	if (req.response_status() != 200)
 	  throw std::runtime_error("Expected HTTP 200 OK: Log on with email address, whitespace, different case");
@@ -2264,7 +2243,7 @@ namespace {
              </osmChange>)" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
 	if (req.response_status() != 403)
 	  throw std::runtime_error("Expected HTTP 403 Forbidden: user blocked (needs view)");
@@ -2292,7 +2271,7 @@ namespace {
              </osmChange>)" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
 
 	if (req.response_status() != 403)
@@ -2319,7 +2298,7 @@ namespace {
              </osmChange>)" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
 	if (req.response_status() != 409)
 	  throw std::runtime_error("Expected HTTP 409 Conflict: Payload and URL changeset id differ");
@@ -2340,7 +2319,7 @@ namespace {
              </osmChange>)" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
 	if (req.response_status() != 409)
 	  throw std::runtime_error("Expected HTTP 409 Conflict: User doesn't own the changeset");
@@ -2361,7 +2340,7 @@ namespace {
 		  </osmChange>)" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
 	if (req.response_status() != 409)
 	  std::runtime_error("Expected HTTP 409 Conflict: Cannot add more elements to changeset");
@@ -2382,7 +2361,7 @@ namespace {
 		  </osmChange>)" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
 	if (req.response_status() != 409)
 	  std::runtime_error("Expected HTTP 409 Conflict: Changeset already closed");
@@ -2443,7 +2422,7 @@ namespace {
 		 </osmChange>)" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
 	// std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
 
@@ -2499,7 +2478,7 @@ namespace {
 		 </osmChange>)" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
 	// std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
 
@@ -2535,7 +2514,7 @@ namespace {
                    </osmChange>)" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, sel_factory, upd_factory, std::shared_ptr<oauth::store>(nullptr));
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
 	// std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
 

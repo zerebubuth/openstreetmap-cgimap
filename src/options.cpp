@@ -4,7 +4,7 @@
 
 global_settings_base::~global_settings_base() = default;
 
-std::unique_ptr<global_settings_base> global_settings::settings = std::unique_ptr<global_settings_base>(new global_settings_default());
+std::unique_ptr<global_settings_base> global_settings::settings = std::make_unique<global_settings_default>();
 
 
 void global_settings_via_options::init_fallback_values(const global_settings_base &def) {
@@ -19,6 +19,8 @@ void global_settings_via_options::init_fallback_values(const global_settings_bas
   m_scale = def.get_scale();
   m_relation_max_members = def.get_relation_max_members();
   m_element_max_tags = def.get_element_max_tags();
+  m_basic_auth_support = def.get_basic_auth_support();
+  m_oauth_10_support = def.get_oauth_10_support();
 }
 
 void global_settings_via_options::set_new_options(const po::variables_map &options) {
@@ -33,21 +35,25 @@ void global_settings_via_options::set_new_options(const po::variables_map &optio
   set_scale(options);
   set_relation_max_members(options);
   set_element_max_tags(options);
+  set_basic_auth_support(options);
+  set_oauth_10_support(options);
 }
 
 void global_settings_via_options::set_payload_max_size(const po::variables_map &options)  {
   if (options.count("max-payload")) {
-    m_payload_max_size = options["max-payload"].as<long>();
-    if (m_payload_max_size <= 0)
+    auto payload_max_size = options["max-payload"].as<long>();
+    if (payload_max_size <= 0)
       throw std::invalid_argument("max-payload must be a positive number");
+    m_payload_max_size = payload_max_size;
   }
 }
 
 void global_settings_via_options::set_map_max_nodes(const po::variables_map &options)  {
   if (options.count("map-nodes")) {
-    m_map_max_nodes = options["map-nodes"].as<int>();
-    if (m_map_max_nodes <= 0)
+    auto map_max_nodes = options["map-nodes"].as<int>();
+    if (map_max_nodes <= 0)
 	throw std::invalid_argument("map-nodes must be a positive number");
+    m_map_max_nodes = map_max_nodes;
   }
 }
 
@@ -78,17 +84,19 @@ void global_settings_via_options::set_changeset_timeout_idle(const po::variables
 
 void global_settings_via_options::set_changeset_max_elements(const po::variables_map &options)  {
   if (options.count("max-changeset-elements")) {
-    m_changeset_max_elements = options["max-changeset-elements"].as<int>();
-    if (m_changeset_max_elements <= 0)
+    auto changeset_max_elements = options["max-changeset-elements"].as<int>();
+    if (changeset_max_elements <= 0)
       throw std::invalid_argument("max-changeset-elements must be a positive number");
+    m_changeset_max_elements = changeset_max_elements;
   }
 }
 
 void global_settings_via_options::set_way_max_nodes(const po::variables_map &options)  {
   if (options.count("max-way-nodes")) {
-    m_way_max_nodes = options["max-way-nodes"].as<int>();
-    if (m_way_max_nodes <= 0)
+    auto way_max_nodes = options["max-way-nodes"].as<int>();
+    if (way_max_nodes <= 0)
       throw std::invalid_argument("max-way-nodes must be a positive number");
+    m_way_max_nodes = way_max_nodes;
   }
 }
 
@@ -102,17 +110,31 @@ void global_settings_via_options::set_scale(const po::variables_map &options) {
 
 void global_settings_via_options::set_relation_max_members(const po::variables_map &options) {
   if (options.count("max-relation-members")) {
-    m_relation_max_members = options["max-relation-members"].as<int>();
-    if (m_relation_max_members <= 0)
+    auto relation_max_members = options["max-relation-members"].as<int>();
+    if (relation_max_members <= 0)
       throw std::invalid_argument("max-relation-members must be a positive number");
+    m_relation_max_members = relation_max_members;
   }
 }
 
 void global_settings_via_options::set_element_max_tags(const po::variables_map &options) {
   if (options.count("max-element-tags")) {
-    m_element_max_tags = options["max-element-tags"].as<int>();
-    if (m_element_max_tags <= 0)
+    auto element_max_tags = options["max-element-tags"].as<int>();
+    if (element_max_tags <= 0)
       throw std::invalid_argument("max-element-tags must be a positive number");
+    m_element_max_tags = element_max_tags;
+  }
+}
+
+void global_settings_via_options::set_basic_auth_support(const po::variables_map &options) {
+  if (options.count("basic_auth_support")) {
+    m_basic_auth_support = options["basic_auth_support"].as<bool>();
+  }
+}
+
+void global_settings_via_options::set_oauth_10_support(const po::variables_map &options) {
+  if (options.count("oauth_10_support")) {
+    m_oauth_10_support = options["oauth_10_support"].as<bool>();
   }
 }
 

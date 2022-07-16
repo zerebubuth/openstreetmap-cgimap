@@ -15,7 +15,7 @@ using std::string;
 namespace api06 {
 
 ways_responder::ways_responder(mime::type mt, vector<id_version> ids_,
-                               data_selection_ptr &w_)
+                               data_selection &w_)
     : osm_current_responder(mt, w_), ids(ids_) {
   vector<osm_nwr_id_t> current_ids;
   vector<osm_edition_t> historic_ids;
@@ -28,9 +28,9 @@ ways_responder::ways_responder(mime::type mt, vector<id_version> ids_,
     }
   }
 
-  size_t num_selected = sel->select_ways(current_ids);
+  size_t num_selected = sel.select_ways(current_ids);
   if (!historic_ids.empty()) {
-    num_selected += sel->select_historical_ways(historic_ids);
+    num_selected += sel.select_historical_ways(historic_ids);
   }
 
   if (num_selected != ids.size()) {
@@ -38,11 +38,7 @@ ways_responder::ways_responder(mime::type mt, vector<id_version> ids_,
   }
 }
 
-ways_responder::~ways_responder() = default;
-
 ways_handler::ways_handler(request &req) : ids(validate_request(req)) {}
-
-ways_handler::~ways_handler() = default;
 
 std::string ways_handler::log_name() const {
   stringstream msg;
@@ -52,7 +48,7 @@ std::string ways_handler::log_name() const {
   return msg.str();
 }
 
-responder_ptr_t ways_handler::responder(data_selection_ptr &x) const {
+responder_ptr_t ways_handler::responder(data_selection &x) const {
   return responder_ptr_t(new ways_responder(mime_type, ids, x));
 }
 
@@ -63,7 +59,7 @@ responder_ptr_t ways_handler::responder(data_selection_ptr &x) const {
 vector<id_version> ways_handler::validate_request(request &req) {
   vector<id_version> myids = parse_id_list_params(req, "ways");
 
-  if (myids.size() < 1) {
+  if (myids.empty()) {
     throw http::bad_request(
       "The parameter ways is required, and must be "
       "of the form ways=ID[vVER][,ID[vVER][,ID[vVER]...]].");

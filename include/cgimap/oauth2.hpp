@@ -10,7 +10,7 @@
 #include "cgimap/request_helpers.hpp"
 
 namespace oauth2 {
-  boost::optional<osm_user_id_t> validate_bearer_token(request &req, std::shared_ptr<oauth::store>& store, bool& allow_api_write);
+  std::optional<osm_user_id_t> validate_bearer_token(const request &req, oauth::store* store, bool& allow_api_write);
 }
 
 #endif

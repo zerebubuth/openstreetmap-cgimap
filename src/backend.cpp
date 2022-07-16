@@ -1,12 +1,12 @@
 #include "cgimap/backend.hpp"
 #include "cgimap/config.hpp"
 
-#include <boost/format.hpp>
+#include <fmt/core.h>
 #include <stdexcept>
 #include <mutex>
 
 namespace po = boost::program_options;
-using std::shared_ptr;
+
 
 namespace {
 
@@ -35,81 +35,78 @@ po::variables_map first_pass_argments(int argc, char *argv[],
 struct registry {
   registry();
 
-  bool add(shared_ptr<backend> ptr);
+  bool add(std::unique_ptr<backend> ptr);
   void setup_options(int argc, char *argv[], po::options_description &desc);
   void output_options(std::ostream &out);
-  shared_ptr<data_selection::factory> create(const po::variables_map &options);
-  shared_ptr<data_update::factory> create_data_update(const po::variables_map &options);
-  shared_ptr<oauth::store> create_oauth_store(const boost::program_options::variables_map &opts);
+  std::unique_ptr<data_selection::factory> create(const po::variables_map &options);
+  std::unique_ptr<data_update::factory> create_data_update(const po::variables_map &options);
+  std::unique_ptr<oauth::store> create_oauth_store(const boost::program_options::variables_map &opts);
 
 private:
-  using backend_map_t = std::map<std::string, shared_ptr<backend> >;
+  using backend_map_t = std::map<std::string, std::unique_ptr<backend> >;
   backend_map_t backends;
-  shared_ptr<backend> default_backend;
+  std::optional<std::string> default_backend;
 };
 
 registry::registry() = default;
 
-bool registry::add(shared_ptr<backend> ptr) {
+bool registry::add(std::unique_ptr<backend> ptr) {
   if (default_backend) {
-    if (ptr->name() <= default_backend->name()) {
-      default_backend = ptr;
+    if (ptr->name() <= *default_backend) {
+      default_backend = ptr->name();
     }
   } else {
-    default_backend = ptr;
+    default_backend = ptr->name();
   }
 
-  backends[ptr->name()] = ptr;
+  std::string name = ptr->name();
+  backends.emplace(name, std::move(ptr));
 
   return true;
 }
 
 void registry::setup_options(int argc, char *argv[],
                              po::options_description &desc) {
-  if (backends.empty() || !default_backend) {
+  if (backends.empty() || (!(default_backend))) {
     throw std::runtime_error("No backends available - this is most likely a "
                              "compile-time configuration error.");
   }
 
-  std::ostringstream all_backends;
-  bool first = true;
+  std::string all_backends;
+
   for (const backend_map_t::value_type &val : backends) {
-    if (first) {
-      first = false;
-    } else {
-      all_backends << ", ";
+    if (!all_backends.empty()) {
+      all_backends += ", ";
     }
-    all_backends << val.second->name();
+    all_backends += val.second->name();
   }
 
-  std::string description =
-      (boost::format("backend to use, available options are: %1%") %
-       all_backends.str()).str();
-  desc.add_options()("backend", po::value<std::string>()->default_value(
-                                    default_backend->name()),
+  std::string description = fmt::format("backend to use, available options are: {}", all_backends);
+
+  desc.add_options()("backend", po::value<std::string>()->default_value(*default_backend),
                      description.c_str());
 
   po::variables_map vm = first_pass_argments(argc, argv, desc);
+
+  std::string backend = *default_backend;
 
   // little hack - we want to print *all* the backends when --help is passed, so
   // we don't add one here when it's present. it's a nasty way to do it, but i
   // can't think of a better one right now...
   if (!vm.count("help")) {
-    shared_ptr<backend> ptr = default_backend;
 
     if (vm.count("backend")) {
       auto itr =
           backends.find(vm["backend"].as<std::string>());
       if (itr != backends.end()) {
-        ptr = itr->second;
+        backend = itr->first;
       }
       else {
-        throw std::runtime_error((boost::format("unknown backend provided, available options are: %1%") %
-	       all_backends.str()).str());
+        throw std::runtime_error(fmt::format("unknown backend provided, available options are: {}", all_backends));
       }
     }
 
-    desc.add(ptr->options());
+    desc.add(backends[backend]->options());
   }
 }
 
@@ -119,50 +116,50 @@ void registry::output_options(std::ostream &out) {
   }
 }
 
-shared_ptr<data_selection::factory>
+std::unique_ptr<data_selection::factory>
 registry::create(const po::variables_map &options) {
-  shared_ptr<backend> ptr = default_backend;
+  std::string backend = *default_backend;
 
   if (options.count("backend")) {
     auto itr =
         backends.find(options["backend"].as<std::string>());
     if (itr != backends.end()) {
-      ptr = itr->second;
+      backend = itr->first;
     }
   }
 
-  return ptr->create(options);
+  return backends[backend]->create(options);
 }
 
-shared_ptr<data_update::factory>
+std::unique_ptr<data_update::factory>
 registry::create_data_update(const po::variables_map &options) {
-  shared_ptr<backend> ptr = default_backend;
+  std::string backend = *default_backend;
 
   if (options.count("backend")) {
     auto itr =
         backends.find(options["backend"].as<std::string>());
     if (itr != backends.end()) {
-      ptr = itr->second;
+      backend = itr->first;
     }
   }
 
-  return ptr->create_data_update(options);
+  return backends[backend]->create_data_update(options);
 }
 
 
-std::shared_ptr<oauth::store>
+std::unique_ptr<oauth::store>
 registry::create_oauth_store(const boost::program_options::variables_map &options) {
-  shared_ptr<backend> ptr = default_backend;
+  std::string backend = *default_backend;
 
   if (options.count("backend")) {
     auto itr =
         backends.find(options["backend"].as<std::string>());
     if (itr != backends.end()) {
-      ptr = itr->second;
+      backend = itr->first;
     }
   }
 
-  return ptr->create_oauth_store(options);
+  return backends[backend]->create_oauth_store(options);
 }
 
 registry *registry_ptr = NULL;
@@ -172,13 +169,13 @@ std::mutex registry_mut;
 
 backend::~backend() = default;
 
-bool register_backend(shared_ptr<backend> ptr) {
+bool register_backend(std::unique_ptr<backend> ptr) {
   std::unique_lock<std::mutex> lock(registry_mut);
   if (registry_ptr == NULL) {
     registry_ptr = new registry;
   }
 
-  return registry_ptr->add(ptr);
+  return registry_ptr->add(std::move(ptr));
 }
 
 void setup_backend_options(int argc, char *argv[],
@@ -200,7 +197,7 @@ void output_backend_options(std::ostream &out) {
   registry_ptr->output_options(out);
 }
 
-shared_ptr<data_selection::factory>
+std::unique_ptr<data_selection::factory>
 create_backend(const po::variables_map &options) {
   std::unique_lock<std::mutex> lock(registry_mut);
   if (registry_ptr == NULL) {
@@ -210,7 +207,7 @@ create_backend(const po::variables_map &options) {
   return registry_ptr->create(options);
 }
 
-shared_ptr<data_update::factory>
+std::unique_ptr<data_update::factory>
 create_update_backend(const po::variables_map &options) {
   std::unique_lock<std::mutex> lock(registry_mut);
   if (registry_ptr == NULL) {
@@ -220,7 +217,7 @@ create_update_backend(const po::variables_map &options) {
   return registry_ptr->create_data_update(options);
 }
 
-std::shared_ptr<oauth::store>
+std::unique_ptr<oauth::store>
 create_oauth_store(const po::variables_map &options) {
   std::unique_lock<std::mutex> lock(registry_mut);
   if (registry_ptr == NULL) {

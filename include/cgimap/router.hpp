@@ -16,7 +16,6 @@
 #include <boost/fusion/include/join.hpp>
 #include <boost/fusion/sequence/io.hpp>
 #include <boost/fusion/include/io.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/fusion/sequence/intrinsic/at.hpp>
 #include <boost/fusion/include/at.hpp>
 #include <boost/fusion/container/list/convert.hpp>

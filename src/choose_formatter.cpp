@@ -16,7 +16,7 @@
 #include <list>
 #include <map>
 #include <limits>
-#include <boost/optional.hpp>
+#include <optional>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -27,23 +27,18 @@
 #include <boost/spirit/include/phoenix_statement.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
 #include <boost/spirit/include/qi.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/format.hpp>
 
-using std::auto_ptr;
-using std::ostringstream;
+#include <fmt/core.h>
+
 using std::list;
-using std::runtime_error;
 using std::map;
 using std::numeric_limits;
 using std::make_pair;
-using boost::optional;
-using std::shared_ptr;
-using boost::lexical_cast;
+
 using std::string;
 using std::vector;
 using std::pair;
-using boost::format;
+
 
 namespace {
 
@@ -151,15 +146,15 @@ acceptable_types::acceptable_types(const std::string &accept_header) {
       // default quality parameter is 1
       float quality = 1.0;
       if (q_itr != range.params.end()) {
-        quality = lexical_cast<float>(q_itr->second);
+        quality = std::stof(q_itr->second);
       }
 
       mapping.insert(make_pair(mime_type, quality));
     }
 
   } else {
-    logger::message(format("Failed to parse accept header '%1%'") %
-                    accept_header);
+    logger::message(fmt::format("Failed to parse accept header '{}'",
+                    accept_header));
     throw http::bad_request("Accept header could not be parsed.");
   }
 }
@@ -185,7 +180,7 @@ acceptable_types::most_acceptable_of(const list<mime::type> &available) const {
   // todo: check the partial wildcards.
 
   // also check the full wildcard.
-  if (available.size() > 0) {
+  if (!available.empty()) {
     auto itr = mapping.find(mime::any_type);
     if ((itr != mapping.end()) && (itr->second > score)) {
       best = available.front();
@@ -207,50 +202,47 @@ acceptable_types header_mime_type(request &req) {
 
 std::string mime_types_to_string(const std::list<mime::type> mime_types)
 {
+  std::string result;
 
-  bool first = true;
-  std::string result = "";
-
-  for (const auto& m : mime_types)
-    {
-      if (!first)
+  for (const auto& m : mime_types) {
+    if (!result.empty()) {
 	result += ", ";
-      result += mime::to_string(m);
-      first = false;
     }
+    result += mime::to_string(m);
+  }
   return result;
 }
 
 }
 
-mime::type choose_best_mime_type(request &req, responder_ptr_t hptr) {
+mime::type choose_best_mime_type(request &req, const responder& hptr) {
   // figure out what, if any, the Accept-able resource mime types are
   acceptable_types types = header_mime_type(req);
-  const list<mime::type> types_available = hptr->types_available();
+  const list<mime::type> types_available = hptr.types_available();
 
-  mime::type best_type = hptr->resource_type();
+  mime::type best_type = hptr.resource_type();
   // check if the handler is capable of supporting an acceptable set of mime
   // types.
   if (best_type != mime::unspecified_type) {
     // check that this doesn't conflict with anything in the Accept header.
-    if (!hptr->is_available(best_type))
-      throw http::not_acceptable((boost::format("Acceptable formats for %1% are: %2%")
-                                % get_request_path(req)
-				% mime_types_to_string(types_available)).str());
+    if (!hptr.is_available(best_type))
+      throw http::not_acceptable(fmt::format("Acceptable formats for {} are: {}",
+                                get_request_path(req),
+				mime_types_to_string(types_available)));
     else if (!types.is_acceptable(best_type))
-      throw http::not_acceptable((boost::format("Acceptable formats for %1% are: %2%")
-				% get_request_path(req)
-				% mime_types_to_string({best_type})).str());
+      throw http::not_acceptable(fmt::format("Acceptable formats for {} are: {}",
+				get_request_path(req),
+				mime_types_to_string({best_type})));
   } else {
     best_type = types.most_acceptable_of(types_available);
     // if none were acceptable then...
     if (best_type == mime::unspecified_type) {
-	      throw http::not_acceptable((boost::format("Acceptable formats for %1% are: %2%")
-	                                % get_request_path(req)
-					% mime_types_to_string(types_available)).str());
+	      throw http::not_acceptable(fmt::format("Acceptable formats for {} are: {}",
+	                                get_request_path(req),
+					mime_types_to_string(types_available)));
     } else if (best_type == mime::any_type) {
       // choose the first of the available types if nothing is preferred.
-      best_type = *(hptr->types_available().begin());
+      best_type = *(hptr.types_available().begin());
     }
     // otherwise we've chosen the most acceptable and available type...
   }
@@ -258,32 +250,22 @@ mime::type choose_best_mime_type(request &req, responder_ptr_t hptr) {
   return best_type;
 }
 
-shared_ptr<output_formatter> create_formatter(request &req,
-                                              mime::type best_type,
-                                              shared_ptr<output_buffer> out) {
-  shared_ptr<output_formatter> o_formatter;
+std::unique_ptr<output_formatter> create_formatter(mime::type best_type, output_buffer& out) {
 
-  if (best_type == mime::application_xml) {
-    auto *xwriter = new xml_writer(out, true);
-    o_formatter = shared_ptr<output_formatter>(new xml_formatter(xwriter));
+  switch (best_type) {
+    case mime::application_xml:
+      return std::make_unique<xml_formatter>(std::make_unique<xml_writer>(out, true));
 
 #ifdef HAVE_YAJL
-  } else if (best_type == mime::application_json) {
-    auto *jwriter = new json_writer(out, false);
-    o_formatter = shared_ptr<output_formatter>(new json_formatter(jwriter));
+    case mime::application_json:
+      return std::make_unique<json_formatter>(std::make_unique<json_writer>(out, false));
 #endif
+    case mime::text_plain:
+      return std::make_unique<text_formatter>(std::make_unique<text_writer>(out, true));
 
-  } else if (best_type == mime::text_plain) {
-      auto *twriter = new text_writer(out, true);
-      o_formatter = shared_ptr<output_formatter>(new text_formatter(twriter));
-  } else {
-    ostringstream ostr;
-    ostr << "Could not create formatter for MIME type `"
-         << mime::to_string(best_type) << "'.";
-    throw runtime_error(ostr.str());
+    default:
+      throw std::runtime_error(fmt::format("Could not create formatter for MIME type `{}'.", mime::to_string(best_type)));
   }
-
-  return o_formatter;
 }
 
 

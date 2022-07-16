@@ -2,7 +2,7 @@
 #include "cgimap/http.hpp"
 #include "cgimap/options.hpp"
 #include <vector>
-#include <boost/format.hpp>
+#include <fmt/core.h>
 #include <boost/algorithm/string.hpp>
 
 #include <iterator> // for distance
@@ -15,7 +15,6 @@ namespace al = boost::algorithm;
 using std::string;
 using std::vector;
 using std::pair;
-using std::shared_ptr;
 
 namespace {
 /**
@@ -170,7 +169,7 @@ vector<pair<string, string> > parse_params(const string &p) {
   return queryKVPairs;
 }
 
-shared_ptr<encoding> choose_encoding(const string &accept_encoding) {
+std::unique_ptr<encoding> choose_encoding(const string &accept_encoding) {
   vector<string> encodings;
 
   al::split(encodings, accept_encoding, al::is_any_of(","));
@@ -221,33 +220,33 @@ shared_ptr<encoding> choose_encoding(const string &accept_encoding) {
 #ifdef ENABLE_DEFLATE
   if (deflate_quality > 0.0 && deflate_quality >= gzip_quality &&
       deflate_quality >= identity_quality) {
-    return shared_ptr<deflate>(new deflate());
+    return std:make_unique<deflate>();
   } else
 #endif /* ENABLE_DEFLATE */
       if (gzip_quality > 0.0 && gzip_quality >= identity_quality) {
-    return shared_ptr<gzip>(new gzip());
+    return std::make_unique<gzip>();
   }
 #endif /* HAVE_LIBZ */
   else if (identity_quality > 0.0) {
-    return shared_ptr<identity>(new identity());
+    return std::make_unique<identity>();
   } else {
     throw http::not_acceptable("No acceptable content encoding found. Only "
                                "identity and gzip are supported.");
   }
 }
 
-shared_ptr<ZLibBaseDecompressor> get_content_encoding_handler(const std::string &content_encoding) {
+std::unique_ptr<ZLibBaseDecompressor> get_content_encoding_handler(const std::string &content_encoding) {
 
   if (content_encoding.empty())
-    return shared_ptr<IdentityDecompressor>(new IdentityDecompressor());
+    return std::make_unique<IdentityDecompressor>();
 
   if (content_encoding == "identity")
-      return shared_ptr<IdentityDecompressor>(new IdentityDecompressor());
+      return std::make_unique<IdentityDecompressor>();
 #ifdef HAVE_LIBZ
   else if (content_encoding == "gzip")
-    return shared_ptr<GZipDecompressor>(new GZipDecompressor());
+    return std::make_unique<GZipDecompressor>();
   else if (content_encoding == "deflate")
-    return shared_ptr<ZLibDecompressor>(new ZLibDecompressor());
+    return std::make_unique<ZLibDecompressor>();
   throw http::unsupported_media_type("Supported Content-Encodings include 'gzip' and 'deflate'");
 
 #else
@@ -280,8 +279,8 @@ std::string list_methods(method m) {
   return result.str();
 }
 
-boost::optional<method> parse_method(const std::string &s) {
-  boost::optional<method> result;
+std::optional<method> parse_method(const std::string &s) {
+  std::optional<method> result;
 
   for (auto const &pair : METHODS) {
     if (pair.second == s) {
@@ -311,7 +310,7 @@ unsigned long parse_content_length(const std::string &content_length_str) {
   } else if (length < 0) {
     throw http::bad_request("CONTENT_LENGTH: invalid value");
   } else if (length > global_settings::get_payload_max_size())
-    throw http::payload_too_large((boost::format("CONTENT_LENGTH exceeds limit of %1% bytes") % global_settings::get_payload_max_size()).str());
+    throw http::payload_too_large(fmt::format("CONTENT_LENGTH exceeds limit of {:d} bytes", global_settings::get_payload_max_size()));
 
   return length;
 }

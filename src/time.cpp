@@ -4,6 +4,7 @@
 #include <sstream>
 #include <cctype>
 #include <time.h>
+#include <fmt/core.h>
 
 
 
@@ -21,7 +22,5 @@ std::chrono::system_clock::time_point parse_time(const std::string &s) {
     return tp;
   }
 
-  std::ostringstream ostr;
-  ostr << "Unable to parse string '" << s << "' as an ISO 8601 format date time.";
-  throw std::runtime_error(ostr.str());
+  throw std::runtime_error(fmt::format("Unable to parse string '{}' as an ISO 8601 format date time.", s));
 }

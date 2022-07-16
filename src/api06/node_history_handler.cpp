@@ -8,23 +8,19 @@ using std::vector;
 
 namespace api06 {
 
-node_history_responder::node_history_responder(mime::type mt, osm_nwr_id_t id_, data_selection_ptr &w_)
+node_history_responder::node_history_responder(mime::type mt, osm_nwr_id_t id_, data_selection &w_)
   : osm_current_responder(mt, w_), id(id_) {
 
-  if (sel->select_nodes_with_history({id}) == 0) {
+  if (sel.select_nodes_with_history({id}) == 0) {
     throw http::not_found("");
   }
 }
 
-node_history_responder::~node_history_responder() = default;
-
 node_history_handler::node_history_handler(request &, osm_nwr_id_t id_) : id(id_) {}
-
-node_history_handler::~node_history_handler() = default;
 
 std::string node_history_handler::log_name() const { return "node/history"; }
 
-responder_ptr_t node_history_handler::responder(data_selection_ptr &w) const {
+responder_ptr_t node_history_handler::responder(data_selection &w) const {
   return responder_ptr_t(new node_history_responder(mime_type, id, w));
 }
 

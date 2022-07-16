@@ -29,7 +29,7 @@ class PasswordHash {
 };
 
 namespace basicauth {
-  boost::optional<osm_user_id_t> authenticate_user(request &req, std::shared_ptr<data_selection>& selection);
+  std::optional<osm_user_id_t> authenticate_user(const request &req, data_selection& selection);
 
 }
 

@@ -24,11 +24,11 @@ inline std::string sha256_hash(const std::string& s) {
 
 namespace oauth2 {
 
-  boost::optional<osm_user_id_t> validate_bearer_token(request &req, std::shared_ptr<oauth::store>& store, bool& allow_api_write)
+  [[nodiscard]] std::optional<osm_user_id_t> validate_bearer_token(const request &req, oauth::store* store, bool& allow_api_write)
   {
     const char * auth_hdr = req.get_param ("HTTP_AUTHORIZATION");
     if (auth_hdr == nullptr)
-      return boost::none;
+      return std::nullopt;
 
     const auto auth_header = std::string(auth_hdr);
 
@@ -38,13 +38,13 @@ namespace oauth2 {
 	std::regex r("Bearer ([A-Za-z0-9~_\\-\\.\\+\\/]+=*)");   // according to RFC 6750, section 2.1
 
 	if (!std::regex_match(auth_header, sm, r))
-	  return boost::none;
+	  return std::nullopt;
 
 	if (sm.size() != 2)
-	  return boost::none;
+	  return std::nullopt;
 
     } catch (std::regex_error&) {
-      return boost::none;
+      return std::nullopt;
     }
 
     const auto bearer_token = sm[1];
@@ -52,16 +52,19 @@ namespace oauth2 {
     bool expired;
     bool revoked;
 
+    if (!store)
+      return std::nullopt;
+
     // Check token as plain text first
     auto user_id = store->get_user_id_for_oauth2_token(bearer_token, expired, revoked, allow_api_write);
 
     // Fallback to sha256-hashed token
-    if (boost::none == user_id) {
+    if (!(user_id)) {
       const auto bearer_token_hashed = sha256_hash(bearer_token);
       user_id = store->get_user_id_for_oauth2_token(bearer_token_hashed, expired, revoked, allow_api_write);
     }
 
-    if (boost::none == user_id) {
+    if (!(user_id)) {
       throw http::unauthorized("invalid_token");
     }
 

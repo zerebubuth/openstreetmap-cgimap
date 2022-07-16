@@ -6,11 +6,11 @@
 #include "cgimap/logger.hpp"
 #include "cgimap/options.hpp"
 
-#include <boost/format.hpp>
+#include <fmt/core.h>
 #include <pqxx/pqxx>
 #include <stdexcept>
 
-using boost::format;
+
 
 ApiDB_Changeset_Updater::ApiDB_Changeset_Updater(Transaction_Manager &_m,
 						 osm_changeset_id_t _changeset,
@@ -36,17 +36,13 @@ void ApiDB_Changeset_Updater::lock_current_changeset(bool check_max_elements_lim
   lock_cs(is_closed, closed_at, current_time);
 
   if (is_closed)
-    throw http::conflict((boost::format("The changeset %1% was closed at %2%") %
-	changeset % closed_at)
-			 .str());
+    throw http::conflict(fmt::format("The changeset {:d} was closed at {}", changeset, closed_at));
 
   // Some clients try to send further changes, although the changeset already
   // holds the maximum number of elements. As this is futile, we raise an error
   // as early as possible.
   if (check_max_elements_limit && cs_num_changes >= global_settings::get_changeset_max_elements())
-    throw http::conflict((boost::format("The changeset %1% was closed at %2%") %
-	changeset % current_time)
-			 .str());
+    throw http::conflict(fmt::format("The changeset {:d} was closed at {}",  changeset, current_time));
 
 }
 
@@ -59,9 +55,7 @@ void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
       auto r = m.exec(
 	  R"(SELECT to_char((now() at time zone 'utc'),'YYYY-MM-DD HH24:MI:SS "UTC"') as current_time)");
 
-      throw http::conflict((boost::format("The changeset %1% was closed at %2%") %
-	  changeset % r[0]["current_time"].as<std::string>())
-			   .str());
+      throw http::conflict(fmt::format("The changeset {:d} was closed at {}", changeset, r[0]["current_time"].as<std::string>()));
   }
 
   cs_num_changes += num_new_changes;

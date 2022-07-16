@@ -32,7 +32,7 @@ match_osm_id::match_type match_osm_id::match(part_iterator &begin,
       // note that osm_nwr_id_t is actually unsigned, so we lose a bit of
       // precision here, but it's OK since IDs are postgres 'bigint' types
       // which are also signed, so element 2^63 is unlikely to exist.
-      auto x = boost::lexical_cast<int64_t>(bit);
+      auto x = std::stol(bit);
       if (x > 0) {
         ++begin;
         return match_type(x);

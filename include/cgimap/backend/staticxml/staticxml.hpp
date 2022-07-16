@@ -5,6 +5,6 @@
 
 #include <memory>
 
-std::shared_ptr<backend> make_staticxml_backend();
+std::unique_ptr<backend> make_staticxml_backend();
 
 #endif /* STATICXML_BACKEND_HPP */

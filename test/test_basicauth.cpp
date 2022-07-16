@@ -5,19 +5,24 @@
 #include <stdexcept>
 #include <cstring>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <set>
 
 #include <boost/date_time/posix_time/conversion.hpp>
-#include <boost/optional.hpp>
-#include <boost/optional/optional_io.hpp>
-#include <boost/tuple/tuple.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
 
 #include "cgimap/basicauth.hpp"
+#include "cgimap/options.hpp"
 #include "test_request.hpp"
 
 #include "cgimap/backend/apidb/transaction_manager.hpp"
+
+template<typename T>
+std::ostream& operator<<(std::ostream& os, std::optional<T> const& opt)
+{
+  return opt ? os << opt.value() : os;
+}
+
 
 #define ANNOTATE_EXCEPTION(stmt)                \
   {                                             \
@@ -30,19 +35,13 @@
     }                                           \
   }
 
-Transaction_Owner_Void::Transaction_Owner_Void() {};
+Transaction_Owner_Void::Transaction_Owner_Void() {}
 
 pqxx::transaction_base& Transaction_Owner_Void::get_transaction() {
   throw std::runtime_error("get_transaction is not supported by Transaction_Owner_Void");
 }
 
 namespace {
-
-void assert_true(bool value) {
-  if (!value) {
-    throw std::runtime_error("Test failed: Expecting true, but got false.");
-  }
-}
 
 template <typename T>
 void assert_equal(const T &actual, const T &expected) {
@@ -69,36 +68,38 @@ public:
 
   virtual ~basicauth_test_data_selection() = default;
 
-  void write_nodes(output_formatter &formatter) {}
-  void write_ways(output_formatter &formatter) {}
-  void write_relations(output_formatter &formatter) {}
+  void write_nodes(output_formatter &formatter) override {}
+  void write_ways(output_formatter &formatter) override {}
+  void write_relations(output_formatter &formatter) override {}
   void write_changesets(output_formatter &formatter,
-                        const std::chrono::system_clock::time_point &now) {}
+                        const std::chrono::system_clock::time_point &now) override {}
 
-  visibility_t check_node_visibility(osm_nwr_id_t id) { return non_exist; }
-  visibility_t check_way_visibility(osm_nwr_id_t id) { return non_exist; }
-  visibility_t check_relation_visibility(osm_nwr_id_t id) { return non_exist; }
+  visibility_t check_node_visibility(osm_nwr_id_t id) override { return non_exist; }
+  visibility_t check_way_visibility(osm_nwr_id_t id) override { return non_exist; }
+  visibility_t check_relation_visibility(osm_nwr_id_t id) override { return non_exist; }
 
-  int select_nodes(const std::vector<osm_nwr_id_t> &) { return 0; }
-  int select_ways(const std::vector<osm_nwr_id_t> &) { return 0; }
-  int select_relations(const std::vector<osm_nwr_id_t> &) { return 0; }
-  int select_nodes_from_bbox(const bbox &bounds, int max_nodes) { return 0; }
-  void select_nodes_from_relations() {}
-  void select_ways_from_nodes() {}
-  void select_ways_from_relations() {}
-  void select_relations_from_ways() {}
-  void select_nodes_from_way_nodes() {}
-  void select_relations_from_nodes() {}
-  void select_relations_from_relations(bool drop_relations = false) {}
-  void select_relations_members_of_relations() {}
-  int select_changesets(const std::vector<osm_changeset_id_t> &) { return 0; }
-  void select_changeset_discussions() {}
-  void drop_nodes() {}
-  void drop_ways() {}
-  void drop_relations() {}
+  int select_nodes(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_ways(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_relations(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_nodes_from_bbox(const bbox &bounds, int max_nodes) override { return 0; }
+  void select_nodes_from_relations() override {}
+  void select_ways_from_nodes() override {}
+  void select_ways_from_relations() override {}
+  void select_relations_from_ways() override {}
+  void select_nodes_from_way_nodes() override {}
+  void select_relations_from_nodes() override {}
+  void select_relations_from_relations(bool drop_relations = false) override {}
+  void select_relations_members_of_relations() override {}
+  int select_changesets(const std::vector<osm_changeset_id_t> &) override { return 0; }
+  void select_changeset_discussions() override {}
+  void drop_nodes() override {}
+  void drop_ways() override {}
+  void drop_relations() override {}
 
+  bool supports_user_details() const override { return false; }
+  bool is_user_blocked(const osm_user_id_t) override { return true; }
   bool get_user_id_pass(const std::string& user_name, osm_user_id_t & user_id,
-				std::string & pass_crypt, std::string & pass_salt) {
+				std::string & pass_crypt, std::string & pass_salt) override {
 
     if (user_name == "demo") {
 	user_id = 4711;
@@ -117,16 +118,34 @@ public:
     return false;
   }
 
+  int select_historical_nodes(const std::vector<osm_edition_t> &) override { return 0; }
+  int select_nodes_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_historical_ways(const std::vector<osm_edition_t> &) override { return 0; }
+  int select_ways_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_historical_relations(const std::vector<osm_edition_t> &) override { return 0; }
+  int select_relations_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  void set_redactions_visible(bool) override {}
+  int select_historical_by_changesets(const std::vector<osm_changeset_id_t> &) override { return 0; }
+
   struct factory
     : public data_selection::factory {
     virtual ~factory() = default;
-    virtual std::shared_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
-      return std::make_shared<basicauth_test_data_selection>();
+    virtual std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
+      return std::make_unique<basicauth_test_data_selection>();
     }
     virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() {
       return std::unique_ptr<Transaction_Owner_Void>(new Transaction_Owner_Void());
     }
   };
+};
+
+class global_settings_test_no_basic_auth : public global_settings_default {
+
+public:
+
+  bool get_basic_auth_support() const override {
+    return false;
+  }
 };
 
 } // anonymous namespace
@@ -196,65 +215,64 @@ void test_password_hash() {
 
 void test_authenticate_user() {
 
-  std::shared_ptr<data_selection::factory> factory =
-    std::make_shared<basicauth_test_data_selection::factory>();
+  auto factory = std::make_shared<basicauth_test_data_selection::factory>();
 
   auto txn_readonly = factory->get_default_transaction();
   auto sel = factory->make_selection(*txn_readonly);
 
   {
     test_request req;
-    auto res = basicauth::authenticate_user(req, sel);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{}, "Missing Header");
+    auto res = basicauth::authenticate_user(req, *sel);
+    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "Missing Header");
   }
 
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","");
-    auto res = basicauth::authenticate_user(req, sel);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{}, "Empty AUTH header");
+    auto res = basicauth::authenticate_user(req, *sel);
+    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "Empty AUTH header");
   }
 
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ");
-    auto res = basicauth::authenticate_user(req, sel);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{}, "Empty AUTH header");
+    auto res = basicauth::authenticate_user(req, *sel);
+    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "Empty AUTH header");
   }
 
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbw==");
-    auto res = basicauth::authenticate_user(req, sel);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{}, "User without password");
+    auto res = basicauth::authenticate_user(req, *sel);
+    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "User without password");
   }
 
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzo=");
-    auto res = basicauth::authenticate_user(req, sel);
-    assert_equal<boost::optional<osm_user_id_t> >(res,boost::optional<osm_user_id_t>{}, "User and colon without password");
+    auto res = basicauth::authenticate_user(req, *sel);
+    assert_equal<std::optional<osm_user_id_t> >(res,std::optional<osm_user_id_t>{}, "User and colon without password");
   }
 
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzpwYXNzd29yZA==");
-    auto res = basicauth::authenticate_user(req, sel);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{4711}, "Known user with correct password");
+    auto res = basicauth::authenticate_user(req, *sel);
+    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{4711}, "Known user with correct password");
   }
 
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic YXJnb24yOnBhc3N3b3Jk");
-    auto res = basicauth::authenticate_user(req, sel);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{4712}, "Known user with correct password, argon2");
+    auto res = basicauth::authenticate_user(req, *sel);
+    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{4712}, "Known user with correct password, argon2");
   }
 
   {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic TotalCrapData==");
-    auto res = basicauth::authenticate_user(req, sel);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{}, "Crap data");
+    auto res = basicauth::authenticate_user(req, *sel);
+    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "Crap data");
   }
 
   // Test with known user and incorrect password
@@ -262,7 +280,7 @@ void test_authenticate_user() {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzppbmNvcnJlY3Q=");
     try {
-      auto res = basicauth::authenticate_user(req, sel);
+      static_cast<void>(basicauth::authenticate_user(req, *sel));
       throw std::runtime_error("Known user, incorrect password: expected http unauthorized exception");
 
     } catch (http::exception &e) {
@@ -277,7 +295,7 @@ void test_authenticate_user() {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic YXJnb24yOndyb25n");
     try {
-      auto res = basicauth::authenticate_user(req, sel);
+      static_cast<void>(basicauth::authenticate_user(req, *sel));
       throw std::runtime_error("Known user, incorrect password: expected http unauthorized exception");
 
     } catch (http::exception &e) {
@@ -292,7 +310,7 @@ void test_authenticate_user() {
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzI6aW5jb3JyZWN0");
     try {
-      auto res = basicauth::authenticate_user(req, sel);
+      static_cast<void>(basicauth::authenticate_user(req, *sel));
       throw std::runtime_error("Unknown user / incorrect password: expected http unauthorized exception");
 
     } catch (http::exception &e) {
@@ -301,7 +319,25 @@ void test_authenticate_user() {
             "Unknown user / incorrect password: Expected HTTP 401");
     }
   }
+}
 
+void test_basic_auth_disabled_by_global_config() {
+
+  auto factory = std::make_shared<basicauth_test_data_selection::factory>();
+
+  auto txn_readonly = factory->get_default_transaction();
+  auto sel = factory->make_selection(*txn_readonly);
+
+  // Known user with correct password, but basic auth has been disabled in global config settings
+  {
+    auto test_settings = std::unique_ptr<global_settings_test_no_basic_auth>(new global_settings_test_no_basic_auth());
+    global_settings::set_configuration(std::move(test_settings));
+
+    test_request req;
+    req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzpwYXNzd29yZA==");
+    auto res = basicauth::authenticate_user(req, *sel);
+    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "Known user with correct password, but basic auth disabled in global config");
+  }
 }
 
 
@@ -309,6 +345,7 @@ int main() {
   try {
     ANNOTATE_EXCEPTION(test_password_hash());
     ANNOTATE_EXCEPTION(test_authenticate_user());
+    ANNOTATE_EXCEPTION(test_basic_auth_disabled_by_global_config());
 
   } catch (const std::exception &e) {
     std::cerr << "EXCEPTION: " << e.what() << std::endl;

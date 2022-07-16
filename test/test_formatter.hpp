@@ -3,6 +3,8 @@
 
 #include "cgimap/output_formatter.hpp"
 
+#include <fmt/core.h>
+
 struct test_formatter : public output_formatter {
   struct node_t {
     node_t(const element_info &elem_, double lon_, double lat_,
@@ -107,11 +109,58 @@ struct test_formatter : public output_formatter {
   void error(const std::string &str);
 };
 
+
 std::ostream &operator<<(std::ostream &out, const element_info &elem);
 std::ostream &operator<<(std::ostream &out, const test_formatter::node_t &n);
 std::ostream &operator<<(std::ostream &out, const test_formatter::changeset_t &n);
 std::ostream &operator<<(std::ostream &out, const test_formatter::way_t &w);
 std::ostream &operator<<(std::ostream &out, const member_info &m);
 std::ostream &operator<<(std::ostream &out, const test_formatter::relation_t &r);
+
+
+template <> struct fmt::formatter<test_formatter::node_t> {
+  template <typename FormatContext>
+  auto format(const test_formatter::node_t& n, FormatContext& ctx) -> decltype(ctx.out()) {
+    // ctx.out() is an output iterator to write to.
+    std::ostringstream ostr;
+    ostr << n;
+    return format_to(ctx.out(), "{}", ostr.str());
+  }
+  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+};
+
+template <> struct fmt::formatter<test_formatter::way_t> {
+  template <typename FormatContext>
+  auto format(const test_formatter::way_t& w, FormatContext& ctx) -> decltype(ctx.out()) {
+    // ctx.out() is an output iterator to write to.
+    std::ostringstream ostr;
+    ostr << w;
+    return format_to(ctx.out(), "{}", ostr.str());
+  }
+
+  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+};
+
+template <> struct fmt::formatter<test_formatter::relation_t> {
+  template <typename FormatContext>
+  auto format(const test_formatter::relation_t& r, FormatContext& ctx) -> decltype(ctx.out()) {
+    // ctx.out() is an output iterator to write to.
+    std::ostringstream ostr;
+    ostr << r;
+    return format_to(ctx.out(), "{}", ostr.str());
+  }
+  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+};
+
+template <> struct fmt::formatter<test_formatter::changeset_t> {
+  template <typename FormatContext>
+  auto format(const test_formatter::changeset_t& cs, FormatContext& ctx) -> decltype(ctx.out()) {
+    // ctx.out() is an output iterator to write to.
+    std::ostringstream ostr;
+    ostr << cs;
+    return format_to(ctx.out(), "{}", ostr.str());
+  }
+  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+};
 
 #endif /* TEST_TEST_FORMATTER */

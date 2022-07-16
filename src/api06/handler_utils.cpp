@@ -2,12 +2,13 @@
 
 #include "cgimap/http.hpp"
 #include "cgimap/request_helpers.hpp"
+#include <algorithm>
 #include <map>
 #include <vector>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/format.hpp>
+#include <fmt/core.h>
 
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
@@ -20,7 +21,6 @@ using std::map;
 using std::vector;
 using std::pair;
 namespace qi = boost::spirit::qi;
-namespace ascii = boost::spirit::ascii;
 namespace standard = boost::spirit::standard;
 
 namespace {
@@ -36,7 +36,7 @@ struct first_equals {
 BOOST_FUSION_ADAPT_STRUCT(
   api06::id_version,
   (uint64_t, id)
-  (boost::optional<uint32_t>, version)
+  (std::optional<uint32_t>, version)
   )
 
 namespace {
@@ -71,37 +71,51 @@ struct id_version_list_parser
 
 namespace api06 {
 
+bool valid_string(const std::string& str)
+{
+  // check if character is representable as an unsigned char
+  // see https://www.boost.org/doc/libs/1_77_0/boost/spirit/home/support/char_encoding/standard.hpp
+
+  return std::all_of(str.begin(), str.end(),
+		     [](char c){ return c >= 0 && c <= UCHAR_MAX; });
+}
+
 vector<id_version> parse_id_list_params(request &req, const string &param_name) {
+
   string decoded = http::urldecode(get_query_string(req));
   const vector<pair<string, string> > params = http::parse_params(decoded);
-  auto itr =
-    std::find_if(params.begin(), params.end(), first_equals(param_name));
+  auto itr = std::find_if(params.begin(), params.end(), first_equals(param_name));
 
+  if (itr == params.end())
+    return {};
+
+  const string &str = itr->second;
+
+  if (str.empty())
+    return {};
+
+  // Make sure our string does not violate boost spirit standard encoding check in strict_ischar
+  // Failure to do so triggers assertion failures, unless NDEBUG flag is set during compilation.
+  if (!valid_string(str))
+    return {};
+
+  vector<id_version> parse_ids;
   vector<id_version> myids;
+  string::const_iterator first = str.begin(), last = str.end();
+  id_version_list_parser<string::const_iterator> idv_p;
 
-  if (itr != params.end()) {
-    vector<id_version> parse_ids;
-    const string &str = itr->second;
+  try {
 
-    if (!str.empty()) {
+    bool ok = qi::phrase_parse(
+      first, last, idv_p, boost::spirit::qi::standard::space, parse_ids);
 
-      string::const_iterator first = str.begin(), last = str.end();
-      id_version_list_parser<string::const_iterator> idv_p;
-
-      try {
-
-	bool ok = qi::phrase_parse(
-	  first, last, idv_p, boost::spirit::qi::standard::space, parse_ids);
-
-	if (ok && (first == last)) {
-	  myids.swap(parse_ids);
-        } else {
-	   myids.push_back(id_version());
-        }
-      } catch (...) {   // input could not be parsed, ignore
-	  myids.clear();
-      }
+    if (ok && (first == last)) {
+      myids.swap(parse_ids);
+    } else {
+       myids.push_back(id_version());
     }
+  } catch (...) {   // input could not be parsed, ignore
+      return {};
   }
 
   // ensure list of IDs is unique

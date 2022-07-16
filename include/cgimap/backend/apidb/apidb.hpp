@@ -5,6 +5,6 @@
 
 #include <memory>
 
-std::shared_ptr<backend> make_apidb_backend();
+std::unique_ptr<backend> make_apidb_backend();
 
 #endif /* APIDB_BACKEND_HPP */

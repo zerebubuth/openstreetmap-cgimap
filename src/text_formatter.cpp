@@ -4,12 +4,11 @@
 #include <stdexcept>
 
 using std::string;
-using std::shared_ptr;
 using std::transform;
 
 
 
-text_formatter::text_formatter(text_writer *w) : writer(w) {}
+text_formatter::text_formatter(std::unique_ptr<text_writer> w) : writer(std::move(w)) {}
 
 text_formatter::~text_formatter() = default;
 

@@ -5,7 +5,7 @@
 #include "cgimap/util.hpp"
 
 #include <libxml/parser.h>
-#include <boost/format.hpp>
+#include <fmt/core.h>
 
 #include <algorithm>
 #include <cassert>
@@ -14,6 +14,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
 #include "parsers/saxparser.hpp"
@@ -76,6 +77,9 @@ namespace api06 {
 	    throw xml_error{ "Unknown element, expecting tag" };
 	  break;
 
+	case context::in_tag:
+	  // intentionally not implemented
+	  break;
       }
     }
 
@@ -117,7 +121,7 @@ namespace api06 {
     void add_tag(std::string key, std::string value) {
 
       if (key.empty())
-	throw xml_error("Key may not be empty in %1%");
+	throw xml_error("Key may not be empty");
 
       if (unicode_strlen(key) > 255)
 	throw xml_error("Key has more than 255 unicode characters");
@@ -142,8 +146,8 @@ namespace api06 {
 
     void add_tag(const char **attrs) {
 
-      boost::optional<std::string> k;
-      boost::optional<std::string> v;
+      std::optional<std::string> k;
+      std::optional<std::string> v;
 
       check_attributes(attrs, [&k, &v](const char *name, const char *value) {
 
@@ -171,11 +175,10 @@ namespace api06 {
       if (location == nullptr)
         throw e;
 
-      throw TEx{ (boost::format("%1% at line %2%, column %3%") %
-    	e.what() %
-    	location->line %
-    	location->col )
-        .str() };
+      throw TEx{ fmt::format("{} at line {:d}, column {:d}",
+    	e.what(),
+    	location->line,
+    	location->col ) };
     }
 
     enum class context {

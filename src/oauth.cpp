@@ -285,10 +285,10 @@ bool get_all_request_parameters(request &req, std::vector<param> &params) {
   return true;
 }
 
-boost::optional<std::string> find_auth_header_value(const std::string &key, request &req) {
+std::optional<std::string> find_auth_header_value(const std::string &key, request &req) {
   std::vector<param> params;
   if (!get_all_request_parameters(req, params)) {
-    return boost::none;
+    return {};
   }
 
   for (std::vector<param>::const_iterator itr = params.begin();
@@ -298,18 +298,18 @@ boost::optional<std::string> find_auth_header_value(const std::string &key, requ
     }
   }
 
-  return boost::none;
+  return {};
 }
 
-boost::optional<std::string> signature_method(request &req) {
+std::optional<std::string> signature_method(request &req) {
   return find_auth_header_value("oauth_signature_method", req);
 }
 
-boost::optional<std::string> get_consumer_key(request &req) {
+std::optional<std::string> get_consumer_key(request &req) {
   return find_auth_header_value("oauth_consumer_key", req);
 }
 
-boost::optional<std::string> get_token_id(request &req) {
+std::optional<std::string> get_token_id(request &req) {
   return find_auth_header_value("oauth_token", req);
 }
 
@@ -364,11 +364,11 @@ std::string base64_encode(const std::string &str) {
   return ostr.str();
 }
 
-boost::optional<std::string> normalise_request_parameters(request &req) {
+std::optional<std::string> normalise_request_parameters(request &req) {
   std::vector<param> params;
 
   if (!get_all_request_parameters(req, params)) {
-    return boost::none;
+    return {};
   }
 
   std::ostringstream out;
@@ -397,14 +397,14 @@ std::string normalise_request_url(request &req) {
   return out.str();
 }
 
-boost::optional<std::string> signature_base_string(request &req) {
+std::optional<std::string> signature_base_string(request &req) {
   std::ostringstream out;
 
-  boost::optional<std::string> request_params =
+  std::optional<std::string> request_params =
     normalise_request_parameters(req);
 
   if (!request_params) {
-    return boost::none;
+    return {};
   }
 
   out << http::urlencode(upcase(request_method(req))) << "&"
@@ -414,29 +414,29 @@ boost::optional<std::string> signature_base_string(request &req) {
   return out.str();
 }
 
-boost::optional<std::string> hashed_signature(request &req, secret_store &store) {
-  boost::optional<std::string> method = signature_method(req);
+std::optional<std::string> hashed_signature(request &req, secret_store &store) {
+  std::optional<std::string> method = signature_method(req);
   if (!method || ((*method != "HMAC-SHA1") && (*method != "PLAINTEXT"))) {
-    return boost::none;
+    return {};
   }
 
-  boost::optional<std::string>
+  std::optional<std::string>
     sig_base_string = signature_base_string(req);
-  if (!sig_base_string) { return boost::none; }
+  if (!sig_base_string) { return {}; }
 
-  boost::optional<std::string>
+  std::optional<std::string>
     consumer_key = get_consumer_key(req),
     token_id = get_token_id(req);
 
-  if (!consumer_key) { return boost::none; }
-  if (!token_id) { return boost::none; }
+  if (!consumer_key) { return {}; }
+  if (!token_id) { return {}; }
 
-  boost::optional<std::string>
+  std::optional<std::string>
     consumer_secret = store.consumer_secret(*consumer_key),
     token_secret = store.token_secret(*token_id);
 
-  if (!consumer_secret) { return boost::none; }
-  if (!token_secret) { return boost::none; }
+  if (!consumer_secret) { return {}; }
+  if (!token_secret) { return {}; }
 
   std::ostringstream key;
   key << http::urlencode(*consumer_secret) << "&"
@@ -449,7 +449,7 @@ boost::optional<std::string> hashed_signature(request &req, secret_store &store)
 
     } catch (const CryptoPP::Exception &e) {
       // TODO: log error!
-      return boost::none;
+      return {};
     }
 
   } else { // PLAINTEXT
@@ -463,13 +463,13 @@ validity::validity is_valid_signature(
   request &req, secret_store &store,
   nonce_store &nonces, token_store &tokens) {
 
-  boost::optional<std::string>
+  std::optional<std::string>
     provided_signature = find_auth_header_value("oauth_signature", req);
   if (!provided_signature) {
     return validity::not_signed();
   }
 
-  boost::optional<std::string>
+  std::optional<std::string>
     calculated_signature = detail::hashed_signature(req, store);
   if (!calculated_signature) {
     // 400 - bad request, according to section 3.2.
@@ -483,7 +483,7 @@ validity::validity is_valid_signature(
       "Calculated signature differs from provided.");
   }
 
-  boost::optional<std::string>
+  std::optional<std::string>
     token = find_auth_header_value("oauth_token", req);
   if (!token) {
     // 401 - unauthorized, according to section 3.2.
@@ -493,7 +493,7 @@ validity::validity is_valid_signature(
 
   if (signature_method(req) != std::string("PLAINTEXT")) {
     // verify nonce/timestamp/token hasn't been used before
-    boost::optional<std::string>
+    std::optional<std::string>
       nonce = find_auth_header_value("oauth_nonce", req),
       timestamp_str = find_auth_header_value("oauth_timestamp", req);
 
@@ -537,7 +537,7 @@ validity::validity is_valid_signature(
       "The user token does not allow read API access.");
   }
 
-  boost::optional<std::string>
+  std::optional<std::string>
     version = find_auth_header_value("oauth_version", req);
   if (version && (*version != "1.0")) {
     // ??? probably a 400?

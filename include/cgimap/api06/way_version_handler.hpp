@@ -10,8 +10,7 @@ namespace api06 {
 
 class way_version_responder : public osm_current_responder {
 public:
-  way_version_responder(mime::type, osm_nwr_id_t, osm_version_t, data_selection_ptr &);
-  ~way_version_responder();
+  way_version_responder(mime::type, osm_nwr_id_t, osm_version_t, data_selection &);
 
 private:
   osm_nwr_id_t id;
@@ -23,10 +22,9 @@ private:
 class way_version_handler : public handler {
 public:
   way_version_handler(request &req, osm_nwr_id_t id, osm_version_t v);
-  ~way_version_handler();
 
-  std::string log_name() const;
-  responder_ptr_t responder(data_selection_ptr &x) const;
+  std::string log_name() const override;
+  responder_ptr_t responder(data_selection &x) const override;
 
 private:
   osm_nwr_id_t id;

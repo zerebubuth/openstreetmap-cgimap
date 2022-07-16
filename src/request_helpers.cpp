@@ -1,10 +1,11 @@
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/zlib.hpp"
 #include <sstream>
+#include <cassert>
 #include <cstring>
+#include <fmt/core.h>
 
 using std::string;
-using std::ostringstream;
 
 string fcgi_get_env(request &req, const char *name, const char *default_value) {
   assert(name);
@@ -16,9 +17,7 @@ string fcgi_get_env(request &req, const char *name, const char *default_value) {
     if (default_value) {
       v = default_value;
     } else {
-      ostringstream ostr;
-      ostr << "request didn't set the $" << name << " environment variable.";
-      throw http::server_error(ostr.str());
+      throw http::server_error(fmt::format("request didn't set the ${} environment variable.", name));
     }
   }
 
@@ -36,10 +35,7 @@ string get_query_string(request &req) {
 
     if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
       // fail. something has obviously gone massively wrong.
-      ostringstream ostr;
-      ostr << "request didn't set the $QUERY_STRING or $REQUEST_URI "
-           << "environment variables.";
-      throw http::server_error(ostr.str());
+      throw http::server_error("request didn't set the $QUERY_STRING or $REQUEST_URI environment variables.");
     }
 
     const char *request_uri_end = request_uri + strlen(request_uri);
@@ -67,10 +63,7 @@ std::string get_request_path(request &req) {
   }
 
   if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
-    ostringstream ostr;
-    ostr << "request didn't set either the $REQUEST_URI or $PATH_INFO "
-            "environment variables.";
-    throw http::server_error(ostr.str());
+    throw http::server_error("request didn't set the $QUERY_STRING or $REQUEST_URI environment variables.");
   }
 
   const char *request_uri_end = request_uri + strlen(request_uri);
@@ -87,13 +80,13 @@ std::string get_request_path(request &req) {
 /**
  * get encoding to use for response.
  */
-std::shared_ptr<http::encoding> get_encoding(request &req) {
+std::unique_ptr<http::encoding> get_encoding(request &req) {
   const char *accept_encoding = req.get_param("HTTP_ACCEPT_ENCODING");
 
   if (accept_encoding) {
     return http::choose_encoding(string(accept_encoding));
   } else {
-    return std::shared_ptr<http::identity>(new http::identity());
+    return std::make_unique<http::identity>();
   }
 }
 
@@ -172,20 +165,20 @@ namespace {
  */
 class fcgi_output_buffer : public output_buffer {
 public:
-  virtual int write(const char *buffer, int len) {
+  int write(const char *buffer, int len) override {
     w += len;
     return r.put(buffer, len);
   }
 
-  virtual int close() {
+  int close() override {
     // we don't actually close the request output, as that happens
     // automatically on the next call to accept.
     return 0;
   }
 
-  virtual int written() { return w; }
+  int written() override { return w; }
 
-  virtual void flush() {
+  void flush() override {
     // there's a note that says this causes too many writes and decreases
     // efficiency, but we're only calling it once...
     r.flush();
@@ -202,6 +195,6 @@ private:
 
 } // anonymous namespace
 
-std::shared_ptr<output_buffer> make_output_buffer(request &req) {
-  return std::shared_ptr<output_buffer>(new fcgi_output_buffer(req));
+std::unique_ptr<output_buffer> make_output_buffer(request &req) {
+  return std::make_unique<fcgi_output_buffer>(req);
 }

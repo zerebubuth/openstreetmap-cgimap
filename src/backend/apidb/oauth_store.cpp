@@ -97,48 +97,36 @@ oauth_store::oauth_store(const po::variables_map &opts)
 
 oauth_store::~oauth_store() = default;
 
-boost::optional<std::string>
+std::optional<std::string>
 oauth_store::consumer_secret(const std::string &consumer_key) {
   pqxx::work w(m_connection, "oauth_get_consumer_secret_for_key");
-#if PQXX_VERSION_MAJOR >= 6
   pqxx::result res = w.exec_prepared("consumer_secret_for_key", consumer_key);
-#else
-  pqxx::result res = w.prepared("consumer_secret_for_key")(consumer_key).exec();
-#endif
 
   if (res.affected_rows() > 0) {
     return res[0][0].as<std::string>();
 
   } else {
-    return boost::none;
+    return {};
   }
 }
 
-boost::optional<std::string>
+std::optional<std::string>
 oauth_store::token_secret(const std::string &token_id) {
   pqxx::work w(m_connection, "oauth_get_token_secret_for_id");
-#if PQXX_VERSION_MAJOR >= 6
   pqxx::result res = w.exec_prepared("token_secret_for_id", token_id);
-#else
-  pqxx::result res = w.prepared("token_secret_for_id")(token_id).exec();
-#endif
 
   if (res.affected_rows() > 0) {
     return res[0][0].as<std::string>();
 
   } else {
-    return boost::none;
+    return {};
   }
 }
 
 bool
 oauth_store::use_nonce(const std::string &nonce, uint64_t timestamp) {
   pqxx::work w(m_connection, "oauth_use_nonce");
-#if PQXX_VERSION_MAJOR >= 6
   pqxx::result res = w.exec_prepared("use_nonce", nonce, timestamp);
-#else
-  pqxx::result res = w.prepared("use_nonce")(nonce)(timestamp).exec();
-#endif
 
   return res.affected_rows() > 0;
 }
@@ -146,11 +134,7 @@ oauth_store::use_nonce(const std::string &nonce, uint64_t timestamp) {
 bool
 oauth_store::allow_read_api(const std::string &token_id) {
   pqxx::work w(m_connection, "oauth_check_allow_read_api");
-#if PQXX_VERSION_MAJOR >= 6
   pqxx::result res = w.exec_prepared("token_is_valid", token_id);
-#else
-  pqxx::result res = w.prepared("token_is_valid")(token_id).exec();
-#endif
 
   return res.affected_rows() > 0;
 }
@@ -158,30 +142,22 @@ oauth_store::allow_read_api(const std::string &token_id) {
 bool
 oauth_store::allow_write_api(const std::string &token_id) {
   pqxx::work w(m_connection, "oauth_check_allow_write_api");
-#if PQXX_VERSION_MAJOR >= 6
   pqxx::result res = w.exec_prepared("token_allow_write_api", token_id);
-#else
-  pqxx::result res = w.prepared("token_allow_write_api")(token_id).exec();
-#endif
 
   return res.affected_rows() > 0 && res[0][0].as<bool>();
 }
 
-boost::optional<osm_user_id_t>
+std::optional<osm_user_id_t>
 oauth_store::get_user_id_for_token(const std::string &token_id) {
   pqxx::work w(m_connection, "oauth_get_user_id_for_token");
-#if PQXX_VERSION_MAJOR >= 6
   pqxx::result res = w.exec_prepared("token_belongs_to", token_id);
-#else
-  pqxx::result res = w.prepared("token_belongs_to")(token_id).exec();
-#endif
 
   if (res.affected_rows() > 0) {
     auto uid = res[0][0].as<osm_user_id_t>();
     return uid;
 
   } else {
-    return boost::none;
+    return {};
   }
 }
 
@@ -190,12 +166,7 @@ oauth_store::get_roles_for_user(osm_user_id_t id) {
   std::set<osm_user_role_t> roles;
 
   pqxx::work w(m_connection, "oauth_get_user_id_for_token");
-
-#if PQXX_VERSION_MAJOR >= 6
   pqxx::result res = w.exec_prepared("roles_for_user", id);
-#else
-  pqxx::result res = w.prepared("roles_for_user")(id).exec();
-#endif
 
   for (const auto &tuple : res) {
     auto role = tuple[0].as<std::string>();
@@ -209,7 +180,7 @@ oauth_store::get_roles_for_user(osm_user_id_t id) {
   return roles;
 }
 
-boost::optional<osm_user_id_t> oauth_store::get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) {
+std::optional<osm_user_id_t> oauth_store::get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) {
 
   m_connection.prepare("oauth2_access_token",
     R"(SELECT resource_owner_id as user_id,
@@ -222,11 +193,7 @@ boost::optional<osm_user_id_t> oauth_store::get_user_id_for_oauth2_token(const s
        WHERE token = $1)");
 
   pqxx::work w(m_connection, "oauth_get_user_id_for_oauth2_token");
-#if PQXX_VERSION_MAJOR >= 6
   pqxx::result res = w.exec_prepared("oauth2_access_token", token_id);
-#else
-  pqxx::result res = w.prepared("oauth2_access_token")(token_id).exec();
-#endif
 
   if (!res.empty()) {
     auto uid = res[0]["user_id"].as<osm_user_id_t>();
@@ -239,6 +206,6 @@ boost::optional<osm_user_id_t> oauth_store::get_user_id_for_oauth2_token(const s
     expired = true;
     revoked = true;
     allow_api_write = false;
-    return boost::none;
+    return {};
   }
 }

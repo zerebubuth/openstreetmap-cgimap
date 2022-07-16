@@ -15,7 +15,7 @@ using std::string;
 namespace api06 {
 
 relations_responder::relations_responder(mime::type mt, vector<id_version> ids_,
-                                         data_selection_ptr &s_)
+                                         data_selection &s_)
     : osm_current_responder(mt, s_), ids(ids_) {
   vector<osm_nwr_id_t> current_ids;
   vector<osm_edition_t> historic_ids;
@@ -28,9 +28,9 @@ relations_responder::relations_responder(mime::type mt, vector<id_version> ids_,
     }
   }
 
-  size_t num_selected = sel->select_relations(current_ids);
+  size_t num_selected = sel.select_relations(current_ids);
   if (!historic_ids.empty()) {
-    num_selected += sel->select_historical_relations(historic_ids);
+    num_selected += sel.select_historical_relations(historic_ids);
   }
 
   if (num_selected != ids.size()) {
@@ -38,12 +38,8 @@ relations_responder::relations_responder(mime::type mt, vector<id_version> ids_,
   }
 }
 
-relations_responder::~relations_responder() = default;
-
 relations_handler::relations_handler(request &req)
     : ids(validate_request(req)) {}
-
-relations_handler::~relations_handler() = default;
 
 std::string relations_handler::log_name() const {
   stringstream msg;
@@ -53,7 +49,7 @@ std::string relations_handler::log_name() const {
   return msg.str();
 }
 
-responder_ptr_t relations_handler::responder(data_selection_ptr &x) const {
+responder_ptr_t relations_handler::responder(data_selection &x) const {
   return responder_ptr_t(new relations_responder(mime_type, ids, x));
 }
 
@@ -64,7 +60,7 @@ responder_ptr_t relations_handler::responder(data_selection_ptr &x) const {
 vector<id_version> relations_handler::validate_request(request &req) {
   vector<id_version> myids = parse_id_list_params(req, "relations");
 
-  if (myids.size() < 1) {
+  if (myids.empty()) {
     throw http::bad_request("The parameter relations is required, and must be "
                             "of the form relations=id[,id[,id...]].");
   }

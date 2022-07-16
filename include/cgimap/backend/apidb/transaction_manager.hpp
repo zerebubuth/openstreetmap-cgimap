@@ -4,7 +4,7 @@
 #include "cgimap/logger.hpp"
 
 #include <chrono>
-#include <boost/format.hpp>
+#include <fmt/core.h>
 #include <pqxx/pqxx>
 
 #include <iostream>
@@ -67,41 +67,21 @@ public:
   pqxx::result exec_prepared(const std::string &statement, Args&&... args) {
 
     auto start = std::chrono::steady_clock::now();
-
-#if PQXX_VERSION_MAJOR >= 6
     pqxx::result res = m_txn.exec_prepared(statement, std::forward<Args>(args)...);
-#else
-    pqxx::prepare::invocation inv = m_txn.prepared(statement);
-    pqxx::prepare::invocation inv_with_params = pass_param<Args...>(inv, std::forward<Args>(args)...);
-    pqxx::result res = inv_with_params.exec();
-#endif
 
     auto end = std::chrono::steady_clock::now();
 
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
-    logger::message(boost::format("Executed prepared statement %1% in %2% ms, returning %3% rows, %4% affected rows")
-                               % statement
-			       % elapsed.count()
-			       % res.size()
-			       % res.affected_rows());
+    logger::message(fmt::format("Executed prepared statement {} in {:d} ms, returning {:d} rows, {:d} affected rows",
+                               statement,
+                               elapsed.count(),
+			       res.size(),
+			       res.affected_rows()));
     return res;
   }
 
 private:
-
-  template<typename Arg>
-  pqxx::prepare::invocation pass_param(pqxx::prepare::invocation& in, Arg&& arg)
-  {
-    return(in(std::forward<Arg>(arg)));
-  }
-
-  template<typename Arg, typename... Args>
-  pqxx::prepare::invocation pass_param(pqxx::prepare::invocation& in, Arg&& arg, Args&&... args)
-  {
-    return (pass_param<Args...>(in(std::forward<Arg>(arg)), std::forward<Args>(args)...));
-  }
-
   pqxx::transaction_base & m_txn;
 };
 

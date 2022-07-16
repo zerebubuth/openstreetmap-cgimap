@@ -10,8 +10,7 @@ namespace api06 {
 
 class changeset_responder : public osm_current_responder {
 public:
-  changeset_responder(mime::type, osm_changeset_id_t, bool, data_selection_ptr &);
-  ~changeset_responder();
+  changeset_responder(mime::type, osm_changeset_id_t, bool, data_selection &);
 
 private:
   osm_changeset_id_t id;
@@ -21,10 +20,9 @@ private:
 class changeset_handler : public handler {
 public:
   changeset_handler(request &req, osm_changeset_id_t id);
-  ~changeset_handler();
 
-  std::string log_name() const;
-  responder_ptr_t responder(data_selection_ptr &x) const;
+  std::string log_name() const override;
+  responder_ptr_t responder(data_selection &x) const override;
 
 private:
   osm_changeset_id_t id;

@@ -23,7 +23,7 @@ public:
   xml_writer(const std::string &file_name, bool indent = false);
 
   // create a new XML writer using writer callback functions
-  xml_writer(std::shared_ptr<output_buffer> &out, bool indent = false);
+  xml_writer(output_buffer &out, bool indent = false);
 
   // closes and flushes the XML writer
   ~xml_writer() noexcept;

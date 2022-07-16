@@ -22,7 +22,7 @@ class responder {
 public:
   responder(mime::type);
   virtual ~responder();
-  virtual void write(std::shared_ptr<output_formatter> f,
+  virtual void write(output_formatter& f,
                      const std::string &generator,
                      const std::chrono::system_clock::time_point &now) = 0;
 
@@ -38,7 +38,7 @@ private:
   mime::type mime_type;
 };
 
-using responder_ptr_t = std::shared_ptr<responder>;
+using responder_ptr_t = std::unique_ptr<responder>;
 
 /**
  * object which is able to validate and create responders from
@@ -50,7 +50,7 @@ public:
     http::method methods = http::method::GET | http::method::HEAD | http::method::OPTIONS);
   virtual ~handler();
   virtual std::string log_name() const = 0;
-  virtual responder_ptr_t responder(data_selection_ptr &) const = 0;
+  virtual responder_ptr_t responder(data_selection &) const = 0;
 
   void set_resource_type(mime::type);
 
@@ -69,7 +69,7 @@ protected:
   http::method m_allowed_methods;
 };
 
-using handler_ptr_t = std::shared_ptr<handler>;
+using handler_ptr_t = std::unique_ptr<handler>;
 
 
 class payload_enabled_handler : public handler {
@@ -78,10 +78,10 @@ public:
     http::method methods = http::method::POST | http::method::OPTIONS);
 
   // Responder used to update the database
-  virtual responder_ptr_t responder(data_update_ptr &, const std::string & payload, boost::optional<osm_user_id_t> user_id) const = 0;
+  virtual responder_ptr_t responder(data_update &, const std::string & payload, std::optional<osm_user_id_t> user_id) const = 0;
 
   // Optional responder to return XML response back to caller of the API method
-  virtual responder_ptr_t responder(data_selection_ptr &) const = 0;
+  virtual responder_ptr_t responder(data_selection &) const = 0;
 
   // Indicates that this payload_enabled_handler requires the optional data_selection based handler to be called
   // after the database update

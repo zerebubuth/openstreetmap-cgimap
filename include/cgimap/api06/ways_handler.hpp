@@ -13,8 +13,7 @@ namespace api06 {
 
 class ways_responder : public osm_current_responder {
 public:
-  ways_responder(mime::type, std::vector<id_version>, data_selection_ptr &);
-  ~ways_responder();
+  ways_responder(mime::type, std::vector<id_version>, data_selection &);
 
 private:
   std::vector<id_version> ids;
@@ -23,10 +22,9 @@ private:
 class ways_handler : public handler {
 public:
   ways_handler(request &req);
-  ~ways_handler();
 
-  std::string log_name() const;
-  responder_ptr_t responder(data_selection_ptr &x) const;
+  std::string log_name() const override;
+  responder_ptr_t responder(data_selection &x) const override;
 
 private:
   std::vector<id_version> ids;

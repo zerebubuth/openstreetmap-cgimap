@@ -3,7 +3,6 @@
 
 #include "cgimap/data_update.hpp"
 #include "cgimap/backend/apidb/changeset.hpp"
-#include "cgimap/backend/apidb/cache.hpp"
 #include "cgimap/backend/apidb/transaction_manager.hpp"
 
 #include <memory>
@@ -21,17 +20,17 @@ public:
   get_changeset_updater(osm_changeset_id_t _changeset, osm_user_id_t _uid);
 
   std::unique_ptr<api06::Node_Updater>
-  get_node_updater(std::shared_ptr<api06::OSMChange_Tracking> _ct);
+  get_node_updater(api06::OSMChange_Tracking &ct);
 
   std::unique_ptr<api06::Way_Updater>
-  get_way_updater(std::shared_ptr<api06::OSMChange_Tracking> _ct);
+  get_way_updater(api06::OSMChange_Tracking &ct);
 
   std::unique_ptr<api06::Relation_Updater>
-  get_relation_updater(std::shared_ptr<api06::OSMChange_Tracking> _ct);
+  get_relation_updater(api06::OSMChange_Tracking &ct);
 
   void commit();
 
-  bool is_api_write_disabled();
+  bool is_api_write_disabled() const;
 
   /**
    * abstracts the creation of transactions for the
@@ -41,9 +40,9 @@ public:
   public:
     factory(const boost::program_options::variables_map &);
     virtual ~factory();
-    virtual std::shared_ptr<data_update> make_data_update(Transaction_Owner_Base& to);
-    virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction();
-    virtual std::unique_ptr<Transaction_Owner_Base> get_read_only_transaction();
+    std::unique_ptr<data_update> make_data_update(Transaction_Owner_Base& to) override;
+    std::unique_ptr<Transaction_Owner_Base> get_default_transaction() override;
+    std::unique_ptr<Transaction_Owner_Base> get_read_only_transaction() override;
 
   private:
     pqxx::connection m_connection;

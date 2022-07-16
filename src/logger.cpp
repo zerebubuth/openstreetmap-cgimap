@@ -3,24 +3,24 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+ #include <unistd.h>
 
 #include "cgimap/logger.hpp"
+#include <fmt/core.h>
 
 using std::string;
 using std::ostream;
 using std::ofstream;
-using boost::format;
 
-using std::shared_ptr;
+
 
 namespace logger {
 
-static shared_ptr<ostream> stream;
+static std::unique_ptr<ostream> stream;
 static pid_t pid;
 
 void initialise(const string &filename) {
-  stream = std::shared_ptr<ostream>(
-      new ofstream(filename.c_str(), std::ios_base::out | std::ios_base::app));
+  stream = std::make_unique<ofstream>(filename.c_str(), std::ios_base::out | std::ios_base::app);
   pid = getpid();
 }
 
@@ -32,5 +32,4 @@ void message(const string &m) {
   }
 }
 
-void message(const format &m) { message(m.str()); }
 }

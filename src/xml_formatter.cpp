@@ -4,7 +4,6 @@
 #include <stdexcept>
 
 using std::string;
-using std::shared_ptr;
 using std::transform;
 
 namespace {
@@ -28,7 +27,7 @@ const std::string &element_type_name(element_type elt) {
 
 } // anonymous namespace
 
-xml_formatter::xml_formatter(xml_writer *w) : writer(w) {}
+xml_formatter::xml_formatter(std::unique_ptr<xml_writer> w) : writer(std::move(w)) {}
 
 xml_formatter::~xml_formatter() = default;
 
@@ -118,8 +117,8 @@ void xml_formatter::write_common(const element_info &elem) {
   writer->attribute("changeset", elem.changeset);
   writer->attribute("timestamp", elem.timestamp);
   if (elem.display_name && elem.uid) {
-    writer->attribute("user", elem.display_name.get());
-    writer->attribute("uid", elem.uid.get());
+    writer->attribute("user", *elem.display_name);
+    writer->attribute("uid", *elem.uid);
   }
 }
 
@@ -187,8 +186,8 @@ void xml_formatter::write_changeset(const changeset_info &elem,
   writer->attribute("open", is_open);
 
   if (bool(elem.display_name) && bool(elem.uid)) {
-    writer->attribute("user", elem.display_name.get());
-    writer->attribute("uid", elem.uid.get());
+    writer->attribute("user", *elem.display_name);
+    writer->attribute("uid", *elem.uid);
   }
 
   if (elem.bounding_box) {

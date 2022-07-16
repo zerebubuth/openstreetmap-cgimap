@@ -5,8 +5,9 @@
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
 
+#include <optional>
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/optional.hpp>
+
 
 namespace api06 {
 
@@ -30,7 +31,7 @@ public:
       m_type = "Relation";
     else
       throw xml_error(
-          (boost::format("Invalid type %1% in member relation") % type).str());
+          fmt::format("Invalid type {} in member relation", type));
   }
 
   void set_role(const char *role) {
@@ -82,8 +83,8 @@ public:
 
 private:
   std::string m_role;
-  boost::optional<osm_nwr_signed_id_t> m_ref;
-  boost::optional<std::string> m_type;
+  std::optional<osm_nwr_signed_id_t> m_ref;
+  std::optional<std::string> m_type;
 };
 
 class Relation : public OSMObject {
@@ -116,11 +117,10 @@ public:
       if ((global_settings::get_relation_max_members()) &&
 	  m_relation_member.size() > *global_settings::get_relation_max_members()) {
         throw http::bad_request(
-            (boost::format(
-                 "You tried to add %1% members to relation %2%, however only "
-                 "%3% are allowed") %
-        	m_relation_member.size() % (has_id() ? id() : 0) % *global_settings::get_relation_max_members())
-                .str());
+             fmt::format("You tried to add {:d} members to relation {:d}, however only {:d} are allowed",
+        	m_relation_member.size(),
+        	(has_id() ? id() : 0),
+        	*global_settings::get_relation_max_members()));
       }
 
       return (is_valid());

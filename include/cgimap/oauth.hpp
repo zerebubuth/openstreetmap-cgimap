@@ -1,10 +1,11 @@
 #ifndef OAUTH_HPP
 #define OAUTH_HPP
 
+#include <optional>
 #include <string>
 #include <set>
-#include <boost/optional.hpp>
-#include <boost/variant.hpp>
+#include <variant>
+
 #include "cgimap/request.hpp"
 #include "cgimap/types.hpp"
 
@@ -15,8 +16,8 @@ namespace oauth {
  * secrets associated with those keys / IDs.
  */
 struct secret_store {
-  virtual boost::optional<std::string> consumer_secret(const std::string &consumer_key) = 0;
-  virtual boost::optional<std::string> token_secret(const std::string &token_id) = 0;
+  virtual std::optional<std::string> consumer_secret(const std::string &consumer_key) = 0;
+  virtual std::optional<std::string> token_secret(const std::string &token_id) = 0;
   virtual ~secret_store();
 };
 
@@ -45,10 +46,10 @@ struct nonce_store {
 struct token_store {
   virtual bool allow_read_api(const std::string &token_id) = 0;
   virtual bool allow_write_api(const std::string &token_id) = 0;
-  virtual boost::optional<osm_user_id_t> get_user_id_for_token(
+  virtual std::optional<osm_user_id_t> get_user_id_for_token(
     const std::string &token_id) = 0;
   virtual std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t) = 0;
-  virtual boost::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) = 0;
+  virtual std::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) = 0;
   virtual ~token_store();
 };
 
@@ -58,6 +59,14 @@ struct token_store {
 struct store
   : public secret_store, public nonce_store, public token_store {
   virtual ~store();
+
+  store() = default;
+
+  store(const store&) = delete;
+  store& operator=(const store&) = delete;
+
+  store(store&&) = delete;
+  store& operator=(store&&) = delete;
 };
 
 namespace validity {
@@ -84,7 +93,7 @@ struct unauthorized {
   std::string reason;
 };
 
-using validity = boost::variant<
+using validity = std::variant<
   copacetic,
   not_signed,
   bad_request,
@@ -105,26 +114,26 @@ namespace detail {
  * Returns the hashed signature of the request, or none if that
  * can't be completed.
  */
-boost::optional<std::string> hashed_signature(request &req, secret_store &store);
+std::optional<std::string> hashed_signature(request &req, secret_store &store);
 
 /**
  * Given a request, returns the signature base string as defined
  * by the OAuth standard.
  *
- * Returns boost::none if the OAuth Authorization header could
+ * Returns none if the OAuth Authorization header could
  * not be parsed.
  */
-boost::optional<std::string> signature_base_string(request &req);
+std::optional<std::string> signature_base_string(request &req);
 
 /**
  * Given a request, returns a string containing the normalised
  * request parameters. See
  * http://oauth.net/core/1.0a/#rfc.section.9.1.1
  *
- * Returns boost::none if the OAuth Authorization header could
+ * Returns none if the OAuth Authorization header could
  * not be parsed.
  */
-boost::optional<std::string> normalise_request_parameters(request &req);
+std::optional<std::string> normalise_request_parameters(request &req);
 
 /**
  * Given a request, returns a string representing the normalised

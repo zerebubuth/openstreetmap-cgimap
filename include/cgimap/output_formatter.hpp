@@ -5,11 +5,13 @@
 #include "cgimap/types.hpp"
 #include "cgimap/mime_types.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <list>
+#include <optional>
+#include <sstream>
 #include <vector>
 #include <stdexcept>
-#include <boost/optional.hpp>
 
 /**
  * What type of element the formatter is starting to write.
@@ -29,28 +31,31 @@ enum action_type {
 };
 
 struct element_info {
-  element_info();
-  element_info(const element_info &);
+
+  element_info() = default;
+
   element_info(osm_nwr_id_t id_, osm_nwr_id_t version_,
                osm_changeset_id_t changeset_,
                const std::string &timestamp_,
-               const boost::optional<osm_user_id_t> &uid_,
-               const boost::optional<std::string> &display_name_,
+               const std::optional<osm_user_id_t> &uid_,
+               const std::optional<std::string> &display_name_,
                bool visible_,
-               boost::optional<osm_redaction_id_t> redaction_ = boost::none);
+               std::optional<osm_redaction_id_t> redaction_ = {});
+
   // Standard meanings
-  osm_nwr_id_t id, version;
-  osm_changeset_id_t changeset;
+  osm_nwr_id_t id = 0;
+  osm_nwr_id_t version = 0;
+  osm_changeset_id_t changeset = 0;
   std::string timestamp;
   // Anonymous objects will not have uids or display names
-  boost::optional<osm_user_id_t> uid;
-  boost::optional<std::string> display_name;
+  std::optional<osm_user_id_t> uid;
+  std::optional<std::string> display_name{};
   // If an object has been deleted
-  bool visible;
+  bool visible = false;
   // If an object has administratively hidden in a "redaction". note that this
   // is never output - if it is present, then the element should not be
   // displayed except to moderators.
-  boost::optional<osm_redaction_id_t> redaction;
+  std::optional<osm_redaction_id_t> redaction = {};
 };
 
 struct changeset_info {
@@ -59,9 +64,9 @@ struct changeset_info {
   changeset_info(osm_changeset_id_t id_,
                  const std::string &created_at_,
                  const std::string &closed_at_,
-                 const boost::optional<osm_user_id_t> &uid_,
-                 const boost::optional<std::string> &display_name_,
-                 const boost::optional<bbox> &bounding_box_,
+                 const std::optional<osm_user_id_t> &uid_,
+                 const std::optional<std::string> &display_name_,
+                 const std::optional<bbox> &bounding_box_,
                  size_t num_changes_,
                  size_t comments_count_);
 
@@ -80,11 +85,11 @@ struct changeset_info {
   // should have an ISO 8601 format: YYYY-MM-DDTHH:MM:SSZ
   std::string created_at, closed_at;
   // anonymous objects don't have UIDs or display names
-  boost::optional<osm_user_id_t> uid;
-  boost::optional<std::string> display_name;
+  std::optional<osm_user_id_t> uid;
+  std::optional<std::string> display_name;
   // changesets with edits will have a bounding box containing
   // the extent of all the changes.
-  boost::optional<bbox> bounding_box;
+  std::optional<bbox> bounding_box;
   // the number of changes (new element versions) associated
   // with this changeset.
   size_t num_changes;

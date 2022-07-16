@@ -12,7 +12,7 @@ struct test_request : public request {
 
   /// implementation of request interface
   virtual ~test_request() = default;
-  virtual const char *get_param(const char *key) {
+  const char *get_param(const char *key) const override {
     std::string key_str(key);
     auto itr = m_params.find(key_str);
     if (itr != m_params.end()) {
@@ -22,11 +22,11 @@ struct test_request : public request {
     }
   }
 
-  const std::string get_payload() {
+  const std::string get_payload() override {
     return "";
   }
 
-  virtual void dispose() {}
+  void dispose() override {}
 
   /// getters and setters for the input headers and output response
   void set_header(const std::string &k, const std::string &v) {
@@ -34,16 +34,16 @@ struct test_request : public request {
   }
   std::stringstream &buffer() { assert(false); }
 
-  std::chrono::system_clock::time_point get_current_time() const {
+  std::chrono::system_clock::time_point get_current_time() const override {
     return std::chrono::system_clock::time_point();
   }
 
 protected:
-  virtual void write_header_info(int status, const headers_t &headers) {}
-  virtual std::shared_ptr<output_buffer> get_buffer_internal() {
-    return std::shared_ptr<output_buffer>();
+  void write_header_info(int status, const headers_t &headers) override {}
+  output_buffer& get_buffer_internal() override {
+    throw std::runtime_error("test_request::get_buffer_internal unimplemented.");
   }
-  virtual void finish_internal() {}
+  void finish_internal() override {}
 
 private:
   std::map<std::string, std::string> m_params;

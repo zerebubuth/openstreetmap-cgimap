@@ -56,12 +56,12 @@ fcgi_request::fcgi_request(int socket, const std::chrono::system_clock::time_poi
     throw runtime_error("Couldn't initialise FCGX request structure.");
   }
   m_impl->now = now;
-  m_buffer = std::shared_ptr<output_buffer>(new fcgi_buffer(m_impl->req));
+  m_buffer = std::make_unique<fcgi_buffer>(m_impl->req);
 }
 
 fcgi_request::~fcgi_request() { FCGX_Free(&m_impl->req, true); }
 
-const char *fcgi_request::get_param(const char *key) {
+const char *fcgi_request::get_param(const char *key) const {
   return FCGX_GetParam(key, m_impl->req.envp);
 }
 
@@ -103,7 +103,7 @@ const std::string fcgi_request::get_payload() {
       }
 
       if (result.length() > global_settings::get_payload_max_size())
-         throw http::payload_too_large((boost::format("Payload exceeds limit of %1% bytes") % global_settings::get_payload_max_size()).str());
+         throw http::payload_too_large((fmt::format("Payload exceeds limit of {:d} bytes", global_settings::get_payload_max_size())));
   }
 
   if (content_length > 0 && result_length != content_length)
@@ -132,8 +132,8 @@ void fcgi_request::write_header_info(int status,
   m_buffer->write(&data[0], data.size());
 }
 
-std::shared_ptr<output_buffer> fcgi_request::get_buffer_internal() {
-  return m_buffer;
+output_buffer& fcgi_request::get_buffer_internal() {
+  return *m_buffer;
 }
 
 void fcgi_request::finish_internal() {}
@@ -169,8 +169,7 @@ int fcgi_request::accept_r() {
 
   // swap out the output buffer for a new one referencing the new
   // request.
-  std::shared_ptr<output_buffer> new_buffer(new fcgi_buffer(m_impl->req));
-  m_buffer.swap(new_buffer);
+  m_buffer.reset(new fcgi_buffer(m_impl->req));
 
   return status;
 }

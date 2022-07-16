@@ -1,0 +1,11 @@
+Request-Method: GET
+Request-URI: /api/0.6/changeset/1/download.json
+Date: 2017-02-20T15:22:00Z
+---
+Cache-Control: no-cache
+Content-Length: 78
+Content-Type: text/plain
+Error: Acceptable formats for /api/0.6/changeset/1/download.json are: application/xml
+Status: 406 Not Acceptable
+---
+Acceptable formats for /api/0.6/changeset/1/download.json are: application/xml

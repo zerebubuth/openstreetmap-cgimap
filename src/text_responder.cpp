@@ -2,7 +2,6 @@
 #include "cgimap/config.hpp"
 
 using std::list;
-using std::shared_ptr;
 
 text_responder::text_responder(mime::type mt)
     : responder(mt), output_text{}  {}
@@ -23,11 +22,10 @@ std::string text_responder::extra_response_headers() const {
   return extra_headers.str();
 }
 
-void text_responder::write(std::shared_ptr<output_formatter> formatter,
+void text_responder::write(output_formatter& fmt,
                      const std::string &generator,
                      const std::chrono::system_clock::time_point &now)
 {
-  output_formatter &fmt = *formatter;
   fmt.error(output_text);
 }
 

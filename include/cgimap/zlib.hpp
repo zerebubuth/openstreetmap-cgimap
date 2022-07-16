@@ -26,22 +26,22 @@ public:
   /**
    * Methods.
    */
-  zlib_output_buffer(std::shared_ptr<output_buffer> o, mode m);
+  zlib_output_buffer(output_buffer& o, mode m);
   zlib_output_buffer(const zlib_output_buffer &old);
   virtual ~zlib_output_buffer();
-  virtual int write(const char *buffer, int len);
-  virtual int written();
-  virtual int close();
-  virtual void flush();
+  int write(const char *buffer, int len) override;
+  int written() override;
+  int close() override;
+  void flush() override;
 
 private:
   void flush_output();
 
-  std::shared_ptr<output_buffer> out;
+  output_buffer& out;
   // keep track of bytes written because the z_stream struct doesn't seem to
   // update unless its flushed.
-  size_t bytes_in;
-  z_stream stream;
+  size_t bytes_in = 0;
+  z_stream stream{};
   char outbuf[4096];
 };
 
@@ -61,12 +61,13 @@ public:
   * @param input Any amount of data to decompress.
   * @retval std::string containing the decompressed data.
   */
-  virtual std::string decompress(const std::string& input);
+  std::string decompress(const std::string& input);
+  ~ZLibBaseDecompressor();
 
 protected:
   ZLibBaseDecompressor();
   ZLibBaseDecompressor(int windowBits);
-  ~ZLibBaseDecompressor();
+
 
 private:
   char inbuf[ZLIB_COMPLETE_CHUNK];
@@ -78,19 +79,16 @@ private:
 class ZLibDecompressor : public ZLibBaseDecompressor {
 public:
   ZLibDecompressor();
-  virtual ~ZLibDecompressor();
 };
 
 class GZipDecompressor : public ZLibBaseDecompressor {
 public:
   GZipDecompressor();
-  virtual ~GZipDecompressor();
 };
 
 class IdentityDecompressor : public ZLibBaseDecompressor {
 public:
   IdentityDecompressor();
-  virtual ~IdentityDecompressor();
 };
 
 #endif /* ZLIB_HPP */

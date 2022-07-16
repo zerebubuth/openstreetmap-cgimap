@@ -3,9 +3,14 @@
 #include <stdexcept>
 #include <iostream>
 #include <sstream>
-#include <boost/optional/optional_io.hpp>
 
 namespace {
+
+template<typename T>
+std::ostream& operator<<(std::ostream& os, std::optional<T> const& opt)
+{
+  return opt ? os << opt.value() : os;
+}
 
 void assert_eq(const std::string &actual, const std::string &expected) {
   if (actual != expected) {
@@ -72,12 +77,12 @@ void http_check_list_methods() {
 }
 
 void http_check_parse_methods() {
-  auto assert_eql = assert_equal<boost::optional<http::method>>;
+  auto assert_eql = assert_equal<std::optional<http::method>>;
   assert_eql(http::parse_method("GET"), http::method::GET);
   assert_eql(http::parse_method("POST"), http::method::POST);
   assert_eql(http::parse_method("HEAD"), http::method::HEAD);
   assert_eql(http::parse_method("OPTIONS"), http::method::OPTIONS);
-  assert_eql(http::parse_method(""), boost::none);
+  assert_eql(http::parse_method(""), {});
 }
 
 void http_check_choose_encoding() {

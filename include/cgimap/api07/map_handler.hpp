@@ -17,7 +17,7 @@ namespace api07 {
 
 class map_responder : public osm_current_responder {
 public:
-  map_responder(mime::type, bbox, data_selection_ptr &);
+  map_responder(mime::type, bbox, data_selection &);
   ~map_responder();
 };
 
@@ -26,8 +26,8 @@ public:
   explicit map_handler(request &req);
   map_handler(request &req, int tile_id);
   ~map_handler();
-  std::string log_name() const;
-  responder_ptr_t responder(data_selection_ptr &x) const;
+  std::string log_name() const override;
+  responder_ptr_t responder(data_selection &x) const override;
 
 private:
   bbox bounds;

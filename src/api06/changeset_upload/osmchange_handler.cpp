@@ -4,19 +4,19 @@
 
 #include "cgimap/api06/changeset_upload/osmchange_handler.hpp"
 
-#include <boost/format.hpp>
+#include <fmt/core.h>
 
 namespace api06 {
 
 OSMChange_Handler::OSMChange_Handler(
-    std::unique_ptr<Node_Updater> _node_updater,
-    std::unique_ptr<Way_Updater> _way_updater,
-    std::unique_ptr<Relation_Updater> _relation_updater,
-    osm_changeset_id_t _changeset)
-    : node_updater(std::move(_node_updater)),
-      way_updater(std::move(_way_updater)),
-      relation_updater(std::move(_relation_updater)),
-      m_changeset(_changeset)
+    Node_Updater& node_updater,
+    Way_Updater& way_updater,
+    Relation_Updater& relation_updater,
+    osm_changeset_id_t changeset)
+    : node_updater(node_updater),
+      way_updater(way_updater),
+      relation_updater(relation_updater),
+      changeset(changeset)
 
 {}
 
@@ -27,12 +27,11 @@ void OSMChange_Handler::end_document() { finish_processing(); }
 // checks common to all objects
 void OSMChange_Handler::check_osm_object(const OSMObject &o) const {
 
-  if (o.changeset() != m_changeset)
+  if (o.changeset() != changeset)
     throw http::conflict(
-        (boost::format(
-             "Changeset mismatch: Provided %1% but only %2% is allowed") %
-         o.changeset() % m_changeset)
-            .str());
+        fmt::format(
+             "Changeset mismatch: Provided {:d} but only {:d} is allowed",
+         o.changeset(), changeset));
 }
 
 void OSMChange_Handler::process_node(const Node &node, operation op,
@@ -45,19 +44,19 @@ void OSMChange_Handler::process_node(const Node &node, operation op,
   switch (op) {
   case operation::op_create:
     handle_new_state(state::st_create_node);
-    node_updater->add_node(node.lat(), node.lon(), m_changeset, node.id(),
+    node_updater.add_node(node.lat(), node.lon(), changeset, node.id(),
                            node.tags());
     break;
 
   case operation::op_modify:
     handle_new_state(state::st_modify);
-    node_updater->modify_node(node.lat(), node.lon(), m_changeset, node.id(),
+    node_updater.modify_node(node.lat(), node.lon(), changeset, node.id(),
                               node.version(), node.tags());
     break;
 
   case operation::op_delete:
     handle_new_state(state::st_delete_node);
-    node_updater->delete_node(m_changeset, node.id(), node.version(),
+    node_updater.delete_node(changeset, node.id(), node.version(),
                               if_unused);
     break;
 
@@ -77,18 +76,18 @@ void OSMChange_Handler::process_way(const Way &way, operation op,
   switch (op) {
   case operation::op_create:
     handle_new_state(state::st_create_way);
-    way_updater->add_way(m_changeset, way.id(), way.nodes(), way.tags());
+    way_updater.add_way(changeset, way.id(), way.nodes(), way.tags());
     break;
 
   case operation::op_modify:
     handle_new_state(state::st_modify);
-    way_updater->modify_way(m_changeset, way.id(), way.version(), way.nodes(),
+    way_updater.modify_way(changeset, way.id(), way.version(), way.nodes(),
                             way.tags());
     break;
 
   case operation::op_delete:
     handle_new_state(state::st_delete_way);
-    way_updater->delete_way(m_changeset, way.id(), way.version(), if_unused);
+    way_updater.delete_way(changeset, way.id(), way.version(), if_unused);
     break;
 
   default:
@@ -107,20 +106,20 @@ void OSMChange_Handler::process_relation(const Relation &relation, operation op,
   switch (op) {
   case operation::op_create:
     handle_new_state(state::st_create_relation);
-    relation_updater->add_relation(m_changeset, relation.id(),
+    relation_updater.add_relation(changeset, relation.id(),
                                    relation.members(), relation.tags());
     break;
 
   case operation::op_modify:
     handle_new_state(state::st_modify);
-    relation_updater->modify_relation(m_changeset, relation.id(),
+    relation_updater.modify_relation(changeset, relation.id(),
                                       relation.version(), relation.members(),
                                       relation.tags());
     break;
 
   case operation::op_delete:
     handle_new_state(state::st_delete_relation);
-    relation_updater->delete_relation(m_changeset, relation.id(),
+    relation_updater.delete_relation(changeset, relation.id(),
                                       relation.version(), if_unused);
     break;
   default:
@@ -134,16 +133,16 @@ void OSMChange_Handler::finish_processing() {
 }
 
 uint32_t OSMChange_Handler::get_num_changes() {
-  return (node_updater->get_num_changes() + way_updater->get_num_changes() +
-          relation_updater->get_num_changes());
+  return (node_updater.get_num_changes() + way_updater.get_num_changes() +
+          relation_updater.get_num_changes());
 }
 
 bbox_t OSMChange_Handler::get_bbox() {
   bbox_t bbox;
 
-  bbox.expand(node_updater->bbox());
-  bbox.expand(way_updater->bbox());
-  bbox.expand(relation_updater->bbox());
+  bbox.expand(node_updater.bbox());
+  bbox.expand(way_updater.bbox());
+  bbox.expand(relation_updater.bbox());
 
   return bbox;
 }
@@ -163,33 +162,33 @@ void OSMChange_Handler::handle_new_state(state new_state) {
     break;
 
   case state::st_create_node:
-    node_updater->process_new_nodes();
+    node_updater.process_new_nodes();
     break;
 
   case state::st_create_way:
-    way_updater->process_new_ways();
+    way_updater.process_new_ways();
     break;
 
   case state::st_create_relation:
-    relation_updater->process_new_relations();
+    relation_updater.process_new_relations();
     break;
 
   case state::st_modify:
-    node_updater->process_modify_nodes();
-    way_updater->process_modify_ways();
-    relation_updater->process_modify_relations();
+    node_updater.process_modify_nodes();
+    way_updater.process_modify_ways();
+    relation_updater.process_modify_relations();
     break;
 
   case state::st_delete_node:
-    node_updater->process_delete_nodes();
+    node_updater.process_delete_nodes();
     break;
 
   case state::st_delete_way:
-    way_updater->process_delete_ways();
+    way_updater.process_delete_ways();
     break;
 
   case state::st_delete_relation:
-    relation_updater->process_delete_relations();
+    relation_updater.process_delete_relations();
     break;
 
   case state::st_finished:

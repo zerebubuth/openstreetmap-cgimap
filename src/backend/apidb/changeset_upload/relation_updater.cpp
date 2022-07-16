@@ -3,6 +3,7 @@
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 #include "cgimap/backend/apidb/changeset_upload/relation_updater.hpp"
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
+#include "cgimap/backend/apidb/utils.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
 
@@ -14,13 +15,13 @@
 #include <utility>
 #include <vector>
 
-#include <boost/format.hpp>
+#include <fmt/core.h>
 
-using boost::format;
+
 
 ApiDB_Relation_Updater::ApiDB_Relation_Updater(
-    Transaction_Manager &_m, std::shared_ptr<api06::OSMChange_Tracking> _ct)
-    : m_bbox(), m(_m), ct(std::move(_ct)) {}
+    Transaction_Manager &_m, api06::OSMChange_Tracking &ct)
+    : m_bbox(), m(_m), ct(ct) {}
 
 ApiDB_Relation_Updater::~ApiDB_Relation_Updater() = default;
 
@@ -52,7 +53,7 @@ void ApiDB_Relation_Updater::add_relation(osm_changeset_id_t changeset_id,
 
   create_relations.push_back(new_relation);
 
-  ct->osmchange_orig_sequence.push_back(
+  ct.osmchange_orig_sequence.push_back(
       { operation::op_create, object_type::relation, new_relation.old_id,
         new_relation.version, false });
 }
@@ -87,7 +88,7 @@ void ApiDB_Relation_Updater::modify_relation(osm_changeset_id_t changeset_id,
 
   modify_relations.push_back(modify_relation);
 
-  ct->osmchange_orig_sequence.push_back(
+  ct.osmchange_orig_sequence.push_back(
       { operation::op_modify, object_type::relation, modify_relation.old_id,
         modify_relation.version, false });
 }
@@ -105,7 +106,7 @@ void ApiDB_Relation_Updater::delete_relation(osm_changeset_id_t changeset_id,
   delete_relation.if_unused = if_unused;
   delete_relations.push_back(delete_relation);
 
-  ct->osmchange_orig_sequence.push_back(
+  ct.osmchange_orig_sequence.push_back(
       { operation::op_delete, object_type::relation, delete_relation.old_id,
         delete_relation.version, if_unused });
 }
@@ -122,8 +123,8 @@ void ApiDB_Relation_Updater::process_new_relations() {
   delete_tmp_create_relations();
 
   // Use new_ids as a result of inserting nodes/ways in tmp table
-  replace_old_ids_in_relations(create_relations, ct->created_node_ids,
-                               ct->created_way_ids, ct->created_relation_ids);
+  replace_old_ids_in_relations(create_relations, ct.created_node_ids,
+                               ct.created_way_ids, ct.created_relation_ids);
 
   std::vector<osm_nwr_id_t> ids;
 
@@ -152,8 +153,8 @@ void ApiDB_Relation_Updater::process_new_relations() {
 void ApiDB_Relation_Updater::process_modify_relations() {
 
   // Use new_ids as a result of inserting nodes/ways/relations in tmp table
-  replace_old_ids_in_relations(modify_relations, ct->created_node_ids,
-                               ct->created_way_ids, ct->created_relation_ids);
+  replace_old_ids_in_relations(modify_relations, ct.created_node_ids,
+                               ct.created_way_ids, ct.created_relation_ids);
 
   std::vector<osm_nwr_id_t> ids;
 
@@ -178,8 +179,8 @@ void ApiDB_Relation_Updater::process_modify_relations() {
 
     // remove duplicates
     std::sort(ids_package.begin(), ids_package.end());
-    ids.erase(std::unique(ids_package.begin(), ids_package.end()),
-              ids_package.end());
+    ids_package.erase(std::unique(ids_package.begin(), ids_package.end()),
+                      ids_package.end());
 
     check_current_relation_versions(modify_relations_package);
 
@@ -261,8 +262,8 @@ void ApiDB_Relation_Updater::process_delete_relations() {
   std::vector<osm_nwr_id_t> ids_visible_unreferenced;
 
   // Use new_ids as a result of inserting nodes/ways/relations in tmp table
-  replace_old_ids_in_relations(delete_relations, ct->created_node_ids,
-                               ct->created_way_ids, ct->created_relation_ids);
+  replace_old_ids_in_relations(delete_relations, ct.created_node_ids,
+                               ct.created_way_ids, ct.created_relation_ids);
 
   for (const auto &id : delete_relations)
     ids.push_back(id.id);
@@ -331,8 +332,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
         std::pair<osm_nwr_signed_id_t, osm_nwr_id_t>(i.old_id, i.new_id));
     if (!res.second)
       throw http::bad_request(
-          (boost::format("Duplicate relation placeholder id %1%.") % i.old_id)
-              .str());
+          fmt::format("Duplicate relation placeholder id {:d}.", i.old_id));
   }
 
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_ways;
@@ -341,8 +341,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
         std::pair<osm_nwr_signed_id_t, osm_nwr_id_t>(i.old_id, i.new_id));
     if (!res.second)
       throw http::bad_request(
-          (boost::format("Duplicate way placeholder id %1%.") % i.old_id)
-              .str());
+          fmt::format("Duplicate way placeholder id {:d}.", i.old_id));
   }
 
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_nodes;
@@ -351,8 +350,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
         std::pair<osm_nwr_signed_id_t, osm_nwr_id_t>(i.old_id, i.new_id));
     if (!res.second)
       throw http::bad_request(
-          (boost::format("Duplicate node placeholder id %1%.") % i.old_id)
-              .str());
+          fmt::format("Duplicate node placeholder id {:d}.", i.old_id));
   }
 
   // replace temporary ids
@@ -362,10 +360,9 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
       auto entry = map_relations.find(cr.old_id);
       if (entry == map_relations.end())
         throw http::bad_request(
-            (boost::format(
-                 "Placeholder id not found for relation reference %1%") %
-             cr.old_id)
-                .str());
+            fmt::format(
+                 "Placeholder id not found for relation reference {:d}",
+             cr.old_id));
 
       cr.id = entry->second;
     }
@@ -376,29 +373,23 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
           auto entry = map_nodes.find(mbr.old_member_id);
           if (entry == map_nodes.end())
             throw http::bad_request(
-                (boost::format("Placeholder node not found for reference %1% "
-                               "in relation %2%") %
-                 mbr.old_member_id % cr.old_id)
-                    .str());
+                fmt::format("Placeholder node not found for reference {:d} in relation {:d}",
+                 mbr.old_member_id, cr.old_id));
           mbr.member_id = entry->second;
         } else if (mbr.member_type == "Way") {
           auto entry = map_ways.find(mbr.old_member_id);
           if (entry == map_ways.end())
             throw http::bad_request(
-                (boost::format("Placeholder way not found for reference %1% in "
-                               "relation %2%") %
-                 mbr.old_member_id % cr.old_id)
-                    .str());
+                fmt::format("Placeholder way not found for reference {:d} in relation {:d}",
+                 mbr.old_member_id, cr.old_id));
           mbr.member_id = entry->second;
 
         } else if (mbr.member_type == "Relation") {
           auto entry = map_relations.find(mbr.old_member_id);
           if (entry == map_relations.end())
             throw http::bad_request(
-                (boost::format("Placeholder relation not found for reference "
-                               "%1% in relation %2%") %
-                 mbr.old_member_id % cr.old_id)
-                    .str());
+                fmt::format("Placeholder relation not found for reference {:d} in relation {:d}",
+                 mbr.old_member_id, cr.old_id));
           mbr.member_id = entry->second;
         }
       }
@@ -445,10 +436,9 @@ void ApiDB_Relation_Updater::check_forward_relation_placeholders(
           auto entry = placeholder_ids.find(mbr.old_member_id);
           if (entry == placeholder_ids.end())
             throw http::bad_request(
-                (boost::format("Placeholder relation not found for reference "
-                               "%1% in relation %2%") %
-                 mbr.old_member_id % cr.old_id)
-                    .str());
+                fmt::format("Placeholder relation not found for reference "
+                               "{:d} in relation {:d}",
+                 mbr.old_member_id, cr.old_id));
       }
     }
     if (cr.old_id < 0) {
@@ -489,7 +479,7 @@ void ApiDB_Relation_Updater::insert_new_relations_to_tmp_table(
         "Could not create all new relations in temporary table");
 
   for (const auto &row : r)
-    ct->created_relation_ids.push_back(
+    ct.created_relation_ids.push_back(
         { row["old_id"].as<osm_nwr_signed_id_t>(), row["id"].as<osm_nwr_id_t>(),
           1 });
 }
@@ -534,9 +524,8 @@ void ApiDB_Relation_Updater::lock_current_relations(
                         std::inserter(not_locked_ids, not_locked_ids.begin()));
 
     throw http::not_found(
-        (boost::format("The following relation ids are unknown: %1%") %
-         to_string(not_locked_ids))
-            .str());
+        fmt::format("The following relation ids are unknown: {}",
+         to_string(not_locked_ids)));
   }
 }
 
@@ -607,12 +596,10 @@ void ApiDB_Relation_Updater::check_current_relation_versions(
       m.exec_prepared("check_current_relation_versions", ids, versions);
 
   if (!r.empty()) {
-    throw http::conflict((boost::format("Version mismatch: Provided %1%, "
-                                        "server had: %2% of Relation %3%") %
-                          r[0]["expected_version"].as<osm_version_t>() %
-                          r[0]["actual_version"].as<osm_version_t>() %
-                          r[0]["id"].as<osm_nwr_id_t>())
-                             .str());
+    throw http::conflict(fmt::format("Version mismatch: Provided {:d}, server had: {:d} of Relation {:d}",
+                          r[0]["expected_version"].as<osm_version_t>(),
+                          r[0]["actual_version"].as<osm_version_t>(),
+                          r[0]["id"].as<osm_nwr_id_t>()));
   }
 }
 
@@ -659,9 +646,7 @@ ApiDB_Relation_Updater::determine_already_deleted_relations(
     // and the if-unused flag hasn't been set!
     if (ids_without_if_unused.find(id) != ids_without_if_unused.end()) {
       throw http::gone(
-          (boost::format(
-               "The relation with the id %1% has already been deleted") %
-           id).str());
+          fmt::format("The relation with the id {:d} has already been deleted", id));
     }
 
     result.insert(id);
@@ -673,7 +658,7 @@ ApiDB_Relation_Updater::determine_already_deleted_relations(
 
     if (ids_if_unused.find(id) != ids_if_unused.end()) {
 
-      ct->skip_deleted_relation_ids.push_back(
+      ct.skip_deleted_relation_ids.push_back(
           { id_to_old_id[row["id"].as<osm_nwr_id_t>()],
 	    row["id"].as<osm_nwr_id_t>(),
             row["version"].as<osm_version_t>() });
@@ -762,10 +747,9 @@ void ApiDB_Relation_Updater::lock_future_members(
       auto it = absent_rel_node_ids.begin();
 
       throw http::precondition_failed(
-          (boost::format("Relation %1% requires the nodes with id in %2%, "
-                         "which either do not exist, or are not visible.") %
-           it->first % to_string(it->second))
-              .str());
+          fmt::format("Relation {:d} requires the nodes with id in {}, "
+                         "which either do not exist, or are not visible.",
+           it->first, to_string(it->second)));
     }
   }
 
@@ -799,10 +783,9 @@ void ApiDB_Relation_Updater::lock_future_members(
       auto it = absent_rel_way_ids.begin();
 
       throw http::precondition_failed(
-          (boost::format("Relation %1% requires the ways with id in %2%, which "
-                         "either do not exist, or are not visible.") %
-           it->first % to_string(it->second))
-              .str());
+          fmt::format("Relation {:d} requires the ways with id in {}, which "
+                         "either do not exist, or are not visible.",
+           it->first, to_string(it->second)));
     }
   }
 
@@ -835,10 +818,9 @@ void ApiDB_Relation_Updater::lock_future_members(
       auto it = absent_rel_rel_ids.begin();
 
       throw http::precondition_failed(
-          (boost::format("Relation %1% requires the relations with id in %2%, "
-                         "which either do not exist, or are not visible.") %
-           it->first % to_string(it->second))
-              .str());
+          fmt::format("Relation {:d} requires the relations with id in {}, "
+                         "which either do not exist, or are not visible.",
+           it->first, to_string(it->second)));
     }
   }
 }
@@ -1270,12 +1252,12 @@ void ApiDB_Relation_Updater::update_current_relations(
   // update modified/deleted relations table
   for (const auto &row : r) {
     if (visible) {
-      ct->modified_relation_ids.push_back(
+      ct.modified_relation_ids.push_back(
           { id_to_old_id[row["id"].as<osm_nwr_id_t>()],
 	    row["id"].as<osm_nwr_id_t>(),
             row["version"].as<osm_version_t>() });
     } else {
-      ct->deleted_relation_ids.push_back({ id_to_old_id[row["id"].as<osm_nwr_id_t>()] });
+      ct.deleted_relation_ids.push_back({ id_to_old_id[row["id"].as<osm_nwr_id_t>()] });
     }
   }
 }
@@ -1449,7 +1431,7 @@ ApiDB_Relation_Updater::remove_blocked_relations_from_deletion_list (
     // However, the caller has indicated via if-unused flag that deletion
     // should not lead to an error. All we can do now is to return old_id,
     // new_id and the current version to the caller
-    ct->skip_deleted_relation_ids.push_back(
+    ct.skip_deleted_relation_ids.push_back(
 	  { id_to_old_id[row["id"].as<osm_nwr_id_t>()],
 	    row["id"].as< osm_nwr_id_t>(),
 	    row["version"].as<osm_version_t>() });
@@ -1634,10 +1616,9 @@ ApiDB_Relation_Updater::is_relation_still_referenced(
       // Without the if-unused, such a situation would lead to an error, and the
       // whole diff upload would fail.
       throw http::precondition_failed(
-          (boost::format("The relation %1% is used in relations %2%.") %
-           row["member_id"].as<osm_nwr_id_t>() %
-           friendly_name(row["relation_ids"].as<std::string>()))
-              .str());
+          fmt::format("The relation {:d} is used in relations {}.",
+           row["member_id"].as<osm_nwr_id_t>(),
+           friendly_name(row["relation_ids"].as_array())));
     }
 
     if (ids_if_unused.find(rel_id) != ids_if_unused.end()) {
@@ -1695,8 +1676,8 @@ void ApiDB_Relation_Updater::delete_current_relation_tags(
 }
 
 uint32_t ApiDB_Relation_Updater::get_num_changes() {
-  return (ct->created_relation_ids.size() + ct->modified_relation_ids.size() +
-          ct->deleted_relation_ids.size());
+  return (ct.created_relation_ids.size() + ct.modified_relation_ids.size() +
+          ct.deleted_relation_ids.size());
 }
 
 bbox_t ApiDB_Relation_Updater::bbox() { return m_bbox; }

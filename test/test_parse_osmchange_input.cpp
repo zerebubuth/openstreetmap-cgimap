@@ -32,16 +32,16 @@ class global_settings_test_class : public global_settings_default {
 
 public:
 
-  boost::optional<int> get_relation_max_members() const override {
+  std::optional<uint32_t> get_relation_max_members() const override {
      return m_relation_max_members;
   }
 
-  boost::optional<int> get_element_max_tags() const override {
+  std::optional<uint32_t> get_element_max_tags() const override {
      return m_element_max_tags;
   }
 
-  boost::optional<int> m_relation_max_members{boost::none};
-  boost::optional<int> m_element_max_tags{boost::none};
+  std::optional<uint32_t> m_relation_max_members{};
+  std::optional<uint32_t> m_element_max_tags{};
 
 };
 
@@ -54,7 +54,7 @@ std::string repeat(const std::string &input, size_t num) {
 void process_testmsg(const std::string &payload) {
 
   Test_Parser_Callback cb;
-  api06::OSMChangeXMLParser parser(&cb);
+  api06::OSMChangeXMLParser parser(cb);
   parser.process_message(payload);
 }
 
@@ -420,10 +420,10 @@ void test_node() {
 
     try {
       process_testmsg(
-          (boost::format(
+          fmt::format(
                R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">
-                           <tag k="key" v="%1%"/></node></create></osmChange>)") %
-           v).str());
+                           <tag k="key" v="{}"/></node></create></osmChange>)",
+           v));
       if (i > 255)
         throw std::runtime_error("test_node::040: Expected exception for "
                                  "string length > 255 unicode characters");
@@ -447,10 +447,10 @@ void test_node() {
 
     try {
       process_testmsg(
-          (boost::format(
+          fmt::format(
                R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">
-                           <tag k="%1%" v="value"/></node></create></osmChange>)") %
-           v).str());
+                           <tag k="{}" v="value"/></node></create></osmChange>)",
+           v));
       if (i > 255)
         throw std::runtime_error("test_node::041: Expected exception for "
                                  "string length > 255 unicode characters");
@@ -671,24 +671,23 @@ void test_way() {
   {
     std::ostringstream os;
 
-    for (int i = 1; i <= global_settings::get_way_max_nodes() + 1; i++) {
-      os << (boost::format(R"(<nd ref="-%1%"/>)") % i).str();
+    for (uint32_t i = 1; i <= global_settings::get_way_max_nodes() + 1; i++) {
+      os << fmt::format(R"(<nd ref="-{}"/>)",  i);
 
       try {
         process_testmsg(
-            (boost::format(
-                 R"(<osmChange><create><way changeset="858" id="-1">%1%</way></create></osmChange>)") %
-             os.str())
-                .str());
+            fmt::format(
+                 R"(<osmChange><create><way changeset="858" id="-1">{}</way></create></osmChange>)",
+             os.str()));
         if (i > global_settings::get_way_max_nodes())
           throw std::runtime_error(
               "test_way::020: Expected exception for way max nodes exceeded");
       } catch (http::exception &e) {
         if (e.code() != 400)
           throw std::runtime_error("test_way::020: Expected HTTP 400");
-        const std::string expected = (boost::format(
-            "You tried to add %1% nodes to way %2%, however only "
-            "%3% are allowed") % i % -1 % global_settings::get_way_max_nodes()).str();
+        const std::string expected = fmt::format(
+            "You tried to add {} nodes to way {}, however only "
+            "{} are allowed", i, -1, global_settings::get_way_max_nodes());
         const std::string actual = std::string(e.what()).substr(0, expected.size());
         if (actual != expected)
           throw std::runtime_error(
@@ -841,11 +840,11 @@ void test_relation() {
 
     try {
       process_testmsg(
-          (boost::format(
+          fmt::format(
                R"(<osmChange><create><relation changeset="858" id="-1">
-                           <member type="node" role="%1%" ref="123"/>
-                  </relation></create></osmChange>)") %
-           v).str());
+                           <member type="node" role="{}" ref="123"/>
+                  </relation></create></osmChange>)",
+           v));
       if (i > 255)
         throw std::runtime_error("test_relation::010: Expected exception for "
                                  "string length > 255 unicode characters");
@@ -926,17 +925,17 @@ void test_object_limits() {
   if (global_settings::get_element_max_tags()) {
 
     // Check maximum number of tags per element
-    for (int i = *global_settings::get_element_max_tags(); i <= *global_settings::get_element_max_tags() + 1; i++) {
+    for (uint32_t i = *global_settings::get_element_max_tags(); i <= *global_settings::get_element_max_tags() + 1; i++) {
        std::ostringstream os;
 
-       for (int x = 0; x < i; x++)
+       for (uint32_t x = 0; x < i; x++)
 	 os << "<tag k='amenity_" << x << "' v='cafe' />";
 
       try {
 	process_testmsg(
-	    (boost::format(
-		 R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">%1%</node></create></osmChange>)") %
-		os.str()).str());
+	    fmt::format(
+		 R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">{}</node></create></osmChange>)",
+		os.str()));
 	if (i > *global_settings::get_element_max_tags())
 	  throw std::runtime_error("test_node::120: Expected exception for max number of tags exceeded");
       } catch (http::exception &e) {
@@ -955,15 +954,15 @@ void test_object_limits() {
   if (global_settings::get_relation_max_members()) {
 
     // Check maximum number of members in relation
-    for (int i = *global_settings::get_relation_max_members();
+    for (uint32_t i = *global_settings::get_relation_max_members();
 	i <= *global_settings::get_relation_max_members() + 1; i++) {
       auto v = repeat(R"(<member type="node" role="demo" ref="123"/>)", i);
 
       try {
 	process_testmsg(
-	    (boost::format(
-		 R"(<osmChange><create><relation changeset="858" id="-1">%1%"</relation></create></osmChange>)") %
-	     v).str());
+	    fmt::format(
+		 R"(<osmChange><create><relation changeset="858" id="-1">{}"</relation></create></osmChange>)",
+	     v));
 	if (i > *global_settings::get_relation_max_members())
 	  throw std::runtime_error("test_relation::011: Expected exception for "
 				   "maximum number of members in relation exceeded");

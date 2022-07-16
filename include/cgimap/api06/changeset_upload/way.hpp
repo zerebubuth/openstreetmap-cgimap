@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include <fmt/core.h>
+
 namespace api06 {
 
 class Way : public OSMObject {
@@ -51,18 +53,15 @@ public:
     default:
       if (m_way_nodes.empty()) {
         throw http::precondition_failed(
-            (boost::format("Way %1% must have at least one node") %
-             (has_id() ? id() : 0))
-                .str());
+            fmt::format("Way {:d} must have at least one node",
+             (has_id() ? id() : 0)));
       }
 
       if (m_way_nodes.size() > global_settings::get_way_max_nodes()) {
         throw http::bad_request(
-            (boost::format(
-                 "You tried to add %1% nodes to way %2%, however only "
-                 "%3% are allowed") %
-             m_way_nodes.size() % (has_id() ? id() : 0) % global_settings::get_way_max_nodes())
-                .str());
+             fmt::format(
+                 "You tried to add {:d} nodes to way {:d}, however only {:d} are allowed",
+             m_way_nodes.size(), (has_id() ? id() : 0), global_settings::get_way_max_nodes()));
       }
 
       return (is_valid());

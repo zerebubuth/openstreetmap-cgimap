@@ -9,7 +9,6 @@
 #include <sstream>
 
 namespace po = boost::program_options;
-using std::shared_ptr;
 using std::string;
 
 
@@ -26,8 +25,6 @@ struct apidb_backend : public backend {
        "database character set")
       ("readonly", "(obsolete parameter, read only backend is always assumed)")
       ("disable-api-write", "disable API write operations")
-      ("cachesize", po::value<size_t>()->default_value(100000),
-       "maximum size of changeset cache")
       ("dbport", po::value<string>(),
        "database port number or UNIX socket file name")
       ("oauth-dbname", po::value<string>(),
@@ -61,22 +58,21 @@ struct apidb_backend : public backend {
   const string &name() const { return m_name; }
   const po::options_description &options() const { return m_options; }
 
-  shared_ptr<data_selection::factory> create(const po::variables_map &opts) {
+  std::unique_ptr<data_selection::factory> create(const po::variables_map &opts) {
 
-    return std::make_shared<readonly_pgsql_selection::factory>(opts);
+    return std::make_unique<readonly_pgsql_selection::factory>(opts);
   }
 
-  shared_ptr<data_update::factory> create_data_update(const po::variables_map &opts) {
+  std::unique_ptr<data_update::factory> create_data_update(const po::variables_map &opts) {
 
-    return std::make_shared<pgsql_update::factory>(opts);
+    return std::make_unique<pgsql_update::factory>(opts);
   }
 
 
-  std::shared_ptr<oauth::store> create_oauth_store(
+  std::unique_ptr<oauth::store> create_oauth_store(
     const po::variables_map &opts) {
-    shared_ptr<oauth::store> store =
-      std::make_shared<oauth_store>(opts);
-    return store;
+
+    return std::make_unique<oauth_store>(opts);
   }
 
 private:
@@ -85,6 +81,6 @@ private:
 };
 }
 
-std::shared_ptr<backend> make_apidb_backend() {
-  return std::make_shared<apidb_backend>();
+std::unique_ptr<backend> make_apidb_backend() {
+  return std::make_unique<apidb_backend>();
 }

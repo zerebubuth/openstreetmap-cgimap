@@ -3,13 +3,13 @@
 #include <stdexcept>
 #include <cstring>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <set>
 #include <tuple>
 
 #include <boost/date_time/posix_time/conversion.hpp>
-#include <boost/optional.hpp>
-#include <boost/optional/optional_io.hpp>
+
 
 #include <cassert>
 #include <iostream>
@@ -17,8 +17,7 @@
 
 
 #include <boost/date_time/posix_time/conversion.hpp>
-#include <boost/optional.hpp>
-#include <boost/optional/optional_io.hpp>
+
 #include <boost/tuple/tuple.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
 
@@ -26,6 +25,12 @@
 #include "test_request.hpp"
 
 #include "cgimap/backend/apidb/transaction_manager.hpp"
+
+template<typename T>
+std::ostream& operator<<(std::ostream& os, std::optional<T> const& opt)
+{
+  return opt ? os << opt.value() : os;
+}
 
 #define ANNOTATE_EXCEPTION(stmt)                \
   {                                             \
@@ -38,19 +43,13 @@
     }                                           \
   }
 
-Transaction_Owner_Void::Transaction_Owner_Void() {};
+Transaction_Owner_Void::Transaction_Owner_Void() {}
 
 pqxx::transaction_base& Transaction_Owner_Void::get_transaction() {
   throw std::runtime_error("get_transaction is not supported by Transaction_Owner_Void");
 }
 
 namespace {
-
-void assert_true(bool value) {
-  if (!value) {
-    throw std::runtime_error("Test failed: Expecting true, but got false.");
-  }
-}
 
 
 template <typename T>
@@ -83,11 +82,11 @@ struct test_oauth2
     return true;
   }
 
-  boost::optional<osm_user_id_t> get_user_id_for_token(const std::string &token_id) {
+  std::optional<osm_user_id_t> get_user_id_for_token(const std::string &token_id) {
     return {};
   }
 
-  boost::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) {
+  std::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) {
 
     // Note: original token ids have been sha256 hashed, token_id hash values can be generated using
     // echo -n "6GGXRGoDog0i6mRyrBonFmJORQhWZMhZH5WNWLd0qcs" | sha256sum
@@ -108,7 +107,7 @@ struct test_oauth2
 
     // invalid token
     } else if (token_id == "f3565d87316a9f5eb134f3d129e76fc82798d4ede12b59f4b3f2094aa61b0ce2") { // "nFRBLFyNXPKY1fiTHAIfVsjQYkCD2KoRuH66upvueaQ"
-      return boost::none;
+      return {};
 
     // expired token for user 3
     } else if (token_id == "42ad2fc9589b134e57cecab938873490aebfb0c7c6430f3c62485a693c6be62d") { // "pwnMeCjSmIfQ9hXVYfAyFLFnE9VOADNvwGMKv4Ylaf0"
@@ -134,7 +133,7 @@ struct test_oauth2
     }
 
     // default: invalid token
-    return boost::none;
+    return {};
 
   }
 
@@ -142,8 +141,8 @@ struct test_oauth2
     return {};
   }
 
-  boost::optional<std::string> consumer_secret(const std::string &consumer_key) { return {}; }
-  boost::optional<std::string> token_secret(const std::string &token_id) { return {}; }
+  std::optional<std::string> consumer_secret(const std::string &consumer_key) { return {}; }
+  std::optional<std::string> token_secret(const std::string &token_id) { return {}; }
   bool use_nonce(const std::string &nonce, uint64_t timestamp) { return true; }
 };
 
@@ -153,21 +152,21 @@ struct test_oauth2
 
 void test_validate_bearer_token() {
 
-  std::shared_ptr<oauth::store> store = std::make_shared<test_oauth2>();
+  auto store = std::make_shared<test_oauth2>();
 
   {
     bool allow_api_write;
     test_request req;
-    auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::none, "Missing Header");
+    auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
+    assert_equal<std::optional<osm_user_id_t> >(res, {}, "Missing Header");
   }
 
   {
     bool allow_api_write;
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","");
-    auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::none, "Empty AUTH header");
+    auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
+    assert_equal<std::optional<osm_user_id_t> >(res, {}, "Empty AUTH header");
   }
 
   // Test valid bearer token, no api_write
@@ -175,8 +174,8 @@ void test_validate_bearer_token() {
     bool allow_api_write;
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Bearer 6GGXRGoDog0i6mRyrBonFmJORQhWZMhZH5WNWLd0qcs");
-    auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{1}, "Bearer token for user 1");
+    auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
+    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{1}, "Bearer token for user 1");
     assert_equal<bool>(allow_api_write, false, "Bearer token for user 1, allow_api_write");
   }
 
@@ -185,8 +184,8 @@ void test_validate_bearer_token() {
     bool allow_api_write;
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Bearer H4TeKX-zE_VLH.UT33_n6x__yZ8~BA~aQL+wfxQN/cADu7BMMA=====");
-    auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{2}, "Bearer token for user 2");
+    auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
+    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{2}, "Bearer token for user 2");
     assert_equal<bool>(allow_api_write, true, "Bearer token for user 2, allow_api_write");
   }
 
@@ -196,8 +195,8 @@ void test_validate_bearer_token() {
     bool allow_api_write;
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Bearer 6!#c23.-;<<>>");
-    auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::none, "Invalid bearer format");
+    auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
+    assert_equal<std::optional<osm_user_id_t> >(res, {}, "Invalid bearer format");
   }
 
   // Test invalid bearer token
@@ -206,7 +205,7 @@ void test_validate_bearer_token() {
     test_request req;
     try {
       req.set_header("HTTP_AUTHORIZATION","Bearer nFRBLFyNXPKY1fiTHAIfVsjQYkCD2KoRuH66upvueaQ");
-      auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
+      static_cast<void>(oauth2::validate_bearer_token(req, store.get(), allow_api_write));
       throw std::runtime_error("test_authenticate_user::001: Expected exception");
     } catch (http::unauthorized &e) {
       if (std::string(e.what()) != "invalid_token") {
@@ -221,7 +220,7 @@ void test_validate_bearer_token() {
     test_request req;
     try {
       req.set_header("HTTP_AUTHORIZATION","Bearer pwnMeCjSmIfQ9hXVYfAyFLFnE9VOADNvwGMKv4Ylaf0");
-      auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
+      static_cast<void>(oauth2::validate_bearer_token(req, store.get(), allow_api_write));
       throw std::runtime_error("test_authenticate_user::002: Expected exception");
     } catch (http::unauthorized &e) {
       if (std::string(e.what()) != "token_expired") {
@@ -236,7 +235,7 @@ void test_validate_bearer_token() {
     test_request req;
     try {
       req.set_header("HTTP_AUTHORIZATION","Bearer hCXrz5B5fCBHusp0EuD2IGwYSxS8bkAnVw2_aLEdxig");
-      auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
+      static_cast<void>(oauth2::validate_bearer_token(req, store.get(), allow_api_write));
       throw std::runtime_error("test_authenticate_user::003: Expected exception");
     } catch (http::unauthorized &e) {
       if (std::string(e.what()) != "token_revoked") {
@@ -250,8 +249,8 @@ void test_validate_bearer_token() {
     bool allow_api_write;
     test_request req;
     req.set_header("HTTP_AUTHORIZATION","Bearer 0LbSEAVj4jQhr-TfNaCUhn4JSAvXmXepNaL9aSAUsVQ");
-    auto res = oauth2::validate_bearer_token(req, store, allow_api_write);
-    assert_equal<boost::optional<osm_user_id_t> >(res, boost::optional<osm_user_id_t>{5}, "Bearer token for user 5");
+    auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
+    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{5}, "Bearer token for user 5");
     assert_equal<bool>(allow_api_write, false, "Bearer token for user 5, allow_api_write");
   }
 }

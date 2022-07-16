@@ -3,6 +3,7 @@
 
 #include "cgimap/http.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <string>
 #include <vector>
@@ -30,7 +31,7 @@ struct request {
 
   // get the value associated with a key in the request headers. returns NULL if
   // the key could not be found. this function can be called at any time.
-  virtual const char *get_param(const char *key) = 0;
+  virtual const char *get_param(const char *key) const = 0;
 
   // get the current time of the request.
   virtual std::chrono::system_clock::time_point get_current_time() const = 0;
@@ -63,7 +64,7 @@ struct request {
   // return a handle to the output buffer to write body output. this function
   // should only be called after setting the status and any custom response
   // headers.
-  std::shared_ptr<output_buffer> get_buffer();
+  output_buffer& get_buffer();
 
   // convenience functions to write body data. see `get_buffer()` for more
   // information on the constraints of calling this.
@@ -98,7 +99,7 @@ protected:
   // internal functions.
   // TODO: this is really bad design and indicates this should probably use
   // composition rather than inheritance.
-  virtual std::shared_ptr<output_buffer> get_buffer_internal() = 0;
+  virtual output_buffer& get_buffer_internal() = 0;
   virtual void finish_internal() = 0;
 
   // reset the state of the request back to blank for re-use.

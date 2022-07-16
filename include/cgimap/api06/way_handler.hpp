@@ -10,8 +10,7 @@ namespace api06 {
 
 class way_responder : public osm_current_responder {
 public:
-  way_responder(mime::type, osm_nwr_id_t, data_selection_ptr &);
-  ~way_responder();
+  way_responder(mime::type, osm_nwr_id_t, data_selection &);
 
 private:
   osm_nwr_id_t id;
@@ -22,10 +21,9 @@ private:
 class way_handler : public handler {
 public:
   way_handler(request &req, osm_nwr_id_t id);
-  ~way_handler();
 
-  std::string log_name() const;
-  responder_ptr_t responder(data_selection_ptr &x) const;
+  std::string log_name() const override;
+  responder_ptr_t responder(data_selection &x) const override;
 
 private:
   osm_nwr_id_t id;

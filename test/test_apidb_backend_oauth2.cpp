@@ -1,7 +1,6 @@
 #include <iostream>
 #include <stdexcept>
-#include <boost/format.hpp>
-#include <boost/optional/optional_io.hpp>
+#include <fmt/core.h>
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
@@ -20,30 +19,32 @@
 
 namespace {
 
-std::ostream &operator<<(
-  std::ostream &out, const std::set<osm_user_role_t> &roles) {
-
-  out << "{";
-  bool first = true;
-  for (osm_user_role_t r : roles) {
-    if (first) { first = false; } else { out << ", "; }
-    if (r == osm_user_role_t::moderator) {
-      out << "moderator";
-    } else if (r == osm_user_role_t::administrator) {
-      out << "administrator";
-    }
-  }
-  out << "}";
-  return out;
+template<typename T>
+std::ostream& operator<<(std::ostream& os, std::optional<T> const& opt)
+{
+  return opt ? os << opt.value() : os;
 }
+
+}
+
+template <> struct fmt::formatter<std::optional<osm_user_id_t>> {
+  template <typename FormatContext>
+  auto format(const std::optional<osm_user_id_t>& v, FormatContext& ctx) -> decltype(ctx.out()) {
+    // ctx.out() is an output iterator to write to.
+    std::ostringstream ostr;
+    ostr << v;
+    return format_to(ctx.out(), "{}", ostr.str());
+  }
+  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+};
+
+
+namespace {
 
 template <typename T>
 void assert_equal(const T& a, const T&b, const std::string &message) {
   if (a != b) {
-    std::ostringstream out;
-    out << "Expecting " << message << " to be equal, but "
-        << a << " != " << b;
-    throw std::runtime_error(out.str());
+    throw std::runtime_error(fmt::format("Expecting {} to be equal, but {} != {}", message, a, b));
   }
 }
 
@@ -85,7 +86,7 @@ void test_user_id_for_oauth2_token(test_database &tdb) {
 
   )");
 
-  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+  auto store = tdb.get_oauth_store();
 
   // Note: Tokens in this unit tests are considered to be opaque strings, tokens are used for db lookups as-is.
   // It doesn't matter if they have been previously stored as plain or sha256-hashed tokens.
@@ -97,10 +98,10 @@ void test_user_id_for_oauth2_token(test_database &tdb) {
     bool expired;
     bool revoked;
     const auto user_id = store->get_user_id_for_oauth2_token("4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8", expired, revoked, allow_api_write);
-    assert_equal<boost::optional<osm_user_id_t> >(user_id, boost::optional<osm_user_id_t>{1}, "test_apidb_backend_oauth2::001 - user id");
-    assert_equal<boost::optional<bool> >(allow_api_write, true, "test_apidb_backend_oauth2::001 - allow_api_write");
-    assert_equal<boost::optional<bool> >(expired, false, "test_apidb_backend_oauth2::001 - expired");
-    assert_equal<boost::optional<bool> >(revoked, false, "test_apidb_backend_oauth2::001 - revoked");
+    assert_equal<std::optional<osm_user_id_t>>(user_id, 1, "test_apidb_backend_oauth2::001 - user id");
+    assert_equal<bool>(allow_api_write, true, "test_apidb_backend_oauth2::001 - allow_api_write");
+    assert_equal<bool>(expired, false, "test_apidb_backend_oauth2::001 - expired");
+    assert_equal<bool>(revoked, false, "test_apidb_backend_oauth2::001 - revoked");
   }
 
   // Invalid (non existing) token
@@ -109,7 +110,7 @@ void test_user_id_for_oauth2_token(test_database &tdb) {
     bool expired;
     bool revoked;
     const auto user_id = store->get_user_id_for_oauth2_token("a6ee343e3417915c87f492aac2a7b638647ef576e2a03256bbf1854c7e06c163", expired, revoked, allow_api_write);
-    assert_equal<boost::optional<osm_user_id_t> >(user_id, boost::none, "test_apidb_backend_oauth2::002");
+    assert_equal<bool>(user_id.has_value(), false, "test_apidb_backend_oauth2::002");
   }
 
   // Revoked token
@@ -118,10 +119,10 @@ void test_user_id_for_oauth2_token(test_database &tdb) {
     bool expired;
     bool revoked;
     const auto user_id = store->get_user_id_for_oauth2_token("1187c28b93ab4a14e3df6a61ef46a24d7d4d7964c1d56eb2bfd197b059798c1d", expired, revoked, allow_api_write);
-    assert_equal<boost::optional<osm_user_id_t> >(user_id, boost::optional<osm_user_id_t>{1}, "test_apidb_backend_oauth2::003 - user id");
-    assert_equal<boost::optional<bool> >(allow_api_write, true, "test_apidb_backend_oauth2::003 - allow_api_write");
-    assert_equal<boost::optional<bool> >(expired, false, "test_apidb_backend_oauth2::003 - expired");
-    assert_equal<boost::optional<bool> >(revoked, true, "test_apidb_backend_oauth2::003 - revoked");
+    assert_equal<std::optional<osm_user_id_t>>(user_id, 1, "test_apidb_backend_oauth2::003 - user id");
+    assert_equal<bool>(allow_api_write, true, "test_apidb_backend_oauth2::003 - allow_api_write");
+    assert_equal<bool>(expired, false, "test_apidb_backend_oauth2::003 - expired");
+    assert_equal<bool>(revoked, true, "test_apidb_backend_oauth2::003 - revoked");
   }
 
   // Two scopes, including write_api
@@ -130,10 +131,10 @@ void test_user_id_for_oauth2_token(test_database &tdb) {
     bool expired;
     bool revoked;
     const auto user_id = store->get_user_id_for_oauth2_token("4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8", expired, revoked, allow_api_write);
-    assert_equal<boost::optional<osm_user_id_t> >(user_id, boost::optional<osm_user_id_t>{1}, "test_apidb_backend_oauth2::004 - user id");
-    assert_equal<boost::optional<bool> >(allow_api_write, true, "test_apidb_backend_oauth2::004 - allow_api_write");
-    assert_equal<boost::optional<bool> >(expired, false, "test_apidb_backend_oauth2::004 - expired");
-    assert_equal<boost::optional<bool> >(revoked, false, "test_apidb_backend_oauth2::004 - revoked");
+    assert_equal<std::optional<osm_user_id_t>>(user_id, 1, "test_apidb_backend_oauth2::004 - user id");
+    assert_equal<bool>(allow_api_write, true, "test_apidb_backend_oauth2::004 - allow_api_write");
+    assert_equal<bool>(expired, false, "test_apidb_backend_oauth2::004 - expired");
+    assert_equal<bool>(revoked, false, "test_apidb_backend_oauth2::004 - revoked");
   }
 
   // Two scopes, not write_api
@@ -142,10 +143,10 @@ void test_user_id_for_oauth2_token(test_database &tdb) {
     bool expired;
     bool revoked;
     const auto user_id = store->get_user_id_for_oauth2_token("e466d2ba2ff5da35fdaa7547eb6c27ae0461c7a4acc05476c0a33b1b1d0788cd", expired, revoked, allow_api_write);
-    assert_equal<boost::optional<osm_user_id_t> >(user_id, boost::optional<osm_user_id_t>{1}, "test_apidb_backend_oauth2::005 - user id");
-    assert_equal<boost::optional<bool> >(allow_api_write, false, "test_apidb_backend_oauth2::005 - allow_api_write");
-    assert_equal<boost::optional<bool> >(expired, false, "test_apidb_backend_oauth2::005 - expired");
-    assert_equal<boost::optional<bool> >(revoked, false, "test_apidb_backend_oauth2::005 - revoked");
+    assert_equal<std::optional<osm_user_id_t>>(user_id, 1, "test_apidb_backend_oauth2::005 - user id");
+    assert_equal<bool>(allow_api_write, false, "test_apidb_backend_oauth2::005 - allow_api_write");
+    assert_equal<bool>(expired, false, "test_apidb_backend_oauth2::005 - expired");
+    assert_equal<bool>(revoked, false, "test_apidb_backend_oauth2::005 - revoked");
   }
 
   // expired token
@@ -154,10 +155,10 @@ void test_user_id_for_oauth2_token(test_database &tdb) {
     bool expired;
     bool revoked;
     const auto user_id = store->get_user_id_for_oauth2_token("f0e6f310ee3a9362fe00cee4328ad318a1fa6c770b2e19975271da99a6407476", expired, revoked, allow_api_write);
-    assert_equal<boost::optional<osm_user_id_t> >(user_id, boost::optional<osm_user_id_t>{1}, "test_apidb_backend_oauth2::006 - user id");
-    assert_equal<boost::optional<bool> >(allow_api_write, true, "test_apidb_backend_oauth2::006 - allow_api_write");
-    assert_equal<boost::optional<bool> >(expired, true, "test_apidb_backend_oauth2::006 - expired");
-    assert_equal<boost::optional<bool> >(revoked, false, "test_apidb_backend_oauth2::006 - revoked");
+    assert_equal<std::optional<osm_user_id_t>>(user_id, 1, "test_apidb_backend_oauth2::006 - user id");
+    assert_equal<bool>(allow_api_write, true, "test_apidb_backend_oauth2::006 - allow_api_write");
+    assert_equal<bool>(expired, true, "test_apidb_backend_oauth2::006 - expired");
+    assert_equal<bool>(revoked, false, "test_apidb_backend_oauth2::006 - revoked");
   }
 
   // token to expire in about 30 minutes
@@ -166,10 +167,10 @@ void test_user_id_for_oauth2_token(test_database &tdb) {
     bool expired;
     bool revoked;
     const auto user_id = store->get_user_id_for_oauth2_token("b1294a183bf64f4d9a97f24ed84ce88e3ab6e7ada78114d6e600bdb63831237b", expired, revoked, allow_api_write);
-    assert_equal<boost::optional<osm_user_id_t> >(user_id, boost::optional<osm_user_id_t>{1}, "test_apidb_backend_oauth2::006 - user id");
-    assert_equal<boost::optional<bool> >(allow_api_write, true, "test_apidb_backend_oauth2::007 - allow_api_write");
-    assert_equal<boost::optional<bool> >(expired, false, "test_apidb_backend_oauth2::007 - expired");
-    assert_equal<boost::optional<bool> >(revoked, false, "test_apidb_backend_oauth2::007 - revoked");
+    assert_equal<std::optional<osm_user_id_t>>(user_id, 1, "test_apidb_backend_oauth2::006 - user id");
+    assert_equal<bool>(allow_api_write, true, "test_apidb_backend_oauth2::007 - allow_api_write");
+    assert_equal<bool>(expired, false, "test_apidb_backend_oauth2::007 - expired");
+    assert_equal<bool>(revoked, false, "test_apidb_backend_oauth2::007 - revoked");
   }
 
 }
@@ -180,39 +181,52 @@ public:
 
   virtual ~empty_data_selection() = default;
 
-  void write_nodes(output_formatter &formatter) {}
-  void write_ways(output_formatter &formatter) {}
-  void write_relations(output_formatter &formatter) {}
+  void write_nodes(output_formatter &formatter) override {}
+  void write_ways(output_formatter &formatter) override {}
+  void write_relations(output_formatter &formatter) override {}
   void write_changesets(output_formatter &formatter,
-                        const std::chrono::system_clock::time_point &now) {}
+                        const std::chrono::system_clock::time_point &now) override {}
 
-  visibility_t check_node_visibility(osm_nwr_id_t id) { return non_exist; }
-  visibility_t check_way_visibility(osm_nwr_id_t id) { return non_exist; }
-  visibility_t check_relation_visibility(osm_nwr_id_t id) { return non_exist; }
+  visibility_t check_node_visibility(osm_nwr_id_t id) override { return non_exist; }
+  visibility_t check_way_visibility(osm_nwr_id_t id) override { return non_exist; }
+  visibility_t check_relation_visibility(osm_nwr_id_t id) override { return non_exist; }
 
-  int select_nodes(const std::vector<osm_nwr_id_t> &) { return 0; }
-  int select_ways(const std::vector<osm_nwr_id_t> &) { return 0; }
-  int select_relations(const std::vector<osm_nwr_id_t> &) { return 0; }
-  int select_nodes_from_bbox(const bbox &bounds, int max_nodes) { return 0; }
-  void select_nodes_from_relations() {}
-  void select_ways_from_nodes() {}
-  void select_ways_from_relations() {}
-  void select_relations_from_ways() {}
-  void select_nodes_from_way_nodes() {}
-  void select_relations_from_nodes() {}
-  void select_relations_from_relations(bool drop_relations = false) {}
-  void select_relations_members_of_relations() {}
-  int select_changesets(const std::vector<osm_changeset_id_t> &) { return 0; }
-  void select_changeset_discussions() {}
-  void drop_nodes() {}
-  void drop_ways() {}
-  void drop_relations() {}
+  int select_nodes(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_ways(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_relations(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_nodes_from_bbox(const bbox &bounds, int max_nodes) override { return 0; }
+  void select_nodes_from_relations() override {}
+  void select_ways_from_nodes() override {}
+  void select_ways_from_relations() override {}
+  void select_relations_from_ways() override {}
+  void select_nodes_from_way_nodes() override {}
+  void select_relations_from_nodes() override {}
+  void select_relations_from_relations(bool drop_relations = false) override {}
+  void select_relations_members_of_relations() override {}
+  int select_changesets(const std::vector<osm_changeset_id_t> &) override { return 0; }
+  void select_changeset_discussions() override {}
+  void drop_nodes() override {}
+  void drop_ways() override {}
+  void drop_relations() override {}
+
+  bool supports_user_details() const override { return false; }
+  bool is_user_blocked(const osm_user_id_t) override { return true; }
+  bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &) override { return false; };
+
+  int select_historical_nodes(const std::vector<osm_edition_t> &) override { return 0; }
+  int select_nodes_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_historical_ways(const std::vector<osm_edition_t> &) override { return 0; }
+  int select_ways_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_historical_relations(const std::vector<osm_edition_t> &) override { return 0; }
+  int select_relations_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  void set_redactions_visible(bool) override {}
+  int select_historical_by_changesets(const std::vector<osm_changeset_id_t> &) override { return 0; }
 
   struct factory
     : public data_selection::factory {
     virtual ~factory() = default;
-    virtual std::shared_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
-      return std::make_shared<empty_data_selection>();
+    virtual std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
+      return std::make_unique<empty_data_selection>();
     }
     virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() {
       {
@@ -244,7 +258,7 @@ private:
 };
 
 
-void create_changeset(test_database &tdb, std::shared_ptr<oauth::store> store, std::string token, int expected_response_code) {
+void create_changeset(test_database &tdb, oauth::store& store, std::string token, int expected_response_code) {
 
   // Test valid token, create empty changeset
   recording_rate_limiter limiter;
@@ -282,17 +296,17 @@ void create_changeset(test_database &tdb, std::shared_ptr<oauth::store> store, s
 
   req.set_payload(R"( <osm><changeset><tag k="created_by" v="JOSM 1.61"/><tag k="comment" v="Just adding some streetnames"/></changeset></osm> )" );
 
-  process_request(req, limiter, generator, route, sel_factory, upd_factory, store);
+  process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), &store);
 
   assert_equal<int>(expected_response_code, req.response_status(), "response status");
-};
+}
 
-void fetch_relation(test_database &tdb, std::shared_ptr<oauth::store> store, std::string token, int expected_response_code) {
+void fetch_relation(test_database &tdb, oauth::store& store, std::string token, int expected_response_code) {
 
   recording_rate_limiter limiter;
   std::string generator("test_apidb_backend.cpp");
   routes route;
-  std::shared_ptr<data_selection::factory> factory = std::make_shared<empty_data_selection::factory>();
+  auto factory = std::make_shared<empty_data_selection::factory>();
 
   test_request req;
   req.set_header("SCRIPT_URL", "/api/0.6/relation/165475/full");
@@ -324,7 +338,7 @@ void fetch_relation(test_database &tdb, std::shared_ptr<oauth::store> store, std
   req.set_header("REQUEST_URI", "/api/0.6/relation/165475/full");
   req.set_header("SCRIPT_NAME", "/api/0.6/relation/165475/full");
 
-  process_request(req, limiter, generator, route, factory, std::shared_ptr<data_update::factory>(nullptr), store);
+  process_request(req, limiter, generator, route, *factory, nullptr, &store);
 
   assert_equal<int>(expected_response_code, req.response_status(), "response status");
 }
@@ -353,21 +367,21 @@ void test_oauth2_end_to_end(test_database &tdb) {
  
   )");
 
-  std::shared_ptr<oauth::store> store = tdb.get_oauth_store();
+  auto store = tdb.get_oauth_store();
 
   // Test valid token -> HTTP 404 not found, due to unknown relation
-  fetch_relation(tdb, store, "1yi2RI2WhIVMLoLaDLg0nrPJPU4WQSIX4Hh_jxfRRxI", 404);
+  fetch_relation(tdb, *store, "1yi2RI2WhIVMLoLaDLg0nrPJPU4WQSIX4Hh_jxfRRxI", 404);
 
   // Test unknown token -> HTTP 401 Unauthorized
-  fetch_relation(tdb, store, "8JrrmoKSUtzBhmenUUQF27PVdQn2QY8YdRfosu3R-Dc", 401);
+  fetch_relation(tdb, *store, "8JrrmoKSUtzBhmenUUQF27PVdQn2QY8YdRfosu3R-Dc", 401);
 
   // Test valid token, create empty changeset
 
   // missing write_api scope --> http::unauthorized ("You have not granted the modify map permission")
-  create_changeset(tdb, store, "hCXrz5B5fCBHusp0EuD2IGwYSxS8bkAnVw2_aLEdxig", 401);
+  create_changeset(tdb, *store, "hCXrz5B5fCBHusp0EuD2IGwYSxS8bkAnVw2_aLEdxig", 401);
 
   // includes write_api scope
-  create_changeset(tdb, store, "1yi2RI2WhIVMLoLaDLg0nrPJPU4WQSIX4Hh_jxfRRxI", 200);
+  create_changeset(tdb, *store, "1yi2RI2WhIVMLoLaDLg0nrPJPU4WQSIX4Hh_jxfRRxI", 200);
 
 }
 

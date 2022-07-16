@@ -1,7 +1,6 @@
 #include <iostream>
 #include <stdexcept>
-#include <boost/format.hpp>
-#include <boost/optional/optional_io.hpp>
+#include <fmt/core.h>
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
@@ -13,6 +12,7 @@
 #include "cgimap/rate_limiter.hpp"
 #include "cgimap/routes.hpp"
 #include "cgimap/process_request.hpp"
+#include "cgimap/backend/apidb/utils.hpp"
 
 #include "test_formatter.hpp"
 #include "test_database.hpp"
@@ -23,10 +23,7 @@ namespace {
 template <typename T>
 void assert_equal(const T& a, const T&b, const std::string &message) {
   if (a != b) {
-    throw std::runtime_error(
-      (boost::format(
-        "Expecting %1% to be equal, but %2% != %3%")
-       % message % a % b).str());
+    throw std::runtime_error(fmt::format("Expecting {} to be equal, but {} != {}", message, a, b));
   }
 }
 
@@ -50,7 +47,7 @@ void test_single_nodes(test_database &tdb) {
     "  (3,       0,       0, 2, false, '2015-03-02T18:27:00Z', 3221225472, 2), "
     "  (4,       0,       0, 4, true,  '2015-03-02T19:25:00Z', 3221225472, 1);"
     );
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   if (sel->check_node_visibility(1) != data_selection::exists) {
     throw std::runtime_error("Node 1 should be visible, but isn't");
@@ -113,7 +110,7 @@ void test_single_nodes(test_database &tdb) {
     f.m_nodes[2], "third node written");
   assert_equal<test_formatter::node_t>(
     test_formatter::node_t(
-      element_info(4, 1, 4, "2015-03-02T19:25:00Z", boost::none, boost::none, true),
+      element_info(4, 1, 4, "2015-03-02T19:25:00Z", {}, {}, true),
       0.0, 0.0,
       tags_t()
       ),
@@ -135,7 +132,7 @@ void test_dup_nodes(test_database &tdb) {
     "  (1,       0,       0, 1, true,  '2013-11-14T02:10:00Z', 3221225472, 1);"
     );
 
-  std::shared_ptr<data_selection> sel = tdb.get_data_selection();
+  auto sel = tdb.get_data_selection();
 
   if (sel->check_node_visibility(1) != data_selection::exists) {
     throw std::runtime_error("Node 1 should be visible, but isn't");

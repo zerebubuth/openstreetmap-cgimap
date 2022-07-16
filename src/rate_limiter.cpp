@@ -7,11 +7,11 @@ rate_limiter::~rate_limiter() = default;
 
 null_rate_limiter::~null_rate_limiter() = default;
 
-bool null_rate_limiter::check(const std::string &key) {
+bool null_rate_limiter::check(const std::string &) {
   return true;
 }
 
-void null_rate_limiter::update(const std::string &key, int bytes) {
+void null_rate_limiter::update(const std::string &, int) {
 }
 
 struct memcached_rate_limiter::state {

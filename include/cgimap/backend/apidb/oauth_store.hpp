@@ -12,14 +12,14 @@ public:
   oauth_store(const boost::program_options::variables_map &);
   virtual ~oauth_store();
 
-  boost::optional<std::string> consumer_secret(const std::string &consumer_key);
-  boost::optional<std::string> token_secret(const std::string &token_id);
-  bool use_nonce(const std::string &nonce, uint64_t timestamp);
-  bool allow_read_api(const std::string &token_id);
-  bool allow_write_api(const std::string &token_id);
-  boost::optional<osm_user_id_t> get_user_id_for_token(const std::string &token_id);
-  std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t id);
-  boost::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write);
+  std::optional<std::string> consumer_secret(const std::string &consumer_key) override;
+  std::optional<std::string> token_secret(const std::string &token_id) override;
+  bool use_nonce(const std::string &nonce, uint64_t timestamp) override;
+  bool allow_read_api(const std::string &token_id) override;
+  bool allow_write_api(const std::string &token_id) override;
+  std::optional<osm_user_id_t> get_user_id_for_token(const std::string &token_id) override;
+  std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t id) override;
+  std::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) override;
 
 private:
   pqxx::connection m_connection;

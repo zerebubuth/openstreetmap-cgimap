@@ -3,7 +3,7 @@
 
 #include <stdexcept>
 
-#include <boost/format.hpp>
+#include <fmt/core.h>
 
 namespace {
 // set the default HTTP response headers
@@ -42,20 +42,20 @@ request& request::add_success_header(const std::string &key, const std::string &
   return *this;
 }
 
-std::shared_ptr<output_buffer> request::get_buffer() {
+output_buffer& request::get_buffer() {
   check_workflow(status_BODY);
   return get_buffer_internal();
 }
 
 int request::put(const char *ptr, int len) {
-  return get_buffer()->write(ptr, len);
+  return get_buffer().write(ptr, len);
 }
 
 int request::put(const std::string &str) {
-  return get_buffer()->write(str.c_str(), str.size());
+  return get_buffer().write(str.c_str(), str.size());
 }
 
-void request::flush() { get_buffer()->flush(); }
+void request::flush() { get_buffer().flush(); }
 
 void request::finish() {
   check_workflow(status_FINISHED);
@@ -88,10 +88,8 @@ void request::check_workflow(workflow_status this_stage) {
   } else if (m_workflow_status > this_stage) {
     // oops - workflow is more advanced than the function which called
     // this, so a workflow violation has occurred.
-    throw std::runtime_error((boost::format("Can't move backwards in the "
-                                            "request workflow from %1% to "
-                                            "%2%.") %
-                              m_workflow_status % this_stage).str());
+    throw std::runtime_error(fmt::format("Can't move backwards in the request workflow from {} to {}.",
+                              m_workflow_status, this_stage));
   }
 }
 

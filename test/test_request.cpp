@@ -1,6 +1,7 @@
 #include "test_request.hpp"
 #include "cgimap/request_helpers.hpp"
 
+#include <cassert>
 
 test_output_buffer::test_output_buffer(std::ostream &out, std::ostream &body)
   : m_out(out), m_body(body), m_written(0) {
@@ -29,7 +30,7 @@ test_request::test_request() : m_status(-1), m_payload{}  {}
 
 test_request::~test_request() = default;
 
-const char *test_request::get_param(const char *key) {
+const char *test_request::get_param(const char *key) const {
   std::string key_str(key);
   auto itr = m_params.find(key_str);
   if (itr != m_params.end()) {
@@ -92,8 +93,9 @@ int test_request::response_status() const {
   return m_status;
 }
 
-std::shared_ptr<output_buffer> test_request::get_buffer_internal() {
-  return std::shared_ptr<output_buffer>(new test_output_buffer(m_output, m_body));
+output_buffer& test_request::get_buffer_internal() {
+  test_ob_buffer.reset(new test_output_buffer(m_output, m_body));
+  return *test_ob_buffer;
 }
 
 void test_request::finish_internal() {}
