@@ -1,8 +1,10 @@
-openstreetmap-cgimap (0.8.7-0~jammy1) jammy; urgency=medium
+openstreetmap-cgimap (0.8.7-1~jammy1) jammy; urgency=medium
 
-  * Pre-release version 0.8.7
+  * Released version 0.8.7
+  * Switch to Ubuntu 20.04
+  * Refactoring
 
- -- mmd osm <mmd.osm@gmail.com>  Sat, 16 Jul 2022 05:00:00 +0000
+ -- mmd osm <mmd.osm@gmail.com>  Sat, 16 Jul 2022 11:38:00 +0000
 
 openstreetmap-cgimap (0.8.6-1~focal1) focal; urgency=medium
 
