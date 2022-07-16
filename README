@@ -4,15 +4,17 @@
 
 ## Overview
 
-CGImap is a C++ implementation of some parts of the OpenStreetMap
-API as an FCGI process. The rails implementation of the "map" call
-had a few problems with memory - it uses a lot of it and there is
-a leak which makes it annoying to use in long-running environments,
-such as the main OSM server.
+CGImap is a C++ implementation of some parts of the OpenStreetMap API as an FastCGI process.
+
+The rails implementation of the "map" call had a few problems with memory -
+it uses a lot of it and there is a leak which makes it annoying to use
+in long-running environments, such as the main OSM server.
 
 CGImap attempts to address these memory problems and makes it easier
 to optimise the queries, something which is also a bit of a pain to do
 in Rails.
+
+Over time, many more API 0.6 endpoints were added.
 
 Currently, CGImap implements:
 
@@ -37,55 +39,67 @@ download (i.e: `osmChange` data).
 
 ## Requirements
 
-CGImap uses a PostgreSQL server for the APIDB backend. A minimum server version of 9.4 is required.
+CGImap uses a PostgreSQL server for the APIDB backend. A minimum server version of 9.5 is required.
 
-CGImap depends on the following libraries. Versions used during
-development are in brackets. Respective library versions for Ubuntu 18.04 and Ubuntu 20.04 are supported at this time. Other versions may work, but YMMV.
+CGImap depends on the following libraries. Versions used during development are in brackets.
+Respective library versions for Ubuntu 20.04 and Ubuntu 22.04 are supported at this time.
+Other versions may work, but YMMV.
 
-* libxml2     (2.9.3+dfsg1-1ubuntu0.2)
-* libpqxx-4.0 (4.0.1+dfsg-3ubuntu2)
-* libfcgi     (2.4.0-8.3)
-* libboost    (1.58.0+dfsg-5ubuntu3.1)
-* libcrypto++ (5.6.1-9)
-* zlib1g-dev  (1:1.2.11.dfsg-0ubuntu2)
-* libargon2-dev
+On Ubuntu 20.04:
+
+* libxml2-dev        (2.9.10+dfsg-5ubuntu0.20.04.3)
+* libpqxx-dev        (6.4.5-2build1)
+* libfcgi-dev        (2.4.0-10build1)
+* zlib1g-dev         (1:1.2.11.dfsg-2ubuntu1.3)
+* libboost-dev       (1.71.0.0ubuntu2)
+* libboost-program-options-dev (1.71.0.0ubuntu2)
+* libfmt-dev         (6.1.2+ds-2)
+* libmemcached-dev   (1.0.18-4.2ubuntu2)
+* libcrypto++-dev    (5.6.4-9build1)
+* libargon2-dev      (0~20171227-0.2)
+* libyajl-dev        (2.1.0-3)
+
 
 If you're running a Debian or Ubuntu system these can be installed
 using the following command:
 
     sudo apt-get install libxml2-dev libpqxx-dev libfcgi-dev zlib1g-dev \
-      libboost-dev libboost-program-options-dev libboost-filesystem-dev \
-      libboost-system-dev libboost-locale-dev libmemcached-dev \
-      libcrypto++-dev libargon2-dev
+      libboost-dev libboost-program-options-dev libfmt-dev \
+      libmemcached-dev libcrypto++-dev libargon2-dev libyajl-dev
 
-Note that C++11 is _required_ to build CGImap.
+Note that C++17 is _required_ to build CGImap.
 
 The build system used is GNU Make, using pkg-config to provide some of
 the flags.
 
 Note that the full set of packages needed from a fresh install (tested
-with Ubuntu 18.04 and 20.04) - you may already have many or all of these - is:
+with Ubuntu 20.04 and 22.04) - you may already have many or all of these - is:
 
     sudo apt-get install git build-essential automake autoconf libtool
-
-If you want to enable the OSM API JSON format, then you'll also need:
-
-    sudo apt-get install libyajl-dev
 
 To build the system from scratch, first check out the source code (skip
 this step if you've already got the source):
 
-    git clone git://github.com/zerebubuth/openstreetmap-cgimap.git
+    git clone https://github.com/zerebubuth/openstreetmap-cgimap.git
 
 Then change to the source code directory to configure and build:
 
     cd openstreetmap-cgimap/
     ./autogen.sh
-    ./configure [--enable-yajl]
+    ./configure
     make
 
 You should now have a "./openstreetmap-cgimap" executable in the current
-directory.
+directory. For system-wide installation you still need to run:
+
+    sudo make install
+
+For historic reasons, CGImap provides a number of shared libraries which were
+originally intended for reuse by other applications. As there are no real world
+consumers of these libraries, you might want to run the `configure`
+script with the following parameters to create a static build instead:
+
+    ./configure --enable-static --disable-shared
 
 ## Setup
 
@@ -164,7 +178,7 @@ Fcgi programs can be deployed with Apache using `mod_fastcgi_handler`,
 `mod_fcgid`, `mod_fastcgi`, and on recent versions `mod_proxy_fcgi`. A sample
 Apache configuration file that will work in conjunction with CGImap as a
 daemon is supplied in `scripts/cgimap.conf`. To use this on a Ubuntu-based
-system you need to copy the cofiguration to where Apache will read it and
+system you need to copy the configuration to where Apache will read it and
 create an api directory:
 
     sudo cp scripts/cgimap.conf /etc/apache2/sites-available/cgimap
@@ -178,9 +192,9 @@ The apache modules mod_proxy and mod_fastcgi_handler must also be enabled.
 
 ## Docker
 
-This repository includes a `Dockerfile`, which can be used to build a cgimap image based on Ubuntu 20.04:
+This repository includes a `Dockerfile` and `Dockerfile2204`, which can be used to build a cgimap image based on Ubuntu 20.04 / 22.04 respectively:
 
-    docker build . -t cgimap
+    docker build -f Dockerfile . -t cgimap
 
 Due to the multi-stage build process, Docker version 17.05 or higher is required. The resulting cgimap image has a total size of about 140MB. `openstreetmap-cgimap` is built as a static binary.
 
