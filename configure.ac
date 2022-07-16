@@ -88,6 +88,20 @@ AM_CONDITIONAL([HAVE_YAJL], [test "x$enable_yajl" != xno])
 #	[AC_DEFINE([ENABLE_API07], [1], [Define for experimental API 0.7 features.])])
 #AM_CONDITIONAL([ENABLE_API07], [test "x$enable_api07" == xyes])
 
+AC_MSG_CHECKING([whether to enable FMT header only])
+AC_ARG_ENABLE([fmt_header],
+	[AS_HELP_STRING([--enable-fmt-header],
+		[Enable FMT header only mode (default: enabled)])],
+	[case "${enableval}" in
+	  yes | no ) enable_fmt_header="${enableval}" ;;
+	  * ) AC_MSG_ERROR(value for ---enable-fmt-header should be yes or no) ;;
+	 esac],
+	[enable_fmt_header="yes"])
+AC_MSG_RESULT($enable_fmt_header)
+AS_IF([test "x$enable_fmt_header" == xyes],
+      [AC_DEFINE([FMT_HEADER_ONLY], [1], [Define for FMT header only.])])
+AM_CONDITIONAL([ENABLE_FMT_HEADER], [test "x$enable_fmt_header" == xyes])
+
 AC_MSG_CHECKING([whether to enable APIDB backend])
 AC_ARG_ENABLE([apidb],
 	[AS_HELP_STRING([--enable-apidb],
