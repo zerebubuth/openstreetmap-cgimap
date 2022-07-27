@@ -200,6 +200,23 @@ void test_psql_array_to_vector() {
   if (values != actual_values) {
     throw std::runtime_error("Psql array parse failed for " + test + " " +values[0] + " " +values[1]);
   }
+
+  // test with semicolon in key
+  test = R"({use_sidepath,secondary,3,1,yes,50,"Rijksweg Noord",asphalt,left|through;right})";
+  values = psql_array_to_vector(test);
+  actual_values.clear();
+  actual_values.push_back("use_sidepath");
+  actual_values.push_back("secondary");
+  actual_values.push_back("3");
+  actual_values.push_back("1");
+  actual_values.push_back("yes");
+  actual_values.push_back("50");
+  actual_values.push_back("Rijksweg Noord");
+  actual_values.push_back("asphalt");
+  actual_values.push_back("left|through;right");
+  if (values != actual_values) {
+    throw std::runtime_error("Psql array parse failed for " + test + " " +values[0] + " " +values[1]);
+  }
 }
 
 } // anonymous namespace

@@ -1618,7 +1618,7 @@ ApiDB_Relation_Updater::is_relation_still_referenced(
       throw http::precondition_failed(
           fmt::format("The relation {:d} is used in relations {}.",
            row["member_id"].as<osm_nwr_id_t>(),
-           friendly_name(row["relation_ids"].as_array())));
+           friendly_name(row["relation_ids"].c_str())));
     }
 
     if (ids_if_unused.find(rel_id) != ids_if_unused.end()) {
