@@ -76,8 +76,8 @@ void extract_changeset(const pqxx_tuple &row,
 void extract_tags(const pqxx_tuple &row, tags_t &tags) {
   tags.clear();
 
-  auto keys   = psql_array_to_vector(row["tag_k"].as_array());
-  auto values = psql_array_to_vector(row["tag_v"].as_array());
+  auto keys   = psql_array_to_vector(row["tag_k"].c_str());
+  auto values = psql_array_to_vector(row["tag_v"].c_str());
 
   if (keys.size()!=values.size()) {
     throw std::runtime_error("Mismatch in tags key and value size");
@@ -89,7 +89,7 @@ void extract_tags(const pqxx_tuple &row, tags_t &tags) {
 
 void extract_nodes(const pqxx_tuple &row, nodes_t &nodes) {
   nodes.clear();
-  auto ids = psql_array_to_vector(row["node_ids"].as_array());
+  auto ids = psql_array_to_vector(row["node_ids"].c_str());
   for (const auto & id : ids)
     nodes.push_back(std::stol(id));
 }
@@ -126,9 +126,9 @@ void extract_members(const pqxx_tuple &row, members_t &members) {
   member_info member;
   members.clear();
 
-  auto types = psql_array_to_vector(row["member_types"].as_array());
-  auto ids   = psql_array_to_vector(row["member_ids"].as_array());
-  auto roles = psql_array_to_vector(row["member_roles"].as_array());
+  auto types = psql_array_to_vector(row["member_types"].c_str());
+  auto ids   = psql_array_to_vector(row["member_ids"].c_str());
+  auto roles = psql_array_to_vector(row["member_roles"].c_str());
 
   if (types.size()!=ids.size() || ids.size()!=roles.size()) {
     throw std::runtime_error("Mismatch in members types, ids and roles size");
@@ -146,10 +146,10 @@ void extract_comments(const pqxx_tuple &row, comments_t &comments) {
   changeset_comment_info comment;
   comments.clear();
 
-  auto author_id    = psql_array_to_vector(row["comment_author_id"].as_array());
-  auto display_name = psql_array_to_vector(row["comment_display_name"].as_array());
-  auto body         = psql_array_to_vector(row["comment_body"].as_array());
-  auto created_at   = psql_array_to_vector(row["comment_created_at"].as_array());
+  auto author_id    = psql_array_to_vector(row["comment_author_id"].c_str());
+  auto display_name = psql_array_to_vector(row["comment_display_name"].c_str());
+  auto body         = psql_array_to_vector(row["comment_body"].c_str());
+  auto created_at   = psql_array_to_vector(row["comment_created_at"].c_str());
 
   if (author_id.size()!=display_name.size() || display_name.size()!=body.size()
       || body.size()!=created_at.size()) {
