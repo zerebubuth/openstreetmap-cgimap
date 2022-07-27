@@ -796,7 +796,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
         throw http::precondition_failed(
             fmt::format("Node {:d} is still used by ways {}.",
              row["node_id"].as<osm_nwr_id_t>(),
-             friendly_name(row["way_ids"].as_array())));
+             friendly_name(row["way_ids"].c_str())));
       }
 
       if (ids_if_unused.find(node_id) != ids_if_unused.end()) {
@@ -839,7 +839,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
         throw http::precondition_failed(
             fmt::format("Node {:d} is still used by relations {}.",
                 row["member_id"].as<osm_nwr_id_t>(),
-                friendly_name(row["relation_ids"].as_array())));
+                friendly_name(row["relation_ids"].c_str())));
       }
 
       if (ids_if_unused.find(node_id) != ids_if_unused.end())
