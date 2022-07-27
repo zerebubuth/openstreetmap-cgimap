@@ -1,8 +1,8 @@
-openstreetmap-cgimap (0.8.7-2~jammy1) jammy; urgency=medium
+openstreetmap-cgimap (0.8.8-1~jammy1) jammy; urgency=medium
 
-  * Rebuild ubuntu package with 0.8.7 as release version
+  * Undo "Replace custom array parser by pqxx::array_parser" (#277)
 
- -- mmd osm <mmd.osm@gmail.com>  Wed, 26 Jul 2022 18:44:55 +0000
+ -- mmd osm <mmd.osm@gmail.com>  Wed, 27 Jul 2022 18:19:04 +0000
 
 openstreetmap-cgimap (0.8.7-1~jammy1) jammy; urgency=medium
 
