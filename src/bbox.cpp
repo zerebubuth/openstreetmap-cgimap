@@ -24,6 +24,7 @@ bool bbox::operator==(const bbox &other) const {
 
 bool bbox::parse(const std::string &s) {
   vector<string> strs;
+  strs.reserve(4);
   al::split(strs, s, al::is_any_of(","));
 
   if (strs.size() != 4)
