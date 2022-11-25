@@ -232,6 +232,8 @@ void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
   if (!sel_historic_ways.empty()) {
     std::vector<osm_nwr_id_t> ids;
     std::vector<osm_nwr_id_t> versions;
+    ids.reserve(sel_historic_ways.size());
+    versions.reserve(sel_historic_ways.size());
 
     for (const auto &ed : sel_historic_ways) {
       ids.emplace_back(ed.first);
@@ -311,6 +313,8 @@ void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
   if (!sel_historic_relations.empty()) {
     std::vector<osm_nwr_id_t> ids;
     std::vector<osm_nwr_id_t> versions;
+    ids.reserve(sel_historic_relations.size());
+    versions.reserve(sel_historic_relations.size());
 
     for (const auto &ed : sel_historic_relations) {
       ids.emplace_back(ed.first);
@@ -574,8 +578,10 @@ int readonly_pgsql_selection::select_historical_nodes(
        "INNER JOIN wanted w ON n.node_id = w.id AND n.version = w.version "
        "WHERE (n.redaction_id IS NULL OR $3 = TRUE)");
 
-  std::vector<osm_nwr_id_t> ids(eds.size());
-  std::vector<osm_version_t> vers(eds.size());
+  std::vector<osm_nwr_id_t> ids;
+  std::vector<osm_version_t> vers;
+  ids.reserve(eds.size());
+  vers.reserve(eds.size());
 
   for (const auto &ed : eds) {
     ids.emplace_back(ed.first);
@@ -602,8 +608,10 @@ int readonly_pgsql_selection::select_historical_ways(
        "INNER JOIN wanted x ON w.way_id = x.id AND w.version = x.version "
        "WHERE (w.redaction_id IS NULL OR $3 = TRUE)");
 
-  std::vector<osm_nwr_id_t> ids(eds.size());
-  std::vector<osm_version_t> vers(eds.size());
+  std::vector<osm_nwr_id_t> ids;
+  std::vector<osm_version_t> vers;
+  ids.reserve(eds.size());
+  vers.reserve(eds.size());
 
   for (const auto &ed : eds) {
     ids.emplace_back(ed.first);
@@ -630,8 +638,10 @@ int readonly_pgsql_selection::select_historical_relations(
        "INNER JOIN wanted x ON r.relation_id = x.id AND r.version = x.version "
        "WHERE (r.redaction_id IS NULL OR $3 = TRUE)");
 
-  std::vector<osm_nwr_id_t> ids(eds.size());
-  std::vector<osm_version_t> vers(eds.size());
+  std::vector<osm_nwr_id_t> ids;
+  std::vector<osm_version_t> vers;
+  ids.reserve(eds.size());
+  vers.reserve(eds.size());
 
   for (const auto &ed : eds) {
     ids.emplace_back(ed.first);
