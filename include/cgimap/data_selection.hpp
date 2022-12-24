@@ -164,6 +164,9 @@ public:
   virtual bool get_user_id_pass(const std::string& display_name, osm_user_id_t &,
 				std::string & pass_crypt, std::string & pass_salt) = 0;
 
+  // is user status confirmed or active?
+  virtual bool is_user_active(const osm_user_id_t) = 0;
+
   /**
    * factory for the creation of data selections. this abstracts away
    * the creation process of transactions, and allows some up-front

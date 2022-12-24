@@ -823,6 +823,17 @@ bool readonly_pgsql_selection::get_user_id_pass(const std::string& user_name, os
   return true;
 }
 
+bool readonly_pgsql_selection::is_user_active(const osm_user_id_t id)
+{
+  m.prepare("is_user_active",
+         R"(SELECT id FROM users
+            WHERE id = $1
+            AND (status = 'active' or status = 'confirmed'))");
+
+  auto res = m.exec_prepared("is_user_active", id);
+  return (!res.empty());
+}
+
 std::set< osm_changeset_id_t > readonly_pgsql_selection::extract_changeset_ids(pqxx::result& result) {
 
   std::set< osm_changeset_id_t > changeset_ids;

@@ -66,7 +66,7 @@ public:
   bool supports_user_details() const override;
   bool is_user_blocked(const osm_user_id_t) override;
   bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &) override;
-
+  bool is_user_active(const osm_user_id_t id) override;
 
 
   /**
