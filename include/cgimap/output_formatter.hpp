@@ -207,4 +207,9 @@ struct output_formatter {
   virtual void error(const std::string &) = 0;
 };
 
+inline std::string mask_timestamp(std::string timestamp)
+{
+   return timestamp.substr(0,10) + "T00:00:00Z";
+}
+
 #endif /* OUTPUT_FORMATTER_HPP */

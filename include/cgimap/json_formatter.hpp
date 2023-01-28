@@ -13,6 +13,7 @@
 class json_formatter : public output_formatter {
 private:
   std::unique_ptr<json_writer> writer;
+  bool m_print_gdpr_data = true;
   bool is_in_elements_array;
 
   void write_tags(const tags_t &tags);
@@ -20,7 +21,7 @@ private:
   void write_common(const element_info &elem);
 
 public:
-  json_formatter(std::unique_ptr<json_writer> w);
+  json_formatter(std::unique_ptr<json_writer> w, bool print_gdpr_data);
   virtual ~json_formatter();
 
   mime::type mime_type() const;

@@ -23,6 +23,7 @@ public:
 
   std::string log_name() const override;
   responder_ptr_t responder(data_selection &x) const override;
+  bool gdpr_disallow_call() const override { return true; }
 
 private:
   osm_changeset_id_t id;

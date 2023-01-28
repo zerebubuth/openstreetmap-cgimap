@@ -11,12 +11,13 @@
 class xml_formatter : public output_formatter {
 private:
   std::unique_ptr<xml_writer> writer;
+  bool m_print_gdpr_data = true;
 
   void write_tags(const tags_t &tags);
   void write_common(const element_info &elem);
 
 public:
-  xml_formatter(std::unique_ptr<xml_writer> w);
+  xml_formatter(std::unique_ptr<xml_writer> w, bool print_gdpr_data);
   virtual ~xml_formatter();
 
   mime::type mime_type() const;

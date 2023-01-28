@@ -169,7 +169,7 @@ void process_not_allowed(request &req, const http::method_not_allowed& e) {
      .finish();
 }
 
-std::size_t generate_response(request &req, responder &responder, const string &generator)
+std::size_t generate_response(request &req, responder &responder, const string &generator, const bool user_gdpr_allowed)
 {
   // get encoding to use
   auto encoding = get_encoding(req);
@@ -188,8 +188,10 @@ std::size_t generate_response(request &req, responder &responder, const string &
   // create the XML/JSON/text writer with the FCGI streams as output
   auto out = encoding->buffer(req.get_buffer());
 
+  const bool print_gdpr_data = !global_settings::get_gdpr_mode() || (global_settings::get_gdpr_mode() && user_gdpr_allowed);
+
   // create the correct mime type output formatter.
-  auto o_formatter = create_formatter(best_mime_type, *out);
+  auto o_formatter = create_formatter(best_mime_type, print_gdpr_data, *out);
 
   try {
     // call to write the response
@@ -224,7 +226,8 @@ std::size_t generate_response(request &req, responder &responder, const string &
 std::tuple<string, size_t>
 process_get_request(request &req, handler& handler,
                     data_selection& selection,
-                    const string &ip, const string &generator) {
+                    const string &ip, const string &generator,
+                    const bool user_gdpr_allowed) {
   // request start logging
   const std::string request_name = handler.log_name();
   logger::message(fmt::format("Started request for {} from {}", request_name, ip));
@@ -233,7 +236,7 @@ process_get_request(request &req, handler& handler,
   responder_ptr_t responder = handler.responder(selection);
 
   // Generate full XML/JSON/text response message for previously collected object ids
-  std::size_t bytes_written = generate_response(req, *responder, generator);
+  std::size_t bytes_written = generate_response(req, *responder, generator, user_gdpr_allowed);
 
   return std::make_tuple(request_name, bytes_written);
 }
@@ -246,7 +249,8 @@ process_post_put_request(request &req, handler& handler,
                     data_selection::factory& factory,
                     data_update::factory& update_factory,
                     std::optional<osm_user_id_t> user_id,
-                    const string &ip, const string &generator) {
+                    const string &ip, const string &generator,
+                    const bool user_gdpr_allowed) {
 
   std::size_t bytes_written = 0;
 
@@ -283,12 +287,12 @@ process_post_put_request(request &req, handler& handler,
       // create a data selection for the request
       auto data_selection = factory.make_selection(*read_only_transaction);
       auto sel_responder = pe_handler.responder(*data_selection);
-      bytes_written = generate_response(req, *sel_responder, generator);
+      bytes_written = generate_response(req, *sel_responder, generator, user_gdpr_allowed);
     }
     else
     {
       // Step 1 already collected all data needed to generate a response message
-      bytes_written = generate_response(req, *responder, generator);
+      bytes_written = generate_response(req, *responder, generator, user_gdpr_allowed);
     }
 
   } catch(std::bad_cast&) {
@@ -515,6 +519,16 @@ void process_request(request &req, rate_limiter &limiter,
           user_roles = store->get_roles_for_user(*user_id);
     }
 
+    const bool user_gdpr_allowed = [&]() {
+      // Assume logged in user has also accepted the ToU
+      // TODO: need to also check if user has accepted ToU.
+      // This information is not yet available on Rails at this time.
+       if (user_id) {
+         return true;
+       }
+       return false;
+    }();
+
     // check whether the client is being rate limited
     if (!limiter.check(client_key)) {
       logger::message(fmt::format("Rate limiter rejected request from {}", client_key));
@@ -525,6 +539,12 @@ void process_request(request &req, rate_limiter &limiter,
 
     // figure how to handle the request
     handler_ptr_t handler = route(req);
+
+    // check if endpoint is disallowed if requested user has not accepted ToU
+    if (global_settings::get_gdpr_mode() && handler->gdpr_disallow_call() && !user_gdpr_allowed)
+    {
+      throw http::forbidden("User has not accepted ToU");
+    }
 
     // if handler doesn't accept this method, then return method not
     // allowed.
@@ -550,7 +570,7 @@ void process_request(request &req, rate_limiter &limiter,
     switch (method) {
 
       case http::method::GET:
-	std::tie(request_name, bytes_written) = process_get_request(req, *handler, *selection, ip, generator);
+	std::tie(request_name, bytes_written) = process_get_request(req, *handler, *selection, ip, generator, user_gdpr_allowed);
 	break;
 
       case http::method::HEAD:
@@ -566,7 +586,7 @@ void process_request(request &req, rate_limiter &limiter,
 	    throw http::bad_request("Backend does not support given HTTP method");
 
 	  std::tie(request_name, bytes_written) =
-	      process_post_put_request(req, *handler, factory, *update_factory, user_id, ip, generator);
+	      process_post_put_request(req, *handler, factory, *update_factory, user_id, ip, generator, user_gdpr_allowed);
 	}
 	break;
 

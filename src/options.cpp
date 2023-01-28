@@ -21,6 +21,7 @@ void global_settings_via_options::init_fallback_values(const global_settings_bas
   m_element_max_tags = def.get_element_max_tags();
   m_basic_auth_support = def.get_basic_auth_support();
   m_oauth_10_support = def.get_oauth_10_support();
+  m_gdpr_mode = def.get_gdpr_mode();
 }
 
 void global_settings_via_options::set_new_options(const po::variables_map &options) {
@@ -37,6 +38,7 @@ void global_settings_via_options::set_new_options(const po::variables_map &optio
   set_element_max_tags(options);
   set_basic_auth_support(options);
   set_oauth_10_support(options);
+  set_gdpr_mode(options);
 }
 
 void global_settings_via_options::set_payload_max_size(const po::variables_map &options)  {
@@ -135,6 +137,12 @@ void global_settings_via_options::set_basic_auth_support(const po::variables_map
 void global_settings_via_options::set_oauth_10_support(const po::variables_map &options) {
   if (options.count("oauth_10_support")) {
     m_oauth_10_support = options["oauth_10_support"].as<bool>();
+  }
+}
+
+void global_settings_via_options::set_gdpr_mode(const po::variables_map &options) {
+  if (options.count("gdpr")) {
+    m_gdpr_mode = options["gdpr"].as<bool>();
   }
 }
 

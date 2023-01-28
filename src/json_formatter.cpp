@@ -27,7 +27,7 @@ const std::string &element_type_name(element_type elt) {
 
 } // anonymous namespace
 
-json_formatter::json_formatter(std::unique_ptr<json_writer> w) : writer(std::move(w)),
+json_formatter::json_formatter(std::unique_ptr<json_writer> w, bool print_gdpr_data) : writer(std::move(w)), m_print_gdpr_data(print_gdpr_data),
     is_in_elements_array(false) {}
 
 json_formatter::~json_formatter() = default;
@@ -117,12 +117,14 @@ void json_formatter::write_id(const element_info &elem) {
 
 void json_formatter::write_common(const element_info &elem) {
   writer->object_key("timestamp");
-  writer->entry_string(elem.timestamp);
+  writer->entry_string((m_print_gdpr_data ? elem.timestamp : mask_timestamp(elem.timestamp)));
   writer->object_key("version");
   writer->entry_int(elem.version);
-  writer->object_key("changeset");
-  writer->entry_int(elem.changeset);
-  if (elem.display_name && elem.uid) {
+  if (m_print_gdpr_data) {
+    writer->object_key("changeset");
+    writer->entry_int(elem.changeset);
+  }
+  if (elem.display_name && elem.uid && m_print_gdpr_data) {
     writer->object_key("user");
     writer->entry_string(*elem.display_name);
     writer->object_key("uid");
@@ -234,7 +236,7 @@ void json_formatter::write_changeset(const changeset_info &elem,
   writer->object_key("open");
   writer->entry_bool(is_open);
 
-  if (elem.display_name && bool(elem.uid)) {
+  if (elem.display_name && bool(elem.uid) && m_print_gdpr_data) {
     writer->object_key("user");
     writer->entry_string(*elem.display_name);
     writer->object_key("uid");
@@ -267,10 +269,12 @@ void json_formatter::write_changeset(const changeset_info &elem,
 	  writer->start_object();
 	  writer->object_key("date");
 	  writer->entry_string(comment.created_at);
-	  writer->object_key("uid");
-	  writer->entry_int(comment.author_id);
-	  writer->object_key("user");
-	  writer->entry_string(comment.author_display_name);
+	  if (m_print_gdpr_data) {
+	    writer->object_key("uid");
+	    writer->entry_int(comment.author_id);
+	    writer->object_key("user");
+	    writer->entry_string(comment.author_display_name);
+	  }
 	  writer->object_key("text");
 	  writer->entry_string(comment.body);
 	  writer->end_object();

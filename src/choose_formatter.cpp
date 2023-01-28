@@ -250,15 +250,15 @@ mime::type choose_best_mime_type(request &req, const responder& hptr) {
   return best_type;
 }
 
-std::unique_ptr<output_formatter> create_formatter(mime::type best_type, output_buffer& out) {
+std::unique_ptr<output_formatter> create_formatter(mime::type best_type, const bool print_gdpr_data, output_buffer& out) {
 
   switch (best_type) {
     case mime::application_xml:
-      return std::make_unique<xml_formatter>(std::make_unique<xml_writer>(out, true));
+      return std::make_unique<xml_formatter>(std::make_unique<xml_writer>(out, true), print_gdpr_data);
 
 #ifdef HAVE_YAJL
     case mime::application_json:
-      return std::make_unique<json_formatter>(std::make_unique<json_writer>(out, false));
+      return std::make_unique<json_formatter>(std::make_unique<json_writer>(out, false), print_gdpr_data);
 #endif
     case mime::text_plain:
       return std::make_unique<text_formatter>(std::make_unique<text_writer>(out, true));

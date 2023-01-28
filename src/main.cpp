@@ -111,6 +111,7 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
     ("max-element-tags", po::value<int>(), "max number of tags per OSM element")
     ("basic_auth_support", po::value<bool>(), "enable HTTP basic authentication support")
     ("oauth_10_support", po::value<bool>(), "enable legacy OAuth 1.0 support")
+    ("gdpr", po::value<bool>(), "enable GDPR mode, omits user data for non-compliant requests")
     ;
   // clang-format on
 

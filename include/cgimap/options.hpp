@@ -25,6 +25,7 @@ public:
   virtual std::optional<uint32_t> get_element_max_tags() const = 0;
   virtual bool get_basic_auth_support() const = 0;
   virtual bool get_oauth_10_support() const = 0;
+  virtual bool get_gdpr_mode() const = 0;
 };
 
 class global_settings_default : public global_settings_base {
@@ -76,6 +77,10 @@ public:
 
   virtual bool get_oauth_10_support() const override {
     return true;
+  }
+
+  virtual bool get_gdpr_mode() const override {
+    return false;
   }
 };
 
@@ -145,6 +150,10 @@ public:
     return m_oauth_10_support;
   }
 
+  virtual bool get_gdpr_mode() const override {
+    return m_gdpr_mode;
+  }
+
 private:
   void init_fallback_values(const global_settings_base &def);
   void set_new_options(const po::variables_map &options);
@@ -160,6 +169,7 @@ private:
   void set_element_max_tags(const po::variables_map &options);
   void set_basic_auth_support(const po::variables_map &options);
   void set_oauth_10_support(const po::variables_map &options);
+  void set_gdpr_mode(const po::variables_map &options);
   bool validate_timeout(const std::string &timeout) const;
 
   uint32_t m_payload_max_size;
@@ -174,6 +184,7 @@ private:
   std::optional<uint32_t> m_element_max_tags;
   bool m_basic_auth_support;
   bool m_oauth_10_support;
+  bool m_gdpr_mode; // true, if GDPR mode is enabled
 };
 
 class global_settings final {
@@ -218,6 +229,9 @@ public:
 
   // Enable legacy OAuth 1.0 support
   static bool get_oauth_10_support() { return settings->get_oauth_10_support(); }
+
+  // Is GDPR mode active, i.e. additional data privacy filtering rules are in effect
+  static bool get_gdpr_mode() { return settings->get_gdpr_mode(); }
 
 
 private:

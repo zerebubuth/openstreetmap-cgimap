@@ -64,6 +64,12 @@ public:
     return m_allowed_methods;
   }
 
+  // returns true, if endpoint is not permitted for anonymous users,
+  // or users who have not accepted the ToU.
+  virtual bool gdpr_disallow_call() const {
+    return false;
+  }
+
 protected:
   mime::type mime_type;
   http::method m_allowed_methods;
