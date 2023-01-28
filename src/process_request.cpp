@@ -34,10 +34,18 @@ void validate_user_db_update_permission (
   if (!user_id)
     throw http::unauthorized ("User is not authorized");
 
-  if (selection.supports_user_details ()
-      && selection.is_user_blocked (*user_id))
-    throw http::forbidden (
-	"Your access to the API has been blocked. Please log-in to the web interface to find out more.");
+  if (selection.supports_user_details ())
+  {
+    if (selection.is_user_blocked (*user_id))
+      throw http::forbidden (
+	  "Your access to the API has been blocked. Please log-in to the web interface to find out more.");
+
+    // User status has to be either active or confirmed, otherwise the request
+    // to change the database will be rejected
+    if (!selection.is_user_active(*user_id))
+      throw http::forbidden (
+          "You have not permitted the application access to this facility");
+  }
 
   if (!allow_api_write)
     throw http::unauthorized ("You have not granted the modify map permission");
@@ -463,6 +471,7 @@ std::optional<osm_user_id_t> determine_user_id (request& req,
       // the request must have been unsigned.
     }
   }
+
   return user_id;
 }
 
