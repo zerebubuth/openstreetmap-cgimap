@@ -99,6 +99,7 @@ struct changeset_info {
 };
 
 struct changeset_comment_info {
+  osm_changeset_comment_id_t id;
   osm_user_id_t author_id;
   std::string body;
   std::string created_at;

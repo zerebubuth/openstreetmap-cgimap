@@ -7,6 +7,7 @@
 
 using osm_user_id_t = uint64_t ;
 using osm_changeset_id_t = int64_t;
+using osm_changeset_comment_id_t = int32_t;
 using osm_nwr_id_t = uint64_t;
 using osm_nwr_signed_id_t = int64_t;
 using tile_id_t = uint32_t;

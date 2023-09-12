@@ -2,7 +2,7 @@
   <changeset id="1" user="FakeUser1" uid="1" created_at="2015-08-09T10:33:13Z" closed_at="2015-08-09T11:33:13Z" min_lat="51.5288506" min_lon="-0.1465242" max_lat="51.528862" max_lon="-0.1464925" comments_count="1" num_changes="1">
     <tag k="created_by" v="manually"/>
     <discussion>
-      <comment date="2015-08-09T10:33:13Z" uid="1" user="FakeUser1">
+      <comment id="1" date="2015-08-09T10:33:13Z" uid="1" user="FakeUser1">
         <text>First post!!!!</text>
       </comment>
     </discussion>
@@ -17,6 +17,19 @@
   <changeset id="9" user="FakeUser2" uid="2" created_at="2017-03-13T16:12:00Z" closed_at="2017-03-13T16:12:00Z" comments_count="0" num_changes="0"/>
   <changeset id="10" user="FakeUser2" uid="2" created_at="2017-03-13T16:27:00Z" closed_at="2017-03-13T16:27:00Z" comments_count="0" num_changes="0"/>
   <changeset id="11" user="FakeUser2" uid="2" created_at="2017-03-13T16:32:00Z" closed_at="2017-03-13T16:32:02Z" comments_count="0" num_changes="0"/>
+  <changeset id="12" user="FakeUser1" uid="1" created_at="2020-01-01T12:34:56Z" closed_at="2020-01-01T13:12:11Z" comments_count="3" num_changes="0">
+    <discussion>
+      <comment id="2" date="2020-01-02T12:00:00Z" uid="1" user="FakeUser1">
+        <text>it was empty</text>
+      </comment>
+      <comment id="3" date="2020-01-03T12:00:00Z" uid="2" user="FakeUser2">
+        <text>why?</text>
+      </comment>
+      <comment id="4" date="2020-01-04T12:00:00Z" uid="1" user="FakeUser1">
+        <text>because</text>
+      </comment>
+    </discussion>
+  </changeset>
 
   <node id="1" version="1" changeset="1" lat="0.0" lon="0.0" user="FakeUser1" uid="1" visible="true" timestamp="2015-08-09T10:33:13Z"/>
   <node id="2" version="1" changeset="3" lat="0.0" lon="0.0" user="FakeUser2" uid="2" visible="true" timestamp="2017-03-13T09:52:00Z"/>

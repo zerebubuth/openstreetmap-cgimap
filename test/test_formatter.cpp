@@ -254,7 +254,8 @@ std::ostream &operator<<(std::ostream &out, const test_formatter::changeset_t &c
       << "include_comments=" << c.m_include_comments << ", "
       << "comments[";
   for (const comments_t::value_type &v : c.m_comments) {
-    out << "comment(author_id=" << v.author_id << ", "
+    out << "comment(id=" << v.id << ", "
+        << "author_id=" << v.author_id << ", "
         << "body=\"" << v.body << "\", "
         << "created_at=\"" << v.created_at << "\", "
         << "author_display_name=\"" << v.author_display_name << "\"), ";

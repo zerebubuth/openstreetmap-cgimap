@@ -265,6 +265,8 @@ void json_formatter::write_changeset(const changeset_info &elem,
       writer->start_array();
       for (const auto & comment : comments) {
 	  writer->start_object();
+	  writer->object_key("id");
+	  writer->entry_int(comment.id);
 	  writer->object_key("date");
 	  writer->entry_string(comment.created_at);
 	  writer->object_key("uid");
