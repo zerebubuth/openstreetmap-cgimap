@@ -46,7 +46,8 @@ bool changeset_info::is_open_at(const std::chrono::system_clock::time_point &now
 }
 
 bool changeset_comment_info::operator==(const changeset_comment_info &other) const {
-  return ((author_id == other.author_id) &&
+  return ((id == other.id) &&
+          (author_id == other.author_id) &&
           (body == other.body) &&
           (created_at == other.created_at) &&
           (author_display_name == other.author_display_name));

@@ -240,6 +240,7 @@ struct xml_parser {
         parser->m_cur_changeset->m_info.comments_count += 1;
 
         changeset_comment_info info;
+        info.id = get_attribute<osm_changeset_comment_id_t>("id", 3, attributes);
         info.author_id = get_attribute<osm_user_id_t>("uid", 4, attributes);
         info.author_display_name = get_attribute<std::string>("user", 5, attributes);
         info.created_at = get_attribute<std::string>("date", 5, attributes);
