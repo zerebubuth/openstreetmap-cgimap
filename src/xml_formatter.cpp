@@ -27,7 +27,7 @@ const std::string &element_type_name(element_type elt) {
 
 } // anonymous namespace
 
-xml_formatter::xml_formatter(std::unique_ptr<xml_writer> w) : writer(std::move(w)) {}
+xml_formatter::xml_formatter(std::unique_ptr<xml_writer> w, bool print_gdpr_data) : writer(std::move(w)), m_print_gdpr_data(print_gdpr_data) {}
 
 xml_formatter::~xml_formatter() = default;
 
@@ -114,9 +114,11 @@ void xml_formatter::write_common(const element_info &elem) {
   writer->attribute("id", elem.id);
   writer->attribute("visible", elem.visible);
   writer->attribute("version", elem.version);
-  writer->attribute("changeset", elem.changeset);
-  writer->attribute("timestamp", elem.timestamp);
-  if (elem.display_name && elem.uid) {
+  if (m_print_gdpr_data) {
+    writer->attribute("changeset", elem.changeset);
+  }
+  writer->attribute("timestamp", (m_print_gdpr_data ? elem.timestamp : mask_timestamp(elem.timestamp)));
+  if (elem.display_name && elem.uid && m_print_gdpr_data) {
     writer->attribute("user", *elem.display_name);
     writer->attribute("uid", *elem.uid);
   }
@@ -185,7 +187,7 @@ void xml_formatter::write_changeset(const changeset_info &elem,
   }
   writer->attribute("open", is_open);
 
-  if (bool(elem.display_name) && bool(elem.uid)) {
+  if (bool(elem.display_name) && bool(elem.uid) && m_print_gdpr_data) {
     writer->attribute("user", *elem.display_name);
     writer->attribute("uid", *elem.uid);
   }

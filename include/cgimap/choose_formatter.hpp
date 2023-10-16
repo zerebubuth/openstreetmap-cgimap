@@ -19,6 +19,6 @@ mime::type choose_best_mime_type(request &req, const responder& hptr);
  * passed in as an argument.
  */
 std::unique_ptr<output_formatter>
-create_formatter(mime::type best_type, output_buffer&);
+create_formatter(mime::type best_type, bool print_gdpr_data, output_buffer&);
 
 #endif /* CHOOSE_FORMATTER_HPP */
