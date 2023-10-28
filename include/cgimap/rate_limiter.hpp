@@ -10,17 +10,17 @@ struct rate_limiter {
 
   // check if the key is below the rate limit. return true to indicate that it
   // is.
-  virtual bool check(const std::string &key) = 0;
+  virtual bool check(const std::string &key, bool moderator) = 0;
 
   // update the limit for the key to say it has consumed this number of bytes.
-  virtual void update(const std::string &key, int bytes) = 0;
+  virtual void update(const std::string &key, int bytes, bool moderator) = 0;
 };
 
 struct null_rate_limiter
   : public rate_limiter {
   ~null_rate_limiter();
-  bool check(const std::string &key);
-  void update(const std::string &key, int bytes);
+  bool check(const std::string &key, bool moderator);
+  void update(const std::string &key, int bytes, bool moderator);
 };
 
 class memcached_rate_limiter
@@ -31,13 +31,15 @@ public:
    */
   memcached_rate_limiter(const boost::program_options::variables_map &options);
   ~memcached_rate_limiter();
-  bool check(const std::string &key);
-  void update(const std::string &key, int bytes);
+  bool check(const std::string &key, bool moderator);
+  void update(const std::string &key, int bytes, bool moderator);
 
 private:
   memcached_st *ptr;
   int bytes_per_sec;
   int max_bytes;
+  int moderator_bytes_per_sec;
+  int moderator_max_bytes;
 
   struct state;
 };
