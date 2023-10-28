@@ -25,6 +25,8 @@ public:
   virtual std::optional<uint32_t> get_element_max_tags() const = 0;
   virtual bool get_basic_auth_support() const = 0;
   virtual bool get_oauth_10_support() const = 0;
+  virtual uint32_t get_bytes_per_sec(bool) const = 0;
+  virtual uint32_t get_max_bytes(bool) const = 0;
 };
 
 class global_settings_default : public global_settings_base {
@@ -76,6 +78,20 @@ public:
 
   virtual bool get_oauth_10_support() const override {
     return true;
+  }
+
+  virtual uint32_t get_bytes_per_sec(bool moderator) const override {
+    if (moderator) {
+       return 1024 * 1024; // 1MB/s
+    }
+    return 100 * 1024; // 100 KB/s
+  }
+
+  virtual uint32_t get_max_bytes(bool moderator) const override {
+    if (moderator) {
+       return 1024 * 1024 * 1024; // 1GB
+    }
+    return 250 * 1024 * 1024; // 250 MB
   }
 };
 
@@ -145,6 +161,20 @@ public:
     return m_oauth_10_support;
   }
 
+  virtual uint32_t get_bytes_per_sec(bool moderator) const override {
+    if (moderator) {
+       return m_moderator_bytes_per_sec;
+    }
+    return m_bytes_per_sec;
+  }
+
+  virtual uint32_t get_max_bytes(bool moderator) const override {
+    if (moderator) {
+       return m_moderator_max_bytes;
+    }
+    return m_max_bytes;
+  }
+
 private:
   void init_fallback_values(const global_settings_base &def);
   void set_new_options(const po::variables_map &options);
@@ -160,6 +190,8 @@ private:
   void set_element_max_tags(const po::variables_map &options);
   void set_basic_auth_support(const po::variables_map &options);
   void set_oauth_10_support(const po::variables_map &options);
+  void set_bytes_per_sec(const po::variables_map &options);
+  void set_max_bytes(const po::variables_map &options);
   bool validate_timeout(const std::string &timeout) const;
 
   uint32_t m_payload_max_size;
@@ -174,6 +206,10 @@ private:
   std::optional<uint32_t> m_element_max_tags;
   bool m_basic_auth_support;
   bool m_oauth_10_support;
+  uint32_t m_bytes_per_sec;
+  uint32_t m_moderator_bytes_per_sec;
+  uint32_t m_max_bytes;
+  uint32_t m_moderator_max_bytes;
 };
 
 class global_settings final {
@@ -219,6 +255,11 @@ public:
   // Enable legacy OAuth 1.0 support
   static bool get_oauth_10_support() { return settings->get_oauth_10_support(); }
 
+  // average number of bytes/s to allow each client/moderator
+  static uint32_t get_bytes_per_sec(bool moderator) { return settings->get_bytes_per_sec(moderator);  }
+
+  // Maximum debt in bytes to allow each client/moderator before rate limiting
+  static uint32_t get_max_bytes(bool moderator) { return settings->get_max_bytes(moderator);  }
 
 private:
   static std::unique_ptr<global_settings_base> settings;  // gets initialized with global_settings_default instance

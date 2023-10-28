@@ -36,10 +36,6 @@ public:
 
 private:
   memcached_st *ptr;
-  int standard_bytes_per_sec;
-  int standard_max_bytes;
-  int moderator_bytes_per_sec;
-  int moderator_max_bytes;
 
   struct state;
 };
