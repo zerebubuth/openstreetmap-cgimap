@@ -54,7 +54,7 @@ bool memcached_rate_limiter::check(const std::string &key, bool moderator) {
   memcached_return error;
 
   mc_key = "cgimap:" + key;
-  auto bytes_per_sec = global_settings::get_bytes_per_sec(moderator);
+  auto bytes_per_sec = global_settings::get_ratelimiter_ratelimit(moderator);
 
   if (ptr &&
       (sp = (state *)memcached_get(ptr, mc_key.data(), mc_key.size(), &length,
@@ -70,7 +70,7 @@ bool memcached_rate_limiter::check(const std::string &key, bool moderator) {
     free(sp);
   }
 
-  auto max_bytes = global_settings::get_max_bytes(moderator);
+  auto max_bytes = global_settings::get_ratelimiter_maxdebt(moderator);
   return bytes_served < max_bytes;
 }
 
@@ -84,7 +84,7 @@ void memcached_rate_limiter::update(const std::string &key, int bytes, bool mode
     memcached_return error;
 
     mc_key = "cgimap:" + key;
-    auto bytes_per_sec = global_settings::get_bytes_per_sec(moderator);
+    auto bytes_per_sec = global_settings::get_ratelimiter_ratelimit(moderator);
 
   retry:
 
