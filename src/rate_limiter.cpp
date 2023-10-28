@@ -39,15 +39,15 @@ memcached_rate_limiter::memcached_rate_limiter(
   }
 
   if (options.count("ratelimit")) {
-    bytes_per_sec = options["ratelimit"].as<int>();
+    standard_bytes_per_sec = options["ratelimit"].as<int>();
   } else {
-    bytes_per_sec = 100 * 1024; // 100 KB/s
+    standard_bytes_per_sec = 100 * 1024; // 100 KB/s
   }
 
   if (options.count("maxdebt")) {
-    max_bytes = options["maxdebt"].as<int>() * 1024 * 1024;
+    standard_max_bytes = options["maxdebt"].as<int>() * 1024 * 1024;
   } else {
-    max_bytes = 250 * 1024 * 1024; // 250 MB
+    standard_max_bytes = 250 * 1024 * 1024; // 250 MB
   }
 
   if (options.count("moderator-ratelimit")) {
@@ -77,7 +77,7 @@ bool memcached_rate_limiter::check(const std::string &key, bool moderator) {
   memcached_return error;
 
   mc_key = "cgimap:" + key;
-  int specific_bytes_per_sec = moderator ? moderator_bytes_per_sec : bytes_per_sec;
+  int bytes_per_sec = moderator ? moderator_bytes_per_sec : standard_bytes_per_sec;
 
   if (ptr &&
       (sp = (state *)memcached_get(ptr, mc_key.data(), mc_key.size(), &length,
@@ -86,8 +86,8 @@ bool memcached_rate_limiter::check(const std::string &key, bool moderator) {
 
     int64_t elapsed = time(NULL) - sp->last_update;
 
-    if (elapsed * specific_bytes_per_sec < sp->bytes_served) {
-      bytes_served = sp->bytes_served - elapsed * specific_bytes_per_sec;
+    if (elapsed * bytes_per_sec < sp->bytes_served) {
+      bytes_served = sp->bytes_served - elapsed * bytes_per_sec;
     }
 
     free(sp);
@@ -97,7 +97,7 @@ bool memcached_rate_limiter::check(const std::string &key, bool moderator) {
       return bytes_served < moderator_max_bytes;
   }
 
-  return bytes_served < max_bytes;
+  return bytes_served < standard_max_bytes;
 }
 
 void memcached_rate_limiter::update(const std::string &key, int bytes, bool moderator) {
@@ -110,7 +110,7 @@ void memcached_rate_limiter::update(const std::string &key, int bytes, bool mode
     memcached_return error;
 
     mc_key = "cgimap:" + key;
-    int specific_bytes_per_sec = moderator ? moderator_bytes_per_sec : bytes_per_sec;
+    int bytes_per_sec = moderator ? moderator_bytes_per_sec : standard_bytes_per_sec;
 
   retry:
 
@@ -123,8 +123,8 @@ void memcached_rate_limiter::update(const std::string &key, int bytes, bool mode
 
       sp->last_update = now;
 
-      if (elapsed * specific_bytes_per_sec < sp->bytes_served) {
-        sp->bytes_served = sp->bytes_served - elapsed * specific_bytes_per_sec + bytes;
+      if (elapsed * bytes_per_sec < sp->bytes_served) {
+        sp->bytes_served = sp->bytes_served - elapsed * bytes_per_sec + bytes;
       } else {
         sp->bytes_served = bytes;
       }
