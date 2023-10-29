@@ -32,6 +32,7 @@ Cache-Control: private, max-age=0, must-revalidate
 			"created_by": "manually"
 		},
 		"discussion": [{
+			"id": 1,
 			"date": "2015-08-09T10:33:13Z",
 			"uid": 1,
 			"user": "FakeUser1",

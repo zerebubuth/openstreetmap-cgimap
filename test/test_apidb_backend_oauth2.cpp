@@ -52,7 +52,7 @@ void assert_equal(const T& a, const T&b, const std::string &message) {
 
 void test_user_id_for_oauth2_token(test_database &tdb) {
   tdb.run_sql(R"(
-    INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) 
+    INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public)
     VALUES 
       (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true),
       (2, 'user_2@example.com', '', '2021-03-12T01:33:43Z', 'user_2', true);
@@ -212,6 +212,7 @@ public:
   bool supports_user_details() const override { return false; }
   bool is_user_blocked(const osm_user_id_t) override { return true; }
   bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &) override { return false; };
+  bool is_user_active(const osm_user_id_t id) override { return (id != 1000); }
 
   int select_historical_nodes(const std::vector<osm_edition_t> &) override { return 0; }
   int select_nodes_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
@@ -240,12 +241,12 @@ struct recording_rate_limiter
   : public rate_limiter {
   ~recording_rate_limiter() = default;
 
-  bool check(const std::string &key) {
+  std::tuple<bool, int> check(const std::string &key, bool moderator) {
     m_keys_seen.insert(key);
-    return true;
+    return std::make_tuple(false, 0);
   }
 
-  void update(const std::string &key, int bytes) {
+  void update(const std::string &key, int bytes, bool moderator) {
     m_keys_seen.insert(key);
   }
 
@@ -346,14 +347,17 @@ void fetch_relation(test_database &tdb, oauth::store& store, std::string token, 
 
 void test_oauth2_end_to_end(test_database &tdb) {
 
-  // token 1yi2RI2WhIVMLoLaDLg0nrPJPU4WQSIX4Hh_jxfRRxI is stored in plain text in oauth_access_tokens table,
-  // all others as sha256-hash value
+  // tokens 1yi2RI2W... and 2Kx... are stored in plain text in oauth_access_tokens table, all others as sha256-hash value
+
+  // Column status in table users is for information purposes only
+  // User id 1000 denotes an inactive user (see empty_data_selection, method is_user_active)
 
   tdb.run_sql(R"(
-    INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) 
+    INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public, status)
     VALUES 
-      (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true),
-      (2, 'user_2@example.com', '', '2021-03-12T01:33:43Z', 'user_2', true);
+      (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true, 'confirmed'),
+      (2, 'user_2@example.com', '', '2021-03-12T01:33:43Z', 'user_2', true, 'active'),
+      (1000, 'user_1000@example.com', '', '2021-04-12T01:33:43Z', 'user_1000', true, 'pending');
 
     INSERT INTO oauth_applications (id, owner_type, owner_id, name, uid, secret, redirect_uri, scopes, confidential, created_at, updated_at) 
        VALUES (3, 'User', 1, 'App 1', 'dHKmvGkmuoMjqhCNmTJkf-EcnA61Up34O1vOHwTSvU8', '965136b8fb8d00e2faa2faaaed99c0ec10225518d0c8d9fb1d2af701e87eb68c', 
@@ -364,7 +368,9 @@ void test_oauth2_end_to_end(test_database &tdb) {
 
     INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
        VALUES (72, 1, 3, '4ea5b956c8882db030a5a799cb45eb933bb6dd2f196a44f68167d96fbc8ec3f1', NULL, NULL, NULL, '2021-04-14 19:38:21.991429', 'read_prefs', '');
- 
+
+    INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
+       VALUES (78, 1000, 3, '2KxONxvhoSji9F8dz_WO6UZOzRdmQ0ISB0ovnZrJnhM', NULL, NULL, NULL, '2021-04-14 19:38:21.991429', 'write_api', '');
   )");
 
   auto store = tdb.get_oauth_store();
@@ -383,6 +389,9 @@ void test_oauth2_end_to_end(test_database &tdb) {
   // includes write_api scope
   create_changeset(tdb, *store, "1yi2RI2WhIVMLoLaDLg0nrPJPU4WQSIX4Hh_jxfRRxI", 200);
 
+  // Same as previous tests case. However, user 1000 is not active this time
+  // Creating changesets should be rejected with HTTP 403 (Forbidden)
+  create_changeset(tdb, *store, "2KxONxvhoSji9F8dz_WO6UZOzRdmQ0ISB0ovnZrJnhM", 403);
 }
 
 } // anonymous namespace

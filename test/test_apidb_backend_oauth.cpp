@@ -274,6 +274,7 @@ public:
   bool supports_user_details() const override { return false; }
   bool is_user_blocked(const osm_user_id_t) override { return true; }
   bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &) override { return false; };
+  bool is_user_active(const osm_user_id_t id) override { return (id != 1000); }
 
   int select_historical_nodes(const std::vector<osm_edition_t> &) override { return 0; }
   int select_nodes_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
@@ -303,12 +304,12 @@ struct recording_rate_limiter
   : public rate_limiter {
   ~recording_rate_limiter() = default;
 
-  bool check(const std::string &key) {
+  std::tuple<bool, int> check(const std::string &key, bool moderator) {
     m_keys_seen.insert(key);
-    return true;
+    return std::make_tuple(false, 0);
   }
 
-  void update(const std::string &key, int bytes) {
+  void update(const std::string &key, int bytes, bool moderator) {
     m_keys_seen.insert(key);
   }
 

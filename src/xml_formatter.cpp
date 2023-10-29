@@ -206,6 +206,7 @@ void xml_formatter::write_changeset(const changeset_info &elem,
     writer->start("discussion");
     for (const auto & comment : comments) {
       writer->start("comment");
+      writer->attribute("id", comment.id);
       writer->attribute("date", comment.created_at);
       writer->attribute("uid", comment.author_id);
       writer->attribute("user", comment.author_display_name);

@@ -240,6 +240,7 @@ void check_changeset_with_comments_impl(
   comments_t comments;
   {
     changeset_comment_info comment;
+    comment.id = 1;
     comment.author_id = 3;
     comment.body = "a nice comment!";
     comment.created_at = "2015-09-05T20:37:01Z";

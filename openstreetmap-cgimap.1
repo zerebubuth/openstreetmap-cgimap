@@ -12,7 +12,9 @@ openstreetmap-cgimap \- FCGI version of the OpenStreetMap API
 [\fB\-\-configfile \fICONFIGFILE\fR]
 [\fB\-\-memcache \fISPEC\fR]
 [\fB\-\-ratelimit \fILIMIT\fR]
+[\fB\-\-moderator-ratelimit \fIMODERATOR_LIMIT\fR]
 [\fB\-\-maxdebt \fIDEBT\fR]
+[\fB\-\-moderator-maxdebt \fIMODERATOR_DEBT\fR]
 [\fB\-\-port \fIPORT\fR]
 [\fB\-\-socket \fISOCKET\fR]
 [\fB\-\-backend \fIBACKEND\fR]
@@ -72,8 +74,14 @@ Memcache server specification.
 .BR \-\-ratelimit =\fILIMIT\fR
 Average number of bytes/s to allow each client.
 .TP
+.BR \-\-moderator-ratelimit =\fIMODERATOR_LIMIT\fR
+Average number of bytes/s to allow each moderator.
+.TP
 .BR \-\-maxdebt =\fIDEBT\fR
 Maximum debt (in Mb) to allow each client before rate limiting.
+.TP
+.BR \-\-moderator-maxdebt =\fIMODERATOR_DEBT\fR
+Maximum debt (in Mb) to allow each moderator before rate limiting.
 .TP
 .BR \-\-port =\fIPORT\fR
 FCGI port number (e.g. 8000) to listen on. This option is for backwards compatibility, please use \-\-socket for new configurations.

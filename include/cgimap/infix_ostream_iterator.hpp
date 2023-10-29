@@ -4,18 +4,24 @@
 #include <ios>
 #include <ostream>
 #include <iterator>
+#include <cstddef>
 
 /**
  * output iterator which infixes its delimiter string between the output items.
  */
 template <typename _Tp, typename _CharT = char,
           typename _Traits = std::char_traits<_CharT> >
-class infix_ostream_iterator
-    : public std::iterator<std::output_iterator_tag, void, void, void, void> {
+class infix_ostream_iterator {
 public:
   using char_type = _CharT;
   using traits_type = _Traits ;
   using ostream_type = std::basic_ostream<_CharT, _Traits>;
+  using iterator_concept = std::output_iterator_tag;
+  using iterator_category = std::output_iterator_tag;
+  using value_type = void;
+  using difference_type = std::ptrdiff_t;
+  using pointer = void;
+  using reference = void;
 
 private:
   ostream_type *_M_stream;

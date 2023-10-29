@@ -1,6 +1,6 @@
 # CGImap
 
-[![Build Status](https://travis-ci.org/zerebubuth/openstreetmap-cgimap.svg?branch=master)](https://travis-ci.org/zerebubuth/openstreetmap-cgimap)
+[![CI](https://github.com/zerebubuth/openstreetmap-cgimap/actions/workflows/main.yml/badge.svg)](https://github.com/zerebubuth/openstreetmap-cgimap/actions/workflows/main.yml) [![CodeQL](https://github.com/zerebubuth/openstreetmap-cgimap/actions/workflows/codeql.yml/badge.svg)](https://github.com/zerebubuth/openstreetmap-cgimap/actions/workflows/codeql.yml)
 
 ## Overview
 

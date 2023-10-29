@@ -2226,6 +2226,32 @@ namespace {
 	  throw std::runtime_error("Expected HTTP 200 OK: Log on with email address, whitespace, different case");
     }
 
+    // User is in status "pending"
+    {
+        tdb.run_sql(R"(UPDATE users SET status = 'pending' where id = 1;)");
+
+        // set up request headers from test case
+        test_request req;
+        req.set_header("REQUEST_METHOD", "POST");
+        req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
+        req.set_header("HTTP_AUTHORIZATION", baseauth);
+        req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+        req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+             <osmChange version="0.6" generator="iD">
+             <create><node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1"/></create>
+             </osmChange>)" );
+
+        // execute the request
+        process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+
+        // Basic Auth in status "pending" should return status HTTP 401
+        if (req.response_status() != 401)
+          throw std::runtime_error("Expected HTTP 401 Unauthorized: user status pending");
+
+        tdb.run_sql(R"(UPDATE users SET status = 'confirmed' where id = 1;)");
+    }
+
     // User is blocked (needs_view)
     {
         tdb.run_sql(R"(UPDATE user_blocks SET needs_view = true where user_id = 1;)");

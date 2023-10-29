@@ -1,0 +1,24 @@
+Request-Method: GET
+Request-URI: /api/0.6/changeset/12?include_discussion=1
+HTTP-X-Error-Format: xml
+Date: 2021-01-01T12:00:00Z
+---
+Status: 200 OK
+Content-Type: application/xml; charset=utf-8
+!Content-Disposition:
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+  <changeset id="12" user="FakeUser1" uid="1" created_at="2020-01-01T12:34:56Z" closed_at="2020-01-01T13:12:11Z" open="false" comments_count="3" changes_count="0">
+    <discussion>
+      <comment id="2" date="2020-01-02T12:00:00Z" uid="1" user="FakeUser1">
+        <text>it was empty</text>
+      </comment>
+      <comment id="3" date="2020-01-03T12:00:00Z" uid="2" user="FakeUser2">
+        <text>why?</text>
+      </comment>
+      <comment id="4" date="2020-01-04T12:00:00Z" uid="1" user="FakeUser1">
+        <text>because</text>
+      </comment>
+    </discussion>
+  </changeset>
+</osm>

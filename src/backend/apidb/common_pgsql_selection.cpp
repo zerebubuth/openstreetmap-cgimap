@@ -146,17 +146,19 @@ void extract_comments(const pqxx_tuple &row, comments_t &comments) {
   changeset_comment_info comment;
   comments.clear();
 
+  auto id           = psql_array_to_vector(row["comment_id"].c_str());
   auto author_id    = psql_array_to_vector(row["comment_author_id"].c_str());
   auto display_name = psql_array_to_vector(row["comment_display_name"].c_str());
   auto body         = psql_array_to_vector(row["comment_body"].c_str());
   auto created_at   = psql_array_to_vector(row["comment_created_at"].c_str());
 
-  if (author_id.size()!=display_name.size() || display_name.size()!=body.size()
-      || body.size()!=created_at.size()) {
+  if (id.size()!=author_id.size() || author_id.size()!=display_name.size()
+      || display_name.size()!=body.size() || body.size()!=created_at.size()) {
     throw std::runtime_error("Mismatch in comments author_id, display_name, body and created_at size");
   }
 
-  for (std::size_t i=0; i<author_id.size(); i++) {
+  for (std::size_t i=0; i<id.size(); i++) {
+    comment.id = std::stol(id[i]);
     comment.author_id = std::stol(author_id[i]);
     comment.author_display_name = display_name[i];
     comment.body = body[i];

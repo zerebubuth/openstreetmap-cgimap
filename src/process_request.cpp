@@ -34,10 +34,18 @@ void validate_user_db_update_permission (
   if (!user_id)
     throw http::unauthorized ("User is not authorized");
 
-  if (selection.supports_user_details ()
-      && selection.is_user_blocked (*user_id))
-    throw http::forbidden (
-	"Your access to the API has been blocked. Please log-in to the web interface to find out more.");
+  if (selection.supports_user_details ())
+  {
+    if (selection.is_user_blocked (*user_id))
+      throw http::forbidden (
+	  "Your access to the API has been blocked. Please log-in to the web interface to find out more.");
+
+    // User status has to be either active or confirmed, otherwise the request
+    // to change the database will be rejected
+    if (!selection.is_user_active(*user_id))
+      throw http::forbidden (
+          "You have not permitted the application access to this facility");
+  }
 
   if (!allow_api_write)
     throw http::unauthorized ("You have not granted the modify map permission");
@@ -61,6 +69,8 @@ void respond_404(const http::not_found &e, request &r) {
     .add_header("Content-Length", "0")
     .add_header("Cache-Control", "no-cache")
     .put("");
+
+  r.finish();
 }
 
 void respond_401(const http::unauthorized &e, request &r) {
@@ -132,8 +142,16 @@ void respond_error(const http::exception &e, request &r) {
       .add_header("Content-Type", "text/plain")
       .add_header("Content-Length", std::to_string(message.size()))
       .add_header("Error", message_error_header)
-      .add_header("Cache-Control", "no-cache")
-      .put(message);   // output the message as well
+      .add_header("Cache-Control", "no-cache");
+
+    if (e.code() == 509) {
+      if (auto bandwidth_exception = dynamic_cast<const http::bandwidth_limit_exceeded*>(&e)) {
+        r.add_header("Retry-After",
+                      std::to_string(bandwidth_exception->retry_seconds));
+      }
+    }
+
+    r.put(message);   // output the message as well
   }
 
   r.finish();
@@ -463,6 +481,7 @@ std::optional<osm_user_id_t> determine_user_id (request& req,
       // the request must have been unsigned.
     }
   }
+
   return user_id;
 }
 
@@ -506,10 +525,15 @@ void process_request(request &req, rate_limiter &limiter,
           user_roles = store->get_roles_for_user(*user_id);
     }
 
+    auto is_moderator = user_roles.count(osm_user_role_t::moderator) > 0;
+
+    bool exceeded_limit;
+    int retry_seconds;
+    std::tie(exceeded_limit, retry_seconds) = limiter.check(client_key, is_moderator);
     // check whether the client is being rate limited
-    if (!limiter.check(client_key)) {
+    if (exceeded_limit) {
       logger::message(fmt::format("Rate limiter rejected request from {}", client_key));
-      throw http::bandwidth_limit_exceeded("You have downloaded too much data. Please try again later.");
+      throw http::bandwidth_limit_exceeded(retry_seconds);
     }
 
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -528,8 +552,7 @@ void process_request(request &req, rate_limiter &limiter,
     // override the default access control allow methods header
     req.set_default_methods(handler->allowed_methods());
 
-    if (show_redactions_requested(req) &&
-        (user_roles.count(osm_user_role_t::moderator) > 0)) {
+    if (is_moderator && show_redactions_requested(req)) {
       selection->set_redactions_visible(true);
     }
 
@@ -571,7 +594,7 @@ void process_request(request &req, rate_limiter &limiter,
 
     // update the rate limiter, if anything was written
     if (bytes_written > 0) {
-      limiter.update(client_key, bytes_written);
+      limiter.update(client_key, bytes_written, is_moderator);
     }
 
     // log the completion time (note: this comes last to avoid

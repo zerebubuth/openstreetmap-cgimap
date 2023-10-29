@@ -232,6 +232,8 @@ void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
   if (!sel_historic_ways.empty()) {
     std::vector<osm_nwr_id_t> ids;
     std::vector<osm_nwr_id_t> versions;
+    ids.reserve(sel_historic_ways.size());
+    versions.reserve(sel_historic_ways.size());
 
     for (const auto &ed : sel_historic_ways) {
       ids.emplace_back(ed.first);
@@ -311,6 +313,8 @@ void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
   if (!sel_historic_relations.empty()) {
     std::vector<osm_nwr_id_t> ids;
     std::vector<osm_nwr_id_t> versions;
+    ids.reserve(sel_historic_relations.size());
+    versions.reserve(sel_historic_relations.size());
 
     for (const auto &ed : sel_historic_relations) {
       ids.emplace_back(ed.first);
@@ -335,19 +339,25 @@ void readonly_pgsql_selection::write_changesets(output_formatter &formatter,
       "SELECT c.id, "
         "to_char(c.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at, "
         "to_char(c.closed_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS closed_at, "
-        "c.min_lat, c.max_lat, c.min_lon, c.max_lon, c.num_changes, t.keys as tag_k, "
-        "t.values as tag_v, cc.author_id as comment_author_id, "
+        "c.min_lat, c.max_lat, c.min_lon, c.max_lon, "
+        "c.num_changes, "
+        "t.keys as tag_k, t.values as tag_v, "
+        "cc.id as comment_id, "
+        "cc.author_id as comment_author_id, "
         "cc.display_name as comment_display_name, "
-        "cc.body as comment_body, cc.created_at as comment_created_at "
+        "cc.body as comment_body, "
+        "cc.created_at as comment_created_at "
       "FROM changesets c "
        "LEFT JOIN LATERAL "
            "(SELECT array_agg(k) AS keys, array_agg(v) AS values "
            "FROM changeset_tags WHERE c.id=changeset_id ) t ON true "
        "LEFT JOIN LATERAL "
-         "(SELECT array_agg(author_id) as author_id, array_agg(display_name) "
-         "as display_name, array_agg(body) as body, "
+         "(SELECT array_agg(id) as id, "
+         "array_agg(author_id) as author_id, "
+         "array_agg(display_name) as display_name, "
+         "array_agg(body) as body, "
          "array_agg(created_at) as created_at FROM "
-           "(SELECT cc.author_id, u.display_name, cc.body, "
+           "(SELECT cc.id, cc.author_id, u.display_name, cc.body, "
            "to_char(cc.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at "
            "FROM changeset_comments cc JOIN users u ON cc.author_id = u.id "
            "where cc.changeset_id=c.id AND cc.visible ORDER BY cc.created_at) x "
@@ -574,8 +584,10 @@ int readonly_pgsql_selection::select_historical_nodes(
        "INNER JOIN wanted w ON n.node_id = w.id AND n.version = w.version "
        "WHERE (n.redaction_id IS NULL OR $3 = TRUE)");
 
-  std::vector<osm_nwr_id_t> ids(eds.size());
-  std::vector<osm_version_t> vers(eds.size());
+  std::vector<osm_nwr_id_t> ids;
+  std::vector<osm_version_t> vers;
+  ids.reserve(eds.size());
+  vers.reserve(eds.size());
 
   for (const auto &ed : eds) {
     ids.emplace_back(ed.first);
@@ -602,8 +614,10 @@ int readonly_pgsql_selection::select_historical_ways(
        "INNER JOIN wanted x ON w.way_id = x.id AND w.version = x.version "
        "WHERE (w.redaction_id IS NULL OR $3 = TRUE)");
 
-  std::vector<osm_nwr_id_t> ids(eds.size());
-  std::vector<osm_version_t> vers(eds.size());
+  std::vector<osm_nwr_id_t> ids;
+  std::vector<osm_version_t> vers;
+  ids.reserve(eds.size());
+  vers.reserve(eds.size());
 
   for (const auto &ed : eds) {
     ids.emplace_back(ed.first);
@@ -630,8 +644,10 @@ int readonly_pgsql_selection::select_historical_relations(
        "INNER JOIN wanted x ON r.relation_id = x.id AND r.version = x.version "
        "WHERE (r.redaction_id IS NULL OR $3 = TRUE)");
 
-  std::vector<osm_nwr_id_t> ids(eds.size());
-  std::vector<osm_version_t> vers(eds.size());
+  std::vector<osm_nwr_id_t> ids;
+  std::vector<osm_version_t> vers;
+  ids.reserve(eds.size());
+  vers.reserve(eds.size());
 
   for (const auto &ed : eds) {
     ids.emplace_back(ed.first);
@@ -811,6 +827,17 @@ bool readonly_pgsql_selection::get_user_id_pass(const std::string& user_name, os
   pass_salt = row["pass_salt"].as<std::string>();
 
   return true;
+}
+
+bool readonly_pgsql_selection::is_user_active(const osm_user_id_t id)
+{
+  m.prepare("is_user_active",
+         R"(SELECT id FROM users
+            WHERE id = $1
+            AND (status = 'active' or status = 'confirmed'))");
+
+  auto res = m.exec_prepared("is_user_active", id);
+  return (!res.empty());
 }
 
 std::set< osm_changeset_id_t > readonly_pgsql_selection::extract_changeset_ids(pqxx::result& result) {
