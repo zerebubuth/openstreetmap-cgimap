@@ -147,8 +147,8 @@ void global_settings_via_options::set_oauth_10_support(const po::variables_map &
 void global_settings_via_options::set_ratelimiter_ratelimit(const po::variables_map &options) {
   if (options.count("ratelimit")) {
     auto parsed_bytes_per_sec = options["ratelimit"].as<long>();
-    if (parsed_bytes_per_sec < 0)
-      throw std::invalid_argument("ratelimit must be a positive number");
+    if (parsed_bytes_per_sec <= 0)
+      throw std::invalid_argument("ratelimit must be greater than zero");
     if (parsed_bytes_per_sec > 1024 * 1024 * 1024)
       throw std::invalid_argument("ratelimit must be 1GB or less");
     m_ratelimiter_ratelimit = parsed_bytes_per_sec;
@@ -156,8 +156,8 @@ void global_settings_via_options::set_ratelimiter_ratelimit(const po::variables_
 
   if (options.count("moderator-ratelimit")) {
     auto parsed_bytes_per_sec = options["moderator-ratelimit"].as<long>();
-    if (parsed_bytes_per_sec < 0)
-      throw std::invalid_argument("moderator-ratelimit must be a positive number");
+    if (parsed_bytes_per_sec <= 0)
+      throw std::invalid_argument("moderator-ratelimit must be greater than zero");
     if (parsed_bytes_per_sec > 1024 * 1024 * 1024)
       throw std::invalid_argument("moderator-ratelimit must be 1GB or less");
     m_moderator_ratelimiter_ratelimit = parsed_bytes_per_sec;
@@ -167,8 +167,8 @@ void global_settings_via_options::set_ratelimiter_ratelimit(const po::variables_
 void global_settings_via_options::set_ratelimiter_maxdebt(const po::variables_map &options) {
  if (options.count("maxdebt")) {
     auto parsed_max_bytes = options["maxdebt"].as<long>();
-    if (parsed_max_bytes < 0)
-      throw std::invalid_argument("maxdebt must be a positive number");
+    if (parsed_max_bytes <= 0)
+      throw std::invalid_argument("maxdebt must be greater than zero");
     if (parsed_max_bytes > 3500)
       throw std::invalid_argument("maxdebt (in MB) must be 3500 or less");
     m_ratelimiter_maxdebt = parsed_max_bytes * 1024 * 1024;
@@ -176,8 +176,8 @@ void global_settings_via_options::set_ratelimiter_maxdebt(const po::variables_ma
 
   if (options.count("moderator-maxdebt")) {
     auto parsed_max_bytes = options["moderator-maxdebt"].as<long>();
-    if (parsed_max_bytes < 0)
-      throw std::invalid_argument("moderator-maxdebt must be a positive number");
+    if (parsed_max_bytes <= 0)
+      throw std::invalid_argument("moderator-maxdebt must be greater than zero");
     if (parsed_max_bytes > 3500)
       throw std::invalid_argument("moderator-maxdebt (in MB) must be 3500 or less");
     m_moderator_ratelimiter_maxdebt = parsed_max_bytes * 1024 * 1024;

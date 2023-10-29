@@ -157,7 +157,8 @@ public:
  */
 class bandwidth_limit_exceeded : public exception {
 public:
-  bandwidth_limit_exceeded(const std::string &message);
+  bandwidth_limit_exceeded(int retry_seconds);
+  int retry_seconds;
 };
 
 /**

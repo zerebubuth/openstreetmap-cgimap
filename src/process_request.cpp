@@ -65,10 +65,12 @@ void check_db_readonly_mode (const data_update& data_update)
 // https://github.com/zerebubuth/openstreetmap-cgimap/pull/125#issuecomment-272720417
 void respond_404(const http::not_found &e, request &r) {
   r.status(e.code())
-    .add_header("Content-Type", "text/html; charset=utf-8")
+    .add_header("Content-Type", "text/plain; charset=utf-8")
     .add_header("Content-Length", "0")
     .add_header("Cache-Control", "no-cache")
     .put("");
+
+  r.finish();
 }
 
 void respond_401(const http::unauthorized &e, request &r) {
@@ -140,8 +142,15 @@ void respond_error(const http::exception &e, request &r) {
       .add_header("Content-Type", "text/plain")
       .add_header("Content-Length", std::to_string(message.size()))
       .add_header("Error", message_error_header)
-      .add_header("Cache-Control", "no-cache")
-      .put(message);   // output the message as well
+      .add_header("Cache-Control", "no-cache");
+
+    if (e.code() == 509) {
+      auto bandwidth_exception = dynamic_cast<const http::bandwidth_limit_exceeded&>(e);
+      r.add_header("Retry-After",
+                    std::to_string(bandwidth_exception.retry_seconds));
+    }
+
+    r.put(message);   // output the message as well
   }
 
   r.finish();
@@ -517,10 +526,13 @@ void process_request(request &req, rate_limiter &limiter,
 
     auto is_moderator = user_roles.count(osm_user_role_t::moderator) > 0;
 
+    bool exceeded_limit;
+    int retry_seconds;
+    std::tie(exceeded_limit, retry_seconds) = limiter.check(client_key, is_moderator);
     // check whether the client is being rate limited
-    if (!limiter.check(client_key, is_moderator)) {
+    if (exceeded_limit) {
       logger::message(fmt::format("Rate limiter rejected request from {}", client_key));
-      throw http::bandwidth_limit_exceeded("You have downloaded too much data. Please try again later.");
+      throw http::bandwidth_limit_exceeded(retry_seconds);
     }
 
     auto start_time = std::chrono::high_resolution_clock::now();
