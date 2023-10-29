@@ -1,3 +1,16 @@
+openstreetmap-cgimap (0.8.9-1~jammy1) jammy; urgency=medium
+
+  * Add moderators specific rate limiting settings (#294)
+  * Add Retry-After http header in 509 response (#295)
+  * Add ids to changeset comments output (#289)
+  * Fix vector reserve in pqsql select for historic n/w/r (#282)
+  * Replace deprecated std::iterator with direct member type declarations (#279)
+  * Check user state, only allow db changes for confirmed and active users (#284)
+  * Fix commented out Dockerfile config in lighttpd.conf (#287)
+  * Add more test files to gitignore (#288)
+
+ -- mmd osm <mmd.osm@gmail.com>  Sun, 29 Oct 2023 19:30:00 +0000
+
 openstreetmap-cgimap (0.8.8-1~jammy1) jammy; urgency=medium
 
   * Undo "Replace custom array parser by pqxx::array_parser" (#277)
