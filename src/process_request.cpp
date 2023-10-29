@@ -515,8 +515,10 @@ void process_request(request &req, rate_limiter &limiter,
           user_roles = store->get_roles_for_user(*user_id);
     }
 
+    auto is_moderator = user_roles.count(osm_user_role_t::moderator) > 0;
+
     // check whether the client is being rate limited
-    if (!limiter.check(client_key)) {
+    if (!limiter.check(client_key, is_moderator)) {
       logger::message(fmt::format("Rate limiter rejected request from {}", client_key));
       throw http::bandwidth_limit_exceeded("You have downloaded too much data. Please try again later.");
     }
@@ -537,8 +539,7 @@ void process_request(request &req, rate_limiter &limiter,
     // override the default access control allow methods header
     req.set_default_methods(handler->allowed_methods());
 
-    if (show_redactions_requested(req) &&
-        (user_roles.count(osm_user_role_t::moderator) > 0)) {
+    if (is_moderator && show_redactions_requested(req)) {
       selection->set_redactions_visible(true);
     }
 
@@ -580,7 +581,7 @@ void process_request(request &req, rate_limiter &limiter,
 
     // update the rate limiter, if anything was written
     if (bytes_written > 0) {
-      limiter.update(client_key, bytes_written);
+      limiter.update(client_key, bytes_written, is_moderator);
     }
 
     // log the completion time (note: this comes last to avoid

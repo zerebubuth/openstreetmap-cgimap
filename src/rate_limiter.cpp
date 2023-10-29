@@ -1,22 +1,23 @@
 #include <vector>
 #include <libmemcached/memcached.h>
 
+#include "cgimap/options.hpp"
 #include "cgimap/rate_limiter.hpp"
 
 rate_limiter::~rate_limiter() = default;
 
 null_rate_limiter::~null_rate_limiter() = default;
 
-bool null_rate_limiter::check(const std::string &) {
+bool null_rate_limiter::check(const std::string &, bool) {
   return true;
 }
 
-void null_rate_limiter::update(const std::string &, int) {
+void null_rate_limiter::update(const std::string &, int, bool) {
 }
 
 struct memcached_rate_limiter::state {
   time_t last_update;
-  int bytes_served;
+  uint32_t bytes_served;
 };
 
 memcached_rate_limiter::memcached_rate_limiter(
@@ -37,18 +38,6 @@ memcached_rate_limiter::memcached_rate_limiter(
   } else {
     ptr = NULL;
   }
-
-  if (options.count("ratelimit")) {
-    bytes_per_sec = options["ratelimit"].as<int>();
-  } else {
-    bytes_per_sec = 100 * 1024;
-  }
-
-  if (options.count("maxdebt")) {
-    max_bytes = options["maxdebt"].as<int>() * 1024 * 1024;
-  } else {
-    max_bytes = 250 * 1024 * 1024;
-  }
 }
 
 memcached_rate_limiter::~memcached_rate_limiter() {
@@ -56,8 +45,8 @@ memcached_rate_limiter::~memcached_rate_limiter() {
     memcached_free(ptr);
 }
 
-bool memcached_rate_limiter::check(const std::string &key) {
-  int bytes_served = 0;
+bool memcached_rate_limiter::check(const std::string &key, bool moderator) {
+  uint32_t bytes_served = 0;
   std::string mc_key;
   state *sp;
   size_t length;
@@ -65,6 +54,7 @@ bool memcached_rate_limiter::check(const std::string &key) {
   memcached_return error;
 
   mc_key = "cgimap:" + key;
+  auto bytes_per_sec = global_settings::get_ratelimiter_ratelimit(moderator);
 
   if (ptr &&
       (sp = (state *)memcached_get(ptr, mc_key.data(), mc_key.size(), &length,
@@ -80,10 +70,11 @@ bool memcached_rate_limiter::check(const std::string &key) {
     free(sp);
   }
 
+  auto max_bytes = global_settings::get_ratelimiter_maxdebt(moderator);
   return bytes_served < max_bytes;
 }
 
-void memcached_rate_limiter::update(const std::string &key, int bytes) {
+void memcached_rate_limiter::update(const std::string &key, int bytes, bool moderator) {
   if (ptr) {
     time_t now = time(NULL);
     std::string mc_key;
@@ -93,6 +84,7 @@ void memcached_rate_limiter::update(const std::string &key, int bytes) {
     memcached_return error;
 
     mc_key = "cgimap:" + key;
+    auto bytes_per_sec = global_settings::get_ratelimiter_ratelimit(moderator);
 
   retry:
 

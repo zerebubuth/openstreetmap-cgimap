@@ -304,12 +304,12 @@ struct recording_rate_limiter
   : public rate_limiter {
   ~recording_rate_limiter() = default;
 
-  bool check(const std::string &key) {
+  bool check(const std::string &key, bool moderator) {
     m_keys_seen.insert(key);
     return true;
   }
 
-  void update(const std::string &key, int bytes) {
+  void update(const std::string &key, int bytes, bool moderator) {
     m_keys_seen.insert(key);
   }
 

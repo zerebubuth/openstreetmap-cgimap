@@ -21,6 +21,10 @@ void global_settings_via_options::init_fallback_values(const global_settings_bas
   m_element_max_tags = def.get_element_max_tags();
   m_basic_auth_support = def.get_basic_auth_support();
   m_oauth_10_support = def.get_oauth_10_support();
+  m_ratelimiter_ratelimit = def.get_ratelimiter_ratelimit(false);
+  m_moderator_ratelimiter_ratelimit = def.get_ratelimiter_ratelimit(true);
+  m_ratelimiter_maxdebt = def.get_ratelimiter_maxdebt(false);
+  m_moderator_ratelimiter_maxdebt = def.get_ratelimiter_maxdebt(true);
 }
 
 void global_settings_via_options::set_new_options(const po::variables_map &options) {
@@ -37,6 +41,8 @@ void global_settings_via_options::set_new_options(const po::variables_map &optio
   set_element_max_tags(options);
   set_basic_auth_support(options);
   set_oauth_10_support(options);
+  set_ratelimiter_ratelimit(options);
+  set_ratelimiter_maxdebt(options);
 }
 
 void global_settings_via_options::set_payload_max_size(const po::variables_map &options)  {
@@ -135,6 +141,46 @@ void global_settings_via_options::set_basic_auth_support(const po::variables_map
 void global_settings_via_options::set_oauth_10_support(const po::variables_map &options) {
   if (options.count("oauth_10_support")) {
     m_oauth_10_support = options["oauth_10_support"].as<bool>();
+  }
+}
+
+void global_settings_via_options::set_ratelimiter_ratelimit(const po::variables_map &options) {
+  if (options.count("ratelimit")) {
+    auto parsed_bytes_per_sec = options["ratelimit"].as<long>();
+    if (parsed_bytes_per_sec < 0)
+      throw std::invalid_argument("ratelimit must be a positive number");
+    if (parsed_bytes_per_sec > 1024 * 1024 * 1024)
+      throw std::invalid_argument("ratelimit must be 1GB or less");
+    m_ratelimiter_ratelimit = parsed_bytes_per_sec;
+  }
+
+  if (options.count("moderator-ratelimit")) {
+    auto parsed_bytes_per_sec = options["moderator-ratelimit"].as<long>();
+    if (parsed_bytes_per_sec < 0)
+      throw std::invalid_argument("moderator-ratelimit must be a positive number");
+    if (parsed_bytes_per_sec > 1024 * 1024 * 1024)
+      throw std::invalid_argument("moderator-ratelimit must be 1GB or less");
+    m_moderator_ratelimiter_ratelimit = parsed_bytes_per_sec;
+  }
+}
+
+void global_settings_via_options::set_ratelimiter_maxdebt(const po::variables_map &options) {
+ if (options.count("maxdebt")) {
+    auto parsed_max_bytes = options["maxdebt"].as<long>();
+    if (parsed_max_bytes < 0)
+      throw std::invalid_argument("maxdebt must be a positive number");
+    if (parsed_max_bytes > 3500)
+      throw std::invalid_argument("maxdebt (in MB) must be 3500 or less");
+    m_ratelimiter_maxdebt = parsed_max_bytes * 1024 * 1024;
+  }
+
+  if (options.count("moderator-maxdebt")) {
+    auto parsed_max_bytes = options["moderator-maxdebt"].as<long>();
+    if (parsed_max_bytes < 0)
+      throw std::invalid_argument("moderator-maxdebt must be a positive number");
+    if (parsed_max_bytes > 3500)
+      throw std::invalid_argument("moderator-maxdebt (in MB) must be 3500 or less");
+    m_moderator_ratelimiter_maxdebt = parsed_max_bytes * 1024 * 1024;
   }
 }
 
