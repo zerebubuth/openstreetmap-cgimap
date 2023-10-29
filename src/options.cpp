@@ -150,7 +150,7 @@ void global_settings_via_options::set_ratelimiter_ratelimit(const po::variables_
     if (parsed_bytes_per_sec < 0)
       throw std::invalid_argument("ratelimit must be a positive number");
     if (parsed_bytes_per_sec > 1024 * 1024 * 1024)
-      throw std::invalid_argument("ratelimit must be 1GB or less.");
+      throw std::invalid_argument("ratelimit must be 1GB or less");
     m_ratelimiter_ratelimit = parsed_bytes_per_sec;
   }
 
@@ -159,7 +159,7 @@ void global_settings_via_options::set_ratelimiter_ratelimit(const po::variables_
     if (parsed_bytes_per_sec < 0)
       throw std::invalid_argument("moderator-ratelimit must be a positive number");
     if (parsed_bytes_per_sec > 1024 * 1024 * 1024)
-      throw std::invalid_argument("moderator-ratelimit must be 1GB or less.");
+      throw std::invalid_argument("moderator-ratelimit must be 1GB or less");
     m_moderator_ratelimiter_ratelimit = parsed_bytes_per_sec;
   }
 }
@@ -170,7 +170,7 @@ void global_settings_via_options::set_ratelimiter_maxdebt(const po::variables_ma
     if (parsed_max_bytes < 0)
       throw std::invalid_argument("maxdebt must be a positive number");
     if (parsed_max_bytes > 3500)
-      throw std::invalid_argument("maxdebt must be 3500 MB or less.");
+      throw std::invalid_argument("maxdebt (in MB) must be 3500 or less");
     m_ratelimiter_maxdebt = parsed_max_bytes * 1024 * 1024;
   }
 
@@ -179,7 +179,7 @@ void global_settings_via_options::set_ratelimiter_maxdebt(const po::variables_ma
     if (parsed_max_bytes < 0)
       throw std::invalid_argument("moderator-maxdebt must be a positive number");
     if (parsed_max_bytes > 3500)
-      throw std::invalid_argument("moderator-maxdebt must be 3500 MB or less.");
+      throw std::invalid_argument("moderator-maxdebt (in MB) must be 3500 or less");
     m_moderator_ratelimiter_maxdebt = parsed_max_bytes * 1024 * 1024;
   }
 }
