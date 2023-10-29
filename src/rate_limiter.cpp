@@ -8,8 +8,8 @@ rate_limiter::~rate_limiter() = default;
 
 null_rate_limiter::~null_rate_limiter() = default;
 
-bool null_rate_limiter::check(const std::string &, bool) {
-  return true;
+std::tuple<bool, int> null_rate_limiter::check(const std::string &, bool) {
+  return std::make_tuple(false, 0);
 }
 
 void null_rate_limiter::update(const std::string &, int, bool) {
@@ -45,7 +45,7 @@ memcached_rate_limiter::~memcached_rate_limiter() {
     memcached_free(ptr);
 }
 
-bool memcached_rate_limiter::check(const std::string &key, bool moderator) {
+std::tuple<bool, int> memcached_rate_limiter::check(const std::string &key, bool moderator) {
   uint32_t bytes_served = 0;
   std::string mc_key;
   state *sp;
@@ -71,7 +71,12 @@ bool memcached_rate_limiter::check(const std::string &key, bool moderator) {
   }
 
   auto max_bytes = global_settings::get_ratelimiter_maxdebt(moderator);
-  return bytes_served < max_bytes;
+  if (bytes_served < max_bytes) {
+    return std::make_tuple(false, 0);
+  } else {
+    // + 1 to reverse effect of integer flooring seconds
+    return std::make_tuple(true, (bytes_served - max_bytes) / bytes_per_sec + 1);
+  }
 }
 
 void memcached_rate_limiter::update(const std::string &key, int bytes, bool moderator) {

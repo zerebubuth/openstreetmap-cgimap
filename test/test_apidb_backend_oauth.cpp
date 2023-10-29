@@ -304,9 +304,9 @@ struct recording_rate_limiter
   : public rate_limiter {
   ~recording_rate_limiter() = default;
 
-  bool check(const std::string &key, bool moderator) {
+  std::tuple<bool, int> check(const std::string &key, bool moderator) {
     m_keys_seen.insert(key);
-    return true;
+    return std::make_tuple(false, 0);
   }
 
   void update(const std::string &key, int bytes, bool moderator) {
