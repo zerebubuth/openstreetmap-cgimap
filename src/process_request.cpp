@@ -65,7 +65,7 @@ void check_db_readonly_mode (const data_update& data_update)
 // https://github.com/zerebubuth/openstreetmap-cgimap/pull/125#issuecomment-272720417
 void respond_404(const http::not_found &e, request &r) {
   r.status(e.code())
-    .add_header("Content-Type", "text/plain; charset=utf-8")
+    .add_header("Content-Type", "text/html; charset=utf-8")
     .add_header("Content-Length", "0")
     .add_header("Cache-Control", "no-cache")
     .put("");
@@ -145,9 +145,10 @@ void respond_error(const http::exception &e, request &r) {
       .add_header("Cache-Control", "no-cache");
 
     if (e.code() == 509) {
-      auto bandwidth_exception = dynamic_cast<const http::bandwidth_limit_exceeded&>(e);
-      r.add_header("Retry-After",
-                    std::to_string(bandwidth_exception.retry_seconds));
+      if (auto bandwidth_exception = dynamic_cast<const http::bandwidth_limit_exceeded*>(&e)) {
+        r.add_header("Retry-After",
+                      std::to_string(bandwidth_exception->retry_seconds));
+      }
     }
 
     r.put(message);   // output the message as well
