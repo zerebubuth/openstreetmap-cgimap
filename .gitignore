@@ -34,6 +34,7 @@ test/.deps/
 test/.libs/
 test/test_core
 test/test_apidb_backend_nodes
+test/test_apidb_backend_node_changes
 test/test_apidb_backend_oauth
 test/test_apidb_backend_oauth2
 test/test_apidb_backend_historic

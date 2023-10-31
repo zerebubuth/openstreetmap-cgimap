@@ -7,6 +7,7 @@
 
 #include "cgimap/api06/node_handler.hpp"
 #include "cgimap/api06/node_version_handler.hpp"
+#include "cgimap/api06/node_create_handler.hpp"
 #include "cgimap/api06/nodes_handler.hpp"
 #include "cgimap/api06/node_history_handler.hpp"
 
@@ -236,6 +237,7 @@ routes::routes()
     // make sure that *_version_handler is listed before matching *_handler
       .GET<node_history_handler>(root_ / "node" / osm_id_ / "history")
       .GET<node_version_handler>(root_ / "node" / osm_id_ / osm_id_ )
+      .PUT<node_create_handler>(root_ / "node" / "create")
       .GET<node_handler>(root_ / "node" / osm_id_)
       .GET<nodes_handler>(root_ / "nodes")
 

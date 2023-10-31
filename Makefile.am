@@ -47,6 +47,7 @@ cgimap_api06_include_HEADERS = \
 	include/cgimap/api06/changeset_upload_handler.hpp \
 	include/cgimap/api06/handler_utils.hpp \
 	include/cgimap/api06/map_handler.hpp \
+	include/cgimap/api06/node_create_handler.hpp \
 	include/cgimap/api06/node_handler.hpp \
 	include/cgimap/api06/node_history_handler.hpp \
 	include/cgimap/api06/node_relations_handler.hpp \
@@ -123,6 +124,7 @@ endif
 if ENABLE_APIDB
 TESTS += \
 	test/test_apidb_backend_nodes \
+	test/test_apidb_backend_node_changes \
 	test/test_apidb_backend_oauth \
 	test/test_apidb_backend_oauth2 \
 	test/test_apidb_backend_historic \

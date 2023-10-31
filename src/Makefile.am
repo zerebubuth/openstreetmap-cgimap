@@ -18,6 +18,7 @@ if ENABLE_APIDB
 lib_LTLIBRARIES+=libcgimap_apidb.la
 check_PROGRAMS+=\
 	../test/test_apidb_backend_nodes \
+	../test/test_apidb_backend_node_changes \
 	../test/test_apidb_backend_oauth \
 	../test/test_apidb_backend_oauth2 \
 	../test/test_apidb_backend_historic \
@@ -27,6 +28,7 @@ check_PROGRAMS+=\
 ___openstreetmap_cgimap_LDADD+=libcgimap_apidb.la
 ___test_test_core_LDADD+=libcgimap_apidb.la
 ___test_test_apidb_backend_nodes_LDADD=libcgimap_core.la libcgimap_apidb.la
+___test_test_apidb_backend_node_changes_LDADD=libcgimap_core.la libcgimap_apidb.la
 ___test_test_apidb_backend_oauth_LDADD=libcgimap_core.la libcgimap_apidb.la
 ___test_test_apidb_backend_oauth2_LDADD=libcgimap_core.la libcgimap_apidb.la
 ___test_test_apidb_backend_historic_LDADD=libcgimap_core.la libcgimap_apidb.la
@@ -61,6 +63,7 @@ ___test_test_parse_changeset_input_LDADD=libcgimap_core.la @LIBXML_LIBS@ @BOOST_
 
 if ENABLE_APIDB
 ___test_test_apidb_backend_nodes_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
+___test_test_apidb_backend_node_changes_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
 ___test_test_apidb_backend_oauth_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
 ___test_test_apidb_backend_oauth2_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
 ___test_test_apidb_backend_historic_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
@@ -106,6 +109,11 @@ ___test_test_parse_changeset_input_SOURCES=\
 if ENABLE_APIDB
 ___test_test_apidb_backend_nodes_SOURCES=\
 	../test/test_apidb_backend_nodes.cpp \
+	../test/test_formatter.cpp \
+	../test/test_database.cpp \
+	../test/test_request.cpp
+___test_test_apidb_backend_node_changes_SOURCES=\
+	../test/test_apidb_backend_node_changes.cpp \
 	../test/test_formatter.cpp \
 	../test/test_database.cpp \
 	../test/test_request.cpp
@@ -197,6 +205,7 @@ libcgimap_core_la_SOURCES+=\
 	api06/handler_utils.cpp \
 	api06/id_version_io.cpp \
 	api06/map_handler.cpp \
+	api06/node_create_handler.cpp \
 	api06/node_handler.cpp \
 	api06/node_history_handler.cpp \
 	api06/node_relations_handler.cpp \
