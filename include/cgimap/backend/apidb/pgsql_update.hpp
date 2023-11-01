@@ -32,6 +32,8 @@ public:
 
   bool is_api_write_disabled() const;
 
+  uint32_t get_rate_limit(osm_user_id_t uid);
+
   /**
    * abstracts the creation of transactions for the
    * data updates.

@@ -2551,6 +2551,138 @@ namespace {
 
 }
 
+  class global_settings_enable_upload_rate_limiter_test_class : public global_settings_default {
+
+  public:
+     // enable upload rate limiter
+     bool get_ratelimiter_upload() const override { return true; }
+  };
+
+  void test_osmchange_rate_limiter(test_database &tdb) {
+
+    // Upload rate limiter enabling
+    auto test_settings = std::unique_ptr<global_settings_enable_upload_rate_limiter_test_class>(new global_settings_enable_upload_rate_limiter_test_class());
+    global_settings::set_configuration(std::move(test_settings));
+
+    tdb.run_sql(R"(
+         INSERT INTO users (id, email, pass_crypt, pass_salt, creation_time, display_name, data_public, status)
+         VALUES
+           (1, 'demo@example.com', '3wYbPiOxk/tU0eeIDjUhdvi8aDP3AbFtwYKKxF1IhGg=',
+                                     'sha512!10000!OUQLgtM7eD8huvanFT5/WtWaCwdOdrir8QOtFwxhO0A=',
+                                     '2013-11-14T02:10:00Z', 'demo', true, 'confirmed'),
+           (2, 'user_2@example.com', '', '', '2013-11-14T02:10:00Z', 'user_2', false, 'active');
+
+        INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes)
+        VALUES
+          (1, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 0),
+          (3, 1, now() at time zone 'utc' - '12 hour' ::interval,
+                 now() at time zone 'utc' - '11 hour' ::interval, 10000),
+          (4, 2, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 10000),
+          (5, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 10000);
+
+        INSERT INTO user_blocks (user_id, creator_id, reason, ends_at, needs_view)
+        VALUES (1,  2, '', now() at time zone 'utc' - ('1 hour' ::interval), false);
+
+        )"
+    );
+
+    // Test check_rate_limit database function.
+    // User ids != 1 may not upload any changes,
+    // User id may upload up to 99 changes
+    // Real database function is managed outside of CGImap
+
+    tdb.run_sql(R"(
+
+      CREATE OR REPLACE FUNCTION api_rate_limit(user_id bigint)
+        RETURNS integer
+        AS $$
+       DECLARE
+         max_changes double precision;
+        recent_changes int4;
+      BEGIN
+        IF user_id <> 1 THEN
+          RETURN 0;
+        ELSE
+          max_changes = 99;
+          SELECT COALESCE(SUM(changesets.num_changes), 0) INTO STRICT recent_changes FROM changesets
+             WHERE changesets.user_id = api_rate_limit.user_id
+               AND changesets.created_at >= CURRENT_TIMESTAMP AT TIME ZONE 'UTC' - '1 hour'::interval;
+
+          RETURN max_changes - recent_changes;
+        END IF;
+      END;
+      $$ LANGUAGE plpgsql STABLE;
+
+    )");
+
+    const std::string baseauth = "Basic ZGVtbzpwYXNzd29yZA==";
+    const std::string generator = "Test";
+
+    auto sel_factory = tdb.get_data_selection_factory();
+    auto upd_factory = tdb.get_data_update_factory();
+
+    null_rate_limiter limiter;
+    routes route;
+
+    // Try to upload a single change only
+    {
+        // set up request headers from test case
+        test_request req;
+        req.set_header("REQUEST_METHOD", "POST");
+        req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
+        req.set_header("HTTP_AUTHORIZATION", baseauth);
+        req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+        req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+             <osmChange version="0.6" generator="iD">
+             <create><node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1"/></create>
+             </osmChange>)" );
+
+        // execute the request
+        process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+
+        if (req.response_status() != 200)
+          throw std::runtime_error(fmt::format("Expected HTTP 200, found HTTP {} - single node update, rate limiter check.\nBody: {} ", req.response_status(), req.body().str()));
+    }
+
+    // We've already uploaded one change to changeset 1, we should be able
+    // to upload 98 further changes before hitting the rate limit
+
+    // This test checks that we're not counting any uncommitted changes
+    // to the changeset table towards our quota.
+
+    for (int nds = 100; nds > 97; nds--)
+    {
+        // set up request headers from test case
+        test_request req;
+        req.set_header("REQUEST_METHOD", "POST");
+        req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
+        req.set_header("HTTP_AUTHORIZATION", baseauth);
+        req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+        std::string nodes;
+
+        for (int i=1; i <= nds; i++) {
+          nodes += fmt::format(R"( <node id="{}" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1"/> )", -i);
+        }
+
+        req.set_payload(fmt::format(R"(<?xml version="1.0" encoding="UTF-8"?>
+             <osmChange version="0.6" generator="iD">
+             <create>{}</create>
+             </osmChange>)" , nodes));
+
+        // execute the request
+        process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+
+        if (nds > 98 && req.response_status() != 429)
+          throw std::runtime_error(fmt::format("Expected HTTP 429, found HTTP {} - multiple nodes update, rate limiter check.\nBody: {}", req.response_status(), req.body().str()));
+
+        if (nds == 98 && req.response_status() != 200)
+          throw std::runtime_error(fmt::format("Expected HTTP 200, found HTTP {} - multiple nodes update, rate limiter check.\nBody: {}", req.response_status(), req.body().str()));
+    }
+
+}
+
 } // anonymous namespace
 
 int main(int, char **) {
@@ -2570,6 +2702,9 @@ int main(int, char **) {
       tdb.run_update(std::function<void(test_database&)>(&test_osmchange_message));
 
       tdb.run_update(std::function<void(test_database&)>(&test_osmchange_end_to_end));
+
+      tdb.run_update(std::function<void(test_database&)>(&test_osmchange_rate_limiter));
+
 
 
   } catch (const test_database::setup_error &e) {

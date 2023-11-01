@@ -136,6 +136,23 @@ void pgsql_update::commit() {
   m.commit();
 }
 
+uint32_t pgsql_update::get_rate_limit(osm_user_id_t uid)
+{
+  m.prepare("api_rate_limit",
+    R"(SELECT * FROM api_rate_limit($1) LIMIT 1 )");
+
+  auto res = m.exec_prepared("api_rate_limit", uid);
+
+  if (res.size() != 1) {
+    throw http::server_error("api_rate_limit db function did not return any data");
+  }
+
+  auto row = res[0];
+  auto rate_limit = row[0].as<int32_t>();
+
+  return std::max(0, rate_limit);
+}
+
 
 pgsql_update::factory::factory(const po::variables_map &opts)
     : m_connection(connect_db_str(opts)), m_api_write_disabled(false)

@@ -103,6 +103,9 @@ const char *precondition_failed::what() const noexcept { return fullstring.c_str
 payload_too_large::payload_too_large(const string &message)
     : exception(413, "Payload Too Large", message) {}
 
+too_many_requests::too_many_requests(const string &message)
+    : exception(429, "Too Many Requests", message) {}
+
 bandwidth_limit_exceeded::bandwidth_limit_exceeded(int retry_seconds)
     : exception(509, "Bandwidth Limit Exceeded", fmt::format("You have downloaded too much data. Please try again in {} seconds.", retry_seconds)), retry_seconds(retry_seconds) {}
 
