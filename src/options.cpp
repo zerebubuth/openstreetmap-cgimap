@@ -25,6 +25,7 @@ void global_settings_via_options::init_fallback_values(const global_settings_bas
   m_moderator_ratelimiter_ratelimit = def.get_ratelimiter_ratelimit(true);
   m_ratelimiter_maxdebt = def.get_ratelimiter_maxdebt(false);
   m_moderator_ratelimiter_maxdebt = def.get_ratelimiter_maxdebt(true);
+  m_ratelimiter_upload = def.get_ratelimiter_upload();
 }
 
 void global_settings_via_options::set_new_options(const po::variables_map &options) {
@@ -43,6 +44,7 @@ void global_settings_via_options::set_new_options(const po::variables_map &optio
   set_oauth_10_support(options);
   set_ratelimiter_ratelimit(options);
   set_ratelimiter_maxdebt(options);
+  set_ratelimiter_upload(options);
 }
 
 void global_settings_via_options::set_payload_max_size(const po::variables_map &options)  {
@@ -181,6 +183,12 @@ void global_settings_via_options::set_ratelimiter_maxdebt(const po::variables_ma
     if (parsed_max_bytes > 3500)
       throw std::invalid_argument("moderator-maxdebt (in MB) must be 3500 or less");
     m_moderator_ratelimiter_maxdebt = parsed_max_bytes * 1024 * 1024;
+  }
+}
+
+void global_settings_via_options::set_ratelimiter_upload(const po::variables_map &options) {
+  if (options.count("ratelimit-upload")) {
+    m_ratelimiter_upload = options["ratelimit-upload"].as<bool>();
   }
 }
 

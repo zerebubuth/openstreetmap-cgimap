@@ -27,6 +27,7 @@ public:
   virtual bool get_oauth_10_support() const = 0;
   virtual uint32_t get_ratelimiter_ratelimit(bool) const = 0;
   virtual uint32_t get_ratelimiter_maxdebt(bool) const = 0;
+  virtual bool get_ratelimiter_upload() const = 0;
 };
 
 class global_settings_default : public global_settings_base {
@@ -92,6 +93,10 @@ public:
        return 1024 * 1024 * 1024; // 1GB
     }
     return 250 * 1024 * 1024; // 250 MB
+  }
+
+  virtual bool get_ratelimiter_upload() const override {
+    return false;
   }
 };
 
@@ -175,6 +180,10 @@ public:
     return m_ratelimiter_maxdebt;
   }
 
+  virtual bool get_ratelimiter_upload() const override {
+    return m_ratelimiter_upload;
+  }
+
 private:
   void init_fallback_values(const global_settings_base &def);
   void set_new_options(const po::variables_map &options);
@@ -192,6 +201,7 @@ private:
   void set_oauth_10_support(const po::variables_map &options);
   void set_ratelimiter_ratelimit(const po::variables_map &options);
   void set_ratelimiter_maxdebt(const po::variables_map &options);
+  void set_ratelimiter_upload(const po::variables_map &options);
   bool validate_timeout(const std::string &timeout) const;
 
   uint32_t m_payload_max_size;
@@ -210,6 +220,7 @@ private:
   uint32_t m_moderator_ratelimiter_ratelimit;
   uint32_t m_ratelimiter_maxdebt;
   uint32_t m_moderator_ratelimiter_maxdebt;
+  bool m_ratelimiter_upload;
 };
 
 class global_settings final {
@@ -260,6 +271,9 @@ public:
 
   // Maximum debt in bytes to allow each client/moderator before rate limiting
   static uint32_t get_ratelimiter_maxdebt(bool moderator) { return settings->get_ratelimiter_maxdebt(moderator);  }
+
+  // Use ratelimiter for changeset uploads
+  static bool get_ratelimiter_upload() { return settings->get_ratelimiter_upload(); }
 
 private:
   static std::unique_ptr<global_settings_base> settings;  // gets initialized with global_settings_default instance
