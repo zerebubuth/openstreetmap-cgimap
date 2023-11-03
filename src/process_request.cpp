@@ -265,48 +265,49 @@ process_post_put_request(request &req, handler& handler,
   logger::message(fmt::format("Started request for {} from {}", request_name, ip));
 
   try {
-
     payload_enabled_handler& pe_handler = dynamic_cast< payload_enabled_handler& >(handler);
 
-    auto payload = req.get_payload();
-    responder_ptr_t responder;
-
-    // Step 1: execute database update
-    auto rw_transaction = update_factory.get_default_transaction();
-
-    auto data_update = update_factory.make_data_update(*rw_transaction);
-
-    check_db_readonly_mode(*data_update);
-
-    // Executing the responder constructor will process the payload, perform database CRUD operations
-    // as needed and eventually calls db commit()
-    // Note: due to the database commit, rw_transaction can no longer be used
-    responder = pe_handler.responder(*data_update, payload, user_id);
-
-    // Step 2: do we need to read back some data from the database to generate a response?
-    if (pe_handler.requires_selection_after_update()) {
-
-      // Create a new read only transaction based on the update factory
-      // (might use a different db/user than what the data_selection factory would use)
-      auto read_only_transaction = update_factory.get_read_only_transaction();
-
-      // create a data selection for the request
-      auto data_selection = factory.make_selection(*read_only_transaction);
-      auto sel_responder = pe_handler.responder(*data_selection);
-      bytes_written = generate_response(req, *sel_responder, generator);
-    }
-    else
+    // Process request, perform database update
     {
-      // Step 1 already collected all data needed to generate a response message
-      bytes_written = generate_response(req, *responder, generator);
+      const auto payload = req.get_payload();
+      auto rw_transaction = update_factory.get_default_transaction();
+      auto data_update = update_factory.make_data_update(*rw_transaction);
+      check_db_readonly_mode(*data_update);
+
+      // Executing the responder constructor parses the payload, performs db CRUD operations
+      // and eventually calls db commit(), in case there are no issues with the data.
+      auto responder = pe_handler.responder(*data_update, payload, user_id);
+
+      // does the responder instance carry all the data which is needed to construct a response?
+      if (!pe_handler.requires_selection_after_update())
+      {
+        bytes_written = generate_response(req, *responder, generator);
+        return {request_name, bytes_written};
+      }
     }
+
+    /*
+     * Some endpoints, like changeset update, need to send back a complete OSM document
+     * containing all changeset details. Since the original request payload didn't include
+     * all necessary details, we need to read the data back from the database.
+     *
+     * As a first step, set up a new read only transaction using the update_factory,
+     * then read all needed data from the db, and finally generate the response.
+     */
+
+    auto read_only_transaction = update_factory.get_read_only_transaction();
+
+    // create a data selection for the request
+    auto data_selection = factory.make_selection(*read_only_transaction);
+    auto sel_responder = pe_handler.responder(*data_selection);
+    bytes_written = generate_response(req, *sel_responder, generator);
 
   } catch(std::bad_cast&) {
     // This may not happen, see static_assert in routes.cpp
     throw http::server_error("HTTP method is not payload enabled");
   }
 
-  return std::make_tuple(request_name, bytes_written);
+  return {request_name, bytes_written};
 }
 
 
