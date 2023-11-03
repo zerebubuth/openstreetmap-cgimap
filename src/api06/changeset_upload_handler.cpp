@@ -59,10 +59,7 @@ changeset_upload_responder::changeset_upload_responder(
           fmt::format(
               "Upload of {} changes by user {} in changeset {} blocked due to rate limiting, max. {} changes allowed",
               new_changes, uid, changeset, max_changes));
-      throw http::too_many_requests(
-          fmt::format(
-              "Upload of {} changes has been blocked due to rate limiting. You may upload at most {} changes at this time.",
-              new_changes, max_changes));
+      throw http::too_many_requests("Upload has been blocked due to rate limiting. Please try again later.");
     }
   }
 
