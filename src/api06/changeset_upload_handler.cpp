@@ -48,8 +48,22 @@ changeset_upload_responder::changeset_upload_responder(
   // store diffresult for output handling in class osm_diffresult_responder
   m_diffresult = change_tracking.assemble_diffresult();
 
-  changeset_updater->update_changeset(handler.get_num_changes(),
-                                      handler.get_bbox());
+  const auto new_changes = handler.get_num_changes();
+
+  if (global_settings::get_ratelimiter_upload()) {
+
+    auto max_changes = upd.get_rate_limit(uid);
+    if (new_changes > max_changes)
+    {
+      logger::message(
+          fmt::format(
+              "Upload of {} changes by user {} in changeset {} blocked due to rate limiting, max. {} changes allowed",
+              new_changes, uid, changeset, max_changes));
+      throw http::too_many_requests("Upload has been blocked due to rate limiting. Please try again later.");
+    }
+  }
+
+  changeset_updater->update_changeset(new_changes, handler.get_bbox());
 
   upd.commit();
 }

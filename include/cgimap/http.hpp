@@ -144,6 +144,17 @@ public:
 
 
 /**
+ * The HTTP 429 Too Many Requests response status code indicates
+ * the user has sent too many requests in a given amount of time ("rate limiting").
+ */
+
+class too_many_requests : public exception {
+public:
+  too_many_requests(const std::string &message);
+};
+
+
+/**
  * The request resource could not be found, or is not handled
  * by the server.
  */
