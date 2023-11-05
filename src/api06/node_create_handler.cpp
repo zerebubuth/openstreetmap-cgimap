@@ -6,7 +6,22 @@ node_create_responder::node_create_responder(
     mime::type mt, data_update & upd, const std::string &payload,
     std::optional<osm_user_id_t> user_id)
     : text_responder(mt) {
-  output_text = "1234567";
+  OSMChange_Tracking change_tracking{};
+  osm_changeset_id_t cid = 1; // TODO get changeset id
+  osm_user_id_t uid = *user_id;
+  auto changeset_updater = upd.get_changeset_updater(cid, uid);
+  auto node_updater = upd.get_node_updater(change_tracking);
+
+  changeset_updater->lock_current_changeset(true);
+  std::map<std::string, std::string> tags;
+  node_updater->add_node(12, 34, cid, -1, tags); // TODO get lat, lon, tags
+  node_updater->process_new_nodes();
+  changeset_updater->update_changeset(node_updater->get_num_changes(),
+                                      node_updater->bbox());
+  upd.commit();
+
+  auto oid = change_tracking.created_node_ids[0].new_id;
+  output_text = std::to_string(oid);
 }
 
 node_create_handler::node_create_handler(request &)
