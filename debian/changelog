@@ -1,3 +1,10 @@
+openstreetmap-cgimap (0.8.10-1~jammy1) jammy; urgency=medium
+
+  * Added changeset upload rate limiting (#296) (#297)
+  * process_post_put_request: small cleanups (#298)
+
+ -- mmd osm <mmd.osm@gmail.com>  Sun, 5 Nov 2023 10:36:00 +0000
+
 openstreetmap-cgimap (0.8.9-1~jammy1) jammy; urgency=medium
 
   * Add moderators specific rate limiting settings (#294)
