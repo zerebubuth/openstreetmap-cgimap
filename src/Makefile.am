@@ -48,7 +48,7 @@ ___test_test_apidb_backend_changeset_downloads_LDADD+=libcgimap_staticxml.la
 endif
 
 ___openstreetmap_cgimap_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
-___test_test_core_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
+___test_test_core_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
 check_PROGRAMS+=../test/test_parse_id_list ../test/test_basicauth ../test/test_oauth ../test/test_oauth2 ../test/test_http ../test/test_parse_time ../test/test_parse_osmchange_input ../test/test_parse_changeset_input
 ___test_test_parse_id_list_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
 ___test_test_basicauth_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
@@ -56,8 +56,8 @@ ___test_test_oauth_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_
 ___test_test_oauth2_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
 ___test_test_http_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
 ___test_test_parse_time_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@
-___test_test_parse_osmchange_input_LDADD=libcgimap_core.la @LIBXML_LIBS@ @BOOST_PROGRAM_OPTIONS_LIB@
-___test_test_parse_changeset_input_LDADD=libcgimap_core.la @LIBXML_LIBS@ @BOOST_PROGRAM_OPTIONS_LIB@
+___test_test_parse_osmchange_input_LDADD=libcgimap_core.la @LIBXML_LIBS@ @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@
+___test_test_parse_changeset_input_LDADD=libcgimap_core.la @LIBXML_LIBS@ @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@
 
 if ENABLE_APIDB
 ___test_test_apidb_backend_nodes_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
