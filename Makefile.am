@@ -75,6 +75,7 @@ cgimap_api06_changeset_upload_include_HEADERS = \
 	include/cgimap/api06/changeset_upload/osmchange_input_format.hpp \
 	include/cgimap/api06/changeset_upload/osmchange_tracking.hpp \
 	include/cgimap/api06/changeset_upload/osmobject.hpp \
+	include/cgimap/api06/changeset_upload/osmobject_input_format.hpp \
 	include/cgimap/api06/changeset_upload/relation.hpp \
 	include/cgimap/api06/changeset_upload/relation_updater.hpp \
 	include/cgimap/api06/changeset_upload/way_updater.hpp
