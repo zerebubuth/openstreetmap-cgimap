@@ -4,6 +4,7 @@
 #include "cgimap/logger.hpp"
 
 #include <chrono>
+#include <set>
 #include <fmt/core.h>
 #include <pqxx/pqxx>
 
@@ -15,6 +16,7 @@ class Transaction_Owner_Base
 public:
   Transaction_Owner_Base() {}
   virtual pqxx::transaction_base& get_transaction() = 0;
+  virtual std::set<std::string>& get_prep_stmt() = 0;
   virtual ~Transaction_Owner_Base() {}
 };
 
@@ -22,31 +24,36 @@ public:
 class Transaction_Owner_ReadOnly : public Transaction_Owner_Base
 {
 public:
-  explicit Transaction_Owner_ReadOnly(pqxx::connection &conn);
-  virtual pqxx::transaction_base& get_transaction();
+  explicit Transaction_Owner_ReadOnly(pqxx::connection &conn, std::set<std::string> &prep_stmt);
+  pqxx::transaction_base& get_transaction() override;
+  std::set<std::string>& get_prep_stmt() override;
   ~Transaction_Owner_ReadOnly() {}
 
 private:
   pqxx::read_transaction m_txn;
+  std::set<std::string>& m_prep_stmt;
 };
 
 
 class Transaction_Owner_ReadWrite : public Transaction_Owner_Base
 {
 public:
-  explicit Transaction_Owner_ReadWrite(pqxx::connection &conn);
-  virtual pqxx::transaction_base& get_transaction();
+  explicit Transaction_Owner_ReadWrite(pqxx::connection &conn, std::set<std::string> &prep_stmt);
+  pqxx::transaction_base& get_transaction() override;
+  std::set<std::string>& get_prep_stmt() override;
   ~Transaction_Owner_ReadWrite() {}
 
 private:
   pqxx::work m_txn;
+  std::set<std::string>& m_prep_stmt;
 };
 
 class Transaction_Owner_Void : public Transaction_Owner_Base
 {
 public:
   explicit Transaction_Owner_Void();
-  virtual pqxx::transaction_base& get_transaction();
+  pqxx::transaction_base& get_transaction() override;
+  std::set<std::string>& get_prep_stmt() override;
   ~Transaction_Owner_Void() {}
 };
 
@@ -83,6 +90,7 @@ public:
 
 private:
   pqxx::transaction_base & m_txn;
+  std::set<std::string>& m_prep_stmt;
 };
 
 

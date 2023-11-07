@@ -48,6 +48,7 @@ public:
 
   private:
     pqxx::connection m_connection;
+    std::set<std::string> m_prep_stmt;  // keeps track of already prepared statements
     bool m_api_write_disabled;
     pqxx::quiet_errorhandler m_errorhandler;
   };

@@ -917,8 +917,12 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
   // set the connections to use the appropriate charset.
   m_connection.set_client_encoding(opts["charset"].as<std::string>());
 
+#if PQXX_VERSION_MAJOR < 7
   // set the connection to use readonly transaction.
   m_connection.set_variable("default_transaction_read_only", "true");
+#else
+  m_connection.set_session_var("default_transaction_read_only", "true");
+#endif
 }
 
 readonly_pgsql_selection::factory::~factory() = default;
@@ -932,7 +936,7 @@ readonly_pgsql_selection::factory::make_selection(Transaction_Owner_Base& to) {
 std::unique_ptr<Transaction_Owner_Base>
 readonly_pgsql_selection::factory::get_default_transaction()
 {
-  return std::make_unique<Transaction_Owner_ReadOnly>(std::ref(m_connection));
+  return std::make_unique<Transaction_Owner_ReadOnly>(std::ref(m_connection), m_prep_stmt);
 }
 
 

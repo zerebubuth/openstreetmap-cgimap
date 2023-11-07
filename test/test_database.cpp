@@ -44,8 +44,6 @@ int exec_sql_string(pqxx::connection& conn, const std::string &s) {
   return row_count;
 }
 
-
-
 void truncate_all_tables(pqxx::connection& conn) {
 
   exec_sql_string(conn, "TRUNCATE TABLE users CASCADE");

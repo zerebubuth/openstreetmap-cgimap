@@ -92,6 +92,17 @@ oauth_store::oauth_store(const po::variables_map &opts)
   m_connection.prepare("roles_for_user",
     "SELECT role FROM user_roles WHERE user_id = $1");
 
+  // return details for OAuth 2.0 access token
+  m_connection.prepare("oauth2_access_token",
+    R"(SELECT resource_owner_id as user_id,
+         CASE WHEN expires_in IS NULL THEN false
+              ELSE (created_at + expires_in * interval '1' second)  < now() at time zone 'utc'
+         END as expired,
+         COALESCE(revoked_at < now() at time zone 'utc', false) as revoked,
+         'write_api' = any(string_to_array(scopes, ' ')) as allow_api_write
+       FROM oauth_access_tokens
+       WHERE token = $1)");
+
   // clang-format on
 }
 
@@ -181,16 +192,6 @@ oauth_store::get_roles_for_user(osm_user_id_t id) {
 }
 
 std::optional<osm_user_id_t> oauth_store::get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) {
-
-  m_connection.prepare("oauth2_access_token",
-    R"(SELECT resource_owner_id as user_id,
-         CASE WHEN expires_in IS NULL THEN false
-              ELSE (created_at + expires_in * interval '1' second)  < now() at time zone 'utc'
-         END as expired,
-         COALESCE(revoked_at < now() at time zone 'utc', false) as revoked,
-         'write_api' = any(string_to_array(scopes, ' ')) as allow_api_write
-       FROM oauth_access_tokens
-       WHERE token = $1)");
 
   pqxx::work w(m_connection, "oauth_get_user_id_for_oauth2_token");
   pqxx::result res = w.exec_prepared("oauth2_access_token", token_id);
