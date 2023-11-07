@@ -1,3 +1,4 @@
+#include "cgimap/api06/changeset_upload/node_input_format.hpp"
 #include "cgimap/api06/node_create_handler.hpp"
 
 namespace api06 {
@@ -13,8 +14,9 @@ node_create_responder::node_create_responder(
   auto node_updater = upd.get_node_updater(change_tracking);
 
   changeset_updater->lock_current_changeset(true);
-  std::map<std::string, std::string> tags;
-  node_updater->add_node(12, 34, cid, -1, tags); // TODO get lat, lon, tags
+  NodeXMLParser parser;
+  auto node = parser.process_message(payload);
+  node_updater->add_node(node->lat(), node->lon(), cid, -1, node->tags());
   node_updater->process_new_nodes();
   changeset_updater->update_changeset(node_updater->get_num_changes(),
                                       node_updater->bbox());

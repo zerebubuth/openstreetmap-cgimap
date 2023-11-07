@@ -53,7 +53,7 @@ void test_end_to_end(test_database &tdb) {
     req.set_header("REMOTE_ADDR", "127.0.0.1");
     req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
       <osm>
-        <node lon="12" lat="34" changeset="1"/>
+        <node lon="34" lat="12" changeset="1"/>
       </osm>)");
     process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
