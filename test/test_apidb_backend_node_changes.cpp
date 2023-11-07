@@ -28,11 +28,17 @@ void test_end_to_end(test_database &tdb, const std::string& title, const std::st
 
     INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes)
     VALUES
-      (1, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 0);
+      (1, 1, now() at time zone 'utc' - '12 hour' ::interval,
+             now() at time zone 'utc' - '11 hour' ::interval, 0),
+      (2, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 0);
   )");
 
   const std::string baseauth = "Basic ZGVtbzpwYXNzd29yZA==";
   const std::string generator = "Test";
+  const osm_nwr_id_t target_version = 1;
+  const osm_changeset_id_t target_changeset_id = 2;
+  const osm_user_id_t target_user_id = 1;
+  const std::string target_display_name = "demo";
 
   auto sel_factory = tdb.get_data_selection_factory();
   auto upd_factory = tdb.get_data_update_factory();
@@ -72,7 +78,7 @@ void test_end_to_end(test_database &tdb, const std::string& title, const std::st
   assert_equal<size_t>(f.m_nodes.size(), 1, fmt::format("number of nodes written for {}", title));
   assert_equal<test_formatter::node_t>(
     test_formatter::node_t(
-      element_info(node_id, 1, 1, f.m_nodes[0].elem.timestamp, 1, std::string("demo"), true),
+      element_info(node_id, target_version, target_changeset_id, f.m_nodes[0].elem.timestamp, target_user_id, target_display_name, true),
       target_lon, target_lat, target_tags
     ),
     f.m_nodes[0], title);
@@ -88,7 +94,7 @@ int main(int, char **) {
       test_end_to_end(tdb, "node without tags",
         R"(<?xml version="1.0" encoding="UTF-8"?>
         <osm>
-          <node lat="12" lon="34" changeset="1"/>
+          <node lat="12" lon="34" changeset="2"/>
         </osm>)",
         12, 34, tags_t());
     });
@@ -96,7 +102,7 @@ int main(int, char **) {
       test_end_to_end(tdb, "node with tags",
         R"(<?xml version="1.0" encoding="UTF-8"?>
         <osm>
-          <node lat="21" lon="43" changeset="1">
+          <node lat="21" lon="43" changeset="2">
             <tag k="natural" v="tree"/>
             <tag k="height" v="19"/>
           </node>

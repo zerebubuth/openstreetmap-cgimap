@@ -7,16 +7,17 @@ node_create_responder::node_create_responder(
     mime::type mt, data_update & upd, const std::string &payload,
     std::optional<osm_user_id_t> user_id)
     : text_responder(mt) {
+
+  NodeXMLParser parser;
+  auto node = parser.process_message(payload);
+
   OSMChange_Tracking change_tracking{};
-  osm_changeset_id_t cid = 1; // TODO get changeset id
   osm_user_id_t uid = *user_id;
-  auto changeset_updater = upd.get_changeset_updater(cid, uid);
+  auto changeset_updater = upd.get_changeset_updater(node->changeset(), uid);
   auto node_updater = upd.get_node_updater(change_tracking);
 
   changeset_updater->lock_current_changeset(true);
-  NodeXMLParser parser;
-  auto node = parser.process_message(payload);
-  node_updater->add_node(node->lat(), node->lon(), cid, -1, node->tags());
+  node_updater->add_node(node->lat(), node->lon(), node->changeset(), -1, node->tags());
   node_updater->process_new_nodes();
   changeset_updater->update_changeset(node_updater->get_num_changes(),
                                       node_updater->bbox());
