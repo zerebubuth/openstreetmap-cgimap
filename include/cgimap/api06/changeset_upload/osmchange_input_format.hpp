@@ -102,15 +102,18 @@ protected:
       if (!std::strcmp(element, "node")) {
         m_node.reset(new Node{});
         init_object(*m_node, attrs);
+        require_object_attributes(*m_node);
         init_node(*m_node, attrs);
         m_context.push_back(context::node);
       } else if (!std::strcmp(element, "way")) {
         m_way.reset(new Way{});
         init_object(*m_way, attrs);
+        require_object_attributes(*m_way);
         m_context.push_back(context::way);
       } else if (!std::strcmp(element, "relation")) {
         m_relation.reset(new Relation{});
         init_object(*m_relation, attrs);
+        require_object_attributes(*m_relation);
         m_context.push_back(context::relation);
       } else {
         throw xml_error{
@@ -295,9 +298,12 @@ private:
         object.set_version(value);
       } // don't parse any other attributes here
     });
+  }
+  
+  void require_object_attributes(OSMObject &object) {
 
     if (!object.has_id()) {
-	throw xml_error{ "Mandatory field id missing in object" };
+      throw xml_error{ "Mandatory field id missing in object" };
     }
 
     if (!object.has_changeset()) {
