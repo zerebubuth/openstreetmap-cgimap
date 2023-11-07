@@ -15,7 +15,7 @@ void assert_equal(const T& a, const T&b, const std::string &message) {
   }
 }
 
-void test_end_to_end(test_database &tdb) {
+void test_end_to_end(test_database &tdb, const std::string& payload, double target_lat, double target_lon, const tags_t& target_tags) {
 
   // Prepare users, changesets
 
@@ -51,10 +51,7 @@ void test_end_to_end(test_database &tdb) {
     req.set_header("REQUEST_URI", "/api/0.6/node/create");
     req.set_header("HTTP_AUTHORIZATION", baseauth);
     req.set_header("REMOTE_ADDR", "127.0.0.1");
-    req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
-      <osm>
-        <node lon="34" lat="12" changeset="1"/>
-      </osm>)");
+    req.set_payload(payload);
     process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
     if (req.response_status() != 200)
@@ -78,7 +75,7 @@ void test_end_to_end(test_database &tdb) {
     assert_equal<test_formatter::node_t>(
       test_formatter::node_t(
         element_info(node_id, 1, 1, f.m_nodes[0].elem.timestamp, 1, std::string("demo"), true),
-        34, 12, tags_t()
+        target_lon, target_lat, target_tags
       ),
       f.m_nodes[0], "node written");
   }
@@ -90,7 +87,13 @@ int main(int, char **) {
   try {
     test_database tdb;
     tdb.setup();
-    tdb.run_update(std::function<void(test_database&)>(&test_end_to_end));
+    tdb.run_update([](test_database &tdb) {
+      test_end_to_end(tdb, R"(<?xml version="1.0" encoding="UTF-8"?>
+        <osm>
+          <node lat="12" lon="34" changeset="1"/>
+        </osm>)",
+        12, 34, tags_t());
+    });
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;
     return 77;
