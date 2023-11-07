@@ -48,7 +48,7 @@ protected:
       case context::in_object:
         if (!std::strcmp(element, "tag")) {
           m_context = context::in_tag;
-          // add_tag(attrs); // TODO
+          add_tag(*m_node, attrs);
         }
         else
           throw xml_error{ "Unknown element, expecting tag" };
@@ -131,6 +131,35 @@ private:
         node.set_lat(value);
       }
     });
+  }
+
+  void add_tag(OSMObject &o, const char **attrs) {
+
+    std::optional<std::string> k;
+    std::optional<std::string> v;
+
+    check_attributes(attrs, [&k, &v](const char *name, const char *value) {
+
+      if (name[0] == 'k' && name[1] == 0) {
+        k = value;
+      } else if (name[0] == 'v' && name[1] == 0) {
+        v = value;
+      }
+    });
+
+    if (!k)
+      throw xml_error{
+        fmt::format("Mandatory field k missing in tag element for {}",
+         o.to_string())
+      };
+
+    if (!v)
+      throw xml_error{
+        fmt::format("Mandatory field v missing in tag element for {}",
+         o.to_string())
+      };
+
+    o.add_tag(*k, *v);
   }
 
   // Include XML message location information where error occurred in exception

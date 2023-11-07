@@ -92,6 +92,17 @@ int main(int, char **) {
         </osm>)",
         12, 34, tags_t());
     });
+    tdb.run_update([](test_database &tdb) {
+      test_end_to_end(tdb, "node with tags",
+        R"(<?xml version="1.0" encoding="UTF-8"?>
+        <osm>
+          <node lat="21" lon="43" changeset="1">
+            <tag k="natural" v="tree"/>
+            <tag k="height" v="19"/>
+          </node>
+        </osm>)",
+        21, 43, tags_t({{"natural", "tree"}, {"height", "19"}}));
+    });
   } catch (const test_database::setup_error &e) {
     std::cout << "Unable to set up test database: " << e.what() << std::endl;
     return 77;
