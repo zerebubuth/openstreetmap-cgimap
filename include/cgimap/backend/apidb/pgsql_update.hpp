@@ -17,22 +17,22 @@ public:
   ~pgsql_update();
 
   std::unique_ptr<api06::Changeset_Updater>
-  get_changeset_updater(osm_changeset_id_t _changeset, osm_user_id_t _uid);
+  get_changeset_updater(osm_changeset_id_t _changeset, osm_user_id_t _uid) override;
 
   std::unique_ptr<api06::Node_Updater>
-  get_node_updater(api06::OSMChange_Tracking &ct);
+  get_node_updater(api06::OSMChange_Tracking &ct) override;
 
   std::unique_ptr<api06::Way_Updater>
-  get_way_updater(api06::OSMChange_Tracking &ct);
+  get_way_updater(api06::OSMChange_Tracking &ct) override;
 
   std::unique_ptr<api06::Relation_Updater>
-  get_relation_updater(api06::OSMChange_Tracking &ct);
+  get_relation_updater(api06::OSMChange_Tracking &ct) override;
 
-  void commit();
+  void commit() override;
 
-  bool is_api_write_disabled() const;
+  bool is_api_write_disabled() const override;
 
-  uint32_t get_rate_limit(osm_user_id_t uid);
+  uint32_t get_rate_limit(osm_user_id_t uid) override;
 
   /**
    * abstracts the creation of transactions for the
@@ -48,15 +48,14 @@ public:
 
   private:
     pqxx::connection m_connection;
-    std::set<std::string> m_prep_stmt;  // keeps track of already prepared statements
     bool m_api_write_disabled;
     pqxx::quiet_errorhandler m_errorhandler;
+    std::set<std::string> m_prep_stmt;  // keeps track of already prepared statements
   };
 
 private:
   Transaction_Manager m;
   bool m_readonly;
-
 };
 
 #endif
