@@ -103,6 +103,7 @@ const char *http_message_status_410 = "Gone";
 const char *http_message_status_412 = "Precondition Failed";
 const char *http_message_status_413 = "Payload Too Large";
 const char *http_message_status_415 = "Unsupported Media Type";
+const char *http_message_status_429 = "Too Many Requests";
 const char *http_message_status_509 = "Bandwidth Limit Exceeded";
 const char *http_message_status_500 = "Internal Server Error";
 } // anonymous namespace
@@ -146,6 +147,9 @@ const char *status_message(int code) {
     break;
   case 415:
     msg = http_message_status_415;
+    break;
+  case 429:
+    msg = http_message_status_429;
     break;
   case 509:
     msg = http_message_status_509;
