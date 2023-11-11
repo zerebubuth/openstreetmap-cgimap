@@ -25,24 +25,24 @@ public:
   virtual ~ApiDB_Way_Updater();
 
   void add_way(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
-               const api06::WayNodeList &nodes, const api06::TagList &tags);
+               const api06::WayNodeList &nodes, const api06::TagList &tags) override;
 
   void modify_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id,
                   osm_version_t version, const api06::WayNodeList &nodes,
-                  const api06::TagList &tags);
+                  const api06::TagList &tags) override;
 
   void delete_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id,
-                  osm_version_t version, bool if_unused);
+                  osm_version_t version, bool if_unused) override;
 
-  void process_new_ways();
+  void process_new_ways() override;
 
-  void process_modify_ways();
+  void process_modify_ways() override;
 
-  void process_delete_ways();
+  void process_delete_ways() override;
 
-  unsigned int get_num_changes();
+  unsigned int get_num_changes() const override;
 
-  bbox_t bbox();
+  bbox_t bbox() const override;
 
 private:
   bbox_t m_bbox;
