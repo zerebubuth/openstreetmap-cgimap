@@ -12,9 +12,6 @@
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
 
-#include <sstream>
-
-
 namespace api06 {
 
 changeset_close_responder::changeset_close_responder(

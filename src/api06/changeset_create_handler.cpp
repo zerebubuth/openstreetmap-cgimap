@@ -13,9 +13,6 @@
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
 
-#include <sstream>
-
-
 namespace api06 {
 
 changeset_create_responder::changeset_create_responder(

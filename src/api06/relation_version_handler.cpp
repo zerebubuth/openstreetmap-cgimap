@@ -1,11 +1,6 @@
 #include "cgimap/api06/relation_version_handler.hpp"
 #include "cgimap/http.hpp"
 
-#include <sstream>
-
-using std::stringstream;
-using std::vector;
-
 namespace api06 {
 
 relation_version_responder::relation_version_responder(mime::type mt, osm_nwr_id_t id_, 
