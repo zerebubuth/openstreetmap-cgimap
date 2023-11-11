@@ -14,15 +14,15 @@ class Test_Parser_Callback : public api06::Parser_Callback {
 public:
   Test_Parser_Callback() : start_executed(false), end_executed(false) {}
 
-  void start_document() { start_executed = true; }
+  void start_document() override { start_executed = true; }
 
-  void end_document() { end_executed = true; }
+  void end_document() override { end_executed = true; }
 
-  void process_node(const api06::Node &, operation op, bool if_unused) {}
+  void process_node(const api06::Node &, operation op, bool if_unused) override {}
 
-  void process_way(const api06::Way &, operation op, bool if_unused) {}
+  void process_way(const api06::Way &, operation op, bool if_unused) override {}
 
-  void process_relation(const api06::Relation &, operation op, bool if_unused) {}
+  void process_relation(const api06::Relation &, operation op, bool if_unused) override {}
 
   bool start_executed;
   bool end_executed;
