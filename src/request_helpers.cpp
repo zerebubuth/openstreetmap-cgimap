@@ -90,76 +90,40 @@ std::unique_ptr<http::encoding> get_encoding(request &req) {
   }
 }
 
-namespace {
-const char *http_message_status_200 = "OK";
-const char *http_message_status_400 = "Bad Request";
-const char *http_message_status_401 = "Unauthorized";
-const char *http_message_status_403 = "Forbidden";
-const char *http_message_status_404 = "Not Found";
-const char *http_message_status_405 = "Method Not Allowed";
-const char *http_message_status_406 = "Not Acceptable";
-const char *http_message_status_409 = "Conflict";
-const char *http_message_status_410 = "Gone";
-const char *http_message_status_412 = "Precondition Failed";
-const char *http_message_status_413 = "Payload Too Large";
-const char *http_message_status_415 = "Unsupported Media Type";
-const char *http_message_status_429 = "Too Many Requests";
-const char *http_message_status_509 = "Bandwidth Limit Exceeded";
-const char *http_message_status_500 = "Internal Server Error";
-} // anonymous namespace
-
 const char *status_message(int code) {
-  const char *msg;
 
   switch (code) {
   case 200:
-    msg = http_message_status_200;
-    break;
+    return "OK";
   case 400:
-    msg = http_message_status_400;
-    break;
+    return "Bad Request";
   case 401:
-    msg = http_message_status_401;
-    break;
+    return "Unauthorized";
   case 403:
-    msg = http_message_status_403;
-    break;
+    return "Forbidden";
   case 404:
-    msg = http_message_status_404;
-    break;
+    return "Not Found";
   case 405:
-    msg = http_message_status_405;
-    break;
+    return "Method Not Allowed";
   case 406:
-    msg = http_message_status_406;
-    break;
+    return "Not Acceptable";
   case 409:
-    msg = http_message_status_409;
-    break;
+    return "Conflict";
   case 410:
-    msg = http_message_status_410;
-    break;
+    return "Gone";
   case 412:
-    msg = http_message_status_412;
-    break;
+    return "Precondition Failed";
   case 413:
-    msg = http_message_status_413;
-    break;
+    return "Payload Too Large";
   case 415:
-    msg = http_message_status_415;
-    break;
+    return "Unsupported Media Type";
   case 429:
-    msg = http_message_status_429;
-    break;
+    return "Too Many Requests";
   case 509:
-    msg = http_message_status_509;
-    break;
+    return "Bandwidth Limit Exceeded";
   default:
-    msg = http_message_status_500;
-    break;
+    return "Internal Server Error";
   }
-
-  return msg;
 }
 
 namespace {
