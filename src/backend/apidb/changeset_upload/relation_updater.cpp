@@ -1675,9 +1675,9 @@ void ApiDB_Relation_Updater::delete_current_relation_tags(
   pqxx::result r = m.exec_prepared("delete_current_relation_tags", ids);
 }
 
-uint32_t ApiDB_Relation_Updater::get_num_changes() {
+uint32_t ApiDB_Relation_Updater::get_num_changes() const {
   return (ct.created_relation_ids.size() + ct.modified_relation_ids.size() +
           ct.deleted_relation_ids.size());
 }
 
-bbox_t ApiDB_Relation_Updater::bbox() { return m_bbox; }
+bbox_t ApiDB_Relation_Updater::bbox() const { return m_bbox; }

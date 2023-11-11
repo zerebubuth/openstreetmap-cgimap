@@ -24,24 +24,24 @@ public:
   virtual ~ApiDB_Relation_Updater();
 
   void add_relation(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
-                    const RelationMemberList &members, const TagList &tags);
+                    const RelationMemberList &members, const TagList &tags) override;
 
   void modify_relation(osm_changeset_id_t changeset_id, osm_nwr_id_t id,
                        osm_version_t version, const RelationMemberList &members,
-                       const TagList &tags);
+                       const TagList &tags) override;
 
   void delete_relation(osm_changeset_id_t changeset_id, osm_nwr_id_t id,
-                       osm_version_t version, bool if_unused);
+                       osm_version_t version, bool if_unused) override;
 
-  void process_new_relations();
+  void process_new_relations() override;
 
-  void process_modify_relations();
+  void process_modify_relations() override;
 
-  void process_delete_relations();
+  void process_delete_relations() override;
 
-  unsigned int get_num_changes();
+  unsigned int get_num_changes() const override;
 
-  bbox_t bbox();
+  bbox_t bbox() const override;
 
 private:
   bbox_t m_bbox;
