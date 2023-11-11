@@ -9,7 +9,7 @@ struct rate_limiter {
   virtual ~rate_limiter();
 
   // check if the key is below the rate limit. return true to indicate that it
-  // is.
+  // is. The int return values indicates the wait time in seconds
   virtual std::tuple<bool, int> check(const std::string &key, bool moderator) = 0;
 
   // update the limit for the key to say it has consumed this number of bytes.
@@ -19,8 +19,8 @@ struct rate_limiter {
 struct null_rate_limiter
   : public rate_limiter {
   ~null_rate_limiter();
-  std::tuple<bool, int> check(const std::string &key, bool moderator);
-  void update(const std::string &key, int bytes, bool moderator);
+  std::tuple<bool, int> check(const std::string &key, bool moderator) override;
+  void update(const std::string &key, int bytes, bool moderator) override;
 };
 
 class memcached_rate_limiter
@@ -31,8 +31,8 @@ public:
    */
   memcached_rate_limiter(const boost::program_options::variables_map &options);
   ~memcached_rate_limiter();
-  std::tuple<bool, int> check(const std::string &key, bool moderator);
-  void update(const std::string &key, int bytes, bool moderator);
+  std::tuple<bool, int> check(const std::string &key, bool moderator) override;
+  void update(const std::string &key, int bytes, bool moderator) override;
 
 private:
   memcached_st *ptr;
