@@ -8,7 +8,6 @@
 
 
 using std::string;
-using std::auto_ptr;
 using std::map;
 
 namespace api07 {

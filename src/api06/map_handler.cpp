@@ -9,7 +9,6 @@
 
 
 using std::string;
-using std::auto_ptr;
 using std::map;
 using std::pair;
 using std::vector;
