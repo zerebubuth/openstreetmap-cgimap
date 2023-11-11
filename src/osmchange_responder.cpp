@@ -59,41 +59,41 @@ struct sorting_formatter
 
   virtual ~sorting_formatter() = default;
 
-  mime::type mime_type() const {
+  mime::type mime_type() const override {
     throw std::runtime_error("sorting_formatter::mime_type unimplemented");
   }
 
   void start_document(
     const std::string &,
-    const std::string &) {
+    const std::string &) override {
 
     throw std::runtime_error("sorting_formatter::start_document unimplemented");
   }
 
-  void end_document() {
+  void end_document() override {
     throw std::runtime_error("sorting_formatter::end_document unimplemented");
   }
 
-  void error(const std::exception &) {
+  void error(const std::exception &) override {
     throw std::runtime_error("sorting_formatter::error unimplemented");
   }
 
-  void write_bounds(const bbox &) {
+  void write_bounds(const bbox &) override {
     throw std::runtime_error("sorting_formatter::write_bounds unimplemented");
   }
 
-  void start_element_type(element_type) {
+  void start_element_type(element_type) override {
     throw std::runtime_error("sorting_formatter::start_element_type unimplemented");
   }
 
-  void end_element_type(element_type) {
+  void end_element_type(element_type) override {
     throw std::runtime_error("sorting_formatter::end_element_type unimplemented");
   }
 
   void write_node(
     const element_info &elem,
     double lon, double lat,
-    const tags_t &tags) {
+    const tags_t &tags) override {
 
     element node{
       element_type_node, elem, tags, element::lonlat{lon, lat},
@@ -105,7 +105,7 @@ struct sorting_formatter
   void write_way(
     const element_info &elem,
     const nodes_t &nodes,
-    const tags_t &tags) {
+    const tags_t &tags) override {
 
     element way{
       element_type_way, elem, tags, element::lonlat{},
@@ -117,7 +117,7 @@ struct sorting_formatter
   void write_relation(
     const element_info &elem,
     const members_t &members,
-    const tags_t &tags) {
+    const tags_t &tags) override {
 
     element rel{
       element_type_relation, elem, tags, element::lonlat{},
@@ -131,7 +131,7 @@ struct sorting_formatter
     const tags_t &,
     bool,
     const comments_t &,
-    const std::chrono::system_clock::time_point &) {
+    const std::chrono::system_clock::time_point &) override {
 
     throw std::runtime_error("sorting_formatter::write_changeset unimplemented");
   }
@@ -139,14 +139,14 @@ struct sorting_formatter
   void write_diffresult_create_modify(const element_type,
 				      const osm_nwr_signed_id_t,
 				      const osm_nwr_id_t,
-				      const osm_version_t) {
+				      const osm_version_t) override {
 
     throw std::runtime_error("sorting_formatter::write_diffresult_create_modify unimplemented");
   }
 
 
   void write_diffresult_delete(const element_type,
-                               const osm_nwr_signed_id_t) {
+                               const osm_nwr_signed_id_t) override {
     throw std::runtime_error("sorting_formatter::write_diffresult_delete unimplemented");
   }
 
@@ -155,17 +155,17 @@ struct sorting_formatter
   }
 
   // write an error to the output stream
-  void error(const std::string &) {
+  void error(const std::string &) override {
     throw std::runtime_error("sorting_formatter::error unimplemented");
   }
 
-  void start_action(action_type) {
+  void start_action(action_type) override {
     // this shouldn't be called here, as the things which call this don't have
     // actions - they're added by this code.
     throw std::runtime_error("Unexpected call to start_action.");
   }
 
-  void end_action(action_type) {
+  void end_action(action_type) override {
     // this shouldn't be called here, as the things which call this don't have
     // actions - they're added by this code.
     throw std::runtime_error("Unexpected call to end_action.");
