@@ -41,6 +41,11 @@ pqxx::transaction_base& Transaction_Owner_Void::get_transaction() {
   throw std::runtime_error("get_transaction is not supported by Transaction_Owner_Void");
 }
 
+std::set<std::string>& Transaction_Owner_Void::get_prep_stmt() {
+  throw std::runtime_error ("get_prep_stmt is not supported by Transaction_Owner_Void");
+}
+
+
 namespace {
 
 template <typename T>
