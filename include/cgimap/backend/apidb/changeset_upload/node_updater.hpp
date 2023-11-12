@@ -21,23 +21,23 @@ public:
   virtual ~ApiDB_Node_Updater();
 
   void add_node(double lat, double lon, osm_changeset_id_t changeset_id,
-                osm_nwr_signed_id_t old_id, const api06::TagList &tags);
+                osm_nwr_signed_id_t old_id, const api06::TagList &tags) override;
 
   void modify_node(double lat, double lon, osm_changeset_id_t changeset_id,
-                   osm_nwr_id_t id, osm_version_t version, const api06::TagList &tags);
+                   osm_nwr_id_t id, osm_version_t version, const api06::TagList &tags) override;
 
   void delete_node(osm_changeset_id_t changeset_id, osm_nwr_id_t id,
-                   osm_version_t version, bool if_unused);
+                   osm_version_t version, bool if_unused) override;
 
-  void process_new_nodes();
+  void process_new_nodes() override;
 
-  void process_modify_nodes();
+  void process_modify_nodes() override;
 
-  void process_delete_nodes();
+  void process_delete_nodes() override;
 
-  unsigned int get_num_changes();
+  unsigned int get_num_changes() const override;
 
-  bbox_t bbox();
+  bbox_t bbox() const override;
 
 private:
   bbox_t m_bbox;

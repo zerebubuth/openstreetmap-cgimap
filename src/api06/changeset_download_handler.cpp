@@ -3,11 +3,7 @@
 #include "cgimap/http.hpp"
 #include "cgimap/config.hpp"
 
-#include <sstream>
 #include <fmt/core.h>
-
-using std::stringstream;
-using std::vector;
 
 namespace api06 {
 

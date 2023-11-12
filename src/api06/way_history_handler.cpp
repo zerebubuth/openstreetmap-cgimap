@@ -1,11 +1,6 @@
 #include "cgimap/api06/way_history_handler.hpp"
 #include "cgimap/http.hpp"
 
-#include <sstream>
-
-using std::stringstream;
-using std::vector;
-
 namespace api06 {
 
 way_history_responder::way_history_responder(mime::type mt, osm_nwr_id_t id_, data_selection &w_)

@@ -1,10 +1,7 @@
 #include "cgimap/api06/node_handler.hpp"
 #include "cgimap/http.hpp"
 
-#include <sstream>
 #include <fmt/core.h>
-
-using std::vector;
 
 namespace api06 {
 

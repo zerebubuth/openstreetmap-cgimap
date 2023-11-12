@@ -132,12 +132,12 @@ void OSMChange_Handler::finish_processing() {
   handle_new_state(state::st_finished);
 }
 
-uint32_t OSMChange_Handler::get_num_changes() {
+uint32_t OSMChange_Handler::get_num_changes() const {
   return (node_updater.get_num_changes() + way_updater.get_num_changes() +
           relation_updater.get_num_changes());
 }
 
-bbox_t OSMChange_Handler::get_bbox() {
+bbox_t OSMChange_Handler::get_bbox() const {
   bbox_t bbox;
 
   bbox.expand(node_updater.bbox());

@@ -947,9 +947,9 @@ void ApiDB_Way_Updater::delete_current_way_nodes(
   pqxx::result r = m.exec_prepared("delete_current_way_nodes", ids);
 }
 
-uint32_t ApiDB_Way_Updater::get_num_changes() {
+uint32_t ApiDB_Way_Updater::get_num_changes() const {
   return (ct.created_way_ids.size() + ct.modified_way_ids.size() +
           ct.deleted_way_ids.size());
 }
 
-bbox_t ApiDB_Way_Updater::bbox() { return m_bbox; }
+bbox_t ApiDB_Way_Updater::bbox() const { return m_bbox; }

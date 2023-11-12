@@ -36,9 +36,9 @@ public:
 
   virtual void process_delete_nodes() = 0;
 
-  virtual uint32_t get_num_changes() = 0;
+  virtual uint32_t get_num_changes() const = 0;
 
-  virtual bbox_t bbox() = 0;
+  virtual bbox_t bbox() const = 0;
 };
 
 } // namespace api06

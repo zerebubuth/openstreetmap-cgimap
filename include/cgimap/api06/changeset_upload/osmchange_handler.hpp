@@ -29,19 +29,19 @@ public:
   // checks common to all objects
   void check_osm_object(const OSMObject &o) const;
 
-  void start_document();
+  void start_document() override;
 
-  void end_document();
+  void end_document() override;
 
-  void process_node(const Node &node, operation op, bool if_unused);
+  void process_node(const Node &node, operation op, bool if_unused) override;
 
-  void process_way(const Way &way, operation op, bool if_unused);
+  void process_way(const Way &way, operation op, bool if_unused) override;
 
-  void process_relation(const Relation &relation, operation op, bool if_unused);
+  void process_relation(const Relation &relation, operation op, bool if_unused) override;
 
-  unsigned int get_num_changes();
+  unsigned int get_num_changes() const;
 
-  bbox_t get_bbox();
+  bbox_t get_bbox() const;
 
 private:
   enum class state {
