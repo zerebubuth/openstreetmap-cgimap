@@ -285,10 +285,12 @@ std::unique_ptr<ZLibBaseDecompressor> get_content_encoding_handler(const std::st
 
 // allow bitset-like operators on methods
 inline method operator|(method a, method b) {
-  return static_cast<method>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
+  return static_cast<method>(static_cast<std::underlying_type_t<method>>(a) |
+                             static_cast<std::underlying_type_t<method>>(b));
 }
 inline method operator&(method a, method b) {
-  return static_cast<method>(static_cast<uint8_t>(a) & static_cast<uint8_t>(b));
+  return static_cast<method>(static_cast<std::underlying_type_t<method>>(a) &
+                             static_cast<std::underlying_type_t<method>>(b));
 }
 inline method& operator|=(method& a, method b)
 {
