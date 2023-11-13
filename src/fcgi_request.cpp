@@ -47,7 +47,7 @@ struct fcgi_request::pimpl {
   std::chrono::system_clock::time_point now;
 };
 
-fcgi_request::fcgi_request(int socket, const std::chrono::system_clock::time_point &now) : m_impl(new pimpl) {
+fcgi_request::fcgi_request(int socket, const std::chrono::system_clock::time_point &now) : m_impl(std::make_unique<pimpl>()) {
   // initialise FCGI
   if (FCGX_Init() != 0) {
     throw runtime_error("Couldn't initialise FCGX library.");
@@ -85,7 +85,7 @@ const std::string fcgi_request::get_payload() {
 
   std::array<char, BUFFER_LEN> content_buffer{};
 
-  std::string result = "";
+  std::string result{};
 
   while ((curr_content_length = FCGX_GetStr(content_buffer.data(), BUFFER_LEN, m_impl->req.in)) > 0)
   {
@@ -103,7 +103,7 @@ const std::string fcgi_request::get_payload() {
       }
 
       if (result.length() > global_settings::get_payload_max_size())
-         throw http::payload_too_large((fmt::format("Payload exceeds limit of {:d} bytes", global_settings::get_payload_max_size())));
+         throw http::payload_too_large(fmt::format("Payload exceeds limit of {:d} bytes", global_settings::get_payload_max_size()));
   }
 
   if (content_length > 0 && result_length != content_length)
@@ -149,7 +149,7 @@ int fcgi_request::accept_r() {
 
       if (errno == ENOTSOCK) {
         out << "FCGI port or UNIX socket not set properly, please use the "
-            << "--socket option (caused by ENOTSOCK).";
+               "--socket option (caused by ENOTSOCK).";
 
       } else {
         out << "error accepting request: ";

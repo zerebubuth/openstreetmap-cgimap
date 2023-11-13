@@ -306,7 +306,7 @@ void fetch_relation(test_database &tdb, oauth::store& store, std::string token, 
   recording_rate_limiter limiter;
   std::string generator("test_apidb_backend.cpp");
   routes route;
-  auto factory = std::make_shared<empty_data_selection::factory>();
+  auto factory = std::make_unique<empty_data_selection::factory>();
 
   test_request req;
   req.set_header("SCRIPT_URL", "/api/0.6/relation/165475/full");

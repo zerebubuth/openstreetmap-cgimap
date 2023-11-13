@@ -23,8 +23,8 @@ public:
   routes& operator=(routes &&) = default;
 
   /**
-         * returns the handler which matches a request, or throws a 404 error.
-         */
+   * returns the handler which matches a request, or throws a 404 error.
+   */
   handler_ptr_t operator()(request &req) const;
 
 private:

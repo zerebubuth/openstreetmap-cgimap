@@ -27,13 +27,13 @@ request& request::status(int code) {
 
 request& request::add_header(const std::string &key, const std::string &value) {
   check_workflow(status_HEADERS);
-  m_headers.push_back(std::make_pair(key, value));
+  m_headers.emplace_back(key, value);
   return *this;
 }
 
 request& request::add_success_header(const std::string &key, const std::string &value) {
   check_workflow(status_HEADERS);
-  m_success_headers.push_back(std::make_pair(key, value));
+  m_success_headers.emplace_back(key, value);
   return *this;
 }
 
