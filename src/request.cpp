@@ -93,6 +93,7 @@ void request::reset() {
   m_status = 500;
   m_headers.clear();
   m_success_headers.clear();
+  m_methods = http::method::GET | http::method::HEAD | http::method::OPTIONS;
 }
 
 void request::set_default_methods(http::method m) {
