@@ -23,16 +23,6 @@ using std::pair;
 namespace qi = boost::spirit::qi;
 namespace standard = boost::spirit::standard;
 
-namespace {
-struct first_equals {
-  first_equals(const std::string &k) : m_key(k) {}
-  bool operator()(const pair<string, string> &v) const {
-    return v.first == m_key;
-  }
-  string m_key;
-};
-} // anonymous namespace
-
 BOOST_FUSION_ADAPT_STRUCT(
   api06::id_version,
   (uint64_t, id)
@@ -80,11 +70,11 @@ bool valid_string(const std::string& str)
 		     [](char c){ return c >= 0 && c <= UCHAR_MAX; });
 }
 
-vector<id_version> parse_id_list_params(request &req, const string &param_name) {
+vector<id_version> parse_id_list_params(request &req, std::string_view param_name) {
 
   string decoded = http::urldecode(get_query_string(req));
   const vector<pair<string, string> > params = http::parse_params(decoded);
-  auto itr = std::find_if(params.begin(), params.end(), first_equals(param_name));
+  auto itr = std::find_if(params.begin(), params.end(), [&param_name](auto& x){ return x.first == param_name; });
 
   if (itr == params.end())
     return {};
