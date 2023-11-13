@@ -79,7 +79,7 @@ void test_request::write_header_info(int status, const headers_t &headers) {
   m_status = status;
 
   std::stringstream hdr;
-  hdr << "Status: " << status << " " << status_message(status) << "\r\n";
+  hdr << "Status: " << status << " " << http::status_message(status) << "\r\n";
   for (const request::headers_t::value_type &header : headers) {
       hdr << header.first << ": " << header.second << "\r\n";
   }

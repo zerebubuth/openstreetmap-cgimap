@@ -30,6 +30,13 @@ namespace http {
     OPTIONS = 0b10000
   };
 
+
+  /**
+   * return a static string description for an HTTP status code.
+   */
+  const char *status_message(int code);
+
+
 /**
  * Base class for HTTP protocol related exceptions.
  *
@@ -41,22 +48,18 @@ private:
   /// http://en.wikipedia.org/wiki/List_of_HTTP_status_codes
   const int code_;
 
-  /// the header is a short description of the code, mainly for
-  /// human consumption.
-  const std::string header_;
-
   /// specific error message, meant entirely for humans to read.
   const std::string message_;
 
 protected:
-  exception(int c, const std::string &h, const std::string &m);
+  exception(int c, std::string m);
 
 public:
-  virtual ~exception() noexcept;
+  ~exception() noexcept override = default;
 
   int code() const;
-  const std::string &header() const;
-  const char *what() const noexcept;
+  const char* header() const;
+  const char* what() const noexcept override;
 };
 
 /**

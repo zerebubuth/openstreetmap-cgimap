@@ -33,11 +33,6 @@ std::string get_request_path(request &req);
 std::unique_ptr<http::encoding> get_encoding(request &req);
 
 /**
- * return a static string description for an HTTP status code.
- */
-const char *status_message(int code);
-
-/**
  * return shared pointer to a buffer object which can be
  * used to write to the response body.
  */

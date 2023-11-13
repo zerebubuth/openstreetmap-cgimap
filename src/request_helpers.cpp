@@ -90,41 +90,6 @@ std::unique_ptr<http::encoding> get_encoding(request &req) {
   }
 }
 
-const char *status_message(int code) {
-
-  switch (code) {
-  case 200:
-    return "OK";
-  case 400:
-    return "Bad Request";
-  case 401:
-    return "Unauthorized";
-  case 403:
-    return "Forbidden";
-  case 404:
-    return "Not Found";
-  case 405:
-    return "Method Not Allowed";
-  case 406:
-    return "Not Acceptable";
-  case 409:
-    return "Conflict";
-  case 410:
-    return "Gone";
-  case 412:
-    return "Precondition Failed";
-  case 413:
-    return "Payload Too Large";
-  case 415:
-    return "Unsupported Media Type";
-  case 429:
-    return "Too Many Requests";
-  case 509:
-    return "Bandwidth Limit Exceeded";
-  default:
-    return "Internal Server Error";
-  }
-}
 
 namespace {
 /**

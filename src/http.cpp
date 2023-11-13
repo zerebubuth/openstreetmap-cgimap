@@ -66,60 +66,95 @@ std::string form_urldecode(const std::string &src) {
 
 namespace http {
 
-exception::exception(int c, const string &h, const string &m)
-    : code_(c), header_(h), message_(m) {}
+const char *status_message(int code) {
 
-exception::~exception() noexcept = default;
+  switch (code) {
+  case 200:
+    return "OK";
+  case 400:
+    return "Bad Request";
+  case 401:
+    return "Unauthorized";
+  case 403:
+    return "Forbidden";
+  case 404:
+    return "Not Found";
+  case 405:
+    return "Method Not Allowed";
+  case 406:
+    return "Not Acceptable";
+  case 409:
+    return "Conflict";
+  case 410:
+    return "Gone";
+  case 412:
+    return "Precondition Failed";
+  case 413:
+    return "Payload Too Large";
+  case 415:
+    return "Unsupported Media Type";
+  case 429:
+    return "Too Many Requests";
+  case 509:
+    return "Bandwidth Limit Exceeded";
+  default:
+    return "Internal Server Error";
+  }
+}
+
+exception::exception(int c, string m)
+    : code_(c), message_(std::move(m)) {}
 
 int exception::code() const { return code_; }
 
-const string &exception::header() const { return header_; }
+const char *exception::header() const { return status_message(code()); }
 
 const char *exception::what() const noexcept { return message_.c_str(); }
 
 server_error::server_error(const string &message)
-    : exception(500, "Internal Server Error", message) {}
+    : exception(500, message) {}
 
 bad_request::bad_request(const string &message)
-    : exception(400, "Bad Request", message) {}
+    : exception(400, message) {}
 
 forbidden::forbidden(const string &message)
-    : exception(403, "Forbidden", message) {}
+    : exception(403, message) {}
 
-not_found::not_found(const string &uri) : exception(404, "Not Found", uri) {}
+not_found::not_found(const string &uri) 
+    : exception(404, uri) {}
 
 not_acceptable::not_acceptable(const string &message)
-    : exception(406, "Not Acceptable", message) {}
+    : exception(406, message) {}
 
 conflict::conflict(const string &message)
-    : exception(409, "Conflict", message) {}
+    : exception(409, message) {}
 
 precondition_failed::precondition_failed(const string &message)
-    : exception(412, "Precondition Failed", message),
+    : exception(412, message),
       fullstring("Precondition failed: " + message) {}
 
 const char *precondition_failed::what() const noexcept { return fullstring.c_str(); }
 
 payload_too_large::payload_too_large(const string &message)
-    : exception(413, "Payload Too Large", message) {}
+    : exception(413, message) {}
 
 too_many_requests::too_many_requests(const string &message)
-    : exception(429, "Too Many Requests", message) {}
+    : exception(429, message) {}
 
 bandwidth_limit_exceeded::bandwidth_limit_exceeded(int retry_seconds)
-    : exception(509, "Bandwidth Limit Exceeded", fmt::format("You have downloaded too much data. Please try again in {} seconds.", retry_seconds)), retry_seconds(retry_seconds) {}
+    : exception(509, fmt::format("You have downloaded too much data. Please try again in {} seconds.", retry_seconds)), retry_seconds(retry_seconds) {}
 
 gone::gone(const string &message)
-    : exception(410, "Gone", message) {}
+    : exception(410, message) {}
 
 unsupported_media_type::unsupported_media_type(const string &message)
-    : exception(415, "Unsupported Media Type", message) {}
+    : exception(415, message) {}
 
 unauthorized::unauthorized(const std::string &message)
-  : exception(401, "Unauthorized", message) {}
+  : exception(401, message) {}
 
 method_not_allowed::method_not_allowed(const http::method method)
-   :  exception(405, "Method not allowed", http::list_methods(method)),
+   :  exception(405, http::list_methods(method)),
       allowed_methods(method) {}
 
 
