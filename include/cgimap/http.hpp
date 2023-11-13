@@ -32,6 +32,8 @@ namespace http {
 
   using headers_t = std::vector<std::pair<std::string, std::string> >;
 
+  std::string format_header(int status, const headers_t &headers);
+
   /**
    * return a static string description for an HTTP status code.
    */

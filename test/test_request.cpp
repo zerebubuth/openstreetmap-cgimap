@@ -78,15 +78,9 @@ void test_request::write_header_info(int status, const http::headers_t &headers)
   assert(m_output.tellp() == 0);
   m_status = status;
 
-  std::stringstream hdr;
-  hdr << "Status: " << status << " " << http::status_message(status) << "\r\n";
-  for (const auto& [name, value] : headers) {
-      hdr << name << ": " << value << "\r\n";
-  }
-  hdr << "\r\n";
-
-  m_output << hdr.str();
-  m_header << hdr.str();
+  auto hdr = http::format_header(status, headers);
+  m_output << hdr;
+  m_header << hdr;
 }
 
 int test_request::response_status() const {

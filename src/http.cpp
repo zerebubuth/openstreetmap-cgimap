@@ -102,6 +102,16 @@ const char *status_message(int code) {
   }
 }
 
+std::string format_header(int status, const headers_t &headers) {
+  std::string hdr{};
+  hdr += fmt::format("Status: {} {}\r\n", status, status_message(status));
+  for (const auto& [name, value] : headers) {
+    hdr += fmt::format("{}: {}\r\n", name, value);
+  }
+  hdr += "\r\n";
+  return hdr;
+}
+
 exception::exception(int c, string m)
     : code_(c), message_(std::move(m)) {}
 

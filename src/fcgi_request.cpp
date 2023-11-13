@@ -121,14 +121,7 @@ void fcgi_request::set_current_time(const std::chrono::system_clock::time_point 
 }
 
 void fcgi_request::write_header_info(int status, const http::headers_t &headers) {
-  std::ostringstream ostr;
-  ostr << "Status: " << status << " " << http::status_message(status) << "\r\n";
-  for (const auto& [name, value] : headers) {
-    ostr << name << ": " << value << "\r\n";
-  }
-  ostr << "\r\n";
-  std::string data(ostr.str());
-  m_buffer->write(&data[0], data.size());
+  m_buffer->write(http::format_header(status, headers));
 }
 
 output_buffer& fcgi_request::get_buffer_internal() {

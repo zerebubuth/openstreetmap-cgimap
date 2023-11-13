@@ -1,11 +1,14 @@
 #ifndef OUTPUT_BUFFER_HPP
 #define OUTPUT_BUFFER_HPP
 
+#include <string_view>
+
 /**
  * Implement this interface to provide custom output.
  */
 struct output_buffer {
   virtual int write(const char *buffer, int len) = 0;
+  virtual int write(std::string_view str) { return write(str.data(), str.size()); }
   virtual int written() = 0;
   virtual int close() = 0;
   virtual void flush() = 0;
