@@ -157,10 +157,7 @@ void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
 
     fetch_changesets(extract_changeset_ids(result), cc);
 
-    extract_nodes(result,
-		  formatter,
-		  [&](const element_info&) {},
-		  cc);
+    extract_nodes(result, formatter, {}, cc);
   }
 }
 
@@ -240,10 +237,7 @@ void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
 
     fetch_changesets(extract_changeset_ids(result), cc);
 
-    extract_ways(result,
-		 formatter,
-		 [&](const element_info&) {},
-		 cc);
+    extract_ways(result, formatter, {}, cc);
   }
 }
 
@@ -321,10 +315,7 @@ void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
 
     fetch_changesets(extract_changeset_ids(result), cc);
 
-    extract_relations(result,
-		      formatter,
-	              [&](const element_info&) {},
-		      cc);
+    extract_relations(result, formatter, {}, cc);
   }
 }
 

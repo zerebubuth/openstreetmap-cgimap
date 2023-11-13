@@ -224,7 +224,8 @@ void extract(
     extract_elem(row, elem, cc);
     extra.extract(row);
     extract_tags(row, tags);
-    notify(elem);     // let callback function know about a new element we're processing
+    if (notify)
+      notify(elem);     // let callback function know about a new element we're processing
     T::write(formatter, elem, extra, tags);
   }
 }
