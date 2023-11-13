@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <optional>
+#include <cmath>
 
 namespace api06 {
 
@@ -52,12 +53,16 @@ public:
   void set_lat(double lat) {
     if (lat < -90 || lat > 90)
       throw xml_error("Latitude outside of valid range");
+    else if (!std::isfinite(lat))
+      throw xml_error("Latitude not a valid finite number");
     m_lat = lat;
   }
 
   void set_lon(double lon) {
     if (lon < -180 || lon > 180)
       throw xml_error("Longitude outside of valid range");
+    else if (!std::isfinite(lon))
+      throw xml_error("Longitude not a valid finite number");
     m_lon = lon;
   }
 
