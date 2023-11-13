@@ -89,12 +89,11 @@ struct request {
   http::method methods() const;
 
 protected:
-  using headers_t = std::vector<std::pair<std::string, std::string> >;
 
   // this is called once, the first time an output function is called. the
   // implementing output system may use this to write out the complete set of
   // status & header information.
-  virtual void write_header_info(int status, const headers_t &headers) = 0;
+  virtual void write_header_info(int status, const http::headers_t &headers) = 0;
 
   // internal functions.
   // TODO: this is really bad design and indicates this should probably use
@@ -122,10 +121,10 @@ private:
   int m_status{500};
 
   // the headers to be written in the response
-  headers_t m_headers;
+  http::headers_t m_headers;
 
   // the headers to be written in the response if process was successful
-  headers_t m_success_headers;
+  http::headers_t m_success_headers;
 
   // allowed methods, to be returned to the client in the CORS headers.
   http::method m_methods{http::method::GET | http::method::HEAD | http::method::OPTIONS};

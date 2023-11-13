@@ -74,7 +74,7 @@ void test_request::set_current_time(const std::chrono::system_clock::time_point 
   m_now = now;
 }
 
-void test_request::write_header_info(int status, const headers_t &headers) {
+void test_request::write_header_info(int status, const http::headers_t &headers) {
   assert(m_output.tellp() == 0);
   m_status = status;
 

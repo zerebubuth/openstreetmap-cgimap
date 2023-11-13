@@ -30,6 +30,7 @@ namespace http {
     OPTIONS = 0b10000
   };
 
+  using headers_t = std::vector<std::pair<std::string, std::string> >;
 
   /**
    * return a static string description for an HTTP status code.

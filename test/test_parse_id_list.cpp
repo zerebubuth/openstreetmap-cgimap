@@ -39,7 +39,7 @@ struct test_request : public request {
   }
 
 protected:
-  void write_header_info(int status, const headers_t &headers) override {}
+  void write_header_info(int status, const http::headers_t &headers) override {}
   output_buffer& get_buffer_internal() override {
     throw std::runtime_error("test_request::get_buffer_internal unimplemented.");
   }

@@ -23,7 +23,7 @@ struct fcgi_request : public request {
   void dispose() override;
 
 protected:
-  void write_header_info(int status, const request::headers_t &headers) override;
+  void write_header_info(int status, const http::headers_t &headers) override;
   output_buffer& get_buffer_internal() override;
   void finish_internal() override;
 

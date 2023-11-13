@@ -79,7 +79,7 @@ struct test_request : public request {
   std::chrono::system_clock::time_point get_current_time() const override;
 
 protected:
-  void write_header_info(int status, const headers_t &headers) override;
+  void write_header_info(int status, const http::headers_t &headers) override;
 
   output_buffer& get_buffer_internal() override;
   void finish_internal() override;
@@ -136,7 +136,7 @@ const std::string test_request::get_payload() {
 void test_request::dispose() {
 }
 
-void test_request::write_header_info(int status, const headers_t &headers) {
+void test_request::write_header_info(int status, const http::headers_t &headers) {
   throw std::runtime_error("test_request::write_header_info unimplemented.");
 }
 
