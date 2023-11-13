@@ -186,7 +186,7 @@ public:
 
     /// get a handle to a selection which can be used to build up
     /// a working set of data.
-    virtual std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) = 0;
+    virtual std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) const = 0;
 
     virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() = 0;
   };

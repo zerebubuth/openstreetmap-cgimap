@@ -103,8 +103,6 @@ readonly_pgsql_selection::readonly_pgsql_selection(
     , include_changeset_discussions(false)
     , m_redactions_visible(false) {}
 
-readonly_pgsql_selection::~readonly_pgsql_selection() = default;
-
 void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
 
   // get all nodes - they already contain their own tags, so
@@ -840,7 +838,7 @@ bool readonly_pgsql_selection::is_user_active(const osm_user_id_t id)
   return (!res.empty());
 }
 
-std::set< osm_changeset_id_t > readonly_pgsql_selection::extract_changeset_ids(pqxx::result& result) {
+std::set< osm_changeset_id_t > readonly_pgsql_selection::extract_changeset_ids(const pqxx::result& result) const {
 
   std::set< osm_changeset_id_t > changeset_ids;
   for (const auto & row : result) {
@@ -925,11 +923,9 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
 #endif
 }
 
-readonly_pgsql_selection::factory::~factory() = default;
-
 
 std::unique_ptr<data_selection>
-readonly_pgsql_selection::factory::make_selection(Transaction_Owner_Base& to) {
+readonly_pgsql_selection::factory::make_selection(Transaction_Owner_Base& to) const {
   return std::make_unique<readonly_pgsql_selection>(to);
 }
 

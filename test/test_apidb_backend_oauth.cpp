@@ -286,23 +286,21 @@ public:
   int select_historical_by_changesets(const std::vector<osm_changeset_id_t> &) override { return 0; }
 
 
-  struct factory
-    : public data_selection::factory {
-    virtual ~factory() = default;
-    virtual std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
+  struct factory : public data_selection::factory {
+    ~factory() override = default;
+    
+    std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) const override {
       return std::make_unique<empty_data_selection>();
     }
-    virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() {
-      {
-        return std::unique_ptr<Transaction_Owner_Void>(new Transaction_Owner_Void());
-      }
+    std::unique_ptr<Transaction_Owner_Base> get_default_transaction() override {
+      return std::make_unique<Transaction_Owner_Void>();
     }
   };
 };
 
 struct recording_rate_limiter
   : public rate_limiter {
-  ~recording_rate_limiter() = default;
+  ~recording_rate_limiter() override = default;
 
   std::tuple<bool, int> check(const std::string &key, bool moderator) {
     m_keys_seen.insert(key);
@@ -435,7 +433,7 @@ void test_oauth_get_roles_for_user(test_database &tdb) {
 
 void test_oauth_disabled_by_global_config(test_database &tdb) {
 
-  auto test_settings = std::unique_ptr<global_settings_test_no_oauth1>(new global_settings_test_no_oauth1());
+  auto test_settings = std::make_unique<global_settings_test_no_oauth1>();
   global_settings::set_configuration(std::move(test_settings));
 
   // TODO

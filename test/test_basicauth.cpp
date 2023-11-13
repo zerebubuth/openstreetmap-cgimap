@@ -135,12 +135,12 @@ public:
 
   struct factory
     : public data_selection::factory {
-    virtual ~factory() = default;
-    virtual std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
+    ~factory() override = default;
+    std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) const override {
       return std::make_unique<basicauth_test_data_selection>();
     }
-    virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() {
-      return std::unique_ptr<Transaction_Owner_Void>(new Transaction_Owner_Void());
+    std::unique_ptr<Transaction_Owner_Base> get_default_transaction() override {
+      return std::make_unique<Transaction_Owner_Void>();
     }
   };
 };

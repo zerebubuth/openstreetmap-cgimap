@@ -179,7 +179,7 @@ class empty_data_selection
   : public data_selection {
 public:
 
-  virtual ~empty_data_selection() = default;
+  ~empty_data_selection() override = default;
 
   void write_nodes(output_formatter &formatter) override {}
   void write_ways(output_formatter &formatter) override {}
@@ -225,21 +225,20 @@ public:
 
   struct factory
     : public data_selection::factory {
-    virtual ~factory() = default;
-    virtual std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
+    ~factory() override = default;
+
+    std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) const override {
       return std::make_unique<empty_data_selection>();
     }
-    virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() {
-      {
-        return std::unique_ptr<Transaction_Owner_Void>(new Transaction_Owner_Void());
-      }
+    std::unique_ptr<Transaction_Owner_Base> get_default_transaction() override {
+      return std::make_unique<Transaction_Owner_Void>();
     }
   };
 };
 
 struct recording_rate_limiter
   : public rate_limiter {
-  ~recording_rate_limiter() = default;
+  ~recording_rate_limiter() override = default;
 
   std::tuple<bool, int> check(const std::string &key, bool moderator) {
     m_keys_seen.insert(key);

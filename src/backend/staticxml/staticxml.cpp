@@ -784,9 +784,9 @@ struct factory : public data_selection::factory {
   factory(const std::string &file)
     : m_database(parse_xml(file.c_str())) {}
 
-  virtual ~factory() = default;
+  ~factory() override = default;
 
-  virtual std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
+  virtual std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) const {
     return std::make_unique<static_data_selection>(*m_database);
   }
 
@@ -804,7 +804,7 @@ struct staticxml_backend : public backend {
     m_options.add_options()("file", po::value<string>()->required(),
                             "file to load static OSM XML from.");
   }
-  virtual ~staticxml_backend() = default;
+  ~staticxml_backend() override = default;
 
   const string &name() const { return m_name; }
   const po::options_description &options() const { return m_options; }

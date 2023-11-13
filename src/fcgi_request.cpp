@@ -20,9 +20,9 @@ struct fcgi_buffer : public output_buffer {
 
   explicit fcgi_buffer(FCGX_Request req) : m_req(req), m_written(0) {}
 
-  virtual ~fcgi_buffer() = default;
+  ~fcgi_buffer() override = default;
 
-  int write(const char *buffer, int len) {
+  int write(const char *buffer, int len) override {
     int bytes = FCGX_PutStr(buffer, len, m_req.out);
     if (bytes >= 0) {
       m_written += bytes;
@@ -30,11 +30,11 @@ struct fcgi_buffer : public output_buffer {
     return bytes;
   }
 
-  int written() { return m_written; }
+  int written() override { return m_written; }
 
-  int close() { return FCGX_FClose(m_req.out); }
+  int close() override { return FCGX_FClose(m_req.out); }
 
-  void flush() { FCGX_FFlush(m_req.out); }
+  void flush() override { FCGX_FFlush(m_req.out); }
 
 private:
   FCGX_Request m_req;
