@@ -92,12 +92,12 @@ private:
   Transaction_Manager m;
 
   // true if we want to include changeset discussions along with
-  // the changesets themselves. defaults to false.
-  bool include_changeset_discussions;
+  // the changesets themselves.
+  bool include_changeset_discussions { false };
 
   // true if the user is a moderator and we should include redacted historical
   // versions in the responses.
-  bool m_redactions_visible;
+  bool m_redactions_visible { false };
 
   // the set of selected nodes, ways and relations
   std::set<osm_changeset_id_t> sel_changesets;

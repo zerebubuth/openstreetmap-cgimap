@@ -26,7 +26,7 @@ int test_output_buffer::close() {
 
 void test_output_buffer::flush() {}
 
-test_request::test_request() : m_status(-1), m_payload{}  {}
+test_request::test_request() : m_status(-1) {}
 
 test_request::~test_request() = default;
 

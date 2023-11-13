@@ -7,11 +7,11 @@
  * Container for a simple lat/lon bounding box.
  */
 struct bbox {
-  double minlat, minlon, maxlat, maxlon;
+  double minlat{0.0}, minlon{0.0}, maxlat{0.0}, maxlon{0.0};
 
   bbox(double minlat_, double minlon_, double maxlat_, double maxlon_);
 
-  bbox();
+  constexpr bbox() = default;
 
   bool operator==(const bbox &) const;
 

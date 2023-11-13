@@ -99,9 +99,7 @@ inline int insert_results(const pqxx::result &res, set<T> &elems) {
 
 readonly_pgsql_selection::readonly_pgsql_selection(
     Transaction_Owner_Base& to)
-    : m(to)
-    , include_changeset_discussions(false)
-    , m_redactions_visible(false) {}
+    : m(to) {}
 
 void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
 

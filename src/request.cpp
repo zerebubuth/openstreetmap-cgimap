@@ -18,11 +18,6 @@ void set_default_headers(request &req) {
 }
 } // anonymous namespace
 
-request::request()
-  : m_workflow_status(status_NONE), m_status(500), m_headers(), m_success_headers()
-  , m_methods(http::method::GET | http::method::HEAD | http::method::OPTIONS) {}
-
-request::~request() = default;
 
 request& request::status(int code) {
   check_workflow(status_HEADERS);

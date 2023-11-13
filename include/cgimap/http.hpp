@@ -239,7 +239,7 @@ private:
   const std::string name_;
 
 public:
-  encoding(const std::string &name) : name_(name){}
+  encoding(std::string name) : name_(std::move(name)){}
   virtual ~encoding() = default;
 
   const std::string &name() const { return name_; };

@@ -18,7 +18,7 @@ using std::runtime_error;
 namespace {
 struct fcgi_buffer : public output_buffer {
 
-  explicit fcgi_buffer(FCGX_Request req) : m_req(req), m_written(0) {}
+  explicit fcgi_buffer(FCGX_Request req) : m_req(req) {}
 
   ~fcgi_buffer() override = default;
 
@@ -38,7 +38,7 @@ struct fcgi_buffer : public output_buffer {
 
 private:
   FCGX_Request m_req;
-  int m_written;
+  int m_written{0};
 };
 }
 
