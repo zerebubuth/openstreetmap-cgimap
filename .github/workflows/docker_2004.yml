@@ -1,4 +1,4 @@
-name: Ubuntu 22.04 docker image
+name: Build on Ubuntu 20.04
 
 on: [push, pull_request]
 
@@ -11,3 +11,5 @@ jobs:
 
       - name: Build Docker images
         uses: docker/build-push-action@v2.1.0
+        with:
+           file: Dockerfile
