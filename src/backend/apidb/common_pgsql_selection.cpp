@@ -236,14 +236,14 @@ void extract_nodes(
   const pqxx::result &rows, output_formatter &formatter,
   std::function<void(const element_info&)> notify,
   std::map<osm_changeset_id_t, changeset> &cc) {
-  extract<node>(rows, formatter, notify, cc);
+  extract<node>(rows, formatter, std::move(notify), cc);
 }
 
 void extract_ways(
   const pqxx::result &rows, output_formatter &formatter,
   std::function<void(const element_info&)> notify,
   std::map<osm_changeset_id_t, changeset> &cc) {
-  extract<way>(rows, formatter, notify, cc);
+  extract<way>(rows, formatter, std::move(notify), cc);
 }
 
 // extract relations from the results of the query and write them to the
@@ -252,7 +252,7 @@ void extract_relations(
   const pqxx::result &rows, output_formatter &formatter,
   std::function<void(const element_info&)> notify,
   std::map<osm_changeset_id_t, changeset> &cc) {
-  extract<relation>(rows, formatter, notify, cc);
+  extract<relation>(rows, formatter, std::move(notify), cc);
 }
 
 void extract_changesets(

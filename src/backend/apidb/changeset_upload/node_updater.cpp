@@ -236,7 +236,7 @@ void ApiDB_Node_Updater::replace_old_ids_in_nodes(
         &created_node_id_mapping) {
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map;
 
-  for (auto i : created_node_id_mapping) {
+  for (auto &i : created_node_id_mapping) {
     auto res = map.insert( { i.old_id, i.new_id } );
     if (!res.second)
       throw http::bad_request(
@@ -606,7 +606,7 @@ void ApiDB_Node_Updater::update_current_nodes(
   }
 
   // update modified nodes table
-  for (auto row : r)
+  for (const auto &row : r)
     ct.modified_node_ids.push_back({ id_to_old_id[row["id"].as<osm_nwr_id_t>()],
                                       row["id"].as<osm_nwr_id_t>(),
                                       row["version"].as<osm_version_t>() });

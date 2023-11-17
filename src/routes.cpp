@@ -81,7 +81,7 @@ struct router {
     // the function to call (used later as constructor factory)
     func_t func;
 
-    rule(rule_t r_, func_t f_) : r(r_), func(f_) {}
+    rule(rule_t r_, func_t f_) : r(std::move(r_)), func(f_) {}
 
     // try to match the expression. if it succeeds, call the provided function
     // with the provided params and the matched DSL arguments.
@@ -116,7 +116,7 @@ struct router {
     static_assert(!std::is_base_of<payload_enabled_handler, Handler>::value, "GET rule cannot use payload enabled handler subclass");
 
     rules_get.push_back(
-        rule_ptr(new rule<Rule, boost::factory<Handler *> >(r, ctor)));
+        rule_ptr(new rule<Rule, boost::factory<Handler *> >(std::move(r), ctor)));
     return *this;
   }
 
@@ -128,7 +128,7 @@ struct router {
     static_assert(std::is_base_of<payload_enabled_handler, Handler>::value, "POST rule requires payload enabled handler subclass");
 
     rules_post.push_back(
-        rule_ptr(new rule<Rule, boost::factory<Handler *> >(r, ctor)));
+        rule_ptr(new rule<Rule, boost::factory<Handler *> >(std::move(r), ctor)));
     return *this;
   }
 
@@ -141,7 +141,7 @@ struct router {
     static_assert(std::is_base_of<payload_enabled_handler, Handler>::value, "PUT rule requires payload enabled handler subclass");
 
     rules_put.push_back(
-        rule_ptr(new rule<Rule, boost::factory<Handler *> >(r, ctor)));
+        rule_ptr(new rule<Rule, boost::factory<Handler *> >(std::move(r), ctor)));
     return *this;
   }
 
