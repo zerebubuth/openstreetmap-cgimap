@@ -112,7 +112,7 @@ struct match_string : public ops<match_string> {
   match_string(const char *s);
 
   // copy just copies the held string
-  inline match_string(const match_string &m) : str(m.str) {}
+  inline match_string(const match_string &m) = default;
 
   match_type match(part_iterator &begin, const part_iterator &end) const;
 

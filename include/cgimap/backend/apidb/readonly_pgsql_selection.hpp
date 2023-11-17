@@ -23,7 +23,7 @@ class readonly_pgsql_selection : public data_selection {
 
 public:
   readonly_pgsql_selection(Transaction_Owner_Base& to);
-  ~readonly_pgsql_selection();
+  ~readonly_pgsql_selection() override = default;
 
   void write_nodes(output_formatter &formatter) override;
   void write_ways(output_formatter &formatter) override;
@@ -75,8 +75,8 @@ public:
   class factory : public data_selection::factory {
   public:
     factory(const boost::program_options::variables_map &);
-    virtual ~factory();
-    std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) override;
+    ~factory() override = default;
+    std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) const override;
     std::unique_ptr<Transaction_Owner_Base> get_default_transaction() override;
 
   private:
@@ -86,18 +86,18 @@ public:
   };
 
 private:
-  std::set< osm_changeset_id_t > extract_changeset_ids(pqxx::result& result);
+  std::set< osm_changeset_id_t > extract_changeset_ids(const pqxx::result& result) const;
   void fetch_changesets(const std::set< osm_changeset_id_t >& ids, std::map<osm_changeset_id_t, changeset> & cc);
 
   Transaction_Manager m;
 
   // true if we want to include changeset discussions along with
-  // the changesets themselves. defaults to false.
-  bool include_changeset_discussions;
+  // the changesets themselves.
+  bool include_changeset_discussions { false };
 
   // true if the user is a moderator and we should include redacted historical
   // versions in the responses.
-  bool m_redactions_visible;
+  bool m_redactions_visible { false };
 
   // the set of selected nodes, ways and relations
   std::set<osm_changeset_id_t> sel_changesets;

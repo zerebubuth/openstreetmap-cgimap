@@ -99,11 +99,7 @@ inline int insert_results(const pqxx::result &res, set<T> &elems) {
 
 readonly_pgsql_selection::readonly_pgsql_selection(
     Transaction_Owner_Base& to)
-    : m(to)
-    , include_changeset_discussions(false)
-    , m_redactions_visible(false) {}
-
-readonly_pgsql_selection::~readonly_pgsql_selection() = default;
+    : m(to) {}
 
 void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
 
@@ -152,19 +148,16 @@ void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
     std::vector<osm_nwr_id_t> ids;
     std::vector<osm_nwr_id_t> versions;
 
-    for (const auto &ed : sel_historic_nodes) {
-      ids.emplace_back(ed.first);
-      versions.emplace_back(ed.second);
+    for (const auto &[id, version] : sel_historic_nodes) {
+      ids.emplace_back(id);
+      versions.emplace_back(version);
     }
 
     auto result = m.exec_prepared("extract_historic_nodes", ids, versions);
 
     fetch_changesets(extract_changeset_ids(result), cc);
 
-    extract_nodes(result,
-		  formatter,
-		  [&](const element_info&) {},
-		  cc);
+    extract_nodes(result, formatter, {}, cc);
   }
 }
 
@@ -235,19 +228,16 @@ void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
     ids.reserve(sel_historic_ways.size());
     versions.reserve(sel_historic_ways.size());
 
-    for (const auto &ed : sel_historic_ways) {
-      ids.emplace_back(ed.first);
-      versions.emplace_back(ed.second);
+    for (const auto &[id, version] : sel_historic_ways) {
+      ids.emplace_back(id);
+      versions.emplace_back(version);
     }
 
     auto result = m.exec_prepared("extract_historic_ways", ids, versions);
 
     fetch_changesets(extract_changeset_ids(result), cc);
 
-    extract_ways(result,
-		 formatter,
-		 [&](const element_info&) {},
-		 cc);
+    extract_ways(result, formatter, {}, cc);
   }
 }
 
@@ -316,19 +306,16 @@ void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
     ids.reserve(sel_historic_relations.size());
     versions.reserve(sel_historic_relations.size());
 
-    for (const auto &ed : sel_historic_relations) {
-      ids.emplace_back(ed.first);
-      versions.emplace_back(ed.second);
+    for (const auto &[id, version] : sel_historic_relations) {
+      ids.emplace_back(id);
+      versions.emplace_back(version);
     }
 
     auto result = m.exec_prepared("extract_historic_relations", ids, versions);
 
     fetch_changesets(extract_changeset_ids(result), cc);
 
-    extract_relations(result,
-		      formatter,
-	              [&](const element_info&) {},
-		      cc);
+    extract_relations(result, formatter, {}, cc);
   }
 }
 
@@ -589,9 +576,9 @@ int readonly_pgsql_selection::select_historical_nodes(
   ids.reserve(eds.size());
   vers.reserve(eds.size());
 
-  for (const auto &ed : eds) {
-    ids.emplace_back(ed.first);
-    vers.emplace_back(ed.second);
+  for (const auto &[id, version] : eds) {
+    ids.emplace_back(id);
+    vers.emplace_back(version);
   }
 
   return insert_results(
@@ -619,9 +606,9 @@ int readonly_pgsql_selection::select_historical_ways(
   ids.reserve(eds.size());
   vers.reserve(eds.size());
 
-  for (const auto &ed : eds) {
-    ids.emplace_back(ed.first);
-    vers.emplace_back(ed.second);
+  for (const auto &[id, version] : eds) {
+    ids.emplace_back(id);
+    vers.emplace_back(version);
   }
 
   return insert_results(
@@ -649,9 +636,9 @@ int readonly_pgsql_selection::select_historical_relations(
   ids.reserve(eds.size());
   vers.reserve(eds.size());
 
-  for (const auto &ed : eds) {
-    ids.emplace_back(ed.first);
-    vers.emplace_back(ed.second);
+  for (const auto &[id, version] : eds) {
+    ids.emplace_back(id);
+    vers.emplace_back(version);
   }
 
   return insert_results(
@@ -840,7 +827,7 @@ bool readonly_pgsql_selection::is_user_active(const osm_user_id_t id)
   return (!res.empty());
 }
 
-std::set< osm_changeset_id_t > readonly_pgsql_selection::extract_changeset_ids(pqxx::result& result) {
+std::set< osm_changeset_id_t > readonly_pgsql_selection::extract_changeset_ids(const pqxx::result& result) const {
 
   std::set< osm_changeset_id_t > changeset_ids;
   for (const auto & row : result) {
@@ -925,11 +912,9 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
 #endif
 }
 
-readonly_pgsql_selection::factory::~factory() = default;
-
 
 std::unique_ptr<data_selection>
-readonly_pgsql_selection::factory::make_selection(Transaction_Owner_Base& to) {
+readonly_pgsql_selection::factory::make_selection(Transaction_Owner_Base& to) const {
   return std::make_unique<readonly_pgsql_selection>(to);
 }
 

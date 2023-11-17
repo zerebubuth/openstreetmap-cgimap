@@ -18,11 +18,6 @@ void set_default_headers(request &req) {
 }
 } // anonymous namespace
 
-request::request()
-  : m_workflow_status(status_NONE), m_status(500), m_headers(), m_success_headers()
-  , m_methods(http::method::GET | http::method::HEAD | http::method::OPTIONS) {}
-
-request::~request() = default;
 
 request& request::status(int code) {
   check_workflow(status_HEADERS);
@@ -32,13 +27,13 @@ request& request::status(int code) {
 
 request& request::add_header(const std::string &key, const std::string &value) {
   check_workflow(status_HEADERS);
-  m_headers.push_back(std::make_pair(key, value));
+  m_headers.emplace_back(key, value);
   return *this;
 }
 
 request& request::add_success_header(const std::string &key, const std::string &value) {
   check_workflow(status_HEADERS);
-  m_success_headers.push_back(std::make_pair(key, value));
+  m_success_headers.emplace_back(key, value);
   return *this;
 }
 
@@ -98,6 +93,7 @@ void request::reset() {
   m_status = 500;
   m_headers.clear();
   m_success_headers.clear();
+  m_methods = http::method::GET | http::method::HEAD | http::method::OPTIONS;
 }
 
 void request::set_default_methods(http::method m) {

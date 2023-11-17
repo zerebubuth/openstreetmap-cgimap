@@ -11,11 +11,10 @@ std::vector<tile_id_t> tiles_for_area(double minlat, double minlon, double maxla
 /* following functions liberally nicked from TomH's quad_tile
  * library.
  */
-inline unsigned int xy2tile(unsigned int x, unsigned int y) {
+constexpr unsigned int xy2tile(unsigned int x, unsigned int y) {
   unsigned int tile = 0;
-  int i;
 
-  for (i = 15; i >= 0; --i) {
+  for (int i = 15; i >= 0; --i) {
     tile = (tile << 1) | ((x >> i) & 1);
     tile = (tile << 1) | ((y >> i) & 1);
   }

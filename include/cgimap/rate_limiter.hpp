@@ -18,7 +18,7 @@ struct rate_limiter {
 
 struct null_rate_limiter
   : public rate_limiter {
-  ~null_rate_limiter();
+  ~null_rate_limiter() override;
   std::tuple<bool, int> check(const std::string &key, bool moderator) override;
   void update(const std::string &key, int bytes, bool moderator) override;
 };
@@ -30,7 +30,7 @@ public:
    * Methods.
    */
   memcached_rate_limiter(const boost::program_options::variables_map &options);
-  ~memcached_rate_limiter();
+  ~memcached_rate_limiter() override;
   std::tuple<bool, int> check(const std::string &key, bool moderator) override;
   void update(const std::string &key, int bytes, bool moderator) override;
 

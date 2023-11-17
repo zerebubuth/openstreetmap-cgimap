@@ -26,7 +26,7 @@ int test_output_buffer::close() {
 
 void test_output_buffer::flush() {}
 
-test_request::test_request() : m_status(-1), m_payload{}  {}
+test_request::test_request() : m_status(-1) {}
 
 test_request::~test_request() = default;
 
@@ -51,7 +51,7 @@ void test_request::set_payload(const std::string& payload) {
 void test_request::dispose() {}
 
 void test_request::set_header(const std::string &k, const std::string &v) {
-  m_params.insert(std::make_pair(k, v));
+  m_params.try_emplace(k, v);
 }
 
 std::stringstream &test_request::buffer() {
@@ -74,19 +74,13 @@ void test_request::set_current_time(const std::chrono::system_clock::time_point 
   m_now = now;
 }
 
-void test_request::write_header_info(int status, const headers_t &headers) {
+void test_request::write_header_info(int status, const http::headers_t &headers) {
   assert(m_output.tellp() == 0);
   m_status = status;
 
-  std::stringstream hdr;
-  hdr << "Status: " << status << " " << status_message(status) << "\r\n";
-  for (const request::headers_t::value_type &header : headers) {
-      hdr << header.first << ": " << header.second << "\r\n";
-  }
-  hdr << "\r\n";
-
-  m_output << hdr.str();
-  m_header << hdr.str();
+  auto hdr = http::format_header(status, headers);
+  m_output << hdr;
+  m_header << hdr;
 }
 
 int test_request::response_status() const {

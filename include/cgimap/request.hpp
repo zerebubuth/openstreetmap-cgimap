@@ -26,8 +26,8 @@ struct output_buffer;
  * body.
  */
 struct request {
-  request();
-  virtual ~request();
+  request() = default;
+  virtual ~request() = default;
 
   // get the value associated with a key in the request headers. returns NULL if
   // the key could not be found. this function can be called at any time.
@@ -89,12 +89,11 @@ struct request {
   http::method methods() const;
 
 protected:
-  using headers_t = std::vector<std::pair<std::string, std::string> >;
 
   // this is called once, the first time an output function is called. the
   // implementing output system may use this to write out the complete set of
   // status & header information.
-  virtual void write_header_info(int status, const headers_t &headers) = 0;
+  virtual void write_header_info(int status, const http::headers_t &headers) = 0;
 
   // internal functions.
   // TODO: this is really bad design and indicates this should probably use
@@ -113,22 +112,22 @@ private:
     status_BODY = 2,
     status_FINISHED = 3
   };
-  workflow_status m_workflow_status;
+  workflow_status m_workflow_status{status_NONE};
 
   // function to check and update the workflow
   void check_workflow(workflow_status this_stage);
 
   // the HTTP status code
-  int m_status;
+  int m_status{500};
 
   // the headers to be written in the response
-  headers_t m_headers;
+  http::headers_t m_headers;
 
   // the headers to be written in the response if process was successful
-  headers_t m_success_headers;
+  http::headers_t m_success_headers;
 
   // allowed methods, to be returned to the client in the CORS headers.
-  http::method m_methods;
+  http::method m_methods{http::method::GET | http::method::HEAD | http::method::OPTIONS};
 };
 
 #endif /* REQUEST_HPP */

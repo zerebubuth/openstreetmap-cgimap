@@ -13,8 +13,6 @@ using std::vector;
 bbox::bbox(double minlat_, double minlon_, double maxlat_, double maxlon_)
     : minlat(minlat_), minlon(minlon_), maxlat(maxlat_), maxlon(maxlon_) {}
 
-bbox::bbox() : minlat(0.0), minlon(0.0), maxlat(0.0), maxlon(0.0) {}
-
 bool bbox::operator==(const bbox &other) const {
   return ((minlat == other.minlat) &&
           (minlon == other.minlon) &&

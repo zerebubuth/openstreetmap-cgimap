@@ -7,7 +7,7 @@
 
 struct fcgi_request : public request {
   fcgi_request(int socket, const std::chrono::system_clock::time_point &now);
-  virtual ~fcgi_request();
+  ~fcgi_request() override;
   const char *get_param(const char *key) const override;
   const std::string get_payload() override;
 
@@ -23,7 +23,7 @@ struct fcgi_request : public request {
   void dispose() override;
 
 protected:
-  void write_header_info(int status, const request::headers_t &headers) override;
+  void write_header_info(int status, const http::headers_t &headers) override;
   output_buffer& get_buffer_internal() override;
   void finish_internal() override;
 

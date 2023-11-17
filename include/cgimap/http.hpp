@@ -30,6 +30,16 @@ namespace http {
     OPTIONS = 0b10000
   };
 
+  using headers_t = std::vector<std::pair<std::string, std::string> >;
+
+  std::string format_header(int status, const headers_t &headers);
+
+  /**
+   * return a static string description for an HTTP status code.
+   */
+  const char *status_message(int code);
+
+
 /**
  * Base class for HTTP protocol related exceptions.
  *
@@ -41,22 +51,18 @@ private:
   /// http://en.wikipedia.org/wiki/List_of_HTTP_status_codes
   const int code_;
 
-  /// the header is a short description of the code, mainly for
-  /// human consumption.
-  const std::string header_;
-
   /// specific error message, meant entirely for humans to read.
   const std::string message_;
 
 protected:
-  exception(int c, const std::string &h, const std::string &m);
+  exception(int c, std::string m);
 
 public:
-  virtual ~exception() noexcept;
+  ~exception() noexcept override = default;
 
   int code() const;
-  const std::string &header() const;
-  const char *what() const noexcept;
+  const char* header() const;
+  const char* what() const noexcept override;
 };
 
 /**
@@ -236,7 +242,7 @@ private:
   const std::string name_;
 
 public:
-  encoding(const std::string &name) : name_(name){}
+  encoding(std::string name) : name_(std::move(name)){}
   virtual ~encoding() = default;
 
   const std::string &name() const { return name_; };
@@ -282,10 +288,12 @@ std::unique_ptr<ZLibBaseDecompressor> get_content_encoding_handler(const std::st
 
 // allow bitset-like operators on methods
 inline method operator|(method a, method b) {
-  return static_cast<method>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
+  return static_cast<method>(static_cast<std::underlying_type_t<method>>(a) |
+                             static_cast<std::underlying_type_t<method>>(b));
 }
 inline method operator&(method a, method b) {
-  return static_cast<method>(static_cast<uint8_t>(a) & static_cast<uint8_t>(b));
+  return static_cast<method>(static_cast<std::underlying_type_t<method>>(a) &
+                             static_cast<std::underlying_type_t<method>>(b));
 }
 inline method& operator|=(method& a, method b)
 {

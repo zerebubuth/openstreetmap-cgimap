@@ -14,10 +14,10 @@
 class Transaction_Owner_Base
 {
 public:
-  Transaction_Owner_Base() {}
+  Transaction_Owner_Base() = default;
   virtual pqxx::transaction_base& get_transaction() = 0;
   virtual std::set<std::string>& get_prep_stmt() = 0;
-  virtual ~Transaction_Owner_Base() {}
+  virtual ~Transaction_Owner_Base() = default;
 };
 
 
@@ -27,7 +27,7 @@ public:
   explicit Transaction_Owner_ReadOnly(pqxx::connection &conn, std::set<std::string> &prep_stmt);
   pqxx::transaction_base& get_transaction() override;
   std::set<std::string>& get_prep_stmt() override;
-  ~Transaction_Owner_ReadOnly() {}
+  ~Transaction_Owner_ReadOnly() override = default;
 
 private:
   pqxx::read_transaction m_txn;
@@ -41,7 +41,7 @@ public:
   explicit Transaction_Owner_ReadWrite(pqxx::connection &conn, std::set<std::string> &prep_stmt);
   pqxx::transaction_base& get_transaction() override;
   std::set<std::string>& get_prep_stmt() override;
-  ~Transaction_Owner_ReadWrite() {}
+  ~Transaction_Owner_ReadWrite() override = default;
 
 private:
   pqxx::work m_txn;
@@ -54,7 +54,7 @@ public:
   explicit Transaction_Owner_Void();
   pqxx::transaction_base& get_transaction() override;
   std::set<std::string>& get_prep_stmt() override;
-  ~Transaction_Owner_Void() {}
+  ~Transaction_Owner_Void() override = default;
 };
 
 

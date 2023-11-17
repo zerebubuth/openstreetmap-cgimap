@@ -18,11 +18,11 @@ using std::runtime_error;
 namespace {
 struct fcgi_buffer : public output_buffer {
 
-  explicit fcgi_buffer(FCGX_Request req) : m_req(req), m_written(0) {}
+  explicit fcgi_buffer(FCGX_Request req) : m_req(req) {}
 
-  virtual ~fcgi_buffer() = default;
+  ~fcgi_buffer() override = default;
 
-  int write(const char *buffer, int len) {
+  int write(const char *buffer, int len) override {
     int bytes = FCGX_PutStr(buffer, len, m_req.out);
     if (bytes >= 0) {
       m_written += bytes;
@@ -30,15 +30,15 @@ struct fcgi_buffer : public output_buffer {
     return bytes;
   }
 
-  int written() { return m_written; }
+  int written() override { return m_written; }
 
-  int close() { return FCGX_FClose(m_req.out); }
+  int close() override { return FCGX_FClose(m_req.out); }
 
-  void flush() { FCGX_FFlush(m_req.out); }
+  void flush() override { FCGX_FFlush(m_req.out); }
 
 private:
   FCGX_Request m_req;
-  int m_written;
+  int m_written{0};
 };
 }
 
@@ -47,7 +47,7 @@ struct fcgi_request::pimpl {
   std::chrono::system_clock::time_point now;
 };
 
-fcgi_request::fcgi_request(int socket, const std::chrono::system_clock::time_point &now) : m_impl(new pimpl) {
+fcgi_request::fcgi_request(int socket, const std::chrono::system_clock::time_point &now) : m_impl(std::make_unique<pimpl>()) {
   // initialise FCGI
   if (FCGX_Init() != 0) {
     throw runtime_error("Couldn't initialise FCGX library.");
@@ -85,7 +85,7 @@ const std::string fcgi_request::get_payload() {
 
   std::array<char, BUFFER_LEN> content_buffer{};
 
-  std::string result = "";
+  std::string result{};
 
   while ((curr_content_length = FCGX_GetStr(content_buffer.data(), BUFFER_LEN, m_impl->req.in)) > 0)
   {
@@ -103,7 +103,7 @@ const std::string fcgi_request::get_payload() {
       }
 
       if (result.length() > global_settings::get_payload_max_size())
-         throw http::payload_too_large((fmt::format("Payload exceeds limit of {:d} bytes", global_settings::get_payload_max_size())));
+         throw http::payload_too_large(fmt::format("Payload exceeds limit of {:d} bytes", global_settings::get_payload_max_size()));
   }
 
   if (content_length > 0 && result_length != content_length)
@@ -120,16 +120,8 @@ void fcgi_request::set_current_time(const std::chrono::system_clock::time_point 
   m_impl->now = now;
 }
 
-void fcgi_request::write_header_info(int status,
-                                     const request::headers_t &headers) {
-  std::ostringstream ostr;
-  ostr << "Status: " << status << " " << status_message(status) << "\r\n";
-  for (const request::headers_t::value_type &header : headers) {
-    ostr << header.first << ": " << header.second << "\r\n";
-  }
-  ostr << "\r\n";
-  std::string data(ostr.str());
-  m_buffer->write(&data[0], data.size());
+void fcgi_request::write_header_info(int status, const http::headers_t &headers) {
+  m_buffer->write(http::format_header(status, headers));
 }
 
 output_buffer& fcgi_request::get_buffer_internal() {
@@ -149,7 +141,7 @@ int fcgi_request::accept_r() {
 
       if (errno == ENOTSOCK) {
         out << "FCGI port or UNIX socket not set properly, please use the "
-            << "--socket option (caused by ENOTSOCK).";
+               "--socket option (caused by ENOTSOCK).";
 
       } else {
         out << "error accepting request: ";
