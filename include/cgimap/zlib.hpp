@@ -72,7 +72,7 @@ protected:
 private:
   char inbuf[ZLIB_COMPLETE_CHUNK];
   char outbuf[ZLIB_COMPLETE_CHUNK];
-  z_stream stream;
+  z_stream stream{};
   bool use_decompression;
 };
 

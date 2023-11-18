@@ -268,7 +268,7 @@ void ApiDB_Way_Updater::replace_old_ids_in_ways(
     const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
         &created_way_id_mapping) {
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_ways;
-  for (auto i : created_way_id_mapping) {
+  for (auto &i : created_way_id_mapping) {
     auto res = map_ways.insert(
         std::pair<osm_nwr_signed_id_t, osm_nwr_id_t>(i.old_id, i.new_id));
     if (!res.second)
@@ -277,7 +277,7 @@ void ApiDB_Way_Updater::replace_old_ids_in_ways(
   }
 
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_nodes;
-  for (auto i : created_node_id_mapping) {
+  for (auto &i : created_node_id_mapping) {
     auto res = map_nodes.insert(
         std::pair<osm_nwr_signed_id_t, osm_nwr_id_t>(i.old_id, i.new_id));
     if (!res.second)
