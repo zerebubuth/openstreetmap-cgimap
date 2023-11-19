@@ -66,3 +66,4 @@ ltmain.sh
 # a file created by bear for use with irony-server and irony-mode for
 # autocomplete in emacs.
 compile_commands.json
+/.vscode/
