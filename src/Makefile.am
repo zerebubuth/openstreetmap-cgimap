@@ -5,6 +5,8 @@ if ENABLE_FMT_HEADER
   AM_CPPFLAGS+=-DFMT_HEADER_ONLY
 endif
 
+CATCH2_CPPFLAGS="-I../contrib/catch2/single_include"
+
 bin_PROGRAMS=../openstreetmap-cgimap
 check_PROGRAMS=../test/test_core
 
@@ -49,7 +51,15 @@ endif
 
 ___openstreetmap_cgimap_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
 ___test_test_core_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
-check_PROGRAMS+=../test/test_parse_id_list ../test/test_basicauth ../test/test_oauth ../test/test_oauth2 ../test/test_http ../test/test_parse_time ../test/test_parse_osmchange_input ../test/test_parse_changeset_input
+check_PROGRAMS+=\
+	../test/test_parse_id_list \
+	../test/test_basicauth \
+	../test/test_oauth \
+	../test/test_oauth2 \
+	../test/test_http \
+	../test/test_parse_time \
+	../test/test_parse_osmchange_input \
+	../test/test_parse_changeset_input
 ___test_test_parse_id_list_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
 ___test_test_basicauth_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
 ___test_test_oauth_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
@@ -97,6 +107,7 @@ ___test_test_http_SOURCES=\
 ___test_test_parse_time_SOURCES=\
 	../test/test_parse_time.cpp
 
+___test_test_parse_osmchange_input_CPPFLAGS=$(AM_CPPFLAGS) $(CATCH2_CPPFLAGS)
 ___test_test_parse_osmchange_input_SOURCES=\
 	../test/test_parse_osmchange_input.cpp
 
@@ -154,10 +165,10 @@ libcgimap_core_la_SOURCES=\
 	http.cpp \
 	logger.cpp \
 	mime_types.cpp \
-        basicauth.cpp \
+	basicauth.cpp \
 	oauth.cpp \
 	oauth2.cpp \
-        options.cpp \
+	options.cpp \
 	osm_responder.cpp \
 	osm_current_responder.cpp \
 	osm_diffresult_responder.cpp \
@@ -171,7 +182,7 @@ libcgimap_core_la_SOURCES=\
 	router.cpp \
 	routes.cpp \
 	text_formatter.cpp \
-        text_responder.cpp \
+	text_responder.cpp \
 	text_writer.cpp \
 	time.cpp \
 	xml_formatter.cpp \
