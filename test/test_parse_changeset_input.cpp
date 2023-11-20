@@ -31,7 +31,7 @@ void test_changeset_xml() {
         "test_changeset_xml::001: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400) {
-      std::runtime_error("test_changeset_xml::001: Expected HTTP 400");
+      throw std::runtime_error("test_changeset_xml::001: Expected HTTP 400");
     }
   }
 
@@ -42,7 +42,7 @@ void test_changeset_xml() {
         "test_changeset_xml::invalid:001: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400) {
-      std::runtime_error("test_changeset_xml::invalid:001: Expected HTTP 400");
+      throw std::runtime_error("test_changeset_xml::invalid:001: Expected HTTP 400");
     }
   }
 
@@ -53,7 +53,7 @@ void test_changeset_xml() {
         "test_changeset_xml::invalid:002: Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400) {
-      std::runtime_error("test_changeset_xml::invalid:002: Expected HTTP 400");
+      throw std::runtime_error("test_changeset_xml::invalid:002: Expected HTTP 400");
     }
   }
 
@@ -64,7 +64,7 @@ void test_changeset_xml() {
         "test_changeset_xml::invalid:003 Expected exception");
     } catch (http::exception &e) {
       if (e.code() != 400) {
-        std::runtime_error("test_changeset_xml::invalid:003: Expected HTTP 400");
+        throw std::runtime_error("test_changeset_xml::invalid:003: Expected HTTP 400");
       }
   }
 
@@ -75,7 +75,7 @@ void test_changeset_xml() {
         "test_changeset_xml::invalid:004 Expected exception");
   } catch (http::exception &e) {
     if (e.code() != 400) {
-      std::runtime_error("test_changeset_xml::invalid:004 Expected HTTP 400");
+      throw std::runtime_error("test_changeset_xml::invalid:004 Expected HTTP 400");
     }
   }
 
@@ -86,7 +86,7 @@ void test_changeset_xml() {
         "test_changeset_xml::invalid:005 Expected exception");
     } catch (http::exception &e) {
       if (e.code() != 400) {
-        std::runtime_error("test_changeset_xml::invalid:005: Expected HTTP 400");
+        throw std::runtime_error("test_changeset_xml::invalid:005: Expected HTTP 400");
       }
   }
 
@@ -97,7 +97,7 @@ void test_changeset_xml() {
         "test_changeset_xml::invalid:006 Expected exception");
     } catch (http::exception &e) {
       if (e.code() != 400) {
-        std::runtime_error("test_changeset_xml::invalid:006: Expected HTTP 400");
+        throw std::runtime_error("test_changeset_xml::invalid:006: Expected HTTP 400");
       }
   }
 
@@ -108,7 +108,7 @@ void test_changeset_xml() {
         "test_changeset_xml::invalid:007: Expected exception");
   } catch (http::exception &e) {
       if (e.code() != 400) {
-        std::runtime_error("test_changeset_xml::invalid:007: Expected HTTP 400");
+        throw std::runtime_error("test_changeset_xml::invalid:007: Expected HTTP 400");
       }
   }
 
