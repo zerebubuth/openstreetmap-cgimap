@@ -14,6 +14,7 @@
 #include "cgimap/routes.hpp"
 #include "cgimap/process_request.hpp"
 #include "cgimap/output_buffer.hpp"
+#include "cgimap/zlib.hpp"
 
 #include "cgimap/api06/changeset_upload/osmchange_handler.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_input_format.hpp"
@@ -23,6 +24,29 @@
 #include "test_request.hpp"
 
 namespace {
+
+std::string get_compressed_payload()
+{
+  std::stringstream body;
+  std::stringstream output;
+
+  std::string payload = R"(<?xml version="1.0" encoding="UTF-8"?>
+      <osmChange version="0.6" generator="iD">
+      <create>
+        <node id="-5" lon="11" lat="46" version="0" changeset="1">
+           <tag k="highway" v="bus_stop" />
+        </node>
+     </create>
+     </osmChange>)";
+
+  // gzip compress payload
+  test_output_buffer tob(output, body);
+  zlib_output_buffer zlib_ob(tob, zlib_output_buffer::gzip);
+  zlib_ob.write(payload.data(), payload.size());
+  zlib_ob.close();
+
+  return body.str();
+}
 
   template <typename T>
   void assert_equal(const T& a, const T&b, const std::string &message) {
@@ -2369,7 +2393,7 @@ namespace {
 	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
 	if (req.response_status() != 409)
-	  std::runtime_error("Expected HTTP 409 Conflict: Cannot add more elements to changeset");
+	  throw std::runtime_error("Expected HTTP 409 Conflict: Cannot add more elements to changeset");
     }
 
     // Try to add a node to a changeset that is already closed
@@ -2390,7 +2414,7 @@ namespace {
 	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
 	if (req.response_status() != 409)
-	  std::runtime_error("Expected HTTP 409 Conflict: Changeset already closed");
+	  throw std::runtime_error("Expected HTTP 409 Conflict: Changeset already closed");
     }
 
     // Try to add a nodes, ways, relations to a changeset
@@ -2453,7 +2477,7 @@ namespace {
 	// std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
 
 	if (req.response_status() != 200)
-	  std::runtime_error("Expected HTTP 200 OK: Create new node");
+	  throw std::runtime_error("Expected HTTP 200 OK: Create new node");
     }
 
     // Try to add, modify and delete nodes, ways, relations in changeset
@@ -2509,7 +2533,7 @@ namespace {
 	// std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
 
 	if (req.response_status() != 200)
-	  std::runtime_error("Expected HTTP 200 OK: add, modify and delete nodes, ways, relations in changeset");
+	  throw std::runtime_error("Expected HTTP 200 OK: add, modify and delete nodes, ways, relations in changeset");
     }
 
     // Multiple operations on the same node id -1
@@ -2545,8 +2569,30 @@ namespace {
 	// std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
 
 	if (req.response_status() != 200)
-	  std::runtime_error("Expected HTTP 200 OK: Multiple operations on the same node id -1");
+	  throw std::runtime_error("Expected HTTP 200 OK: Multiple operations on the same node id -1");
 
+  }
+
+  // Compressed upload
+  {
+    // set up request headers from test case
+    test_request req;
+    req.set_header("REQUEST_METHOD", "POST");
+    req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
+    req.set_header("HTTP_AUTHORIZATION", baseauth);
+    req.set_header("REMOTE_ADDR", "127.0.0.1");
+    req.set_header("HTTP_CONTENT_ENCODING", "gzip");
+
+    req.set_payload(get_compressed_payload());
+
+    // execute the request
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+
+//    std::cerr << "Response status: " << req.response_status() << "\n";
+//    std::cerr << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
+
+    if (req.response_status() != 200)
+      throw std::runtime_error("Expected HTTP 200 OK: Compressed upload");
   }
 
 }
