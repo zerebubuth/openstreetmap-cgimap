@@ -1,6 +1,6 @@
 # CGImap
 
-[![CI](https://github.com/zerebubuth/openstreetmap-cgimap/actions/workflows/main.yml/badge.svg)](https://github.com/zerebubuth/openstreetmap-cgimap/actions/workflows/main.yml) [![CodeQL](https://github.com/zerebubuth/openstreetmap-cgimap/actions/workflows/codeql.yml/badge.svg)](https://github.com/zerebubuth/openstreetmap-cgimap/actions/workflows/codeql.yml)
+[![CI](https://github.com/zerebubuth/openstreetmap-cgimap/actions/workflows/docker_bookworm.yml/badge.svg)](https://github.com/zerebubuth/openstreetmap-cgimap/actions/workflows/main.yml) [![CodeQL](https://github.com/zerebubuth/openstreetmap-cgimap/actions/workflows/codeql.yml/badge.svg)](https://github.com/zerebubuth/openstreetmap-cgimap/actions/workflows/codeql.yml)
 
 ## Overview
 
@@ -248,3 +248,5 @@ CGImap contains code from and is partly based on the following:
   by Stephen F. Booth and Sebastien Diaz.
 * [libxml++](https://gitlab.gnome.org/GNOME/libxmlplusplus/)
   by The libxml++ development team
+* [Catch2](https://github.com/catchorg/Catch2)
+  by Catch2 Authors
