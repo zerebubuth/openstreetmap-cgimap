@@ -25,23 +25,14 @@
 
 namespace {
 
-std::string get_compressed_payload()
+std::string get_compressed_payload(const std::string &payload)
 {
   std::stringstream body;
   std::stringstream output;
 
-  std::string payload = R"(<?xml version="1.0" encoding="UTF-8"?>
-      <osmChange version="0.6" generator="iD">
-      <create>
-        <node id="-5" lon="11" lat="46" version="0" changeset="1">
-           <tag k="highway" v="bus_stop" />
-        </node>
-     </create>
-     </osmChange>)";
-
   // gzip compress payload
-  test_output_buffer tob(output, body);
-  zlib_output_buffer zlib_ob(tob, zlib_output_buffer::gzip);
+  test_output_buffer test_ob(output, body);
+  zlib_output_buffer zlib_ob(test_ob, zlib_output_buffer::gzip);
   zlib_ob.write(payload.data(), payload.size());
   zlib_ob.close();
 
@@ -2575,6 +2566,15 @@ std::string get_compressed_payload()
 
   // Compressed upload
   {
+    std::string payload = R"(<?xml version="1.0" encoding="UTF-8"?>
+        <osmChange version="0.6" generator="iD">
+        <create>
+          <node id="-5" lon="11" lat="46" version="0" changeset="1">
+             <tag k="highway" v="bus_stop" />
+          </node>
+       </create>
+       </osmChange>)";
+
     // set up request headers from test case
     test_request req;
     req.set_header("REQUEST_METHOD", "POST");
@@ -2583,7 +2583,7 @@ std::string get_compressed_payload()
     req.set_header("REMOTE_ADDR", "127.0.0.1");
     req.set_header("HTTP_CONTENT_ENCODING", "gzip");
 
-    req.set_payload(get_compressed_payload());
+    req.set_payload(get_compressed_payload(payload));
 
     // execute the request
     process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
