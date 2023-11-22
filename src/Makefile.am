@@ -59,7 +59,8 @@ check_PROGRAMS+=\
 	../test/test_http \
 	../test/test_parse_time \
 	../test/test_parse_osmchange_input \
-	../test/test_parse_changeset_input
+	../test/test_parse_changeset_input \
+	../test/test_parse_options
 ___test_test_parse_id_list_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
 ___test_test_basicauth_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
 ___test_test_oauth_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
@@ -68,6 +69,7 @@ ___test_test_http_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_L
 ___test_test_parse_time_LDADD=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@
 ___test_test_parse_osmchange_input_LDADD=libcgimap_core.la @LIBXML_LIBS@ @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@
 ___test_test_parse_changeset_input_LDADD=libcgimap_core.la @LIBXML_LIBS@ @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@
+___test_test_parse_options_LDADD=libcgimap_core.la @LIBXML_LIBS@ @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@
 
 if ENABLE_APIDB
 ___test_test_apidb_backend_nodes_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
@@ -113,6 +115,10 @@ ___test_test_parse_osmchange_input_SOURCES=\
 
 ___test_test_parse_changeset_input_SOURCES=\
 	../test/test_parse_changeset_input.cpp
+
+___test_test_parse_options_CPPFLAGS=$(AM_CPPFLAGS) $(CATCH2_CPPFLAGS)
+___test_test_parse_options_SOURCES=\
+	../test/test_parse_options.cpp
 
 if ENABLE_APIDB
 ___test_test_apidb_backend_nodes_SOURCES=\
