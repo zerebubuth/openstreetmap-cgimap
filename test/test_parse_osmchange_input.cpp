@@ -133,6 +133,26 @@ TEST_CASE("Create node, lon outside range", "[osmchange][node][xml]") {
   REQUIRE_THROWS_AS(process_testmsg(fmt::format(R"(<osmChange><create><node changeset="858" id="-1" lat="90.00" lon="{}"/></create></osmChange>)", i)), http::bad_request);
 }
 
+TEST_CASE("Create node, lat float overflow", "[osmchange][node][xml]") {
+  auto i = GENERATE(R"(9999999999999999999999999999999999999999999999.01)", R"(-9999999999999999999999999999999999999999999999.01)");
+  REQUIRE_THROWS_AS(process_testmsg(fmt::format(R"(<osmChange><create><node changeset="858" id="-1" lat="{}" lon="2"/></create></osmChange>)", i)), http::bad_request);
+}
+
+TEST_CASE("Create node, lon float overflow", "[osmchange][node][xml]") {
+  auto i = GENERATE(R"(9999999999999999999999999999999999999999999999.01)", R"(-9999999999999999999999999999999999999999999999.01)");
+  REQUIRE_THROWS_AS(process_testmsg(fmt::format(R"(<osmChange><create><node changeset="858" id="-1" lat="90.00" lon="{}"/></create></osmChange>)", i)), http::bad_request);
+}
+
+TEST_CASE("Create node, lat non-finite float", "[osmchange][node][xml]") {
+  auto i = GENERATE(R"(nan)", R"(-nan)", R"(Inf), R"(-Inf)");
+  REQUIRE_THROWS_AS(process_testmsg(fmt::format(R"(<osmChange><create><node changeset="858" id="-1" lat="{}" lon="2"/></create></osmChange>)", i)), http::bad_request);
+}
+
+TEST_CASE("Create node, lon non-finite float", "[osmchange][node][xml]") {
+  auto i = GENERATE(R"(nan)", R"(-nan)", R"(Inf), R"(-Inf)");
+  REQUIRE_THROWS_AS(process_testmsg(fmt::format(R"(<osmChange><create><node changeset="858" id="-1" lat="90.00" lon="{}"/></create></osmChange>)", i)), http::bad_request);
+}
+
 TEST_CASE("Create node, changeset missing", "[osmchange][node][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(R"(<osmChange><create><node id="-1" lat="-90.00" lon="-180.00"/></create></osmChange>)"), http::bad_request, 
     Catch::Message("Changeset id is missing for Node -1 at line 1, column 60"));
