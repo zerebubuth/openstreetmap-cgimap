@@ -3,12 +3,13 @@
 
 #include "cgimap/types.hpp"
 #include "cgimap/output_formatter.hpp"
-#include "cgimap/backend/apidb/transaction_manager.hpp"
 
 #include <chrono>
 #include <memory>
 #include <sstream>
 #include <vector>
+
+class Transaction_Owner_Base;
 
 /**
  * represents a selected set of data which can be written out to
@@ -191,10 +192,5 @@ public:
     virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() = 0;
   };
 };
-
-
-// parses psql array based on specs given
-// https://www.postgresql.org/docs/current/static/arrays.html#ARRAYS-IO
-std::vector<std::string> psql_array_to_vector(std::string str);
 
 #endif /* DATA_SELECTION_HPP */

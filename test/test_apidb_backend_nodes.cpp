@@ -13,6 +13,7 @@
 #include "cgimap/routes.hpp"
 #include "cgimap/process_request.hpp"
 #include "cgimap/backend/apidb/utils.hpp"
+#include "cgimap/backend/apidb/common_pgsql_selection.hpp"
 
 #include "test_formatter.hpp"
 #include "test_database.hpp"
