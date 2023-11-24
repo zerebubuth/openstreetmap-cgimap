@@ -10,6 +10,8 @@
 #include <iostream>
 #include <stdexcept>
 #include <fmt/core.h>
+#include <filesystem>
+
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
@@ -866,10 +868,26 @@ void test_changeset_close(test_database &tdb) {
 
 } // anonymous namespace
 
-int main(int, char **) {
+int main(int argc, char** argv) {
+  std::filesystem::path test_db_sql;
+  boost::program_options::options_description desc("Allowed options");
+  desc.add_options()
+      ("help", "print help message")
+      ("db-schema", po::value<std::filesystem::path>(&test_db_sql)->default_value("test/structure.sql"), "test database schema")
+  ;
+
+  boost::program_options::variables_map vm;
+  boost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc), vm);
+  boost::program_options::notify(vm);
+
+  if (vm.count("help")) {
+    std::cout << desc << "\n";
+    return 1;
+  }
+
   try {
     test_database tdb;
-    tdb.setup();
+    tdb.setup(test_db_sql);
 
     tdb.run(std::function<void(test_database&)>(
               &test_negative_changeset_ids));
