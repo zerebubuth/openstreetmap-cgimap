@@ -44,10 +44,7 @@ const char *test_request::get_param(const char *key) const {
 
 const std::string test_request::get_payload() {
 
-
   // TODO: still a bit too much duplication from fcgi_request.cpp::get_payload
-
-  const unsigned int BUFFER_LEN = 512000;
 
   // fetch and parse the content length
   const char *content_length_str = m_params.find("CONTENT_LENGTH") != m_params.end() ? m_params["CONTENT_LENGTH"].c_str() : nullptr;
