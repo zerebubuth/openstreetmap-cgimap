@@ -56,11 +56,8 @@ void test_single_nodes(test_database &tdb) {
     throw std::runtime_error("Node 2 should be visible, but isn't");
   }
 
-  std::vector<osm_nwr_id_t> ids;
-  ids.push_back(1);
-  ids.push_back(2);
-  ids.push_back(3);
-  ids.push_back(4);
+  std::vector<osm_nwr_id_t> ids{1,2,3,4};
+
   if (sel->select_nodes(ids) != 4) {
     throw std::runtime_error("Selecting 4 nodes failed");
   }
@@ -138,10 +135,8 @@ void test_dup_nodes(test_database &tdb) {
     throw std::runtime_error("Node 1 should be visible, but isn't");
   }
 
-  std::vector<osm_nwr_id_t> ids;
-  ids.push_back(1);
-  ids.push_back(1);
-  ids.push_back(1);
+  std::vector<osm_nwr_id_t> ids{1,1,1};
+
   if (sel->select_nodes(ids) != 1) {
     throw std::runtime_error("Selecting 3 duplicates of 1 node failed");
   }

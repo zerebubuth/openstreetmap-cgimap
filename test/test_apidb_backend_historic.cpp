@@ -49,12 +49,8 @@ void test_historic_elements(test_database &tdb) {
     "");
   auto sel = tdb.get_data_selection();
 
-  std::vector<osm_edition_t> editions;
-  editions.push_back(std::make_pair(osm_nwr_id_t(3), osm_version_t(1)));
-  editions.push_back(std::make_pair(osm_nwr_id_t(3), osm_version_t(2)));
-
   assert_equal<int>(
-    sel->select_historical_nodes(editions), 2,
+    sel->select_historical_nodes({{3,1}, {3,2}}), 2,
     "number of nodes selected");
 
   test_formatter f;
@@ -100,16 +96,12 @@ void test_historic_dup(test_database &tdb) {
     "");
   auto sel = tdb.get_data_selection();
 
-  std::vector<osm_edition_t> editions;
-  editions.push_back(std::make_pair(osm_nwr_id_t(3), osm_version_t(2)));
   assert_equal<int>(
-    sel->select_historical_nodes(editions), 1,
+    sel->select_historical_nodes({{3, 2}}), 1,
     "number of historic nodes selected");
 
-  std::vector<osm_nwr_id_t> ids;
-  ids.push_back(3);
   assert_equal<int>(
-    sel->select_nodes(ids), 1,
+    sel->select_nodes({3}), 1,
     "number of current nodes selected");
 
   test_formatter f;
@@ -162,29 +154,22 @@ void test_historic_dup_way(test_database &tdb) {
     "");
   auto sel = tdb.get_data_selection();
 
-  std::vector<osm_edition_t> editions;
-  editions.push_back(std::make_pair(osm_nwr_id_t(1), osm_version_t(2)));
   assert_equal<int>(
-    sel->select_historical_ways(editions), 1,
+    sel->select_historical_ways({{1, 2}}), 1,
     "number of historic ways selected");
 
-  std::vector<osm_nwr_id_t> ids;
-  ids.push_back(1);
   assert_equal<int>(
-    sel->select_ways(ids), 1,
+    sel->select_ways({1}), 1,
     "number of current ways selected");
 
   test_formatter f;
   sel->write_ways(f);
   assert_equal<size_t>(f.m_ways.size(), 1, "number of ways written");
 
-  nodes_t way1_nds;
-  way1_nds.push_back(3);
-
   assert_equal<test_formatter::way_t>(
     test_formatter::way_t(
       element_info(1, 2, 3, "2016-09-06T19:55:00Z", 1, std::string("user_1"), true),
-      way1_nds,
+      {3},        // nodes_t
       tags_t()
       ),
     f.m_ways[0], "way written");
@@ -229,24 +214,19 @@ void test_historic_dup_relation(test_database &tdb) {
     "");
   auto sel = tdb.get_data_selection();
 
-  std::vector<osm_edition_t> editions;
-  editions.push_back(std::make_pair(osm_nwr_id_t(1), osm_version_t(2)));
   assert_equal<int>(
-    sel->select_historical_relations(editions), 1,
+    sel->select_historical_relations({{1, 2}}), 1,
     "number of historic relations selected");
 
-  std::vector<osm_nwr_id_t> ids;
-  ids.push_back(1);
   assert_equal<int>(
-    sel->select_relations(ids), 1,
+    sel->select_relations({1}), 1,
     "number of current relations selected");
 
   test_formatter f;
   sel->write_relations(f);
   assert_equal<size_t>(f.m_relations.size(), 1, "number of relations written");
 
-  members_t relation1_members;
-  relation1_members.push_back(member_info(element_type_node, 3, "foo"));
+  members_t relation1_members{member_info(element_type_node, 3, "foo")};
 
   assert_equal<test_formatter::relation_t>(
     test_formatter::relation_t(
@@ -288,11 +268,8 @@ void test_node_history(test_database &tdb) {
     "");
   auto sel = tdb.get_data_selection();
 
-  std::vector<osm_nwr_id_t> ids;
-  ids.push_back(3);
-
   assert_equal<int>(
-    sel->select_nodes_with_history(ids), 2,
+    sel->select_nodes_with_history({3}), 2,
     "number of node versions selected");
 
   test_formatter f;
@@ -363,11 +340,8 @@ void test_way_history(test_database &tdb) {
     "");
   auto sel = tdb.get_data_selection();
 
-  std::vector<osm_nwr_id_t> ids;
-  ids.push_back(1);
-
   assert_equal<int>(
-    sel->select_ways_with_history(ids), 2,
+    sel->select_ways_with_history({1}), 2,
     "number of way versions selected");
 
   test_formatter f;
@@ -440,20 +414,16 @@ void test_relation_history(test_database &tdb) {
     "");
   auto sel = tdb.get_data_selection();
 
-  std::vector<osm_nwr_id_t> ids;
-  ids.push_back(1);
-
   assert_equal<int>(
-    sel->select_relations_with_history(ids), 2,
+    sel->select_relations_with_history({1}), 2,
     "number of relation versions selected");
 
   test_formatter f;
   sel->write_relations(f);
   assert_equal<size_t>(f.m_relations.size(), 2, "number of relations written");
 
-  members_t relation1v1_members, relation1v2_members;
-  relation1v1_members.push_back(member_info(element_type_node, 3, "bar"));
-  relation1v2_members.push_back(member_info(element_type_node, 3, "foo"));
+  members_t relation1v1_members{member_info(element_type_node, 3, "bar")};
+  members_t relation1v2_members{member_info(element_type_node, 3, "foo")};
 
   assert_equal<test_formatter::relation_t>(
     test_formatter::relation_t(
@@ -503,10 +473,7 @@ void test_node_with_history_redacted(test_database &tdb) {
 
   // as a normal user, the redactions should not be visible
   {
-    std::vector<osm_nwr_id_t> ids;
-    ids.push_back(3);
-
-    assert_equal<int>(sel->select_nodes_with_history(ids), 1,
+    assert_equal<int>(sel->select_nodes_with_history({3}), 1,
       "number of node versions selected for regular user");
 
     test_formatter f;
@@ -528,10 +495,7 @@ void test_node_with_history_redacted(test_database &tdb) {
   // selected.
   sel->set_redactions_visible(true);
   {
-    std::vector<osm_nwr_id_t> ids;
-    ids.push_back(3);
-
-    assert_equal<int>(sel->select_nodes_with_history(ids), 1,
+    assert_equal<int>(sel->select_nodes_with_history({3}), 1,
       "number of extra node versions selected for moderator");
 
     test_formatter f;
@@ -585,10 +549,7 @@ void test_historical_nodes_redacted(test_database &tdb) {
 
   // as a normal user, the redactions should not be visible
   {
-    std::vector<osm_edition_t> eds;
-    eds.emplace_back(3,1);
-
-    assert_equal<int>(sel->select_historical_nodes(eds), 0,
+    assert_equal<int>(sel->select_historical_nodes({ {3, 1}}), 0,
       "number of node versions selected for regular user");
 
     test_formatter f;
@@ -602,10 +563,7 @@ void test_historical_nodes_redacted(test_database &tdb) {
   // selected.
   sel->set_redactions_visible(true);
   {
-    std::vector<osm_edition_t> eds;
-    eds.emplace_back(3,1);
-
-    assert_equal<int>(sel->select_historical_nodes(eds), 1,
+    assert_equal<int>(sel->select_historical_nodes({ {3, 1}}), 1,
       "number of extra node versions selected for moderator");
 
     test_formatter f;
@@ -666,11 +624,8 @@ void test_way_with_history_redacted(test_database &tdb) {
 
   // as a normal user, the redactions should not be visible
   {
-    std::vector<osm_nwr_id_t> ids;
-    ids.push_back(1);
-
     assert_equal<int>(
-      sel->select_ways_with_history(ids), 1,
+      sel->select_ways_with_history({1}), 1,
       "number of way versions selected for regular user");
 
     test_formatter f;
@@ -690,11 +645,8 @@ void test_way_with_history_redacted(test_database &tdb) {
   // visible.
   sel->set_redactions_visible(true);
   {
-    std::vector<osm_nwr_id_t> ids;
-    ids.push_back(1);
-
     assert_equal<int>(
-      sel->select_ways_with_history(ids), 1, // note: one is already selected
+      sel->select_ways_with_history({1}), 1, // note: one is already selected
       "number of extra way versions selected for moderator");
 
     test_formatter f;
@@ -761,11 +713,8 @@ void test_historical_ways_redacted(test_database &tdb) {
 
   // as a normal user, the redactions should not be visible
   {
-    std::vector<osm_edition_t> eds;
-    eds.emplace_back(1, 1);
-
     assert_equal<int>(
-      sel->select_historical_ways(eds), 0,
+      sel->select_historical_ways({ {1,1}}), 0,
       "number of way versions selected for regular user");
 
     test_formatter f;
@@ -777,11 +726,8 @@ void test_historical_ways_redacted(test_database &tdb) {
   // visible.
   sel->set_redactions_visible(true);
   {
-    std::vector<osm_edition_t> eds;
-    eds.emplace_back(1, 1);
-
     assert_equal<int>(
-      sel->select_historical_ways(eds), 1,
+      sel->select_historical_ways({{1,1}}), 1,
       "number of way versions selected for moderator");
 
     test_formatter f;
@@ -843,11 +789,8 @@ void test_relation_with_history_redacted(test_database &tdb) {
 
   // as a normal user, the redactions should not be visible
   {
-    std::vector<osm_nwr_id_t> ids;
-    ids.push_back(1);
-
     assert_equal<int>(
-      sel->select_relations_with_history(ids), 1,
+      sel->select_relations_with_history({1}), 1,
       "number of relation versions selected for regular user");
 
     test_formatter f;
@@ -870,20 +813,16 @@ void test_relation_with_history_redacted(test_database &tdb) {
   // visible.
   sel->set_redactions_visible(true);
   {
-    std::vector<osm_nwr_id_t> ids;
-    ids.push_back(1);
-
     assert_equal<int>(
-      sel->select_relations_with_history(ids), 1, // note: one is already selected
+      sel->select_relations_with_history({1}), 1, // note: one is already selected
       "number of extra relation versions selected for moderator");
 
     test_formatter f;
     sel->write_relations(f);
     assert_equal<size_t>(f.m_relations.size(), 2, "number of relations written for moderator");
 
-    members_t relation1v1_members, relation1v2_members;
-    relation1v1_members.push_back(member_info(element_type_node, 3, "bar"));
-    relation1v2_members.push_back(member_info(element_type_node, 3, "foo"));
+    members_t relation1v1_members{member_info(element_type_node, 3, "bar")};
+    members_t relation1v2_members{member_info(element_type_node, 3, "foo")};
 
     assert_equal<test_formatter::relation_t>(
       test_formatter::relation_t(
@@ -947,11 +886,8 @@ void test_historical_relations_redacted(test_database &tdb) {
 
   // as a normal user, the redactions should not be visible
   {
-    std::vector<osm_edition_t> eds;
-    eds.emplace_back(1, 1);
-
     assert_equal<int>(
-      sel->select_historical_relations(eds), 0,
+      sel->select_historical_relations({{1,1}}), 0,
       "number of relation versions selected for regular user");
 
     test_formatter f;
@@ -963,19 +899,15 @@ void test_historical_relations_redacted(test_database &tdb) {
   // visible.
   sel->set_redactions_visible(true);
   {
-    std::vector<osm_edition_t> eds;
-    eds.emplace_back(1, 1);
-
     assert_equal<int>(
-      sel->select_historical_relations(eds), 1,
+      sel->select_historical_relations({{1,1}}), 1,
       "number of relation versions selected for moderator");
 
     test_formatter f;
     sel->write_relations(f);
     assert_equal<size_t>(f.m_relations.size(), 1, "number of relations written for moderator");
 
-    members_t relation1v1_members;
-    relation1v1_members.push_back(member_info(element_type_node, 3, "bar"));
+    members_t relation1v1_members{member_info(element_type_node, 3, "bar")};
 
     assert_equal<test_formatter::relation_t>(
       test_formatter::relation_t(
@@ -1063,10 +995,8 @@ void test_historic_way_node_order(test_database &tdb) {
     "");
   auto sel = tdb.get_data_selection();
 
-  std::vector<osm_nwr_id_t> ids;
-  ids.push_back(1);
   assert_equal<int>(
-    sel->select_ways_with_history(ids), 2,
+    sel->select_ways_with_history({1}), 2,
     "number of way versions with history selected");
 
   test_formatter f;
