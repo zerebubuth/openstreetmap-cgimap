@@ -48,9 +48,7 @@ void test_changeset_select_node(test_database &tdb) {
     );
   auto sel = tdb.get_data_selection();
 
-  std::vector<osm_changeset_id_t> ids;
-  ids.push_back(1);
-  int num = sel->select_historical_by_changesets(ids);
+  int num = sel->select_historical_by_changesets({1});
   assert_equal<int>(num, 1, "should have selected one element from changeset 1");
 
   test_formatter f;
@@ -100,9 +98,7 @@ void test_changeset_select_way(test_database &tdb) {
     );
   auto sel = tdb.get_data_selection();
 
-  std::vector<osm_changeset_id_t> ids;
-  ids.push_back(2);
-  int num = sel->select_historical_by_changesets(ids);
+  int num = sel->select_historical_by_changesets({2});
   assert_equal<int>(num, 2, "number of ways (2) selected from changeset 1");
 
   test_formatter f;
@@ -158,9 +154,7 @@ void test_changeset_select_relation(test_database &tdb) {
     );
   auto sel = tdb.get_data_selection();
 
-  std::vector<osm_changeset_id_t> ids;
-  ids.push_back(2);
-  int num = sel->select_historical_by_changesets(ids);
+  int num = sel->select_historical_by_changesets({2});
   assert_equal<int>(num, 1, "number of relations (1) selected from changeset 1");
 
   test_formatter f;
@@ -207,9 +201,7 @@ void test_changeset_redacted(test_database &tdb) {
   auto sel = tdb.get_data_selection();
 
   {
-    std::vector<osm_changeset_id_t> ids;
-    ids.push_back(2);
-    int num = sel->select_historical_by_changesets(ids);
+    int num = sel->select_historical_by_changesets({2});
     assert_equal<int>(num, 0, "number of elements (0) selected by regular user from changeset 2");
 
     test_formatter f;
@@ -221,9 +213,7 @@ void test_changeset_redacted(test_database &tdb) {
   // as a moderator, should have all redacted elements shown.
   sel->set_redactions_visible(true);
   {
-    std::vector<osm_changeset_id_t> ids;
-    ids.push_back(2);
-    int num = sel->select_historical_by_changesets(ids);
+    int num = sel->select_historical_by_changesets({2});
     assert_equal<int>(num, 1, "number of elements (1) selected by moderator from changeset 2");
 
     test_formatter f;

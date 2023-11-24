@@ -51,10 +51,7 @@ void test_negative_changeset_ids(test_database &tdb) {
     sel->check_node_visibility(7), data_selection::exists,
     "node 7 visibility");
 
-  std::vector<osm_nwr_id_t> ids;
-  ids.push_back(6);
-  ids.push_back(7);
-  if (sel->select_nodes(ids) != 2) {
+  if (sel->select_nodes({6,7}) != 2) {
     throw std::runtime_error("Selecting 2 nodes failed");
   }
 
@@ -89,9 +86,7 @@ void test_changeset(test_database &tdb) {
     );
   auto sel = tdb.get_data_selection();
 
-  std::vector<osm_changeset_id_t> ids;
-  ids.push_back(1);
-  int num = sel->select_changesets(ids);
+  int num = sel->select_changesets({1});
   assert_equal<int>(num, 1, "should have selected one changeset.");
 
   std::chrono::system_clock::time_point t = parse_time("2015-09-05T17:15:33Z");
@@ -133,9 +128,7 @@ void test_nonpublic_changeset(test_database &tdb) {
     );
   auto sel = tdb.get_data_selection();
 
-  std::vector<osm_changeset_id_t> ids;
-  ids.push_back(4);
-  int num = sel->select_changesets(ids);
+  int num = sel->select_changesets({4});
   assert_equal<int>(num, 1, "should have selected one changeset.");
 
   std::chrono::system_clock::time_point t = parse_time("2015-09-05T20:13:23Z");
@@ -182,9 +175,7 @@ void test_changeset_with_tags(test_database &tdb) {
     );
   auto sel = tdb.get_data_selection();
 
-  std::vector<osm_changeset_id_t> ids;
-  ids.push_back(2);
-  int num = sel->select_changesets(ids);
+  int num = sel->select_changesets({2});
   assert_equal<int>(num, 1, "should have selected one changeset.");
 
   std::chrono::system_clock::time_point t = parse_time("2015-09-05T20:33:00Z");
@@ -221,9 +212,7 @@ void check_changeset_with_comments_impl(
   data_selection& sel,
   bool include_discussion) {
 
-  std::vector<osm_changeset_id_t> ids;
-  ids.push_back(3);
-  int num = sel.select_changesets(ids);
+  int num = sel.select_changesets({3});
   assert_equal<int>(num, 1, "should have selected one changeset.");
 
   if (include_discussion) {
