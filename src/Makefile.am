@@ -113,6 +113,7 @@ ___test_test_parse_osmchange_input_CPPFLAGS=$(AM_CPPFLAGS) $(CATCH2_CPPFLAGS)
 ___test_test_parse_osmchange_input_SOURCES=\
 	../test/test_parse_osmchange_input.cpp
 
+___test_test_parse_changeset_input_CPPFLAGS=$(AM_CPPFLAGS) $(CATCH2_CPPFLAGS)
 ___test_test_parse_changeset_input_SOURCES=\
 	../test/test_parse_changeset_input.cpp
 
