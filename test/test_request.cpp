@@ -57,13 +57,10 @@ const std::string test_request::get_payload() {
          std::string(content_encoding == nullptr ? "" : content_encoding));
 
   unsigned long content_length = 0;
-  unsigned long curr_content_length = 0;
   unsigned long result_length = 0;
 
   if (content_length_str)
     content_length = http::parse_content_length(content_length_str);
-
-  std::array<char, BUFFER_LEN> content_buffer{};
 
   std::string result;
 
