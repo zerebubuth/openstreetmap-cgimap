@@ -1,5 +1,5 @@
 # vim:set ft=dockerfile:
-FROM debian:trixie AS builder
+FROM debian:trixie-slim AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -21,7 +21,7 @@ COPY . ./
 # Compile, install and remove source
 RUN ./autogen.sh && \
     ./configure --enable-static --disable-shared --enable-yajl CXXFLAGS="-Wall -Wextra -Wpedantic -Wno-unused-parameter" && \
-    make -j3 && \
+    make -j3 check TESTS= && \
     make check || ( cat ./test-suite.log ; exit 1 ) && \
     strip openstreetmap-cgimap
 
