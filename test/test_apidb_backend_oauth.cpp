@@ -18,6 +18,17 @@
 #include "test_database.hpp"
 #include "test_request.hpp"
 
+
+/***********************************************************************************
+ *
+ *
+ * NOTE: OAuth1.0a is scheduled to be removed in 0.9 - no catch2 migration needed
+ *
+ *
+ *
+ ***********************************************************************************/
+
+
 using roles_t = std::set<osm_user_role_t>;
 
 namespace {
