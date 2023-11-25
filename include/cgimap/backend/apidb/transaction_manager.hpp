@@ -51,9 +51,15 @@ private:
 class Transaction_Owner_Void : public Transaction_Owner_Base
 {
 public:
-  explicit Transaction_Owner_Void();
-  pqxx::transaction_base& get_transaction() override;
-  std::set<std::string>& get_prep_stmt() override;
+  explicit Transaction_Owner_Void() = default;
+  inline pqxx::transaction_base& get_transaction() override {
+    throw std::runtime_error ("get_transaction is not supported by Transaction_Owner_Void");
+  }
+
+  inline std::set<std::string>& get_prep_stmt() override {
+    throw std::runtime_error ("get_prep_stmt is not supported by Transaction_Owner_Void");
+  }
+
   ~Transaction_Owner_Void() override = default;
 };
 
