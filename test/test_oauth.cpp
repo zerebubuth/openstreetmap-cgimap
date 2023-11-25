@@ -12,6 +12,17 @@
 #include <boost/date_time/posix_time/conversion.hpp>
 
 
+/***********************************************************************************
+ *
+ *
+ * NOTE: OAuth1.0a is scheduled to be removed in 0.9 - no catch2 migration needed
+ *
+ *
+ *
+ ***********************************************************************************/
+
+
+
 template<typename T>
 std::ostream& operator<<(std::ostream& os, std::optional<T> const& opt)
 {

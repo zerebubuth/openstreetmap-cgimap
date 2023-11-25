@@ -1,47 +1,15 @@
-#include "cgimap/oauth2.hpp"
 
 #include <stdexcept>
-#include <cstring>
-#include <iostream>
 #include <optional>
-#include <sstream>
-#include <set>
-#include <tuple>
-
-#include <boost/date_time/posix_time/conversion.hpp>
-
-
-#include <cassert>
-#include <iostream>
 #include <string>
-
-
-#include <boost/date_time/posix_time/conversion.hpp>
-
-#include <boost/tuple/tuple.hpp>
-#include <boost/tuple/tuple_comparison.hpp>
 
 #include "cgimap/oauth2.hpp"
 #include "test_request.hpp"
-
 #include "cgimap/backend/apidb/transaction_manager.hpp"
 
-template<typename T>
-std::ostream& operator<<(std::ostream& os, std::optional<T> const& opt)
-{
-  return opt ? os << opt.value() : os;
-}
+#define CATCH_CONFIG_MAIN
+#include <catch2/catch.hpp>
 
-#define ANNOTATE_EXCEPTION(stmt)                \
-  {                                             \
-    try {                                       \
-      stmt;                                     \
-    } catch (const std::exception &e) {         \
-      std::ostringstream ostr;                  \
-      ostr << e.what() << ", during " #stmt ;   \
-        throw std::runtime_error(ostr.str());   \
-    }                                           \
-  }
 
 Transaction_Owner_Void::Transaction_Owner_Void() {}
 
@@ -53,21 +21,7 @@ std::set<std::string>& Transaction_Owner_Void::get_prep_stmt() {
   throw std::runtime_error ("get_prep_stmt is not supported by Transaction_Owner_Void");
 }
 
-
 namespace {
-
-
-template <typename T>
-void assert_equal(const T &actual, const T &expected, const std::string& scope = "") {
-  if (!(actual == expected)) {
-    std::ostringstream ostr;
-    if (!scope.empty())
-      ostr << scope << ":";
-    ostr << "Expected `" << expected << "', but got `" << actual << "'";
-    throw std::runtime_error(ostr.str());
-  }
-}
-
 
 struct test_oauth2
   : public oauth::store {
@@ -154,125 +108,70 @@ struct test_oauth2
 } // anonymous namespace
 
 
+TEST_CASE("test_validate_bearer_token", "[oauth2]") {
 
-void test_validate_bearer_token() {
-
+  bool allow_api_write;
+  test_request req;
   auto store = std::make_shared<test_oauth2>();
 
-  {
-    bool allow_api_write;
-    test_request req;
+  SECTION("Missing Header") {
     auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
-    assert_equal<std::optional<osm_user_id_t> >(res, {}, "Missing Header");
+    CHECK(res == std::optional<osm_user_id_t>{});
   }
 
-  {
-    bool allow_api_write;
-    test_request req;
+  SECTION("Missing Header") {
     req.set_header("HTTP_AUTHORIZATION","");
     auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
-    assert_equal<std::optional<osm_user_id_t> >(res, {}, "Empty AUTH header");
+    CHECK(res == std::optional<osm_user_id_t>{});
   }
 
-  // Test valid bearer token, no api_write
-  {
-    bool allow_api_write;
-    test_request req;
+  //
+  SECTION("Test valid bearer token, no api_write") {
     req.set_header("HTTP_AUTHORIZATION","Bearer 6GGXRGoDog0i6mRyrBonFmJORQhWZMhZH5WNWLd0qcs");
     auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
-    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{1}, "Bearer token for user 1");
-    assert_equal<bool>(allow_api_write, false, "Bearer token for user 1, allow_api_write");
+    CHECK(res == std::optional<osm_user_id_t>{1});
+    CHECK(!allow_api_write);
   }
 
-  // Test valid token including all allowed chars & padding chars - api_write allowed
-  {
-    bool allow_api_write;
-    test_request req;
+  //
+  SECTION("Test valid token including all allowed chars & padding chars - api_write allowed") {
     req.set_header("HTTP_AUTHORIZATION","Bearer H4TeKX-zE_VLH.UT33_n6x__yZ8~BA~aQL+wfxQN/cADu7BMMA=====");
     auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
-    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{2}, "Bearer token for user 2");
-    assert_equal<bool>(allow_api_write, true, "Bearer token for user 2, allow_api_write");
+    CHECK(res == std::optional<osm_user_id_t>{2});
+    CHECK(allow_api_write);
   }
 
-
-  // Test bearer token invalid format
-  {
-    bool allow_api_write;
-    test_request req;
+  SECTION("Test bearer token invalid format") {
     req.set_header("HTTP_AUTHORIZATION","Bearer 6!#c23.-;<<>>");
     auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
-    assert_equal<std::optional<osm_user_id_t> >(res, {}, "Invalid bearer format");
+    CHECK(res == std::optional<osm_user_id_t>{});
   }
 
-  // Test invalid bearer token
-  {
-    bool allow_api_write;
-    test_request req;
-    try {
-      req.set_header("HTTP_AUTHORIZATION","Bearer nFRBLFyNXPKY1fiTHAIfVsjQYkCD2KoRuH66upvueaQ");
-      static_cast<void>(oauth2::validate_bearer_token(req, store.get(), allow_api_write));
-      throw std::runtime_error("test_authenticate_user::001: Expected exception");
-    } catch (http::unauthorized &e) {
-      if (std::string(e.what()) != "invalid_token") {
-        throw std::runtime_error("test_authenticate_user::001: Expected invalid_token");
-      }
-    }
+  SECTION("Test invalid bearer token") {
+
+    req.set_header("HTTP_AUTHORIZATION","Bearer nFRBLFyNXPKY1fiTHAIfVsjQYkCD2KoRuH66upvueaQ");
+    REQUIRE_THROWS_MATCHES(static_cast<void>(oauth2::validate_bearer_token(req, store.get(), allow_api_write)), http::unauthorized,
+        Catch::Message("invalid_token"));
   }
 
-  // Test expired bearer token
-  {
-    bool allow_api_write;
-    test_request req;
-    try {
-      req.set_header("HTTP_AUTHORIZATION","Bearer pwnMeCjSmIfQ9hXVYfAyFLFnE9VOADNvwGMKv4Ylaf0");
-      static_cast<void>(oauth2::validate_bearer_token(req, store.get(), allow_api_write));
-      throw std::runtime_error("test_authenticate_user::002: Expected exception");
-    } catch (http::unauthorized &e) {
-      if (std::string(e.what()) != "token_expired") {
-        throw std::runtime_error("test_authenticate_user::002: Expected token_expired");
-      }
-    }
+  SECTION("Test expired bearer token") {
+    req.set_header("HTTP_AUTHORIZATION","Bearer pwnMeCjSmIfQ9hXVYfAyFLFnE9VOADNvwGMKv4Ylaf0");
+    REQUIRE_THROWS_MATCHES(static_cast<void>(oauth2::validate_bearer_token(req, store.get(), allow_api_write)),
+                      http::unauthorized,
+                      Catch::Message("token_expired"));
   }
 
-  // Test revoked bearer token
-  {
-    bool allow_api_write;
-    test_request req;
-    try {
-      req.set_header("HTTP_AUTHORIZATION","Bearer hCXrz5B5fCBHusp0EuD2IGwYSxS8bkAnVw2_aLEdxig");
-      static_cast<void>(oauth2::validate_bearer_token(req, store.get(), allow_api_write));
-      throw std::runtime_error("test_authenticate_user::003: Expected exception");
-    } catch (http::unauthorized &e) {
-      if (std::string(e.what()) != "token_revoked") {
-        throw std::runtime_error("test_authenticate_user::003: Expected token_revoked");
-      }
-    }
+  SECTION("Test revoked bearer token") {
+    req.set_header("HTTP_AUTHORIZATION","Bearer hCXrz5B5fCBHusp0EuD2IGwYSxS8bkAnVw2_aLEdxig");
+    REQUIRE_THROWS_MATCHES(static_cast<void>(oauth2::validate_bearer_token(req, store.get(), allow_api_write)),
+                      http::unauthorized,
+                      Catch::Message("token_revoked"));
   }
 
-  // Test valid bearer token, no api_write
-  {
-    bool allow_api_write;
-    test_request req;
+  SECTION("Test valid bearer token, no api_write") {
     req.set_header("HTTP_AUTHORIZATION","Bearer 0LbSEAVj4jQhr-TfNaCUhn4JSAvXmXepNaL9aSAUsVQ");
     auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
-    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{5}, "Bearer token for user 5");
-    assert_equal<bool>(allow_api_write, false, "Bearer token for user 5, allow_api_write");
+    CHECK(res == std::optional<osm_user_id_t>{5});
+    CHECK(!allow_api_write);
   }
 }
-
-
-int main() {
-  try {
-    ANNOTATE_EXCEPTION(test_validate_bearer_token());
-  } catch (const std::exception &e) {
-    std::cerr << "EXCEPTION: " << e.what() << std::endl;
-    return 1;
-
-  } catch (...) {
-    std::cerr << "UNKNOWN EXCEPTION" << std::endl;
-    return 1;
-  }
-
-  return 0;
-}
-
