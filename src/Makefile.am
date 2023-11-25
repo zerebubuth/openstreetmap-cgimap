@@ -109,6 +109,7 @@ ___test_test_http_CPPFLAGS=$(AM_CPPFLAGS) $(CATCH2_CPPFLAGS)
 ___test_test_http_SOURCES=\
 	../test/test_http.cpp
 
+___test_test_parse_time_CPPFLAGS=$(AM_CPPFLAGS) $(CATCH2_CPPFLAGS)
 ___test_test_parse_time_SOURCES=\
 	../test/test_parse_time.cpp
 
