@@ -100,6 +100,7 @@ ___test_test_basicauth_SOURCES=\
 ___test_test_oauth_SOURCES=\
 	../test/test_oauth.cpp
 
+___test_test_oauth2_CPPFLAGS=$(AM_CPPFLAGS) $(CATCH2_CPPFLAGS)
 ___test_test_oauth2_SOURCES=\
 	../test/test_oauth2.cpp \
 	../test/test_request.cpp
