@@ -89,8 +89,10 @@ ___test_test_core_SOURCES=\
 	../test/test_core.cpp \
 	../test/test_request.cpp
 
+___test_test_parse_id_list_CPPFLAGS=$(AM_CPPFLAGS) $(CATCH2_CPPFLAGS)
 ___test_test_parse_id_list_SOURCES=\
-	../test/test_parse_id_list.cpp
+	../test/test_parse_id_list.cpp \
+	../test/test_request.cpp
 
 ___test_test_basicauth_CPPFLAGS=$(AM_CPPFLAGS) $(CATCH2_CPPFLAGS)
 ___test_test_basicauth_SOURCES=\
@@ -109,6 +111,7 @@ ___test_test_http_CPPFLAGS=$(AM_CPPFLAGS) $(CATCH2_CPPFLAGS)
 ___test_test_http_SOURCES=\
 	../test/test_http.cpp
 
+___test_test_parse_time_CPPFLAGS=$(AM_CPPFLAGS) $(CATCH2_CPPFLAGS)
 ___test_test_parse_time_SOURCES=\
 	../test/test_parse_time.cpp
 
