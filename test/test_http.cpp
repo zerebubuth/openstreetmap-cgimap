@@ -4,117 +4,69 @@
 #include <iostream>
 #include <sstream>
 
-namespace {
+#define CATCH_CONFIG_MAIN
+#include <catch2/catch.hpp>
 
-template<typename T>
-std::ostream& operator<<(std::ostream& os, std::optional<T> const& opt)
-{
-  return opt ? os << opt.value() : os;
-}
 
-void assert_eq(const std::string &actual, const std::string &expected) {
-  if (actual != expected) {
-    std::ostringstream ostr;
-    ostr << "Test failed: Expecting \"" << expected << "\", but got \"" << actual << "\".";
-    throw std::runtime_error(ostr.str());
-  }
-}
-
-template <typename T>
-void assert_equal(const T &actual, const T &expected) {
-  if (actual != expected) {
-    std::ostringstream ostr;
-    ostr << "Expected `" << expected << "', but got `" << actual << "'";
-    throw std::runtime_error(ostr.str());
-  }
-}
-
-void http_check_urlencoding() {
+TEST_CASE("http_check_urlencoding", "[http]") {
   // RFC 3986 section 2.5
-  assert_eq(http::urlencode("ア"), "%E3%82%A2");
-  assert_eq(http::urlencode("À"), "%C3%80");
+  CHECK(http::urlencode("ア") == "%E3%82%A2");
+  CHECK(http::urlencode("À") == "%C3%80");
 
   // RFC 3986 - unreserved characters not encoded
-  assert_eq(http::urlencode("abcdefghijklmnopqrstuvwxyz"), "abcdefghijklmnopqrstuvwxyz");
-  assert_eq(http::urlencode("ABCDEFGHIJKLMNOPQRSTUVWXYZ"), "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-  assert_eq(http::urlencode("0123456789"), "0123456789");
-  assert_eq(http::urlencode("-._~"), "-._~");
+  CHECK(http::urlencode("abcdefghijklmnopqrstuvwxyz") == "abcdefghijklmnopqrstuvwxyz");
+  CHECK(http::urlencode("ABCDEFGHIJKLMNOPQRSTUVWXYZ") == "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+  CHECK(http::urlencode("0123456789") == "0123456789");
+  CHECK(http::urlencode("-._~") == "-._~");
 
   // RFC 3986 - % must be encoded
-  assert_eq(http::urlencode("%"), "%25");
+  CHECK(http::urlencode("%") == "%25");
 }
 
-void http_check_urldecoding() {
-  assert_eq(http::urldecode("%E3%82%A2"), "ア");
-  assert_eq(http::urldecode("%C3%80"), "À");
+TEST_CASE("http_check_urldecoding", "[http]") {
+  CHECK(http::urldecode("%E3%82%A2") == "ア");
+  CHECK(http::urldecode("%C3%80") == "À");
 
   // RFC 3986 - uppercase A-F are equivalent to lowercase a-f
-  assert_eq(http::urldecode("%e3%82%a2"), "ア");
-  assert_eq(http::urldecode("%c3%80"), "À");
+  CHECK(http::urldecode("%e3%82%a2") == "ア");
+  CHECK(http::urldecode("%c3%80") == "À");
 }
 
-void http_check_parse_params() {
+TEST_CASE("http_check_parse_params", "[http]") {
   using params_t = std::vector<std::pair<std::string, std::string> >;
   params_t params = http::parse_params("a2=r%20b&a3=2%20q&a3=a&b5=%3D%253D&c%40=&c2=");
 
-  assert_equal<std::size_t>(params.size(), 6);
-  assert_eq(params[0].first, "a2");   assert_eq(params[0].second, "r%20b");
-  assert_eq(params[1].first, "a3");   assert_eq(params[1].second, "2%20q");
-  assert_eq(params[2].first, "a3");   assert_eq(params[2].second, "a");
-  assert_eq(params[3].first, "b5");   assert_eq(params[3].second, "%3D%253D");
-  assert_eq(params[4].first, "c%40"); assert_eq(params[4].second, "");
-  assert_eq(params[5].first, "c2");   assert_eq(params[5].second, "");
+  CHECK(params.size() == 6);
+  CHECK(params[0].first == "a2");   CHECK(params[0].second == "r%20b");
+  CHECK(params[1].first == "a3");   CHECK(params[1].second == "2%20q");
+  CHECK(params[2].first == "a3");   CHECK(params[2].second == "a");
+  CHECK(params[3].first == "b5");   CHECK(params[3].second == "%3D%253D");
+  CHECK(params[4].first == "c%40"); CHECK(params[4].second == "");
+  CHECK(params[5].first == "c2");   CHECK(params[5].second == "");
 }
 
-void http_check_list_methods() {
-  assert_eq(http::list_methods(http::method::GET), "GET");
-  assert_eq(http::list_methods(http::method::POST), "POST");
-  assert_eq(http::list_methods(http::method::HEAD), "HEAD");
-  assert_eq(http::list_methods(http::method::OPTIONS), "OPTIONS");
-  assert_eq(
-    http::list_methods(http::method::GET | http::method::OPTIONS),
-    "GET, OPTIONS");
+TEST_CASE("http_check_list_methods", "[http]") {
+  CHECK(http::list_methods(http::method::GET) == "GET");
+  CHECK(http::list_methods(http::method::POST) == "POST");
+  CHECK(http::list_methods(http::method::HEAD) == "HEAD");
+  CHECK(http::list_methods(http::method::OPTIONS) == "OPTIONS");
+  CHECK(http::list_methods(http::method::GET | http::method::OPTIONS) == "GET, OPTIONS");
 }
 
-void http_check_parse_methods() {
-  auto assert_eql = assert_equal<std::optional<http::method>>;
-  assert_eql(http::parse_method("GET"), http::method::GET);
-  assert_eql(http::parse_method("POST"), http::method::POST);
-  assert_eql(http::parse_method("HEAD"), http::method::HEAD);
-  assert_eql(http::parse_method("OPTIONS"), http::method::OPTIONS);
-  assert_eql(http::parse_method(""), {});
+TEST_CASE("http_check_parse_methods", "[http]") {
+  CHECK(http::parse_method("GET") == http::method::GET);
+  CHECK(http::parse_method("POST") == http::method::POST);
+  CHECK(http::parse_method("HEAD") == http::method::HEAD);
+  CHECK(http::parse_method("OPTIONS") == http::method::OPTIONS);
+  CHECK(http::parse_method("") == std::optional<http::method>{});
 }
 
-void http_check_choose_encoding() {
-
-  assert_eq(http::choose_encoding("deflate, gzip;q=1.0, *;q=0.5")->name(), "gzip");
-  assert_eq(http::choose_encoding("gzip;q=1.0, identity;q=0.8, *;q=0.1")->name(), "gzip");
-  assert_eq(http::choose_encoding("identity;q=0.8, gzip;q=1.0, *;q=0.1")->name(), "gzip");
-  assert_eq(http::choose_encoding("gzip")->name(), "gzip");
-  assert_eq(http::choose_encoding("identity")->name(), "identity");
-  assert_eq(http::choose_encoding("*")->name(), "identity");
-  assert_eq(http::choose_encoding("deflate")->name(), "identity");
-}
-
-} // anonymous namespace
-
-int main() {
-  try {
-    http_check_urlencoding();
-    http_check_urldecoding();
-    http_check_parse_params();
-    http_check_list_methods();
-    http_check_parse_methods();
-    http_check_choose_encoding();
-
-  } catch (const std::exception &e) {
-    std::cerr << "EXCEPTION: " << e.what() << std::endl;
-    return 1;
-
-  } catch (...) {
-    std::cerr << "UNKNOWN EXCEPTION" << std::endl;
-    return 1;
-  }
-
-  return 0;
+TEST_CASE("http_check_choose_encoding", "[http]") {
+  CHECK(http::choose_encoding("deflate, gzip;q=1.0, *;q=0.5")->name() == "gzip");
+  CHECK(http::choose_encoding("gzip;q=1.0, identity;q=0.8, *;q=0.1")->name() == "gzip");
+  CHECK(http::choose_encoding("identity;q=0.8, gzip;q=1.0, *;q=0.1")->name() == "gzip");
+  CHECK(http::choose_encoding("gzip")->name() == "gzip");
+  CHECK(http::choose_encoding("identity")->name() == "identity");
+  CHECK(http::choose_encoding("*")->name() == "identity");
+  CHECK(http::choose_encoding("deflate")->name() == "identity");
 }

@@ -105,6 +105,7 @@ ___test_test_oauth2_SOURCES=\
 	../test/test_oauth2.cpp \
 	../test/test_request.cpp
 
+___test_test_http_CPPFLAGS=$(AM_CPPFLAGS) $(CATCH2_CPPFLAGS)
 ___test_test_http_SOURCES=\
 	../test/test_http.cpp
 
