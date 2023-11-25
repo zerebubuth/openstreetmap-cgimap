@@ -1,15 +1,8 @@
-#include <cassert>
-#include <iostream>
-#include <string>
 
-#include <stdexcept>
-#include <cstring>
-#include <iostream>
 #include <optional>
-#include <sstream>
-#include <set>
-
-#include <boost/date_time/posix_time/conversion.hpp>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 #include "cgimap/basicauth.hpp"
 #include "cgimap/options.hpp"
@@ -17,23 +10,9 @@
 
 #include "cgimap/backend/apidb/transaction_manager.hpp"
 
-template<typename T>
-std::ostream& operator<<(std::ostream& os, std::optional<T> const& opt)
-{
-  return opt ? os << opt.value() : os;
-}
+#define CATCH_CONFIG_MAIN
+#include <catch2/catch.hpp>
 
-
-#define ANNOTATE_EXCEPTION(stmt)                \
-  {                                             \
-    try {                                       \
-      stmt;                                     \
-    } catch (const std::exception &e) {         \
-      std::ostringstream ostr;                  \
-      ostr << e.what() << ", during " #stmt ;   \
-        throw std::runtime_error(ostr.str());   \
-    }                                           \
-  }
 
 Transaction_Owner_Void::Transaction_Owner_Void() {}
 
@@ -45,27 +24,7 @@ std::set<std::string>& Transaction_Owner_Void::get_prep_stmt() {
   throw std::runtime_error ("get_prep_stmt is not supported by Transaction_Owner_Void");
 }
 
-
 namespace {
-
-template <typename T>
-void assert_equal(const T &actual, const T &expected) {
-  if (!(actual == expected)) {
-    std::ostringstream ostr;
-    ostr << "Expected `" << expected << "', but got `" << actual << "'";
-    throw std::runtime_error(ostr.str());
-  }
-}
-
-template <typename T>
-void assert_equal(const T &actual, const T &expected, const std::string& scope) {
-  if (!(actual == expected)) {
-    std::ostringstream ostr;
-    ostr << scope << ": Expected `" << expected << "', but got `" << actual << "'";
-    throw std::runtime_error(ostr.str());
-  }
-}
-
 
 class basicauth_test_data_selection
   : public data_selection {
@@ -156,214 +115,142 @@ public:
 
 } // anonymous namespace
 
+TEST_CASE("test_md5_without_salt", "[basicauth]") {
+  CHECK(PasswordHash::check("5f4dcc3b5aa765d61d8327deb882cf99", "","password") == true);
+  CHECK(PasswordHash::check("5f4dcc3b5aa765d61d8327deb882cf99", "", "wrong") == false);
+}
 
+TEST_CASE("test_md5_with_salt", "[basicauth]") {
+  CHECK(PasswordHash::check("67a1e09bb1f83f5007dc119c14d663aa", "salt", "password") == true);
+  CHECK(PasswordHash::check("67a1e09bb1f83f5007dc119c14d663aa", "salt", "wrong") == false);
+  CHECK(PasswordHash::check("67a1e09bb1f83f5007dc119c14d663aa", "wrong","password") == false);
+}
 
-void test_password_hash() {
-
-  // test_md5_without_salt
-  assert_equal<bool>(PasswordHash::check("5f4dcc3b5aa765d61d8327deb882cf99", "",
-                             "password"), true);
-
-  assert_equal<bool>(PasswordHash::check("5f4dcc3b5aa765d61d8327deb882cf99", "", "wrong"), false);
-
-  // test_md5_with_salt
-  assert_equal<bool>(PasswordHash::check("67a1e09bb1f83f5007dc119c14d663aa", "salt",
-                             "password"), true);
-  assert_equal<bool>(PasswordHash::check("67a1e09bb1f83f5007dc119c14d663aa", "salt",
-                             "wrong"), false);
-  assert_equal<bool>(PasswordHash::check("67a1e09bb1f83f5007dc119c14d663aa", "wrong",
-                             "password"), false);
-
-  // test_pbkdf2_1000_32_sha512
-  assert_equal<bool>(PasswordHash::check(
+TEST_CASE("test_pbkdf2_1000_32_sha512", "[basicauth]") {
+  CHECK(PasswordHash::check(
              "ApT/28+FsTBLa/J8paWfgU84SoRiTfeY8HjKWhgHy08=",
              "sha512!1000!HR4z+hAvKV2ra1gpbRybtoNzm/CNKe4cf7bPKwdUNrk=",
-             "password"), true);
+             "password") == true);
 
-  assert_equal<bool>(PasswordHash::check(
+  CHECK(PasswordHash::check(
              "ApT/28+FsTBLa/J8paWfgU84SoRiTfeY8HjKWhgHy08=",
              "sha512!1000!HR4z+hAvKV2ra1gpbRybtoNzm/CNKe4cf7bPKwdUNrk=",
-             "wrong"), false);
+             "wrong") == false);
 
-  assert_equal<bool>(PasswordHash::check(
+  CHECK(PasswordHash::check(
              "ApT/28+FsTBLa/J8paWfgU84SoRiTfeY8HjKWhgHy08=",
              "sha512!1000!HR4z+hAvKV2ra1gwrongtoNzm/CNKe4cf7bPKwdUNrk=",
-             "password"), false);
+             "password") == false);
+}
 
-  // test_pbkdf2_10000_32_sha512
-  assert_equal<bool>(PasswordHash::check(
+
+TEST_CASE("test_pbkdf2_10000_32_sha512", "[basicauth]") {
+
+  CHECK(PasswordHash::check(
              "3wYbPiOxk/tU0eeIDjUhdvi8aDP3AbFtwYKKxF1IhGg=",
              "sha512!10000!OUQLgtM7eD8huvanFT5/WtWaCwdOdrir8QOtFwxhO0A=",
-             "password"), true);
+             "password") == true);
 
-  assert_equal<bool>(PasswordHash::check(
+  CHECK(PasswordHash::check(
              "3wYbPiOxk/tU0eeIDjUhdvi8aDP3AbFtwYKKxF1IhGg=",
              "sha512!10000!OUQLgtM7eD8huvanFT5/WtWaCwdOdrir8QOtFwxhO0A=",
-             "wrong"), false);
+             "wrong") == false);
 
-  assert_equal<bool>(PasswordHash::check(
+  CHECK(PasswordHash::check(
              "3wYbPiOxk/tU0eeIDjUhdvi8aDP3AbFtwYKKxF1IhGg=",
              "sha512!10000!OUQLgtMwronguvanFT5/WtWaCwdOdrir8QOtFwxhO0A=",
-             "password"), false);
+             "password") == false);
+}
 
-  // test argon2
-  assert_equal<bool>(PasswordHash::check(
+TEST_CASE("test argon2", "[basicauth]") {
+
+  CHECK(PasswordHash::check(
              "$argon2id$v=19$m=65536,t=1,p=1$KXGHWfWMf5H5kY4uU3ua8A$YroVvX6cpJpljTio62k19C6UpuIPtW7me2sxyU2dyYg",
              "",
-             "password"), true);
+             "password") == true);
 
-  assert_equal<bool>(PasswordHash::check(
+  CHECK(PasswordHash::check(
              "$argon2id$v=19$m=65536,t=1,p=1$KXGHWfWMf5H5kY4uU3ua8A$YroVvX6cpJpljTio62k19C6UpuIPtW7me2sxyU2dyYg",
              "",
-             "wrong"), false);
+             "wrong") == false);
 }
 
 
-void test_authenticate_user() {
+TEST_CASE("test_authenticate_user", "[basicauth]") {
 
   auto factory = std::make_shared<basicauth_test_data_selection::factory>();
-
   auto txn_readonly = factory->get_default_transaction();
   auto sel = factory->make_selection(*txn_readonly);
+  test_request req;
 
-  {
-    test_request req;
+  SECTION("Missing Header") {
     auto res = basicauth::authenticate_user(req, *sel);
-    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "Missing Header");
+    CHECK(res == std::optional<osm_user_id_t>{});
   }
 
-  {
-    test_request req;
+  SECTION("Empty AUTH header"){
     req.set_header("HTTP_AUTHORIZATION","");
     auto res = basicauth::authenticate_user(req, *sel);
-    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "Empty AUTH header");
+    CHECK(res == std::optional<osm_user_id_t>{});
   }
 
-  {
-    test_request req;
+  SECTION("Empty AUTH header"){
     req.set_header("HTTP_AUTHORIZATION","Basic ");
     auto res = basicauth::authenticate_user(req, *sel);
-    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "Empty AUTH header");
+    CHECK(res == std::optional<osm_user_id_t>{});
   }
 
-  {
-    test_request req;
+  SECTION("User without password"){
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbw==");
     auto res = basicauth::authenticate_user(req, *sel);
-    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "User without password");
+    CHECK(res == std::optional<osm_user_id_t>{});
   }
 
-  {
-    test_request req;
+  SECTION("User and colon without password"){
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzo=");
     auto res = basicauth::authenticate_user(req, *sel);
-    assert_equal<std::optional<osm_user_id_t> >(res,std::optional<osm_user_id_t>{}, "User and colon without password");
+    CHECK(res == std::optional<osm_user_id_t>{});
   }
 
-  {
-    test_request req;
+  SECTION("Known user with correct password"){
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzpwYXNzd29yZA==");
     auto res = basicauth::authenticate_user(req, *sel);
-    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{4711}, "Known user with correct password");
+    CHECK(res == std::optional<osm_user_id_t>{4711});
   }
 
-  {
-    test_request req;
+  SECTION("Known user with correct password, argon2") {
     req.set_header("HTTP_AUTHORIZATION","Basic YXJnb24yOnBhc3N3b3Jk");
     auto res = basicauth::authenticate_user(req, *sel);
-    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{4712}, "Known user with correct password, argon2");
+    CHECK(res == std::optional<osm_user_id_t>{4712});
   }
 
-  {
-    test_request req;
+  SECTION("Crap data") {
     req.set_header("HTTP_AUTHORIZATION","Basic TotalCrapData==");
     auto res = basicauth::authenticate_user(req, *sel);
-    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "Crap data");
+    CHECK(res == std::optional<osm_user_id_t>{});
   }
 
-  // Test with known user and incorrect password
-  {
-    test_request req;
+  SECTION("Test with known user and incorrect password") {
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzppbmNvcnJlY3Q=");
-    try {
-      static_cast<void>(basicauth::authenticate_user(req, *sel));
-      throw std::runtime_error("Known user, incorrect password: expected http unauthorized exception");
-
-    } catch (http::exception &e) {
-      if (e.code() != 401)
-        throw std::runtime_error(
-            "Known user / incorrect password: Expected HTTP 401");
-    }
+    REQUIRE_THROWS_AS(static_cast<void>(basicauth::authenticate_user(req, *sel)), http::unauthorized);
   }
 
-  // Test with known user and incorrect password, argon2
-  {
-    test_request req;
+  SECTION("Test with known user and incorrect password, argon2") {
     req.set_header("HTTP_AUTHORIZATION","Basic YXJnb24yOndyb25n");
-    try {
-      static_cast<void>(basicauth::authenticate_user(req, *sel));
-      throw std::runtime_error("Known user, incorrect password: expected http unauthorized exception");
-
-    } catch (http::exception &e) {
-      if (e.code() != 401)
-        throw std::runtime_error(
-            "Known user / incorrect password: Expected HTTP 401");
-    }
+    REQUIRE_THROWS_AS(static_cast<void>(basicauth::authenticate_user(req, *sel)), http::unauthorized);
   }
 
-  // Test with unknown user and incorrect password
-  {
-    test_request req;
+  SECTION("Test with unknown user and incorrect password") {
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzI6aW5jb3JyZWN0");
-    try {
-      static_cast<void>(basicauth::authenticate_user(req, *sel));
-      throw std::runtime_error("Unknown user / incorrect password: expected http unauthorized exception");
-
-    } catch (http::exception &e) {
-      if (e.code() != 401)
-        throw std::runtime_error(
-            "Unknown user / incorrect password: Expected HTTP 401");
-    }
+    REQUIRE_THROWS_AS(static_cast<void>(basicauth::authenticate_user(req, *sel)), http::unauthorized);
   }
-}
 
-void test_basic_auth_disabled_by_global_config() {
-
-  auto factory = std::make_shared<basicauth_test_data_selection::factory>();
-
-  auto txn_readonly = factory->get_default_transaction();
-  auto sel = factory->make_selection(*txn_readonly);
-
-  // Known user with correct password, but basic auth has been disabled in global config settings
-  {
+  SECTION("Known user with correct password; basicauth disabled in config") {
     auto test_settings = std::unique_ptr<global_settings_test_no_basic_auth>(new global_settings_test_no_basic_auth());
     global_settings::set_configuration(std::move(test_settings));
-
-    test_request req;
     req.set_header("HTTP_AUTHORIZATION","Basic ZGVtbzpwYXNzd29yZA==");
     auto res = basicauth::authenticate_user(req, *sel);
-    assert_equal<std::optional<osm_user_id_t> >(res, std::optional<osm_user_id_t>{}, "Known user with correct password, but basic auth disabled in global config");
+    CHECK(res == std::optional<osm_user_id_t>{});
   }
 }
-
-
-int main() {
-  try {
-    ANNOTATE_EXCEPTION(test_password_hash());
-    ANNOTATE_EXCEPTION(test_authenticate_user());
-    ANNOTATE_EXCEPTION(test_basic_auth_disabled_by_global_config());
-
-  } catch (const std::exception &e) {
-    std::cerr << "EXCEPTION: " << e.what() << std::endl;
-    return 1;
-
-  } catch (...) {
-    std::cerr << "UNKNOWN EXCEPTION" << std::endl;
-    return 1;
-  }
-
-  return 0;
-}
-
-
 
