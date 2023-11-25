@@ -68,3 +68,4 @@ ltmain.sh
 # autocomplete in emacs.
 compile_commands.json
 /.vscode/
+/build/
