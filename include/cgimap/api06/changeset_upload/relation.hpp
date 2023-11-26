@@ -19,32 +19,30 @@ public:
   RelationMember(std::string _m_type, osm_nwr_signed_id_t _m_ref, std::string _m_role) :
     m_role(_m_role), m_ref(_m_ref), m_type(_m_type) {};
 
-  void set_type(const char *type) {
+  void set_type(const std::string &type) {
 
-    std::string t = std::string(type);
-
-    if (boost::iequals(t, "Node"))
+    if (boost::iequals(type, "Node"))
       m_type = "Node";
-    else if (boost::iequals(t, "Way"))
+    else if (boost::iequals(type, "Way"))
       m_type = "Way";
-    else if (boost::iequals(t, "Relation"))
+    else if (boost::iequals(type, "Relation"))
       m_type = "Relation";
     else
       throw xml_error(
           fmt::format("Invalid type {} in member relation", type));
   }
 
-  void set_role(const char *role) {
+  void set_role(const std::string &role) {
 
     if (unicode_strlen(role) > 255) {
       throw xml_error(
           "Relation Role has more than 255 unicode characters");
     }
 
-    m_role = std::string(role);
+    m_role = role;
   }
 
-  void set_ref(const char *ref) {
+  void set_ref(const std::string &ref) {
 
     osm_nwr_signed_id_t _ref = 0;
 

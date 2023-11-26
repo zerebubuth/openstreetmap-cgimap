@@ -7,21 +7,15 @@
 #include <libxml/parser.h>
 #include <fmt/core.h>
 
-#include <algorithm>
 #include <cassert>
-#include <cstdint>
-#include <cstring>
-#include <functional>
 #include <map>
-#include <memory>
-#include <optional>
-#include <sstream>
 #include <string>
+#include <string_view>
+#include <utility>
+
 #include "parsers/saxparser.hpp"
 
 namespace api06 {
-
-
 
   class ChangesetXMLParser : private xmlpp::SaxParser {
 
@@ -48,11 +42,13 @@ namespace api06 {
 
   protected:
 
-    void on_start_element(const char *element, const char **attrs) override {
+    void on_start_element(const char *elem, const char **attrs) override {
+
+      const std::string_view element(elem);
 
       switch (m_context) {
 	case context::root:
-	  if (!std::strcmp(element, "osm"))
+	  if (element == "osm")
 	    m_context = context::top;
 	  else
 	    throw xml_error{ "Unknown top-level element, expecting osm"  };
@@ -60,7 +56,7 @@ namespace api06 {
 	  break;
 
 	case context::top:
-	  if (!std::strcmp(element, "changeset")) {
+	  if (element == "changeset") {
 	    m_context = context::in_changeset;
 	    changeset_element_found = true;
 	  }
@@ -69,7 +65,7 @@ namespace api06 {
 	  break;
 
 	case context::in_changeset:
-	  if (!std::strcmp(element, "tag")) {
+	  if (element == "tag") {
 	    m_context = context::in_tag;
 	    add_tag(attrs);
 	  }
@@ -83,24 +79,26 @@ namespace api06 {
       }
     }
 
-    void on_end_element(const char *element) override {
+    void on_end_element(const char *elem) override {
+
+      const std::string_view element(elem);
 
       switch (m_context) {
 	case context::root:
 	  assert(false);
 	  break;
 	case context::top:
-	  assert(!std::strcmp(element, "osm"));
+	  assert(element == "osm");
 	  m_context = context::root;
 	  if (!changeset_element_found)
 	    throw xml_error{ "Cannot parse valid changeset from xml string. XML doesn't contain an osm/changeset element" };
 	  break;
 	case context::in_changeset:
-	  assert(!std::strcmp(element, "changeset"));
+	  assert(element == "changeset");
 	  m_context = context::top;
 	  break;
 	case context::in_tag:
-	  assert(!std::strcmp(element, "tag"));
+	  assert(element == "tag");
 	  m_context = context::in_changeset;
       }
     }
@@ -149,12 +147,12 @@ namespace api06 {
       std::optional<std::string> k;
       std::optional<std::string> v;
 
-      check_attributes(attrs, [&k, &v](const char *name, const char *value) {
+      check_attributes(attrs, [&k, &v](std::string_view name, std::string && value) {
 
-	if (name[0] == 'k' && name[1] == 0) {
-	    k = value;
-	} else if (name[0] == 'v' && name[1] == 0) {
-	    v = value;
+	if (name == "k") {
+	    k = std::move(value);
+	} else if (name == "v") {
+	    v = std::move(value);
 	}
       });
 

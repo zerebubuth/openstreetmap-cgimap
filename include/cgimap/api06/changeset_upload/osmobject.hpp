@@ -34,7 +34,7 @@ namespace api06 {
 
     // Setters with string conversions
 
-    void set_changeset(const char *changeset) {
+    void set_changeset(const std::string &changeset) {
 
       osm_changeset_id_t _changeset = 0;
 
@@ -53,7 +53,7 @@ namespace api06 {
       set_changeset(_changeset);
     }
 
-    void set_version(const char *version) {
+    void set_version(const std::string &version) {
 
       int64_t _version = 0;
 
@@ -72,7 +72,7 @@ namespace api06 {
       set_version(_version);
     }
 
-    void set_id(const char *id) {
+    void set_id(const std::string &id) {
 
       osm_nwr_signed_id_t _id = 0;
 
@@ -104,7 +104,7 @@ namespace api06 {
 
     std::map<std::string, std::string> tags() const { return m_tags; }
 
-    void add_tag(std::string key, std::string value) {
+    void add_tag(const std::string& key, const std::string& value) {
 
       if (key.empty()) {
 	  throw xml_error(fmt::format("Key may not be empty in {}", to_string()));

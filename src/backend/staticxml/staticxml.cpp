@@ -69,7 +69,7 @@ template <typename T>
 std::optional<T> opt_attribute(std::string_view name, const xmlChar **attributes) {
   while (*attributes != nullptr) {
     auto name_attr = (const char *)(*attributes++);
-    std::string_view attr(name_attr, std::strlen(name_attr));
+    std::string_view attr((const char *)name_attr);
     if (attr == name) {
       return boost::lexical_cast<T>((const char *)(*attributes));
     }
@@ -128,7 +128,7 @@ struct xml_parser {
                             const xmlChar **attributes) {
     auto *parser = static_cast<xml_parser *>(ctx);
 
-    std::string_view name((const char *)name_cstr, std::strlen((const char *)name_cstr));
+    std::string_view name((const char *)name_cstr);
 
     if (name == "node") {
       node n;
