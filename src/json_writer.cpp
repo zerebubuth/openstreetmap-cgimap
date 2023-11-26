@@ -12,7 +12,7 @@ struct json_writer::pimpl_ {
   // so seems best to be on the safe side.
   yajl_gen gen;
 
-#ifdef HAVE_YAJL2
+#if HAVE_YAJL2
   yajl_alloc_funcs alloc_funcs;
 #else
   yajl_gen_config config;
@@ -36,7 +36,7 @@ static void wrap_write(void *context, const char *str, unsigned int len) {
 
 json_writer::json_writer(output_buffer &out, bool indent)
     : pimpl(std::make_unique<pimpl_>()), out(out) {
-#ifdef HAVE_YAJL2
+#if HAVE_YAJL2
   pimpl->gen = yajl_gen_alloc(NULL);
 
 #else  /* older version of YAJL */
@@ -56,7 +56,7 @@ json_writer::json_writer(output_buffer &out, bool indent)
     throw std::runtime_error("error creating json writer.");
   }
 
-#ifdef HAVE_YAJL2
+#if HAVE_YAJL2
   if (indent) {
     yajl_gen_config(pimpl->gen, yajl_gen_beautify, 1);
     yajl_gen_config(pimpl->gen, yajl_gen_indent_string, " ");

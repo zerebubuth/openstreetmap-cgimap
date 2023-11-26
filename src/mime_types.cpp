@@ -13,7 +13,7 @@ string to_string(type t) {
     return "text/plain";
   } else if (application_xml == t) {
     return "application/xml";
-#ifdef HAVE_YAJL
+#if HAVE_YAJL
   } else if (application_json == t) {
     return "application/json";
 #endif
@@ -37,7 +37,7 @@ type parse_from(const std::string &name) {
     t = application_xml;
   } else if (name == "application/xml") {
     t = application_xml;
-#ifdef HAVE_YAJL
+#if HAVE_YAJL
   } else if (name == "application/json") {
     t = application_json;
 #endif

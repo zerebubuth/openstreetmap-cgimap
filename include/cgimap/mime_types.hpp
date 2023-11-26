@@ -12,7 +12,7 @@ enum type {
   unspecified_type, // a "null" type, used to indicate no choice.
   text_plain,
   application_xml,
-#ifdef HAVE_YAJL
+#if HAVE_YAJL
   application_json,
 #endif
   any_type // the "*/*" type used to mean that anything is acceptable.
