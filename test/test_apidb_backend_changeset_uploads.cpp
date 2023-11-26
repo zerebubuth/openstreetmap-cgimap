@@ -17,7 +17,9 @@
 
 #include <sys/time.h>
 
+#if !CMAKE
 #include "cgimap/config.hpp"
+#endif
 #include "cgimap/time.hpp"
 #include "cgimap/oauth.hpp"
 #include "cgimap/options.hpp"

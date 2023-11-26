@@ -48,7 +48,9 @@ using namespace std::chrono_literals;
 #include "cgimap/fcgi_request.hpp"
 #include "cgimap/options.hpp"
 #include "cgimap/process_request.hpp"
+#if !CMAKE
 #include "cgimap/config.hpp"
+#endif
 
 #ifdef ENABLE_APIDB
 #include "cgimap/backend/apidb/apidb.hpp"

@@ -14,7 +14,9 @@
 #include "cgimap/output_formatter.hpp"
 #include "cgimap/handler.hpp"
 #include "cgimap/osm_current_responder.hpp"
+#if !CMAKE
 #include "cgimap/config.hpp"
+#endif
 #include "cgimap/request.hpp"
 #include <string>
 

@@ -11,7 +11,9 @@
 #define MIME_TYPES_HPP
 
 #include <string>
+#if !CMAKE
 #include "cgimap/config.hpp"
+#endif
 
 /**
  * simple set of supported mime types.

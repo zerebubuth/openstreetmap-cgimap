@@ -10,7 +10,9 @@
 #include "cgimap/api06/changeset_download_handler.hpp"
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/http.hpp"
+#if !CMAKE
 #include "cgimap/config.hpp"
+#endif
 
 #include <fmt/core.h>
 

@@ -14,7 +14,9 @@
 #include <utility>
 
 #include "cgimap/json_writer.hpp"
+#if !CMAKE
 #include "cgimap/config.hpp"
+#endif
 
 struct json_writer::pimpl_ {
   // not sure whether the config.hppas to live as long as the generator itself,

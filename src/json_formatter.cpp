@@ -9,7 +9,9 @@
 
 
 #include "cgimap/json_formatter.hpp"
+#if !CMAKE
 #include "cgimap/config.hpp"
+#endif
 
 #include <chrono>
 

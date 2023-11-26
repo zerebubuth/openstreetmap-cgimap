@@ -8,7 +8,9 @@
  */
 
 #include "cgimap/xml_formatter.hpp"
+#if !CMAKE
 #include "cgimap/config.hpp"
+#endif
 #include <string>
 #include <stdexcept>
 

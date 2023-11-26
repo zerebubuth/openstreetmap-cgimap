@@ -8,7 +8,9 @@
  */
 
 #include "cgimap/osm_diffresult_responder.hpp"
+#if !CMAKE
 #include "cgimap/config.hpp"
+#endif
 #include "cgimap/logger.hpp"
 
 #include <chrono>

@@ -17,7 +17,9 @@
 #include <sys/time.h>
 #include <cstdio>
 
+#if !CMAKE
 #include "cgimap/config.hpp"
+#endif
 #include "cgimap/time.hpp"
 #include "cgimap/oauth.hpp"
 #include "cgimap/rate_limiter.hpp"

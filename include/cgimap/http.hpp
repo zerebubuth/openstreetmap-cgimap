@@ -17,7 +17,9 @@
 #include <stdexcept>
 #include <optional>
 #include <ostream>
+#if !CMAKE
 #include "cgimap/config.hpp"
+#endif
 
 #ifdef HAVE_LIBZ
 #include "cgimap/zlib.hpp"

@@ -8,7 +8,9 @@
  */
 
 #include "cgimap/text_responder.hpp"
+#if !CMAKE
 #include "cgimap/config.hpp"
+#endif
 
 text_responder::text_responder(mime::type mt)
     : responder(mt) {}

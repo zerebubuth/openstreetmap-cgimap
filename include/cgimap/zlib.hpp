@@ -10,7 +10,9 @@
 #ifndef ZLIB_HPP
 #define ZLIB_HPP
 
+#if !CMAKE
 #include "cgimap/config.hpp"
+#endif
 
 #ifndef HAVE_LIBZ
 #error This file should not be included when zlib is not available.

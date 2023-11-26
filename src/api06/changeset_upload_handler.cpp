@@ -7,7 +7,9 @@
  * For a full list of authors see the git log.
  */
 
+#if !CMAKE
 #include "cgimap/config.hpp"
+#endif
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
 #include "cgimap/request_helpers.hpp"

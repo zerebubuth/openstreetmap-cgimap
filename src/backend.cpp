@@ -8,7 +8,9 @@
  */
 
 #include "cgimap/backend.hpp"
+#if !CMAKE
 #include "cgimap/config.hpp"
+#endif
 
 #include <fmt/core.h>
 #include <stdexcept>
