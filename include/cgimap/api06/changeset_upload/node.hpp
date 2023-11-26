@@ -20,7 +20,7 @@ public:
 
   double lon() const { return *m_lon; }
 
-  void set_lat(const char *lat) {
+  void set_lat(const std::string &lat) {
 
     double _lat = -200.0;
 
@@ -35,7 +35,7 @@ public:
     set_lat(_lat);
   }
 
-  void set_lon(const char *lon) {
+  void set_lon(const std::string &lon) {
 
     double _lon = -200.0;
 

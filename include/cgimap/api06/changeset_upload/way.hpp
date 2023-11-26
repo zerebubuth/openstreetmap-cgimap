@@ -22,7 +22,7 @@ public:
     m_way_nodes.emplace_back(waynode);
   }
 
-  void add_way_node(const char *waynode) {
+  void add_way_node(const std::string &waynode) {
 
     osm_nwr_signed_id_t _waynode = 0;
 
