@@ -18,7 +18,7 @@ public:
   ApiDB_Node_Updater(Transaction_Manager &_m,
 		     api06::OSMChange_Tracking &ct);
 
-  virtual ~ApiDB_Node_Updater();
+  ~ApiDB_Node_Updater() override;
 
   void add_node(double lat, double lon, osm_changeset_id_t changeset_id,
                 osm_nwr_signed_id_t old_id, const api06::TagList &tags) override;

@@ -20,9 +20,9 @@ namespace api06 {
   class ChangesetXMLParser : private xmlpp::SaxParser {
 
   public:
-    explicit ChangesetXMLParser() {}
+    explicit ChangesetXMLParser() = default;
 
-    virtual ~ChangesetXMLParser()  { }
+    ~ChangesetXMLParser() override = default;
 
     ChangesetXMLParser(const ChangesetXMLParser &) = delete;
     ChangesetXMLParser &operator=(const ChangesetXMLParser &) = delete;
@@ -133,7 +133,7 @@ namespace api06 {
 
     template <typename T>
     static void check_attributes(const char **attrs, T check) {
-      if (attrs == NULL)
+      if (attrs == nullptr)
 	return;
 
       while (*attrs) {

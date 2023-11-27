@@ -31,7 +31,7 @@ zlib_output_buffer::zlib_output_buffer(output_buffer& o,
     throw output_writer::write_error("deflateInit2 failed");
   }
 
-  stream.next_in = NULL;
+  stream.next_in = nullptr;
   stream.avail_in = 0;
   stream.next_out = (Bytef *)outbuf;
   stream.avail_out = sizeof(outbuf);
@@ -42,8 +42,6 @@ zlib_output_buffer::zlib_output_buffer(const zlib_output_buffer &old)
   std::copy(old.outbuf, (const char *)old.stream.next_out, outbuf);
   stream.next_out = (Bytef *)outbuf + (sizeof(outbuf) - stream.avail_out);
 }
-
-zlib_output_buffer::~zlib_output_buffer(void) = default;
 
 int zlib_output_buffer::write(const char *buffer, int len) {
   assert(stream.avail_in == 0);
@@ -125,8 +123,6 @@ ZLibBaseDecompressor::ZLibBaseDecompressor(int windowBits) {
   }
   use_decompression = true;
 }
-
-ZLibBaseDecompressor::ZLibBaseDecompressor() : use_decompression(false) { }
 
 ZLibBaseDecompressor::~ZLibBaseDecompressor() {
   if (use_decompression)

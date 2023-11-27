@@ -11,7 +11,7 @@
 class PasswordHash {
  public:
   static bool check(const std::string& pass_crypt,
-		    const std::string& pass_salt,
+                    const std::string& pass_salt,
                     const std::string& candidate);
 
   static std::string base64decode(const std::string& s);
@@ -19,9 +19,9 @@ class PasswordHash {
  private:
   template <class T>
   static std::string PBKDF2_HMAC_SHA_string(const std::string& pass,
-                                     const std::string& salt,
-                                     const uint iterations,
-                                     const uint outputBytes);
+                                            const std::string& salt,
+                                            const uint iterations,
+                                            const uint outputBytes);
 
   static std::string md5_hash(const std::string& s);
 

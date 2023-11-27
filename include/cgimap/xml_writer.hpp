@@ -26,7 +26,7 @@ public:
   xml_writer(output_buffer &out, bool indent = false);
 
   // closes and flushes the XML writer
-  ~xml_writer() noexcept;
+  ~xml_writer() noexcept override;
 
   // begin a new element with the given name
   void start(const std::string &name);
@@ -52,9 +52,9 @@ public:
   void end();
 
   // flushes the output buffer
-  void flush();
+  void flush() override;
 
-  void error(const std::string &);
+  void error(const std::string &) override;
 
 private:
   // shared initialisation code

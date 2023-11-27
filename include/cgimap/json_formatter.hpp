@@ -13,7 +13,7 @@
 class json_formatter : public output_formatter {
 private:
   std::unique_ptr<json_writer> writer;
-  bool is_in_elements_array;
+  bool is_in_elements_array{false};
 
   void write_tags(const tags_t &tags);
   void write_id(const element_info &elem);
@@ -21,7 +21,7 @@ private:
 
 public:
   json_formatter(std::unique_ptr<json_writer> w);
-  virtual ~json_formatter();
+  ~json_formatter() override;
 
   mime::type mime_type() const override;
 

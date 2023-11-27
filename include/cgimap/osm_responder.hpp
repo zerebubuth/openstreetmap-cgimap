@@ -24,15 +24,14 @@ public:
   osm_responder(mime::type,
                 std::optional<bbox> bounds = std::optional<bbox>());
 
-  virtual ~osm_responder();
+  ~osm_responder() override;
 
   // lists the standard types that OSM format can respond in, currently XML and,
-  // if
-  // the yajl library is provided, JSON.
-  virtual std::list<mime::type> types_available() const;
+  // if the yajl library is provided, JSON.
+  std::list<mime::type> types_available() const override;
 
   // quick hack to add headers to the response
-  std::string extra_response_headers() const;
+  std::string extra_response_headers() const override;
 
 protected:
   // optional bounds element - this is only for information and has no effect on

@@ -17,19 +17,19 @@ public:
   // optional bounds are stored at this level, but available to derived classes.
   text_responder(mime::type);
 
-  virtual ~text_responder();
+  ~text_responder() override = default;
 
   // lists the standard types that OSM format can respond in, currently XML and,
   // if
   // the yajl library is provided, JSON.
-  virtual std::list<mime::type> types_available() const;
+  std::list<mime::type> types_available() const override;
 
   // quick hack to add headers to the response
-  std::string extra_response_headers() const;
+  std::string extra_response_headers() const override;
 
   void write(output_formatter& f,
              const std::string &generator,
-             const std::chrono::system_clock::time_point &now);
+             const std::chrono::system_clock::time_point &now) override;
 
 protected:
 

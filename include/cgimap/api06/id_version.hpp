@@ -7,8 +7,8 @@
 namespace api06 {
 
 struct id_version {
-  id_version() : id(0), version() {}
-  explicit id_version(osm_nwr_id_t i) : id(i), version() {}
+  id_version() : id(0) {}
+  explicit id_version(osm_nwr_id_t i) : id(i) {}
   id_version(osm_nwr_id_t i, uint32_t v) : id(i), version(v) {}
 
   inline bool operator==(const id_version &other) const {

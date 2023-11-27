@@ -12,9 +12,9 @@ namespace api06 {
 class Node : public OSMObject {
 
 public:
-  Node() : OSMObject() {};
+  Node() = default;
 
-  virtual ~Node() = default;
+  ~Node() override = default;
 
   double lat() const { return *m_lat; }
 
@@ -77,7 +77,7 @@ public:
     }
   }
 
-  std::string get_type_name() { return "Node"; }
+  std::string get_type_name() override { return "Node"; }
 
 private:
   std::optional<double> m_lat;

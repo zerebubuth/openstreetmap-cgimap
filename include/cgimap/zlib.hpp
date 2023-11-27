@@ -28,7 +28,7 @@ public:
    */
   zlib_output_buffer(output_buffer& o, mode m);
   zlib_output_buffer(const zlib_output_buffer &old);
-  virtual ~zlib_output_buffer();
+  ~zlib_output_buffer() override = default;
   int write(const char *buffer, int len) override;
   int written() override;
   int close() override;
@@ -65,7 +65,7 @@ public:
   ~ZLibBaseDecompressor();
 
 protected:
-  ZLibBaseDecompressor();
+  ZLibBaseDecompressor() = default;
   ZLibBaseDecompressor(int windowBits);
 
 
@@ -73,7 +73,7 @@ private:
   char inbuf[ZLIB_COMPLETE_CHUNK];
   char outbuf[ZLIB_COMPLETE_CHUNK];
   z_stream stream{};
-  bool use_decompression;
+  bool use_decompression{false};
 };
 
 class ZLibDecompressor : public ZLibBaseDecompressor {

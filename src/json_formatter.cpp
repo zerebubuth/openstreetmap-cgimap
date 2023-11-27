@@ -27,8 +27,7 @@ const std::string &element_type_name(element_type elt) {
 
 } // anonymous namespace
 
-json_formatter::json_formatter(std::unique_ptr<json_writer> w) : writer(std::move(w)),
-    is_in_elements_array(false) {}
+json_formatter::json_formatter(std::unique_ptr<json_writer> w) : writer(std::move(w)) {}
 
 json_formatter::~json_formatter() = default;
 

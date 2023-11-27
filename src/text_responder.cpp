@@ -4,9 +4,7 @@
 using std::list;
 
 text_responder::text_responder(mime::type mt)
-    : responder(mt), output_text{}  {}
-
-text_responder::~text_responder() = default;
+    : responder(mt) {}
 
 list<mime::type> text_responder::types_available() const {
   list<mime::type> types;

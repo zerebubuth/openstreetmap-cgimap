@@ -16,12 +16,12 @@ public:
 
   osm_diffresult_responder(mime::type);
 
-  virtual ~osm_diffresult_responder();
+  ~osm_diffresult_responder() override;
 
 
   void write(output_formatter& f,
              const std::string &generator,
-             const std::chrono::system_clock::time_point &now);
+             const std::chrono::system_clock::time_point &now) override;
 
 protected:
   std::vector<api06::diffresult_t> m_diffresult;

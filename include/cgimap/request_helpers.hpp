@@ -10,7 +10,7 @@
  * string isn't there and no default value is given.
  */
 std::string fcgi_get_env(request &req, const char *name,
-                         const char *default_value = NULL);
+                         const char *default_value = nullptr);
 
 /**
  * get a query string by hook or by crook.
