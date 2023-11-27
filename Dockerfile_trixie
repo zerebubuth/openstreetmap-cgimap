@@ -3,8 +3,10 @@ FROM debian:trixie-slim AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+ARG BUILD_SYSTEM="autotools"
+
 RUN apt-get update -qq && \
-    apt-get install -y gcc g++ make autoconf automake libtool \
+    apt-get install -y gcc g++ make autoconf automake libtool cmake ninja-build \
        libfcgi-dev libxml2-dev libmemcached-dev \
        libboost-program-options-dev libcrypto++-dev libyajl-dev \
        libpqxx-dev zlib1g-dev libargon2-dev libfmt-dev \
@@ -19,11 +21,22 @@ WORKDIR /app
 COPY . ./
 
 # Compile, install and remove source
-RUN ./autogen.sh && \
-    ./configure --enable-static --disable-shared --enable-yajl CXXFLAGS="-Wall -Wextra -Wpedantic -Wno-unused-parameter" && \
-    make -j${nproc} check TESTS= && \
-    make check || ( cat ./test-suite.log ; exit 1 ) && \
-    strip openstreetmap-cgimap
+RUN if [ "$BUILD_SYSTEM" = "cmake" ]; then \
+        mkdir build && cd build && \
+        CXXFLAGS="-Wall -Wextra -Wpedantic -Wno-unused-parameter" CMAKE_MAKE_PROGRAM=ninja cmake .. -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=ON -G Ninja && \
+        cmake --build . && \
+        cmake --build . -t test && \
+        strip openstreetmap-cgimap && \
+        cp openstreetmap-cgimap ../ ; \
+    elif [ "$BUILD_SYSTEM" = "autotools" ]; then \
+        ./autogen.sh && \
+        ./configure --enable-static --disable-shared --enable-yajl CXXFLAGS="-Wall -Wextra -Wpedantic -Wno-unused-parameter" && \
+        make -j${nproc} check TESTS= && \
+        make check || ( cat ./test-suite.log ; exit 1 ) && \
+        strip openstreetmap-cgimap; \
+    else \
+        echo "Unknown build system ${BUILD_SYSTEM}" && exit 1; \
+    fi
 
 FROM debian:trixie
 
