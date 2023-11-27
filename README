@@ -89,6 +89,14 @@ Then change to the source code directory to configure and build:
     ./configure
     make
 
+Using cmake:
+
+    cd openstreetmap-cgimap/
+    mkdir build
+    cd build
+    cmake ..
+    cmake --build .
+
 You should now have a "./openstreetmap-cgimap" executable in the current
 directory. For system-wide installation you still need to run:
 
@@ -100,6 +108,10 @@ consumers of these libraries, you might want to run the `configure`
 script with the following parameters to create a static build instead:
 
     ./configure --enable-static --disable-shared
+
+Using cmake:
+
+    cmake .. -DBUILD_SHARED_LIBS=OFF
 
 ## Setup
 
@@ -220,6 +232,15 @@ To run the test suite using `make check` you will need additional packages insta
 
 Test cases are executed under `pg_virtualenv`, i.e. no further steps are needed to create databases as your user.
 
+When using the cmake build system, tests can be built by using the Debug build type or explicitly setting the BUILD_TESTING: option
+
+    cmake .. -DCMAKE_BUILD_TYPE=Debug
+
+or
+
+    cmake .. -DBUILD_TESTING=ON
+
+The test suite can then be run using `make check`/`cmake --build . -t test` as normal
 
 ## Formatting
 
