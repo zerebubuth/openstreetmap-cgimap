@@ -102,10 +102,10 @@ void xml_formatter::error(const std::exception &e) {
 }
 
 void xml_formatter::write_tags(const tags_t &tags) {
-  for (const auto & tag : tags) {
+  for (const auto & [key, value] : tags) {
     writer->start("tag");
-    writer->attribute("k", tag.first);
-    writer->attribute("v", tag.second);
+    writer->attribute("k", key);
+    writer->attribute("v", value);
     writer->end();
   }
 }

@@ -40,9 +40,9 @@ void json_formatter::write_tags(const tags_t &tags) {
 
   writer->object_key("tags");
   writer->start_object();
-  for (const auto& tag : tags) {
-    writer->object_key(tag.first);
-    writer->entry_string(tag.second);
+  for (const auto& [key, value] : tags) {
+    writer->object_key(key);
+    writer->entry_string(value);
   }
   writer->end_object();
 }
