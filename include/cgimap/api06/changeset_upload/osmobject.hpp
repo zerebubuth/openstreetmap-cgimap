@@ -16,7 +16,7 @@ namespace api06 {
     std::string error_string;
 
     explicit xml_error(const std::string &message)
-    : http::bad_request(message), error_string(message) {}
+      : http::bad_request(message), error_string(message) {}
   };
 
   class OSMObject {
@@ -97,9 +97,9 @@ namespace api06 {
 
     osm_nwr_signed_id_t id() const { return *m_id; }
 
-    bool has_changeset() const {  return (m_changeset ? true : false); }
-    bool has_id() const { return (m_id ? true : false); };
-    bool has_version() const { return (m_version ? true : false); }
+    constexpr bool has_changeset() const {  return m_changeset.has_value(); }
+    constexpr bool has_id() const { return m_id.has_value(); };
+    constexpr bool has_version() const { return m_version.has_value(); }
 
 
     std::map<std::string, std::string> tags() const { return m_tags; }
@@ -147,7 +147,7 @@ namespace api06 {
 
     virtual std::string to_string() {
 
-      return fmt::format("{} {:d}", get_type_name(), (m_id ? *m_id : 0));
+      return fmt::format("{} {:d}", get_type_name(), m_id.value_or(0));
     }
 
   private:
