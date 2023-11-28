@@ -15,8 +15,6 @@
 #include <memory>
 #include <vector>
 
-/**
- */
 class data_update {
 public:
   virtual ~data_update() = default;

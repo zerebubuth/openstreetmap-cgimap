@@ -77,25 +77,25 @@ public:
     return true;
   }
 
-  virtual bool get_oauth_10_support() const override {
+  bool get_oauth_10_support() const override {
     return true;
   }
 
-  virtual uint32_t get_ratelimiter_ratelimit(bool moderator) const override {
+  uint32_t get_ratelimiter_ratelimit(bool moderator) const override {
     if (moderator) {
        return 1024 * 1024; // 1MB/s
     }
     return 100 * 1024; // 100 KB/s
   }
 
-  virtual uint32_t get_ratelimiter_maxdebt(bool moderator) const override {
+  uint32_t get_ratelimiter_maxdebt(bool moderator) const override {
     if (moderator) {
        return 1024 * 1024 * 1024; // 1GB
     }
     return 250 * 1024 * 1024; // 250 MB
   }
 
-  virtual bool get_ratelimiter_upload() const override {
+  bool get_ratelimiter_upload() const override {
     return false;
   }
 };
@@ -162,25 +162,25 @@ public:
     return m_basic_auth_support;
   }
 
-  virtual bool get_oauth_10_support() const override {
+  bool get_oauth_10_support() const override {
     return m_oauth_10_support;
   }
 
-  virtual uint32_t get_ratelimiter_ratelimit(bool moderator) const override {
+  uint32_t get_ratelimiter_ratelimit(bool moderator) const override {
     if (moderator) {
        return m_moderator_ratelimiter_ratelimit;
     }
     return m_ratelimiter_ratelimit;
   }
 
-  virtual uint32_t get_ratelimiter_maxdebt(bool moderator) const override {
+  uint32_t get_ratelimiter_maxdebt(bool moderator) const override {
     if (moderator) {
        return m_moderator_ratelimiter_maxdebt;
     }
     return m_ratelimiter_maxdebt;
   }
 
-  virtual bool get_ratelimiter_upload() const override {
+  bool get_ratelimiter_upload() const override {
     return m_ratelimiter_upload;
   }
 

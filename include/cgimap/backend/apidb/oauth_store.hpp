@@ -5,12 +5,10 @@
 #include <pqxx/pqxx>
 #include <boost/program_options.hpp>
 
-/**
- */
 class oauth_store : public oauth::store {
 public:
   oauth_store(const boost::program_options::variables_map &);
-  virtual ~oauth_store();
+  ~oauth_store() override;
 
   std::optional<std::string> consumer_secret(const std::string &consumer_key) override;
   std::optional<std::string> token_secret(const std::string &token_id) override;

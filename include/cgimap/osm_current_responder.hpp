@@ -20,7 +20,7 @@ public:
   // formatter.
   void write(output_formatter& f,
              const std::string &generator,
-             const std::chrono::system_clock::time_point &now);
+             const std::chrono::system_clock::time_point &now) override;
 
 protected:
   // current selection of elements to be written out

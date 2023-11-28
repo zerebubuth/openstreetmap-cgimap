@@ -22,7 +22,7 @@ public:
   ApiDB_Way_Updater(Transaction_Manager &_m,
 		    api06::OSMChange_Tracking &ct);
 
-  virtual ~ApiDB_Way_Updater();
+  ~ApiDB_Way_Updater() override;
 
   void add_way(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
                const api06::WayNodeList &nodes, const api06::TagList &tags) override;

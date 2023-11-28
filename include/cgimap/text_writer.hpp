@@ -21,7 +21,7 @@ public:
   text_writer(output_buffer &out, bool indent = false);
 
   // closes and flushes the text writer
-  ~text_writer() noexcept;
+  ~text_writer() noexcept override;
 
   // begin a new element with the given name
   void start(const std::string &name);
@@ -33,9 +33,9 @@ public:
   void end();
 
   // flushes the output buffer
-  void flush();
+  void flush() override;
 
-  void error(const std::string &);
+  void error(const std::string &) override;
 
 private:
   output_buffer& out;

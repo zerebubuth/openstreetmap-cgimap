@@ -14,9 +14,9 @@ namespace api06 {
 class Way : public OSMObject {
 
 public:
-  Way() : OSMObject() {};
+  Way() = default;
 
-  virtual ~Way() = default;
+  ~Way() override = default;
 
   void add_way_node(osm_nwr_signed_id_t waynode) {
     m_way_nodes.emplace_back(waynode);
@@ -68,7 +68,7 @@ public:
     }
   }
 
-  std::string get_type_name() { return "Way"; }
+  std::string get_type_name() override { return "Way"; }
 
 private:
   std::vector<osm_nwr_signed_id_t> m_way_nodes;

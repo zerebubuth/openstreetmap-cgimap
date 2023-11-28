@@ -14,7 +14,7 @@ namespace api06 {
 class RelationMember {
 
 public:
-  RelationMember() : m_role("") {};
+  RelationMember() = default;
 
   RelationMember(std::string _m_type, osm_nwr_signed_id_t _m_ref, std::string _m_role) :
     m_role(_m_role), m_ref(_m_ref), m_type(_m_type) {};
@@ -62,7 +62,7 @@ public:
     m_ref = _ref;
   }
 
-  bool is_valid() {
+  bool is_valid() const {
 
     if (!m_type)
       throw xml_error("Missing 'type' attribute in Relation member");
@@ -87,9 +87,9 @@ private:
 
 class Relation : public OSMObject {
 public:
-  Relation() : OSMObject() {};
+  Relation() = default;
 
-  virtual ~Relation() = default;
+  ~Relation() override = default;
 
   void add_member(RelationMember &member) {
     if (!member.is_valid())
@@ -102,7 +102,7 @@ public:
     return m_relation_member;
   }
 
-  std::string get_type_name() { return "Relation"; }
+  std::string get_type_name() override { return "Relation"; }
 
   bool is_valid(operation op) const {
 

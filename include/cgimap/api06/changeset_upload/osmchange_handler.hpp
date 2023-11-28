@@ -24,7 +24,7 @@ public:
                     Relation_Updater&,
                     osm_changeset_id_t changeset);
 
-  virtual ~OSMChange_Handler() = default;
+  ~OSMChange_Handler() override = default;
 
   // checks common to all objects
   void check_osm_object(const OSMObject &o) const;

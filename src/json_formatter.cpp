@@ -27,8 +27,7 @@ const std::string &element_type_name(element_type elt) {
 
 } // anonymous namespace
 
-json_formatter::json_formatter(std::unique_ptr<json_writer> w) : writer(std::move(w)),
-    is_in_elements_array(false) {}
+json_formatter::json_formatter(std::unique_ptr<json_writer> w) : writer(std::move(w)) {}
 
 json_formatter::~json_formatter() = default;
 
@@ -41,9 +40,9 @@ void json_formatter::write_tags(const tags_t &tags) {
 
   writer->object_key("tags");
   writer->start_object();
-  for (const auto& tag : tags) {
-    writer->object_key(tag.first);
-    writer->entry_string(tag.second);
+  for (const auto& [key, value] : tags) {
+    writer->object_key(key);
+    writer->entry_string(value);
   }
   writer->end_object();
 }

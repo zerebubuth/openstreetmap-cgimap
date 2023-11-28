@@ -14,7 +14,7 @@ public:
   ApiDB_Changeset_Updater(Transaction_Manager &_m,
                           osm_changeset_id_t _changeset, osm_user_id_t _uid);
 
-  virtual ~ApiDB_Changeset_Updater();
+  ~ApiDB_Changeset_Updater() override;
 
   void lock_current_changeset(bool check_max_elements_limit) override;
 

@@ -13,11 +13,11 @@ public:
   // optional bounds are stored at this level, but available to derived classes.
   osmchange_responder(mime::type, data_selection &s);
 
-  virtual ~osmchange_responder();
+  ~osmchange_responder() override;
 
   // lists the standard types that OSM format can respond in, currently only XML,
   // as the osmChange format is undefined for JSON
-  std::list<mime::type> types_available() const;
+  std::list<mime::type> types_available() const override;
 
   // takes the stuff in the tmp_nodes/ways/relations tables and sorts them by
   // timestamp, then wraps them in <create>/<modify>/<delete> to create an
@@ -25,7 +25,7 @@ public:
   // likely that some documents may be poorly formed.
   void write(output_formatter& f,
              const std::string &generator,
-             const std::chrono::system_clock::time_point &now);
+             const std::chrono::system_clock::time_point &now) override;
 
 protected:
   // selection of elements to be written out

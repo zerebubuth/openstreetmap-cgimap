@@ -3,8 +3,7 @@
 
 #include "cgimap/oauth.hpp"
 
-namespace oauth {
-namespace validity {
+namespace oauth::validity {
 
 inline bool operator==(const copacetic &a, const copacetic &b) {
   return a.token == b.token;
@@ -36,7 +35,6 @@ std::ostream &operator<<(std::ostream &out, const unauthorized &) {
   return out << "unauthorized";
 }
 
-} // namespace validity
-} // namespace oauth
+} // namespace oauth::validity
 
 #endif /* OAUTH_IO_HPP */

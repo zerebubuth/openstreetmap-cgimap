@@ -24,8 +24,8 @@ inline size_t unicode_strlen(const std::string & s)
 
    std::setlocale(LC_ALL, "C.UTF-8");          // TODO: check location for setlocale
 
-   std::mbstate_t state = std::mbstate_t();
-   std::size_t len = std::mbsrtowcs(NULL, &mbstr, 0, &state);
+   std::mbstate_t state{};
+   std::size_t len = std::mbsrtowcs(nullptr, &mbstr, 0, &state);
 
    if (len == static_cast<std::size_t> (-1)) {
      throw http::bad_request("Invalid UTF-8 string encountered");
@@ -104,7 +104,7 @@ public:
 		maxlon = std::max(maxlon, bbox.maxlon);
 	}
 
-	bool operator==(const bbox_t& bbox)
+	bool operator==(const bbox_t& bbox) const
 	{
 	  return( minlat == bbox.minlat &&
 			  minlon == bbox.minlon &&

@@ -20,7 +20,7 @@ public:
   json_writer(output_buffer &out, bool indent = false);
 
   // closes and flushes the buffer
-  ~json_writer() noexcept;
+  ~json_writer() noexcept override;
 
   void start_object();
   void object_key(const std::string &s);
@@ -37,9 +37,9 @@ public:
   void entry_double(double d);
   void entry_string(const std::string &s);
 
-  void flush();
+  void flush() override;
 
-  void error(const std::string &);
+  void error(const std::string &) override;
 
 private:
   // PIMPL idiom

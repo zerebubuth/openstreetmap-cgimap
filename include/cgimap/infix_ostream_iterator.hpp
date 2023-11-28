@@ -26,13 +26,13 @@ public:
 private:
   ostream_type *_M_stream;
   const _CharT *_M_string;
-  bool _M_first;
+  bool _M_first{true};
 
 public:
   infix_ostream_iterator(ostream_type &s)
-      : _M_stream(&s), _M_string(0), _M_first(true) {}
+      : _M_stream(&s), _M_string(0) {}
   infix_ostream_iterator(ostream_type &s, const _CharT *c)
-      : _M_stream(&s), _M_string(c), _M_first(true) {}
+      : _M_stream(&s), _M_string(c) {}
   infix_ostream_iterator(const infix_ostream_iterator &obj)
       : _M_stream(obj._M_stream),
         _M_string(obj._M_string),
@@ -42,7 +42,7 @@ public:
     __glibcxx_requires_cond(
         _M_stream != 0,
         _M_message(__gnu_debug::__msg_output_ostream)._M_iterator(*this));
-    if ((_M_string != 0) && (_M_first == false)) {
+    if ((_M_string != 0) && !_M_first) {
       *_M_stream << _M_string;
     } else {
       _M_first = false;
