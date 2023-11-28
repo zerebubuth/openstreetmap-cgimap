@@ -173,7 +173,6 @@ libcgimap_core_la_SOURCES=\
 	backend.cpp \
 	bbox.cpp \
 	choose_formatter.cpp \
-	data_selection.cpp \
 	handler.cpp \
 	http.cpp \
 	logger.cpp \

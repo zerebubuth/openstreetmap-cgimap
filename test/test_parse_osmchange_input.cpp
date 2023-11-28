@@ -73,6 +73,10 @@ TEST_CASE("XML without any changes", "[osmchange][xml]") {
   REQUIRE_NOTHROW(process_testmsg(R"(<osmChange/>)"));
 }
 
+TEST_CASE("Invalid XML: osmchange end only", "[osmchange][xml]") {
+  REQUIRE_THROWS_AS(process_testmsg(R"(</osmChange>)"), http::bad_request);
+}
+
 TEST_CASE("Misspelled osmchange xml", "[osmchange][xml]") {
   REQUIRE_THROWS_AS(process_testmsg(R"(<osmChange2/>)"), http::bad_request);
 }
@@ -174,6 +178,14 @@ TEST_CASE("Modify node, missing version", "[osmchange][node][xml]") {
 
 TEST_CASE("Modify node, invalid version", "[osmchange][node][xml]") {
   REQUIRE_THROWS_AS(process_testmsg(R"(<osmChange><modify><node changeset="858" version="0" id="123"/></modify></osmChange>)"), http::bad_request);
+}
+
+TEST_CASE("Delete node", "[osmchange][node][xml]") {
+  REQUIRE_NOTHROW(process_testmsg(R"(<osmChange><delete><node changeset="858" version="1" id="123"/></delete></osmChange>)"));
+}
+
+TEST_CASE("Delete node, if-unused", "[osmchange][node][xml]") {
+  REQUIRE_NOTHROW(process_testmsg(R"(<osmChange><delete if-unused="true"><node changeset="858" version="1" id="123"/></delete></osmChange>)"));
 }
 
 TEST_CASE("Delete node, missing version", "[osmchange][node][xml]") {
@@ -412,6 +424,28 @@ TEST_CASE("Create way, node ref missing", "[osmchange][way][xml]") {
     R"(<osmChange><create><way changeset="858" id="-1"><nd ref="1"/><nd /><tag k="key" v="value"/></way></create></osmChange>)"), http::bad_request);
 }
 
+TEST_CASE("Delete way, no version", "[osmchange][way][xml]") {
+  REQUIRE_THROWS_AS(process_testmsg(
+    R"(<osmChange><delete><way changeset="858" id="-1"/></delete></osmChange>)"),
+    http::bad_request);
+}
+
+TEST_CASE("Delete way, no id", "[osmchange][way][xml]") {
+  REQUIRE_THROWS_MATCHES(process_testmsg(
+    R"(<osmChange><delete><way changeset="858" version="1"/></delete></osmChange>)"),
+    http::bad_request, Catch::Message(fmt::format("Mandatory field id missing in object at line 1, column 52")));
+}
+
+TEST_CASE("Delete way, no changeset", "[osmchange][way][xml]") {
+  REQUIRE_THROWS_MATCHES(process_testmsg(
+    R"(<osmChange><delete><way id="-1" version="1"/></delete></osmChange>)"),
+    http::bad_request, Catch::Message(fmt::format("Changeset id is missing for Way -1 at line 1, column 44")));
+}
+
+TEST_CASE("Delete way", "[osmchange][way][xml]") {
+  REQUIRE_NOTHROW(process_testmsg(R"(<osmChange><delete><way changeset="858" id="-1" version="1"/></delete></osmChange>)"));
+}
+
 
 // RELATION TESTS
 
@@ -479,6 +513,22 @@ TEST_CASE("Create relation, role with > 255 unicode characters", "[osmchange][re
     http::bad_request, Catch::Message("Relation Role has more than 255 unicode characters at line 2, column 321"));
 }
 
+TEST_CASE("Delete relation, no version", "[osmchange][relation][xml]") {
+  REQUIRE_THROWS_MATCHES(process_testmsg(
+    R"(<osmChange><delete><relation changeset="972" id="-1"/></delete></osmChange>)"),
+    http::bad_request, Catch::Message(fmt::format("Version is required when updating Relation -1 at line 1, column 53")));
+}
+
+TEST_CASE("Delete relation, no id", "[osmchange][relation][xml]") {
+  REQUIRE_THROWS_MATCHES(process_testmsg(
+    R"(<osmChange><delete><relation changeset="972" version="1"/></delete></osmChange>)"), 
+    http::bad_request, Catch::Message(fmt::format("Mandatory field id missing in object at line 1, column 57")));
+}
+
+TEST_CASE("Delete relation", "[osmchange][relation][xml]") {
+  REQUIRE_NOTHROW(process_testmsg(
+    R"(<osmChange><delete><relation changeset="972" id="123456" version="1"/></delete></osmChange>)"));
+}
 
 // INVALID DATA TESTS
 

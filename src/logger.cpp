@@ -3,7 +3,8 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
- #include <unistd.h>
+#include <unistd.h>
+#include <memory>
 
 #include "cgimap/logger.hpp"
 #include <fmt/core.h>

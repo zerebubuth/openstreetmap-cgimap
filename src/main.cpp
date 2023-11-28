@@ -1,4 +1,6 @@
+#if ENABLE_APIDB
 #include <pqxx/pqxx>
+#endif
 #include <iostream>
 #include <sstream>
 
@@ -395,6 +397,8 @@ int main(int argc, char **argv) {
   } catch (const po::error & e) {
     std::cerr << "Error: " << e.what() << "\n(\"openstreetmap-cgimap --help\" for help)" << std::endl;
     return 1;
+
+#if ENABLE_APIDB
   } catch (const pqxx::sql_error &er) {
     // Catch-all for query related postgres exceptions
     std::cerr << "Error: " << er.what() << std::endl
@@ -408,6 +412,7 @@ int main(int argc, char **argv) {
     std::cerr << "Error: " << e.base().what() << std::endl;
     return 1;
 
+#endif
 #endif
 
   } catch (const std::exception &e) {

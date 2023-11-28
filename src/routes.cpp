@@ -279,7 +279,7 @@ namespace {
  */
   pair<string, mime::type> resource_mime_type(const string &path) {
 
-#ifdef HAVE_YAJL
+#if HAVE_YAJL
     {
       std::size_t json_found = path.rfind(".json");
 

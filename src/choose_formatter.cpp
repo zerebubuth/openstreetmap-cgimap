@@ -6,8 +6,10 @@
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/xml_writer.hpp"
 #include "cgimap/xml_formatter.hpp"
+#if HAVE_YAJL
 #include "cgimap/json_writer.hpp"
 #include "cgimap/json_formatter.hpp"
+#endif
 #include "cgimap/text_writer.hpp"
 #include "cgimap/text_formatter.hpp"
 #include "cgimap/logger.hpp"
@@ -115,7 +117,7 @@ struct http_accept_grammar
       = lit("* / *")      [_val = mime::any_type]
       | lit("text/xml") [_val = mime::application_xml]
       | lit("application/xml") [_val = mime::application_xml]
-#ifdef HAVE_YAJL
+#if HAVE_YAJL
       | lit("application/json")[_val = mime::application_json]
 #endif
       ;
@@ -256,7 +258,7 @@ std::unique_ptr<output_formatter> create_formatter(mime::type best_type, output_
     case mime::application_xml:
       return std::make_unique<xml_formatter>(std::make_unique<xml_writer>(out, true));
 
-#ifdef HAVE_YAJL
+#if HAVE_YAJL
     case mime::application_json:
       return std::make_unique<json_formatter>(std::make_unique<json_writer>(out, false));
 #endif
