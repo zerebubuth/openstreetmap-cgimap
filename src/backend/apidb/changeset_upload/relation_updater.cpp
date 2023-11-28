@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 #include "cgimap/backend/apidb/changeset_upload/relation_updater.hpp"
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
