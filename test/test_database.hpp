@@ -84,6 +84,12 @@ struct test_database {
   // intended for setting up data that the test needs.
   int run_sql(const std::string &sql);
 
+  // clean up database tables before new test case starts
+  void testcase_starting();
+
+  // clean up internal buffers when test case ended
+  void testcase_ended();
+
 private:
   // create a random, and hopefully unique, database name.
   static std::string random_db_name();
@@ -104,7 +110,6 @@ private:
 
   std::unique_ptr<Transaction_Owner_Base> txn_owner_readonly;
   std::unique_ptr<Transaction_Owner_Base> txn_owner_readwrite;
-
 };
 
 #endif /* TEST_TEST_DATABASE_HPP */
