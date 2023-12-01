@@ -160,21 +160,31 @@ std::string test_database::random_db_name() {
   return std::string(name);
 }
 
+void test_database::testcase_starting() {
+
+  pqxx::connection conn(fmt::format("dbname={}", m_db_name));
+  truncate_all_tables(conn);
+}
+
+void test_database::testcase_ended() {
+
+  txn_owner_readonly.reset();
+  txn_owner_readwrite.reset();
+}
+
 void test_database::run(
     std::function<void(test_database&)> func) {
 
   try {
     // clear out database before using it!
-    pqxx::connection conn(fmt::format("dbname={}", m_db_name));
-    truncate_all_tables(conn);
+    testcase_starting();
 
     func(*this);
 
   } catch (const std::exception &e) {
     throw std::runtime_error(fmt::format("{}", e.what()));
   }
-  txn_owner_readonly.reset();
-  txn_owner_readwrite.reset();
+  testcase_ended();
 }
 
 void test_database::run_update(
@@ -182,16 +192,13 @@ void test_database::run_update(
 
   try {
     // clear out database before using it!
-    pqxx::connection conn(fmt::format("dbname={}", m_db_name));
-    truncate_all_tables(conn);
+    testcase_starting();
 
     func(*this);
   } catch (const std::exception &e) {
     throw std::runtime_error(fmt::format("{}, in update", e.what()));
   }
-
-  txn_owner_readonly.reset();
-  txn_owner_readwrite.reset();
+  testcase_ended();
 }
 
 

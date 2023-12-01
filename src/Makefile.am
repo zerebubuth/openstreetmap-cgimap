@@ -128,6 +128,7 @@ ___test_test_parse_options_SOURCES=\
 	../test/test_parse_options.cpp
 
 if ENABLE_APIDB
+___test_test_apidb_backend_nodes_CPPFLAGS=$(AM_CPPFLAGS) $(CATCH2_CPPFLAGS)
 ___test_test_apidb_backend_nodes_SOURCES=\
 	../test/test_apidb_backend_nodes.cpp \
 	../test/test_formatter.cpp \
@@ -138,6 +139,7 @@ ___test_test_apidb_backend_oauth_SOURCES=\
 	../test/test_formatter.cpp \
 	../test/test_database.cpp \
 	../test/test_request.cpp
+___test_test_apidb_backend_oauth2_CPPFLAGS=$(AM_CPPFLAGS) $(CATCH2_CPPFLAGS)
 ___test_test_apidb_backend_oauth2_SOURCES=\
 	../test/test_apidb_backend_oauth2.cpp \
 	../test/test_formatter.cpp \
