@@ -26,9 +26,6 @@ public:
 			     osm_changeset_id_t id_,
                              const std::string & payload,
 			     std::optional<osm_user_id_t> user_id);
-
-private:
-  osm_changeset_id_t id;
 };
 
 class changeset_update_sel_responder : public osm_current_responder {
@@ -36,11 +33,8 @@ public:
   changeset_update_sel_responder(mime::type,
 			     data_selection & sel,
 			     osm_changeset_id_t id_);
-
 private:
   data_selection& sel;
-  osm_changeset_id_t id;
-  bool include_discussion;
 };
 
 class changeset_update_handler : public payload_enabled_handler {

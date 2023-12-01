@@ -22,10 +22,7 @@ namespace api06 {
 
 class nodes_responder : public osm_current_responder {
 public:
-  nodes_responder(mime::type, std::vector<id_version>, data_selection &);
-
-private:
-  std::vector<id_version> ids;
+  nodes_responder(mime::type, const std::vector<id_version>&, data_selection &);
 };
 
 class nodes_handler : public handler {

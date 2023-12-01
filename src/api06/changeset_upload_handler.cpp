@@ -32,16 +32,13 @@
 namespace api06 {
 
 changeset_upload_responder::changeset_upload_responder(
-    mime::type mt, data_update& upd, osm_changeset_id_t id_, const std::string &payload,
+    mime::type mt, data_update& upd, osm_changeset_id_t changeset, const std::string &payload,
     std::optional<osm_user_id_t> user_id)
     : osm_diffresult_responder(mt) {
 
-  osm_changeset_id_t changeset = id_;
-  osm_user_id_t uid = *user_id;
-
   OSMChange_Tracking change_tracking{};
 
-  auto changeset_updater = upd.get_changeset_updater(changeset, uid);
+  auto changeset_updater = upd.get_changeset_updater(changeset, *user_id);
   auto node_updater = upd.get_node_updater(change_tracking);
   auto way_updater = upd.get_way_updater(change_tracking);
   auto relation_updater = upd.get_relation_updater(change_tracking);
@@ -61,13 +58,13 @@ changeset_upload_responder::changeset_upload_responder(
 
   if (global_settings::get_ratelimiter_upload()) {
 
-    auto max_changes = upd.get_rate_limit(uid);
+    auto max_changes = upd.get_rate_limit(*user_id);
     if (new_changes > max_changes)
     {
       logger::message(
           fmt::format(
               "Upload of {} changes by user {} in changeset {} blocked due to rate limiting, max. {} changes allowed",
-              new_changes, uid, changeset, max_changes));
+              new_changes, *user_id, changeset, max_changes));
       throw http::too_many_requests("Upload has been blocked due to rate limiting. Please try again later.");
     }
   }
@@ -78,10 +75,10 @@ changeset_upload_responder::changeset_upload_responder(
 }
 
 changeset_upload_handler::changeset_upload_handler(request &,
-                                                   osm_changeset_id_t id_)
+                                                   osm_changeset_id_t id)
     : payload_enabled_handler(mime::unspecified_type,
                               http::method::POST | http::method::OPTIONS),
-      id(id_) {}
+      id(id) {}
 
 std::string changeset_upload_handler::log_name() const {
   return (fmt::format("changeset/upload {:d}", id));
@@ -95,8 +92,7 @@ changeset_upload_handler::responder(data_selection &) const {
 
 responder_ptr_t changeset_upload_handler::responder(
     data_update & upd, const std::string &payload, std::optional<osm_user_id_t> user_id) const {
-  return responder_ptr_t(
-      new changeset_upload_responder(mime_type, upd, id, payload, user_id));
+  return std::make_unique<changeset_upload_responder>(mime_type, upd, id, payload, user_id);
 }
 
 bool changeset_upload_handler::requires_selection_after_update() const {

@@ -24,26 +24,21 @@
 namespace api06 {
 
 changeset_close_responder::changeset_close_responder(
-    mime::type mt, data_update & upd, osm_changeset_id_t id_, const std::string &payload,
+    mime::type mt, data_update & upd, osm_changeset_id_t changeset, const std::string &,
     std::optional<osm_user_id_t> user_id)
     : text_responder(mt) {
 
-  osm_changeset_id_t changeset = id_;
-  osm_user_id_t uid = *user_id;
-
-  auto changeset_updater = upd.get_changeset_updater(changeset, uid);
-
+  auto changeset_updater = upd.get_changeset_updater(changeset, *user_id);
   changeset_updater->api_close_changeset();
-
   upd.commit();
 }
 
 
 changeset_close_handler::changeset_close_handler(request &,
-                                                   osm_changeset_id_t id_)
+                                                   osm_changeset_id_t id)
     : payload_enabled_handler(mime::text_plain,
                               http::method::PUT | http::method::OPTIONS),
-      id(id_) {}
+      id(id) {}
 
 
 std::string changeset_close_handler::log_name() const {
@@ -58,8 +53,7 @@ changeset_close_handler::responder(data_selection &) const {
 
 responder_ptr_t changeset_close_handler::responder(
     data_update & upd, const std::string &payload, std::optional<osm_user_id_t> user_id) const {
-  return responder_ptr_t(
-      new changeset_close_responder(mime_type, upd, id, payload, user_id));
+  return std::make_unique<changeset_close_responder>(mime_type, upd, id, payload, user_id);
 }
 
 bool changeset_close_handler::requires_selection_after_update() const {

@@ -19,9 +19,6 @@ namespace api06 {
 class way_history_responder : public osm_current_responder {
 public:
   way_history_responder(mime::type, osm_nwr_id_t, data_selection &);
-
-private:
-  osm_nwr_id_t id;
 };
 
 class way_history_handler : public handler {

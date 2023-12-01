@@ -20,10 +20,6 @@ namespace api06 {
 class node_version_responder : public osm_current_responder {
 public:
   node_version_responder(mime::type, osm_nwr_id_t, osm_version_t, data_selection &);
-
-private:
-  osm_nwr_id_t id;
-  osm_nwr_id_t v;
 };
 
 class node_version_handler : public handler {

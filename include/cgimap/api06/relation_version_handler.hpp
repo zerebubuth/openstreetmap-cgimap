@@ -20,12 +20,6 @@ namespace api06 {
 class relation_version_responder : public osm_current_responder {
 public:
   relation_version_responder(mime::type, osm_nwr_id_t, osm_version_t v, data_selection &);
-
-private:
-  osm_nwr_id_t id;
-  osm_version_t v;
-
-  void check_visibility();
 };
 
 class relation_version_handler : public handler {

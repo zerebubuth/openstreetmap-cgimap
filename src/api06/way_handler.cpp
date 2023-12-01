@@ -14,28 +14,28 @@
 
 namespace api06 {
 
-way_responder::way_responder(mime::type mt, osm_nwr_id_t id_, data_selection &w_)
-    : osm_current_responder(mt, w_), id(id_) {
+way_responder::way_responder(mime::type mt, osm_nwr_id_t id, data_selection &w)
+    : osm_current_responder(mt, w) {
 
   if (sel.select_ways({id}) == 0) {
     throw http::not_found(fmt::format("Way {:d} was not found.", id));
   }
-  check_visibility();
+  check_visibility(id);
 }
 
-way_handler::way_handler(request &, osm_nwr_id_t id_) : id(id_) {}
-
-std::string way_handler::log_name() const { return "way"; }
-
-responder_ptr_t way_handler::responder(data_selection &x) const {
-  return responder_ptr_t(new way_responder(mime_type, id, x));
-}
-
-void way_responder::check_visibility() {
+void way_responder::check_visibility(osm_nwr_id_t id) {
   if (sel.check_way_visibility(id) == data_selection::deleted) {
     // TODO: fix error message / throw structure to emit better error message
     throw http::gone();
   }
+}
+
+way_handler::way_handler(request &, osm_nwr_id_t id) : id(id) {}
+
+std::string way_handler::log_name() const { return "way"; }
+
+responder_ptr_t way_handler::responder(data_selection &x) const {
+  return std::make_unique<way_responder>(mime_type, id, x);
 }
 
 } // namespace api06
