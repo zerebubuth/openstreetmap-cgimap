@@ -20,9 +20,6 @@ namespace api06 {
 class changeset_download_responder : public osmchange_responder {
 public:
   changeset_download_responder(mime::type, osm_changeset_id_t, data_selection &);
-
-private:
-  osm_changeset_id_t id;
 };
 
 class changeset_download_handler : public handler {

@@ -23,14 +23,14 @@ using std::string;
 
 namespace api06 {
 
-nodes_responder::nodes_responder(mime::type mt, vector<id_version> ids_,
-                                 data_selection &w_)
-    : osm_current_responder(mt, w_), ids(ids_) {
+nodes_responder::nodes_responder(mime::type mt, const vector<id_version> &ids,
+                                 data_selection &w)
+    : osm_current_responder(mt, w) {
 
   vector<osm_nwr_id_t> current_ids;
   vector<osm_edition_t> historic_ids;
 
-  for (id_version idv : ids_) {
+  for (const auto &idv : ids) {
     if (idv.version) {
       historic_ids.push_back(std::make_pair(idv.id, *idv.version));
     } else {
@@ -59,7 +59,7 @@ std::string nodes_handler::log_name() const {
 }
 
 responder_ptr_t nodes_handler::responder(data_selection &x) const {
-  return responder_ptr_t(new nodes_responder(mime_type, ids, x));
+  return std::make_unique<nodes_responder>(mime_type, ids, x);
 }
 
 /**

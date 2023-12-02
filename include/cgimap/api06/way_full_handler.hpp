@@ -22,9 +22,7 @@ public:
   way_full_responder(mime::type, osm_nwr_id_t, data_selection &);
 
 private:
-  osm_nwr_id_t id;
-
-  void check_visibility();
+  void check_visibility(osm_nwr_id_t id);
 };
 
 class way_full_handler : public handler {

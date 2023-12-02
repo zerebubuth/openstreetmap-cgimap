@@ -53,14 +53,8 @@ string map_handler::log_name() const {
 }
 
 responder_ptr_t map_handler::responder(data_selection &x) const {
-  return responder_ptr_t(new map_responder(mime_type, bounds, x));
+  return std::make_unique<map_responder>(mime_type, bounds, x);
 }
-
-namespace {
-bool is_bbox(const std::pair<string, string> &p) {
-  return p.first == "bbox";
-}
-} // anonymous namespace
 
 /**
  * Validates an FCGI request, returning the valid bounding box or
@@ -68,9 +62,10 @@ bool is_bbox(const std::pair<string, string> &p) {
  */
 bbox map_handler::validate_request(request &req) {
   string decoded = http::urldecode(get_query_string(req));
-  const std::vector<std::pair<string, string> > params = http::parse_params(decoded);
+  const auto params = http::parse_params(decoded);
   auto itr =
-    std::find_if(params.begin(), params.end(), is_bbox);
+    std::find_if(params.begin(), params.end(),
+        [](const pair<string, string> &p) { return p.first == "bbox"; });
 
   bbox bounds;
   if ((itr == params.end()) || !bounds.parse(itr->second)) {

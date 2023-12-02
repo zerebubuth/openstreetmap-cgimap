@@ -31,16 +31,11 @@ changeset_create_responder::changeset_create_responder(
 
   osm_changeset_id_t changeset = 0;
 
-  osm_user_id_t uid = *user_id;
-
-  auto changeset_updater = upd.get_changeset_updater(changeset, uid);
-
+  auto changeset_updater = upd.get_changeset_updater(changeset, *user_id);
   auto tags = ChangesetXMLParser().process_message(payload);
-
   changeset = changeset_updater->api_create_changeset(tags);
 
   output_text = std::to_string(changeset);
-
   upd.commit();
 }
 
@@ -60,8 +55,7 @@ changeset_create_handler::responder(data_selection &) const {
 
 responder_ptr_t changeset_create_handler::responder(
     data_update & upd, const std::string &payload, std::optional<osm_user_id_t> user_id) const {
-  return responder_ptr_t(
-      new changeset_create_responder(mime_type, upd, payload, user_id));
+  return std::make_unique<changeset_create_responder>(mime_type, upd, payload, user_id);
 }
 
 bool changeset_create_handler::requires_selection_after_update() const {

@@ -22,9 +22,7 @@ public:
   node_relations_responder(mime::type, osm_nwr_id_t, data_selection &);
 
 private:
-  osm_nwr_id_t id;
-
-  bool is_visible();
+  bool is_visible(osm_nwr_id_t);
 };
 
 class node_relations_handler : public handler {

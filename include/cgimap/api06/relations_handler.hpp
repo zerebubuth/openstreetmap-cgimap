@@ -23,10 +23,7 @@ namespace api06 {
 
 class relations_responder : public osm_current_responder {
 public:
-  relations_responder(mime::type, std::vector<id_version>, data_selection &);
-
-private:
-  std::vector<id_version> ids;
+  relations_responder(mime::type, const std::vector<id_version>&, data_selection &);
 };
 
 class relations_handler : public handler {

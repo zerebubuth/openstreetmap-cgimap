@@ -19,9 +19,6 @@ namespace api06 {
 class relation_history_responder : public osm_current_responder {
 public:
   relation_history_responder(mime::type, osm_nwr_id_t, data_selection &);
-
-private:
-  osm_nwr_id_t id;
 };
 
 class relation_history_handler : public handler {

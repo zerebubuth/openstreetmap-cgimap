@@ -14,22 +14,18 @@
 #include "cgimap/infix_ostream_iterator.hpp"
 #include "cgimap/api06/id_version_io.hpp"
 
-
 #include <sstream>
-
-using std::stringstream;
-using std::vector;
-using std::string;
 
 namespace api06 {
 
-ways_responder::ways_responder(mime::type mt, vector<id_version> ids_,
-                               data_selection &w_)
-    : osm_current_responder(mt, w_), ids(ids_) {
-  vector<osm_nwr_id_t> current_ids;
-  vector<osm_edition_t> historic_ids;
+ways_responder::ways_responder(mime::type mt, const std::vector<id_version>& ids,
+                               data_selection &w)
+    : osm_current_responder(mt, w) {
 
-  for (id_version idv : ids_) {
+  std::vector<osm_nwr_id_t> current_ids;
+  std::vector<osm_edition_t> historic_ids;
+
+  for (id_version idv : ids) {
     if (idv.version) {
       historic_ids.push_back(std::make_pair(idv.id, *idv.version));
     } else {
@@ -50,7 +46,7 @@ ways_responder::ways_responder(mime::type mt, vector<id_version> ids_,
 ways_handler::ways_handler(request &req) : ids(validate_request(req)) {}
 
 std::string ways_handler::log_name() const {
-  stringstream msg;
+  std::stringstream msg;
   msg << "ways?ways=";
   std::copy(ids.begin(), ids.end(),
             infix_ostream_iterator<id_version>(msg, ", "));
@@ -58,15 +54,15 @@ std::string ways_handler::log_name() const {
 }
 
 responder_ptr_t ways_handler::responder(data_selection &x) const {
-  return responder_ptr_t(new ways_responder(mime_type, ids, x));
+  return std::make_unique<ways_responder>(mime_type, ids, x);
 }
 
 /**
  * Validates an FCGI request, returning the valid list of ids or
  * throwing an error if there was no valid list of way ids.
  */
-vector<id_version> ways_handler::validate_request(request &req) {
-  vector<id_version> myids = parse_id_list_params(req, "ways");
+std::vector<id_version> ways_handler::validate_request(request &req) {
+  std::vector<id_version> myids = parse_id_list_params(req, "ways");
 
   if (myids.empty()) {
     throw http::bad_request(
