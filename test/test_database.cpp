@@ -19,7 +19,7 @@
 namespace fs = std::filesystem;
 namespace po = boost::program_options;
 
-test_database::setup_error::setup_error(std::string str)
+test_database::setup_error::setup_error(const std::string &str)
   : m_str(str) {
 }
 

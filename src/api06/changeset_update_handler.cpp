@@ -55,7 +55,7 @@ changeset_update_sel_responder::changeset_update_sel_responder(
 }
 
 
-changeset_update_handler::changeset_update_handler(request &req, osm_changeset_id_t id)
+changeset_update_handler::changeset_update_handler(const request &req, osm_changeset_id_t id)
     : payload_enabled_handler(mime::application_xml,
                               http::method::PUT | http::method::OPTIONS),
       id(id) {}

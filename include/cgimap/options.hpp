@@ -114,7 +114,7 @@ class global_settings_via_options : public global_settings_base {
 public:
   global_settings_via_options() = delete;
 
-  global_settings_via_options(const po::variables_map & options) {
+  explicit global_settings_via_options(const po::variables_map & options) {
 
     init_fallback_values(global_settings_default{}); // use default values as fallback
     set_new_options(options);

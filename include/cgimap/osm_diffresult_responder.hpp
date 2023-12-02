@@ -23,7 +23,7 @@
 class osm_diffresult_responder : public osm_responder {
 public:
 
-  osm_diffresult_responder(mime::type);
+  explicit osm_diffresult_responder(mime::type);
 
   ~osm_diffresult_responder() override;
 

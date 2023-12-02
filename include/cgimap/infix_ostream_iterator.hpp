@@ -38,7 +38,7 @@ private:
   bool _M_first{true};
 
 public:
-  infix_ostream_iterator(ostream_type &s)
+  explicit infix_ostream_iterator(ostream_type &s)
       : _M_stream(&s), _M_string(0) {}
   infix_ostream_iterator(ostream_type &s, const _CharT *c)
       : _M_stream(&s), _M_string(c) {}

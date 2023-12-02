@@ -75,7 +75,7 @@ public:
 
 protected:
   ZLibBaseDecompressor() = default;
-  ZLibBaseDecompressor(int windowBits);
+  explicit ZLibBaseDecompressor(int windowBits);
 
 
 private:

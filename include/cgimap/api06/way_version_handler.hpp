@@ -24,7 +24,7 @@ public:
 
 class way_version_handler : public handler {
 public:
-  way_version_handler(request &req, osm_nwr_id_t id, osm_version_t v);
+  way_version_handler(const request &req, osm_nwr_id_t id, osm_version_t v);
 
   std::string log_name() const override;
   responder_ptr_t responder(data_selection &x) const override;

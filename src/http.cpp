@@ -172,7 +172,7 @@ unsupported_media_type::unsupported_media_type(const string &message)
 unauthorized::unauthorized(const std::string &message)
   : exception(401, message) {}
 
-method_not_allowed::method_not_allowed(const http::method method)
+method_not_allowed::method_not_allowed(http::method method)
    :  exception(405, http::list_methods(method)),
       allowed_methods(method) {}
 

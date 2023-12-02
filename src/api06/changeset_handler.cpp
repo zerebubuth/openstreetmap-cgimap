@@ -34,7 +34,7 @@ changeset_responder::changeset_responder(mime::type mt, osm_changeset_id_t id,
 }
 
 
-changeset_handler::changeset_handler(request &req, osm_changeset_id_t id)
+changeset_handler::changeset_handler(const request &req, osm_changeset_id_t id)
   : id(id), include_discussion(false) {
 
   std::string decoded = http::urldecode(get_query_string(req));

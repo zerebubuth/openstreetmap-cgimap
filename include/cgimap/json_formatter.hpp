@@ -29,7 +29,7 @@ private:
   void write_common(const element_info &elem);
 
 public:
-  json_formatter(std::unique_ptr<json_writer> w);
+  explicit json_formatter(std::unique_ptr<json_writer> w);
   ~json_formatter() override;
 
   mime::type mime_type() const override;

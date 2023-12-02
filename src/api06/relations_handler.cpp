@@ -48,7 +48,7 @@ relations_responder::relations_responder(mime::type mt, const vector<id_version>
   }
 }
 
-relations_handler::relations_handler(request &req)
+relations_handler::relations_handler(const request &req)
     : ids(validate_request(req)) {}
 
 std::string relations_handler::log_name() const {
@@ -67,7 +67,7 @@ responder_ptr_t relations_handler::responder(data_selection &x) const {
  * Validates an FCGI request, returning the valid list of ids or
  * throwing an error if there was no valid list of node ids.
  */
-vector<id_version> relations_handler::validate_request(request &req) {
+vector<id_version> relations_handler::validate_request(const request &req) {
   vector<id_version> myids = parse_id_list_params(req, "relations");
 
   if (myids.empty()) {

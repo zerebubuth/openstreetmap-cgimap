@@ -26,7 +26,7 @@ bool node_ways_responder::is_visible(osm_nwr_id_t id) {
   return (!(sel.check_node_visibility(id) == data_selection::deleted));
 }
 
-node_ways_handler::node_ways_handler(request &, osm_nwr_id_t id) : id(id) {}
+node_ways_handler::node_ways_handler(const request &, osm_nwr_id_t id) : id(id) {}
 
 std::string node_ways_handler::log_name() const { return "node/ways"; }
 

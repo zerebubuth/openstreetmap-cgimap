@@ -43,7 +43,7 @@ ways_responder::ways_responder(mime::type mt, const std::vector<id_version>& ids
   }
 }
 
-ways_handler::ways_handler(request &req) : ids(validate_request(req)) {}
+ways_handler::ways_handler(const request &req) : ids(validate_request(req)) {}
 
 std::string ways_handler::log_name() const {
   std::stringstream msg;
@@ -61,7 +61,7 @@ responder_ptr_t ways_handler::responder(data_selection &x) const {
  * Validates an FCGI request, returning the valid list of ids or
  * throwing an error if there was no valid list of way ids.
  */
-std::vector<id_version> ways_handler::validate_request(request &req) {
+std::vector<id_version> ways_handler::validate_request(const request &req) {
   std::vector<id_version> myids = parse_id_list_params(req, "ways");
 
   if (myids.empty()) {

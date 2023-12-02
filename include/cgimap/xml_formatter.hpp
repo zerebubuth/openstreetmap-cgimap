@@ -25,7 +25,7 @@ private:
   void write_common(const element_info &elem);
 
 public:
-  xml_formatter(std::unique_ptr<xml_writer> w);
+  explicit xml_formatter(std::unique_ptr<xml_writer> w);
   ~xml_formatter() override = default;
 
   mime::type mime_type() const override;

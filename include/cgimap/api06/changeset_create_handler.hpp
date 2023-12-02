@@ -27,7 +27,7 @@ public:
 
 class changeset_create_handler : public payload_enabled_handler {
 public:
-  changeset_create_handler(request &req);
+  explicit changeset_create_handler(const request &req);
 
   std::string log_name() const override;
   responder_ptr_t responder(data_selection &x) const override;

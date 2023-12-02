@@ -20,7 +20,7 @@ node_version_responder::node_version_responder(mime::type mt, osm_nwr_id_t id, o
   }
 }
 
-node_version_handler::node_version_handler(request &, osm_nwr_id_t id, osm_version_t v) : id(id), v(v) {}
+node_version_handler::node_version_handler(const request &, osm_nwr_id_t id, osm_version_t v) : id(id), v(v) {}
 
 std::string node_version_handler::log_name() const { return "node"; }
 

@@ -44,7 +44,7 @@ public:
    */
   class write_error : public std::runtime_error {
   public:
-    write_error(const char *message);
+    explicit write_error(const char *message);
   };
 };
 

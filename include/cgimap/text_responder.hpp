@@ -24,7 +24,7 @@ class text_responder : public responder {
 public:
   // construct, passing the mime type down to the responder.
   // optional bounds are stored at this level, but available to derived classes.
-  text_responder(mime::type);
+  explicit text_responder(mime::type);
 
   ~text_responder() override = default;
 

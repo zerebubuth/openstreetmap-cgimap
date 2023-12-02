@@ -82,7 +82,7 @@ public:
  */
 class server_error : public exception {
 public:
-  server_error(const std::string &message);
+  explicit server_error(const std::string &message);
 };
 
 /**
@@ -91,7 +91,7 @@ public:
  */
 class bad_request : public exception {
 public:
-  bad_request(const std::string &message);
+  explicit bad_request(const std::string &message);
 };
 
 /**
@@ -101,7 +101,7 @@ public:
 
 class forbidden : public exception {
 public:
-   forbidden(const std::string &message);
+   explicit forbidden(const std::string &message);
 };
 
 /**
@@ -111,7 +111,7 @@ public:
  */
 class method_not_allowed : public exception {
 public:
-  method_not_allowed(const http::method method);
+  explicit method_not_allowed(http::method method);
   http::method allowed_methods;
 };
 
@@ -122,7 +122,7 @@ public:
  */
 class not_acceptable : public exception {
 public:
-  not_acceptable(const std::string &message);
+  explicit not_acceptable(const std::string &message);
 };
 
 /**
@@ -132,7 +132,7 @@ public:
  */
 class conflict : public exception {
 public:
-  conflict(const std::string &message);
+  explicit conflict(const std::string &message);
 };
 
 /**
@@ -141,7 +141,7 @@ public:
  */
 class precondition_failed : public exception {
 public:
-  precondition_failed(const std::string &message);
+  explicit precondition_failed(const std::string &message);
   const char *what() const noexcept override;
 private:
   std::string fullstring;
@@ -154,7 +154,7 @@ private:
 
 class payload_too_large : public exception {
 public:
-  payload_too_large(const std::string &message);
+  explicit payload_too_large(const std::string &message);
 };
 
 
@@ -165,7 +165,7 @@ public:
 
 class too_many_requests : public exception {
 public:
-  too_many_requests(const std::string &message);
+  explicit too_many_requests(const std::string &message);
 };
 
 
@@ -175,7 +175,7 @@ public:
  */
 class not_found : public exception {
 public:
-  not_found(const std::string &uri);
+  explicit not_found(const std::string &uri);
 };
 
 /**
@@ -183,7 +183,7 @@ public:
  */
 class bandwidth_limit_exceeded : public exception {
 public:
-  bandwidth_limit_exceeded(int retry_seconds);
+  explicit bandwidth_limit_exceeded(int retry_seconds);
   int retry_seconds;
 };
 
@@ -193,7 +193,7 @@ public:
 class gone : public exception {
 public:
   // TODO: fix up so that error message is meaningful
-  gone(const std::string &message = "");
+  explicit gone(const std::string &message = "");
 };
 
 /**
@@ -201,7 +201,7 @@ public:
  */
 class unauthorized : public exception {
 public:
-  unauthorized(const std::string &message);
+  explicit unauthorized(const std::string &message);
 };
 
 /**
@@ -210,7 +210,7 @@ public:
  */
 class unsupported_media_type : public exception {
 public:
-  unsupported_media_type(const std::string &message);
+  explicit unsupported_media_type(const std::string &message);
 };
 
 /**
@@ -251,7 +251,7 @@ private:
   const std::string name_;
 
 public:
-  encoding(std::string name) : name_(std::move(name)){}
+  explicit encoding(std::string name) : name_(std::move(name)){}
   virtual ~encoding() = default;
 
   const std::string &name() const { return name_; };

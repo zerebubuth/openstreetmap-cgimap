@@ -21,7 +21,7 @@
  * chooses and returns the best available mime type for a given request and
  * responder given the constraints in the Accept header and so forth.
  */
-mime::type choose_best_mime_type(request &req, const responder& hptr);
+mime::type choose_best_mime_type(const request &req, const responder& hptr);
 
 /**
  * creates and initialises an output formatter which matches the MIME type

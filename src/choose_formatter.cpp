@@ -55,7 +55,7 @@ namespace {
 
 class acceptable_types {
 public:
-  acceptable_types(const std::string &accept_header);
+  explicit acceptable_types(const std::string &accept_header);
   bool is_acceptable(mime::type) const;
   // note: returns mime::unspecified_type if none were acceptable
   mime::type most_acceptable_of(const list<mime::type> &available) const;
@@ -205,13 +205,13 @@ acceptable_types::most_acceptable_of(const list<mime::type> &available) const {
  * figures out the preferred mime type(s) from the Accept headers, mapped to
  * their relative acceptability.
  */
-acceptable_types header_mime_type(request &req) {
+acceptable_types header_mime_type(const request &req) {
   // need to look at HTTP_ACCEPT request environment
   string accept_header = fcgi_get_env(req, "HTTP_ACCEPT", "*/*");
   return acceptable_types(accept_header);
 }
 
-std::string mime_types_to_string(const std::list<mime::type> mime_types)
+std::string mime_types_to_string(const std::list<mime::type> &mime_types)
 {
   std::string result;
 
@@ -226,7 +226,7 @@ std::string mime_types_to_string(const std::list<mime::type> mime_types)
 
 }
 
-mime::type choose_best_mime_type(request &req, const responder& hptr) {
+mime::type choose_best_mime_type(const request &req, const responder& hptr) {
   // figure out what, if any, the Accept-able resource mime types are
   acceptable_types types = header_mime_type(req);
   const list<mime::type> types_available = hptr.types_available();

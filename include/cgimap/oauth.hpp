@@ -113,7 +113,7 @@ using validity = std::variant<
 /**
  * Given a request, checks that the OAuth signature is valid.
  */
-validity::validity is_valid_signature(request &, secret_store &, nonce_store &,
+validity::validity is_valid_signature(const request &, secret_store &, nonce_store &,
                                       token_store &);
 
 namespace detail {
@@ -122,7 +122,7 @@ namespace detail {
  * Returns the hashed signature of the request, or none if that
  * can't be completed.
  */
-std::optional<std::string> hashed_signature(request &req, secret_store &store);
+std::optional<std::string> hashed_signature(const request &req, secret_store &store);
 
 /**
  * Given a request, returns the signature base string as defined
@@ -131,7 +131,7 @@ std::optional<std::string> hashed_signature(request &req, secret_store &store);
  * Returns none if the OAuth Authorization header could
  * not be parsed.
  */
-std::optional<std::string> signature_base_string(request &req);
+std::optional<std::string> signature_base_string(const request &req);
 
 /**
  * Given a request, returns a string containing the normalised
@@ -141,14 +141,14 @@ std::optional<std::string> signature_base_string(request &req);
  * Returns none if the OAuth Authorization header could
  * not be parsed.
  */
-std::optional<std::string> normalise_request_parameters(request &req);
+std::optional<std::string> normalise_request_parameters(const request &req);
 
 /**
  * Given a request, returns a string representing the normalised
  * URL according to the OAuth standard. See
  * http://oauth.net/core/1.0a/#rfc.section.9.1.2
  */
-std::string normalise_request_url(request &req);
+std::string normalise_request_url(const request &req);
 
 /**
  * Given a string, returns the base64 encoded version of that string,

@@ -26,7 +26,7 @@ changeset_download_responder::changeset_download_responder(
   sel.select_historical_by_changesets({id});
 }
 
-changeset_download_handler::changeset_download_handler(request &req, osm_changeset_id_t id)
+changeset_download_handler::changeset_download_handler(const request &req, osm_changeset_id_t id)
   : id(id) {
 }
 

@@ -33,7 +33,7 @@ struct test_database {
   // allow the test to be skipped, as people might not have or want an
   // apidb database set up on their local machines.
   struct setup_error : public std::exception {
-    setup_error(std::string fmt);
+    explicit setup_error(const std::string &fmt);
     ~setup_error() noexcept override = default;
     const char *what() const noexcept override;
 

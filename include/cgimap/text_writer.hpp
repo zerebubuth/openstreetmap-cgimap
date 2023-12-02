@@ -27,7 +27,7 @@ public:
   text_writer(text_writer &&) = default;
 
   // create a new text writer using writer callback functions
-  text_writer(output_buffer &out, bool indent = false);
+  explicit text_writer(output_buffer &out, bool indent = false);
 
   // closes and flushes the text writer
   ~text_writer() noexcept override;

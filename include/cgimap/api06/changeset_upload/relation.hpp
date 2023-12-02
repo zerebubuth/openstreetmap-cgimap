@@ -25,8 +25,8 @@ class RelationMember {
 public:
   RelationMember() = default;
 
-  RelationMember(std::string _m_type, osm_nwr_signed_id_t _m_ref, std::string _m_role) :
-    m_role(_m_role), m_ref(_m_ref), m_type(_m_type) {};
+  RelationMember(const std::string &m_type, osm_nwr_signed_id_t m_ref, const std::string &m_role) :
+    m_role(m_role), m_ref(m_ref), m_type(m_type) {};
 
   void set_type(const std::string &type) {
 

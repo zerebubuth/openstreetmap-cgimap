@@ -29,7 +29,7 @@ void relation_responder::check_visibility(osm_nwr_id_t id) {
   }
 }
 
-relation_handler::relation_handler(request &, osm_nwr_id_t id) : id(id) {}
+relation_handler::relation_handler(const request &, osm_nwr_id_t id) : id(id) {}
 
 std::string relation_handler::log_name() const { return "relation"; }
 

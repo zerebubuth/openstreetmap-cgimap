@@ -479,7 +479,7 @@ void check_response(std::istream &expected, std::istream &actual) {
  *  - compares the result to what's expected in the test case.
  */
 void run_test(fs::path test_case, rate_limiter &limiter,
-              const std::string &generator, routes &route,
+              const std::string &generator, const routes &route,
               data_selection::factory& factory,
               oauth::store* store) {
   try {
@@ -530,7 +530,7 @@ osm_user_role_t parse_role(const std::string &str) {
 
 struct test_oauth : public oauth::store {
 
-  test_oauth(const pt::ptree &config) {
+  explicit test_oauth(const pt::ptree &config) {
     boost::optional<const pt::ptree &> consumers =
       config.get_child_optional("consumers");
     if (consumers) {

@@ -132,7 +132,7 @@ void add_common_headers(test_request& req)
 }
 
 
-int create_changeset(test_database &tdb, oauth::store& store, std::string token) {
+int create_changeset(test_database &tdb, oauth::store& store, const std::string &token) {
 
   // Test valid token, create empty changeset
   recording_rate_limiter limiter;
@@ -159,7 +159,7 @@ int create_changeset(test_database &tdb, oauth::store& store, std::string token)
   return (req.response_status());
 }
 
-int fetch_relation(test_database &tdb, oauth::store& store, std::string token) {
+int fetch_relation(test_database &tdb, oauth::store& store, const std::string &token) {
 
   recording_rate_limiter limiter;
   std::string generator("test_apidb_backend.cpp");

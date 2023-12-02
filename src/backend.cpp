@@ -95,7 +95,7 @@ void registry::setup_options(int argc, char *argv[],
 
   po::variables_map vm = first_pass_argments(argc, argv, desc);
 
-  std::string backend = *default_backend;
+  std::string bcknd = *default_backend;
 
   // little hack - we want to print *all* the backends when --help is passed, so
   // we don't add one here when it's present. it's a nasty way to do it, but i
@@ -106,14 +106,14 @@ void registry::setup_options(int argc, char *argv[],
       auto itr =
           backends.find(vm["backend"].as<std::string>());
       if (itr != backends.end()) {
-        backend = itr->first;
+        bcknd = itr->first;
       }
       else {
         throw std::runtime_error(fmt::format("unknown backend provided, available options are: {}", all_backends));
       }
     }
 
-    desc.add(backends[backend]->options());
+    desc.add(backends[bcknd]->options());
   }
 }
 
@@ -125,48 +125,48 @@ void registry::output_options(std::ostream &out) {
 
 std::unique_ptr<data_selection::factory>
 registry::create(const po::variables_map &options) {
-  std::string backend = *default_backend;
+  std::string bcknd = *default_backend;
 
   if (options.count("backend")) {
     auto itr =
         backends.find(options["backend"].as<std::string>());
     if (itr != backends.end()) {
-      backend = itr->first;
+      bcknd = itr->first;
     }
   }
 
-  return backends[backend]->create(options);
+  return backends[bcknd]->create(options);
 }
 
 std::unique_ptr<data_update::factory>
 registry::create_data_update(const po::variables_map &options) {
-  std::string backend = *default_backend;
+  std::string bcknd = *default_backend;
 
   if (options.count("backend")) {
     auto itr =
         backends.find(options["backend"].as<std::string>());
     if (itr != backends.end()) {
-      backend = itr->first;
+      bcknd = itr->first;
     }
   }
 
-  return backends[backend]->create_data_update(options);
+  return backends[bcknd]->create_data_update(options);
 }
 
 
 std::unique_ptr<oauth::store>
 registry::create_oauth_store(const boost::program_options::variables_map &options) {
-  std::string backend = *default_backend;
+  std::string bcknd = *default_backend;
 
   if (options.count("backend")) {
     auto itr =
         backends.find(options["backend"].as<std::string>());
     if (itr != backends.end()) {
-      backend = itr->first;
+      bcknd = itr->first;
     }
   }
 
-  return backends[backend]->create_oauth_store(options);
+  return backends[bcknd]->create_oauth_store(options);
 }
 
 registry *registry_ptr = NULL;

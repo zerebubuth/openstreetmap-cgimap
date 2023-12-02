@@ -26,7 +26,7 @@ bool node_relations_responder::is_visible(osm_nwr_id_t id) {
   return (!(sel.check_node_visibility(id) == data_selection::deleted));
 }
 
-node_relations_handler::node_relations_handler(request &, osm_nwr_id_t id) : id(id) {}
+node_relations_handler::node_relations_handler(const request &, osm_nwr_id_t id) : id(id) {}
 
 std::string node_relations_handler::log_name() const { return "node/relations"; }
 

@@ -26,7 +26,7 @@ public:
   json_writer(json_writer &&) = default;
 
   // create a json writer using a callback object for output
-  json_writer(output_buffer &out, bool indent = false);
+  explicit json_writer(output_buffer &out, bool indent = false);
 
   // closes and flushes the buffer
   ~json_writer() noexcept override;

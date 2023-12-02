@@ -28,7 +28,7 @@ public:
 
 class relations_handler : public handler {
 public:
-  relations_handler(request &req);
+  explicit relations_handler(const request &req);
 
   std::string log_name() const override;
   responder_ptr_t responder(data_selection &x) const override;
@@ -36,7 +36,7 @@ public:
 private:
   std::vector<id_version> ids;
 
-  static std::vector<id_version> validate_request(request &req);
+  static std::vector<id_version> validate_request(const request &req);
 };
 
 } // namespace api06
