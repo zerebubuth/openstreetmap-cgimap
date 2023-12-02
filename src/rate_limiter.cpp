@@ -13,9 +13,6 @@
 #include "cgimap/options.hpp"
 #include "cgimap/rate_limiter.hpp"
 
-rate_limiter::~rate_limiter() = default;
-
-null_rate_limiter::~null_rate_limiter() = default;
 
 std::tuple<bool, int> null_rate_limiter::check(const std::string &, bool) {
   return std::make_tuple(false, 0);

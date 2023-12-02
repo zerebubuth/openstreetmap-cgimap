@@ -27,11 +27,11 @@
 
 
 
-ApiDB_Relation_Updater::ApiDB_Relation_Updater(
-    Transaction_Manager &_m, api06::OSMChange_Tracking &ct)
-    : m_bbox(), m(_m), ct(ct) {}
-
-ApiDB_Relation_Updater::~ApiDB_Relation_Updater() = default;
+ApiDB_Relation_Updater::ApiDB_Relation_Updater(Transaction_Manager &_m, 
+                                               api06::OSMChange_Tracking &ct)
+  : m(_m),
+    ct(ct) 
+{}
 
 void ApiDB_Relation_Updater::add_relation(osm_changeset_id_t changeset_id,
                                           osm_nwr_signed_id_t old_id,

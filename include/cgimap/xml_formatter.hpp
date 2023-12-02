@@ -26,7 +26,7 @@ private:
 
 public:
   xml_formatter(std::unique_ptr<xml_writer> w);
-  ~xml_formatter() override;
+  ~xml_formatter() override = default;
 
   mime::type mime_type() const override;
 

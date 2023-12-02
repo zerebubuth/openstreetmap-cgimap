@@ -85,7 +85,7 @@ struct test_formatter : public output_formatter {
   std::vector<way_t> m_ways;
   std::vector<relation_t> m_relations;
 
-  virtual ~test_formatter();
+  ~test_formatter() override = default;
   mime::type mime_type() const override;
   void start_document(const std::string &generator, const std::string &root_name) override;
   void end_document() override;

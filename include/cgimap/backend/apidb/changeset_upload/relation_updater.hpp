@@ -28,9 +28,9 @@ class ApiDB_Relation_Updater : public api06::Relation_Updater {
 
 public:
   ApiDB_Relation_Updater(Transaction_Manager &_m,
-			 api06::OSMChange_Tracking &ct);
+                         api06::OSMChange_Tracking &ct);
 
-  ~ApiDB_Relation_Updater() override;
+  ~ApiDB_Relation_Updater() override = default;
 
   void add_relation(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
                     const RelationMemberList &members, const TagList &tags) override;
@@ -53,7 +53,7 @@ public:
   bbox_t bbox() const override;
 
 private:
-  bbox_t m_bbox;
+  bbox_t m_bbox{};
 
   struct member_t {
     std::string member_type;

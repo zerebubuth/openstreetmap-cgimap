@@ -63,10 +63,9 @@ bool operator<(const element &a, const element &b) {
   }
 }
 
-struct sorting_formatter
-  : public output_formatter {
+struct sorting_formatter : public output_formatter {
 
-  virtual ~sorting_formatter() = default;
+  virtual ~sorting_formatter() override = default;
 
   mime::type mime_type() const override {
     throw std::runtime_error("sorting_formatter::mime_type unimplemented");
@@ -159,7 +158,7 @@ struct sorting_formatter
     throw std::runtime_error("sorting_formatter::write_diffresult_delete unimplemented");
   }
 
-  void flush() {
+  void flush() override {
     throw std::runtime_error("sorting_formatter::flush unimplemented");
   }
 
@@ -223,12 +222,10 @@ private:
 
 } // anonymous namespace
 
-osmchange_responder::osmchange_responder(
-  mime::type mt, data_selection &s)
-  : osm_responder(mt, {}), sel(s) {
+osmchange_responder::osmchange_responder(mime::type mt, data_selection &s)
+  : osm_responder(mt, {}), 
+    sel(s) {
 }
-
-osmchange_responder::~osmchange_responder() = default;
 
 list<mime::type> osmchange_responder::types_available() const {
   list<mime::type> types;
@@ -236,9 +233,9 @@ list<mime::type> osmchange_responder::types_available() const {
   return types;
 }
 
-void osmchange_responder::write(
-  output_formatter& fmt,
-  const std::string &generator, const std::chrono::system_clock::time_point &now) {
+void osmchange_responder::write(output_formatter& fmt,
+                                const std::string &generator, 
+                                const std::chrono::system_clock::time_point &now) {
 
   fmt.start_document(generator, "osmChange");
   try {

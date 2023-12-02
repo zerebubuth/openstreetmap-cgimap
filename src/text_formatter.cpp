@@ -19,8 +19,6 @@ using std::transform;
 
 text_formatter::text_formatter(std::unique_ptr<text_writer> w) : writer(std::move(w)) {}
 
-text_formatter::~text_formatter() = default;
-
 mime::type text_formatter::mime_type() const { return mime::text_plain; }
 
 void text_formatter::start_document(

@@ -188,7 +188,6 @@ libcgimap_core_la_SOURCES=\
 	osm_diffresult_responder.cpp \
 	osmchange_responder.cpp \
 	output_formatter.cpp \
-	output_writer.cpp \
 	process_request.cpp \
 	rate_limiter.cpp \
 	request.cpp \

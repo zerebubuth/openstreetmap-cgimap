@@ -23,8 +23,6 @@ test_database::setup_error::setup_error(std::string str)
   : m_str(str) {
 }
 
-test_database::setup_error::~setup_error() noexcept = default;
-
 const char *test_database::setup_error::what() const noexcept {
   return m_str.c_str();
 }

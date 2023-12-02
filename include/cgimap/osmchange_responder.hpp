@@ -22,7 +22,7 @@ public:
   // optional bounds are stored at this level, but available to derived classes.
   osmchange_responder(mime::type, data_selection &s);
 
-  ~osmchange_responder() override;
+  ~osmchange_responder() override = default;
 
   // lists the standard types that OSM format can respond in, currently only XML,
   // as the osmChange format is undefined for JSON

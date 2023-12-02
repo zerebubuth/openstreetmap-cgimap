@@ -38,8 +38,6 @@ const std::string &element_type_name(element_type elt) {
 
 xml_formatter::xml_formatter(std::unique_ptr<xml_writer> w) : writer(std::move(w)) {}
 
-xml_formatter::~xml_formatter() = default;
-
 mime::type xml_formatter::mime_type() const { return mime::application_xml; }
 
 void xml_formatter::start_document(

@@ -21,29 +21,31 @@
 
 namespace {
 
-struct test_oauth2
-  : public oauth::store {
+struct test_oauth2 : public oauth::store {
 
   test_oauth2() = default;
 
-  virtual ~test_oauth2() = default;
+  ~test_oauth2() override = default;
 
 
-  bool allow_read_api(const std::string &token_id) {
+  bool allow_read_api(const std::string &token_id) override {
     // everyone can read the api
     return true;
   }
 
-  bool allow_write_api(const std::string &token_id) {
+  bool allow_write_api(const std::string &token_id) override {
     // everyone can write the api for the moment
     return true;
   }
 
-  std::optional<osm_user_id_t> get_user_id_for_token(const std::string &token_id) {
+  std::optional<osm_user_id_t> get_user_id_for_token(const std::string &token_id) override {
     return {};
   }
 
-  std::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) {
+  std::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, 
+                                                            bool& expired, 
+                                                            bool& revoked, 
+                                                            bool& allow_api_write) override {
 
     // Note: original token ids have been sha256 hashed, token_id hash values can be generated using
     // echo -n "6GGXRGoDog0i6mRyrBonFmJORQhWZMhZH5WNWLd0qcs" | sha256sum
@@ -94,13 +96,13 @@ struct test_oauth2
 
   }
 
-  std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t id) {
+  std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t id) override {
     return {};
   }
 
-  std::optional<std::string> consumer_secret(const std::string &consumer_key) { return {}; }
-  std::optional<std::string> token_secret(const std::string &token_id) { return {}; }
-  bool use_nonce(const std::string &nonce, uint64_t timestamp) { return true; }
+  std::optional<std::string> consumer_secret(const std::string &consumer_key) override { return {}; }
+  std::optional<std::string> token_secret(const std::string &token_id) override { return {}; }
+  bool use_nonce(const std::string &nonce, uint64_t timestamp) override { return true; }
 };
 
 } // anonymous namespace

@@ -31,9 +31,9 @@ public:
   // construct, passing the mime type down to the responder.
   // optional bounds are stored at this level, but available to derived classes.
   osm_responder(mime::type,
-                std::optional<bbox> bounds = std::optional<bbox>());
+                std::optional<bbox> bounds = {});
 
-  ~osm_responder() override;
+  ~osm_responder() override = default;
 
   // lists the standard types that OSM format can respond in, currently XML and,
   // if the yajl library is provided, JSON.

@@ -22,14 +22,12 @@
 
 
 ApiDB_Changeset_Updater::ApiDB_Changeset_Updater(Transaction_Manager &_m,
-						 osm_changeset_id_t _changeset,
-						 osm_user_id_t _uid)
-: m(_m), cs_num_changes(0), changeset(_changeset), uid(_uid) {}
-
-ApiDB_Changeset_Updater::~ApiDB_Changeset_Updater() = default;
-
-
-
+                                                 osm_changeset_id_t _changeset,
+                                                 osm_user_id_t _uid)
+  : m(_m),
+    changeset(_changeset),
+    uid(_uid)
+{}
 
 void ApiDB_Changeset_Updater::lock_current_changeset(bool check_max_elements_limit) {
 
@@ -56,7 +54,7 @@ void ApiDB_Changeset_Updater::lock_current_changeset(bool check_max_elements_lim
 }
 
 void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
-					       const bbox_t bbox) {
+                                               const bbox_t bbox) {
 
   // Don't raise an exception when reaching exactly changeset_max_elements!
   if (cs_num_changes + num_new_changes > global_settings::get_changeset_max_elements()) {

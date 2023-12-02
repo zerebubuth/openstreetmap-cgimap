@@ -10,15 +10,11 @@
 #include "cgimap/config.hpp"
 #include "cgimap/osm_responder.hpp"
 
-using std::list;
-
 osm_responder::osm_responder(mime::type mt, std::optional<bbox> b)
     : responder(mt), bounds(b) {}
 
-osm_responder::~osm_responder() = default;
-
-list<mime::type> osm_responder::types_available() const {
-  list<mime::type> types;
+std::list<mime::type> osm_responder::types_available() const {
+  std::list<mime::type> types;
   types.push_back(mime::application_xml);
 #if HAVE_YAJL
   types.push_back(mime::application_json);

@@ -94,8 +94,9 @@ struct router {
 
     // try to match the expression. if it succeeds, call the provided function
     // with the provided params and the matched DSL arguments.
-    bool invoke_if(const list<string> &parts, request &params,
-                   handler_ptr_t &ptr) {
+    bool invoke_if(const list<string> &parts, 
+                   request &params,
+                   handler_ptr_t &ptr) override {
       try {
         auto begin = parts.begin();
         auto sequence = r.match(begin, parts.end());
@@ -226,7 +227,7 @@ private:
 
 routes::routes()
     : common_prefix("/api/0.6/"),
-      r(new router())
+      r(std::make_unique<router>())
 #ifdef ENABLE_API07
       ,
       experimental_prefix("/api/0.7/"),

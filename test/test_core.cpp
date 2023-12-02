@@ -528,8 +528,7 @@ osm_user_role_t parse_role(const std::string &str) {
   }
 }
 
-struct test_oauth
-  : public oauth::store {
+struct test_oauth : public oauth::store {
 
   test_oauth(const pt::ptree &config) {
     boost::optional<const pt::ptree &> consumers =
@@ -578,9 +577,9 @@ struct test_oauth
     }
   }
 
-  virtual ~test_oauth() = default;
+  ~test_oauth() override = default;
 
-  std::optional<std::string> consumer_secret(const std::string &consumer_key) {
+  std::optional<std::string> consumer_secret(const std::string &consumer_key) override {
     auto itr = m_consumers.find(consumer_key);
     if (itr != m_consumers.end()) {
       return itr->second;
@@ -589,7 +588,7 @@ struct test_oauth
     }
   }
 
-  std::optional<std::string> token_secret(const std::string &token_id) {
+  std::optional<std::string> token_secret(const std::string &token_id) override {
     auto itr = m_tokens.find(token_id);
     if (itr != m_tokens.end()) {
       return itr->second;
@@ -598,22 +597,22 @@ struct test_oauth
     }
   }
 
-  bool use_nonce(const std::string &nonce, uint64_t timestamp) {
+  bool use_nonce(const std::string &nonce, uint64_t timestamp) override {
     // pretend all nonces are new for these tests
     return true;
   }
 
-  bool allow_read_api(const std::string &token_id) {
+  bool allow_read_api(const std::string &token_id) override {
     // everyone can read the api
     return true;
   }
 
-  bool allow_write_api(const std::string &token_id) {
+  bool allow_write_api(const std::string &token_id) override {
     // everyone can write the api for the moment
     return true;
   }
 
-  std::optional<osm_user_id_t> get_user_id_for_token(const std::string &token_id) {
+  std::optional<osm_user_id_t> get_user_id_for_token(const std::string &token_id) override {
     auto itr = m_users.find(token_id);
     if (itr != m_users.end()) {
       return itr->second;
@@ -622,7 +621,7 @@ struct test_oauth
     }
   }
 
-  std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t id) {
+  std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t id) override {
     std::set<osm_user_role_t> roles;
     auto itr = m_user_roles.find(id);
     if (itr != m_user_roles.end()) {
@@ -631,7 +630,10 @@ struct test_oauth
     return roles;
   }
 
-  std::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) {
+  std::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, 
+                                                            bool& expired, 
+                                                            bool& revoked, 
+                                                            bool& allow_api_write) override {
     expired = false;
     revoked = false;
     allow_api_write = false;

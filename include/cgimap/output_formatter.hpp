@@ -68,8 +68,8 @@ struct element_info {
 };
 
 struct changeset_info {
-  changeset_info();
-  changeset_info(const changeset_info &);
+  changeset_info() = default;
+  changeset_info(const changeset_info &) = default;
   changeset_info(osm_changeset_id_t id_,
                  const std::string &created_at_,
                  const std::string &closed_at_,
@@ -87,7 +87,7 @@ struct changeset_info {
   bool is_open_at(const std::chrono::system_clock::time_point &) const;
 
   // standard meaning of ID
-  osm_changeset_id_t id;
+  osm_changeset_id_t id{0};
   // changesets are created at a certain time and may be either
   // closed explicitly with a closing time, or close implicitly
   // an hour after the last update to the changeset. closed_at
@@ -101,10 +101,10 @@ struct changeset_info {
   std::optional<bbox> bounding_box;
   // the number of changes (new element versions) associated
   // with this changeset.
-  size_t num_changes;
+  size_t num_changes{0};
   // if the changeset has a discussion attached, then this will
   // be the number of comments.
-  size_t comments_count;
+  size_t comments_count{0};
 };
 
 struct changeset_comment_info {
@@ -124,9 +124,11 @@ struct member_info {
 
   member_info() = default;
   member_info(element_type type_, osm_nwr_id_t ref_, const std::string &role_)
-    : type(type_), ref(ref_), role(role_) {}
+    : type(type_), 
+      ref(ref_), 
+      role(role_) {}
 
-  inline bool operator==(const member_info &other) const {
+  constexpr bool operator==(const member_info &other) const {
     return ((type == other.type) &&
             (ref == other.ref) &&
             (role == other.role));
@@ -144,7 +146,7 @@ using comments_t = std::vector<changeset_comment_info>;
  * of course, that we want any other formats ;-)
  */
 struct output_formatter {
-  virtual ~output_formatter();
+  virtual ~output_formatter() = default;
 
   // returns the mime type of the content that this formatter will
   // produce.

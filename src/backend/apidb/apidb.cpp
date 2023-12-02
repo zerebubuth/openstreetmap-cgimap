@@ -62,24 +62,24 @@ struct apidb_backend : public backend {
        "database port for API write operations, if different from --dbport");
     // clang-format on
   }
-  virtual ~apidb_backend() = default;
+  ~apidb_backend() override = default;
 
-  const string &name() const { return m_name; }
-  const po::options_description &options() const { return m_options; }
+  const string &name() const override { return m_name; }
+  const po::options_description &options() const override { return m_options; }
 
-  std::unique_ptr<data_selection::factory> create(const po::variables_map &opts) {
+  std::unique_ptr<data_selection::factory> create(const po::variables_map &opts) override {
 
     return std::make_unique<readonly_pgsql_selection::factory>(opts);
   }
 
-  std::unique_ptr<data_update::factory> create_data_update(const po::variables_map &opts) {
+  std::unique_ptr<data_update::factory> create_data_update(const po::variables_map &opts) override {
 
     return std::make_unique<pgsql_update::factory>(opts);
   }
 
 
   std::unique_ptr<oauth::store> create_oauth_store(
-    const po::variables_map &opts) {
+    const po::variables_map &opts) override {
 
     return std::make_unique<oauth_store>(opts);
   }

@@ -315,7 +315,7 @@ struct static_data_selection : public data_selection {
     : m_db(db)
     , m_include_changeset_comments(false)
     , m_redactions_visible(false) {}
-  ~static_data_selection() = default;
+  ~static_data_selection() override = default;
 
   void write_nodes(output_formatter &formatter) override {
     write_elements<node>(m_historic_nodes, m_nodes, formatter);
@@ -750,11 +750,11 @@ struct factory : public data_selection::factory {
 
   ~factory() override = default;
 
-  virtual std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) const {
+  std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) const override {
     return std::make_unique<static_data_selection>(*m_database);
   }
 
-  virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() {
+  std::unique_ptr<Transaction_Owner_Base> get_default_transaction() override {
     return std::make_unique<Transaction_Owner_Void>();
   }
 
@@ -763,33 +763,31 @@ private:
 };
 
 struct staticxml_backend : public backend {
-  staticxml_backend()
-      : m_name("staticxml"), m_options("Static XML backend options") {
+  staticxml_backend() {
     m_options.add_options()("file", po::value<std::string>()->required(),
                             "file to load static OSM XML from.");
   }
   ~staticxml_backend() override = default;
 
-  const std::string &name() const { return m_name; }
-  const po::options_description &options() const { return m_options; }
+  const std::string &name() const override { return m_name; }
+  const po::options_description &options() const override { return m_options; }
 
-  std::unique_ptr<data_selection::factory> create(const po::variables_map &opts) {
+  std::unique_ptr<data_selection::factory> create(const po::variables_map &opts) override {
     std::string file = opts["file"].as<std::string>();
     return std::make_unique<factory>(file);
   }
 
-  std::unique_ptr<data_update::factory> create_data_update(const po::variables_map &) {
+  std::unique_ptr<data_update::factory> create_data_update(const po::variables_map &) override {
     return nullptr;   // Data update operations not supported by staticxml backend
   }
 
-  std::unique_ptr<oauth::store> create_oauth_store(
-    const po::variables_map &) {
+  std::unique_ptr<oauth::store> create_oauth_store(const po::variables_map &) override {
     return std::unique_ptr<oauth::store>();
   }
 
 private:
-  std::string m_name;
-  po::options_description m_options;
+  std::string m_name{"staticxml"};
+  po::options_description m_options{"Static XML backend options"};
 };
 
 } // anonymous namespace

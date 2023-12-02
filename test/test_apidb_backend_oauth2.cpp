@@ -30,8 +30,7 @@
 
 namespace {
 
-class empty_data_selection
-  : public data_selection {
+class empty_data_selection : public data_selection {
 public:
 
   ~empty_data_selection() override = default;
@@ -78,8 +77,7 @@ public:
   void set_redactions_visible(bool) override {}
   int select_historical_by_changesets(const std::vector<osm_changeset_id_t> &) override { return 0; }
 
-  struct factory
-    : public data_selection::factory {
+  struct factory : public data_selection::factory {
     ~factory() override = default;
 
     std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) const override {
@@ -91,20 +89,19 @@ public:
   };
 };
 
-struct recording_rate_limiter
-  : public rate_limiter {
+struct recording_rate_limiter : public rate_limiter {
   ~recording_rate_limiter() override = default;
 
-  std::tuple<bool, int> check(const std::string &key, bool moderator) {
+  std::tuple<bool, int> check(const std::string &key, bool moderator) override {
     m_keys_seen.insert(key);
     return std::make_tuple(false, 0);
   }
 
-  void update(const std::string &key, int bytes, bool moderator) {
+  void update(const std::string &key, int bytes, bool moderator) override {
     m_keys_seen.insert(key);
   }
 
-  bool saw_key(const std::string &key) {
+  bool saw_key(const std::string &key) const {
     return m_keys_seen.count(key) > 0;
   }
 
