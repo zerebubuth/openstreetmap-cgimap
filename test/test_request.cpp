@@ -15,10 +15,8 @@
 #include <fmt/core.h>
 
 test_output_buffer::test_output_buffer(std::ostream &out, std::ostream &body)
-  : m_out(out), m_body(body), m_written(0) {
+  : m_out(out), m_body(body) {
 }
-
-test_output_buffer::~test_output_buffer() = default;
 
 int test_output_buffer::write(const char *buffer, int len) {
   m_body.write(buffer, len);
@@ -37,17 +35,13 @@ int test_output_buffer::close() {
 
 void test_output_buffer::flush() {}
 
-test_request::test_request() : m_status(-1) {}
-
-test_request::~test_request() = default;
-
 const char *test_request::get_param(const char *key) const {
   std::string key_str(key);
   auto itr = m_params.find(key_str);
   if (itr != m_params.end()) {
     return itr->second.c_str();
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 

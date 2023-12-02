@@ -21,7 +21,7 @@ struct output_buffer {
   virtual int written() = 0;
   virtual int close() = 0;
   virtual void flush() = 0;
-  virtual ~output_buffer();
+  virtual ~output_buffer() = default;
 
   output_buffer() = default;
 

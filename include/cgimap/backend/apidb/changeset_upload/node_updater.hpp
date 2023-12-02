@@ -25,9 +25,9 @@ class ApiDB_Node_Updater : public api06::Node_Updater {
 
 public:
   ApiDB_Node_Updater(Transaction_Manager &_m,
-		     api06::OSMChange_Tracking &ct);
+                     api06::OSMChange_Tracking &ct);
 
-  ~ApiDB_Node_Updater() override;
+  ~ApiDB_Node_Updater() override = default;
 
   void add_node(double lat, double lon, osm_changeset_id_t changeset_id,
                 osm_nwr_signed_id_t old_id, const api06::TagList &tags) override;
@@ -49,7 +49,7 @@ public:
   bbox_t bbox() const override;
 
 private:
-  bbox_t m_bbox;
+  bbox_t m_bbox{};
 
   struct node_t {
     osm_nwr_id_t id;

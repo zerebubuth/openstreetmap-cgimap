@@ -15,7 +15,7 @@
 #include <boost/program_options.hpp>
 
 struct rate_limiter {
-  virtual ~rate_limiter();
+  virtual ~rate_limiter() = default;
 
   // check if the key is below the rate limit. return true to indicate that it
   // is. The int return values indicates the wait time in seconds
@@ -25,15 +25,13 @@ struct rate_limiter {
   virtual void update(const std::string &key, int bytes, bool moderator) = 0;
 };
 
-struct null_rate_limiter
-  : public rate_limiter {
-  ~null_rate_limiter() override;
+struct null_rate_limiter : public rate_limiter {
+  ~null_rate_limiter() override = default;
   std::tuple<bool, int> check(const std::string &key, bool moderator) override;
   void update(const std::string &key, int bytes, bool moderator) override;
 };
 
-class memcached_rate_limiter
-  : public rate_limiter {
+class memcached_rate_limiter : public rate_limiter {
 public:
   /**
    * Methods.

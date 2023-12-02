@@ -34,8 +34,8 @@ struct test_database {
   // apidb database set up on their local machines.
   struct setup_error : public std::exception {
     setup_error(std::string fmt);
-    ~setup_error() noexcept;
-    virtual const char *what() const noexcept;
+    ~setup_error() noexcept override = default;
+    const char *what() const noexcept override;
 
   private:
     const std::string m_str;

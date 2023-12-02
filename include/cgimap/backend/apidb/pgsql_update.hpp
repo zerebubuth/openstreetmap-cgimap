@@ -23,7 +23,7 @@ class pgsql_update : public data_update {
 public:
   pgsql_update(Transaction_Owner_Base& to, bool is_readonly);
 
-  ~pgsql_update() override;
+  ~pgsql_update() override = default;
 
   std::unique_ptr<api06::Changeset_Updater>
   get_changeset_updater(osm_changeset_id_t _changeset, osm_user_id_t _uid) override;
@@ -50,7 +50,7 @@ public:
   class factory : public data_update::factory {
   public:
     factory(const boost::program_options::variables_map &);
-    ~factory() override;
+    ~factory() override = default;
     std::unique_ptr<data_update> make_data_update(Transaction_Owner_Base& to) override;
     std::unique_ptr<Transaction_Owner_Base> get_default_transaction() override;
     std::unique_ptr<Transaction_Owner_Base> get_read_only_transaction() override;

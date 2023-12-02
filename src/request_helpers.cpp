@@ -126,13 +126,13 @@ public:
     r.flush();
   }
 
-  virtual ~fcgi_output_buffer() = default;
+  ~fcgi_output_buffer() override = default;
 
-  fcgi_output_buffer(request &req) : r(req), w(0) {}
+  fcgi_output_buffer(request &req) : r(req) {}
 
 private:
   request &r;
-  int w;
+  int w{0};
 };
 
 } // anonymous namespace

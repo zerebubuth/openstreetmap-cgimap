@@ -17,7 +17,7 @@
 class oauth_store : public oauth::store {
 public:
   oauth_store(const boost::program_options::variables_map &);
-  ~oauth_store() override;
+  ~oauth_store() override = default;
 
   std::optional<std::string> consumer_secret(const std::string &consumer_key) override;
   std::optional<std::string> token_secret(const std::string &token_id) override;

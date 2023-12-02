@@ -25,7 +25,7 @@ private:
 
 public:
   text_formatter(std::unique_ptr<text_writer> w);
-  ~text_formatter() override;
+  ~text_formatter() override = default;
 
   mime::type mime_type() const override;
 

@@ -32,10 +32,10 @@
 
 
 ApiDB_Node_Updater::ApiDB_Node_Updater(Transaction_Manager &_m,
-				       api06::OSMChange_Tracking &ct)
-    : m_bbox(), m(_m), ct(ct) {}
-
-ApiDB_Node_Updater::~ApiDB_Node_Updater() = default;
+                                       api06::OSMChange_Tracking &ct)
+    : m(_m), 
+      ct(ct)
+{}
 
 void ApiDB_Node_Updater::add_node(double lat, double lon,
                                   osm_changeset_id_t changeset_id,

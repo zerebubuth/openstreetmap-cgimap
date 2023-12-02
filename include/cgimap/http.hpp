@@ -142,7 +142,7 @@ public:
 class precondition_failed : public exception {
 public:
   precondition_failed(const std::string &message);
-  const char *what() const noexcept;
+  const char *what() const noexcept override;
 private:
   std::string fullstring;
 };
@@ -296,15 +296,15 @@ std::unique_ptr<ZLibBaseDecompressor> get_content_encoding_handler(const std::st
 
 
 // allow bitset-like operators on methods
-inline method operator|(method a, method b) {
+constexpr method operator|(method a, method b) {
   return static_cast<method>(static_cast<std::underlying_type_t<method>>(a) |
                              static_cast<std::underlying_type_t<method>>(b));
 }
-inline method operator&(method a, method b) {
+constexpr method operator&(method a, method b) {
   return static_cast<method>(static_cast<std::underlying_type_t<method>>(a) &
                              static_cast<std::underlying_type_t<method>>(b));
 }
-inline method& operator|=(method& a, method b)
+constexpr method& operator|=(method& a, method b)
 {
   return a= a | b;
 }

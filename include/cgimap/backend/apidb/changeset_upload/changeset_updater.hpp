@@ -21,9 +21,10 @@ class ApiDB_Changeset_Updater : public api06::Changeset_Updater {
 
 public:
   ApiDB_Changeset_Updater(Transaction_Manager &_m,
-                          osm_changeset_id_t _changeset, osm_user_id_t _uid);
+                          osm_changeset_id_t _changeset, 
+                          osm_user_id_t _uid);
 
-  ~ApiDB_Changeset_Updater() override;
+  ~ApiDB_Changeset_Updater() override = default;
 
   void lock_current_changeset(bool check_max_elements_limit) override;
 
@@ -45,10 +46,10 @@ private:
   void changeset_insert_cs ();
 
   Transaction_Manager &m;
-  uint32_t cs_num_changes;
+  uint32_t cs_num_changes{0};
   osm_changeset_id_t changeset;
   osm_user_id_t uid;
-  bbox_t cs_bbox;
+  bbox_t cs_bbox{};
 };
 
 #endif

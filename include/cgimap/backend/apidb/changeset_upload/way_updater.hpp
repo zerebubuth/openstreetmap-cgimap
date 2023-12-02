@@ -29,9 +29,9 @@ class ApiDB_Way_Updater : public api06::Way_Updater {
 
 public:
   ApiDB_Way_Updater(Transaction_Manager &_m,
-		    api06::OSMChange_Tracking &ct);
+                    api06::OSMChange_Tracking &ct);
 
-  ~ApiDB_Way_Updater() override;
+  ~ApiDB_Way_Updater() override = default;
 
   void add_way(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
                const api06::WayNodeList &nodes, const api06::TagList &tags) override;
@@ -54,7 +54,7 @@ public:
   bbox_t bbox() const override;
 
 private:
-  bbox_t m_bbox;
+  bbox_t m_bbox{};
 
   struct way_node_t {
     osm_nwr_id_t node_id;

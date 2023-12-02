@@ -258,11 +258,10 @@ void test_get_user_id_for_token(test_database &tdb) {
     "non-existent token does not belong to anyone");
 }
 
-class empty_data_selection
-  : public data_selection {
+class empty_data_selection : public data_selection {
 public:
 
-  virtual ~empty_data_selection() = default;
+  ~empty_data_selection() override = default;
 
   void write_nodes(output_formatter &formatter) override {}
   void write_ways(output_formatter &formatter) override {}
@@ -319,20 +318,19 @@ public:
   };
 };
 
-struct recording_rate_limiter
-  : public rate_limiter {
+struct recording_rate_limiter : public rate_limiter {
   ~recording_rate_limiter() override = default;
 
-  std::tuple<bool, int> check(const std::string &key, bool moderator) {
+  std::tuple<bool, int> check(const std::string &key, bool moderator) override {
     m_keys_seen.insert(key);
     return std::make_tuple(false, 0);
   }
 
-  void update(const std::string &key, int bytes, bool moderator) {
+  void update(const std::string &key, int bytes, bool moderator) override {
     m_keys_seen.insert(key);
   }
 
-  bool saw_key(const std::string &key) {
+  bool saw_key(const std::string &key) const {
     return m_keys_seen.count(key) > 0;
   }
 

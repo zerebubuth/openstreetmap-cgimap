@@ -134,7 +134,7 @@ private:
  */
 struct match_osm_id : public ops<match_osm_id> {
   using match_type = list<osm_nwr_id_t>;
-  match_osm_id();
+  match_osm_id() = default;
   match_type match(part_iterator &begin, const part_iterator &end) const;
 };
 
@@ -143,7 +143,7 @@ struct match_osm_id : public ops<match_osm_id> {
  */
 struct match_name : public ops<match_name> {
   using match_type = list<std::string>;
-  match_name();
+  match_name() = default;
   match_type match(part_iterator &begin, const part_iterator &end) const;
 };
 
@@ -154,7 +154,7 @@ struct match_name : public ops<match_name> {
  */
 struct match_begin : public ops<match_begin> {
   using match_type = list<>;
-  match_begin();
+  match_begin() = default;
   match_type match(part_iterator &begin, const part_iterator &end) const;
 };
 

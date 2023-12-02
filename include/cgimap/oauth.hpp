@@ -27,7 +27,7 @@ namespace oauth {
 struct secret_store {
   virtual std::optional<std::string> consumer_secret(const std::string &consumer_key) = 0;
   virtual std::optional<std::string> token_secret(const std::string &token_id) = 0;
-  virtual ~secret_store();
+  virtual ~secret_store() = default;
 };
 
 /**
@@ -45,7 +45,7 @@ struct secret_store {
 struct nonce_store {
   virtual bool use_nonce(const std::string &nonce,
                          uint64_t timestamp) = 0;
-  virtual ~nonce_store();
+  virtual ~nonce_store() = default;
 };
 
 /**
@@ -55,11 +55,10 @@ struct nonce_store {
 struct token_store {
   virtual bool allow_read_api(const std::string &token_id) = 0;
   virtual bool allow_write_api(const std::string &token_id) = 0;
-  virtual std::optional<osm_user_id_t> get_user_id_for_token(
-    const std::string &token_id) = 0;
+  virtual std::optional<osm_user_id_t> get_user_id_for_token(const std::string &token_id) = 0;
   virtual std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t) = 0;
   virtual std::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) = 0;
-  virtual ~token_store();
+  virtual ~token_store() = default;
 };
 
 /**
@@ -67,7 +66,7 @@ struct token_store {
  */
 struct store
   : public secret_store, public nonce_store, public token_store {
-  ~store() override;
+  ~store() override = default;
 
   store() = default;
 

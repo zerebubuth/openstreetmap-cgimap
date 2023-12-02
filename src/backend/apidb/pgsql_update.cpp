@@ -111,8 +111,6 @@ pgsql_update::pgsql_update(
      )");
 }
 
-pgsql_update::~pgsql_update() = default;
-
 bool pgsql_update::is_api_write_disabled() const {
   return m_readonly;
 }
@@ -164,9 +162,9 @@ uint32_t pgsql_update::get_rate_limit(osm_user_id_t uid)
 
 
 pgsql_update::factory::factory(const po::variables_map &opts)
-    : m_connection(connect_db_str(opts)), m_api_write_disabled(false)
-      ,m_errorhandler(m_connection)
- {
+  : m_connection(connect_db_str(opts)), 
+    m_api_write_disabled(false),
+    m_errorhandler(m_connection) {
 
   check_postgres_version(m_connection);
 
@@ -187,8 +185,6 @@ pgsql_update::factory::factory(const po::variables_map &opts)
 #endif
   }
 }
-
-pgsql_update::factory::~factory() = default;
 
 std::unique_ptr<data_update>
 pgsql_update::factory::make_data_update(Transaction_Owner_Base& to) {

@@ -115,8 +115,6 @@ oauth_store::oauth_store(const po::variables_map &opts)
   // clang-format on
 }
 
-oauth_store::~oauth_store() = default;
-
 std::optional<std::string>
 oauth_store::consumer_secret(const std::string &consumer_key) {
   pqxx::work w(m_connection, "oauth_get_consumer_secret_for_key");

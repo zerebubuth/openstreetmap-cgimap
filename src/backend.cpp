@@ -42,7 +42,7 @@ po::variables_map first_pass_argments(int argc, char *argv[],
 }
 
 struct registry {
-  registry();
+  registry() = default;
 
   bool add(std::unique_ptr<backend> ptr);
   void setup_options(int argc, char *argv[], po::options_description &desc);
@@ -56,8 +56,6 @@ private:
   backend_map_t backends;
   std::optional<std::string> default_backend;
 };
-
-registry::registry() = default;
 
 bool registry::add(std::unique_ptr<backend> ptr) {
   if (default_backend) {

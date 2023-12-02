@@ -24,11 +24,10 @@
 
 namespace {
 
-class basicauth_test_data_selection
-  : public data_selection {
+class basicauth_test_data_selection : public data_selection {
 public:
 
-  virtual ~basicauth_test_data_selection() = default;
+  ~basicauth_test_data_selection() override = default;
 
   void write_nodes(output_formatter &formatter) override {}
   void write_ways(output_formatter &formatter) override {}
@@ -90,8 +89,7 @@ public:
   void set_redactions_visible(bool) override {}
   int select_historical_by_changesets(const std::vector<osm_changeset_id_t> &) override { return 0; }
 
-  struct factory
-    : public data_selection::factory {
+  struct factory : public data_selection::factory {
     ~factory() override = default;
     std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) const override {
       return std::make_unique<basicauth_test_data_selection>();
