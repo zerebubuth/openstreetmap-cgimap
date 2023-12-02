@@ -9,16 +9,13 @@
 
 #include "cgimap/handler.hpp"
 
+#include <algorithm>
+
 responder::responder(mime::type mt) : mime_type(mt) {}
 
 bool responder::is_available(mime::type mt) const {
   std::list<mime::type> types = types_available();
-  for (auto & itr : types) {
-    if (itr == mt) {
-      return true;
-    }
-  }
-  return false;
+  return std::find(types.begin(), types.end(), mt) != types.end(); // Replace with std::ranges::contains in C++23
 }
 
 mime::type responder::resource_type() const { return mime_type; }
