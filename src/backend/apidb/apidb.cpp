@@ -23,7 +23,7 @@ using std::string;
 
 namespace {
 struct apidb_backend : public backend {
-  apidb_backend() : m_name("apidb"), m_options("ApiDB backend options") {
+  apidb_backend() {
     // clang-format off
     m_options.add_options()
       ("dbname", po::value<string>()->required(), "database name")
@@ -68,25 +68,20 @@ struct apidb_backend : public backend {
   const po::options_description &options() const override { return m_options; }
 
   std::unique_ptr<data_selection::factory> create(const po::variables_map &opts) override {
-
     return std::make_unique<readonly_pgsql_selection::factory>(opts);
   }
 
   std::unique_ptr<data_update::factory> create_data_update(const po::variables_map &opts) override {
-
     return std::make_unique<pgsql_update::factory>(opts);
   }
 
-
-  std::unique_ptr<oauth::store> create_oauth_store(
-    const po::variables_map &opts) override {
-
+  std::unique_ptr<oauth::store> create_oauth_store(const po::variables_map &opts) override {
     return std::make_unique<oauth_store>(opts);
   }
 
 private:
-  string m_name;
-  po::options_description m_options;
+  string m_name{"apidb"};
+  po::options_description m_options{"ApiDB backend options"};
 };
 }
 

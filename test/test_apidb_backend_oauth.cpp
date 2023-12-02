@@ -81,7 +81,7 @@ template <> struct fmt::formatter<roles_t> {
     ostr << r;
     return format_to(ctx.out(), "{}", ostr.str());
   }
-  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+  constexpr auto parse(const format_parse_context& ctx) const { return ctx.begin(); }
 };
 
 namespace {
