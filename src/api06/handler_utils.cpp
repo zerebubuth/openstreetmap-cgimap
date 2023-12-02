@@ -11,9 +11,11 @@
 
 #include "cgimap/http.hpp"
 #include "cgimap/request_helpers.hpp"
+
 #include <algorithm>
 #include <map>
 #include <vector>
+#include <string_view>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
@@ -70,13 +72,13 @@ struct id_version_list_parser
 
 namespace api06 {
 
-bool valid_string(const std::string& str)
+bool valid_string(std::string_view str)
 {
   // check if character is representable as an unsigned char
   // see https://www.boost.org/doc/libs/1_77_0/boost/spirit/home/support/char_encoding/standard.hpp
 
   return std::all_of(str.begin(), str.end(),
-		     [](char c){ return c >= 0 && c <= UCHAR_MAX; });
+		     [](auto c){ return c >= 0 && c <= UCHAR_MAX; });
 }
 
 vector<id_version> parse_id_list_params(const request &req, std::string_view param_name) {
