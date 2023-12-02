@@ -30,7 +30,7 @@ void node_responder::check_visibility(osm_nwr_id_t id) {
   }
 }
 
-node_handler::node_handler(request &, osm_nwr_id_t id) : id(id) {}
+node_handler::node_handler(const request &, osm_nwr_id_t id) : id(id) {}
 
 std::string node_handler::log_name() const { return "node"; }
 

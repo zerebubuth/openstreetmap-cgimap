@@ -21,7 +21,7 @@ relation_version_responder::relation_version_responder(mime::type mt, osm_nwr_id
   }
 }
 
-relation_version_handler::relation_version_handler(request &, osm_nwr_id_t id, osm_version_t v) : id(id), v(v) {}
+relation_version_handler::relation_version_handler(const request &, osm_nwr_id_t id, osm_version_t v) : id(id), v(v) {}
 
 std::string relation_version_handler::log_name() const { return "relation"; }
 

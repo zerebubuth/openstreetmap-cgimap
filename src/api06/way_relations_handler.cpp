@@ -27,7 +27,7 @@ bool way_relations_responder::is_visible(osm_nwr_id_t id) {
 }
 
 
-way_relations_handler::way_relations_handler(request &, osm_nwr_id_t id) : id(id) {}
+way_relations_handler::way_relations_handler(const request &, osm_nwr_id_t id) : id(id) {}
 
 std::string way_relations_handler::log_name() const { return "way/relations"; }
 

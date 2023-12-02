@@ -30,7 +30,7 @@ class osm_responder : public responder {
 public:
   // construct, passing the mime type down to the responder.
   // optional bounds are stored at this level, but available to derived classes.
-  osm_responder(mime::type,
+  explicit osm_responder(mime::type,
                 std::optional<bbox> bounds = {});
 
   ~osm_responder() override = default;

@@ -48,7 +48,7 @@ nodes_responder::nodes_responder(mime::type mt, const vector<id_version> &ids,
   }
 }
 
-nodes_handler::nodes_handler(request &req) : ids(validate_request(req)) {}
+nodes_handler::nodes_handler(const request &req) : ids(validate_request(req)) {}
 
 std::string nodes_handler::log_name() const {
   stringstream msg;
@@ -66,7 +66,7 @@ responder_ptr_t nodes_handler::responder(data_selection &x) const {
  * Validates an FCGI request, returning the valid list of ids or
  * throwing an error if there was no valid list of node ids.
  */
-vector<id_version> nodes_handler::validate_request(request &req) {
+vector<id_version> nodes_handler::validate_request(const request &req) {
   vector<id_version> ids = parse_id_list_params(req, "nodes");
 
   if (ids.empty()) {

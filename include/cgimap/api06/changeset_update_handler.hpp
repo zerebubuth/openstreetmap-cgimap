@@ -39,7 +39,7 @@ private:
 
 class changeset_update_handler : public payload_enabled_handler {
 public:
-  changeset_update_handler(request &req, osm_changeset_id_t id);
+  changeset_update_handler(const request &req, osm_changeset_id_t id);
 
   std::string log_name() const override;
   responder_ptr_t responder(data_selection &x) const override;

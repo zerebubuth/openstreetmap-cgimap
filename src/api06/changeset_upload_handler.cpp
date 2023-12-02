@@ -74,7 +74,7 @@ changeset_upload_responder::changeset_upload_responder(
   upd.commit();
 }
 
-changeset_upload_handler::changeset_upload_handler(request &,
+changeset_upload_handler::changeset_upload_handler(const request &,
                                                    osm_changeset_id_t id)
     : payload_enabled_handler(mime::unspecified_type,
                               http::method::POST | http::method::OPTIONS),

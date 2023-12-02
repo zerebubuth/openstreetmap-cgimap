@@ -27,8 +27,6 @@ zlib_output_buffer::zlib_output_buffer(output_buffer& o,
   case gzip:
     windowBits = 15 + 16;
     break;
-  default:
-    throw;
   }
 
   stream.zalloc = Z_NULL;

@@ -16,7 +16,7 @@
 
 using std::string;
 
-string fcgi_get_env(request &req, const char *name, const char *default_value) {
+string fcgi_get_env(const request &req, const char *name, const char *default_value) {
   assert(name);
   const char *v = req.get_param(name);
 
@@ -33,7 +33,7 @@ string fcgi_get_env(request &req, const char *name, const char *default_value) {
   return string(v);
 }
 
-string get_query_string(request &req) {
+string get_query_string(const request &req) {
   // try the query string that's supposed to be present first
   const char *query_string = req.get_param("QUERY_STRING");
 
@@ -62,7 +62,7 @@ string get_query_string(request &req) {
   }
 }
 
-std::string get_request_path(request &req) {
+std::string get_request_path(const request &req) {
   const char *request_uri = req.get_param("REQUEST_URI");
 
   if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
@@ -89,7 +89,7 @@ std::string get_request_path(request &req) {
 /**
  * get encoding to use for response.
  */
-std::unique_ptr<http::encoding> get_encoding(request &req) {
+std::unique_ptr<http::encoding> get_encoding(const request &req) {
   const char *accept_encoding = req.get_param("HTTP_ACCEPT_ENCODING");
 
   if (accept_encoding) {
@@ -128,7 +128,7 @@ public:
 
   ~fcgi_output_buffer() override = default;
 
-  fcgi_output_buffer(request &req) : r(req) {}
+  explicit fcgi_output_buffer(request &req) : r(req) {}
 
 private:
   request &r;

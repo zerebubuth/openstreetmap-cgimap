@@ -80,7 +80,7 @@ responder_ptr_t map_handler::responder(data_selection &x) const {
  * Validates an FCGI request, returning the valid bounding box or
  * throwing an error if there was no valid bounding box.
  */
-bbox map_handler::validate_request(request &req) {
+bbox map_handler::validate_request(const request &req) {
   string decoded = http::urldecode(get_query_string(req));
   const auto params = http::parse_params(decoded);
   auto itr =

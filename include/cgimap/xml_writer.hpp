@@ -29,10 +29,10 @@ public:
 
   // create a new XML writer writing to file_name, which can be
   // "-" for stdout.
-  xml_writer(const std::string &file_name, bool indent = false);
+  explicit xml_writer(const std::string &file_name, bool indent = false);
 
   // create a new XML writer using writer callback functions
-  xml_writer(output_buffer &out, bool indent = false);
+  explicit xml_writer(output_buffer &out, bool indent = false);
 
   // closes and flushes the XML writer
   ~xml_writer() noexcept override;

@@ -27,7 +27,7 @@ private:
 
 class node_relations_handler : public handler {
 public:
-  node_relations_handler(request &req, osm_nwr_id_t id);
+  node_relations_handler(const request &req, osm_nwr_id_t id);
 
   std::string log_name() const override;
   responder_ptr_t responder(data_selection &x) const override;

@@ -79,7 +79,7 @@ bool valid_string(const std::string& str)
 		     [](char c){ return c >= 0 && c <= UCHAR_MAX; });
 }
 
-vector<id_version> parse_id_list_params(request &req, std::string_view param_name) {
+vector<id_version> parse_id_list_params(const request &req, std::string_view param_name) {
 
   string decoded = http::urldecode(get_query_string(req));
   const vector<pair<string, string> > params = http::parse_params(decoded);

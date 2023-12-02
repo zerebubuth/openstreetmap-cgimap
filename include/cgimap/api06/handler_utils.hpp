@@ -18,7 +18,7 @@
 
 namespace api06 {
 
-std::vector<id_version> parse_id_list_params(request &req,
+std::vector<id_version> parse_id_list_params(const request &req,
                                              std::string_view param_name);
 }
 

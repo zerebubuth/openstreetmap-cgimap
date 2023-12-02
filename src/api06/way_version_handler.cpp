@@ -22,7 +22,7 @@ way_version_responder::way_version_responder(mime::type mt, osm_nwr_id_t id, osm
   }
 }
 
-way_version_handler::way_version_handler(request &, osm_nwr_id_t id, osm_version_t v) : id(id), v(v) {}
+way_version_handler::way_version_handler(const request &, osm_nwr_id_t id, osm_version_t v) : id(id), v(v) {}
 
 std::string way_version_handler::log_name() const { return "way"; }
 

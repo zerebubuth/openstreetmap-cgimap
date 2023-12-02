@@ -34,7 +34,7 @@ changeset_close_responder::changeset_close_responder(
 }
 
 
-changeset_close_handler::changeset_close_handler(request &,
+changeset_close_handler::changeset_close_handler(const request &,
                                                    osm_changeset_id_t id)
     : payload_enabled_handler(mime::text_plain,
                               http::method::PUT | http::method::OPTIONS),

@@ -20,7 +20,7 @@ relation_history_responder::relation_history_responder(mime::type mt, osm_nwr_id
   }
 }
 
-relation_history_handler::relation_history_handler(request &, osm_nwr_id_t id) : id(id) {}
+relation_history_handler::relation_history_handler(const request &, osm_nwr_id_t id) : id(id) {}
 
 std::string relation_history_handler::log_name() const { return "relation/history"; }
 

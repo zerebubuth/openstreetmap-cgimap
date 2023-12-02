@@ -36,7 +36,7 @@ public:
   /**
    * Methods.
    */
-  memcached_rate_limiter(const boost::program_options::variables_map &options);
+  explicit memcached_rate_limiter(const boost::program_options::variables_map &options);
   ~memcached_rate_limiter() override;
   std::tuple<bool, int> check(const std::string &key, bool moderator) override;
   void update(const std::string &key, int bytes, bool moderator) override;

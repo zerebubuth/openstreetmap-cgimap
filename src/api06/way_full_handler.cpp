@@ -42,7 +42,7 @@ void way_full_responder::check_visibility(osm_nwr_id_t id) {
   }
 }
 
-way_full_handler::way_full_handler(request &, osm_nwr_id_t id) : id(id) {
+way_full_handler::way_full_handler(const request &, osm_nwr_id_t id) : id(id) {
   logger::message(
       fmt::format("starting way/full handler with id = {:d}", id));
 }

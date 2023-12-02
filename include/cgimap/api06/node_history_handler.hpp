@@ -23,7 +23,7 @@ public:
 
 class node_history_handler : public handler {
 public:
-  node_history_handler(request &, osm_nwr_id_t);
+  node_history_handler(const request &, osm_nwr_id_t);
 
   std::string log_name() const override;
   responder_ptr_t responder(data_selection &) const override;

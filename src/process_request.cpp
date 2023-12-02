@@ -170,7 +170,7 @@ void respond_error(const http::exception &e, request &r) {
  * Return a 405 error.
  */
 
-void process_not_allowed(request &req, handler& handler) {
+void process_not_allowed(request &req, const handler& handler) {
   req.status(405)
      .add_header("Allow", http::list_methods(handler.allowed_methods()))
      .add_header("Content-Type", "text/html")
@@ -241,7 +241,7 @@ std::size_t generate_response(request &req, responder &responder, const string &
  * process a GET request.
  */
 std::tuple<string, size_t>
-process_get_request(request &req, handler& handler,
+process_get_request(request &req, const handler& handler,
                     data_selection& selection,
                     const string &ip, const string &generator) {
   // request start logging
@@ -261,8 +261,8 @@ process_get_request(request &req, handler& handler,
  * process a POST/PUT request.
  */
 std::tuple<string, size_t>
-process_post_put_request(request &req, handler& handler,
-                    data_selection::factory& factory,
+process_post_put_request(request &req, const handler& handler,
+                    const data_selection::factory& factory,
                     data_update::factory& update_factory,
                     std::optional<osm_user_id_t> user_id,
                     const string &ip, const string &generator) {
@@ -274,7 +274,7 @@ process_post_put_request(request &req, handler& handler,
   logger::message(fmt::format("Started request for {} from {}", request_name, ip));
 
   try {
-    payload_enabled_handler& pe_handler = dynamic_cast< payload_enabled_handler& >(handler);
+    const auto & pe_handler = dynamic_cast< const payload_enabled_handler& >(handler);
 
     // Process request, perform database update
     {
@@ -324,7 +324,7 @@ process_post_put_request(request &req, handler& handler,
  * process a HEAD request.
  */
 std::tuple<string, size_t>
-process_head_request(request &req, handler& handler,
+process_head_request(request &req, const handler& handler,
                      data_selection& selection,
                      const string &ip) {
   // request start logging
@@ -364,7 +364,7 @@ process_head_request(request &req, handler& handler,
  * process an OPTIONS request.
  */
 std::tuple<string, size_t> process_options_request(
-  request &req, handler& handler) {
+  request &req, const handler& handler) {
 
   static const string request_name = "OPTIONS";
   const char *origin = req.get_param("HTTP_ORIGIN");
@@ -433,7 +433,7 @@ struct oauth_status_response  {
 
 // look in the request get parameters to see if the user requested that
 // redactions be shown
-bool show_redactions_requested(request &req) {
+bool show_redactions_requested(const request &req) {
   using params_t = std::vector<std::pair<std::string, std::string> >;
   std::string decoded = http::urldecode(get_query_string(req));
   const params_t params = http::parse_params(decoded);
@@ -447,7 +447,7 @@ bool show_redactions_requested(request &req) {
 
 
 // Determine user id and allow_api_write flag based on Basic Auth or OAuth header
-std::optional<osm_user_id_t> determine_user_id (request& req,
+std::optional<osm_user_id_t> determine_user_id (const request& req,
 			        data_selection& selection,
 			        oauth::store* store,
 			        bool& allow_api_write)
@@ -501,7 +501,7 @@ std::optional<osm_user_id_t> determine_user_id (request& req,
  * process a single request.
  */
 void process_request(request &req, rate_limiter &limiter,
-                     const string &generator, routes &route,
+                     const string &generator, const routes &route,
                      data_selection::factory& factory,
                      data_update::factory* update_factory,
                      oauth::store* store) {

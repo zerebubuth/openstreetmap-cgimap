@@ -125,7 +125,7 @@ namespace api06 {
 
     std::map<std::string, std::string> tags() const { return m_tags; }
 
-    void add_tag(std::string key, std::string value) {
+    void add_tag(const std::string &key, const std::string &value) {
 
       if (key.empty())
 	throw xml_error("Key may not be empty");

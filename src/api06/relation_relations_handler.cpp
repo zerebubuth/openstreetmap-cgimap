@@ -27,7 +27,7 @@ bool relation_relations_responder::is_visible(osm_nwr_id_t id) {
   return (!(sel.check_relation_visibility(id) == data_selection::deleted));
 }
 
-relation_relations_handler::relation_relations_handler(request &, osm_nwr_id_t id) : id(id) {}
+relation_relations_handler::relation_relations_handler(const request &, osm_nwr_id_t id) : id(id) {}
 
 std::string relation_relations_handler::log_name() const { return "relation/relations"; }
 

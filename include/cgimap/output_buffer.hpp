@@ -35,7 +35,7 @@ struct output_buffer {
 class identity_output_buffer : public output_buffer
 {
 public:
-    identity_output_buffer(output_buffer& o) : out(o) {}
+    explicit identity_output_buffer(output_buffer& o) : out(o) {}
 
     int write(const char *buffer, int len) override { return out.write(buffer, len); }
     int written() override { return out.written(); }

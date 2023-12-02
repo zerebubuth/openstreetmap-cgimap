@@ -27,7 +27,7 @@ private:
 
 class way_full_handler : public handler {
 public:
-  way_full_handler(request &req, osm_nwr_id_t id);
+  way_full_handler(const request &req, osm_nwr_id_t id);
 
   std::string log_name() const override;
   responder_ptr_t responder(data_selection &x) const override;

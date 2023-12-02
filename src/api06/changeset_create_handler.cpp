@@ -39,7 +39,7 @@ changeset_create_responder::changeset_create_responder(
   upd.commit();
 }
 
-changeset_create_handler::changeset_create_handler(request &)
+changeset_create_handler::changeset_create_handler(const request &)
     : payload_enabled_handler(mime::text_plain,
                               http::method::PUT | http::method::OPTIONS) {}
 

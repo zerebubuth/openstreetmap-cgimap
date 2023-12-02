@@ -20,7 +20,7 @@ node_history_responder::node_history_responder(mime::type mt, osm_nwr_id_t id, d
   }
 }
 
-node_history_handler::node_history_handler(request &, osm_nwr_id_t id) : id(id) {}
+node_history_handler::node_history_handler(const request &, osm_nwr_id_t id) : id(id) {}
 
 std::string node_history_handler::log_name() const { return "node/history"; }
 

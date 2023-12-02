@@ -24,7 +24,7 @@ private:
   void write_common(const element_info &elem);
 
 public:
-  text_formatter(std::unique_ptr<text_writer> w);
+  explicit text_formatter(std::unique_ptr<text_writer> w);
   ~text_formatter() override = default;
 
   mime::type mime_type() const override;

@@ -88,12 +88,11 @@ public:
   template<typename... Args>
   pqxx::result exec_prepared(const std::string &statement, Args&&... args) {
 
-    auto start = std::chrono::steady_clock::now();
-    pqxx::result res = m_txn.exec_prepared(statement, std::forward<Args>(args)...);
+    const auto start = std::chrono::steady_clock::now();
+    auto res(m_txn.exec_prepared(statement, std::forward<Args>(args)...));
+    const auto end = std::chrono::steady_clock::now();
 
-    auto end = std::chrono::steady_clock::now();
-
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
     logger::message(fmt::format("Executed prepared statement {} in {:d} ms, returning {:d} rows, {:d} affected rows",
                                statement,

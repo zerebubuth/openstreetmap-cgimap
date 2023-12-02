@@ -30,7 +30,7 @@ void way_responder::check_visibility(osm_nwr_id_t id) {
   }
 }
 
-way_handler::way_handler(request &, osm_nwr_id_t id) : id(id) {}
+way_handler::way_handler(const request &, osm_nwr_id_t id) : id(id) {}
 
 std::string way_handler::log_name() const { return "way"; }
 

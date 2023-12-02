@@ -145,7 +145,6 @@ int fcgi_request::accept_r() {
   int status = FCGX_Accept_r(&m_impl->req);
   if (status < 0) {
     if (errno != EINTR) {
-      char err_buf[1024];
       std::ostringstream out;
 
       if (errno == ENOTSOCK) {
@@ -153,6 +152,7 @@ int fcgi_request::accept_r() {
                "--socket option (caused by ENOTSOCK).";
 
       } else {
+        char err_buf[1024];
         out << "error accepting request: ";
         if (strerror_r(errno, err_buf, sizeof err_buf) == 0) {
           out << err_buf;
