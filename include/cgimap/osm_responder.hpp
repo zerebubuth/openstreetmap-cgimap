@@ -36,7 +36,7 @@ public:
 
   // lists the standard types that OSM format can respond in, currently XML and,
   // if the yajl library is provided, JSON.
-  std::list<mime::type> types_available() const override;
+  std::vector<mime::type> types_available() const override;
 
   // quick hack to add headers to the response
   std::string extra_response_headers() const override;

@@ -18,7 +18,7 @@
 #include "cgimap/http.hpp"
 
 #include <chrono>
-#include <list>
+#include <vector>
 #include <set>
 #include <string>
 #include <memory>
@@ -38,7 +38,7 @@ public:
 
   mime::type resource_type() const;
 
-  virtual std::list<mime::type> types_available() const = 0; // TODO: change to vector
+  virtual std::vector<mime::type> types_available() const = 0;
   bool is_available(mime::type) const;
 
   // quick hack to get "extra" response headers.

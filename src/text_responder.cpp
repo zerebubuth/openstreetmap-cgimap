@@ -10,13 +10,11 @@
 #include "cgimap/text_responder.hpp"
 #include "cgimap/config.hpp"
 
-using std::list;
-
 text_responder::text_responder(mime::type mt)
     : responder(mt) {}
 
-list<mime::type> text_responder::types_available() const {
-  list<mime::type> types;
+std::vector<mime::type> text_responder::types_available() const {
+  std::vector<mime::type> types;
   types.push_back(mime::text_plain);
   return types;
 }
@@ -30,8 +28,8 @@ std::string text_responder::extra_response_headers() const {
 }
 
 void text_responder::write(output_formatter& fmt,
-                     const std::string &generator,
-                     const std::chrono::system_clock::time_point &now)
+                           const std::string &generator,
+                           const std::chrono::system_clock::time_point &now)
 {
   fmt.error(output_text);
 }

@@ -13,8 +13,8 @@
 osm_responder::osm_responder(mime::type mt, std::optional<bbox> b)
     : responder(mt), bounds(b) {}
 
-std::list<mime::type> osm_responder::types_available() const {
-  std::list<mime::type> types;
+std::vector<mime::type> osm_responder::types_available() const {
+  std::vector<mime::type> types;
   types.push_back(mime::application_xml);
 #if HAVE_YAJL
   types.push_back(mime::application_json);

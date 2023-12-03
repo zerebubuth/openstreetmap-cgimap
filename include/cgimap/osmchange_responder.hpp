@@ -26,7 +26,7 @@ public:
 
   // lists the standard types that OSM format can respond in, currently only XML,
   // as the osmChange format is undefined for JSON
-  std::list<mime::type> types_available() const override;
+  std::vector<mime::type> types_available() const override;
 
   // takes the stuff in the tmp_nodes/ways/relations tables and sorts them by
   // timestamp, then wraps them in <create>/<modify>/<delete> to create an

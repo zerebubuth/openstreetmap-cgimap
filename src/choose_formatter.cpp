@@ -43,11 +43,9 @@
 
 using std::list;
 using std::map;
-using std::numeric_limits;
 using std::make_pair;
 
 using std::string;
-using std::vector;
 using std::pair;
 
 
@@ -58,7 +56,7 @@ public:
   explicit acceptable_types(const std::string &accept_header);
   bool is_acceptable(mime::type) const;
   // note: returns mime::unspecified_type if none were acceptable
-  mime::type most_acceptable_of(const list<mime::type> &available) const;
+  mime::type most_acceptable_of(const std::vector<mime::type> &available) const;
 
 private:
   map<mime::type, float> mapping;
@@ -86,7 +84,7 @@ namespace ascii = boost::spirit::ascii;
 
 template <typename iterator>
 struct http_accept_grammar
-    : qi::grammar<iterator, vector<media_range>(), ascii::blank_type> {
+    : qi::grammar<iterator, std::vector<media_range>(), ascii::blank_type> {
   http_accept_grammar() : http_accept_grammar::base_type(start) {
     using qi::lit;
     using qi::char_;
@@ -120,7 +118,7 @@ struct http_accept_grammar
   qi::rule<iterator, string()> token, quoted_string, mime_type;
   qi::rule<iterator, pair<string, string>(), ascii::blank_type> param;
   qi::rule<iterator, media_range(), ascii::blank_type> range;
-  qi::rule<iterator, vector<media_range>(), ascii::blank_type> start;
+  qi::rule<iterator, std::vector<media_range>(), ascii::blank_type> start;
 };
 /*
       = lit("* / *")      [_val = mime::any_type]
@@ -137,7 +135,7 @@ acceptable_types::acceptable_types(const std::string &accept_header) {
   using iterator_type = std::string::const_iterator;
   using grammar = http_accept_grammar<iterator_type>;
 
-  vector<media_range> ranges;
+  std::vector<media_range> ranges;
   grammar g;
   iterator_type itr = accept_header.begin();
   iterator_type end = accept_header.end();
@@ -176,10 +174,9 @@ bool acceptable_types::is_acceptable(mime::type mt) const {
   return mapping.find(mt) != mapping.end();
 }
 
-mime::type
-acceptable_types::most_acceptable_of(const list<mime::type> &available) const {
+mime::type acceptable_types::most_acceptable_of(const std::vector<mime::type> &available) const {
   mime::type best = mime::unspecified_type;
-  float score = numeric_limits<float>::min();
+  float score = std::numeric_limits<float>::min();
   for (mime::type type : available) {
     auto itr = mapping.find(type);
     if ((itr != mapping.end()) && (itr->second > score)) {
@@ -211,7 +208,7 @@ acceptable_types header_mime_type(const request &req) {
   return acceptable_types(accept_header);
 }
 
-std::string mime_types_to_string(const std::list<mime::type> &mime_types)
+std::string mime_types_to_string(const std::vector<mime::type> &mime_types)
 {
   std::string result;
 
@@ -229,7 +226,7 @@ std::string mime_types_to_string(const std::list<mime::type> &mime_types)
 mime::type choose_best_mime_type(const request &req, const responder& hptr) {
   // figure out what, if any, the Accept-able resource mime types are
   acceptable_types types = header_mime_type(req);
-  const list<mime::type> types_available = hptr.types_available();
+  const std::vector<mime::type> types_available = hptr.types_available();
 
   mime::type best_type = hptr.resource_type();
   // check if the handler is capable of supporting an acceptable set of mime
@@ -238,12 +235,12 @@ mime::type choose_best_mime_type(const request &req, const responder& hptr) {
     // check that this doesn't conflict with anything in the Accept header.
     if (!hptr.is_available(best_type))
       throw http::not_acceptable(fmt::format("Acceptable formats for {} are: {}",
-                                get_request_path(req),
-				mime_types_to_string(types_available)));
+                                 get_request_path(req),
+                                 mime_types_to_string(types_available)));
     else if (!types.is_acceptable(best_type))
       throw http::not_acceptable(fmt::format("Acceptable formats for {} are: {}",
-				get_request_path(req),
-				mime_types_to_string({best_type})));
+                                 get_request_path(req),
+                                 mime_types_to_string({best_type})));
   } else {
     best_type = types.most_acceptable_of(types_available);
     // if none were acceptable then...
