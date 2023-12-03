@@ -11,7 +11,6 @@
 #define OSMCHANGE_TRACKING_HPP
 
 #include <map>
-#include <set>
 #include <string>
 #include <vector>
 

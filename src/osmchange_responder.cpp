@@ -228,7 +228,7 @@ osmchange_responder::osmchange_responder(mime::type mt, data_selection &s)
 }
 
 list<mime::type> osmchange_responder::types_available() const {
-  list<mime::type> types;
+  list<mime::type> types; // TODO: don't reconstruct on every call
   types.push_back(mime::application_xml);
   return types;
 }

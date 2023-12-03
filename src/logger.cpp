@@ -16,25 +16,18 @@
 #include <memory>
 
 #include "cgimap/logger.hpp"
-#include <fmt/core.h>
-
-using std::string;
-using std::ostream;
-using std::ofstream;
-
-
 
 namespace logger {
 
-static std::unique_ptr<ostream> stream;
+static std::unique_ptr<std::ostream> stream;
 static pid_t pid;
 
-void initialise(const string &filename) {
-  stream = std::make_unique<ofstream>(filename.c_str(), std::ios_base::out | std::ios_base::app);
+void initialise(const std::string &filename) {
+  stream = std::make_unique<std::ofstream>(filename.c_str(), std::ios_base::out | std::ios_base::app);
   pid = getpid();
 }
 
-void message(const string &m) {
+void message(const std::string &m) {
   if (stream) {
     time_t now = time(0);
     *stream << "[" << std::put_time( std::gmtime( &now ), "%FT%T") << " #" << pid << "] " << m

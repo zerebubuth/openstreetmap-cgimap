@@ -13,12 +13,14 @@
 #include <string>
 #include "cgimap/request.hpp"
 #include "cgimap/http.hpp"
+#include <memory>
 
 /**
  * Lookup a string from the request environment. Throws 500 error if the
  * string isn't there and no default value is given.
  */
-std::string fcgi_get_env(const request &req, const char *name,
+std::string fcgi_get_env(const request &req, 
+                         const char *name,
                          const char *default_value = nullptr);
 
 /**

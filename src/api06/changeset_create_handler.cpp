@@ -22,11 +22,15 @@
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
 
+#include <string>
+#include <optional>
+
 namespace api06 {
 
-changeset_create_responder::changeset_create_responder(
-    mime::type mt, data_update & upd, const std::string &payload,
-    std::optional<osm_user_id_t> user_id)
+changeset_create_responder::changeset_create_responder(mime::type mt, 
+                                                       data_update & upd, 
+                                                       const std::string &payload,
+                                                       std::optional<osm_user_id_t> user_id)
     : text_responder(mt) {
 
   osm_changeset_id_t changeset = 0;
@@ -49,12 +53,12 @@ std::string changeset_create_handler::log_name() const {
 
 responder_ptr_t
 changeset_create_handler::responder(data_selection &) const {
-  throw http::server_error(
-      "changeset_create_handler: data_selection unsupported");
+  throw http::server_error("changeset_create_handler: data_selection unsupported");
 }
 
-responder_ptr_t changeset_create_handler::responder(
-    data_update & upd, const std::string &payload, std::optional<osm_user_id_t> user_id) const {
+responder_ptr_t changeset_create_handler::responder(data_update & upd, 
+                                                    const std::string &payload, 
+                                                    std::optional<osm_user_id_t> user_id) const {
   return std::make_unique<changeset_create_responder>(mime_type, upd, payload, user_id);
 }
 

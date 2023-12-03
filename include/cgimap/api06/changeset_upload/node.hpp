@@ -10,7 +10,7 @@
 #ifndef NODE_HPP
 #define NODE_HPP
 
-#include "osmobject.hpp"
+#include "cgimap/api06/changeset_upload/osmobject.hpp"
 
 #include <iostream>
 #include <optional>

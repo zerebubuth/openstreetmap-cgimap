@@ -12,7 +12,10 @@
 
 namespace api06 {
 
-node_version_responder::node_version_responder(mime::type mt, osm_nwr_id_t id, osm_version_t v, data_selection &w)
+node_version_responder::node_version_responder(mime::type mt, 
+                                               osm_nwr_id_t id, 
+                                               osm_version_t v, 
+                                               data_selection &w)
     : osm_current_responder(mt, w) {
 
   if (sel.select_historical_nodes({std::make_pair(id, v)}) == 0) {
@@ -20,7 +23,8 @@ node_version_responder::node_version_responder(mime::type mt, osm_nwr_id_t id, o
   }
 }
 
-node_version_handler::node_version_handler(const request &, osm_nwr_id_t id, osm_version_t v) : id(id), v(v) {}
+node_version_handler::node_version_handler(const request &, osm_nwr_id_t id, osm_version_t v) : 
+  id(id), v(v) {}
 
 std::string node_version_handler::log_name() const { return "node"; }
 

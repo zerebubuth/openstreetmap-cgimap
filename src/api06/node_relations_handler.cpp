@@ -12,8 +12,9 @@
 
 namespace api06 {
 
-node_relations_responder::node_relations_responder(mime::type mt, osm_nwr_id_t id,
-                                         data_selection &w)
+node_relations_responder::node_relations_responder(mime::type mt, 
+                                                   osm_nwr_id_t id,
+                                                   data_selection &w)
     : osm_current_responder(mt, w) {
 
   if (sel.select_nodes({id}) > 0 && is_visible(id)) {

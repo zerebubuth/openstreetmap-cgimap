@@ -12,7 +12,8 @@
 
 namespace api06 {
 
-node_ways_responder::node_ways_responder(mime::type mt, osm_nwr_id_t id,
+node_ways_responder::node_ways_responder(mime::type mt, 
+                                         osm_nwr_id_t id,
                                          data_selection &w)
     : osm_current_responder(mt, w) {
 

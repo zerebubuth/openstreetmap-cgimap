@@ -26,7 +26,6 @@
 
 #include <boost/algorithm/string.hpp>
 
-
 #include "cgimap/basicauth.hpp"
 #include "cgimap/options.hpp"
 
@@ -34,8 +33,8 @@
 using namespace CryptoPP;
 
 bool PasswordHash::check(const std::string& pass_crypt,
-			 const std::string& pass_salt,
-			 const std::string& candidate) {
+                         const std::string& pass_salt,
+                         const std::string& candidate) {
 
   std::string hashed_candidate;
 

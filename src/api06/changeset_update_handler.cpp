@@ -24,6 +24,8 @@
 
 #include <sstream>
 
+#include <fmt/core.h>
+
 
 namespace api06 {
 
@@ -69,8 +71,9 @@ changeset_update_handler::responder(data_selection &sel) const {
   return std::make_unique<changeset_update_sel_responder>(mime_type, sel, id);
 }
 
-responder_ptr_t changeset_update_handler::responder(
-    data_update & upd, const std::string &payload, std::optional<osm_user_id_t> user_id) const {
+responder_ptr_t changeset_update_handler::responder(data_update & upd, 
+                                                    const std::string &payload, 
+                                                    std::optional<osm_user_id_t> user_id) const {
   return std::make_unique<changeset_update_responder>(mime_type, upd, id, payload, user_id);
 }
 

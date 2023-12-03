@@ -22,17 +22,17 @@ namespace api06 {
 class changeset_update_responder : public text_responder {
 public:
   changeset_update_responder(mime::type,
-			     data_update &,
-			     osm_changeset_id_t id_,
+                             data_update &,
+                             osm_changeset_id_t id_,
                              const std::string & payload,
-			     std::optional<osm_user_id_t> user_id);
+                             std::optional<osm_user_id_t> user_id);
 };
 
 class changeset_update_sel_responder : public osm_current_responder {
 public:
   changeset_update_sel_responder(mime::type,
-			     data_selection & sel,
-			     osm_changeset_id_t id_);
+                                 data_selection & sel,
+                                 osm_changeset_id_t id_);
 private:
   data_selection& sel;
 };
@@ -45,7 +45,7 @@ public:
   responder_ptr_t responder(data_selection &x) const override;
 
   responder_ptr_t responder(data_update &,
-			    const std::string &payload,
+                            const std::string &payload,
                             std::optional<osm_user_id_t> user_id) const override;
   bool requires_selection_after_update() const override;
 

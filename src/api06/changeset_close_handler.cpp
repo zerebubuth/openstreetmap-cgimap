@@ -21,11 +21,19 @@
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
 
+#include <fmt/core.h>
+
+#include <string>
+#include <memory>
+#include <optional>
+
 namespace api06 {
 
-changeset_close_responder::changeset_close_responder(
-    mime::type mt, data_update & upd, osm_changeset_id_t changeset, const std::string &,
-    std::optional<osm_user_id_t> user_id)
+changeset_close_responder::changeset_close_responder(mime::type mt, 
+                                                     data_update & upd, 
+                                                     osm_changeset_id_t changeset, 
+                                                     const std::string &, 
+                                                     std::optional<osm_user_id_t> user_id)
     : text_responder(mt) {
 
   auto changeset_updater = upd.get_changeset_updater(changeset, *user_id);
@@ -35,7 +43,7 @@ changeset_close_responder::changeset_close_responder(
 
 
 changeset_close_handler::changeset_close_handler(const request &,
-                                                   osm_changeset_id_t id)
+                                                 osm_changeset_id_t id)
     : payload_enabled_handler(mime::text_plain,
                               http::method::PUT | http::method::OPTIONS),
       id(id) {}
@@ -45,14 +53,13 @@ std::string changeset_close_handler::log_name() const {
   return (fmt::format("changeset/close {:d}", id));
 }
 
-responder_ptr_t
-changeset_close_handler::responder(data_selection &) const {
-  throw http::server_error(
-      "changeset_close_handler: data_selection unsupported");
+responder_ptr_t changeset_close_handler::responder(data_selection &) const {
+  throw http::server_error("changeset_close_handler: data_selection unsupported");
 }
 
-responder_ptr_t changeset_close_handler::responder(
-    data_update & upd, const std::string &payload, std::optional<osm_user_id_t> user_id) const {
+responder_ptr_t changeset_close_handler::responder(data_update & upd, 
+                                                   const std::string &payload, 
+                                                   std::optional<osm_user_id_t> user_id) const {
   return std::make_unique<changeset_close_responder>(mime_type, upd, id, payload, user_id);
 }
 

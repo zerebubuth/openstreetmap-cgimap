@@ -15,6 +15,9 @@
 #include "cgimap/data_selection.hpp"
 
 #include <sstream>
+#include <string>
+#include <chrono>
+#include <list>
 
 /**
  * utility class - use this as a base class when the derived class is going to

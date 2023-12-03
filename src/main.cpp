@@ -58,7 +58,6 @@ using std::map;
 using std::ostringstream;
 
 
-namespace al = boost::algorithm;
 namespace po = boost::program_options;
 
 /**

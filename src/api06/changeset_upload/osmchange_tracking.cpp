@@ -12,6 +12,8 @@
 
 #include <fmt/core.h>
 
+#include <set>
+
 namespace api06 {
 
   std::vector<diffresult_t> OSMChange_Tracking::assemble_diffresult() {

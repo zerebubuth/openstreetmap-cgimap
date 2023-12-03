@@ -10,13 +10,13 @@
 #include "cgimap/api06/way_full_handler.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
-#include <fmt/core.h>
 
-using std::vector;
+#include <fmt/core.h>
 
 namespace api06 {
 
-way_full_responder::way_full_responder(mime::type mt, osm_nwr_id_t id,
+way_full_responder::way_full_responder(mime::type mt, 
+                                       osm_nwr_id_t id,
                                        data_selection &w)
     : osm_current_responder(mt, w) {
 
@@ -43,8 +43,7 @@ void way_full_responder::check_visibility(osm_nwr_id_t id) {
 }
 
 way_full_handler::way_full_handler(const request &, osm_nwr_id_t id) : id(id) {
-  logger::message(
-      fmt::format("starting way/full handler with id = {:d}", id));
+  logger::message(fmt::format("starting way/full handler with id = {:d}", id));
 }
 
 std::string way_full_handler::log_name() const { return "way/full"; }

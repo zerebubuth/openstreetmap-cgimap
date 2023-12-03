@@ -16,7 +16,6 @@
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 
 #include <map>
-#include <set>
 #include <string>
 
 

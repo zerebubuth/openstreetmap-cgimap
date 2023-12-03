@@ -10,6 +10,9 @@
 #include "cgimap/api06/way_history_handler.hpp"
 #include "cgimap/http.hpp"
 
+#include <string>
+#include <memory>
+
 namespace api06 {
 
 way_history_responder::way_history_responder(mime::type mt, osm_nwr_id_t id, data_selection &w)
