@@ -14,6 +14,8 @@
 #include "cgimap/output_buffer.hpp"
 #include "cgimap/request_helpers.hpp"
 
+#include <fmt/core.h>
+
 #include <array>
 #include <iostream>
 #include <stdexcept>

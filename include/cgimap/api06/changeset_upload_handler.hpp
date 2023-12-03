@@ -33,7 +33,7 @@ public:
   responder_ptr_t responder(data_selection &x) const override;
 
   responder_ptr_t responder(data_update &,
-			    const std::string &payload,
+                            const std::string &payload,
                             std::optional<osm_user_id_t> user_id) const override;
   bool requires_selection_after_update() const override;
 

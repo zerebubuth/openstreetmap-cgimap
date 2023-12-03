@@ -18,7 +18,8 @@ using std::vector;
 
 namespace api06 {
 
-changeset_responder::changeset_responder(mime::type mt, osm_changeset_id_t id,
+changeset_responder::changeset_responder(mime::type mt, 
+                                         osm_changeset_id_t id,
                                          bool include_discussion,
                                          data_selection &w)
   : osm_current_responder(mt, w) {

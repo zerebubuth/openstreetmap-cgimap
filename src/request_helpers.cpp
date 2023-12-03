@@ -9,9 +9,11 @@
 
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/zlib.hpp"
+
 #include <sstream>
 #include <cassert>
 #include <cstring>
+
 #include <fmt/core.h>
 
 using std::string;

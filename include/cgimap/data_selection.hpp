@@ -15,8 +15,8 @@
 
 #include <chrono>
 #include <memory>
-#include <sstream>
 #include <vector>
+#include <string>
 
 class Transaction_Owner_Base;
 
@@ -171,8 +171,10 @@ public:
   // is user currently blocked?
   virtual bool is_user_blocked(const osm_user_id_t) = 0;
 
-  virtual bool get_user_id_pass(const std::string& display_name, osm_user_id_t &,
-				std::string & pass_crypt, std::string & pass_salt) = 0;
+  virtual bool get_user_id_pass(const std::string& display_name, 
+                                osm_user_id_t &,
+                                std::string & pass_crypt, 
+                                std::string & pass_salt) = 0;
 
   // is user status confirmed or active?
   virtual bool is_user_active(const osm_user_id_t) = 0;

@@ -7,26 +7,22 @@
  * For a full list of authors see the git log.
  */
 
+#include "cgimap/api06/changeset_upload/osmchange_handler.hpp"
 
 #include "cgimap/http.hpp"
-#include "cgimap/logger.hpp"
-
-#include "cgimap/api06/changeset_upload/osmchange_handler.hpp"
 
 #include <fmt/core.h>
 
 namespace api06 {
 
-OSMChange_Handler::OSMChange_Handler(
-    Node_Updater& node_updater,
-    Way_Updater& way_updater,
-    Relation_Updater& relation_updater,
-    osm_changeset_id_t changeset)
+OSMChange_Handler::OSMChange_Handler(Node_Updater& node_updater,
+                                     Way_Updater& way_updater,
+                                     Relation_Updater& relation_updater,
+                                     osm_changeset_id_t changeset)
     : node_updater(node_updater),
       way_updater(way_updater),
       relation_updater(relation_updater),
       changeset(changeset)
-
 {}
 
 void OSMChange_Handler::start_document() {}
@@ -43,7 +39,8 @@ void OSMChange_Handler::check_osm_object(const OSMObject &o) const {
          o.changeset(), changeset));
 }
 
-void OSMChange_Handler::process_node(const Node &node, operation op,
+void OSMChange_Handler::process_node(const Node &node, 
+                                     operation op,
                                      bool if_unused) {
 
   assert(op != operation::op_undefined);
@@ -105,7 +102,8 @@ void OSMChange_Handler::process_way(const Way &way, operation op,
   }
 }
 
-void OSMChange_Handler::process_relation(const Relation &relation, operation op,
+void OSMChange_Handler::process_relation(const Relation &relation, 
+                                         operation op,
                                          bool if_unused) {
 
   assert(op != operation::op_undefined);
@@ -142,7 +140,8 @@ void OSMChange_Handler::finish_processing() {
 }
 
 uint32_t OSMChange_Handler::get_num_changes() const {
-  return (node_updater.get_num_changes() + way_updater.get_num_changes() +
+  return (node_updater.get_num_changes() + 
+          way_updater.get_num_changes() +
           relation_updater.get_num_changes());
 }
 

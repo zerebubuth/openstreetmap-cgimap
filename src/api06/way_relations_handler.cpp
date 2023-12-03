@@ -10,10 +10,14 @@
 #include "cgimap/api06/way_relations_handler.hpp"
 #include "cgimap/http.hpp"
 
+#include <string>
+#include <memory>
+
 namespace api06 {
 
-way_relations_responder::way_relations_responder(mime::type mt, osm_nwr_id_t id,
-                                         data_selection &w)
+way_relations_responder::way_relations_responder(mime::type mt, 
+                                                 osm_nwr_id_t id,
+                                                 data_selection &w)
     : osm_current_responder(mt, w) {
 
   if (sel.select_ways({id}) > 0 && is_visible(id)) {

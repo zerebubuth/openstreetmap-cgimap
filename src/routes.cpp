@@ -56,6 +56,7 @@
 #include <optional>
 
 #include <boost/algorithm/string.hpp>
+#include <fmt/core.h>
 
 using std::list;
 using std::string;
@@ -76,21 +77,24 @@ struct router {
   // interface through which all matches and constructions are performed.
   struct rule_base {
     virtual ~rule_base() = default;
-    virtual bool invoke_if(const list<string> &, request &,
-                           handler_ptr_t &) = 0;
+    virtual bool invoke_if(const list<string> &, request &, handler_ptr_t &) = 0;
   };
 
   using rule_ptr = std::unique_ptr<rule_base>;
 
   // concrete rule match / constructor class
-  template <typename rule_t, typename func_t> struct rule : public rule_base {
+  template <typename rule_t, typename func_t> 
+  struct rule : public rule_base {
     // the DSL rule expression to match
     rule_t r;
 
     // the function to call (used later as constructor factory)
     func_t func;
 
-    rule(rule_t r_, func_t f_) : r(std::move(r_)), func(f_) {}
+    rule(rule_t r_, func_t f_) : 
+      r(std::move(r_)), 
+      func(f_) 
+    {}
 
     // try to match the expression. if it succeeds, call the provided function
     // with the provided params and the matched DSL arguments.

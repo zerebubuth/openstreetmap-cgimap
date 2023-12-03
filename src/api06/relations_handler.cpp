@@ -15,6 +15,10 @@
 #include <fmt/core.h>
 #include <fmt/format.h>
 
+#include <sstream>
+#include <string>
+#include <vector>
+
 using std::vector;
 using std::string;
 

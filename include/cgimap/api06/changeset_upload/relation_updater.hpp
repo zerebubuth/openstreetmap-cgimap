@@ -17,7 +17,6 @@
 #include "cgimap/api06/changeset_upload/relation.hpp"
 
 #include <map>
-#include <set>
 #include <string>
 #include <vector>
 

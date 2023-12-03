@@ -10,7 +10,7 @@
 #ifndef RELATION_HPP
 #define RELATION_HPP
 
-#include "osmobject.hpp"
+#include "cgimap/api06/changeset_upload/osmobject.hpp"
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
 
@@ -26,7 +26,9 @@ public:
   RelationMember() = default;
 
   RelationMember(const std::string &m_type, osm_nwr_signed_id_t m_ref, const std::string &m_role) :
-    m_role(m_role), m_ref(m_ref), m_type(m_type) {};
+    m_role(m_role), 
+    m_ref(m_ref), 
+    m_type(m_type) {}
 
   void set_type(const std::string &type) {
 
