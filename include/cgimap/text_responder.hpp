@@ -14,7 +14,9 @@
 #include "cgimap/bbox.hpp"
 #include "cgimap/data_selection.hpp"
 
-#include <sstream>
+#include <string>
+#include <chrono>
+#include <vector>
 
 /**
  * utility class - use this as a base class when the derived class is going to
@@ -29,9 +31,8 @@ public:
   ~text_responder() override = default;
 
   // lists the standard types that OSM format can respond in, currently XML and,
-  // if
-  // the yajl library is provided, JSON.
-  std::list<mime::type> types_available() const override;
+  // if the yajl library is provided, JSON.
+  std::vector<mime::type> types_available() const override;
 
   // quick hack to add headers to the response
   std::string extra_response_headers() const override;
