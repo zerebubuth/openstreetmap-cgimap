@@ -145,6 +145,7 @@ ___test_test_apidb_backend_oauth2_SOURCES=\
 	../test/test_formatter.cpp \
 	../test/test_database.cpp \
 	../test/test_request.cpp
+___test_test_apidb_backend_historic_CPPFLAGS=$(AM_CPPFLAGS) $(CATCH2_CPPFLAGS)
 ___test_test_apidb_backend_historic_SOURCES=\
 	../test/test_apidb_backend_historic.cpp \
 	../test/test_formatter.cpp \

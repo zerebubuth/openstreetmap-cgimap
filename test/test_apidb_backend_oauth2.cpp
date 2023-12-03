@@ -214,7 +214,7 @@ CATCH_REGISTER_LISTENER( CGImapListener )
 
 
 
-TEST_CASE_METHOD( DatabaseTestsFixture, "test_user_id_for_oauth2_token", "[oauth2][db]" ) {
+TEST_CASE_METHOD(DatabaseTestsFixture, "test_user_id_for_oauth2_token", "[oauth2][db]" ) {
 
   bool allow_api_write;
   bool expired;
@@ -319,7 +319,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_user_id_for_oauth2_token", "[oauth
 }
 
 
-TEST_CASE_METHOD( DatabaseTestsFixture, "test_oauth2_end_to_end", "[oauth2][db]" ) {
+TEST_CASE_METHOD(DatabaseTestsFixture, "test_oauth2_end_to_end", "[oauth2][db]" ) {
 
   auto store = tdb.get_oauth_store();
 
