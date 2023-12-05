@@ -50,8 +50,7 @@ void ApiDB_Node_Updater::add_node(double lat, double lon,
   new_node.changeset_id = changeset_id;
   new_node.old_id = old_id;
   for (const auto &tag : tags)
-    new_node.tags.emplace_back(
-        std::pair<std::string, std::string>(tag.first, tag.second));
+    new_node.tags.emplace_back(tag.first, tag.second);
   create_nodes.push_back(new_node);
 
   ct.osmchange_orig_sequence.push_back({ operation::op_create,
@@ -386,7 +385,7 @@ ApiDB_Node_Updater::build_packages(const std::vector<node_t> &nodes) {
       ++id_to_package[node.id];
 
     if (id_to_package[node.id] + 1 > result.size())
-      result.emplace_back(std::vector<ApiDB_Node_Updater::node_t>());
+      result.emplace_back();
 
     result.at(id_to_package[node.id]).emplace_back(node);
   }
