@@ -254,7 +254,7 @@ process_get_request(request &req, const handler& handler,
   // Generate full XML/JSON/text response message for previously collected object ids
   std::size_t bytes_written = generate_response(req, *responder, generator);
 
-  return std::make_tuple(request_name, bytes_written);
+  return {request_name, bytes_written};
 }
 
 /**
@@ -357,7 +357,7 @@ process_head_request(request &req, const handler& handler,
   // ensure the request is finished
   req.finish();
 
-  return std::make_tuple(request_name, 0);
+  return {request_name, 0};
 }
 
 /**
