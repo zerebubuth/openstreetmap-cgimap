@@ -311,9 +311,8 @@ int main(int argc, char **argv) {
       }
       // fall back to the old --port option if socket isn't available.
     } else if (options.count("port")) {
-      std::ostringstream sock_str;
-      sock_str << ":" << options["port"].as<int>();
-      if ((socket = fcgi_request::open_socket(sock_str.str(), 5)) < 0) {
+      auto sock_str = fmt::format(":{:d}", options["port"].as<int>());
+      if ((socket = fcgi_request::open_socket(sock_str, 5)) < 0) {
         throw runtime_error("Couldn't open FCGX socket (from port).");
       }
     } else {
