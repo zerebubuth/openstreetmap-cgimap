@@ -10,8 +10,6 @@
 #include "cgimap/api06/way_version_handler.hpp"
 #include "cgimap/http.hpp"
 
-#include <sstream>
-
 namespace api06 {
 
 way_version_responder::way_version_responder(mime::type mt, osm_nwr_id_t id, osm_version_t v, data_selection &w)

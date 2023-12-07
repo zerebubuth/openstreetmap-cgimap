@@ -8,7 +8,6 @@
  */
 
 #include "cgimap/api06/handler_utils.hpp"
-#include "cgimap/api06/id_version_io.hpp"
 #include "test_request.hpp"
 
 #define CATCH_CONFIG_MAIN

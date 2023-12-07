@@ -220,7 +220,6 @@ libcgimap_core_la_SOURCES+=\
 	api06/changeset_update_handler.cpp \
 	api06/changeset_upload_handler.cpp \
 	api06/handler_utils.cpp \
-	api06/id_version_io.cpp \
 	api06/map_handler.cpp \
 	api06/node_handler.cpp \
 	api06/node_history_handler.cpp \

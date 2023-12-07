@@ -15,7 +15,6 @@
 #include "cgimap/options.hpp"
 
 #include <memory>
-#include <sstream>
 
 namespace po = boost::program_options;
 using std::string;

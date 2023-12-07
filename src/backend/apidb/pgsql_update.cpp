@@ -10,7 +10,7 @@
 #include "cgimap/backend/apidb/pgsql_update.hpp"
 #include "cgimap/backend/apidb/apidb.hpp"
 #include "cgimap/logger.hpp"
-#include "cgimap/infix_ostream_iterator.hpp"
+
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
 #include "cgimap/backend/apidb/utils.hpp"
 #include "cgimap/backend/apidb/transaction_manager.hpp"
