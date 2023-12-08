@@ -13,6 +13,9 @@
 #include "cgimap/types.hpp"
 #include <optional>
 
+#include <fmt/core.h>
+#include <fmt/format.h>
+
 namespace api06 {
 
 struct id_version {
@@ -46,5 +49,18 @@ struct id_version {
 };
 
 } // namespace api06
+
+template <> struct fmt::formatter<api06::id_version> {
+  template <typename FormatContext>
+  auto format(const api06::id_version& r, FormatContext& ctx) const -> decltype(ctx.out()) {
+    if (r.version) {
+      return fmt::format_to(ctx.out(), "{:d}v{:d}", r.id, *r.version);
+    }
+
+    return fmt::format_to(ctx.out(), "{:d}", r.id);
+  }
+  constexpr auto parse(const format_parse_context& ctx) const { return ctx.begin(); }
+};
+
 
 #endif /* API06_ID_VERSION_HPP */

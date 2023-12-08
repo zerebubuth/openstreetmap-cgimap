@@ -11,13 +11,10 @@
 #include "cgimap/api06/handler_utils.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
-#include "cgimap/infix_ostream_iterator.hpp"
-#include "cgimap/api06/id_version_io.hpp"
 
+#include <fmt/core.h>
+#include <fmt/format.h>
 
-#include <sstream>
-
-using std::stringstream;
 using std::vector;
 using std::string;
 
@@ -51,11 +48,7 @@ nodes_responder::nodes_responder(mime::type mt, const vector<id_version> &ids,
 nodes_handler::nodes_handler(const request &req) : ids(validate_request(req)) {}
 
 std::string nodes_handler::log_name() const {
-  stringstream msg;
-  msg << "nodes?nodes=";
-  std::copy(ids.begin(), ids.end(),
-            infix_ostream_iterator<id_version>(msg, ", "));
-  return msg.str();
+  return fmt::format("nodes?nodes={}",fmt::join(ids,","));
 }
 
 responder_ptr_t nodes_handler::responder(data_selection &x) const {

@@ -45,7 +45,7 @@ inline size_t unicode_strlen(const std::string & s)
 
 
 // TODO: Proper escaping function
-inline std::string escape(std::string input)
+inline std::string escape(std::string_view input)
 {
 
 	std::string result = "\"";

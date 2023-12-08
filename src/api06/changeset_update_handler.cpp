@@ -15,14 +15,11 @@
 #include "cgimap/api06/changeset_update_handler.hpp"
 #include "cgimap/api06/changeset_upload/changeset_input_format.hpp"
 #include "cgimap/backend/apidb/changeset_upload/changeset_updater.hpp"
-
 #include "cgimap/backend/apidb/transaction_manager.hpp"
-#include "cgimap/infix_ostream_iterator.hpp"
 
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
 
-#include <sstream>
 
 
 namespace api06 {

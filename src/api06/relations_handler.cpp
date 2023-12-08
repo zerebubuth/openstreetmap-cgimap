@@ -11,13 +11,10 @@
 #include "cgimap/api06/handler_utils.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
-#include "cgimap/infix_ostream_iterator.hpp"
-#include "cgimap/api06/id_version_io.hpp"
 
+#include <fmt/core.h>
+#include <fmt/format.h>
 
-#include <sstream>
-
-using std::stringstream;
 using std::vector;
 using std::string;
 
@@ -52,11 +49,7 @@ relations_handler::relations_handler(const request &req)
     : ids(validate_request(req)) {}
 
 std::string relations_handler::log_name() const {
-  stringstream msg;
-  msg << "relations?relations=";
-  std::copy(ids.begin(), ids.end(),
-            infix_ostream_iterator<id_version>(msg, ", "));
-  return msg.str();
+  return fmt::format("relations?relations={}",fmt::join(ids,","));
 }
 
 responder_ptr_t relations_handler::responder(data_selection &x) const {

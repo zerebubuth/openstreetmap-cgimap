@@ -254,7 +254,7 @@ process_get_request(request &req, const handler& handler,
   // Generate full XML/JSON/text response message for previously collected object ids
   std::size_t bytes_written = generate_response(req, *responder, generator);
 
-  return std::make_tuple(request_name, bytes_written);
+  return {request_name, bytes_written};
 }
 
 /**
@@ -357,7 +357,7 @@ process_head_request(request &req, const handler& handler,
   // ensure the request is finished
   req.finish();
 
-  return std::make_tuple(request_name, 0);
+  return {request_name, 0};
 }
 
 /**
@@ -434,12 +434,11 @@ struct oauth_status_response  {
 // look in the request get parameters to see if the user requested that
 // redactions be shown
 bool show_redactions_requested(const request &req) {
-  using params_t = std::vector<std::pair<std::string, std::string> >;
   std::string decoded = http::urldecode(get_query_string(req));
-  const params_t params = http::parse_params(decoded);
+  const auto params = http::parse_params(decoded);
   auto itr = std::find_if(
     params.begin(), params.end(),
-    [](const params_t::value_type &param) -> bool {
+    [](const auto &param) -> bool {
       return param.first == "show_redactions" && param.second == "true";
     });
   return itr != params.end();

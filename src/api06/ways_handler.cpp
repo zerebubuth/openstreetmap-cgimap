@@ -11,10 +11,9 @@
 #include "cgimap/api06/handler_utils.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
-#include "cgimap/infix_ostream_iterator.hpp"
-#include "cgimap/api06/id_version_io.hpp"
 
-#include <sstream>
+#include <fmt/core.h>
+#include <fmt/format.h>
 
 namespace api06 {
 
@@ -46,11 +45,7 @@ ways_responder::ways_responder(mime::type mt, const std::vector<id_version>& ids
 ways_handler::ways_handler(const request &req) : ids(validate_request(req)) {}
 
 std::string ways_handler::log_name() const {
-  std::stringstream msg;
-  msg << "ways?ways=";
-  std::copy(ids.begin(), ids.end(),
-            infix_ostream_iterator<id_version>(msg, ", "));
-  return msg.str();
+  return fmt::format("ways?ways={}",fmt::join(ids,","));
 }
 
 responder_ptr_t ways_handler::responder(data_selection &x) const {

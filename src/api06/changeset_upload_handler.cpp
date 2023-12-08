@@ -21,12 +21,9 @@
 #include "cgimap/backend/apidb/changeset_upload/relation_updater.hpp"
 #include "cgimap/backend/apidb/changeset_upload/way_updater.hpp"
 #include "cgimap/backend/apidb/transaction_manager.hpp"
-#include "cgimap/infix_ostream_iterator.hpp"
 
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
-
-#include <sstream>
 
 
 namespace api06 {

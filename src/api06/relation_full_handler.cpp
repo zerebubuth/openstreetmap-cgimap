@@ -10,7 +10,6 @@
 #include "cgimap/api06/relation_full_handler.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
-#include <sstream>
 #include <fmt/core.h>
 
 using std::vector;

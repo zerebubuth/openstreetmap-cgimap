@@ -20,7 +20,6 @@
 #include <sys/types.h>
 #include <argon2.h>
 #include <cassert>
-#include <iostream>
 #include <regex>
 #include <string>
 
