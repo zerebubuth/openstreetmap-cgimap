@@ -15,8 +15,9 @@
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/request.hpp"
 #include "cgimap/api06/id_version.hpp"
+
 #include <string>
-#include <list>
+#include <vector>
 
 namespace api06 {
 

@@ -22,8 +22,9 @@ class osm_current_responder : public osm_responder {
 public:
   // construct, passing the mime type down to the responder.
   // optional bounds are stored at this level, but available to derived classes.
-  osm_current_responder(mime::type, data_selection &s,
-                        std::optional<bbox> bounds = std::optional<bbox>());
+  osm_current_responder(mime::type, 
+                        data_selection &s,
+                        std::optional<bbox> bounds = {});
 
   // writes whatever is in the tmp_nodes/ways/relations tables to the given
   // formatter.

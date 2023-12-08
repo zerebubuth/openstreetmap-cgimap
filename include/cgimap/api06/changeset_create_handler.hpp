@@ -20,7 +20,8 @@ namespace api06 {
 
 class changeset_create_responder : public text_responder {
 public:
-  changeset_create_responder(mime::type, data_update &,
+  changeset_create_responder(mime::type, 
+                             data_update &,
                              const std::string &,
                              std::optional<osm_user_id_t>);
 };
@@ -33,7 +34,7 @@ public:
   responder_ptr_t responder(data_selection &x) const override;
 
   responder_ptr_t responder(data_update &,
-			    const std::string &payload,
+                            const std::string &payload,
                             std::optional<osm_user_id_t> user_id) const override;
   bool requires_selection_after_update() const override;
 };

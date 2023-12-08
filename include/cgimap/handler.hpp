@@ -22,6 +22,7 @@
 #include <set>
 #include <string>
 #include <memory>
+#include <optional>
 
 
 /**
@@ -63,6 +64,7 @@ public:
   handler(mime::type default_type = mime::unspecified_type,
           http::method methods = default_methods);
   virtual ~handler() = default;
+
   virtual std::string log_name() const = 0;
   virtual responder_ptr_t responder(data_selection &) const = 0;
 
@@ -89,10 +91,12 @@ using handler_ptr_t = std::unique_ptr<handler>;
 class payload_enabled_handler : public handler {
 public:
   payload_enabled_handler(mime::type default_type = mime::unspecified_type,
-    http::method methods = http::method::POST | http::method::OPTIONS);
+                          http::method methods = http::method::POST | http::method::OPTIONS);
 
   // Responder used to update the database
-  virtual responder_ptr_t responder(data_update &, const std::string & payload, std::optional<osm_user_id_t> user_id) const = 0;
+  virtual responder_ptr_t responder(data_update &, 
+                                    const std::string & payload, 
+                                    std::optional<osm_user_id_t> user_id) const = 0;
 
   // Optional responder to return XML response back to caller of the API method
   responder_ptr_t responder(data_selection &) const override = 0;

@@ -10,6 +10,8 @@
 #include "cgimap/api06/relation_handler.hpp"
 #include "cgimap/http.hpp"
 
+#include <fmt/core.h>
+
 namespace api06 {
 
 relation_responder::relation_responder(mime::type mt, osm_nwr_id_t id,

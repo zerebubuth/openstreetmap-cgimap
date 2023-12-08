@@ -9,8 +9,6 @@
 
 #include "cgimap/backend/apidb/pgsql_update.hpp"
 #include "cgimap/backend/apidb/apidb.hpp"
-#include "cgimap/logger.hpp"
-
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
 #include "cgimap/backend/apidb/utils.hpp"
 #include "cgimap/backend/apidb/transaction_manager.hpp"
@@ -21,17 +19,10 @@
 #include "cgimap/backend/apidb/changeset_upload/way_updater.hpp"
 
 #include <functional>
-#include <set>
 #include <sstream>
-#include <list>
-#include <vector>
-#include <boost/iterator/transform_iterator.hpp>
 
 
 namespace po = boost::program_options;
-using std::set;
-using std::list;
-using std::vector;
 
 namespace {
 std::string connect_db_str(const po::variables_map &options) {
@@ -64,9 +55,9 @@ std::string connect_db_str(const po::variables_map &options) {
 
 } // anonymous namespace
 
-pgsql_update::pgsql_update(
-    Transaction_Owner_Base& to, bool readonly)
-    : m{ to }, m_readonly{ readonly } {
+pgsql_update::pgsql_update(Transaction_Owner_Base& to, bool readonly)
+    : m{ to }, 
+      m_readonly{ readonly } {
 
   if (is_api_write_disabled())
     return;

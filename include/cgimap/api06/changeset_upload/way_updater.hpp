@@ -16,10 +16,8 @@
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 
 #include <map>
-#include <set>
 #include <string>
 #include <vector>
-
 
 
 namespace api06 {
@@ -36,15 +34,20 @@ public:
   virtual ~Way_Updater() = default;
 
   virtual void add_way(osm_changeset_id_t changeset_id,
-                       osm_nwr_signed_id_t old_id, const WayNodeList &nodes,
+                       osm_nwr_signed_id_t old_id, 
+                       const WayNodeList &nodes,
                        const TagList &tags) = 0;
 
-  virtual void modify_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id,
-                          osm_version_t version, const WayNodeList &nodes,
+  virtual void modify_way(osm_changeset_id_t changeset_id, 
+                          osm_nwr_id_t id,
+                          osm_version_t version, 
+                          const WayNodeList &nodes,
                           const TagList &tags) = 0;
 
-  virtual void delete_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id,
-                          osm_version_t version, bool if_unused) = 0;
+  virtual void delete_way(osm_changeset_id_t changeset_id, 
+                          osm_nwr_id_t id,
+                          osm_version_t version, 
+                          bool if_unused) = 0;
 
   virtual void process_new_ways() = 0;
 

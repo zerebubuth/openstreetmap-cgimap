@@ -10,7 +10,7 @@
 #ifndef LOGGER_HPP
 #define LOGGER_HPP
 
-#include <fmt/core.h>
+#include <string>
 
 /**
  * Contains support for logging.

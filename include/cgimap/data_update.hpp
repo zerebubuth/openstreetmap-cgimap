@@ -26,9 +26,9 @@
 
 class data_update {
 public:
-  virtual ~data_update() = default;
-
   data_update() = default;
+
+  virtual ~data_update() = default;
 
   data_update(const data_update&) = delete;
   data_update& operator=(const data_update&) = delete;
