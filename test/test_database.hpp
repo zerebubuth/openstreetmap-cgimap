@@ -10,8 +10,11 @@
 #ifndef TEST_TEST_DATABASE_HPP
 #define TEST_TEST_DATABASE_HPP
 
+
+#include <filesystem>
 #include <stdexcept>
 #include <string>
+
 #include <fmt/core.h>
 #include <pqxx/pqxx>
 
@@ -51,7 +54,7 @@ struct test_database {
   ~test_database();
 
   // create table structure and fill with fake data.
-  void setup();
+  void setup(const std::filesystem::path& sql_file = "test/structure.sql");
 
   // run a test. func will be called twice - once with each of a
   // writeable and readonly data selection available from the
@@ -94,7 +97,7 @@ struct test_database {
 
 private:
   // set up the schema of the database
-  static void setup_schema(pqxx::connection &w);
+  static void setup_schema(pqxx::connection &w, const std::filesystem::path& sql_file);
 
   // the name of the test database.
   std::string m_db_name;
