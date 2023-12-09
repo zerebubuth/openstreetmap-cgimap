@@ -125,7 +125,7 @@ AC_ARG_WITH([clang-format],
 	[AS_HELP_STRING([--with-clang-format@<:@=ARG@:>@],
 	   [Enable re-formatting source code with clang-format. @<:@ARG=no@:>@ ])],
 	[case "${withval}" in
-	  yes ) prog_clang_format="clang-format-3.6" ;;
+	  yes ) prog_clang_format="clang-format" ;;
 	  no ) prog_clang_format="no" ;;
 	  * ) prog_clang_format="${withval}" ;;
 	 esac],
