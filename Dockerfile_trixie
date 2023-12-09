@@ -21,7 +21,7 @@ COPY . ./
 # Compile, install and remove source
 RUN ./autogen.sh && \
     ./configure --enable-static --disable-shared --enable-yajl CXXFLAGS="-Wall -Wextra -Wpedantic -Wno-unused-parameter" && \
-    make -j3 check TESTS= && \
+    make -j${nproc} check TESTS= && \
     make check || ( cat ./test-suite.log ; exit 1 ) && \
     strip openstreetmap-cgimap
 
@@ -46,14 +46,15 @@ ENV CGIMAP_HOST db
 ENV CGIMAP_DBNAME openstreetmap
 ENV CGIMAP_USERNAME openstreetmap
 ENV CGIMAP_PASSWORD openstreetmap
-ENV CGIMAP_PIDFILE /dev/null
-ENV CGIMAP_LOGFILE /dev/stdout
 ENV CGIMAP_MEMCACHE memcached
 ENV CGIMAP_RATELIMIT 204800
 ENV CGIMAP_MAXDEBT 250
 ENV CGIMAP_MODERATOR_RATELIMIT 1048576
 ENV CGIMAP_MODERATOR_MAXDEBT 1024
+ENV CGIMAP_PORT 8000
+ENV CGIMAP_INSTANCES 10
 
 EXPOSE 8000
 
-CMD ["/usr/local/bin/openstreetmap-cgimap", "--port=8000", "--instances=30"]
+ENTRYPOINT /usr/local/bin/openstreetmap-cgimap --pidfile /tmp/cgimap.pid --logfile=/proc/1/fd/1 --daemon && \
+           tail --pid=$(cat /tmp/cgimap.pid) -f /dev/null

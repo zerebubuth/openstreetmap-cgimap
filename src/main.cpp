@@ -99,7 +99,7 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
     ("maxdebt", po::value<long>(), "maximum debt (in Mb) to allow each client before rate limiting")
     ("moderator-maxdebt", po::value<long>(), "maximum debt (in Mb) to allow each moderator before rate limiting")
     ("port", po::value<int>(), "FCGI port number (e.g. 8000) to listen on. This option is for backwards compatibility, please use --socket for new configurations.")
-    ("socket", po::value<string>(), "FCGI port number (e.g. :8000) or UNIX socket to listen on")
+    ("socket", po::value<string>(), "FCGI port number (e.g. :8000, or 127.0.0.1:8000) or UNIX domain socket to listen on")
     ("configfile", po::value<string>(), "Config file")
     ;
   // clang-format on
@@ -290,10 +290,120 @@ void setup_backends() {
   register_backend(make_staticxml_backend());
 }
 
+
+void daemon_mode(const po::variables_map &options, int socket)
+{
+  size_t instances = 0;
+  {
+    int opt_instances = options["instances"].as<int>();
+    if (opt_instances > 0) {
+      instances = opt_instances;
+    } else {
+      throw std::runtime_error(
+          "Number of instances must be strictly positive.");
+    }
+  }
+
+  bool children_terminated = false;
+  std::set<pid_t> children;
+
+  // make ourselves into a daemon
+  daemonise();
+
+  // record our pid if requested
+  if (options.count("pidfile")) {
+    std::ofstream pidfile(options["pidfile"].as<string>().c_str());
+    pidfile << getpid() << std::endl;
+  }
+
+  // loop until we have been asked to stop and have no more children
+  while (!terminate_requested || children.size() > 0) {
+    pid_t pid;
+
+    // start more children if we don't have enough
+    while (!terminate_requested && (children.size() < instances)) {
+      if ((pid = fork()) < 0) {
+        throw runtime_error("fork failed.");
+      } else if (pid == 0) {
+        process_requests(socket, options);
+        exit(0);
+      }
+
+      children.insert(pid);
+    }
+
+    // wait for a child to exit
+    if ((pid = wait(NULL)) >= 0) {
+      children.erase(pid);
+    } else if (errno != EINTR) {
+      throw runtime_error("wait failed.");
+    }
+
+    // pass on any termination request to our children
+    if (terminate_requested && !children_terminated) {
+      for (auto pid : children) { kill(pid, SIGTERM); }
+
+      children_terminated = true;
+    }
+
+    // pass on any reload request to our children
+    if (reload_requested) {
+      for (auto pid : children) { kill(pid, SIGHUP); }
+
+      reload_requested = false;
+    }
+  }
+
+  // remove any pid file
+  if (options.count("pidfile")) {
+    remove(options["pidfile"].as<string>().c_str());
+  }
+}
+
+void non_daemon_mode(const po::variables_map &options, int socket)
+{
+  if (options.count("instances")) {
+    std::cerr << "[WARN] The --instances parameter is ignored in non-daemon mode, running as single process only.\n"
+                 "[WARN] If the process terminates, it must be restarted externally.\n";
+  }
+
+  // record our pid if requested
+  if (options.count("pidfile")) {
+    std::ofstream pidfile(options["pidfile"].as<string>().c_str());
+    pidfile << getpid() << std::endl;
+  }
+
+  // do work here
+  process_requests(socket, options);
+
+  // remove any pid file
+  if (options.count("pidfile")) {
+    remove(options["pidfile"].as<string>().c_str());
+  }
+}
+
+int init_socket(const po::variables_map &options)
+{
+  int socket = 0;
+
+  if (options.count("socket")) {
+    if ((socket = fcgi_request::open_socket(options["socket"].as<string>(), 5)) < 0) {
+      throw runtime_error("Couldn't open FCGX socket.");
+    }
+    // fall back to the old --port option if socket isn't available.
+  } else if (options.count("port")) {
+    auto sock_str = fmt::format(":{:d}", options["port"].as<int>());
+    if ((socket = fcgi_request::open_socket(sock_str, 5)) < 0) {
+      throw runtime_error("Couldn't open FCGX socket (from port).");
+    }
+  }
+  return socket;
+}
+
+
 int main(int argc, char **argv) {
   try {
     po::variables_map options;
-    int socket;
 
     // set up all the backends
     setup_backends();
@@ -305,101 +415,13 @@ int main(int argc, char **argv) {
     global_settings::set_configuration(std::make_unique<global_settings_via_options>(options));
 
     // get the socket to use
-    if (options.count("socket")) {
-      if ((socket = fcgi_request::open_socket(options["socket"].as<string>(), 5)) < 0) {
-        throw runtime_error("Couldn't open FCGX socket.");
-      }
-      // fall back to the old --port option if socket isn't available.
-    } else if (options.count("port")) {
-      auto sock_str = fmt::format(":{:d}", options["port"].as<int>());
-      if ((socket = fcgi_request::open_socket(sock_str, 5)) < 0) {
-        throw runtime_error("Couldn't open FCGX socket (from port).");
-      }
-    } else {
-      socket = 0;
-    }
+    auto socket = init_socket(options);
 
     // are we supposed to run as a daemon?
     if (options.count("daemon")) {
-      size_t instances = 0;
-      {
-        int opt_instances = options["instances"].as<int>();
-        if (opt_instances > 0) {
-          instances = opt_instances;
-        } else {
-          throw std::runtime_error(
-              "Number of instances must be strictly positive.");
-        }
-      }
-
-      bool children_terminated = false;
-      std::set<pid_t> children;
-
-      // make ourselves into a daemon
-      daemonise();
-
-      // record our pid if requested
-      if (options.count("pidfile")) {
-        std::ofstream pidfile(options["pidfile"].as<string>().c_str());
-        pidfile << getpid() << std::endl;
-      }
-
-      // loop until we have been asked to stop and have no more children
-      while (!terminate_requested || children.size() > 0) {
-        pid_t pid;
-
-        // start more children if we don't have enough
-        while (!terminate_requested && (children.size() < instances)) {
-          if ((pid = fork()) < 0) {
-            throw runtime_error("fork failed.");
-          } else if (pid == 0) {
-            process_requests(socket, options);
-            exit(0);
-          }
-
-          children.insert(pid);
-        }
-
-        // wait for a child to exit
-        if ((pid = wait(NULL)) >= 0) {
-          children.erase(pid);
-        } else if (errno != EINTR) {
-          throw runtime_error("wait failed.");
-        }
-
-        // pass on any termination request to our children
-        if (terminate_requested && !children_terminated) {
-          for (auto pid : children) { kill(pid, SIGTERM); }
-
-          children_terminated = true;
-        }
-
-        // pass on any reload request to our children
-        if (reload_requested) {
-          for (auto pid : children) { kill(pid, SIGHUP); }
-
-          reload_requested = false;
-        }
-      }
-
-      // remove any pid file
-      if (options.count("pidfile")) {
-        remove(options["pidfile"].as<string>().c_str());
-      }
+      daemon_mode(options, socket);
     } else {
-      // record our pid if requested
-      if (options.count("pidfile")) {
-        std::ofstream pidfile(options["pidfile"].as<string>().c_str());
-        pidfile << getpid() << std::endl;
-      }
-
-      // do work here
-      process_requests(socket, options);
-
-      // remove any pid file
-      if (options.count("pidfile")) {
-        remove(options["pidfile"].as<string>().c_str());
-      }
+      non_daemon_mode(options, socket);
     }
   } catch (const po::error & e) {
     std::cerr << "Error: " << e.what() << "\n(\"openstreetmap-cgimap --help\" for help)" << std::endl;
