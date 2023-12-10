@@ -246,6 +246,26 @@ void process_requests(int socket, const po::variables_map &options) {
   req.dispose();
 }
 
+void install_signal_handlers() {
+  struct sigaction sa;
+
+  // install a SIGTERM handler
+  sa.sa_handler = terminate;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = 0;
+  if (sigaction(SIGTERM, &sa, NULL) < 0) {
+    throw std::runtime_error("sigaction failed");
+  }
+
+  // install a SIGHUP handler
+  sa.sa_handler = reload;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = 0;
+  if (sigaction(SIGHUP, &sa, NULL) < 0) {
+    throw std::runtime_error("sigaction failed");
+  }
+}
+
 /**
  * make the process into a daemon by detaching from the console.
  */
@@ -265,21 +285,7 @@ void daemonise() {
     throw std::runtime_error("setsid failed");
   }
 
-  // install a SIGTERM handler
-  sa.sa_handler = terminate;
-  sigemptyset(&sa.sa_mask);
-  sa.sa_flags = 0;
-  if (sigaction(SIGTERM, &sa, NULL) < 0) {
-    throw std::runtime_error("sigaction failed");
-  }
-
-  // install a SIGHUP handler
-  sa.sa_handler = reload;
-  sigemptyset(&sa.sa_mask);
-  sa.sa_flags = 0;
-  if (sigaction(SIGHUP, &sa, NULL) < 0) {
-    throw std::runtime_error("sigaction failed");
-  }
+  install_signal_handlers();
 
   // close standard descriptors
   close(0);
@@ -381,6 +387,8 @@ void non_daemon_mode(const po::variables_map &options, int socket)
     std::cerr << "[WARN] The --instances parameter is ignored in non-daemon mode, running as single process only.\n"
                  "[WARN] If the process terminates, it must be restarted externally.\n";
   }
+
+  install_signal_handlers();
 
   // record our pid if requested
   if (options.count("pidfile")) {
