@@ -64,11 +64,11 @@ void json_formatter::start_document(
   const std::string &generator, const std::string &root_name) {
   writer->start_object();
 
-  WRITE_KV("version", string, "0.6");
+  WRITE_KV("version", string, output_formatter::API_VERSION);
   WRITE_KV("generator", string, generator);
-  WRITE_KV("copyright", string, "OpenStreetMap and contributors");
-  WRITE_KV("attribution", string, "http://www.openstreetmap.org/copyright");
-  WRITE_KV("license", string, "http://opendatacommons.org/licenses/odbl/1-0/");
+  WRITE_KV("copyright", string, output_formatter::COPYRIGHT);
+  WRITE_KV("attribution", string, output_formatter::ATTRIBUTION);
+  WRITE_KV("license", string, output_formatter::LICENSE);
 }
 
 void json_formatter::write_bounds(const bbox &bounds) {

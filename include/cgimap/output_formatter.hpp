@@ -146,6 +146,11 @@ using comments_t = std::vector<changeset_comment_info>;
  * of course, that we want any other formats ;-)
  */
 struct output_formatter {
+  static constexpr const char * API_VERSION = "0.6";
+  static constexpr const char * COPYRIGHT = "OpenStreetMap and contributors";
+  static constexpr const char * ATTRIBUTION = "http://www.openstreetmap.org/copyright";
+  static constexpr const char * LICENSE = "http://opendatacommons.org/licenses/odbl/1-0/";
+
   virtual ~output_formatter() = default;
 
   // returns the mime type of the content that this formatter will

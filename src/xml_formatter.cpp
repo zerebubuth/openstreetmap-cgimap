@@ -43,14 +43,12 @@ mime::type xml_formatter::mime_type() const { return mime::application_xml; }
 void xml_formatter::start_document(
   const std::string &generator, const std::string &root_name) {
   writer->start(root_name);
-  writer->attribute("version", string("0.6"));
+  writer->attribute("version", output_formatter::API_VERSION);
   writer->attribute("generator", generator);
 
-  writer->attribute("copyright", string("OpenStreetMap and contributors"));
-  writer->attribute("attribution",
-                    string("http://www.openstreetmap.org/copyright"));
-  writer->attribute("license",
-                    string("http://opendatacommons.org/licenses/odbl/1-0/"));
+  writer->attribute("copyright", output_formatter::COPYRIGHT);
+  writer->attribute("attribution", output_formatter::ATTRIBUTION);
+  writer->attribute("license", output_formatter::LICENSE);
 }
 
 void xml_formatter::end_document() { writer->end(); }
