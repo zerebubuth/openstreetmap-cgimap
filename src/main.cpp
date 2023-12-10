@@ -58,6 +58,8 @@ using namespace std::chrono_literals;
 
 namespace po = boost::program_options;
 
+namespace {
+
 /**
  * global flags set by signal handlers.
  */
@@ -67,11 +69,27 @@ static std::atomic<bool> reload_requested = false;
 static_assert(std::atomic<bool>::is_always_lock_free);
 
 /**
+ * SIGTERM handler.
+ */
+void terminate(int) {
+  // termination has been requested
+  terminate_requested = true;
+}
+
+/**
+ * SIGHUP handler.
+ */
+void reload(int) {
+  // reload has been requested
+  reload_requested = true;
+}
+
+/**
  * make a string to be used as the generator header
  * attribute of output files. includes some instance
  * identifying information.
  */
-static std::string get_generator_string() {
+std::string get_generator_string() {
   char hostname[HOST_NAME_MAX];
   if (gethostname(hostname, sizeof hostname) != 0) {
     throw std::runtime_error("gethostname returned error.");
@@ -83,7 +101,7 @@ static std::string get_generator_string() {
 /**
  * parse the comment line and environment for options.
  */
-static void get_options(int argc, char **argv, po::variables_map &options) {
+void get_options(int argc, char **argv, po::variables_map &options) {
   po::options_description desc(PACKAGE_STRING ": Allowed options");
 
   using std::string;
@@ -180,7 +198,7 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
  * loop processing fasctgi requests until are asked to stop by
  * somebody sending us a TERM signal.
  */
-static void process_requests(int socket, const po::variables_map &options) {
+void process_requests(int socket, const po::variables_map &options) {
   // generator string - identifies the cgimap instance.
   auto generator = get_generator_string();
   // open any log file
@@ -229,25 +247,9 @@ static void process_requests(int socket, const po::variables_map &options) {
 }
 
 /**
- * SIGTERM handler.
- */
-static void terminate(int) {
-  // termination has been requested
-  terminate_requested = true;
-}
-
-/**
- * SIGHUP handler.
- */
-static void reload(int) {
-  // reload has been requested
-  reload_requested = true;
-}
-
-/**
  * make the process into a daemon by detaching from the console.
  */
-static void daemonise() {
+void daemonise() {
   pid_t pid;
   struct sigaction sa;
 
@@ -296,6 +298,7 @@ void setup_backends() {
 void daemon_mode(const po::variables_map &options, int socket)
 {
   size_t instances = 0;
+
   {
     int opt_instances = options["instances"].as<int>();
     if (opt_instances > 0) {
@@ -411,6 +414,8 @@ int init_socket(const po::variables_map &options)
   }
   return socket;
 }
+
+} // anonymous namespace
 
 
 int main(int argc, char **argv) {
