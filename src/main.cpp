@@ -30,6 +30,7 @@
 #include <thread>
 #include <vector>
 #include <sys/wait.h>
+#include <atomic>
 
 using namespace std::chrono_literals;
 
@@ -60,8 +61,10 @@ namespace po = boost::program_options;
 /**
  * global flags set by signal handlers.
  */
-static bool terminate_requested = false;
-static bool reload_requested = false;
+static std::atomic<bool> terminate_requested = false;
+static std::atomic<bool> reload_requested = false;
+
+static_assert(std::atomic<bool>::is_always_lock_free);
 
 /**
  * make a string to be used as the generator header
