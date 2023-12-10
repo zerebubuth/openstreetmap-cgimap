@@ -377,7 +377,7 @@ void daemon_mode(const po::variables_map &options, int socket)
 
 void non_daemon_mode(const po::variables_map &options, int socket)
 {
-  if (options.count("instances")) {
+  if (options.count("instances") && !options["instances"].defaulted()) {
     std::cerr << "[WARN] The --instances parameter is ignored in non-daemon mode, running as single process only.\n"
                  "[WARN] If the process terminates, it must be restarted externally.\n";
   }
