@@ -93,7 +93,7 @@ void test_request::set_payload(const std::string& payload) {
 void test_request::dispose() {}
 
 void test_request::set_header(const std::string &k, const std::string &v) {
-  m_params.try_emplace(k, v);
+  m_params[k] = v;  // requirement: same key can be set multiple times!
 }
 
 std::stringstream &test_request::buffer() {

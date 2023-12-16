@@ -32,7 +32,39 @@
 #include "test_database.hpp"
 #include "test_request.hpp"
 
-namespace {
+#define CATCH_CONFIG_MAIN
+#include <catch2/catch.hpp>
+
+
+class DatabaseTestsFixture
+{
+protected:
+  DatabaseTestsFixture() = default;
+  static test_database tdb;
+};
+
+test_database DatabaseTestsFixture::tdb{};
+
+struct CGImapListener : Catch::TestEventListenerBase, DatabaseTestsFixture {
+
+    using TestEventListenerBase::TestEventListenerBase; // inherit constructor
+
+    void testRunStarting( Catch::TestRunInfo const& testRunInfo ) override {
+      // load database schema when starting up tests
+      tdb.setup();
+    }
+
+    void testCaseStarting( Catch::TestCaseInfo const& testInfo ) override {
+      tdb.testcase_starting();
+    }
+
+    void testCaseEnded( Catch::TestCaseStats const& testCaseStats ) override {
+      tdb.testcase_ended();
+    }
+};
+
+CATCH_REGISTER_LISTENER( CGImapListener )
+
 
 std::string get_compressed_payload(const std::string &payload)
 {
@@ -2130,481 +2162,7 @@ std::string get_compressed_payload(const std::string &payload)
       }
   }
 
-  void test_osmchange_end_to_end(test_database &tdb) {
 
-    // Prepare users, changesets
-
-    tdb.run_sql(R"(
-	 INSERT INTO users (id, email, pass_crypt, pass_salt, creation_time, display_name, data_public, status)
-	 VALUES
-	   (1, 'demo@example.com', '3wYbPiOxk/tU0eeIDjUhdvi8aDP3AbFtwYKKxF1IhGg=',
-                                     'sha512!10000!OUQLgtM7eD8huvanFT5/WtWaCwdOdrir8QOtFwxhO0A=',
-                                     '2013-11-14T02:10:00Z', 'demo', true, 'confirmed'),
-	   (2, 'user_2@example.com', '', '', '2013-11-14T02:10:00Z', 'user_2', false, 'active');
-
-	INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes)
-	VALUES
-	  (1, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 0),
-	  (2, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 10000),
-	  (3, 1, now() at time zone 'utc' - '12 hour' ::interval,
-                 now() at time zone 'utc' - '11 hour' ::interval, 10000),
-	  (4, 2, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 0),
-	  (5, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 0);
-
-        INSERT INTO user_blocks (user_id, creator_id, reason, ends_at, needs_view)
-        VALUES (1,  2, '', now() at time zone 'utc' - ('1 hour' ::interval), false);
-
-        )"
-    );
-
-    const std::string baseauth = "Basic ZGVtbzpwYXNzd29yZA==";
-    const std::string generator = "Test";
-
-    auto sel_factory = tdb.get_data_selection_factory();
-    auto upd_factory = tdb.get_data_update_factory();
-
-    null_rate_limiter limiter;
-    routes route;
-
-    // User providing wrong password
-    {
-	// set up request headers from test case
-	test_request req;
-	req.set_header("REQUEST_METHOD", "POST");
-	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
-	req.set_header("HTTP_AUTHORIZATION", "Basic ZGVtbzppbnZhbGlkcGFzc3dvcmQK");
-	req.set_header("REMOTE_ADDR", "127.0.0.1");
-
-	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
-	     <osmChange version="0.6" generator="iD">
-	     <create><node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="2"/></create>
-             </osmChange>)" );
-
-	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
-
-	if (req.response_status() != 401)
-	  throw std::runtime_error("Expected HTTP 401 Unauthorized: wrong user/password");
-    }
-
-    // User logging on with display name (different case)
-    {
-	// set up request headers from test case
-	test_request req;
-	req.set_header("REQUEST_METHOD", "POST");
-	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
-	req.set_header("HTTP_AUTHORIZATION", "Basic REVNTzpwYXNzd29yZA==");
-	req.set_header("REMOTE_ADDR", "127.0.0.1");
-
-	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
-	     <osmChange version="0.6" generator="iD">
-	     <create><node id="-1" lon="11" lat="46" changeset="1"/></create>
-             </osmChange>)" );
-
-	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
-
-	if (req.response_status() != 200)
-	  throw std::runtime_error("Expected HTTP 200 OK: Log on with display name, different case");
-    }
-
-    // User logging on with email address rather than display name
-    {
-	// set up request headers from test case
-	test_request req;
-	req.set_header("REQUEST_METHOD", "POST");
-	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
-	req.set_header("HTTP_AUTHORIZATION", "Basic ZGVtb0BleGFtcGxlLmNvbTpwYXNzd29yZA==");
-	req.set_header("REMOTE_ADDR", "127.0.0.1");
-
-	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
-	     <osmChange version="0.6" generator="iD">
-	     <create><node id="-1" lon="11" lat="46" changeset="1"/></create>
-             </osmChange>)" );
-
-	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
-
-	if (req.response_status() != 200)
-	  throw std::runtime_error("Expected HTTP 200 OK: Log on with email address");
-    }
-
-    // User logging on with email address with different case and additional whitespace rather than display name
-    {
-	// set up request headers from test case
-	test_request req;
-	req.set_header("REQUEST_METHOD", "POST");
-	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
-	req.set_header("HTTP_AUTHORIZATION", "Basic ICAgZGVtb0BleGFtcGxlLkNPTSAgIDpwYXNzd29yZA==");
-	req.set_header("REMOTE_ADDR", "127.0.0.1");
-
-	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
-	     <osmChange version="0.6" generator="iD">
-	     <create><node id="-1" lon="11" lat="46" changeset="1"/></create>
-             </osmChange>)" );
-
-	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
-
-	if (req.response_status() != 200)
-	  throw std::runtime_error("Expected HTTP 200 OK: Log on with email address, whitespace, different case");
-    }
-
-    // User is in status "pending"
-    {
-        tdb.run_sql(R"(UPDATE users SET status = 'pending' where id = 1;)");
-
-        // set up request headers from test case
-        test_request req;
-        req.set_header("REQUEST_METHOD", "POST");
-        req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
-        req.set_header("HTTP_AUTHORIZATION", baseauth);
-        req.set_header("REMOTE_ADDR", "127.0.0.1");
-
-        req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
-             <osmChange version="0.6" generator="iD">
-             <create><node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1"/></create>
-             </osmChange>)" );
-
-        // execute the request
-        process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
-
-        // Basic Auth in status "pending" should return status HTTP 401
-        if (req.response_status() != 401)
-          throw std::runtime_error("Expected HTTP 401 Unauthorized: user status pending");
-
-        tdb.run_sql(R"(UPDATE users SET status = 'confirmed' where id = 1;)");
-    }
-
-    // User is blocked (needs_view)
-    {
-        tdb.run_sql(R"(UPDATE user_blocks SET needs_view = true where user_id = 1;)");
-
-	// set up request headers from test case
-	test_request req;
-	req.set_header("REQUEST_METHOD", "POST");
-	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
-	req.set_header("HTTP_AUTHORIZATION", baseauth);
-	req.set_header("REMOTE_ADDR", "127.0.0.1");
-
-	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
-	     <osmChange version="0.6" generator="iD">
-	     <create><node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1"/></create>
-             </osmChange>)" );
-
-	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
-
-	if (req.response_status() != 403)
-	  throw std::runtime_error("Expected HTTP 403 Forbidden: user blocked (needs view)");
-
-	tdb.run_sql(R"(UPDATE user_blocks SET needs_view = false where user_id = 1;)");
-    }
-
-    // User is blocked for 1 hour
-    {
-        tdb.run_sql(R"(UPDATE user_blocks
-                         SET needs_view = false,
-                             ends_at = now() at time zone 'utc' + ('1 hour' ::interval)
-                         WHERE user_id = 1;)");
-
-	// set up request headers from test case
-	test_request req;
-	req.set_header("REQUEST_METHOD", "POST");
-	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
-	req.set_header("HTTP_AUTHORIZATION", baseauth);
-	req.set_header("REMOTE_ADDR", "127.0.0.1");
-
-	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
-	     <osmChange version="0.6" generator="iD">
-	     <create><node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1"/></create>
-             </osmChange>)" );
-
-	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
-
-
-	if (req.response_status() != 403)
-	  throw std::runtime_error("Expected HTTP 403 Forbidden: user blocked for 1 hour");
-
-	tdb.run_sql(R"(UPDATE user_blocks
-                          SET needs_view = false,
-                              ends_at = now() at time zone 'utc' - ('1 hour' ::interval)
-                          WHERE user_id = 1;)");
-    }
-
-    // Try to post a changeset, where the URL points to a different URL than the payload
-    {
-	// set up request headers from test case
-	test_request req;
-	req.set_header("REQUEST_METHOD", "POST");
-	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
-	req.set_header("HTTP_AUTHORIZATION", baseauth);
-	req.set_header("REMOTE_ADDR", "127.0.0.1");
-
-	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
-	     <osmChange version="0.6" generator="iD">
-	     <create><node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="2"/></create>
-             </osmChange>)" );
-
-	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
-
-	if (req.response_status() != 409)
-	  throw std::runtime_error("Expected HTTP 409 Conflict: Payload and URL changeset id differ");
-    }
-
-    // Try to post a changeset, where the user doesn't own the changeset
-    {
-	// set up request headers from test case
-	test_request req;
-	req.set_header("REQUEST_METHOD", "POST");
-	req.set_header("REQUEST_URI", "/api/0.6/changeset/4/upload");
-	req.set_header("HTTP_AUTHORIZATION", baseauth);
-	req.set_header("REMOTE_ADDR", "127.0.0.1");
-
-	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
-	     <osmChange version="0.6" generator="iD">
-	     <create><node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="4"/></create>
-             </osmChange>)" );
-
-	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
-
-	if (req.response_status() != 409)
-	  throw std::runtime_error("Expected HTTP 409 Conflict: User doesn't own the changeset");
-    }
-
-    // Try to add a node to a changeset that already has 10000 elements (=max)
-    {
-	// set up request headers from test case
-	test_request req;
-	req.set_header("REQUEST_METHOD", "POST");
-	req.set_header("REQUEST_URI", "/api/0.6/changeset/2/upload");
-	req.set_header("HTTP_AUTHORIZATION", baseauth);
-	req.set_header("REMOTE_ADDR", "127.0.0.1");
-
-	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
-		  <osmChange version="0.6" generator="iD">
-		     <create><node id="-5" lon="11" lat="46" version="0" changeset="2"/></create>
-		  </osmChange>)" );
-
-	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
-
-	if (req.response_status() != 409)
-	  throw std::runtime_error("Expected HTTP 409 Conflict: Cannot add more elements to changeset");
-    }
-
-    // Try to add a node to a changeset that is already closed
-    {
-	// set up request headers from test case
-	test_request req;
-	req.set_header("REQUEST_METHOD", "POST");
-	req.set_header("REQUEST_URI", "/api/0.6/changeset/3/upload");
-	req.set_header("HTTP_AUTHORIZATION", baseauth);
-	req.set_header("REMOTE_ADDR", "127.0.0.1");
-
-	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
-		  <osmChange version="0.6" generator="iD">
-		     <create><node id="-5" lon="11" lat="46" version="0" changeset="3"/></create>
-		  </osmChange>)" );
-
-	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
-
-	if (req.response_status() != 409)
-	  throw std::runtime_error("Expected HTTP 409 Conflict: Changeset already closed");
-    }
-
-    // Try to add a nodes, ways, relations to a changeset
-    {
-
-        // Set sequences to new start values
-
-        tdb.run_sql(R"(  SELECT setval('current_nodes_id_seq', 12000000000, false);
-                         SELECT setval('current_ways_id_seq', 14000000000, false);
-                         SELECT setval('current_relations_id_seq', 18000000000, false);
-                     )");
-
-	// set up request headers from test case
-	test_request req;
-	req.set_header("REQUEST_METHOD", "POST");
-	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
-	req.set_header("HTTP_AUTHORIZATION", baseauth);
-	req.set_header("REMOTE_ADDR", "127.0.0.1");
-
-	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
-		  <osmChange version="0.6" generator="iD">
-		  <create>
-		    <node id="-5" lon="11" lat="46" version="0" changeset="1">
-		       <tag k="highway" v="bus_stop" />
-		    </node>
-		    <node id="-6" lon="13" lat="47" version="0" changeset="1">
-		       <tag k="highway" v="bus_stop" />
-		    </node>
-		    <node id="-7" lon="-54" lat="12" version="0" changeset="1"/>
-                    <way id="-10" version="0" changeset="1">
-                      <nd ref="-5"/>
-                      <nd ref="-6"/>
-                    </way>
-                    <way id="-11" version="0" changeset="1">
-                      <nd ref="-6"/>
-                      <nd ref="-7"/>
-                    </way>
-		    <relation id="-2" version="0" changeset="1">
-		       <member type="node" role="" ref="-5" />
-		       <tag k="type" v="route" />
-		       <tag k="name" v="AtoB" />
-		    </relation>
-		    <relation id="-3" version="0" changeset="1">
-		       <member type="node" role="" ref="-6" />
-		       <tag k="type" v="route" />
-		       <tag k="name" v="BtoA" />
-		    </relation>
-		    <relation id="-4" version="0" changeset="1">
-		       <member type="relation" role="" ref="-2" />
-		       <member type="relation" role="" ref="-3" />
-		       <tag k="type" v="route_master" />
-		       <tag k="name" v="master" />
-		    </relation>
-		 </create>
-		 </osmChange>)" );
-
-	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
-
-	// std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
-
-	if (req.response_status() != 200)
-	  throw std::runtime_error("Expected HTTP 200 OK: Create new node");
-    }
-
-    // Try to add, modify and delete nodes, ways, relations in changeset
-    {
-	// set up request headers from test case
-	test_request req;
-	req.set_header("REQUEST_METHOD", "POST");
-	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
-	req.set_header("HTTP_AUTHORIZATION", baseauth);
-	req.set_header("REMOTE_ADDR", "127.0.0.1");
-
-	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
-		  <osmChange version="0.6" generator="iD">
-                  <create>
-		    <node id="-15" lon="4" lat="2" version="0" changeset="1"/>
-		    <node id="-16" lon="3" lat="7" version="0" changeset="1"/>
-                  </create>
-		  <modify>
-		    <node id="12000000000" lon="-11" lat="-46" version="1" changeset="1">
-		       <tag k="highway" v="bus_stop" />
-                       <tag k="name" v="Repubblica" />
-		    </node>
-                    <way id="14000000000" version="1" changeset="1">
-                      <tag k="highway" v="residential"/>
-                      <nd ref="-15"/>
-                      <nd ref="-16"/>
-                    </way>
-		    <relation id="18000000000" version="1" changeset="1">
-		       <tag k="type" v="route" />
-		    </relation>
-		    <relation id="18000000001" version="1" changeset="1">
-		       <member type="way" role="test" ref="14000000000" />
-                       <member type="node" role="" ref="12000000001" />
-                       <member type="relation" role="bla" ref="18000000000" />
-		       <tag k="type" v="route" />
-		    </relation>
-		 </modify>
-                  <delete>
-		    <relation id="18000000002" version="1" changeset="1"/>
-                    <way id="14000000001" version="1" changeset="1"/>
-		    <node id="12000000002" version="1" changeset="1"/>
-                  </delete>
-                  <delete if-unused="true">
-		    <node id="12000000001" version="1" changeset="1"/>
-                    <way id="14000000000" version="2" changeset="1"/>
-                    <relation id="18000000000" version="2" changeset="1"/>
-                  </delete>
-		 </osmChange>)" );
-
-	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
-
-	// std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
-
-	if (req.response_status() != 200)
-	  throw std::runtime_error("Expected HTTP 200 OK: add, modify and delete nodes, ways, relations in changeset");
-    }
-
-    // Multiple operations on the same node id -1
-    {
-	// set up request headers from test case
-	test_request req;
-	req.set_header("REQUEST_METHOD", "POST");
-	req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
-	req.set_header("HTTP_AUTHORIZATION", baseauth);
-	req.set_header("REMOTE_ADDR", "127.0.0.1");
-
-	req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
-                    <osmChange version="0.6" generator="iD">
-                    <create>
-                       <node id="-1" lon="11.625506992810122" lat="46.866699181636555"  changeset="1">
-                         <tag k="highway" v="bus_stop" />
-                       </node>
-                    </create>
-                    <delete>
-                       <node id="-1"  version="1" changeset="1" />
-                    </delete>
-                    <modify>
-                       <node id="-1" lon="11.12" lat="46.13" version="2" changeset="1"/>
-                    </modify>
-                    <delete>
-                        <node id="-1"  version="3" changeset="1" />
-                    </delete>
-                   </osmChange>)" );
-
-	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
-
-	// std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
-
-	if (req.response_status() != 200)
-	  throw std::runtime_error("Expected HTTP 200 OK: Multiple operations on the same node id -1");
-
-  }
-
-  // Compressed upload
-  {
-    std::string payload = R"(<?xml version="1.0" encoding="UTF-8"?>
-        <osmChange version="0.6" generator="iD">
-        <create>
-          <node id="-5" lon="11" lat="46" version="0" changeset="1">
-             <tag k="highway" v="bus_stop" />
-          </node>
-       </create>
-       </osmChange>)";
-
-    // set up request headers from test case
-    test_request req;
-    req.set_header("REQUEST_METHOD", "POST");
-    req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
-    req.set_header("HTTP_AUTHORIZATION", baseauth);
-    req.set_header("REMOTE_ADDR", "127.0.0.1");
-    req.set_header("HTTP_CONTENT_ENCODING", "gzip");
-
-    req.set_payload(get_compressed_payload(payload));
-
-    // execute the request
-    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
-
-//    std::cerr << "Response status: " << req.response_status() << "\n";
-//    std::cerr << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
-
-    if (req.response_status() != 200)
-      throw std::runtime_error("Expected HTTP 200 OK: Compressed upload");
-  }
-
-}
 
   class global_settings_enable_upload_rate_limiter_test_class : public global_settings_default {
 
@@ -2738,42 +2296,421 @@ std::string get_compressed_payload(const std::string &payload)
 
 }
 
-} // anonymous namespace
-
-int main(int, char **) {
-
-  try {
-      test_database tdb;
-      tdb.setup();
-
-      tdb.run_update(std::function<void(test_database&)>(&test_single_nodes));
-
-      tdb.run_update(std::function<void(test_database&)>(&test_single_ways));
-
-      tdb.run_update(std::function<void(test_database&)>(&test_single_relations));
-
-      tdb.run_update(std::function<void(test_database&)>(&test_changeset_update));
-
-      tdb.run_update(std::function<void(test_database&)>(&test_osmchange_message));
-
-      tdb.run_update(std::function<void(test_database&)>(&test_osmchange_end_to_end));
-
-      tdb.run_update(std::function<void(test_database&)>(&test_osmchange_rate_limiter));
 
 
+TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload][db]" ) {
+  tdb.run_update(std::function<void(test_database&)>(&test_single_nodes));
+}
 
-  } catch (const test_database::setup_error &e) {
-      std::cout << "Unable to set up test database: " << e.what() << std::endl;
-      return 77;
+TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload][db]" ) {
+  tdb.run_update(std::function<void(test_database&)>(&test_single_ways));
+}
 
-  } catch (const std::exception &e) {
-      std::cout << "Error: " << e.what() << std::endl;
-      return 1;
+TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][upload][db]" ) {
+  tdb.run_update(std::function<void(test_database&)>(&test_single_relations));
+}
 
-  } catch (...) {
-      std::cout << "Unknown exception type." << std::endl;
-      return 99;
+TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][upload][db]" ) {
+  tdb.run_update(std::function<void(test_database&)>(&test_changeset_update));
+}
+
+TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_message", "[changeset][upload][db]" ) {
+  tdb.run_update(std::function<void(test_database&)>(&test_osmchange_message));
+}
+
+TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset][upload][db]" ) {
+
+  const std::string baseauth = "Basic ZGVtbzpwYXNzd29yZA==";
+  const std::string generator = "Test";
+
+  auto sel_factory = tdb.get_data_selection_factory();
+  auto upd_factory = tdb.get_data_update_factory();
+
+  null_rate_limiter limiter;
+  routes route;
+  test_request req;
+
+  req.set_header("REQUEST_METHOD", "POST");
+  req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
+  req.set_header("REMOTE_ADDR", "127.0.0.1");
+  req.set_header("HTTP_AUTHORIZATION", baseauth);
+
+  // Prepare users, changesets
+  SECTION("Initialize test data") {
+
+    tdb.run_sql(R"(
+         INSERT INTO users (id, email, pass_crypt, pass_salt, creation_time, display_name, data_public, status)
+         VALUES
+           (1, 'demo@example.com', '3wYbPiOxk/tU0eeIDjUhdvi8aDP3AbFtwYKKxF1IhGg=',
+                                     'sha512!10000!OUQLgtM7eD8huvanFT5/WtWaCwdOdrir8QOtFwxhO0A=',
+                                     '2013-11-14T02:10:00Z', 'demo', true, 'confirmed'),
+           (2, 'user_2@example.com', '', '', '2013-11-14T02:10:00Z', 'user_2', false, 'active');
+  
+        INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes)
+        VALUES
+          (1, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 0),
+          (2, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 10000),
+          (3, 1, now() at time zone 'utc' - '12 hour' ::interval,
+                 now() at time zone 'utc' - '11 hour' ::interval, 10000),
+          (4, 2, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 0),
+          (5, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 0);
+  
+        INSERT INTO user_blocks (user_id, creator_id, reason, ends_at, needs_view)
+        VALUES (1,  2, '', now() at time zone 'utc' - ('1 hour' ::interval), false);
+  
+        )"
+    );
   }
 
-  return 0;
+  SECTION("User providing wrong password"){
+
+      // set up request headers from test case
+      req.set_header("HTTP_AUTHORIZATION", "Basic ZGVtbzppbnZhbGlkcGFzc3dvcmQK");
+
+      req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+           <osmChange version="0.6" generator="iD">
+           <create><node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="2"/></create>
+           </osmChange>)" );
+
+      // execute the request
+      process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+
+      REQUIRE(req.response_status() == 401);
+  }
+
+  SECTION("User logging on with display name (different case)")
+  {
+      // set up request headers from test case
+      req.set_header("HTTP_AUTHORIZATION", "Basic REVNTzpwYXNzd29yZA==");
+
+      req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+           <osmChange version="0.6" generator="iD">
+           <create><node id="-1" lon="11" lat="46" changeset="1"/></create>
+           </osmChange>)" );
+
+      // execute the request
+      process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+
+      REQUIRE(req.response_status() == 200);
+  }
+
+  SECTION("User logging on with email address rather than display name")
+  {
+      // set up request headers from test case
+      req.set_header("HTTP_AUTHORIZATION", "Basic ZGVtb0BleGFtcGxlLmNvbTpwYXNzd29yZA==");
+
+      req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+           <osmChange version="0.6" generator="iD">
+           <create><node id="-1" lon="11" lat="46" changeset="1"/></create>
+           </osmChange>)" );
+
+      // execute the request
+      process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+
+      REQUIRE(req.response_status() == 200);
+  }
+
+  SECTION("User logging on with email address with different case and additional whitespace rather than display name")
+  {
+      // set up request headers from test case
+      req.set_header("HTTP_AUTHORIZATION", "Basic ICAgZGVtb0BleGFtcGxlLkNPTSAgIDpwYXNzd29yZA==");
+
+      req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+           <osmChange version="0.6" generator="iD">
+           <create><node id="-1" lon="11" lat="46" changeset="1"/></create>
+           </osmChange>)" );
+
+      // execute the request
+      process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+
+      REQUIRE(req.response_status() == 200);
+  }
+
+  SECTION("User is in status pending")
+  {
+      tdb.run_sql(R"(UPDATE users SET status = 'pending' where id = 1;)");
+
+      // set up request headers from test case
+
+      req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+           <osmChange version="0.6" generator="iD">
+           <create><node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1"/></create>
+           </osmChange>)" );
+
+      // execute the request
+      process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+
+      // Basic Auth in status "pending" should return status HTTP 401
+      REQUIRE(req.response_status() == 401);
+
+      tdb.run_sql(R"(UPDATE users SET status = 'confirmed' where id = 1;)");
+  }
+
+  SECTION("User is blocked (needs_view)")
+  {
+      tdb.run_sql(R"(UPDATE user_blocks SET needs_view = true where user_id = 1;)");
+
+      // set up request headers from test case
+      req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+           <osmChange version="0.6" generator="iD">
+           <create><node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1"/></create>
+           </osmChange>)" );
+
+      // execute the request
+      process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+
+      REQUIRE(req.response_status() == 403);
+
+      tdb.run_sql(R"(UPDATE user_blocks SET needs_view = false where user_id = 1;)");
+  }
+
+  SECTION("User is blocked for 1 hour")
+  {
+      tdb.run_sql(R"(UPDATE user_blocks
+                       SET needs_view = false,
+                           ends_at = now() at time zone 'utc' + ('1 hour' ::interval)
+                       WHERE user_id = 1;)");
+
+      // set up request headers from test case
+      req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+           <osmChange version="0.6" generator="iD">
+           <create><node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1"/></create>
+           </osmChange>)" );
+
+      // execute the request
+      process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+
+      REQUIRE(req.response_status() == 403);
+
+      tdb.run_sql(R"(UPDATE user_blocks
+                        SET needs_view = false,
+                            ends_at = now() at time zone 'utc' - ('1 hour' ::interval)
+                        WHERE user_id = 1;)");
+  }
+
+  SECTION("Try to post a changeset, where the URL points to a different URL than the payload")
+  {
+      // set up request headers from test case
+      req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+           <osmChange version="0.6" generator="iD">
+           <create><node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="2"/></create>
+           </osmChange>)" );
+
+      // execute the request
+      process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+
+      REQUIRE(req.response_status() == 409);
+  }
+
+  SECTION("Try to post a changeset, where the user doesn't own the changeset")
+  {
+      // set up request headers from test case
+      req.set_header("REQUEST_URI", "/api/0.6/changeset/4/upload");
+
+      req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+           <osmChange version="0.6" generator="iD">
+           <create><node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="4"/></create>
+           </osmChange>)" );
+
+      // execute the request
+      process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+
+      REQUIRE(req.response_status() == 409);
+  }
+
+  SECTION("Try to add a node to a changeset that already has 10000 elements (=max)")
+  {
+      // set up request headers from test case
+      req.set_header("REQUEST_URI", "/api/0.6/changeset/2/upload");
+
+      req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+                <osmChange version="0.6" generator="iD">
+                   <create><node id="-5" lon="11" lat="46" version="0" changeset="2"/></create>
+                </osmChange>)" );
+
+      // execute the request
+      process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+
+      REQUIRE(req.response_status() == 409);
+  }
+
+  SECTION("Try to add a node to a changeset that is already closed")
+  {
+      // set up request headers from test case
+      req.set_header("REQUEST_URI", "/api/0.6/changeset/3/upload");
+
+      req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+                <osmChange version="0.6" generator="iD">
+                   <create><node id="-5" lon="11" lat="46" version="0" changeset="3"/></create>
+                </osmChange>)" );
+
+      // execute the request
+      process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+
+      REQUIRE(req.response_status() == 409);
+  }
+
+  SECTION("Try to add a nodes, ways, relations to a changeset")
+  {
+      // Set sequences to new start values
+      tdb.run_sql(R"(  SELECT setval('current_nodes_id_seq', 12000000000, false);
+                       SELECT setval('current_ways_id_seq', 14000000000, false);
+                       SELECT setval('current_relations_id_seq', 18000000000, false);
+                   )");
+
+      // set up request headers from test case
+      req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+                <osmChange version="0.6" generator="iD">
+                <create>
+                  <node id="-5" lon="11" lat="46" version="0" changeset="1">
+                     <tag k="highway" v="bus_stop" />
+                  </node>
+                  <node id="-6" lon="13" lat="47" version="0" changeset="1">
+                     <tag k="highway" v="bus_stop" />
+                  </node>
+                  <node id="-7" lon="-54" lat="12" version="0" changeset="1"/>
+                  <way id="-10" version="0" changeset="1">
+                    <nd ref="-5"/>
+                    <nd ref="-6"/>
+                  </way>
+                  <way id="-11" version="0" changeset="1">
+                    <nd ref="-6"/>
+                    <nd ref="-7"/>
+                  </way>
+                  <relation id="-2" version="0" changeset="1">
+                     <member type="node" role="" ref="-5" />
+                     <tag k="type" v="route" />
+                     <tag k="name" v="AtoB" />
+                  </relation>
+                  <relation id="-3" version="0" changeset="1">
+                     <member type="node" role="" ref="-6" />
+                     <tag k="type" v="route" />
+                     <tag k="name" v="BtoA" />
+                  </relation>
+                  <relation id="-4" version="0" changeset="1">
+                     <member type="relation" role="" ref="-2" />
+                     <member type="relation" role="" ref="-3" />
+                     <tag k="type" v="route_master" />
+                     <tag k="name" v="master" />
+                  </relation>
+               </create>
+               </osmChange>)" );
+
+      // execute the request
+      process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+
+      // std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
+
+      REQUIRE(req.response_status() == 200);
+  }
+
+  SECTION("Try to add, modify and delete nodes, ways, relations in changeset")
+  {
+      // set up request headers from test case
+      req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+                <osmChange version="0.6" generator="iD">
+                <create>
+                  <node id="-15" lon="4" lat="2" version="0" changeset="1"/>
+                  <node id="-16" lon="3" lat="7" version="0" changeset="1"/>
+                </create>
+                <modify>
+                  <node id="12000000000" lon="-11" lat="-46" version="1" changeset="1">
+                     <tag k="highway" v="bus_stop" />
+                     <tag k="name" v="Repubblica" />
+                  </node>
+                  <way id="14000000000" version="1" changeset="1">
+                    <tag k="highway" v="residential"/>
+                    <nd ref="-15"/>
+                    <nd ref="-16"/>
+                  </way>
+                  <relation id="18000000000" version="1" changeset="1">
+                     <tag k="type" v="route" />
+                  </relation>
+                  <relation id="18000000001" version="1" changeset="1">
+                     <member type="way" role="test" ref="14000000000" />
+                     <member type="node" role="" ref="12000000001" />
+                     <member type="relation" role="bla" ref="18000000000" />
+                     <tag k="type" v="route" />
+                  </relation>
+               </modify>
+                <delete>
+                  <relation id="18000000002" version="1" changeset="1"/>
+                  <way id="14000000001" version="1" changeset="1"/>
+                  <node id="12000000002" version="1" changeset="1"/>
+                </delete>
+                <delete if-unused="true">
+                  <node id="12000000001" version="1" changeset="1"/>
+                  <way id="14000000000" version="2" changeset="1"/>
+                  <relation id="18000000000" version="2" changeset="1"/>
+                </delete>
+               </osmChange>)" );
+
+      // execute the request
+      process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+
+      // std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
+
+      REQUIRE(req.response_status() == 200);
+  }
+
+  SECTION("Multiple operations on the same node id -1")
+  {
+    // set up request headers from test case
+    req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+                <osmChange version="0.6" generator="iD">
+                <create>
+                   <node id="-1" lon="11.625506992810122" lat="46.866699181636555"  changeset="1">
+                     <tag k="highway" v="bus_stop" />
+                   </node>
+                </create>
+                <delete>
+                   <node id="-1"  version="1" changeset="1" />
+                </delete>
+                <modify>
+                   <node id="-1" lon="11.12" lat="46.13" version="2" changeset="1"/>
+                </modify>
+                <delete>
+                    <node id="-1"  version="3" changeset="1" />
+                </delete>
+               </osmChange>)" );
+
+      // execute the request
+      process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+
+      // std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
+
+      REQUIRE(req.response_status() == 200);
+  }
+
+  SECTION("Compressed upload")
+  {
+    std::string payload = R"(<?xml version="1.0" encoding="UTF-8"?>
+        <osmChange version="0.6" generator="iD">
+        <create>
+          <node id="-5" lon="11" lat="46" version="0" changeset="1">
+             <tag k="highway" v="bus_stop" />
+          </node>
+       </create>
+       </osmChange>)";
+
+    // set up request headers from test case
+    req.set_header("HTTP_CONTENT_ENCODING", "gzip");
+
+    req.set_payload(get_compressed_payload(payload));
+
+    // execute the request
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+
+  //    std::cerr << "Response status: " << req.response_status() << "\n";
+  //    std::cerr << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
+
+    REQUIRE(req.response_status() == 200);
+  }
+
 }
+
+TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changeset][upload][db]" ) {
+  tdb.run_update(std::function<void(test_database&)>(&test_osmchange_rate_limiter));
+}
+
+
