@@ -78,7 +78,7 @@ bool valid_string(std::string_view str)
   // see https://www.boost.org/doc/libs/1_77_0/boost/spirit/home/support/char_encoding/standard.hpp
 
   return std::all_of(str.begin(), str.end(),
-		     [](auto c){ return c >= 0 && c <= UCHAR_MAX; });
+		     [](uint8_t ch){ return ((ch & ~0x7f) == 0); });
 }
 
 vector<id_version> parse_id_list_params(const request &req, std::string_view param_name) {
