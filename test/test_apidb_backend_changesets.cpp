@@ -26,203 +26,253 @@
 #include "test_database.hpp"
 #include "test_request.hpp"
 
-namespace {
 
-template <typename T>
-void assert_equal(const T& a, const T&b, const std::string &message) {
-  if (a != b) {
-    throw std::runtime_error(fmt::format("Expecting {} to be equal, but {} != {}", message, a, b));
+#define CATCH_CONFIG_MAIN
+#include <catch2/catch.hpp>
+
+
+class DatabaseTestsFixture
+{
+protected:
+  DatabaseTestsFixture() = default;
+  static test_database tdb;
+};
+
+test_database DatabaseTestsFixture::tdb{};
+
+struct CGImapListener : Catch::TestEventListenerBase, DatabaseTestsFixture {
+
+    using TestEventListenerBase::TestEventListenerBase; // inherit constructor
+
+    void testRunStarting( Catch::TestRunInfo const& testRunInfo ) override {
+      // load database schema when starting up tests
+      tdb.setup();
+    }
+
+    void testCaseStarting( Catch::TestCaseInfo const& testInfo ) override {
+      tdb.testcase_starting();
+    }
+
+    void testCaseEnded( Catch::TestCaseStats const& testCaseStats ) override {
+      tdb.testcase_ended();
+    }
+};
+
+CATCH_REGISTER_LISTENER( CGImapListener )
+
+
+
+TEST_CASE_METHOD( DatabaseTestsFixture, "test_negative_changeset_ids", "[changeset][db]" ) {
+
+  auto sel = tdb.get_data_selection();
+
+  SECTION("Initialize test data") {
+
+    tdb.run_sql(
+      "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+      "VALUES "
+      "  (-1, 'osmosis@osmosis.com', '', '2016-04-16T15:09:00Z', 'osmosis', false);"
+
+      "INSERT INTO changesets (id, user_id, created_at, closed_at) "
+      "VALUES "
+      "  (-1, -1, '2016-04-16T15:09:00Z', '2016-04-16T15:09:00Z'), "
+      "  (0, -1, '2016-04-16T15:09:00Z', '2016-04-16T15:09:00Z'); "
+
+      "INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, \"timestamp\", tile, version) "
+      " VALUES "
+      "  (6, 90000000, 90000000,  0, true,  '2016-04-16T15:09:00Z', 3229120632, 1), "
+      "  (7, 90000000, 90000000, -1, true,  '2016-04-16T15:09:00Z', 3229120632, 1); "
+      );
+
+  }
+
+  SECTION("Validate data") {
+
+    REQUIRE(sel->check_node_visibility(6) == data_selection::exists);
+
+    REQUIRE(sel->check_node_visibility(7) == data_selection::exists);
+
+    REQUIRE(sel->select_nodes({6,7}) == 2);
+
+    test_formatter f;
+    sel->write_nodes(f);
+    REQUIRE(f.m_nodes.size() ==  2);
+
+    REQUIRE(
+        test_formatter::node_t(
+        element_info(6, 1, 0, "2016-04-16T15:09:00Z", {}, {}, true),
+        9.0, 9.0,
+        tags_t()
+        ) == f.m_nodes[0]);
+
+    REQUIRE(
+      test_formatter::node_t(
+        element_info(7, 1, -1, "2016-04-16T15:09:00Z", {}, {}, true),
+        9.0, 9.0,
+        tags_t()
+        ) == f.m_nodes[1]);
   }
 }
 
-void test_negative_changeset_ids(test_database &tdb) {
-  tdb.run_sql(
-    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-    "VALUES "
-    "  (-1, 'osmosis@osmosis.com', '', '2016-04-16T15:09:00Z', 'osmosis', false);"
 
-    "INSERT INTO changesets (id, user_id, created_at, closed_at) "
-    "VALUES "
-    "  (-1, -1, '2016-04-16T15:09:00Z', '2016-04-16T15:09:00Z'), "
-    "  (0, -1, '2016-04-16T15:09:00Z', '2016-04-16T15:09:00Z'); "
+TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset", "[changeset][db]" ) {
 
-    "INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, \"timestamp\", tile, version) "
-    " VALUES "
-    "  (6, 90000000, 90000000,  0, true,  '2016-04-16T15:09:00Z', 3229120632, 1), "
-    "  (7, 90000000, 90000000, -1, true,  '2016-04-16T15:09:00Z', 3229120632, 1); "
-    );
   auto sel = tdb.get_data_selection();
 
-  assert_equal<data_selection::visibility_t>(
-    sel->check_node_visibility(6), data_selection::exists,
-    "node 6 visibility");
-  assert_equal<data_selection::visibility_t>(
-    sel->check_node_visibility(7), data_selection::exists,
-    "node 7 visibility");
+  SECTION("Initialize test data") {
+    tdb.run_sql(
+      "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+      "VALUES "
+      "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true); "
 
-  if (sel->select_nodes({6,7}) != 2) {
-    throw std::runtime_error("Selecting 2 nodes failed");
+      "INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes) "
+      "VALUES "
+      "  (1, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 2);"
+      );
   }
 
-  test_formatter f;
-  sel->write_nodes(f);
-  assert_equal<size_t>(f.m_nodes.size(), 2, "number of nodes written");
-  assert_equal<test_formatter::node_t>(
-    test_formatter::node_t(
-      element_info(6, 1, 0, "2016-04-16T15:09:00Z", {}, {}, true),
-      9.0, 9.0,
-      tags_t()
-      ),
-    f.m_nodes[0], "first node written");
-  assert_equal<test_formatter::node_t>(
-    test_formatter::node_t(
-      element_info(7, 1, -1, "2016-04-16T15:09:00Z", {}, {}, true),
-      9.0, 9.0,
-      tags_t()
-      ),
-    f.m_nodes[1], "second node written");
+  SECTION("Validate data") {
+
+    int num = sel->select_changesets({1});
+    REQUIRE(num ==  1);
+
+    std::chrono::system_clock::time_point t = parse_time("2015-09-05T17:15:33Z");
+
+    test_formatter f;
+    sel->write_changesets(f, t);
+    REQUIRE(f.m_changesets.size() == 1);
+
+    REQUIRE(
+      f.m_changesets.front() ==
+      test_formatter::changeset_t(
+        changeset_info(
+          1, // ID
+          "2013-11-14T02:10:00Z", // created_at
+          "2013-11-14T03:10:00Z", // closed_at
+          1, // uid
+          std::string("user_1"), // display_name
+          {}, // bounding box
+          2, // num_changes
+          0 // comments_count
+          ),
+        tags_t(),
+        false,
+        comments_t(),
+        t));
+  }
 }
 
-void test_changeset(test_database &tdb) {
-  tdb.run_sql(
-    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-    "VALUES "
-    "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true); "
+TEST_CASE_METHOD( DatabaseTestsFixture, "test_nonpublic_changeset", "[changeset][db]" ) {
 
-    "INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes) "
-    "VALUES "
-    "  (1, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 2);"
-    );
   auto sel = tdb.get_data_selection();
 
-  int num = sel->select_changesets({1});
-  assert_equal<int>(num, 1, "should have selected one changeset.");
+  SECTION("Initialize test data") {
 
-  std::chrono::system_clock::time_point t = parse_time("2015-09-05T17:15:33Z");
+    tdb.run_sql(
+      "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+      "VALUES "
+      "  (2, 'user_2@example.com', '', '2013-11-14T02:10:00Z', 'user_2', false); "
 
-  test_formatter f;
-  sel->write_changesets(f, t);
-  assert_equal<size_t>(f.m_changesets.size(), 1,
-                       "should have written one changeset.");
+      "INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes) "
+      "VALUES "
+      "  (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 1);"
+      );
+  }
 
-  assert_equal<test_formatter::changeset_t>(
-    f.m_changesets.front(),
-    test_formatter::changeset_t(
-      changeset_info(
-        1, // ID
-        "2013-11-14T02:10:00Z", // created_at
-        "2013-11-14T03:10:00Z", // closed_at
-        1, // uid
-        std::string("user_1"), // display_name
-        {}, // bounding box
-        2, // num_changes
-        0 // comments_count
-        ),
-      tags_t(),
-      false,
-      comments_t(),
-      t),
-    "changesets");
+  SECTION("Validate data") {
+
+    int num = sel->select_changesets({4});
+    REQUIRE(num == 1);
+
+    std::chrono::system_clock::time_point t = parse_time("2015-09-05T20:13:23Z");
+
+    test_formatter f;
+    sel->write_changesets(f, t);
+    REQUIRE(f.m_changesets.size() == 1);
+
+    REQUIRE(
+      f.m_changesets.front() ==
+      test_formatter::changeset_t(
+        changeset_info(
+          4, // ID
+          "2013-11-14T02:10:00Z", // created_at
+          "2013-11-14T03:10:00Z", // closed_at
+          {}, // uid
+          {}, // display_name
+          {}, // bounding box
+          1, // num_changes
+          0 // comments_count
+          ),
+        tags_t(),
+        false,
+        comments_t(),
+        t));
+  }
 }
 
-void test_nonpublic_changeset(test_database &tdb) {
-  tdb.run_sql(
-    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-    "VALUES "
-    "  (2, 'user_2@example.com', '', '2013-11-14T02:10:00Z', 'user_2', false); "
+TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_with_tags", "[changeset][db]" ) {
 
-    "INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes) "
-    "VALUES "
-    "  (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 1);"
-    );
   auto sel = tdb.get_data_selection();
 
-  int num = sel->select_changesets({4});
-  assert_equal<int>(num, 1, "should have selected one changeset.");
+  SECTION("Initialize test data") {
 
-  std::chrono::system_clock::time_point t = parse_time("2015-09-05T20:13:23Z");
+    tdb.run_sql(
+      "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+      "VALUES "
+      "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true); "
 
-  test_formatter f;
-  sel->write_changesets(f, t);
-  assert_equal<size_t>(f.m_changesets.size(), 1,
-                       "should have written one changeset.");
+      "INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes) "
+      "VALUES "
+      "  (2, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 1);"
 
-  assert_equal<test_formatter::changeset_t>(
-    f.m_changesets.front(),
-    test_formatter::changeset_t(
-      changeset_info(
-        4, // ID
-        "2013-11-14T02:10:00Z", // created_at
-        "2013-11-14T03:10:00Z", // closed_at
-        {}, // uid
-        {}, // display_name
-        {}, // bounding box
-        1, // num_changes
-        0 // comments_count
-        ),
-      tags_t(),
-      false,
-      comments_t(),
-      t),
-    "changesets");
+      "INSERT INTO changeset_tags (changeset_id, k, v) "
+      "VALUES "
+      "  (2, 'test_key', 'test_value'), "
+      "  (2, 'test_key2', 'test_value2'); "
+      );
+  }
+
+  SECTION("Validate data") {
+
+    int num = sel->select_changesets({2});
+    REQUIRE(num == 1);
+
+    std::chrono::system_clock::time_point t = parse_time("2015-09-05T20:33:00Z");
+
+    test_formatter f;
+    sel->write_changesets(f, t);
+    REQUIRE(f.m_changesets.size() == 1);
+
+    tags_t tags;
+    tags.push_back(std::make_pair("test_key", "test_value"));
+    tags.push_back(std::make_pair("test_key2", "test_value2"));
+    REQUIRE(
+      f.m_changesets.front() ==
+      test_formatter::changeset_t(
+        changeset_info(
+          2, // ID
+          "2013-11-14T02:10:00Z", // created_at
+          "2013-11-14T03:10:00Z", // closed_at
+          1, // uid
+          std::string("user_1"), // display_name
+          {}, // bounding box
+          1, // num_changes
+          0 // comments_count
+          ),
+        tags,
+        false,
+        comments_t(),
+        t));
+  }
 }
 
-void test_changeset_with_tags(test_database &tdb) {
-  tdb.run_sql(
-    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-    "VALUES "
-    "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true); "
-
-    "INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes) "
-    "VALUES "
-    "  (2, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 1);"
-
-    "INSERT INTO changeset_tags (changeset_id, k, v) "
-    "VALUES "
-    "  (2, 'test_key', 'test_value'), "
-    "  (2, 'test_key2', 'test_value2'); "
-    );
-  auto sel = tdb.get_data_selection();
-
-  int num = sel->select_changesets({2});
-  assert_equal<int>(num, 1, "should have selected one changeset.");
-
-  std::chrono::system_clock::time_point t = parse_time("2015-09-05T20:33:00Z");
-
-  test_formatter f;
-  sel->write_changesets(f, t);
-  assert_equal<size_t>(f.m_changesets.size(), 1,
-                       "should have written one changeset.");
-
-  tags_t tags;
-  tags.push_back(std::make_pair("test_key", "test_value"));
-  tags.push_back(std::make_pair("test_key2", "test_value2"));
-  assert_equal<test_formatter::changeset_t>(
-    f.m_changesets.front(),
-    test_formatter::changeset_t(
-      changeset_info(
-        2, // ID
-        "2013-11-14T02:10:00Z", // created_at
-        "2013-11-14T03:10:00Z", // closed_at
-        1, // uid
-        std::string("user_1"), // display_name
-        {}, // bounding box
-        1, // num_changes
-        0 // comments_count
-        ),
-      tags,
-      false,
-      comments_t(),
-      t),
-    "changesets should be equal.");
-}
 
 void check_changeset_with_comments_impl(
   data_selection& sel,
   bool include_discussion) {
 
   int num = sel.select_changesets({3});
-  assert_equal<int>(num, 1, "should have selected one changeset.");
+  REQUIRE(num == 1);
 
   if (include_discussion) {
     sel.select_changeset_discussions();
@@ -232,8 +282,7 @@ void check_changeset_with_comments_impl(
 
   test_formatter f;
   sel.write_changesets(f, t);
-  assert_equal<size_t>(f.m_changesets.size(), 1,
-                       "should have written one changeset.");
+  REQUIRE(f.m_changesets.size() == 1);
 
   comments_t comments;
   {
@@ -246,8 +295,8 @@ void check_changeset_with_comments_impl(
     comments.push_back(comment);
   }
   // note that we don't see the non-visible one in the database.
-  assert_equal<test_formatter::changeset_t>(
-    f.m_changesets.front(),
+  REQUIRE(
+    f.m_changesets.front() ==
     test_formatter::changeset_t(
       changeset_info(
         3, // ID
@@ -262,45 +311,38 @@ void check_changeset_with_comments_impl(
       tags_t(),
       include_discussion,
       comments,
-      t),
-    "changesets should be equal.");
+      t));
 }
 
-void test_changeset_with_comments(test_database &tdb) {
-  tdb.run_sql(
-    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-    "VALUES "
-    "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true), "
-    "  (3, 'user_3@example.com', '', '2015-09-05T20:37:00Z', 'user_3', true); "
+TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_with_comments", "[changeset][db]" ) {
 
-    "INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes) "
-    "VALUES "
-    "  (3, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 0); "
+  auto sel = tdb.get_data_selection();
 
-    "INSERT INTO changeset_comments (id, changeset_id, author_id, body, created_at, visible) "
-    "VALUES "
-    "  (1, 3, 3, 'a nice comment!', '2015-09-05T20:37:01Z', true), "
-    "  (2, 3, 3, 'a nasty comment', '2015-09-05T20:37:10Z', false); "
-    );
+  SECTION("Initialize test data") {
 
-  try {
-    auto sel = tdb.get_data_selection();
-    check_changeset_with_comments_impl(*sel, false);
+      tdb.run_sql(
+        "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+        "VALUES "
+        "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true), "
+        "  (3, 'user_3@example.com', '', '2015-09-05T20:37:00Z', 'user_3', true); "
 
-  } catch (const std::exception &e) {
-    std::ostringstream ostr;
-    ostr << e.what() << ", while include_discussion was false";
-    throw std::runtime_error(ostr.str());
+        "INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes) "
+        "VALUES "
+        "  (3, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 0); "
+
+        "INSERT INTO changeset_comments (id, changeset_id, author_id, body, created_at, visible) "
+        "VALUES "
+        "  (1, 3, 3, 'a nice comment!', '2015-09-05T20:37:01Z', true), "
+        "  (2, 3, 3, 'a nasty comment', '2015-09-05T20:37:10Z', false); "
+        );
   }
 
-  try {
-    auto sel = tdb.get_data_selection();
-    check_changeset_with_comments_impl(*sel, true);
+  SECTION("Check changeset without discussion") {
+    REQUIRE_NOTHROW(check_changeset_with_comments_impl(*sel, false));
+  }
 
-  } catch (const std::exception &e) {
-    std::ostringstream ostr;
-    ostr << e.what() << ", while include_discussion was true";
-    throw std::runtime_error(ostr.str());
+  SECTION("Check changeset with discussion") {
+    REQUIRE_NOTHROW(check_changeset_with_comments_impl(*sel, true));
   }
 }
 
@@ -347,14 +389,11 @@ void init_changesets(test_database &tdb) {
 
 }
 
-
-void test_changeset_create(test_database &tdb) {
+TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_create", "[changeset][db]" ) {
 
 
     const std::string baseauth = "Basic ZGVtbzpwYXNzd29yZA==";
     const std::string generator = "Test";
-
-    init_changesets(tdb);
 
     auto sel_factory = tdb.get_data_selection_factory();
     auto upd_factory = tdb.get_data_update_factory();
@@ -362,7 +401,12 @@ void test_changeset_create(test_database &tdb) {
     null_rate_limiter limiter;
     routes route;
 
-    // Unauthenticated user
+    SECTION("Initialize test data") {
+
+      init_changesets(tdb);
+    }
+
+    SECTION("Unauthenticated user")
     {
 	// set up request headers from test case
 	test_request req;
@@ -382,11 +426,10 @@ void test_changeset_create(test_database &tdb) {
 	// execute the request
 	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
-	if (req.response_status() != 401)
-	  throw std::runtime_error("Expected HTTP 401 Unauthorized: wrong user/password");
+	REQUIRE(req.response_status() == 401);
     }
 
-    // User providing wrong password
+    SECTION("User providing wrong password")
     {
 	// set up request headers from test case
 	test_request req;
@@ -407,11 +450,10 @@ void test_changeset_create(test_database &tdb) {
 	// execute the request
 	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
-	if (req.response_status() != 401)
-	  throw std::runtime_error("Expected HTTP 401 Unauthorized: wrong user/password");
+	REQUIRE(req.response_status() == 401);
     }
 
-    // User is blocked (needs_view)
+    SECTION("User is blocked (needs_view)")
     {
         tdb.run_sql(R"(UPDATE user_blocks SET needs_view = true where user_id = 31;)");
 
@@ -434,14 +476,14 @@ void test_changeset_create(test_database &tdb) {
 	// execute the request
 	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
-	if (req.response_status() != 403)
-	  throw std::runtime_error("Expected HTTP 403 Forbidden: user blocked (needs view)");
+	REQUIRE(req.response_status() == 403);
 
-	tdb.run_sql(R"(UPDATE user_blocks SET needs_view = false where user_id = 31;)");
+        tdb.run_sql(R"(UPDATE user_blocks SET needs_view = false where user_id = 31;)");
     }
 
-    // User is blocked for 1 hour
+    SECTION("User is blocked for 1 hour")
     {
+
         tdb.run_sql(R"(UPDATE user_blocks
                          SET needs_view = false,
                              ends_at = now() at time zone 'utc' + ('1 hour' ::interval)
@@ -467,8 +509,7 @@ void test_changeset_create(test_database &tdb) {
 	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
 
-	if (req.response_status() != 403)
-	  throw std::runtime_error("Expected HTTP 403 Forbidden: user blocked for 1 hour");
+	REQUIRE(req.response_status() == 403);
 
 	tdb.run_sql(R"(UPDATE user_blocks
                           SET needs_view = false,
@@ -476,7 +517,7 @@ void test_changeset_create(test_database &tdb) {
                           WHERE user_id = 31;)");
     }
 
-    // Create new changeset
+    SECTION("Create new changeset")
     {
       // Set changeset sequence id to new start value
 
@@ -499,25 +540,25 @@ void test_changeset_create(test_database &tdb) {
 	// execute the request
 	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
-	assert_equal<int>(req.response_status(), 200, "should have received HTTP status 200 OK");
-	assert_equal<std::string>(req.body().str(), "500", "should have received changeset id 500");
+	REQUIRE(req.response_status() == 200);
+	REQUIRE(req.body().str() == "500");   // should have received changeset id 500
 
 	auto sel = tdb.get_data_selection();
 
 	int num = sel->select_changesets({500});
-	assert_equal<int>(num, 1, "should have selected changeset 10.");
+        REQUIRE(num == 1);
 
 	std::chrono::system_clock::time_point t = std::chrono::system_clock::now();
 
 	test_formatter f;
 	sel->write_changesets(f, t);
-	assert_equal<size_t>(f.m_changesets.size(), 1, "should have written one changeset 500.");
+	REQUIRE(f.m_changesets.size() == 1);
 
 	tags_t tags;
 	tags.push_back(std::make_pair("comment", "Just adding some streetnames"));
 	tags.push_back(std::make_pair("created_by", "JOSM 1.61"));
-	assert_equal<test_formatter::changeset_t>(
-	  f.m_changesets.front(),
+	REQUIRE(
+	  f.m_changesets.front() ==
 	  test_formatter::changeset_t(
 	    changeset_info(
               500, // ID
@@ -532,8 +573,7 @@ void test_changeset_create(test_database &tdb) {
 	    tags,
 	    false,
 	    comments_t(),
-	    t),
-	  "changeset 500");
+	    t));
 
         // TODO: check users changeset count
 	// TODO: check changesets_subscribers table
@@ -542,13 +582,12 @@ void test_changeset_create(test_database &tdb) {
 
 }
 
-void test_changeset_update(test_database &tdb) {
+
+TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][db]" ) {
 
 
     const std::string baseauth = "Basic ZGVtbzpwYXNzd29yZA==";
     const std::string generator = "Test";
-
-    init_changesets(tdb);
 
     auto sel_factory = tdb.get_data_selection_factory();
     auto upd_factory = tdb.get_data_update_factory();
@@ -556,7 +595,11 @@ void test_changeset_update(test_database &tdb) {
     null_rate_limiter limiter;
     routes route;
 
-    // unauthenticated user
+    SECTION("Initialize test data") {
+      init_changesets(tdb);
+    }
+
+    SECTION("unauthenticated user")
     {
 
 	// set up request headers from test case
@@ -576,12 +619,11 @@ void test_changeset_update(test_database &tdb) {
 	// execute the request
 	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
-	assert_equal<int>(req.response_status(), 401, "should have received HTTP status 401 Unauthenticated");
+	REQUIRE(req.response_status() == 401); // should have received HTTP status 401 Unauthenticated
 
     }
 
-    // wrong user/password
-
+    SECTION("wrong user/password")
     {
 	// set up request headers from test case
 	test_request req;
@@ -602,14 +644,12 @@ void test_changeset_update(test_database &tdb) {
 	// execute the request
 	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
-	if (req.response_status() != 401)
-	  throw std::runtime_error("Expected HTTP 401 Unauthorized: wrong user/password");
+	REQUIRE(req.response_status() == 401);
     }
 
 
-    // updating already closed changeset
+    SECTION("updating already closed changeset")
     {
-
 	// set up request headers from test case
 	test_request req;
 	req.set_header("REQUEST_METHOD", "PUT");
@@ -628,10 +668,10 @@ void test_changeset_update(test_database &tdb) {
 	// execute the request
 	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
-	assert_equal<int>(req.response_status(), 409, "should have received HTTP status 409 Conflict");
+	REQUIRE(req.response_status() == 409);
     }
 
-    // updating non-existing changeset
+    SECTION("updating non-existing changeset")
     {
 
 	// set up request headers from test case
@@ -652,10 +692,10 @@ void test_changeset_update(test_database &tdb) {
 	// execute the request
 	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
-	assert_equal<int>(req.response_status(), 404, "should have received HTTP status 404 Not found");
+	REQUIRE(req.response_status() == 404);
     }
 
-    // changeset belongs to another user
+    SECTION("changeset belongs to another user")
     {
 	// set up request headers from test case
 	test_request req;
@@ -675,12 +715,14 @@ void test_changeset_update(test_database &tdb) {
 	// execute the request
 	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
-	assert_equal<int>(req.response_status(), 409, "should have received HTTP status 409 Conflict");
+	REQUIRE(req.response_status() == 409);
     }
 
-    // Changeset which is open for 23 hours, and will close in 10 minutes
-    // Expected result: "closed date - creation date" must be exactly 24 hours after update (assuming default settings)
+
+    SECTION("Changeset which is open for 23 hours, and will close in 10 minutes")
     {
+        // Expected result: "closed date - creation date" must be exactly 24 hours after update (assuming default settings)
+
 	// set up request headers from test case
 	test_request req;
 	req.set_header("REQUEST_METHOD", "PUT");
@@ -699,16 +741,16 @@ void test_changeset_update(test_database &tdb) {
 	// execute the request
 	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
-	assert_equal<int>(req.response_status(), 200, "should have received HTTP status 200 OK");
+	REQUIRE(req.response_status() == 200);
 
 	int rows = tdb.run_sql(R"( select * from changesets where closed_at - created_at = '24 hours' ::interval and id = 56;  )");
 
-	assert_equal<int>(rows, 1, "Changeset 56 should be closed exactly 24 hours after creation");
+	REQUIRE(rows == 1);   // Changeset 56 should be closed exactly 24 hours after creation
 
     }
 
 
-    // Update changeset with 10k entries (may not fail)
+    SECTION("Update changeset with 10k entries (may not fail)")
     {
 
 	// set up request headers from test case
@@ -729,25 +771,26 @@ void test_changeset_update(test_database &tdb) {
 	// execute the request
 	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
-	assert_equal<int>(req.response_status(), 200, "should have received HTTP status 200 OK");
+	REQUIRE(req.response_status() == 200);
 
 	auto sel = tdb.get_data_selection();
 
 	int num = sel->select_changesets({52});
-	assert_equal<int>(num, 1, "should have selected changeset 52.");
+	REQUIRE(num == 1);
 
 	std::chrono::system_clock::time_point t = std::chrono::system_clock::now();
 
 	test_formatter f;
 	sel->write_changesets(f, t);
-	assert_equal<size_t>(f.m_changesets.size(), 1, "should have written one changeset 52.");
+	REQUIRE(f.m_changesets.size() == 1);   // should have written one changeset 52.
 
 	tags_t tags;
 	tags.push_back(std::make_pair("tag1", "value1"));
 	tags.push_back(std::make_pair("tag2", "value2"));
 	tags.push_back(std::make_pair("tag3", "value3"));
-	assert_equal<test_formatter::changeset_t>(
-	  f.m_changesets.front(),
+
+	REQUIRE(
+	  f.m_changesets.front() ==
 	  test_formatter::changeset_t(
 	    changeset_info(
 	      52, // ID
@@ -762,21 +805,14 @@ void test_changeset_update(test_database &tdb) {
 	    tags,
 	    false,
 	    comments_t(),
-	    t),
-	  "changeset 52");
-
+	    t));
     }
-
 }
 
-
-void test_changeset_close(test_database &tdb) {
-
+TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_close", "[changeset][db]" ) {
 
     const std::string baseauth = "Basic ZGVtbzpwYXNzd29yZA==";
     const std::string generator = "Test";
-
-    init_changesets(tdb);
 
     auto sel_factory = tdb.get_data_selection_factory();
     auto upd_factory = tdb.get_data_update_factory();
@@ -784,9 +820,11 @@ void test_changeset_close(test_database &tdb) {
     null_rate_limiter limiter;
     routes route;
 
+    SECTION("Initialize test data") {
+      init_changesets(tdb);
+    }
 
-
-    // unauthenticated user
+    SECTION("unauthenticated user")
     {
 	// set up request headers from test case
 	test_request req;
@@ -797,10 +835,10 @@ void test_changeset_close(test_database &tdb) {
 	// execute the request
 	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
-	assert_equal<int>(req.response_status(), 401, "should have received HTTP status 401 Unauthorized");
+	REQUIRE(req.response_status() == 401);
     }
 
-    // Close changeset
+    SECTION("Close changeset")
     {
 	// set up request headers from test case
 	test_request req;
@@ -812,11 +850,11 @@ void test_changeset_close(test_database &tdb) {
 	// execute the request
 	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
-	assert_equal<int>(req.response_status(), 200, "should have received HTTP status 200 OK");
+	REQUIRE(req.response_status() == 200);
 
     }
 
-    // changeset already closed
+    SECTION("changeset already closed")
     {
 	// set up request headers from test case
 	test_request req;
@@ -828,10 +866,10 @@ void test_changeset_close(test_database &tdb) {
 	// execute the request
 	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
-	assert_equal<int>(req.response_status(), 409, "should have received HTTP status 409 Conflict");
+	REQUIRE(req.response_status() == 409);
     }
 
-    // updating non-existing changeset
+    SECTION("updating non-existing changeset")
     {
 	// set up request headers from test case
 	test_request req;
@@ -843,10 +881,10 @@ void test_changeset_close(test_database &tdb) {
 	// execute the request
 	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
-	assert_equal<int>(req.response_status(), 404, "should have received HTTP status 404 Not found");
+	REQUIRE(req.response_status() == 404);
     }
 
-    // changeset belongs to another user
+    SECTION("changeset belongs to another user")
     {
 	// set up request headers from test case
 	test_request req;
@@ -858,55 +896,8 @@ void test_changeset_close(test_database &tdb) {
 	// execute the request
 	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
-	assert_equal<int>(req.response_status(), 409, "should have received HTTP status 409 Conflict");
+	REQUIRE(req.response_status() == 409);
     }
 }
 
 
-
-} // anonymous namespace
-
-int main(int, char **) {
-  try {
-    test_database tdb;
-    tdb.setup();
-
-    tdb.run(std::function<void(test_database&)>(
-              &test_negative_changeset_ids));
-
-    tdb.run(std::function<void(test_database&)>(
-              &test_changeset));
-
-    tdb.run(std::function<void(test_database&)>(
-              &test_nonpublic_changeset));
-
-    tdb.run(std::function<void(test_database&)>(
-              &test_changeset_with_tags));
-
-    tdb.run(std::function<void(test_database&)>(
-              &test_changeset_with_comments));
-
-    tdb.run(std::function<void(test_database&)>(
-              &test_changeset_create));
-
-    tdb.run(std::function<void(test_database&)>(
-              &test_changeset_update));
-
-    tdb.run(std::function<void(test_database&)>(
-              &test_changeset_close));
-
-  } catch (const test_database::setup_error &e) {
-    std::cout << "Unable to set up test database: " << e.what() << std::endl;
-    return 77;
-
-  } catch (const std::exception &e) {
-    std::cout << "Error: " << e.what() << std::endl;
-    return 1;
-
-  } catch (...) {
-    std::cout << "Unknown exception type." << std::endl;
-    return 99;
-  }
-
-  return 0;
-}
