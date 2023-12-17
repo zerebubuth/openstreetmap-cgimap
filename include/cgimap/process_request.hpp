@@ -27,6 +27,6 @@ void process_request(request &req, rate_limiter &limiter,
                      const std::string &generator, const routes &route,
                      data_selection::factory& factory,
                      data_update::factory* update_factory,
-                     oauth::store* store);
+                     oauth::store* store = nullptr);
 
 #endif /* PROCESS_REQUEST_HPP */

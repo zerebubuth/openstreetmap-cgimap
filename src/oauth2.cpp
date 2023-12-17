@@ -33,7 +33,7 @@ inline std::string sha256_hash(const std::string& s) {
 
 namespace oauth2 {
 
-  [[nodiscard]] std::optional<osm_user_id_t> validate_bearer_token(const request &req, oauth::store* store, bool& allow_api_write)
+  [[nodiscard]] std::optional<osm_user_id_t> validate_bearer_token(const request &req, data_selection& selection, bool& allow_api_write)
   {
     const char * auth_hdr = req.get_param ("HTTP_AUTHORIZATION");
     if (auth_hdr == nullptr)
@@ -61,16 +61,13 @@ namespace oauth2 {
     bool expired;
     bool revoked;
 
-    if (!store)
-      return std::nullopt;
-
     // Check token as plain text first
-    auto user_id = store->get_user_id_for_oauth2_token(bearer_token, expired, revoked, allow_api_write);
+    auto user_id = selection.get_user_id_for_oauth2_token(bearer_token, expired, revoked, allow_api_write);
 
     // Fallback to sha256-hashed token
     if (!(user_id)) {
       const auto bearer_token_hashed = sha256_hash(bearer_token);
-      user_id = store->get_user_id_for_oauth2_token(bearer_token_hashed, expired, revoked, allow_api_write);
+      user_id = selection.get_user_id_for_oauth2_token(bearer_token_hashed, expired, revoked, allow_api_write);
     }
 
     if (!(user_id)) {

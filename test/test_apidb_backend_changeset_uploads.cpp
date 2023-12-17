@@ -1757,7 +1757,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
            </osmChange>)" );
 
     // execute the request
-    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
     REQUIRE(req.response_status() == 401);
   }
@@ -1773,7 +1773,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
            </osmChange>)" );
 
     // execute the request
-    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
     REQUIRE(req.response_status() == 200);
   }
@@ -1789,7 +1789,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
            </osmChange>)" );
 
     // execute the request
-    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
     REQUIRE(req.response_status() == 200);
   }
@@ -1805,7 +1805,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
            </osmChange>)" );
 
     // execute the request
-    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
     REQUIRE(req.response_status() == 200);
   }
@@ -1822,7 +1822,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
            </osmChange>)" );
 
     // execute the request
-    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
     // Basic Auth in status "pending" should return status HTTP 401
     REQUIRE(req.response_status() == 401);
@@ -1841,7 +1841,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
            </osmChange>)" );
 
     // execute the request
-    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
     REQUIRE(req.response_status() == 403);
 
@@ -1862,7 +1862,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
            </osmChange>)" );
 
     // execute the request
-    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
     REQUIRE(req.response_status() == 403);
 
@@ -1881,7 +1881,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
            </osmChange>)" );
 
     // execute the request
-    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
     REQUIRE(req.response_status() == 409);
   }
@@ -1897,7 +1897,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
            </osmChange>)" );
 
     // execute the request
-    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
     REQUIRE(req.response_status() == 409);
   }
@@ -1913,7 +1913,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
                 </osmChange>)" );
 
     // execute the request
-    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
     REQUIRE(req.response_status() == 409);
   }
@@ -1929,7 +1929,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
                 </osmChange>)" );
 
     // execute the request
-    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
     REQUIRE(req.response_status() == 409);
   }
@@ -1981,7 +1981,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
                </osmChange>)" );
 
     // execute the request
-    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
     CAPTURE(req.body().str());
 
@@ -2030,7 +2030,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
                </osmChange>)" );
 
     // execute the request
-    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
     CAPTURE(req.body().str());
 
@@ -2059,7 +2059,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
                </osmChange>)" );
 
     // execute the request
-    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
     // std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
 
@@ -2083,7 +2083,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     req.set_payload(get_compressed_payload(payload));
 
     // execute the request
-    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
     CAPTURE(req.body().str());
 
@@ -2176,7 +2176,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
                </osmChange>)" );
 
     // execute the request
-    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
     CAPTURE(req.body().str());
     REQUIRE(req.response_status() == 200);
@@ -2211,7 +2211,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
                  </osmChange>)" , nodes));
 
       // execute the request
-      process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+      process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
       if (nds > 98)
       {
