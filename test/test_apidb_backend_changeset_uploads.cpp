@@ -92,23 +92,26 @@ std::string get_compressed_payload(const std::string &payload)
 
 TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload][db]" ) {
 
-  tdb.run_sql(
-      "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-      "VALUES "
-      "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true), "
-      "  (2, 'user_2@example.com', '', '2013-11-14T02:10:00Z', 'user_2', false); "
+  SECTION("Initialize test data") {
 
-      "INSERT INTO changesets (id, user_id, created_at, closed_at) "
-      "VALUES "
-      "  (1, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'), "
-      "  (2, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'), "
-      "  (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z');"
-  );
+    tdb.run_sql(
+        "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+        "VALUES "
+        "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true), "
+        "  (2, 'user_2@example.com', '', '2013-11-14T02:10:00Z', 'user_2', false); "
 
-  osm_nwr_id_t node_id;
-  osm_version_t node_version;
+        "INSERT INTO changesets (id, user_id, created_at, closed_at) "
+        "VALUES "
+        "  (1, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'), "
+        "  (2, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'), "
+        "  (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z');"
+    );
+  }
 
-  // Create new node
+  static osm_nwr_id_t node_id;
+  static osm_version_t node_version;
+
+  SECTION("Create new node")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto upd = tdb.get_data_update();
@@ -165,7 +168,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
     }
   }
 
-  // Create two nodes with the same old_id
+  SECTION("Create two nodes with the same old_id")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -177,7 +180,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
     REQUIRE_THROWS_AS(node_updater->process_new_nodes(), http::bad_request);
   }
 
-  // Change existing node
+  SECTION("Change existing node")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto upd = tdb.get_data_update();
@@ -231,7 +234,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
     }
   }
 
-  // Change existing node with incorrect version number
+  SECTION("Change existing node with incorrect version number")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -242,7 +245,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
     REQUIRE_THROWS_AS(node_updater->process_modify_nodes(), http::conflict);
   }
 
-  // Change existing node multiple times
+  SECTION("Change existing node multiple times")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto upd = tdb.get_data_update();
@@ -271,9 +274,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
     auto bbox = node_updater->bbox();
     auto bbox_expected = bbox_t(minlat, minlon, maxlat, maxlon);
 
-    if (!(bbox == bbox_expected)) {
-      throw std::runtime_error("Bbox does not match expected size");
-    }
+    REQUIRE(bbox == bbox_expected);
 
     upd->commit();
 
@@ -297,7 +298,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
     }
   }
 
-  // Delete existing node
+  SECTION("Delete existing node")
   {
     api06::OSMChange_Tracking change_tracking{};
 
@@ -337,7 +338,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
     }
   }
 
-  // Try to delete already deleted node (if-unused not set)
+  SECTION("Try to delete already deleted node (if-unused not set)")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -348,7 +349,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
     REQUIRE_THROWS_AS(node_updater->process_delete_nodes(), http::gone);
   }
 
-  // Try to delete already deleted node (if-unused set)
+  SECTION("Try to delete already deleted node (if-unused set)")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -362,7 +363,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
     REQUIRE(change_tracking.skip_deleted_node_ids[0].new_version == node_version);
   }
 
-  // Delete non-existing node
+  SECTION("Delete non-existing node")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -373,7 +374,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
     REQUIRE_THROWS_AS(node_updater->process_delete_nodes(), http::not_found);
   }
 
-  // Modify non-existing node
+  SECTION("Modify non-existing node")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -388,24 +389,27 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
 
 TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload][db]" ) {
 
-  tdb.run_sql(
-      "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-      "VALUES "
-      "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true), "
-      "  (2, 'user_2@example.com', '', '2013-11-14T02:10:00Z', 'user_2', false); "
+  static osm_nwr_id_t way_id;
+  static osm_version_t way_version;
+  static osm_nwr_id_t node_new_ids[2];
 
-      "INSERT INTO changesets (id, user_id, created_at, closed_at) "
-      "VALUES "
-      "  (1, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'), "
-      "  (2, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'), "
-      "  (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z');"
-  );
+  SECTION("Initialize test data") {
 
-  osm_nwr_id_t way_id;
-  osm_version_t way_version;
-  osm_nwr_id_t node_new_ids[2];
+    tdb.run_sql(
+        "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+        "VALUES "
+        "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true), "
+        "  (2, 'user_2@example.com', '', '2013-11-14T02:10:00Z', 'user_2', false); "
 
-  // Create new way with two nodes
+        "INSERT INTO changesets (id, user_id, created_at, closed_at) "
+        "VALUES "
+        "  (1, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'), "
+        "  (2, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'), "
+        "  (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z');"
+    );
+  }
+
+  SECTION("Create new way with two nodes")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto upd = tdb.get_data_update();
@@ -437,9 +441,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
       // verify current tables
       auto sel = tdb.get_data_selection();
 
-      if (sel->check_way_visibility(way_id) != data_selection::exists) {
-        throw std::runtime_error("Way should be visible, but isn't");
-      }
+      REQUIRE(sel->check_way_visibility(way_id) == data_selection::exists);
 
       sel->select_ways({ way_id });
 
@@ -475,7 +477,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     }
   }
 
-  // Create two ways with the same old_id must fail
+  SECTION("Create two ways with the same old_id must fail")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -493,7 +495,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     REQUIRE_THROWS_AS(way_updater->process_new_ways(), http::bad_request);
   }
 
-  // Create way with unknown placeholder ids
+  SECTION("Create way with unknown placeholder ids")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -504,7 +506,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     REQUIRE_THROWS_AS(way_updater->process_new_ways(), http::bad_request);
   }
 
-  // Change existing way
+  SECTION("Change existing way")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto upd = tdb.get_data_update();
@@ -561,7 +563,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
 
   }
 
-  // Change existing way with incorrect version number
+  SECTION("Change existing way with incorrect version number")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -572,7 +574,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     REQUIRE_THROWS_AS(way_updater->process_modify_ways(), http::conflict);
   }
 
-  // Change existing way with incorrect version number and non-existing node id
+  SECTION("Change existing way with incorrect version number and non-existing node id")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -583,7 +585,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     REQUIRE_THROWS_AS(way_updater->process_modify_ways(), http::conflict);
   }
 
-  // Change existing way with unknown node id
+  SECTION("Change existing way with unknown node id")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -594,7 +596,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     REQUIRE_THROWS_AS(way_updater->process_modify_ways(), http::precondition_failed);
   }
 
-  // Change existing way with unknown placeholder node id
+  SECTION("Change existing way with unknown placeholder node id")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -605,7 +607,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     REQUIRE_THROWS_AS(way_updater->process_modify_ways(), http::bad_request);
   }
 
-  // TODO: Change existing way multiple times
+  SECTION("TODO: Change existing way multiple times")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -617,7 +619,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
 
   }
 
-  // Try to delete node which still belongs to way, if-unused not set
+  SECTION("Try to delete node which still belongs to way, if-unused not set")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -628,7 +630,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     REQUIRE_THROWS_AS(node_updater->process_delete_nodes(), http::precondition_failed);
   }
 
-  // Try to delete node which still belongs to way, if-unused set
+  SECTION("Try to delete node which still belongs to way, if-unused set")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -642,7 +644,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     REQUIRE(change_tracking.skip_deleted_node_ids[0].new_version == 1);
   }
 
-  // Delete existing way
+  SECTION("Delete existing way")
   {
     api06::OSMChange_Tracking change_tracking{};
 
@@ -679,7 +681,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     }
   }
 
-  // Try to delete already deleted node (if-unused not set)
+  SECTION("Try to delete already deleted node (if-unused not set)")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -690,7 +692,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     REQUIRE_THROWS_AS(way_updater->process_delete_ways(), http::gone);
   }
 
-  // Try to delete already deleted node (if-unused set)
+  SECTION("Try to delete already deleted node (if-unused set)")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -704,7 +706,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     REQUIRE(change_tracking.skip_deleted_way_ids[0].new_version == way_version);
   }
 
-  // Delete non-existing way
+  SECTION("Delete non-existing way")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -715,7 +717,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     REQUIRE_THROWS_AS(way_updater->process_delete_ways(), http::not_found);
   }
 
-  // Modify non-existing way
+  SECTION("Modify non-existing way")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -729,30 +731,34 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
 
 TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][upload][db]" ) {
 
-  tdb.run_sql(
-      "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-      "VALUES "
-      "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true), "
-      "  (2, 'user_2@example.com', '', '2013-11-14T02:10:00Z', 'user_2', false); "
+  static osm_nwr_id_t relation_id;
+  static osm_version_t relation_version;
+  static osm_nwr_id_t node_new_ids[3];
+  static osm_nwr_id_t way_new_id;
 
-      "INSERT INTO changesets (id, user_id, created_at, closed_at) "
-      "VALUES "
-      "  (1, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'), "
-      "  (2, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'), "
-      "  (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z');"
-  );
+  static osm_nwr_id_t relation_id_1;
+  static osm_version_t relation_version_1;
+  static osm_nwr_id_t relation_id_2;
+  static osm_version_t relation_version_2;
 
-  osm_nwr_id_t relation_id;
-  osm_version_t relation_version;
-  osm_nwr_id_t node_new_ids[3];
-  osm_nwr_id_t way_new_id;
+  SECTION("Initialize test data") {
 
-  osm_nwr_id_t relation_id_1;
-  osm_version_t relation_version_1;
-  osm_nwr_id_t relation_id_2;
-  osm_version_t relation_version_2;
+    tdb.run_sql(
+        "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
+        "VALUES "
+        "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true), "
+        "  (2, 'user_2@example.com', '', '2013-11-14T02:10:00Z', 'user_2', false); "
 
-  // Create new relation with two nodes, and one way
+        "INSERT INTO changesets (id, user_id, created_at, closed_at) "
+        "VALUES "
+        "  (1, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'), "
+        "  (2, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'), "
+        "  (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z');"
+    );
+  }
+
+
+  SECTION("Create new relation with two nodes, and one way")
   {
     api06::OSMChange_Tracking change_tracking{};
 
@@ -851,7 +857,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
   }
 
 
-  // Create new relation with two nodes, and one way, only placeholder ids
+  SECTION("Create new relation with two nodes, and one way, only placeholder ids")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto upd = tdb.get_data_update();
@@ -896,9 +902,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
       // verify current tables
       auto sel = tdb.get_data_selection();
 
-      if (sel->check_relation_visibility(r_id) != data_selection::exists) {
-        throw std::runtime_error("Relation should be visible, but isn't");
-      }
+      REQUIRE(sel->check_relation_visibility(r_id) == data_selection::exists);
 
       sel->select_relations({ r_id });
 
@@ -947,7 +951,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
 
   }
 
-  // Create two relations with the same old_id
+  SECTION("Create two relations with the same old_id")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -959,7 +963,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     REQUIRE_THROWS_AS(rel_updater->process_new_relations(), http::bad_request);
   }
 
-  // Create one relation with self reference
+  SECTION("Create one relation with self reference")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -970,7 +974,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     REQUIRE_THROWS_AS(rel_updater->process_new_relations(), http::bad_request);
   }
 
-  // Create two relations with references to each other
+  SECTION("Create two relations with references to each other")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -982,7 +986,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     REQUIRE_THROWS_AS(rel_updater->process_new_relations(), http::bad_request);
   }
 
-  // Create two relations with parent/child relationship
+  SECTION("Create two relations with parent/child relationship")
   {
     api06::OSMChange_Tracking change_tracking{};
 
@@ -995,8 +999,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
 
     upd->commit();
 
-    if (change_tracking.created_relation_ids.size() != 2)
-      throw std::runtime_error("Expected 2 entry in created_relation_ids");
+    REQUIRE(change_tracking.created_relation_ids.size() == 2);
 
     relation_id_1 = change_tracking.created_relation_ids[0].new_id;
     relation_version_1 = change_tracking.created_relation_ids[0].new_version;
@@ -1028,7 +1031,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     }
   }
 
-  // Create relation with unknown node placeholder id
+  SECTION("Create relation with unknown node placeholder id")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -1039,7 +1042,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     REQUIRE_THROWS_AS(rel_updater->process_new_relations(), http::bad_request);
   }
 
-  // Create relation with unknown way placeholder id
+  SECTION("Create relation with unknown way placeholder id")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -1050,7 +1053,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     REQUIRE_THROWS_AS(rel_updater->process_new_relations(), http::bad_request);
   }
 
-  // Create relation with unknown relation placeholder id
+  SECTION("Create relation with unknown relation placeholder id")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -1061,7 +1064,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     REQUIRE_THROWS_AS(rel_updater->process_new_relations(), http::bad_request);
   }
 
-  // Change existing relation
+  SECTION("Change existing relation")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto upd = tdb.get_data_update();
@@ -1131,7 +1134,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     }
   }
 
-  // Change existing relation with incorrect version number
+  SECTION("Change existing relation with incorrect version number")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -1143,19 +1146,18 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     REQUIRE_THROWS_AS(rel_updater->process_modify_relations(), http::conflict);
   }
 
-  // Change existing relation with incorrect version number and non-existing node id
+  SECTION("Change existing relation with incorrect version number and non-existing node id")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
-    rel_updater->modify_relation(1, relation_id, 666,
-        { {"Node", static_cast<osm_nwr_signed_id_t>(1434253485634), ""} }, {});
+    rel_updater->modify_relation(1, relation_id, 666, { {"Node", static_cast<osm_nwr_signed_id_t>(1434253485634), ""} }, {});
     REQUIRE_THROWS_AS(rel_updater->process_modify_relations(), http::conflict);
   }
 
-  // Change existing relation with unknown node id
+  SECTION("Change existing relation with unknown node id")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -1163,36 +1165,33 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto way_updater = upd->get_way_updater(change_tracking);
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
-    rel_updater->modify_relation(1, relation_id, relation_version,
-        { {"Node", 1434253485634, ""} }, {});
+    rel_updater->modify_relation(1, relation_id, relation_version, { {"Node", 1434253485634, ""} }, {});
     REQUIRE_THROWS_AS(rel_updater->process_modify_relations(), http::precondition_failed);
   }
 
-  // Change existing relation with unknown way id
+  SECTION("Change existing relation with unknown way id")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
-    rel_updater->modify_relation(1, relation_id, relation_version,
-        { {"Way", 9574853485634, ""} }, {});
+    rel_updater->modify_relation(1, relation_id, relation_version, { {"Way", 9574853485634, ""} }, {});
     REQUIRE_THROWS_AS(rel_updater->process_modify_relations(), http::precondition_failed);
   }
 
-  // Change existing relation with unknown relation id
+  SECTION("Change existing relation with unknown relation id")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
-    rel_updater->modify_relation(1, relation_id, relation_version,
-        { {"Relation", 9574853485634, ""} }, {});
+    rel_updater->modify_relation(1, relation_id, relation_version, { {"Relation", 9574853485634, ""} }, {});
     REQUIRE_THROWS_AS(rel_updater->process_modify_relations(), http::precondition_failed);
   }
 
-  // Change existing relation with unknown node placeholder id
+  SECTION("Change existing relation with unknown node placeholder id")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -1200,36 +1199,33 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto way_updater = upd->get_way_updater(change_tracking);
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
-    rel_updater->modify_relation(1, relation_id, relation_version,
-        { {"Node", -10, ""} }, {});
+    rel_updater->modify_relation(1, relation_id, relation_version, { {"Node", -10, ""} }, {});
     REQUIRE_THROWS_AS(rel_updater->process_modify_relations(), http::bad_request);
   }
 
-  // Change existing relation with unknown way placeholder id
+  SECTION("Change existing relation with unknown way placeholder id")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
-    rel_updater->modify_relation(1, relation_id, relation_version,
-        { {"Way", -10, ""} }, {});
+    rel_updater->modify_relation(1, relation_id, relation_version, { {"Way", -10, ""} }, {});
     REQUIRE_THROWS_AS(rel_updater->process_modify_relations(), http::bad_request);
   }
 
-  // Change existing relation with unknown relation placeholder id
+  SECTION("Change existing relation with unknown relation placeholder id")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
-    rel_updater->modify_relation(1, relation_id, relation_version,
-        { {"Relation", -10, ""} }, {});
+    rel_updater->modify_relation(1, relation_id, relation_version, { {"Relation", -10, ""} }, {});
     REQUIRE_THROWS_AS(rel_updater->process_modify_relations(), http::bad_request);
   }
 
-  // TODO: Change existing relation multiple times
+  SECTION("TODO: Change existing relation multiple times")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -1241,7 +1237,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
 
   }
 
-  // Preparation for next test case: create a new relation with node_new_ids[2] as only member
+  SECTION("Preparation for next test case: create a new relation with node_new_ids[2] as only member")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto upd = tdb.get_data_update();
@@ -1257,7 +1253,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     upd->commit();
   }
 
-  // Try to delete node which still belongs to relation, if-unused not set
+  SECTION("Try to delete node which still belongs to relation, if-unused not set")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -1268,7 +1264,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     REQUIRE_THROWS_AS(node_updater->process_delete_nodes(), http::precondition_failed);
   }
 
-  // Try to delete node which still belongs to relation, if-unused set
+  SECTION("Try to delete node which still belongs to relation, if-unused set")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -1283,7 +1279,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     REQUIRE(change_tracking.skip_deleted_node_ids[0].new_id == node_new_ids[2]);
   }
 
-  // Try to delete way which still belongs to relation, if-unused not set
+  SECTION("Try to delete way which still belongs to relation, if-unused not set")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -1294,7 +1290,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     REQUIRE_THROWS_AS(way_updater->process_delete_ways(), http::precondition_failed);
   }
 
-  // Try to delete way which still belongs to relation, if-unused set
+  SECTION("Try to delete way which still belongs to relation, if-unused set")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -1309,7 +1305,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     REQUIRE(change_tracking.skip_deleted_way_ids[0].new_id == way_new_id);
   }
 
-  // Try to delete relation which still belongs to relation, if-unused not set
+  SECTION("Try to delete relation which still belongs to relation, if-unused not set")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -1320,7 +1316,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     REQUIRE_THROWS_AS(rel_updater->process_delete_relations(), http::precondition_failed);
   }
 
-  // Try to delete relation which still belongs to relation, if-unused set
+  SECTION("Try to delete relation which still belongs to relation, if-unused set")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -1336,7 +1332,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
   }
 
 
-  // Delete existing relation
+  SECTION("Delete existing relation")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto upd = tdb.get_data_update();
@@ -1373,7 +1369,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     }
   }
 
-  // Delete two relations with references to each other
+  SECTION("Delete two relations with references to each other")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -1393,7 +1389,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     ++relation_version_2;
   }
 
-  // Revert deletion of two relations with master/child relationship
+  SECTION("Revert deletion of two relations with master/child relationship")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -1409,7 +1405,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     REQUIRE_NOTHROW(upd->commit());
   }
 
-  // Try to delete already deleted relation (if-unused not set)
+  SECTION("Try to delete already deleted relation (if-unused not set)")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -1420,7 +1416,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     REQUIRE_THROWS_AS(rel_updater->process_delete_relations(), http::gone);
   }
 
-  // Try to delete already deleted relation (if-unused set)
+  SECTION("Try to delete already deleted relation (if-unused set)")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -1434,7 +1430,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     REQUIRE(change_tracking.skip_deleted_relation_ids[0].new_version == relation_version);
   }
 
-  // Delete non-existing relation
+  SECTION("Delete non-existing relation")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -1445,7 +1441,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     REQUIRE_THROWS_AS(rel_updater->process_delete_relations(), http::not_found);
   }
 
-  // Modify non-existing relation
+  SECTION("Modify non-existing relation")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
@@ -1456,18 +1452,18 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     REQUIRE_THROWS_AS(rel_updater->process_modify_relations(), http::not_found);
   }
 
-  {
 
-    // Deleting child/parent in three level nested relations
+  SECTION("Deleting child/parent in three level nested relations")
+  {
 
     // Test case for https://github.com/zerebubuth/openstreetmap-cgimap/issues/223
 
-    osm_nwr_id_t relation_l3_id_1;
-    osm_version_t relation_l3_version_1;
-    osm_nwr_id_t relation_l3_id_2;
-    osm_version_t relation_l3_version_2;
+    static osm_nwr_id_t relation_l3_id_1;
+    static osm_version_t relation_l3_version_1;
+    static osm_nwr_id_t relation_l3_id_2;
+    static osm_version_t relation_l3_version_2;
 
-    // Create three relations with grandparent/parent/child relationship
+    SECTION("Create three relations with grandparent/parent/child relationship")
     {
       api06::OSMChange_Tracking change_tracking{};
 
@@ -1481,8 +1477,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
 
       upd->commit();
 
-      if (change_tracking.created_relation_ids.size() != 3)
-        throw std::runtime_error("Expected 3 entry in created_relation_ids");
+      REQUIRE(change_tracking.created_relation_ids.size() == 3);
 
       relation_l3_id_1 = change_tracking.created_relation_ids[0].new_id;
       relation_l3_version_1 = change_tracking.created_relation_ids[0].new_version;
@@ -1494,7 +1489,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
       // osm_version_t relation_l3_version_3 = change_tracking.created_relation_ids[2].new_version;
     }
 
-    // Try to delete child/parent relations which still belong to grandparent relation, if-unused set
+    SECTION("Try to delete child/parent relations which still belong to grandparent relation, if-unused set")
     {
       api06::OSMChange_Tracking change_tracking{};
       auto sel = tdb.get_data_selection();
@@ -1579,6 +1574,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][up
 
 TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_message", "[changeset][upload][db]" ) {
 
+  SECTION("Initialize test data") {
+
   tdb.run_sql(
       "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
       "VALUES "
@@ -1591,64 +1588,31 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_message", "[changeset][u
       "  (2, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'), "
       "  (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z');"
   );
+  }
 
-  // Test unknown changeset id
-  REQUIRE_THROWS_AS(process_payload(tdb, 1234, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
-      <osmChange version="0.6" generator="iD">
-         <create>
-            <node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1234">
-               <tag k="highway" v="bus_stop" />
-            </node>
-         </create>
-      </osmChange>
-    )"), http::not_found);
+
+  SECTION("Test unknown changeset id") {
+
+    REQUIRE_THROWS_AS(process_payload(tdb, 1234, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
+        <osmChange version="0.6" generator="iD">
+           <create>
+              <node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1234">
+                 <tag k="highway" v="bus_stop" />
+              </node>
+           </create>
+        </osmChange>
+      )"), http::not_found);
+
+  }
 
   // Test more complex examples, including XML parsing
 
-  // Forward relation member declarations
+  SECTION("Forward relation member declarations") {
 
-  // Example from https://github.com/openstreetmap/iD/issues/3208#issuecomment-281942743
+    // Example from https://github.com/openstreetmap/iD/issues/3208#issuecomment-281942743
+    // Relation id -3 has a relation member with forward reference to relation id -4
 
-
-  // Relation id -3 has a relation member with forward reference to relation id -4
-
-  REQUIRE_THROWS_AS(process_payload(tdb, 1, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
-      <osmChange version="0.6" generator="iD">
-         <create>
-            <node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1">
-               <tag k="highway" v="bus_stop" />
-            </node>
-            <node id="-6" lon="11.62686047585252" lat="46.86730122861715" version="0" changeset="1">
-               <tag k="highway" v="bus_stop" />
-            </node>
-            <relation id="-2" version="0" changeset="1">
-               <member type="node" role="" ref="-5" />
-               <tag k="type" v="route" />
-               <tag k="name" v="AtoB" />
-            </relation>
-            <relation id="-3" version="0" changeset="1">
-               <member type="relation" role="" ref="-2" />
-               <member type="relation" role="" ref="-4" />
-               <tag k="type" v="route_master" />
-               <tag k="name" v="master" />
-            </relation>
-            <relation id="-4" version="0" changeset="1">
-               <member type="node" role="" ref="-6" />
-               <tag k="type" v="route" />
-               <tag k="name" v="BtoA" />
-            </relation>
-         </create>
-         <modify />
-         <delete if-unused="true" />
-      </osmChange>
-
-    )"), http::bad_request);
-
-  // Testing correct parent/child sequence
-
-  std::vector<api06::diffresult_t> diffresult;
-
-  REQUIRE_NOTHROW(diffresult = process_payload(tdb, 1, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
+    REQUIRE_THROWS_AS(process_payload(tdb, 1, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
         <osmChange version="0.6" generator="iD">
            <create>
               <node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1">
@@ -1663,38 +1627,76 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_message", "[changeset][u
                  <tag k="name" v="AtoB" />
               </relation>
               <relation id="-3" version="0" changeset="1">
+                 <member type="relation" role="" ref="-2" />
+                 <member type="relation" role="" ref="-4" />
+                 <tag k="type" v="route_master" />
+                 <tag k="name" v="master" />
+              </relation>
+              <relation id="-4" version="0" changeset="1">
                  <member type="node" role="" ref="-6" />
                  <tag k="type" v="route" />
                  <tag k="name" v="BtoA" />
-              </relation>    
-              <relation id="-4" version="0" changeset="1">
-                 <member type="relation" role="" ref="-2" />
-                 <member type="relation" role="" ref="-3" />
-                 <tag k="type" v="route_master" />
-                 <tag k="name" v="master" />
               </relation>
            </create>
            <modify />
            <delete if-unused="true" />
         </osmChange>
   
-      )"));
+      )"), http::bad_request);
+  }
 
-  REQUIRE(diffresult.size() == 5);
+  SECTION("Testing correct parent/child sequence") {
 
-  std::vector<osm_nwr_signed_id_t> old_ids{ -5, -6, -2, -3, -4};
-  std::vector<object_type> obj_type{ object_type::node,
-    object_type::node,
-    object_type::relation,
-    object_type::relation,
-    object_type::relation };
+    std::vector<api06::diffresult_t> diffresult;
 
-  for (int i = 0; i < 5; i++) {
-    REQUIRE(old_ids[i] == diffresult[i].old_id);
-    REQUIRE(diffresult[i].new_version == 1);
-    REQUIRE(static_cast<int>(obj_type[i]) == static_cast<int>(diffresult[i].obj_type));
-    REQUIRE(static_cast<int>(operation::op_create) == static_cast<int>(diffresult[i].op));
-    REQUIRE(false == diffresult[i].deletion_skipped);
+    REQUIRE_NOTHROW(diffresult = process_payload(tdb, 1, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
+          <osmChange version="0.6" generator="iD">
+             <create>
+                <node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1">
+                   <tag k="highway" v="bus_stop" />
+                </node>
+                <node id="-6" lon="11.62686047585252" lat="46.86730122861715" version="0" changeset="1">
+                   <tag k="highway" v="bus_stop" />
+                </node>
+                <relation id="-2" version="0" changeset="1">
+                   <member type="node" role="" ref="-5" />
+                   <tag k="type" v="route" />
+                   <tag k="name" v="AtoB" />
+                </relation>
+                <relation id="-3" version="0" changeset="1">
+                   <member type="node" role="" ref="-6" />
+                   <tag k="type" v="route" />
+                   <tag k="name" v="BtoA" />
+                </relation>    
+                <relation id="-4" version="0" changeset="1">
+                   <member type="relation" role="" ref="-2" />
+                   <member type="relation" role="" ref="-3" />
+                   <tag k="type" v="route_master" />
+                   <tag k="name" v="master" />
+                </relation>
+             </create>
+             <modify />
+             <delete if-unused="true" />
+          </osmChange>
+    
+        )"));
+
+    REQUIRE(diffresult.size() == 5);
+
+    std::vector<osm_nwr_signed_id_t> old_ids{ -5, -6, -2, -3, -4};
+    std::vector<object_type> obj_type{ object_type::node,
+      object_type::node,
+      object_type::relation,
+      object_type::relation,
+      object_type::relation };
+
+    for (int i = 0; i < 5; i++) {
+      REQUIRE(old_ids[i] == diffresult[i].old_id);
+      REQUIRE(diffresult[i].new_version == 1);
+      REQUIRE(static_cast<int>(obj_type[i]) == static_cast<int>(diffresult[i].obj_type));
+      REQUIRE(static_cast<int>(operation::op_create) == static_cast<int>(diffresult[i].op));
+      REQUIRE(false == diffresult[i].deletion_skipped);
+    }
   }
 }
 
@@ -1981,7 +1983,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     // execute the request
     process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
-    // std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
+    CAPTURE(req.body().str());
 
     REQUIRE(req.response_status() == 200);
   }
@@ -2030,7 +2032,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     // execute the request
     process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
-    // std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
+    CAPTURE(req.body().str());
 
     REQUIRE(req.response_status() == 200);
   }
@@ -2083,8 +2085,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     // execute the request
     process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
-    //    std::cerr << "Response status: " << req.response_status() << "\n";
-    //    std::cerr << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
+    CAPTURE(req.body().str());
 
     REQUIRE(req.response_status() == 200);
   }
@@ -2097,57 +2098,6 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
   auto test_settings = std::unique_ptr<global_settings_enable_upload_rate_limiter_test_class>(new global_settings_enable_upload_rate_limiter_test_class());
   global_settings::set_configuration(std::move(test_settings));
 
-  tdb.run_sql(R"(
-           INSERT INTO users (id, email, pass_crypt, pass_salt, creation_time, display_name, data_public, status)
-           VALUES
-             (1, 'demo@example.com', '3wYbPiOxk/tU0eeIDjUhdvi8aDP3AbFtwYKKxF1IhGg=',
-                                       'sha512!10000!OUQLgtM7eD8huvanFT5/WtWaCwdOdrir8QOtFwxhO0A=',
-                                       '2013-11-14T02:10:00Z', 'demo', true, 'confirmed'),
-             (2, 'user_2@example.com', '', '', '2013-11-14T02:10:00Z', 'user_2', false, 'active');
-
-          INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes)
-          VALUES
-            (1, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 0),
-            (3, 1, now() at time zone 'utc' - '12 hour' ::interval,
-                   now() at time zone 'utc' - '11 hour' ::interval, 10000),
-            (4, 2, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 10000),
-            (5, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 10000);
-
-          INSERT INTO user_blocks (user_id, creator_id, reason, ends_at, needs_view)
-          VALUES (1,  2, '', now() at time zone 'utc' - ('1 hour' ::interval), false);
-
-          )"
-  );
-
-  // Test check_rate_limit database function.
-  // User ids != 1 may not upload any changes,
-  // User id may upload up to 99 changes
-  // Real database function is managed outside of CGImap
-
-  tdb.run_sql(R"(
-
-        CREATE OR REPLACE FUNCTION api_rate_limit(user_id bigint)
-          RETURNS integer
-          AS $$
-         DECLARE
-           max_changes double precision;
-          recent_changes int4;
-        BEGIN
-          IF user_id <> 1 THEN
-            RETURN 0;
-          ELSE
-            max_changes = 99;
-            SELECT COALESCE(SUM(changesets.num_changes), 0) INTO STRICT recent_changes FROM changesets
-               WHERE changesets.user_id = api_rate_limit.user_id
-                 AND changesets.created_at >= CURRENT_TIMESTAMP AT TIME ZONE 'UTC' - '1 hour'::interval;
-
-            RETURN max_changes - recent_changes;
-          END IF;
-        END;
-        $$ LANGUAGE plpgsql STABLE;
-
-      )");
-
   const std::string baseauth = "Basic ZGVtbzpwYXNzd29yZA==";
   const std::string generator = "Test";
 
@@ -2157,7 +2107,61 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
   null_rate_limiter limiter;
   routes route;
 
-  // Try to upload a single change only
+  SECTION("Initialize test data") {
+
+    tdb.run_sql(R"(
+             INSERT INTO users (id, email, pass_crypt, pass_salt, creation_time, display_name, data_public, status)
+             VALUES
+               (1, 'demo@example.com', '3wYbPiOxk/tU0eeIDjUhdvi8aDP3AbFtwYKKxF1IhGg=',
+                                         'sha512!10000!OUQLgtM7eD8huvanFT5/WtWaCwdOdrir8QOtFwxhO0A=',
+                                         '2013-11-14T02:10:00Z', 'demo', true, 'confirmed'),
+               (2, 'user_2@example.com', '', '', '2013-11-14T02:10:00Z', 'user_2', false, 'active');
+  
+            INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes)
+            VALUES
+              (1, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 0),
+              (3, 1, now() at time zone 'utc' - '12 hour' ::interval,
+                     now() at time zone 'utc' - '11 hour' ::interval, 10000),
+              (4, 2, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 10000),
+              (5, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 10000);
+  
+            INSERT INTO user_blocks (user_id, creator_id, reason, ends_at, needs_view)
+            VALUES (1,  2, '', now() at time zone 'utc' - ('1 hour' ::interval), false);
+  
+            )"
+    );
+
+    // Test check_rate_limit database function.
+    // User ids != 1 may not upload any changes,
+    // User id may upload up to 99 changes
+    // Real database function is managed outside of CGImap
+
+    tdb.run_sql(R"(
+  
+          CREATE OR REPLACE FUNCTION api_rate_limit(user_id bigint)
+            RETURNS integer
+            AS $$
+           DECLARE
+             max_changes double precision;
+            recent_changes int4;
+          BEGIN
+            IF user_id <> 1 THEN
+              RETURN 0;
+            ELSE
+              max_changes = 99;
+              SELECT COALESCE(SUM(changesets.num_changes), 0) INTO STRICT recent_changes FROM changesets
+                 WHERE changesets.user_id = api_rate_limit.user_id
+                   AND changesets.created_at >= CURRENT_TIMESTAMP AT TIME ZONE 'UTC' - '1 hour'::interval;
+  
+              RETURN max_changes - recent_changes;
+            END IF;
+          END;
+          $$ LANGUAGE plpgsql STABLE;
+  
+        )");
+  }
+
+  SECTION("Try to upload a single change only")
   {
     // set up request headers from test case
     test_request req;
@@ -2174,46 +2178,52 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
     // execute the request
     process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
-    if (req.response_status() != 200)
-      throw std::runtime_error(fmt::format("Expected HTTP 200, found HTTP {} - single node update, rate limiter check.\nBody: {} ", req.response_status(), req.body().str()));
+    CAPTURE(req.body().str());
+    REQUIRE(req.response_status() == 200);
   }
 
-  // We've already uploaded one change to changeset 1, we should be able
-  // to upload 98 further changes before hitting the rate limit
-
-  // This test checks that we're not counting any uncommitted changes
-  // to the changeset table towards our quota.
-
-  for (int nds = 100; nds > 97; nds--)
+  SECTION("Try to upload 98 additional changes")
   {
-    // set up request headers from test case
-    test_request req;
-    req.set_header("REQUEST_METHOD", "POST");
-    req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
-    req.set_header("HTTP_AUTHORIZATION", baseauth);
-    req.set_header("REMOTE_ADDR", "127.0.0.1");
+    // We've already uploaded one change to changeset 1, we should be able
+    // to upload 98 further changes before hitting the rate limit
 
-    std::string nodes;
+    // This test checks that we're not counting any uncommitted changes
+    // to the changeset table towards our quota.
 
-    for (int i=1; i <= nds; i++) {
-      nodes += fmt::format(R"( <node id="{}" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1"/> )", -i);
+    for (int nds = 100; nds > 97; nds--)
+    {
+      // set up request headers from test case
+      test_request req;
+      req.set_header("REQUEST_METHOD", "POST");
+      req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
+      req.set_header("HTTP_AUTHORIZATION", baseauth);
+      req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+      std::string nodes;
+
+      for (int i=1; i <= nds; i++) {
+        nodes += fmt::format(R"( <node id="{}" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1"/> )", -i);
+      }
+
+      req.set_payload(fmt::format(R"(<?xml version="1.0" encoding="UTF-8"?>
+                 <osmChange version="0.6" generator="iD">
+                 <create>{}</create>
+                 </osmChange>)" , nodes));
+
+      // execute the request
+      process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+
+      if (nds > 98)
+      {
+        REQUIRE_THAT(req.body().str(), Catch::Matchers::Equals("Upload has been blocked due to rate limiting. Please try again later."));
+        REQUIRE(req.response_status() == 429);
+      }
+      else if (nds == 98)
+      {
+        CAPTURE(req.body().str());
+        REQUIRE(req.response_status() == 200);
+      }
+
     }
-
-    req.set_payload(fmt::format(R"(<?xml version="1.0" encoding="UTF-8"?>
-               <osmChange version="0.6" generator="iD">
-               <create>{}</create>
-               </osmChange>)" , nodes));
-
-    // execute the request
-    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
-
-    if (nds > 98 && req.response_status() != 429)
-      throw std::runtime_error(fmt::format("Expected HTTP 429, found HTTP {} - multiple nodes update, rate limiter check.\nBody: {}", req.response_status(), req.body().str()));
-
-    if (nds == 98 && req.response_status() != 200)
-      throw std::runtime_error(fmt::format("Expected HTTP 200, found HTTP {} - multiple nodes update, rate limiter check.\nBody: {}", req.response_status(), req.body().str()));
   }
-
 }
-
-
