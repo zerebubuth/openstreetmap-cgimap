@@ -25,8 +25,6 @@ public:
   bool allow_read_api(const std::string &token_id) override;
   bool allow_write_api(const std::string &token_id) override;
   std::optional<osm_user_id_t> get_user_id_for_token(const std::string &token_id) override;
-  std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t id) override;
-  std::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) override;
 
 private:
   pqxx::connection m_connection;

@@ -7,12 +7,5 @@
             "secret": "xvvffpkvrk",
             "user_id": 2
         }
-    },
-    "users": {
-        "2": {
-            "roles": [
-                "moderator"
-            ]
-        }
     }
 }

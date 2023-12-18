@@ -18,6 +18,7 @@
 #include "cgimap/infix_ostream_iterator.hpp"
 
 #include <functional>
+#include <set>
 #include <sstream>
 #include <list>
 #include <vector>
@@ -823,6 +824,60 @@ bool readonly_pgsql_selection::get_user_id_pass(const std::string& user_name, os
   pass_salt = row["pass_salt"].as<std::string>();
 
   return true;
+}
+
+std::set< osm_user_role_t > readonly_pgsql_selection::get_roles_for_user(osm_user_id_t id)
+{
+  std::set<osm_user_role_t> roles;
+
+  // return all the roles to which the user belongs.
+  m.prepare("roles_for_user",
+    "SELECT role FROM user_roles WHERE user_id = $1");
+
+  auto res = m.exec_prepared("roles_for_user", id);
+
+  for (const auto &tuple : res) {
+    auto role = tuple[0].as<std::string>();
+    if (role == "moderator") {
+      roles.insert(osm_user_role_t::moderator);
+    } else if (role == "administrator") {
+      roles.insert(osm_user_role_t::administrator);
+    }
+  }
+
+  return roles;
+}
+
+std::optional< osm_user_id_t > readonly_pgsql_selection::get_user_id_for_oauth2_token(
+    const std::string &token_id, bool &expired, bool &revoked,
+    bool &allow_api_write)
+{
+  // return details for OAuth 2.0 access token
+  m.prepare("oauth2_access_token",
+    R"(SELECT resource_owner_id as user_id,
+         CASE WHEN expires_in IS NULL THEN false
+              ELSE (created_at + expires_in * interval '1' second)  < now() at time zone 'utc'
+         END as expired,
+         COALESCE(revoked_at < now() at time zone 'utc', false) as revoked,
+         'write_api' = any(string_to_array(scopes, ' ')) as allow_api_write
+       FROM oauth_access_tokens
+       WHERE token = $1)");
+
+  auto res = m.exec_prepared("oauth2_access_token", token_id);
+
+  if (!res.empty()) {
+    auto uid = res[0]["user_id"].as<osm_user_id_t>();
+    expired = res[0]["expired"].as<bool>();
+    revoked = res[0]["revoked"].as<bool>();
+    allow_api_write = res[0]["allow_api_write"].as<bool>();
+    return uid;
+
+  } else {
+    expired = true;
+    revoked = true;
+    allow_api_write = false;
+    return {};
+  }
 }
 
 bool readonly_pgsql_selection::is_user_active(const osm_user_id_t id)

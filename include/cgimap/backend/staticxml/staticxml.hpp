@@ -14,6 +14,8 @@
 
 #include <memory>
 
-std::unique_ptr<backend> make_staticxml_backend();
+using user_roles_t = std::map<osm_user_id_t, std::set<osm_user_role_t> >;
+
+std::unique_ptr<backend> make_staticxml_backend(user_roles_t = {});
 
 #endif /* STATICXML_BACKEND_HPP */

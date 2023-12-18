@@ -15,6 +15,7 @@
 
 #include <chrono>
 #include <memory>
+#include <set>
 #include <vector>
 #include <string>
 
@@ -175,6 +176,12 @@ public:
                                 osm_user_id_t &,
                                 std::string & pass_crypt, 
                                 std::string & pass_salt) = 0;
+
+  virtual std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t id) = 0;
+
+  virtual std::optional< osm_user_id_t > get_user_id_for_oauth2_token(
+      const std::string &token_id, bool &expired, bool &revoked,
+      bool &allow_api_write) = 0;
 
   // is user status confirmed or active?
   virtual bool is_user_active(const osm_user_id_t) = 0;

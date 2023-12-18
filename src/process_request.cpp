@@ -454,15 +454,12 @@ std::optional<osm_user_id_t> determine_user_id (const request& req,
   // Try to authenticate user via Basic Auth
   std::optional<osm_user_id_t>  user_id = basicauth::authenticate_user (req, selection);
 
-  if (!store)
-    return user_id;
-
   // Try to authenticate user via OAuth2 Bearer Token
   if (!user_id)
-    user_id = oauth2::validate_bearer_token (req, store, allow_api_write);
+    user_id = oauth2::validate_bearer_token (req, selection, allow_api_write);
 
   // Try to authenticate user via OAuth 1.0a
-  if (!user_id && global_settings::get_oauth_10_support())
+  if (!user_id && store && global_settings::get_oauth_10_support())
   {
     oauth::validity::validity oauth_valid = oauth::is_valid_signature (
         req, *store, *store, *store);
@@ -530,8 +527,7 @@ void process_request(request &req, rate_limiter &limiter,
     // set the client key and user roles accordingly
     if (user_id) {
         client_key = (fmt::format("{}{}", user_prefix, (*user_id)));
-        if (store)
-          user_roles = store->get_roles_for_user(*user_id);
+        user_roles = selection->get_roles_for_user(*user_id);
     }
 
     auto is_moderator = user_roles.count(osm_user_role_t::moderator) > 0;

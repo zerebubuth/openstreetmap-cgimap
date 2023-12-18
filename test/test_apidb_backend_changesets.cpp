@@ -424,7 +424,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_create", "[changeset][db
                           )" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
 	REQUIRE(req.response_status() == 401);
     }
@@ -448,7 +448,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_create", "[changeset][db
                           )" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
 	REQUIRE(req.response_status() == 401);
     }
@@ -474,7 +474,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_create", "[changeset][db
                           )" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
 	REQUIRE(req.response_status() == 403);
 
@@ -506,7 +506,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_create", "[changeset][db
                           )" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
 
 	REQUIRE(req.response_status() == 403);
@@ -538,7 +538,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_create", "[changeset][db
 			    </osm>  )" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
 	REQUIRE(req.response_status() == 200);
 	REQUIRE(req.body().str() == "500");   // should have received changeset id 500
@@ -617,7 +617,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][db
 			    </osm>  )" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
 	REQUIRE(req.response_status() == 401); // should have received HTTP status 401 Unauthenticated
 
@@ -642,7 +642,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][db
                           )" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
 	REQUIRE(req.response_status() == 401);
     }
@@ -666,7 +666,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][db
 			    </osm>  )" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
 	REQUIRE(req.response_status() == 409);
     }
@@ -690,7 +690,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][db
 			    </osm>  )" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
 	REQUIRE(req.response_status() == 404);
     }
@@ -713,7 +713,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][db
 			    </osm>  )" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
 	REQUIRE(req.response_status() == 409);
     }
@@ -739,7 +739,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][db
 			    </osm>  )" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
 	REQUIRE(req.response_status() == 200);
 
@@ -769,7 +769,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][db
 			    </osm>  )" );
 
 	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
 	REQUIRE(req.response_status() == 200);
 
@@ -833,7 +833,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_close", "[changeset][db]
 	req.set_header("REMOTE_ADDR", "127.0.0.1");
 
 	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
 	REQUIRE(req.response_status() == 401);
     }
@@ -848,7 +848,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_close", "[changeset][db]
 	req.set_header("REMOTE_ADDR", "127.0.0.1");
 
 	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
 	REQUIRE(req.response_status() == 200);
 
@@ -864,7 +864,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_close", "[changeset][db]
 	req.set_header("REMOTE_ADDR", "127.0.0.1");
 
 	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
 	REQUIRE(req.response_status() == 409);
     }
@@ -879,7 +879,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_close", "[changeset][db]
 	req.set_header("REMOTE_ADDR", "127.0.0.1");
 
 	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
 	REQUIRE(req.response_status() == 404);
     }
@@ -894,7 +894,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_close", "[changeset][db]
 	req.set_header("REMOTE_ADDR", "127.0.0.1");
 
 	// execute the request
-	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
+	process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
 	REQUIRE(req.response_status() == 409);
     }

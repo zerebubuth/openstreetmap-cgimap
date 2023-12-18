@@ -294,6 +294,10 @@ public:
   bool supports_user_details() const override { return false; }
   bool is_user_blocked(const osm_user_id_t) override { return true; }
   bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &) override { return false; };
+  std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t id) override { return {}; }
+  std::optional< osm_user_id_t > get_user_id_for_oauth2_token(
+      const std::string &token_id, bool &expired, bool &revoked,
+      bool &allow_api_write) override { return {}; }
   bool is_user_active(const osm_user_id_t id) override { return (id != 1000); }
 
   int select_historical_nodes(const std::vector<osm_edition_t> &) override { return 0; }
@@ -417,6 +421,9 @@ void test_oauth_end_to_end(test_database &tdb) {
                      "saw user:1 as a rate limit key");
 }
 
+
+
+// TODO: !! Don't remove this test case when removing OAuth 1.0a !!
 void test_oauth_get_roles_for_user(test_database &tdb) {
   tdb.run_sql(
     "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
@@ -431,22 +438,24 @@ void test_oauth_get_roles_for_user(test_database &tdb) {
     "  (2, 1, 'moderator', 1), "
     "  (3, 2, 'moderator', 1);"
     "");
+
+  auto sel = tdb.get_data_selection();
   auto store = tdb.get_oauth_store();
 
   // user 3 has no roles -> should return empty set
-  assert_equal<roles_t>(roles_t(), store->get_roles_for_user(3),
+  assert_equal<roles_t>(roles_t(), sel->get_roles_for_user(3),
     "roles for normal user");
 
   // user 2 is a moderator
   assert_equal<roles_t>(
     roles_t({osm_user_role_t::moderator}),
-    store->get_roles_for_user(2),
+    sel->get_roles_for_user(2),
     "roles for moderator user");
 
   // user 1 is an administrator and a moderator
   assert_equal<roles_t>(
     roles_t({osm_user_role_t::moderator, osm_user_role_t::administrator}),
-    store->get_roles_for_user(1),
+    sel->get_roles_for_user(1),
     "roles for admin+moderator user");
 }
 

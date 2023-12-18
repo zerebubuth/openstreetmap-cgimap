@@ -30,65 +30,6 @@
 
 namespace {
 
-class empty_data_selection : public data_selection {
-public:
-
-  ~empty_data_selection() override = default;
-
-  void write_nodes(output_formatter &formatter) override {}
-  void write_ways(output_formatter &formatter) override {}
-  void write_relations(output_formatter &formatter) override {}
-  void write_changesets(output_formatter &formatter,
-                        const std::chrono::system_clock::time_point &now) override {}
-
-  visibility_t check_node_visibility(osm_nwr_id_t id) override { return non_exist; }
-  visibility_t check_way_visibility(osm_nwr_id_t id) override { return non_exist; }
-  visibility_t check_relation_visibility(osm_nwr_id_t id) override { return non_exist; }
-
-  int select_nodes(const std::vector<osm_nwr_id_t> &) override { return 0; }
-  int select_ways(const std::vector<osm_nwr_id_t> &) override { return 0; }
-  int select_relations(const std::vector<osm_nwr_id_t> &) override { return 0; }
-  int select_nodes_from_bbox(const bbox &bounds, int max_nodes) override { return 0; }
-  void select_nodes_from_relations() override {}
-  void select_ways_from_nodes() override {}
-  void select_ways_from_relations() override {}
-  void select_relations_from_ways() override {}
-  void select_nodes_from_way_nodes() override {}
-  void select_relations_from_nodes() override {}
-  void select_relations_from_relations(bool drop_relations = false) override {}
-  void select_relations_members_of_relations() override {}
-  int select_changesets(const std::vector<osm_changeset_id_t> &) override { return 0; }
-  void select_changeset_discussions() override {}
-  void drop_nodes() override {}
-  void drop_ways() override {}
-  void drop_relations() override {}
-
-  bool supports_user_details() const override { return false; }
-  bool is_user_blocked(const osm_user_id_t) override { return true; }
-  bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &) override { return false; };
-  bool is_user_active(const osm_user_id_t id) override { return (id != 1000); }
-
-  int select_historical_nodes(const std::vector<osm_edition_t> &) override { return 0; }
-  int select_nodes_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
-  int select_historical_ways(const std::vector<osm_edition_t> &) override { return 0; }
-  int select_ways_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
-  int select_historical_relations(const std::vector<osm_edition_t> &) override { return 0; }
-  int select_relations_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
-  void set_redactions_visible(bool) override {}
-  int select_historical_by_changesets(const std::vector<osm_changeset_id_t> &) override { return 0; }
-
-  struct factory : public data_selection::factory {
-    ~factory() override = default;
-
-    std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) const override {
-      return std::make_unique<empty_data_selection>();
-    }
-    std::unique_ptr<Transaction_Owner_Base> get_default_transaction() override {
-      return std::make_unique<Transaction_Owner_Void>();
-    }
-  };
-};
-
 struct recording_rate_limiter : public rate_limiter {
   ~recording_rate_limiter() override = default;
 
@@ -132,7 +73,7 @@ void add_common_headers(test_request& req)
 }
 
 
-int create_changeset(test_database &tdb, oauth::store& store, const std::string &token) {
+int create_changeset(test_database &tdb, const std::string &token) {
 
   // Test valid token, create empty changeset
   recording_rate_limiter limiter;
@@ -154,17 +95,17 @@ int create_changeset(test_database &tdb, oauth::store& store, const std::string 
 
   req.set_payload(R"( <osm><changeset><tag k="created_by" v="JOSM 1.61"/><tag k="comment" v="Just adding some streetnames"/></changeset></osm> )" );
 
-  process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), &store);
+  process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
   return (req.response_status());
 }
 
-int fetch_relation(test_database &tdb, oauth::store& store, const std::string &token) {
+int fetch_relation(test_database &tdb, const std::string &token) {
 
   recording_rate_limiter limiter;
   std::string generator("test_apidb_backend.cpp");
   routes route;
-  auto factory = std::make_unique<empty_data_selection::factory>();
+  auto sel_factory = tdb.get_data_selection_factory();
 
   test_request req;
   req.set_header("SCRIPT_URL", "/api/0.6/relation/165475/full");
@@ -176,7 +117,7 @@ int fetch_relation(test_database &tdb, oauth::store& store, const std::string &t
   req.set_header("SCRIPT_NAME", "/api/0.6/relation/165475/full");
   add_common_headers(req);
 
-  process_request(req, limiter, generator, route, *factory, nullptr, &store);
+  process_request(req, limiter, generator, route, *sel_factory, nullptr);
 
   return (req.response_status());
 }
@@ -220,7 +161,7 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_user_id_for_oauth2_token", "[oauth2
   bool expired;
   bool revoked;
 
-  auto store = tdb.get_oauth_store();
+  auto sel = tdb.get_data_selection();
 
   SECTION("Initialize test data") {
 
@@ -265,7 +206,7 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_user_id_for_oauth2_token", "[oauth2
   // Also see test_oauth2.cpp for oauth2::validate_bearer_token tests, which include auth token hash calculation
 
   SECTION("Valid token w/ write API scope") {
-    const auto user_id = store->get_user_id_for_oauth2_token("4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8", expired, revoked, allow_api_write);
+    const auto user_id = sel->get_user_id_for_oauth2_token("4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8", expired, revoked, allow_api_write);
     CHECK(user_id == 1);
     REQUIRE(allow_api_write);
     REQUIRE_FALSE(expired);
@@ -273,12 +214,12 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_user_id_for_oauth2_token", "[oauth2
   }
 
   SECTION("Invalid (non existing) token") {
-    const auto user_id = store->get_user_id_for_oauth2_token("a6ee343e3417915c87f492aac2a7b638647ef576e2a03256bbf1854c7e06c163", expired, revoked, allow_api_write);
+    const auto user_id = sel->get_user_id_for_oauth2_token("a6ee343e3417915c87f492aac2a7b638647ef576e2a03256bbf1854c7e06c163", expired, revoked, allow_api_write);
     REQUIRE_FALSE(user_id.has_value());
   }
 
   SECTION("Revoked token") {
-    const auto user_id = store->get_user_id_for_oauth2_token("1187c28b93ab4a14e3df6a61ef46a24d7d4d7964c1d56eb2bfd197b059798c1d", expired, revoked, allow_api_write);
+    const auto user_id = sel->get_user_id_for_oauth2_token("1187c28b93ab4a14e3df6a61ef46a24d7d4d7964c1d56eb2bfd197b059798c1d", expired, revoked, allow_api_write);
     CHECK(user_id == 1);
     REQUIRE(allow_api_write);
     REQUIRE_FALSE(expired);
@@ -286,7 +227,7 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_user_id_for_oauth2_token", "[oauth2
   }
 
   SECTION("Two scopes, including write_api") {
-    const auto user_id = store->get_user_id_for_oauth2_token("4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8", expired, revoked, allow_api_write);
+    const auto user_id = sel->get_user_id_for_oauth2_token("4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8", expired, revoked, allow_api_write);
     CHECK(user_id == 1);
     REQUIRE(allow_api_write);
     REQUIRE_FALSE(expired);
@@ -294,7 +235,7 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_user_id_for_oauth2_token", "[oauth2
   }
 
   SECTION("Two scopes, not write_api") {
-    const auto user_id = store->get_user_id_for_oauth2_token("e466d2ba2ff5da35fdaa7547eb6c27ae0461c7a4acc05476c0a33b1b1d0788cd", expired, revoked, allow_api_write);
+    const auto user_id = sel->get_user_id_for_oauth2_token("e466d2ba2ff5da35fdaa7547eb6c27ae0461c7a4acc05476c0a33b1b1d0788cd", expired, revoked, allow_api_write);
     CHECK(user_id == 1);
     REQUIRE_FALSE(allow_api_write);
     REQUIRE_FALSE(expired);
@@ -302,7 +243,7 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_user_id_for_oauth2_token", "[oauth2
   }
 
   SECTION("expired token") {
-    const auto user_id = store->get_user_id_for_oauth2_token("f0e6f310ee3a9362fe00cee4328ad318a1fa6c770b2e19975271da99a6407476", expired, revoked, allow_api_write);
+    const auto user_id = sel->get_user_id_for_oauth2_token("f0e6f310ee3a9362fe00cee4328ad318a1fa6c770b2e19975271da99a6407476", expired, revoked, allow_api_write);
     CHECK(user_id == 1);
     REQUIRE(allow_api_write);
     REQUIRE(expired);
@@ -310,7 +251,7 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_user_id_for_oauth2_token", "[oauth2
   }
 
   SECTION("token to expire in about 30 minutes") {
-    const auto user_id = store->get_user_id_for_oauth2_token("b1294a183bf64f4d9a97f24ed84ce88e3ab6e7ada78114d6e600bdb63831237b", expired, revoked, allow_api_write);
+    const auto user_id = sel->get_user_id_for_oauth2_token("b1294a183bf64f4d9a97f24ed84ce88e3ab6e7ada78114d6e600bdb63831237b", expired, revoked, allow_api_write);
     CHECK(user_id == 1);
     REQUIRE(allow_api_write);
     REQUIRE_FALSE(expired);
@@ -320,8 +261,6 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_user_id_for_oauth2_token", "[oauth2
 
 
 TEST_CASE_METHOD(DatabaseTestsFixture, "test_oauth2_end_to_end", "[oauth2][db]" ) {
-
-  auto store = tdb.get_oauth_store();
 
   // tokens 1yi2RI2W... and 2Kx... are stored in plain text in oauth_access_tokens table, all others as sha256-hash value
 
@@ -354,28 +293,28 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_oauth2_end_to_end", "[oauth2][db]" 
   }
 
   SECTION("Fetch relation: test valid token -> HTTP 404 not found, due to unknown relation") {
-    CHECK(fetch_relation(tdb, *store, "1yi2RI2WhIVMLoLaDLg0nrPJPU4WQSIX4Hh_jxfRRxI") == 404);
+    CHECK(fetch_relation(tdb, "1yi2RI2WhIVMLoLaDLg0nrPJPU4WQSIX4Hh_jxfRRxI") == 404);
   }
 
   SECTION("Fetch relation: test unknown token -> HTTP 401 Unauthorized") {
-    CHECK(fetch_relation(tdb, *store, "8JrrmoKSUtzBhmenUUQF27PVdQn2QY8YdRfosu3R-Dc") == 401);
+    CHECK(fetch_relation(tdb, "8JrrmoKSUtzBhmenUUQF27PVdQn2QY8YdRfosu3R-Dc") == 401);
   }
 
   // Test valid token, create empty changeset
 
   // missing write_api scope --> http::unauthorized ("You have not granted the modify map permission")
   SECTION("Create empty changeset: missing write_api scope") {
-    CHECK(create_changeset(tdb, *store, "hCXrz5B5fCBHusp0EuD2IGwYSxS8bkAnVw2_aLEdxig") == 401);
+    CHECK(create_changeset(tdb, "hCXrz5B5fCBHusp0EuD2IGwYSxS8bkAnVw2_aLEdxig") == 401);
   }
 
   SECTION("Create empty changeset: includes write_api scope") {
-    CHECK(create_changeset(tdb, *store, "1yi2RI2WhIVMLoLaDLg0nrPJPU4WQSIX4Hh_jxfRRxI") == 200);
+    CHECK(create_changeset(tdb, "1yi2RI2WhIVMLoLaDLg0nrPJPU4WQSIX4Hh_jxfRRxI") == 200);
   }
 
   // Same as previous tests case. However, user 1000 is not active this time
   // Creating changesets should be rejected with HTTP 403 (Forbidden)
   SECTION("Create empty changeset: includes write_api scope, user not active") {
-    CHECK(create_changeset(tdb, *store, "2KxONxvhoSji9F8dz_WO6UZOzRdmQ0ISB0ovnZrJnhM") == 403);
+    CHECK(create_changeset(tdb, "2KxONxvhoSji9F8dz_WO6UZOzRdmQ0ISB0ovnZrJnhM") == 403);
   }
 }
 

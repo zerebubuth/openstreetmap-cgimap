@@ -21,26 +21,45 @@
 
 namespace {
 
-struct test_oauth2 : public oauth::store {
 
-  test_oauth2() = default;
+class oauth2_test_data_selection : public data_selection {
+public:
 
-  ~test_oauth2() override = default;
+  ~oauth2_test_data_selection() override = default;
 
+  void write_nodes(output_formatter &formatter) override {}
+  void write_ways(output_formatter &formatter) override {}
+  void write_relations(output_formatter &formatter) override {}
+  void write_changesets(output_formatter &formatter,
+                        const std::chrono::system_clock::time_point &now) override {}
 
-  bool allow_read_api(const std::string &token_id) override {
-    // everyone can read the api
-    return true;
-  }
+  visibility_t check_node_visibility(osm_nwr_id_t id) override { return non_exist; }
+  visibility_t check_way_visibility(osm_nwr_id_t id) override { return non_exist; }
+  visibility_t check_relation_visibility(osm_nwr_id_t id) override { return non_exist; }
 
-  bool allow_write_api(const std::string &token_id) override {
-    // everyone can write the api for the moment
-    return true;
-  }
+  int select_nodes(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_ways(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_relations(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_nodes_from_bbox(const bbox &bounds, int max_nodes) override { return 0; }
+  void select_nodes_from_relations() override {}
+  void select_ways_from_nodes() override {}
+  void select_ways_from_relations() override {}
+  void select_relations_from_ways() override {}
+  void select_nodes_from_way_nodes() override {}
+  void select_relations_from_nodes() override {}
+  void select_relations_from_relations(bool drop_relations = false) override {}
+  void select_relations_members_of_relations() override {}
+  int select_changesets(const std::vector<osm_changeset_id_t> &) override { return 0; }
+  void select_changeset_discussions() override {}
+  void drop_nodes() override {}
+  void drop_ways() override {}
+  void drop_relations() override {}
 
-  std::optional<osm_user_id_t> get_user_id_for_token(const std::string &token_id) override {
-    return {};
-  }
+  bool supports_user_details() const override { return false; }
+  bool is_user_blocked(const osm_user_id_t) override { return true; }
+  bool is_user_active(const osm_user_id_t) override { return false; }
+  bool get_user_id_pass(const std::string& user_name, osm_user_id_t & user_id,
+                                std::string & pass_crypt, std::string & pass_salt) override { return false; }
 
   std::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, 
                                                             bool& expired, 
@@ -100,10 +119,26 @@ struct test_oauth2 : public oauth::store {
     return {};
   }
 
-  std::optional<std::string> consumer_secret(const std::string &consumer_key) override { return {}; }
-  std::optional<std::string> token_secret(const std::string &token_id) override { return {}; }
-  bool use_nonce(const std::string &nonce, uint64_t timestamp) override { return true; }
+  int select_historical_nodes(const std::vector<osm_edition_t> &) override { return 0; }
+  int select_nodes_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_historical_ways(const std::vector<osm_edition_t> &) override { return 0; }
+  int select_ways_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  int select_historical_relations(const std::vector<osm_edition_t> &) override { return 0; }
+  int select_relations_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
+  void set_redactions_visible(bool) override {}
+  int select_historical_by_changesets(const std::vector<osm_changeset_id_t> &) override { return 0; }
+
+  struct factory : public data_selection::factory {
+    ~factory() override = default;
+    std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) const override {
+      return std::make_unique<oauth2_test_data_selection>();
+    }
+    std::unique_ptr<Transaction_Owner_Base> get_default_transaction() override {
+      return std::make_unique<Transaction_Owner_Void>();
+    }
+  };
 };
+
 
 } // anonymous namespace
 
@@ -112,23 +147,26 @@ TEST_CASE("test_validate_bearer_token", "[oauth2]") {
 
   bool allow_api_write;
   test_request req;
-  auto store = std::make_shared<test_oauth2>();
+
+  auto factory = std::make_shared<oauth2_test_data_selection::factory>();
+  auto txn_readonly = factory->get_default_transaction();
+  auto sel = factory->make_selection(*txn_readonly);
 
   SECTION("Missing Header") {
-    auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
+    auto res = oauth2::validate_bearer_token(req, *sel, allow_api_write);
     CHECK(res == std::optional<osm_user_id_t>{});
   }
 
   SECTION("Missing Header") {
     req.set_header("HTTP_AUTHORIZATION","");
-    auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
+    auto res = oauth2::validate_bearer_token(req, *sel, allow_api_write);
     CHECK(res == std::optional<osm_user_id_t>{});
   }
 
   //
   SECTION("Test valid bearer token, no api_write") {
     req.set_header("HTTP_AUTHORIZATION","Bearer 6GGXRGoDog0i6mRyrBonFmJORQhWZMhZH5WNWLd0qcs");
-    auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
+    auto res = oauth2::validate_bearer_token(req, *sel, allow_api_write);
     CHECK(res == std::optional<osm_user_id_t>{1});
     CHECK(!allow_api_write);
   }
@@ -136,41 +174,41 @@ TEST_CASE("test_validate_bearer_token", "[oauth2]") {
   //
   SECTION("Test valid token including all allowed chars & padding chars - api_write allowed") {
     req.set_header("HTTP_AUTHORIZATION","Bearer H4TeKX-zE_VLH.UT33_n6x__yZ8~BA~aQL+wfxQN/cADu7BMMA=====");
-    auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
+    auto res = oauth2::validate_bearer_token(req, *sel, allow_api_write);
     CHECK(res == std::optional<osm_user_id_t>{2});
     CHECK(allow_api_write);
   }
 
   SECTION("Test bearer token invalid format") {
     req.set_header("HTTP_AUTHORIZATION","Bearer 6!#c23.-;<<>>");
-    auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
+    auto res = oauth2::validate_bearer_token(req, *sel, allow_api_write);
     CHECK(res == std::optional<osm_user_id_t>{});
   }
 
   SECTION("Test invalid bearer token") {
 
     req.set_header("HTTP_AUTHORIZATION","Bearer nFRBLFyNXPKY1fiTHAIfVsjQYkCD2KoRuH66upvueaQ");
-    REQUIRE_THROWS_MATCHES(static_cast<void>(oauth2::validate_bearer_token(req, store.get(), allow_api_write)), http::unauthorized,
+    REQUIRE_THROWS_MATCHES(static_cast<void>(oauth2::validate_bearer_token(req, *sel, allow_api_write)), http::unauthorized,
         Catch::Message("invalid_token"));
   }
 
   SECTION("Test expired bearer token") {
     req.set_header("HTTP_AUTHORIZATION","Bearer pwnMeCjSmIfQ9hXVYfAyFLFnE9VOADNvwGMKv4Ylaf0");
-    REQUIRE_THROWS_MATCHES(static_cast<void>(oauth2::validate_bearer_token(req, store.get(), allow_api_write)),
+    REQUIRE_THROWS_MATCHES(static_cast<void>(oauth2::validate_bearer_token(req, *sel, allow_api_write)),
                       http::unauthorized,
                       Catch::Message("token_expired"));
   }
 
   SECTION("Test revoked bearer token") {
     req.set_header("HTTP_AUTHORIZATION","Bearer hCXrz5B5fCBHusp0EuD2IGwYSxS8bkAnVw2_aLEdxig");
-    REQUIRE_THROWS_MATCHES(static_cast<void>(oauth2::validate_bearer_token(req, store.get(), allow_api_write)),
+    REQUIRE_THROWS_MATCHES(static_cast<void>(oauth2::validate_bearer_token(req, *sel, allow_api_write)),
                       http::unauthorized,
                       Catch::Message("token_revoked"));
   }
 
   SECTION("Test valid bearer token, no api_write") {
     req.set_header("HTTP_AUTHORIZATION","Bearer 0LbSEAVj4jQhr-TfNaCUhn4JSAvXmXepNaL9aSAUsVQ");
-    auto res = oauth2::validate_bearer_token(req, store.get(), allow_api_write);
+    auto res = oauth2::validate_bearer_token(req, *sel, allow_api_write);
     CHECK(res == std::optional<osm_user_id_t>{5});
     CHECK(!allow_api_write);
   }
