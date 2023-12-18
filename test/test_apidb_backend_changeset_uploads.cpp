@@ -35,6 +35,9 @@
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
 
+using Catch::Matchers::StartsWith;
+using Catch::Matchers::EndsWith;
+using Catch::Matchers::Equals;
 
 class global_settings_enable_upload_rate_limiter_test_class : public global_settings_default {
 
@@ -177,7 +180,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
 
     node_updater->add_node(0, 0 , 1, -2, {});
     node_updater->add_node(10, 20 , 1, -2, {});
-    REQUIRE_THROWS_AS(node_updater->process_new_nodes(), http::bad_request);
+    REQUIRE_THROWS_MATCHES(node_updater->process_new_nodes(), http::bad_request,
+        Catch::Message("Placeholder IDs must be unique for created elements."));
   }
 
   SECTION("Change existing node")
@@ -242,7 +246,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
     auto node_updater = upd->get_node_updater(change_tracking);
 
     node_updater->modify_node(40, 50, 1, node_id, 666, {});
-    REQUIRE_THROWS_AS(node_updater->process_modify_nodes(), http::conflict);
+    REQUIRE_THROWS_MATCHES(node_updater->process_modify_nodes(), http::conflict,
+        Catch::Message("Version mismatch: Provided 666, server had: 2 of Node 1"));
   }
 
   SECTION("Change existing node multiple times")
@@ -371,7 +376,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
     auto node_updater = upd->get_node_updater(change_tracking);
 
     node_updater->delete_node(1, 424471234567890, 1, false);
-    REQUIRE_THROWS_AS(node_updater->process_delete_nodes(), http::not_found);
+    REQUIRE_THROWS_MATCHES(node_updater->process_delete_nodes(), http::not_found,
+        Catch::Message("The following node ids are not known on the database: 424471234567890"));
   }
 
   SECTION("Modify non-existing node")
@@ -382,7 +388,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
     auto node_updater = upd->get_node_updater(change_tracking);
 
     node_updater->modify_node(40, 50, 1, 4712334567890, 1, {});
-    REQUIRE_THROWS_AS(node_updater->process_modify_nodes(), http::not_found);
+    REQUIRE_THROWS_MATCHES(node_updater->process_modify_nodes(), http::not_found,
+        Catch::Message("The following node ids are not known on the database: 4712334567890"));
   }
 
 }
@@ -492,7 +499,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
 
     way_updater->add_way(1, -1, { -1,  -2}, { {"highway", "path"}});
     way_updater->add_way(1, -1, { -2,  -1}, { {"highway", "path"}});
-    REQUIRE_THROWS_AS(way_updater->process_new_ways(), http::bad_request);
+    REQUIRE_THROWS_MATCHES(way_updater->process_new_ways(), http::bad_request,
+        Catch::Message("Placeholder IDs must be unique for created elements."));
   }
 
   SECTION("Create way with unknown placeholder ids")
@@ -503,7 +511,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     auto way_updater = upd->get_way_updater(change_tracking);
 
     way_updater->add_way(1, -1, { -1, -2}, { {"highway", "path"}});
-    REQUIRE_THROWS_AS(way_updater->process_new_ways(), http::bad_request);
+    REQUIRE_THROWS_MATCHES(way_updater->process_new_ways(), http::bad_request,
+        Catch::Message("Placeholder node not found for reference -1 in way -1"));
   }
 
   SECTION("Change existing way")
@@ -571,7 +580,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     auto way_updater = upd->get_way_updater(change_tracking);
 
     way_updater->modify_way(1, way_id, 666, {static_cast<osm_nwr_signed_id_t>(node_new_ids[0])}, {});
-    REQUIRE_THROWS_AS(way_updater->process_modify_ways(), http::conflict);
+    REQUIRE_THROWS_MATCHES(way_updater->process_modify_ways(), http::conflict,
+        Catch::Message("Version mismatch: Provided 666, server had: 2 of Way 1"));
   }
 
   SECTION("Change existing way with incorrect version number and non-existing node id")
@@ -582,7 +592,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     auto way_updater = upd->get_way_updater(change_tracking);
 
     way_updater->modify_way(1, way_id, 666, {static_cast<osm_nwr_signed_id_t>(5934531745)}, {});
-    REQUIRE_THROWS_AS(way_updater->process_modify_ways(), http::conflict);
+    REQUIRE_THROWS_MATCHES(way_updater->process_modify_ways(), http::conflict,
+        Catch::Message("Version mismatch: Provided 666, server had: 2 of Way 1"));
   }
 
   SECTION("Change existing way with unknown node id")
@@ -593,7 +604,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     auto way_updater = upd->get_way_updater(change_tracking);
 
     way_updater->modify_way(1, way_id, way_version, {static_cast<osm_nwr_signed_id_t>(node_new_ids[0]), 9574853485634}, {});
-    REQUIRE_THROWS_AS(way_updater->process_modify_ways(), http::precondition_failed);
+    REQUIRE_THROWS_MATCHES(way_updater->process_modify_ways(), http::precondition_failed,
+        Catch::Message("Precondition failed: Way 1 requires the nodes with id in 9574853485634, which either do not exist, or are not visible."));
   }
 
   SECTION("Change existing way with unknown placeholder node id")
@@ -604,7 +616,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     auto way_updater = upd->get_way_updater(change_tracking);
 
     way_updater->modify_way(1, way_id, way_version, {-5}, {});
-    REQUIRE_THROWS_AS(way_updater->process_modify_ways(), http::bad_request);
+    REQUIRE_THROWS_MATCHES(way_updater->process_modify_ways(), http::bad_request,
+        Catch::Message("Placeholder node not found for reference -5 in way 1"));
   }
 
   SECTION("TODO: Change existing way multiple times")
@@ -627,7 +640,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     auto node_updater = upd->get_node_updater(change_tracking);
 
     node_updater->delete_node(1, node_new_ids[0], 1, false);
-    REQUIRE_THROWS_AS(node_updater->process_delete_nodes(), http::precondition_failed);
+    REQUIRE_THROWS_MATCHES(node_updater->process_delete_nodes(), http::precondition_failed,
+        Catch::Message("Precondition failed: Node 2 is still used by ways 1."));
   }
 
   SECTION("Try to delete node which still belongs to way, if-unused set")
@@ -689,7 +703,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     auto way_updater = upd->get_way_updater(change_tracking);
 
     way_updater->delete_way(1, way_id, way_version, false);
-    REQUIRE_THROWS_AS(way_updater->process_delete_ways(), http::gone);
+    REQUIRE_THROWS_MATCHES(way_updater->process_delete_ways(), http::gone,
+        Catch::Message("The way with the id 1 has already been deleted"));
   }
 
   SECTION("Try to delete already deleted node (if-unused set)")
@@ -714,7 +729,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     auto way_updater = upd->get_way_updater(change_tracking);
 
     way_updater->delete_way(1, 424471234567890, 1, false);
-    REQUIRE_THROWS_AS(way_updater->process_delete_ways(), http::not_found);
+    REQUIRE_THROWS_MATCHES(way_updater->process_delete_ways(), http::not_found,
+        Catch::Message("The following way ids are unknown: 424471234567890"));
   }
 
   SECTION("Modify non-existing way")
@@ -725,7 +741,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     auto way_updater = upd->get_way_updater(change_tracking);
 
     way_updater->modify_way(1, 424471234567890, 1, {static_cast<osm_nwr_signed_id_t>(node_new_ids[0])}, {});
-    REQUIRE_THROWS_AS(way_updater->process_modify_ways(), http::not_found);
+    REQUIRE_THROWS_MATCHES(way_updater->process_modify_ways(), http::not_found,
+        Catch::Message("The following way ids are unknown: 424471234567890"));
   }
 }
 
@@ -960,7 +977,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
 
     rel_updater->add_relation(1, -1, {}, {});
     rel_updater->add_relation(1, -1, {}, {{"key", "value"}});
-    REQUIRE_THROWS_AS(rel_updater->process_new_relations(), http::bad_request);
+    REQUIRE_THROWS_MATCHES(rel_updater->process_new_relations(), http::bad_request,
+        Catch::Message("Placeholder IDs must be unique for created elements."));
   }
 
   SECTION("Create one relation with self reference")
@@ -971,7 +989,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
     rel_updater->add_relation(1, -1, { { "Relation", -1, "role1" }}, {{"key1", "value1"}});
-    REQUIRE_THROWS_AS(rel_updater->process_new_relations(), http::bad_request);
+    REQUIRE_THROWS_MATCHES(rel_updater->process_new_relations(), http::bad_request,
+        Catch::Message("Placeholder relation not found for reference -1 in relation -1"));
   }
 
   SECTION("Create two relations with references to each other")
@@ -983,7 +1002,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
 
     rel_updater->add_relation(1, -1, { { "Relation", -2, "role1" }}, {{"key1", "value1"}});
     rel_updater->add_relation(1, -2, { { "Relation", -1, "role2" }}, {{"key2", "value2"}});
-    REQUIRE_THROWS_AS(rel_updater->process_new_relations(), http::bad_request);
+    REQUIRE_THROWS_MATCHES(rel_updater->process_new_relations(), http::bad_request,
+        Catch::Message("Placeholder relation not found for reference -2 in relation -1"));
   }
 
   SECTION("Create two relations with parent/child relationship")
@@ -1039,7 +1059,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
     rel_updater->add_relation(1, -1, { { "Node", -10, "role1" }}, {{"key1", "value1"}});
-    REQUIRE_THROWS_AS(rel_updater->process_new_relations(), http::bad_request);
+    REQUIRE_THROWS_MATCHES(rel_updater->process_new_relations(), http::bad_request,
+        Catch::Message("Placeholder node not found for reference -10 in relation -1"));
   }
 
   SECTION("Create relation with unknown way placeholder id")
@@ -1050,7 +1071,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
     rel_updater->add_relation(1, -1, { { "Way", -10, "role1" }}, {{"key1", "value1"}});
-    REQUIRE_THROWS_AS(rel_updater->process_new_relations(), http::bad_request);
+    REQUIRE_THROWS_MATCHES(rel_updater->process_new_relations(), http::bad_request,
+        Catch::Message("Placeholder way not found for reference -10 in relation -1"));
   }
 
   SECTION("Create relation with unknown relation placeholder id")
@@ -1061,7 +1083,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
     rel_updater->add_relation(1, -1, { { "Relation", -10, "role1" }}, {{"key1", "value1"}});
-    REQUIRE_THROWS_AS(rel_updater->process_new_relations(), http::bad_request);
+    REQUIRE_THROWS_MATCHES(rel_updater->process_new_relations(), http::bad_request,
+        Catch::Message("Placeholder relation not found for reference -10 in relation -1"));
   }
 
   SECTION("Change existing relation")
@@ -1143,7 +1166,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
 
     rel_updater->modify_relation(1, relation_id, 666,
         { {"Node", static_cast<osm_nwr_signed_id_t>(node_new_ids[0]), ""} }, {});
-    REQUIRE_THROWS_AS(rel_updater->process_modify_relations(), http::conflict);
+    REQUIRE_THROWS_MATCHES(rel_updater->process_modify_relations(), http::conflict,
+        Catch::Message("Version mismatch: Provided 666, server had: 2 of Relation 1"));
   }
 
   SECTION("Change existing relation with incorrect version number and non-existing node id")
@@ -1154,7 +1178,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
     rel_updater->modify_relation(1, relation_id, 666, { {"Node", static_cast<osm_nwr_signed_id_t>(1434253485634), ""} }, {});
-    REQUIRE_THROWS_AS(rel_updater->process_modify_relations(), http::conflict);
+    REQUIRE_THROWS_MATCHES(rel_updater->process_modify_relations(), http::conflict,
+        Catch::Message("Version mismatch: Provided 666, server had: 2 of Relation 1"));
   }
 
   SECTION("Change existing relation with unknown node id")
@@ -1166,7 +1191,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
     rel_updater->modify_relation(1, relation_id, relation_version, { {"Node", 1434253485634, ""} }, {});
-    REQUIRE_THROWS_AS(rel_updater->process_modify_relations(), http::precondition_failed);
+    REQUIRE_THROWS_MATCHES(rel_updater->process_modify_relations(), http::precondition_failed,
+        Catch::Message("Precondition failed: Relation 1 requires the nodes with id in 1434253485634, which either do not exist, or are not visible."));
   }
 
   SECTION("Change existing relation with unknown way id")
@@ -1177,7 +1203,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
     rel_updater->modify_relation(1, relation_id, relation_version, { {"Way", 9574853485634, ""} }, {});
-    REQUIRE_THROWS_AS(rel_updater->process_modify_relations(), http::precondition_failed);
+    REQUIRE_THROWS_MATCHES(rel_updater->process_modify_relations(), http::precondition_failed,
+        Catch::Message("Precondition failed: Relation 1 requires the ways with id in 9574853485634, which either do not exist, or are not visible."));
   }
 
   SECTION("Change existing relation with unknown relation id")
@@ -1188,7 +1215,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
     rel_updater->modify_relation(1, relation_id, relation_version, { {"Relation", 9574853485634, ""} }, {});
-    REQUIRE_THROWS_AS(rel_updater->process_modify_relations(), http::precondition_failed);
+    REQUIRE_THROWS_MATCHES(rel_updater->process_modify_relations(), http::precondition_failed,
+        Catch::Message("Precondition failed: Relation 1 requires the relations with id in 9574853485634, which either do not exist, or are not visible."));
   }
 
   SECTION("Change existing relation with unknown node placeholder id")
@@ -1200,7 +1228,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
     rel_updater->modify_relation(1, relation_id, relation_version, { {"Node", -10, ""} }, {});
-    REQUIRE_THROWS_AS(rel_updater->process_modify_relations(), http::bad_request);
+    REQUIRE_THROWS_MATCHES(rel_updater->process_modify_relations(), http::bad_request,
+        Catch::Message("Placeholder node not found for reference -10 in relation 1"));
   }
 
   SECTION("Change existing relation with unknown way placeholder id")
@@ -1211,7 +1240,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
     rel_updater->modify_relation(1, relation_id, relation_version, { {"Way", -10, ""} }, {});
-    REQUIRE_THROWS_AS(rel_updater->process_modify_relations(), http::bad_request);
+    REQUIRE_THROWS_MATCHES(rel_updater->process_modify_relations(), http::bad_request,
+        Catch::Message("Placeholder way not found for reference -10 in relation 1"));
   }
 
   SECTION("Change existing relation with unknown relation placeholder id")
@@ -1222,7 +1252,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
     rel_updater->modify_relation(1, relation_id, relation_version, { {"Relation", -10, ""} }, {});
-    REQUIRE_THROWS_AS(rel_updater->process_modify_relations(), http::bad_request);
+    REQUIRE_THROWS_MATCHES(rel_updater->process_modify_relations(), http::bad_request,
+        Catch::Message("Placeholder relation not found for reference -10 in relation 1"));
   }
 
   SECTION("TODO: Change existing relation multiple times")
@@ -1261,7 +1292,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto node_updater = upd->get_node_updater(change_tracking);
 
     node_updater->delete_node(1, node_new_ids[2], 1, false);
-    REQUIRE_THROWS_AS(node_updater->process_delete_nodes(), http::precondition_failed);
+    REQUIRE_THROWS_MATCHES(node_updater->process_delete_nodes(), http::precondition_failed,
+        Catch::Message("Precondition failed: Node 8 is still used by relations 7."));
   }
 
   SECTION("Try to delete node which still belongs to relation, if-unused set")
@@ -1287,7 +1319,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto way_updater = upd->get_way_updater(change_tracking);
 
     way_updater->delete_way(1, way_new_id, 1, false);
-    REQUIRE_THROWS_AS(way_updater->process_delete_ways(), http::precondition_failed);
+    REQUIRE_THROWS_MATCHES(way_updater->process_delete_ways(), http::precondition_failed,
+        Catch::Message("Precondition failed: Way 3 is still used by relations 1."));
   }
 
   SECTION("Try to delete way which still belongs to relation, if-unused set")
@@ -1313,7 +1346,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
     rel_updater->delete_relation(1, relation_id_1, relation_version_1, false);
-    REQUIRE_THROWS_AS(rel_updater->process_delete_relations(), http::precondition_failed);
+    REQUIRE_THROWS_MATCHES(rel_updater->process_delete_relations(), http::precondition_failed,
+        Catch::Message("Precondition failed: The relation 3 is used in relations 4."));
   }
 
   SECTION("Try to delete relation which still belongs to relation, if-unused set")
@@ -1413,7 +1447,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
     rel_updater->delete_relation(1, relation_id, relation_version, false);
-    REQUIRE_THROWS_AS(rel_updater->process_delete_relations(), http::gone);
+    REQUIRE_THROWS_MATCHES(rel_updater->process_delete_relations(), http::gone,
+        Catch::Message("The relation with the id 1 has already been deleted"));
   }
 
   SECTION("Try to delete already deleted relation (if-unused set)")
@@ -1438,7 +1473,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
     rel_updater->delete_relation(1, 424471234567890, 1, false);
-    REQUIRE_THROWS_AS(rel_updater->process_delete_relations(), http::not_found);
+    REQUIRE_THROWS_MATCHES(rel_updater->process_delete_relations(), http::not_found,
+        Catch::Message("The following relation ids are unknown: 424471234567890"));
   }
 
   SECTION("Modify non-existing relation")
@@ -1449,7 +1485,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto rel_updater = upd->get_relation_updater(change_tracking);
 
     rel_updater->modify_relation(1, 424471234567890, 1, {}, {});
-    REQUIRE_THROWS_AS(rel_updater->process_modify_relations(), http::not_found);
+    REQUIRE_THROWS_MATCHES(rel_updater->process_modify_relations(), http::not_found,
+        Catch::Message("The following relation ids are unknown: 424471234567890"));
   }
 
 
@@ -1593,7 +1630,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_message", "[changeset][u
 
   SECTION("Test unknown changeset id") {
 
-    REQUIRE_THROWS_AS(process_payload(tdb, 1234, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
+    REQUIRE_THROWS_MATCHES(process_payload(tdb, 1234, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
         <osmChange version="0.6" generator="iD">
            <create>
               <node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1234">
@@ -1601,7 +1638,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_message", "[changeset][u
               </node>
            </create>
         </osmChange>
-      )"), http::not_found);
+      )"), http::not_found, Catch::Message(""));
 
   }
 
@@ -1612,7 +1649,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_message", "[changeset][u
     // Example from https://github.com/openstreetmap/iD/issues/3208#issuecomment-281942743
     // Relation id -3 has a relation member with forward reference to relation id -4
 
-    REQUIRE_THROWS_AS(process_payload(tdb, 1, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
+    REQUIRE_THROWS_MATCHES(process_payload(tdb, 1, 1, R"(<?xml version="1.0" encoding="UTF-8"?>
         <osmChange version="0.6" generator="iD">
            <create>
               <node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1">
@@ -1642,7 +1679,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_message", "[changeset][u
            <delete if-unused="true" />
         </osmChange>
   
-      )"), http::bad_request);
+      )"), http::bad_request, Catch::Message("Placeholder relation not found for reference -4 in relation -3"));
   }
 
   SECTION("Testing correct parent/child sequence") {
@@ -1826,6 +1863,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
 
     // Basic Auth in status "pending" should return status HTTP 401
     REQUIRE(req.response_status() == 401);
+    REQUIRE_THAT(req.body().str(), Equals("Incorrect user or password"));
 
     tdb.run_sql(R"(UPDATE users SET status = 'confirmed' where id = 1;)");
   }
@@ -1844,6 +1882,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
     REQUIRE(req.response_status() == 403);
+    REQUIRE_THAT(req.body().str(), Equals("Your access to the API has been blocked. Please log-in to the web interface to find out more."));
 
     tdb.run_sql(R"(UPDATE user_blocks SET needs_view = false where user_id = 1;)");
   }
@@ -1865,6 +1904,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
     REQUIRE(req.response_status() == 403);
+    REQUIRE_THAT(req.body().str(), Equals("Your access to the API has been blocked. Please log-in to the web interface to find out more."));
 
     tdb.run_sql(R"(UPDATE user_blocks
                         SET needs_view = false,
@@ -1884,6 +1924,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
     REQUIRE(req.response_status() == 409);
+    REQUIRE_THAT(req.body().str(), Equals("Changeset mismatch: Provided 2 but only 1 is allowed"));
   }
 
   SECTION("Try to post a changeset, where the user doesn't own the changeset")
@@ -1900,6 +1941,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
     REQUIRE(req.response_status() == 409);
+    REQUIRE_THAT(req.body().str(), Equals("The user doesn't own that changeset"));
   }
 
   SECTION("Try to add a node to a changeset that already has 10000 elements (=max)")
@@ -1916,6 +1958,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
     REQUIRE(req.response_status() == 409);
+    REQUIRE_THAT(req.body().str(), StartsWith("The changeset 2 was closed at "));
   }
 
   SECTION("Try to add a node to a changeset that is already closed")
@@ -1932,6 +1975,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     process_request(req, limiter, generator, route, *sel_factory, upd_factory.get(), nullptr);
 
     REQUIRE(req.response_status() == 409);
+    REQUIRE_THAT(req.body().str(), StartsWith("The changeset 3 was closed at "));
   }
 
   SECTION("Try to add a nodes, ways, relations to a changeset")
@@ -2095,7 +2139,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
 TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changeset][upload][db]" ) {
 
   // Upload rate limiter enabling
-  auto test_settings = std::unique_ptr<global_settings_enable_upload_rate_limiter_test_class>(new global_settings_enable_upload_rate_limiter_test_class());
+  auto test_settings = std::unique_ptr<
+      global_settings_enable_upload_rate_limiter_test_class >(
+      new global_settings_enable_upload_rate_limiter_test_class());
   global_settings::set_configuration(std::move(test_settings));
 
   const std::string baseauth = "Basic ZGVtbzpwYXNzd29yZA==";
@@ -2215,7 +2261,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
 
       if (nds > 98)
       {
-        REQUIRE_THAT(req.body().str(), Catch::Matchers::Equals("Upload has been blocked due to rate limiting. Please try again later."));
+        REQUIRE_THAT(req.body().str(), Equals("Upload has been blocked due to rate limiting. Please try again later."));
         REQUIRE(req.response_status() == 429);
       }
       else if (nds == 98)
