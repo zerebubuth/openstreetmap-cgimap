@@ -9,8 +9,13 @@
 
 #include <cstdio>
 #include <iostream>
+#include <optional>
 #include <stdexcept>
+#include <memory>
 #include <fmt/core.h>
+#include <libxml/tree.h>
+#include <libxml/parser.h>
+#include <libxml/xpath.h>
 #include <boost/program_options.hpp>
 
 #include <sys/time.h>
@@ -45,6 +50,31 @@ public:
   // enable upload rate limiter
   bool get_ratelimiter_upload() const override { return true; }
 };
+
+
+std::unique_ptr<xmlDoc, void (*)(xmlDoc *)> getDocument(const std::string &document)
+{
+  return {xmlReadDoc((xmlChar *)(document.c_str()), NULL, NULL, XML_PARSE_PEDANTIC | XML_PARSE_NONET), xmlFreeDoc};
+}
+
+std::optional<std::string> getXPath(xmlDoc* doc, std::string xpath)
+{
+  std::unique_ptr< xmlXPathContext, void (*)(xmlXPathContextPtr) > xpathCtx =
+      { xmlXPathNewContext(doc), xmlXPathFreeContext };
+
+  if (xpathCtx == nullptr)
+    throw std::runtime_error("xpathCtx is null");
+
+  std::unique_ptr< xmlXPathObject, void (*)(xmlXPathObjectPtr) > result =
+     { xmlXPathEvalExpression((xmlChar*) xpath.c_str(), xpathCtx.get()),
+      xmlXPathFreeObject };
+
+  if (xmlXPathNodeSetIsEmpty(result->nodesetval))
+    return {};
+
+  const auto val = std::unique_ptr< xmlChar, decltype(xmlFree) >(xmlNodeGetContent(result->nodesetval->nodeTab[0]), xmlFree);
+  return std::string((char*) val.get());
+}
 
 
 class DatabaseTestsFixture
@@ -1744,6 +1774,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
   const std::string baseauth = "Basic ZGVtbzpwYXNzd29yZA==";
   const std::string generator = "Test";
 
+  const std::optional<std::string> none{};
+
   auto sel_factory = tdb.get_data_selection_factory();
   auto upd_factory = tdb.get_data_update_factory();
 
@@ -2030,6 +2062,40 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     CAPTURE(req.body().str());
 
     REQUIRE(req.response_status() == 200);
+
+    auto doc = getDocument(req.body().str());
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[1]/@old_id") == "-5");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[1]/@new_id") == "12000000000");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[1]/@new_version") == "1");
+
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[2]/@old_id") == "-6");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[2]/@new_id") == "12000000001");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[2]/@new_version") == "1");
+
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[3]/@old_id") == "-7");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[3]/@new_id") == "12000000002");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[3]/@new_version") == "1");
+
+    REQUIRE(getXPath(doc.get(), "/diffResult/way[1]/@old_id") == "-10");
+    REQUIRE(getXPath(doc.get(), "/diffResult/way[1]/@new_id") == "14000000000");
+    REQUIRE(getXPath(doc.get(), "/diffResult/way[1]/@new_version") == "1");
+
+    REQUIRE(getXPath(doc.get(), "/diffResult/way[2]/@old_id") == "-11");
+    REQUIRE(getXPath(doc.get(), "/diffResult/way[2]/@new_id") == "14000000001");
+    REQUIRE(getXPath(doc.get(), "/diffResult/way[2]/@new_version") == "1");
+
+    REQUIRE(getXPath(doc.get(), "/diffResult/relation[1]/@old_id") == "-2");
+    REQUIRE(getXPath(doc.get(), "/diffResult/relation[1]/@new_id") == "18000000000");
+    REQUIRE(getXPath(doc.get(), "/diffResult/relation[1]/@new_version") == "1");
+
+    REQUIRE(getXPath(doc.get(), "/diffResult/relation[2]/@old_id") == "-3");
+    REQUIRE(getXPath(doc.get(), "/diffResult/relation[2]/@new_id") == "18000000001");
+    REQUIRE(getXPath(doc.get(), "/diffResult/relation[2]/@new_version") == "1");
+
+    REQUIRE(getXPath(doc.get(), "/diffResult/relation[3]/@old_id") == "-4");
+    REQUIRE(getXPath(doc.get(), "/diffResult/relation[3]/@new_id") == "18000000002");
+    REQUIRE(getXPath(doc.get(), "/diffResult/relation[3]/@new_version") == "1");
+
   }
 
   SECTION("Try to add, modify and delete nodes, ways, relations in changeset")
@@ -2079,10 +2145,62 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     CAPTURE(req.body().str());
 
     REQUIRE(req.response_status() == 200);
+
+    auto doc = getDocument(req.body().str());
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[1]/@old_id") == "-15");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[1]/@new_id") == "12000000003");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[1]/@new_version") == "1");
+
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[2]/@old_id") == "-16");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[2]/@new_id") == "12000000004");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[2]/@new_version") == "1");
+
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[3]/@old_id") == "12000000000");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[3]/@new_id") == "12000000000");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[3]/@new_version") == "2");
+
+    REQUIRE(getXPath(doc.get(), "/diffResult/way[1]/@old_id") == "14000000000");
+    REQUIRE(getXPath(doc.get(), "/diffResult/way[1]/@new_id") == "14000000000");
+    REQUIRE(getXPath(doc.get(), "/diffResult/way[1]/@new_version") == "2");
+
+    REQUIRE(getXPath(doc.get(), "/diffResult/relation[1]/@old_id") == "18000000000");
+    REQUIRE(getXPath(doc.get(), "/diffResult/relation[1]/@new_id") == "18000000000");
+    REQUIRE(getXPath(doc.get(), "/diffResult/relation[1]/@new_version") == "2");
+
+    REQUIRE(getXPath(doc.get(), "/diffResult/relation[2]/@old_id") == "18000000001");
+    REQUIRE(getXPath(doc.get(), "/diffResult/relation[2]/@new_id") == "18000000001");
+    REQUIRE(getXPath(doc.get(), "/diffResult/relation[2]/@new_version") == "2");
+
+    REQUIRE(getXPath(doc.get(), "/diffResult/relation[3]/@old_id") == "18000000002");
+    REQUIRE(getXPath(doc.get(), "/diffResult/relation[3]/@new_id") == none);
+    REQUIRE(getXPath(doc.get(), "/diffResult/relation[3]/@new_version") == none);
+
+    REQUIRE(getXPath(doc.get(), "/diffResult/way[2]/@old_id") == "14000000001");
+    REQUIRE(getXPath(doc.get(), "/diffResult/way[2]/@new_id") == none);
+    REQUIRE(getXPath(doc.get(), "/diffResult/way[2]/@new_version") == none);
+
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[4]/@old_id") == "12000000002");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[4]/@new_id") == none);
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[4]/@new_version") == none);
+
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[5]/@old_id") == "12000000001");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[5]/@new_id") == "12000000001");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[5]/@new_version") == "1");
+
+    REQUIRE(getXPath(doc.get(), "/diffResult/way[3]/@old_id") == "14000000000");
+    REQUIRE(getXPath(doc.get(), "/diffResult/way[3]/@new_id") == "14000000000");
+    REQUIRE(getXPath(doc.get(), "/diffResult/way[3]/@new_version") == "2");
+
+    REQUIRE(getXPath(doc.get(), "/diffResult/relation[4]/@old_id") == "18000000000");
+    REQUIRE(getXPath(doc.get(), "/diffResult/relation[4]/@new_id") == "18000000000");
+    REQUIRE(getXPath(doc.get(), "/diffResult/relation[4]/@new_version") == "2");
   }
 
   SECTION("Multiple operations on the same node id -1")
   {
+    // Set sequences to new start values
+    tdb.run_sql(R"(  SELECT setval('current_nodes_id_seq', 13000000000, false);  )");
+
     // set up request headers from test case
     req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
                 <osmChange version="0.6" generator="iD">
@@ -2105,9 +2223,27 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     // execute the request
     process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
-    // std::cout << "Response was:\n----------------------\n" << req.buffer().str() << "\n";
+    CAPTURE(req.body().str());
 
     REQUIRE(req.response_status() == 200);
+
+    auto doc = getDocument(req.body().str());
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[1]/@old_id") == "-1");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[1]/@new_id") == "13000000000");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[1]/@new_version") == "1");
+
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[2]/@old_id") == "-1");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[2]/@new_id") == none);
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[2]/@new_version") == none);
+
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[3]/@old_id") == "-1");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[3]/@new_id") == "13000000000");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[3]/@new_version") == "3");
+
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[4]/@old_id") == "-1");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[4]/@new_id") == none);
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[4]/@new_version") == none);
+
   }
 
   SECTION("Compressed upload")
@@ -2173,6 +2309,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
   
             INSERT INTO user_blocks (user_id, creator_id, reason, ends_at, needs_view)
             VALUES (1,  2, '', now() at time zone 'utc' - ('1 hour' ::interval), false);
+
+            SELECT setval('current_nodes_id_seq', 14000000000, false);
   
             )"
     );
@@ -2226,6 +2364,11 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
 
     CAPTURE(req.body().str());
     REQUIRE(req.response_status() == 200);
+
+    auto doc = getDocument(req.body().str());
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[1]/@old_id") == "-5");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[1]/@new_id") == "14000000000");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[1]/@new_version") == "1");
   }
 
   SECTION("Try to upload 98 additional changes")
@@ -2268,6 +2411,13 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
       {
         CAPTURE(req.body().str());
         REQUIRE(req.response_status() == 200);
+
+        auto doc = getDocument(req.body().str());
+        for (int i = 1; i <= nds; i++) {
+          REQUIRE(getXPath(doc.get(), fmt::format("/diffResult/node[{}]/@old_id", i)) == std::to_string(-i));
+          REQUIRE(getXPath(doc.get(), fmt::format("/diffResult/node[{}]/@new_id", i)) == std::to_string(14000000199 + i));
+          REQUIRE(getXPath(doc.get(), fmt::format("/diffResult/node[{}]/@new_version", i)) == "1");
+        }
       }
 
     }
