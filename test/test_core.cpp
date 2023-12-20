@@ -479,8 +479,7 @@ void check_response(std::istream &expected, std::istream &actual) {
  */
 void run_test(fs::path test_case, rate_limiter &limiter,
               const std::string &generator, const routes &route,
-              data_selection::factory& factory,
-              oauth::store* store) {
+              data_selection::factory& factory) {
   try {
     test_request req;
 
@@ -489,7 +488,7 @@ void run_test(fs::path test_case, rate_limiter &limiter,
     setup_request_headers(req, in);
 
     // execute the request
-    process_request(req, limiter, generator, route, factory, nullptr, store);
+    process_request(req, limiter, generator, route, factory, nullptr);
 
     // compare the result to what we're expecting
     try {
@@ -554,84 +553,6 @@ user_roles_t get_user_roles(const pt::ptree &config)
   return user_roles;
 }
 
-struct test_oauth : public oauth::store {
-
-  explicit test_oauth(const pt::ptree &config) {
-    boost::optional<const pt::ptree &> consumers =
-      config.get_child_optional("consumers");
-    if (consumers) {
-      for (const auto &entry : *consumers) {
-        std::string key = entry.first;
-        std::string data = entry.second.data();
-
-        if (!key.empty() && !data.empty()) {
-          m_consumers.emplace(key, data);
-        }
-      }
-    }
-
-    boost::optional<const pt::ptree &> tokens =
-      config.get_child_optional("tokens");
-    if (tokens) {
-      for (const auto &entry : *tokens) {
-        std::string key = entry.first;
-        auto user_id = entry.second.get<osm_user_id_t>("user_id");
-        std::string secret = entry.second.get<std::string>("secret");
-
-        m_tokens.emplace(key, secret);
-        m_users.emplace(key, user_id);
-      }
-    }
-  }
-
-  ~test_oauth() override = default;
-
-  std::optional<std::string> consumer_secret(const std::string &consumer_key) override {
-    auto itr = m_consumers.find(consumer_key);
-    if (itr != m_consumers.end()) {
-      return itr->second;
-    } else {
-      return {};
-    }
-  }
-
-  std::optional<std::string> token_secret(const std::string &token_id) override {
-    auto itr = m_tokens.find(token_id);
-    if (itr != m_tokens.end()) {
-      return itr->second;
-    } else {
-      return {};
-    }
-  }
-
-  bool use_nonce(const std::string &nonce, uint64_t timestamp) override {
-    // pretend all nonces are new for these tests
-    return true;
-  }
-
-  bool allow_read_api(const std::string &token_id) override {
-    // everyone can read the api
-    return true;
-  }
-
-  bool allow_write_api(const std::string &token_id) override {
-    // everyone can write the api for the moment
-    return true;
-  }
-
-  std::optional<osm_user_id_t> get_user_id_for_token(const std::string &token_id) override {
-    auto itr = m_users.find(token_id);
-    if (itr != m_users.end()) {
-      return itr->second;
-    } else {
-      return {};
-    }
-  }
-
-private:
-  std::map<std::string, std::string> m_consumers, m_tokens;
-  std::map<std::string, osm_user_id_t> m_users;
-};
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {
@@ -645,7 +566,6 @@ int main(int argc, char *argv[]) {
   fs::path roles_file = test_directory / "roles.json";
   std::vector<fs::path> test_cases;
 
-  std::unique_ptr<oauth::store> store;
   user_roles_t user_roles;
 
   try {
@@ -680,19 +600,6 @@ int main(int argc, char *argv[]) {
       user_roles = get_user_roles(config);
     }
 
-    if (fs::is_regular_file(oauth_file)) {
-      pt::ptree config;
-
-      try {
-        pt::read_json(oauth_file.string(), config);
-      } catch (const std::exception &ex) {
-        throw std::runtime_error
-          (fmt::format("{}, while reading expected JSON.", ex.what()));
-      }
-
-      store = std::make_unique<test_oauth>(config);
-    }
-
   } catch (const std::exception &e) {
     std::cerr << "EXCEPTION: " << e.what() << std::endl;
     return 99;
@@ -714,7 +621,7 @@ int main(int argc, char *argv[]) {
 
     for (fs::path test_case : test_cases) {
       std::string generator = fmt::format(PACKAGE_STRING " (test {})", test_case.string());
-      run_test(test_case, limiter, generator, route, *factory, store.get());
+      run_test(test_case, limiter, generator, route, *factory);
     }
 
   } catch (const std::exception &e) {

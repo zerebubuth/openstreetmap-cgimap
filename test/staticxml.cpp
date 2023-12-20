@@ -813,10 +813,6 @@ struct staticxml_backend : public backend {
     return nullptr;   // Data update operations not supported by staticxml backend
   }
 
-  std::unique_ptr<oauth::store> create_oauth_store(const po::variables_map &) override {
-    return std::unique_ptr<oauth::store>();
-  }
-
 private:
   std::string m_name{"staticxml"};
   po::options_description m_options{"Static XML backend options"};
