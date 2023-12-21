@@ -526,7 +526,7 @@ osm_user_role_t parse_role(const std::string &str) {
   }
 }
 
-user_roles_t get_user_roles(const pt::ptree &config)
+user_roles_t parse_user_roles(const pt::ptree &config)
 {
   user_roles_t user_roles;
   boost::optional< const pt::ptree& > users = config.get_child_optional("users");
@@ -553,6 +553,65 @@ user_roles_t get_user_roles(const pt::ptree &config)
   return user_roles;
 }
 
+user_roles_t get_user_roles(const fs::path &roles_file)
+{
+  if (fs::is_regular_file(roles_file))
+  {
+    try
+    {
+      pt::ptree config;
+      pt::read_json(roles_file.string(), config);
+      return parse_user_roles(config);
+    }
+    catch (const std::exception &ex)
+    {
+      throw std::runtime_error(
+          fmt::format("{}, while reading expected JSON.", ex.what()));
+    }
+  }
+  return {};
+}
+
+
+oauth2_tokens parse_oauth2_tokens(const pt::ptree &config)
+{
+  oauth2_tokens oauth2_tokens;
+  boost::optional< const pt::ptree& > tokens = config.get_child_optional("tokens");
+  if (tokens)
+  {
+    for (const auto &entry : *tokens)
+    {
+      oauth2_token_detail_t detail;
+      auto token = entry.first;
+      detail.api_write = entry.second.get<bool>("api_write", false);
+      detail.expired = entry.second.get<bool>("expired", true);
+      detail.revoked = entry.second.get<bool>("revoked", true);
+      detail.user_id = entry.second.get<osm_user_id_t>("user_id", {});
+      oauth2_tokens[token] = std::move(detail);
+    }
+  }
+  return oauth2_tokens;
+}
+
+oauth2_tokens get_oauth2_tokens(const fs::path &oauth2_file)
+{
+  if (fs::is_regular_file(oauth2_file))
+  {
+    try
+    {
+      pt::ptree config;
+      pt::read_json(oauth2_file.string(), config);
+      return parse_oauth2_tokens(config);
+    }
+    catch (const std::exception &ex)
+    {
+      throw std::runtime_error(
+          fmt::format("{}, while reading expected JSON.", ex.what()));
+    }
+  }
+  return {};
+}
+
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {
@@ -562,11 +621,12 @@ int main(int argc, char *argv[]) {
 
   fs::path test_directory = argv[1];
   fs::path data_file = test_directory / "data.osm";
-  fs::path oauth_file = test_directory / "oauth.json";
+  fs::path oauth2_file = test_directory / "oauth2.json";
   fs::path roles_file = test_directory / "roles.json";
   std::vector<fs::path> test_cases;
 
   user_roles_t user_roles;
+  oauth2_tokens oauth2_tokens;
 
   try {
     if (fs::is_directory(test_directory) == false) {
@@ -588,17 +648,8 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (fs::is_regular_file(roles_file)) {
-      pt::ptree config;
-
-      try {
-        pt::read_json(roles_file.string(), config);
-      } catch (const std::exception &ex) {
-        throw std::runtime_error
-          (fmt::format("{}, while reading expected JSON.", ex.what()));
-      }
-      user_roles = get_user_roles(config);
-    }
+    user_roles = get_user_roles(roles_file);
+    oauth2_tokens = get_oauth2_tokens(oauth2_file);
 
   } catch (const std::exception &e) {
     std::cerr << "EXCEPTION: " << e.what() << std::endl;
@@ -614,7 +665,7 @@ int main(int argc, char *argv[]) {
     vm.insert(std::make_pair(std::string("file"),
                              po::variable_value(data_file.native(), false)));
 
-    auto data_backend = make_staticxml_backend(user_roles);
+    auto data_backend = make_staticxml_backend(user_roles, oauth2_tokens);
     auto factory = data_backend->create(vm);
     null_rate_limiter limiter;
     routes route;
