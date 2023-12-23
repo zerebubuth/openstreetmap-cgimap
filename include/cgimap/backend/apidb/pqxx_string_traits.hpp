@@ -14,10 +14,13 @@
 #include <set>
 #include <sstream>
 #include <vector>
+
+#include <fmt/core.h>
+#include <fmt/format.h>
+
 #include <pqxx/pqxx>
 
 #include "cgimap/types.hpp"
-#include "cgimap/infix_ostream_iterator.hpp"
 
 namespace pqxx {
 
@@ -43,12 +46,7 @@ namespace pqxx {
     }                                                                   \
     static void from_string(const char[], type &) {}                    \
     static std::string to_string(const type &ids) {                     \
-      std::stringstream ostr;                                           \
-      ostr << "{";                                                      \
-      std::copy(ids.begin(), ids.end(),                                 \
-                infix_ostream_iterator<type::value_type>(ostr, ","));   \
-      ostr << "}";                                                      \
-      return ostr.str();                                                \
+      return fmt::format("{{{}}}", fmt::join(ids, ","));                \
     }                                                                   \
   }
 

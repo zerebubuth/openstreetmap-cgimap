@@ -14,7 +14,6 @@ cgimap_include_HEADERS = \
 	include/cgimap/data_update.hpp \
 	include/cgimap/handler.hpp \
 	include/cgimap/http.hpp \
-	include/cgimap/infix_ostream_iterator.hpp \
 	include/cgimap/logger.hpp \
 	include/cgimap/mime_types.hpp \
 	include/cgimap/basicauth.hpp \

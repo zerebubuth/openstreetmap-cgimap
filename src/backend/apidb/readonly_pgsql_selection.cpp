@@ -15,7 +15,6 @@
 #include "cgimap/logger.hpp"
 #include "cgimap/options.hpp"
 #include "cgimap/backend/apidb/quad_tile.hpp"
-#include "cgimap/infix_ostream_iterator.hpp"
 
 #include <functional>
 #include <set>

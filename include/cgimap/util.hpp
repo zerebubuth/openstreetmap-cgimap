@@ -10,7 +10,6 @@
 #ifndef UTIL_HPP
 #define UTIL_HPP
 
-#include "infix_ostream_iterator.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
 #include "cgimap/options.hpp"
@@ -26,6 +25,8 @@
 #include <string>
 #include <type_traits>
 
+#include <fmt/core.h>
+#include <fmt/format.h>
 
 
 inline size_t unicode_strlen(const std::string & s)
@@ -78,10 +79,7 @@ inline std::string friendly_name(const std::string & input)
 
 template <typename T>
 inline std::string to_string(const std::set<T> &ids) {
-  std::stringstream ostr;
-  std::copy(ids.begin(), ids.end(),
-            infix_ostream_iterator<T>(ostr, ","));
-  return ostr.str();
+  return fmt::format("{}", fmt::join(ids, ","));
 }
 
 
