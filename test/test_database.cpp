@@ -19,15 +19,20 @@
 namespace fs = std::filesystem;
 namespace po = boost::program_options;
 
-test_database::setup_error::setup_error(const std::string &str)
-  : m_str(str) {
-}
-
-const char *test_database::setup_error::what() const noexcept {
-  return m_str.c_str();
-}
 
 namespace {
+
+std::string random_db_name() {
+
+  // try to make something that has a reasonable chance of being
+  // unique on this machine, in case we clash with anything else.
+  auto hash = (unsigned int)getpid();
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  hash ^= (unsigned int)((tv.tv_usec & 0xffffu) << 16);
+
+  return fmt::format("osm_test_{:08x}", hash);
+}
 
 // reads a file of SQL statements, splits on ';' and tries to
 // execute them in a transaction.
@@ -96,7 +101,6 @@ void test_database::setup() {
     po::options_description desc = apidb->options();
     const char *argv[] = { "", "--dbname", m_db_name.c_str() };
     int argc = sizeof(argv) / sizeof(*argv);
-    po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     vm.notify();
     m_readonly_factory = apidb->create(vm);
@@ -144,19 +148,6 @@ test_database::~test_database() {
   }
 }
 
-std::string test_database::random_db_name() {
-  char name[20];
-
-  // try to make something that has a reasonable chance of being
-  // unique on this machine, in case we clash with anything else.
-  auto hash = (unsigned int)getpid();
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  hash ^= (unsigned int)((tv.tv_usec & 0xffffu) << 16);
-
-  snprintf(name, 20, "osm_test_%08x", hash);
-  return std::string(name);
-}
 
 void test_database::testcase_starting() {
 
@@ -199,6 +190,14 @@ void test_database::run_update(
   testcase_ended();
 }
 
+test_database::setup_error::setup_error(const std::string &str)
+  : m_str(str) {
+}
+
+const char *test_database::setup_error::what() const noexcept {
+  return m_str.c_str();
+}
+
 
 std::shared_ptr<data_selection::factory> test_database::get_data_selection_factory() {
   return m_readonly_factory;
@@ -209,14 +208,17 @@ std::shared_ptr<data_update::factory> test_database:: get_data_update_factory() 
   return m_update_factory;
 }
 
+std::unique_ptr<data_update::factory> test_database:: get_new_data_update_factory() {
+  return make_apidb_backend()->create_data_update(vm);
+}
 
-std::shared_ptr<data_selection> test_database::get_data_selection() {
+std::unique_ptr<data_selection> test_database::get_data_selection() {
   txn_owner_readonly.reset();
   txn_owner_readonly = m_readonly_factory->get_default_transaction();
   return (*m_readonly_factory).make_selection(*txn_owner_readonly);
 }
 
-std::shared_ptr<data_update> test_database::get_data_update() {
+std::unique_ptr<data_update> test_database::get_data_update() {
   txn_owner_readwrite.reset();
   txn_owner_readwrite = m_update_factory->get_default_transaction();
   return (*m_update_factory).make_data_update(*txn_owner_readwrite);
