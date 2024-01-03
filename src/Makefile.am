@@ -78,7 +78,7 @@ ___test_test_apidb_backend_oauth2_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTION
 ___test_test_apidb_backend_historic_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
 ___test_test_apidb_backend_changesets_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
 ___test_test_apidb_backend_changeset_downloads_LDADD+=libcgimap_core.la @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
-___test_test_apidb_backend_changeset_uploads_LDADD+=libcgimap_core.la @LIBXML_LIBS@ @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@
+___test_test_apidb_backend_changeset_uploads_LDADD+=libcgimap_core.la @LIBXML_LIBS@ @BOOST_PROGRAM_OPTIONS_LIB@ @LIBPQXX_LIBS@ @CRYPTOPP_LIBS@ @ARGON2_LIBS@ -lpthread
 endif
 
 ################################################################################

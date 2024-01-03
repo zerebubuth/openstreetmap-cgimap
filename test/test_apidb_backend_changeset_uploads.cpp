@@ -7,11 +7,15 @@
  * For a full list of authors see the git log.
  */
 
+
+#include <chrono>
 #include <cstdio>
+#include <future>
 #include <iostream>
 #include <optional>
 #include <stdexcept>
 #include <memory>
+#include <thread>
 #include <fmt/core.h>
 #include <libxml/tree.h>
 #include <libxml/parser.h>
@@ -90,16 +94,16 @@ struct CGImapListener : Catch::TestEventListenerBase, DatabaseTestsFixture {
 
   using TestEventListenerBase::TestEventListenerBase; // inherit constructor
 
-  void testRunStarting( Catch::TestRunInfo const& testRunInfo ) override {
+  void testRunStarting(Catch::TestRunInfo const& testRunInfo ) override {
     // load database schema when starting up tests
     tdb.setup();
   }
 
-  void testCaseStarting( Catch::TestCaseInfo const& testInfo ) override {
+  void testCaseStarting(Catch::TestCaseInfo const& testInfo ) override {
     tdb.testcase_starting();
   }
 
-  void testCaseEnded( Catch::TestCaseStats const& testCaseStats ) override {
+  void testCaseEnded(Catch::TestCaseStats const& testCaseStats ) override {
     tdb.testcase_ended();
   }
 };
@@ -428,7 +432,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
 
   static osm_nwr_id_t way_id;
   static osm_version_t way_version;
-  static osm_nwr_id_t node_new_ids[2];
+  static std::array<osm_nwr_id_t, 3> node_new_ids;
 
   SECTION("Initialize test data") {
 
@@ -455,6 +459,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
 
     node_updater->add_node(-25.3448570, 131.0325171, 1, -1, { {"name", "Uluṟu"}, {"ele", "863"} });
     node_updater->add_node(-25.3448570, 131.2325171, 1, -2, { });
+    node_updater->add_node(-25.34, 131.23, 1, -3, { });
     node_updater->process_new_nodes();
 
     way_updater->add_way(1, -1, { -1,  -2}, { {"highway", "path"}});
@@ -552,10 +557,35 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     auto way_updater = upd->get_way_updater(change_tracking);
 
     way_updater->modify_way(1, way_id, way_version,
-        { static_cast<osm_nwr_signed_id_t>(node_new_ids[0]) },
+        { static_cast<osm_nwr_signed_id_t>(node_new_ids[2]) },
         {{"access", "yes"}});
     way_updater->process_modify_ways();
+
+    // Try to delete node in separate thread while new way version has't been committed yet
+    // Shared lock on future way nodes blocks this activity.
+    //
+    // Note that shared locks on current_nodes table are also implicitly set due to the
+    // foreign key relationship on the current_way_nodes table (current_way_nodes_node_id_fkey).
+
+    auto future = std::async(std::launch::async, [&] {
+       api06::OSMChange_Tracking change_tracking_2nd{};
+       auto factory = tdb.get_new_data_update_factory();
+       auto txn_2nd = factory->get_default_transaction();
+       auto upd_2nd = factory->make_data_update(*txn_2nd);
+
+       auto node_updater = upd_2nd->get_node_updater(change_tracking_2nd);
+       node_updater->delete_node(2, static_cast<osm_nwr_signed_id_t>(node_new_ids[2]), 1, false);
+       // throws precondition_failed exception once the main process commits and releases the lock.
+       node_updater->process_delete_nodes();
+       upd_2nd->commit(); // not reached
+    });
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
     upd->commit();
+
+    REQUIRE_THROWS_MATCHES(future.get(), http::precondition_failed,
+           Catch::Message(fmt::format("Precondition failed: Node {} is still used by ways 1.",node_new_ids[2])));
 
     REQUIRE(change_tracking.modified_way_ids.size() == 1);
     REQUIRE(change_tracking.modified_way_ids[0].new_version == 2);
@@ -567,6 +597,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
       // verify current tables
       auto sel = tdb.get_data_selection();
 
+      REQUIRE(sel->check_node_visibility(static_cast<osm_nwr_signed_id_t>(node_new_ids[2])) == data_selection::exists);
+
       sel->select_ways({ way_id });
 
       test_formatter f;
@@ -577,7 +609,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
       REQUIRE(
           test_formatter::way_t(
               element_info(way_id, way_version, 1, f.m_ways[0].elem.timestamp, 1, std::string("user_1"), true),
-              nodes_t({node_new_ids[0]}),
+              nodes_t({node_new_ids[2]}),
               tags_t({{"access", "yes"}})
           ) == f.m_ways[0]);
     }
@@ -595,7 +627,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
       REQUIRE(
           test_formatter::way_t(
               element_info(way_id, way_version, 1, f2.m_ways[1].elem.timestamp, 1, std::string("user_1"), true),
-              nodes_t({node_new_ids[0]}),
+              nodes_t({node_new_ids[2]}),
               tags_t({{"access", "yes"}})
           ) == f2.m_ways[1]);
     }
@@ -669,9 +701,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     auto upd = tdb.get_data_update();
     auto node_updater = upd->get_node_updater(change_tracking);
 
-    node_updater->delete_node(1, node_new_ids[0], 1, false);
+    node_updater->delete_node(1, node_new_ids[2], 1, false);
     REQUIRE_THROWS_MATCHES(node_updater->process_delete_nodes(), http::precondition_failed,
-        Catch::Message("Precondition failed: Node 2 is still used by ways 1."));
+        Catch::Message(fmt::format("Precondition failed: Node {} is still used by ways 1.",node_new_ids[2])));
   }
 
   SECTION("Try to delete node which still belongs to way, if-unused set")
@@ -681,7 +713,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     auto upd = tdb.get_data_update();
     auto node_updater = upd->get_node_updater(change_tracking);
 
-    node_updater->delete_node(1, node_new_ids[0], 1, true);
+    node_updater->delete_node(1, node_new_ids[2], 1, true);
     REQUIRE_NOTHROW(node_updater->process_delete_nodes());
 
     REQUIRE(change_tracking.skip_deleted_node_ids.size() == 1);
@@ -780,7 +812,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
 
   static osm_nwr_id_t relation_id;
   static osm_version_t relation_version;
-  static osm_nwr_id_t node_new_ids[3];
+  static std::array<osm_nwr_id_t, 3> node_new_ids;
   static osm_nwr_id_t way_new_id;
 
   static osm_nwr_id_t relation_id_1;
@@ -939,7 +971,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto r_id = change_tracking.created_relation_ids[0].new_id;
     auto r_version = change_tracking.created_relation_ids[0].new_version;
 
-    osm_nwr_id_t n_new_ids[2];
+    std::array<osm_nwr_id_t,2> n_new_ids;
 
     for (const auto id : change_tracking.created_node_ids) {
       n_new_ids[-1 * id.old_id - 1] = id.new_id;
@@ -1323,7 +1355,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
 
     node_updater->delete_node(1, node_new_ids[2], 1, false);
     REQUIRE_THROWS_MATCHES(node_updater->process_delete_nodes(), http::precondition_failed,
-        Catch::Message("Precondition failed: Node 8 is still used by relations 7."));
+        Catch::Message(fmt::format("Precondition failed: Node {} is still used by relations 7.",node_new_ids[2])));
   }
 
   SECTION("Try to delete node which still belongs to relation, if-unused set")
@@ -1574,6 +1606,144 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
       REQUIRE(change_tracking.skip_deleted_relation_ids[1].new_id == relation_l3_id_2);
       REQUIRE(change_tracking.deleted_relation_ids.size() == 0);
     }
+  }
+
+  SECTION("Testing locking of future relation members")
+  {
+      // this test is checking that locking in ApiDB_Relation_Updater::lock_future_members is working as expected
+
+      api06::OSMChange_Tracking change_tracking{};
+
+      SECTION("Prepare data") {
+
+        auto upd = tdb.get_data_update();
+        auto node_updater = upd->get_node_updater(change_tracking);
+        auto way_updater = upd->get_way_updater(change_tracking);
+        auto rel_updater = upd->get_relation_updater(change_tracking);
+
+        node_updater->add_node(-25.3448570, 131.0325171, 1, -1, { {"name", "Uluṟu"}, {"ele", "863"} });
+        node_updater->add_node(-25.3448570, 131.2325171, 1, -2, { });
+        node_updater->add_node( 15.5536221, 11.5462653,  1, -3, { });
+        node_updater->process_new_nodes();
+
+        way_updater->add_way(1, -1, { -1,  -2}, { {"highway", "path"}});
+        way_updater->process_new_ways();
+
+        // Remember new_ids for later tests. old_ids -1, -2, -3 are mapped to 0, 1, 2
+        for (const auto id : change_tracking.created_node_ids) {
+          node_new_ids[-1 * id.old_id - 1] = id.new_id;
+        }
+
+        // Also remember the new_id for the way we are creating
+        way_new_id = change_tracking.created_way_ids[0].new_id;
+
+        rel_updater->add_relation(1, -1,
+            {
+                { "Node", static_cast<osm_nwr_signed_id_t>(node_new_ids[0]), "role1" },
+                { "Node", static_cast<osm_nwr_signed_id_t>(node_new_ids[1]), "role2" }
+            },
+            {});
+
+        rel_updater->process_new_relations();
+
+        upd->commit();
+
+        relation_id = change_tracking.created_relation_ids[0].new_id;
+        relation_version = change_tracking.created_relation_ids[0].new_version;
+
+      }
+
+      SECTION("Create new relation") {
+
+        api06::OSMChange_Tracking change_tracking_new_rel{};
+
+        auto upd = tdb.get_data_update();
+        auto rel_updater = upd->get_relation_updater(change_tracking_new_rel);
+
+        rel_updater->add_relation(1, -1,
+            {
+                { "Node", static_cast<osm_nwr_signed_id_t>(node_new_ids[2]), "role1" },
+                { "Way",  static_cast<osm_nwr_signed_id_t>(way_new_id), "" },
+                { "Relation", static_cast<osm_nwr_signed_id_t>(relation_id), "" }
+            },
+            {{"boundary", "administrative"}});
+
+        rel_updater->process_new_relations();
+
+        // Launch 3 threads, trying to delete future node/way/rel members of the new relation,
+        // while the new relation hasn't been committed yet
+
+        auto future_node = std::async(std::launch::async, [&] {
+           api06::OSMChange_Tracking change_tracking_2nd{};
+           auto factory = tdb.get_new_data_update_factory();
+           auto txn_2nd = factory->get_default_transaction();
+           auto upd_2nd = factory->make_data_update(*txn_2nd);
+
+           auto node_updater = upd_2nd->get_node_updater(change_tracking_2nd);
+           node_updater->delete_node(2, static_cast<osm_nwr_signed_id_t>(node_new_ids[2]), 1, false);
+           // throws precondition_failed exception once the main process commits and releases the lock.
+           node_updater->process_delete_nodes();
+           upd_2nd->commit(); // not reached
+        });
+
+        auto future_way = std::async(std::launch::async, [&] {
+           api06::OSMChange_Tracking change_tracking_2nd{};
+           auto factory = tdb.get_new_data_update_factory();
+           auto txn_2nd = factory->get_default_transaction();
+           auto upd_2nd = factory->make_data_update(*txn_2nd);
+
+           auto way_updater = upd_2nd->get_way_updater(change_tracking_2nd);
+           way_updater->delete_way(2, static_cast<osm_nwr_signed_id_t>(way_new_id), 1, false);
+           // throws precondition_failed exception once the main process commits and releases the lock.
+           way_updater->process_delete_ways();
+           upd_2nd->commit(); // not reached
+        });
+
+        auto future_rel = std::async(std::launch::async, [&] {
+           api06::OSMChange_Tracking change_tracking_2nd{};
+           auto factory = tdb.get_new_data_update_factory();
+           auto txn_2nd = factory->get_default_transaction();
+           auto upd_2nd = factory->make_data_update(*txn_2nd);
+
+           auto rel_updater = upd_2nd->get_relation_updater(change_tracking_2nd);
+           rel_updater->delete_relation(2, static_cast<osm_nwr_signed_id_t>(relation_id), 1, false);
+           // throws precondition_failed exception once the main process commits and releases the lock.
+           rel_updater->process_delete_relations();
+           upd_2nd->commit(); // not reached
+        });
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+        upd->commit();
+
+        auto new_rel_id = change_tracking_new_rel.created_relation_ids[0].new_id;
+
+        {
+          // verify current tables, all relation members, including the relation itself must be visible
+
+          auto sel = tdb.get_data_selection();
+
+          REQUIRE(sel->check_node_visibility(static_cast<osm_nwr_signed_id_t>(node_new_ids[2])) == data_selection::exists);
+          REQUIRE(sel->check_way_visibility(static_cast<osm_nwr_signed_id_t>(way_new_id)) == data_selection::exists);
+          REQUIRE(sel->check_relation_visibility(static_cast<osm_nwr_signed_id_t>(relation_id)) == data_selection::exists);
+          REQUIRE(sel->check_relation_visibility(static_cast<osm_nwr_signed_id_t>(new_rel_id)) == data_selection::exists);
+
+        }
+
+        // Parallel attempts to delete future relation members must fail
+
+        REQUIRE_THROWS_MATCHES(future_node.get(), http::precondition_failed,
+               Catch::Message(fmt::format("Precondition failed: Node {} is still used by relations {}.",node_new_ids[2], new_rel_id)));
+
+        REQUIRE_THROWS_MATCHES(future_way.get(), http::precondition_failed,
+               Catch::Message(fmt::format("Precondition failed: Way {} is still used by relations {}.",way_new_id, new_rel_id)));
+
+
+        REQUIRE_THROWS_MATCHES(future_rel.get(), http::precondition_failed,
+               Catch::Message(fmt::format("Precondition failed: The relation {} is used in relations {}.",relation_id, new_rel_id)));
+
+
+      }
   }
 }
 

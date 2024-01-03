@@ -71,11 +71,15 @@ struct test_database {
   // return a data update factory pointing at the current database
   std::shared_ptr<data_update::factory> get_data_update_factory();
 
+  // return a new data update factory pointing at the current database,
+  // with a fresh database connection
+  std::unique_ptr<data_update::factory> get_new_data_update_factory();
+
   // return a data selection pointing at the current database
-  std::shared_ptr<data_selection> get_data_selection();
+  std::unique_ptr<data_selection> get_data_selection();
 
   // return a data updater pointing at the current database
-  std::shared_ptr<data_update> get_data_update();
+  std::unique_ptr<data_update> get_data_update();
 
   // return an oauth store pointing at the current database
   std::shared_ptr<oauth::store> get_oauth_store();
@@ -91,14 +95,13 @@ struct test_database {
   void testcase_ended();
 
 private:
-  // create a random, and hopefully unique, database name.
-  static std::string random_db_name();
-
   // set up the schema of the database
   static void setup_schema(pqxx::connection &w);
 
   // the name of the test database.
   std::string m_db_name;
+
+  po::variables_map vm;
 
   // factories using the test database which produce read-only data selections.
   std::shared_ptr<data_selection::factory> m_readonly_factory;
