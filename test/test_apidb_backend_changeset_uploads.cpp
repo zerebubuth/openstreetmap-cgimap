@@ -24,7 +24,6 @@
 
 #include <sys/time.h>
 
-#include "cgimap/config.hpp"
 #include "cgimap/time.hpp"
 #include "cgimap/oauth.hpp"
 #include "cgimap/options.hpp"

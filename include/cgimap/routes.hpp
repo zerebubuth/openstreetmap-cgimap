@@ -12,7 +12,6 @@
 
 #include "cgimap/handler.hpp"
 #include "cgimap/request.hpp"
-#include "cgimap/config.hpp"
 
 // internal implementation of the routes
 struct router;

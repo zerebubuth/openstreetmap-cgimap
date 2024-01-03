@@ -11,7 +11,6 @@
 #include "cgimap/output_buffer.hpp"
 #include "cgimap/backend/staticxml/staticxml.hpp"
 #include "cgimap/request_helpers.hpp"
-#include "cgimap/config.hpp"
 #include "cgimap/time.hpp"
 
 #include <boost/program_options.hpp>

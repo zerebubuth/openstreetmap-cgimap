@@ -7,7 +7,6 @@
  * For a full list of authors see the git log.
  */
 
-
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
 #include "cgimap/backend/apidb/changeset.hpp"
 #include "cgimap/logger.hpp"

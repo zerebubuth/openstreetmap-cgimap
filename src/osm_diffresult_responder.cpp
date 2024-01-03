@@ -8,7 +8,6 @@
  */
 
 #include "cgimap/osm_diffresult_responder.hpp"
-#include "cgimap/config.hpp"
 #include "cgimap/logger.hpp"
 
 #include <chrono>

@@ -12,9 +12,7 @@
 
 #include <stdexcept>
 #include <string>
-
 #include <fmt/core.h>
-
 #include <pqxx/pqxx>
 
 #include "cgimap/data_selection.hpp"

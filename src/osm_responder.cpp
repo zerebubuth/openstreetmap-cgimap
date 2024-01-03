@@ -7,7 +7,6 @@
  * For a full list of authors see the git log.
  */
 
-#include "cgimap/config.hpp"
 #include "cgimap/osm_responder.hpp"
 
 osm_responder::osm_responder(mime::type mt, std::optional<bbox> b)

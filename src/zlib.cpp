@@ -11,7 +11,6 @@
 #include <algorithm>
 #include <cstring>
 
-
 #include "cgimap/zlib.hpp"
 #include "cgimap/output_writer.hpp"
 
