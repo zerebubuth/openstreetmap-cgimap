@@ -587,7 +587,7 @@ TEST_CASE("Very large XML message", "[osmchange][node][xml]") {
 
 TEST_CASE("Create node, tags < max tags", "[osmchange][node][xml]") {
   auto test_settings = std::unique_ptr<global_settings_test_class>(new global_settings_test_class());
-  test_settings->m_element_max_tags = 5000;
+  test_settings->m_element_max_tags = 50;
 
   global_settings::set_configuration(std::move(test_settings));
   REQUIRE(global_settings::get_element_max_tags());
@@ -602,7 +602,7 @@ TEST_CASE("Create node, tags < max tags", "[osmchange][node][xml]") {
 
 TEST_CASE("Create node, tags >= max tags", "[osmchange][node][xml]") {
   auto test_settings = std::unique_ptr<global_settings_test_class>(new global_settings_test_class());
-  test_settings->m_element_max_tags = 5000;
+  test_settings->m_element_max_tags = 50;
 
   global_settings::set_configuration(std::move(test_settings));
   REQUIRE(global_settings::get_element_max_tags());
