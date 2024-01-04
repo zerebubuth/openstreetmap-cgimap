@@ -39,6 +39,7 @@ option(ENABLE_FMT_HEADER "Enable FMT header only mode" ON)
 option(ENABLE_COVERAGE "Compile with coverage info collection" OFF)
 option(ENABLE_PROFILING "Compile with profiling" OFF)
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
+option(ENABLE_INSTALL "Enable installation" ON)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     option(BUILD_TESTING "Compile test suite" ON)
 else()
@@ -133,3 +134,49 @@ target_link_libraries(openstreetmap_cgimap
     $<$<BOOL:${ENABLE_APIDB}>:cgimap_apidb>
     Boost::program_options
     PQXX::PQXX)
+
+
+#############################################################
+# Install
+#############################################################
+
+if (ENABLE_INSTALL)
+  install(TARGETS openstreetmap_cgimap
+          PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+          DESTINATION "bin")
+
+  if (BUILD_SHARED_LIBS)
+    install(TARGETS cgimap_core DESTINATION lib)
+    install(TARGETS cgimap_fcgi DESTINATION lib)
+    install(TARGETS cgimap_staticxml DESTINATION lib)
+    if (ENABLE_APIDB)
+      install(TARGETS cgimap_apidb DESTINATION lib)
+    endif()
+  endif()
+endif()
+
+
+#############################################################
+# Debian packaging
+#############################################################
+
+set(CPACK_GENERATOR "DEB")
+set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+set(CPACK_DEBIAN_PACKAGE_NAME "openstreetmap-cgimap")
+set(CPACK_PACKAGE_CONTACT "mmd.osm@gmail.com")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "mmd.osm@gmail.com")
+set(CPACK_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
+    OWNER_READ OWNER_WRITE OWNER_EXECUTE
+    GROUP_READ GROUP_EXECUTE
+    WORLD_READ WORLD_EXECUTE
+)
+set(CPACK_PACKAGE_DESCRIPTION "A comprehensive list of supported endpoints can be found at https://github.com/zerebubuth/openstreetmap-cgimap")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "OpenStreetMap CGImap - Performance optimized implementation of selected parts of the OSM API")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS YES)
+set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/zerebubuth/openstreetmap-cgimap")
+set(CPACK_STRIP_FILES "TRUE")
+INCLUDE(CPack)
+
