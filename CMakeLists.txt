@@ -75,6 +75,7 @@ endif()
 ##############
 # dependencies
 ##############
+find_package(Threads REQUIRED)
 find_package(PQXX 6.0 REQUIRED)
 find_package(LibXml2 2.6.31 REQUIRED)
 find_package(Libmemcached REQUIRED)

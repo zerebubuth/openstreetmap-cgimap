@@ -308,6 +308,7 @@ if(BUILD_TESTING)
             cgimap_core
             cgimap_apidb
             Boost::program_options
+            Threads::Threads
             catch2)
 
         add_test(NAME test_apidb_backend_changeset_uploads
