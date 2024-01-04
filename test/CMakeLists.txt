@@ -266,7 +266,8 @@ if(BUILD_TESTING)
             cgimap_core
             cgimap_apidb
             cgimap_staticxml
-            Boost::program_options)
+            Boost::program_options
+            catch2)
 
         add_test(NAME test_apidb_backend_changesets
             COMMAND pg_virtualenv "$<TARGET_FILE:test_apidb_backend_changesets>" --db-schema "${CMAKE_CURRENT_SOURCE_DIR}/structure.sql")
@@ -286,7 +287,8 @@ if(BUILD_TESTING)
             cgimap_core
             cgimap_apidb
             cgimap_staticxml
-            Boost::program_options)
+            Boost::program_options
+            catch2)
 
         add_test(NAME test_apidb_backend_changeset_downloads
             COMMAND pg_virtualenv "$<TARGET_FILE:test_apidb_backend_changeset_downloads>" --db-schema "${CMAKE_CURRENT_SOURCE_DIR}/structure.sql")
@@ -305,7 +307,8 @@ if(BUILD_TESTING)
             cgimap_common_compiler_options
             cgimap_core
             cgimap_apidb
-            Boost::program_options)
+            Boost::program_options
+            catch2)
 
         add_test(NAME test_apidb_backend_changeset_uploads
             COMMAND pg_virtualenv "$<TARGET_FILE:test_apidb_backend_changeset_uploads>" --db-schema "${CMAKE_CURRENT_SOURCE_DIR}/structure.sql")
