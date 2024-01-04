@@ -21,7 +21,7 @@ COPY . ./
 
 # Compile, install and remove source
 RUN mkdir build && cd build && \
-     CXXFLAGS="-Wall -Wextra -Wpedantic -Wno-unused-parameter" CMAKE_MAKE_PROGRAM=ninja cmake .. -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=ON -G Ninja && \
+     CXXFLAGS="-Wall -Wextra -Wpedantic -Wno-unused-parameter" CMAKE_MAKE_PROGRAM=ninja cmake .. -DBUILD_SHARED_LIBS=OFF -DENABLE_FMT_HEADER=OFF -DBUILD_TESTING=ON -G Ninja && \
      cmake --build . && \
      cmake --build . -t test && \
      strip openstreetmap-cgimap && \
