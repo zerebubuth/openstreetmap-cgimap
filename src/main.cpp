@@ -270,7 +270,6 @@ void install_signal_handlers() {
  */
 void daemonise() {
   pid_t pid;
-  struct sigaction sa;
 
   // fork to make sure we aren't a session leader
   if ((pid = fork()) < 0) {
