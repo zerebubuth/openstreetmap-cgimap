@@ -53,7 +53,7 @@ struct CGImapListener : Catch::TestEventListenerBase, DatabaseTestsFixture {
 
     void testRunStarting( Catch::TestRunInfo const& testRunInfo ) override {
       // load database schema when starting up tests
-      tdb.setup();
+      tdb.setup(test_db_sql);
     }
 
     void testCaseStarting( Catch::TestCaseInfo const& testInfo ) override {
