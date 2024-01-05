@@ -146,6 +146,8 @@ if (ENABLE_INSTALL)
           PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
           DESTINATION "bin")
 
+  install(FILES openstreetmap-cgimap.1 DESTINATION share/man/man1)
+
   if (BUILD_SHARED_LIBS)
     install(TARGETS cgimap_core DESTINATION lib)
     install(TARGETS cgimap_fcgi DESTINATION lib)
