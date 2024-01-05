@@ -4,7 +4,7 @@ FROM ubuntu:20.04 AS builder
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -qq && \
-    apt-get install -y gcc g++ make cmake ninja-build \
+    apt-get install -y gcc g++ make cmake \
        libfcgi-dev libxml2-dev libmemcached-dev \
        libboost-program-options-dev \
        libcrypto++-dev libyajl-dev \
@@ -21,11 +21,12 @@ COPY . ./
 
 # Compile, install and remove source
 RUN mkdir build && cd build && \
-     CXXFLAGS="-Wall -Wextra -Wpedantic -Wno-unused-parameter" CMAKE_MAKE_PROGRAM=ninja cmake .. -DBUILD_SHARED_LIBS=OFF -DENABLE_FMT_HEADER=OFF -DBUILD_TESTING=ON -G Ninja && \
-     cmake --build . && \
-     cmake --build . -t test && \
+     CXXFLAGS="-Wall -Wextra -Wpedantic -Wno-unused-parameter" cmake .. -DBUILD_SHARED_LIBS=OFF -DENABLE_FMT_HEADER=OFF -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release && \
+     make -j${nproc} && \
+     ctest --output-on-failure && \
      strip openstreetmap-cgimap && \
      cp openstreetmap-cgimap ../
+
 
 FROM ubuntu:20.04
 
