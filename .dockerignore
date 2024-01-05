@@ -1,2 +1,7 @@
 .git*
 .vagrant
+/build/
+*~
+*.o
+*.a
+*.so

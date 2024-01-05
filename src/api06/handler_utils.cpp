@@ -1,10 +1,20 @@
-#include "cgimap/api06/handler_utils.hpp"
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
 
+#include "cgimap/api06/handler_utils.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/request_helpers.hpp"
+
 #include <algorithm>
 #include <map>
 #include <vector>
+#include <string_view>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
@@ -22,16 +32,6 @@ using std::vector;
 using std::pair;
 namespace qi = boost::spirit::qi;
 namespace standard = boost::spirit::standard;
-
-namespace {
-struct first_equals {
-  first_equals(const std::string &k) : m_key(k) {}
-  bool operator()(const pair<string, string> &v) const {
-    return v.first == m_key;
-  }
-  string m_key;
-};
-} // anonymous namespace
 
 BOOST_FUSION_ADAPT_STRUCT(
   api06::id_version,
@@ -71,20 +71,20 @@ struct id_version_list_parser
 
 namespace api06 {
 
-bool valid_string(const std::string& str)
+bool valid_string(std::string_view str)
 {
   // check if character is representable as an unsigned char
   // see https://www.boost.org/doc/libs/1_77_0/boost/spirit/home/support/char_encoding/standard.hpp
 
   return std::all_of(str.begin(), str.end(),
-		     [](char c){ return c >= 0 && c <= UCHAR_MAX; });
+		     [](uint8_t ch){ return ((ch & ~0x7f) == 0); });
 }
 
-vector<id_version> parse_id_list_params(request &req, const string &param_name) {
+vector<id_version> parse_id_list_params(const request &req, std::string_view param_name) {
 
   string decoded = http::urldecode(get_query_string(req));
   const vector<pair<string, string> > params = http::parse_params(decoded);
-  auto itr = std::find_if(params.begin(), params.end(), first_equals(param_name));
+  auto itr = std::find_if(params.begin(), params.end(), [&param_name](auto& x){ return x.first == param_name; });
 
   if (itr == params.end())
     return {};

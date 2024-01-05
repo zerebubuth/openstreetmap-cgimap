@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef DATA_UPDATE_HPP
 #define DATA_UPDATE_HPP
 
@@ -15,13 +24,11 @@
 #include <memory>
 #include <vector>
 
-/**
- */
 class data_update {
 public:
-  virtual ~data_update() = default;
-
   data_update() = default;
+
+  virtual ~data_update() = default;
 
   data_update(const data_update&) = delete;
   data_update& operator=(const data_update&) = delete;

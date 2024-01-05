@@ -31,7 +31,7 @@ class SaxParser : public Parser
 public:
 
   SaxParser();
-  virtual ~SaxParser();
+  ~SaxParser() override;
 
   /** Parse an XML document from a file.
    * @param filename The path to the file.

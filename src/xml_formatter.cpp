@@ -1,5 +1,13 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #include "cgimap/xml_formatter.hpp"
-#include "cgimap/config.hpp"
 #include <string>
 #include <stdexcept>
 
@@ -29,21 +37,17 @@ const std::string &element_type_name(element_type elt) {
 
 xml_formatter::xml_formatter(std::unique_ptr<xml_writer> w) : writer(std::move(w)) {}
 
-xml_formatter::~xml_formatter() = default;
-
 mime::type xml_formatter::mime_type() const { return mime::application_xml; }
 
 void xml_formatter::start_document(
   const std::string &generator, const std::string &root_name) {
   writer->start(root_name);
-  writer->attribute("version", string("0.6"));
+  writer->attribute("version", output_formatter::API_VERSION);
   writer->attribute("generator", generator);
 
-  writer->attribute("copyright", string("OpenStreetMap and contributors"));
-  writer->attribute("attribution",
-                    string("http://www.openstreetmap.org/copyright"));
-  writer->attribute("license",
-                    string("http://opendatacommons.org/licenses/odbl/1-0/"));
+  writer->attribute("copyright", output_formatter::COPYRIGHT);
+  writer->attribute("attribution", output_formatter::ATTRIBUTION);
+  writer->attribute("license", output_formatter::LICENSE);
 }
 
 void xml_formatter::end_document() { writer->end(); }
@@ -102,10 +106,10 @@ void xml_formatter::error(const std::exception &e) {
 }
 
 void xml_formatter::write_tags(const tags_t &tags) {
-  for (const auto & tag : tags) {
+  for (const auto & [key, value] : tags) {
     writer->start("tag");
-    writer->attribute("k", tag.first);
-    writer->attribute("v", tag.second);
+    writer->attribute("k", key);
+    writer->attribute("v", value);
     writer->end();
   }
 }

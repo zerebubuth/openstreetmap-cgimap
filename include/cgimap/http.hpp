@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef HTTP_HPP
 #define HTTP_HPP
 
@@ -8,7 +17,6 @@
 #include <stdexcept>
 #include <optional>
 #include <ostream>
-#include "cgimap/config.hpp"
 
 #ifdef HAVE_LIBZ
 #include "cgimap/zlib.hpp"
@@ -30,6 +38,16 @@ namespace http {
     OPTIONS = 0b10000
   };
 
+  using headers_t = std::vector<std::pair<std::string, std::string> >;
+
+  std::string format_header(int status, const headers_t &headers);
+
+  /**
+   * return a static string description for an HTTP status code.
+   */
+  const char *status_message(int code);
+
+
 /**
  * Base class for HTTP protocol related exceptions.
  *
@@ -41,22 +59,18 @@ private:
   /// http://en.wikipedia.org/wiki/List_of_HTTP_status_codes
   const int code_;
 
-  /// the header is a short description of the code, mainly for
-  /// human consumption.
-  const std::string header_;
-
   /// specific error message, meant entirely for humans to read.
   const std::string message_;
 
 protected:
-  exception(int c, const std::string &h, const std::string &m);
+  exception(int c, std::string m);
 
 public:
-  virtual ~exception() noexcept;
+  ~exception() noexcept override = default;
 
   int code() const;
-  const std::string &header() const;
-  const char *what() const noexcept;
+  const char* header() const;
+  const char* what() const noexcept override;
 };
 
 /**
@@ -67,7 +81,7 @@ public:
  */
 class server_error : public exception {
 public:
-  server_error(const std::string &message);
+  explicit server_error(const std::string &message);
 };
 
 /**
@@ -76,7 +90,7 @@ public:
  */
 class bad_request : public exception {
 public:
-  bad_request(const std::string &message);
+  explicit bad_request(const std::string &message);
 };
 
 /**
@@ -86,7 +100,7 @@ public:
 
 class forbidden : public exception {
 public:
-   forbidden(const std::string &message);
+   explicit forbidden(const std::string &message);
 };
 
 /**
@@ -96,7 +110,7 @@ public:
  */
 class method_not_allowed : public exception {
 public:
-  method_not_allowed(const http::method method);
+  explicit method_not_allowed(http::method method);
   http::method allowed_methods;
 };
 
@@ -107,7 +121,7 @@ public:
  */
 class not_acceptable : public exception {
 public:
-  not_acceptable(const std::string &message);
+  explicit not_acceptable(const std::string &message);
 };
 
 /**
@@ -117,7 +131,7 @@ public:
  */
 class conflict : public exception {
 public:
-  conflict(const std::string &message);
+  explicit conflict(const std::string &message);
 };
 
 /**
@@ -126,8 +140,8 @@ public:
  */
 class precondition_failed : public exception {
 public:
-  precondition_failed(const std::string &message);
-  const char *what() const noexcept;
+  explicit precondition_failed(const std::string &message);
+  const char *what() const noexcept override;
 private:
   std::string fullstring;
 };
@@ -139,7 +153,7 @@ private:
 
 class payload_too_large : public exception {
 public:
-  payload_too_large(const std::string &message);
+  explicit payload_too_large(const std::string &message);
 };
 
 
@@ -150,7 +164,7 @@ public:
 
 class too_many_requests : public exception {
 public:
-  too_many_requests(const std::string &message);
+  explicit too_many_requests(const std::string &message);
 };
 
 
@@ -160,7 +174,7 @@ public:
  */
 class not_found : public exception {
 public:
-  not_found(const std::string &uri);
+  explicit not_found(const std::string &uri);
 };
 
 /**
@@ -168,7 +182,7 @@ public:
  */
 class bandwidth_limit_exceeded : public exception {
 public:
-  bandwidth_limit_exceeded(int retry_seconds);
+  explicit bandwidth_limit_exceeded(int retry_seconds);
   int retry_seconds;
 };
 
@@ -178,7 +192,7 @@ public:
 class gone : public exception {
 public:
   // TODO: fix up so that error message is meaningful
-  gone(const std::string &message = "");
+  explicit gone(const std::string &message = "");
 };
 
 /**
@@ -186,7 +200,7 @@ public:
  */
 class unauthorized : public exception {
 public:
-  unauthorized(const std::string &message);
+  explicit unauthorized(const std::string &message);
 };
 
 /**
@@ -195,7 +209,7 @@ public:
  */
 class unsupported_media_type : public exception {
 public:
-  unsupported_media_type(const std::string &message);
+  explicit unsupported_media_type(const std::string &message);
 };
 
 /**
@@ -236,7 +250,7 @@ private:
   const std::string name_;
 
 public:
-  encoding(const std::string &name) : name_(name){}
+  explicit encoding(std::string name) : name_(std::move(name)){}
   virtual ~encoding() = default;
 
   const std::string &name() const { return name_; };
@@ -281,13 +295,15 @@ std::unique_ptr<ZLibBaseDecompressor> get_content_encoding_handler(const std::st
 
 
 // allow bitset-like operators on methods
-inline method operator|(method a, method b) {
-  return static_cast<method>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
+constexpr method operator|(method a, method b) {
+  return static_cast<method>(static_cast<std::underlying_type_t<method>>(a) |
+                             static_cast<std::underlying_type_t<method>>(b));
 }
-inline method operator&(method a, method b) {
-  return static_cast<method>(static_cast<uint8_t>(a) & static_cast<uint8_t>(b));
+constexpr method operator&(method a, method b) {
+  return static_cast<method>(static_cast<std::underlying_type_t<method>>(a) &
+                             static_cast<std::underlying_type_t<method>>(b));
 }
-inline method& operator|=(method& a, method b)
+constexpr method& operator|=(method& a, method b)
 {
   return a= a | b;
 }

@@ -1,4 +1,12 @@
-#include "cgimap/config.hpp"
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #include "cgimap/routes.hpp"
 #include "cgimap/handler.hpp"
 
@@ -47,6 +55,7 @@
 #include <optional>
 
 #include <boost/algorithm/string.hpp>
+#include <fmt/core.h>
 
 using std::list;
 using std::string;
@@ -67,26 +76,30 @@ struct router {
   // interface through which all matches and constructions are performed.
   struct rule_base {
     virtual ~rule_base() = default;
-    virtual bool invoke_if(const list<string> &, request &,
-                           handler_ptr_t &) = 0;
+    virtual bool invoke_if(const list<string> &, request &, handler_ptr_t &) = 0;
   };
 
   using rule_ptr = std::unique_ptr<rule_base>;
 
   // concrete rule match / constructor class
-  template <typename rule_t, typename func_t> struct rule : public rule_base {
+  template <typename rule_t, typename func_t> 
+  struct rule : public rule_base {
     // the DSL rule expression to match
     rule_t r;
 
     // the function to call (used later as constructor factory)
     func_t func;
 
-    rule(rule_t r_, func_t f_) : r(r_), func(f_) {}
+    rule(rule_t r_, func_t f_) : 
+      r(std::move(r_)), 
+      func(f_) 
+    {}
 
     // try to match the expression. if it succeeds, call the provided function
     // with the provided params and the matched DSL arguments.
-    bool invoke_if(const list<string> &parts, request &params,
-                   handler_ptr_t &ptr) {
+    bool invoke_if(const list<string> &parts, 
+                   request &params,
+                   handler_ptr_t &ptr) override {
       try {
         auto begin = parts.begin();
         auto sequence = r.match(begin, parts.end());
@@ -116,7 +129,7 @@ struct router {
     static_assert(!std::is_base_of<payload_enabled_handler, Handler>::value, "GET rule cannot use payload enabled handler subclass");
 
     rules_get.push_back(
-        rule_ptr(new rule<Rule, boost::factory<Handler *> >(r, ctor)));
+        rule_ptr(new rule<Rule, boost::factory<Handler *> >(std::move(r), ctor)));
     return *this;
   }
 
@@ -128,7 +141,7 @@ struct router {
     static_assert(std::is_base_of<payload_enabled_handler, Handler>::value, "POST rule requires payload enabled handler subclass");
 
     rules_post.push_back(
-        rule_ptr(new rule<Rule, boost::factory<Handler *> >(r, ctor)));
+        rule_ptr(new rule<Rule, boost::factory<Handler *> >(std::move(r), ctor)));
     return *this;
   }
 
@@ -141,7 +154,7 @@ struct router {
     static_assert(std::is_base_of<payload_enabled_handler, Handler>::value, "PUT rule requires payload enabled handler subclass");
 
     rules_put.push_back(
-        rule_ptr(new rule<Rule, boost::factory<Handler *> >(r, ctor)));
+        rule_ptr(new rule<Rule, boost::factory<Handler *> >(std::move(r), ctor)));
     return *this;
   }
 
@@ -217,7 +230,7 @@ private:
 
 routes::routes()
     : common_prefix("/api/0.6/"),
-      r(new router())
+      r(std::make_unique<router>())
 #ifdef ENABLE_API07
       ,
       experimental_prefix("/api/0.7/"),
@@ -279,7 +292,7 @@ namespace {
  */
   pair<string, mime::type> resource_mime_type(const string &path) {
 
-#ifdef HAVE_YAJL
+#if HAVE_YAJL
     {
       std::size_t json_found = path.rfind(".json");
 

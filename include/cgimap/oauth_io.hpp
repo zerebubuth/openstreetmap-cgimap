@@ -1,10 +1,18 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef OAUTH_IO_HPP
 #define OAUTH_IO_HPP
 
 #include "cgimap/oauth.hpp"
 
-namespace oauth {
-namespace validity {
+namespace oauth::validity {
 
 inline bool operator==(const copacetic &a, const copacetic &b) {
   return a.token == b.token;
@@ -36,7 +44,6 @@ std::ostream &operator<<(std::ostream &out, const unauthorized &) {
   return out << "unauthorized";
 }
 
-} // namespace validity
-} // namespace oauth
+} // namespace oauth::validity
 
 #endif /* OAUTH_IO_HPP */

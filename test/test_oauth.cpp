@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #include "cgimap/oauth.hpp"
 #include "cgimap/oauth_io.hpp"
 
@@ -10,6 +19,17 @@
 #include <tuple>
 
 #include <boost/date_time/posix_time/conversion.hpp>
+
+
+/***********************************************************************************
+ *
+ *
+ * NOTE: OAuth1.0a is scheduled to be removed in 0.9 - no catch2 migration needed
+ *
+ *
+ *
+ ***********************************************************************************/
+
 
 
 template<typename T>
@@ -79,7 +99,7 @@ struct test_request : public request {
   std::chrono::system_clock::time_point get_current_time() const override;
 
 protected:
-  void write_header_info(int status, const headers_t &headers) override;
+  void write_header_info(int status, const http::headers_t &headers) override;
 
   output_buffer& get_buffer_internal() override;
   void finish_internal() override;
@@ -136,7 +156,7 @@ const std::string test_request::get_payload() {
 void test_request::dispose() {
 }
 
-void test_request::write_header_info(int status, const headers_t &headers) {
+void test_request::write_header_info(int status, const http::headers_t &headers) {
   throw std::runtime_error("test_request::write_header_info unimplemented.");
 }
 
@@ -255,14 +275,14 @@ struct test_secret_store
     , m_token_secret(token_secret) {
   }
 
-  std::optional<std::string> consumer_secret(const std::string &key) {
+  std::optional<std::string> consumer_secret(const std::string &key) override {
     if (key == m_consumer_key) {
       return m_consumer_secret;
     }
     return {};
   }
 
-  std::optional<std::string> token_secret(const std::string &id) {
+  std::optional<std::string> token_secret(const std::string &id) override {
     if (id == m_token_id) {
       return m_token_secret;
     }
@@ -270,7 +290,7 @@ struct test_secret_store
   }
 
   bool use_nonce(const std::string &nonce,
-                 uint64_t timestamp) {
+                 uint64_t timestamp) override {
     std::tuple<std::string, uint64_t> tuple =
       std::make_tuple(nonce, timestamp);
     if (m_nonces.count(tuple) > 0) {
@@ -280,27 +300,16 @@ struct test_secret_store
     return true;
   }
 
-  bool allow_read_api(const std::string &id) {
+  bool allow_read_api(const std::string &id) override {
     return id == m_token_id;
   }
 
-  bool allow_write_api(const std::string &id) {
+  bool allow_write_api(const std::string &id) override {
     return id == m_token_id;
   }
 
-  std::optional<osm_user_id_t> get_user_id_for_token(const std::string &id) {
+  std::optional<osm_user_id_t> get_user_id_for_token(const std::string &id) override {
     return {};
-  }
-
-  std::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) {
-    expired = false;
-    revoked = false;
-    allow_api_write = false;
-    return {};
-  }
-
-  std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t) {
-    return std::set<osm_user_role_t>();
   }
 
 private:

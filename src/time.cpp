@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #include "cgimap/time.hpp"
 
 #include <stdexcept>
@@ -11,11 +20,7 @@
 std::chrono::system_clock::time_point parse_time(const std::string &s) {
   // parse only YYYY-MM-DDTHH:MM:SSZ
   if ((s.size() == 20) && (s[19] == 'Z')) {
-    // chop off the trailing 'Z' so as not to interfere with the standard
-    // parsing.
-    std::string without_tz = s.substr(0, 19);
-
-    std::tm tm = {};
+    std::tm tm{};
     strptime(s.c_str(), "%FT%T%z", &tm);
     auto tp = std::chrono::system_clock::from_time_t(timegm(&tm));
 

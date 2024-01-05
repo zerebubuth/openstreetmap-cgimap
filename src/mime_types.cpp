@@ -1,4 +1,12 @@
-#include "cgimap/config.hpp"
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #include "cgimap/mime_types.hpp"
 #include <stdexcept>
 
@@ -13,7 +21,7 @@ string to_string(type t) {
     return "text/plain";
   } else if (application_xml == t) {
     return "application/xml";
-#ifdef HAVE_YAJL
+#if HAVE_YAJL
   } else if (application_json == t) {
     return "application/json";
 #endif
@@ -37,7 +45,7 @@ type parse_from(const std::string &name) {
     t = application_xml;
   } else if (name == "application/xml") {
     t = application_xml;
-#ifdef HAVE_YAJL
+#if HAVE_YAJL
   } else if (name == "application/json") {
     t = application_json;
 #endif

@@ -1,15 +1,19 @@
-#include "cgimap/text_responder.hpp"
-#include "cgimap/config.hpp"
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
 
-using std::list;
+#include "cgimap/text_responder.hpp"
 
 text_responder::text_responder(mime::type mt)
-    : responder(mt), output_text{}  {}
+    : responder(mt) {}
 
-text_responder::~text_responder() = default;
-
-list<mime::type> text_responder::types_available() const {
-  list<mime::type> types;
+std::vector<mime::type> text_responder::types_available() const {
+  std::vector<mime::type> types;
   types.push_back(mime::text_plain);
   return types;
 }
@@ -23,8 +27,8 @@ std::string text_responder::extra_response_headers() const {
 }
 
 void text_responder::write(output_formatter& fmt,
-                     const std::string &generator,
-                     const std::chrono::system_clock::time_point &now)
+                           const std::string &generator,
+                           const std::chrono::system_clock::time_point &now)
 {
   fmt.error(output_text);
 }

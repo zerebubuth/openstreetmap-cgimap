@@ -1,7 +1,14 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef ZLIB_HPP
 #define ZLIB_HPP
-
-#include "cgimap/config.hpp"
 
 #ifndef HAVE_LIBZ
 #error This file should not be included when zlib is not available.
@@ -28,7 +35,7 @@ public:
    */
   zlib_output_buffer(output_buffer& o, mode m);
   zlib_output_buffer(const zlib_output_buffer &old);
-  virtual ~zlib_output_buffer();
+  ~zlib_output_buffer() override = default;
   int write(const char *buffer, int len) override;
   int written() override;
   int close() override;
@@ -65,15 +72,15 @@ public:
   ~ZLibBaseDecompressor();
 
 protected:
-  ZLibBaseDecompressor();
-  ZLibBaseDecompressor(int windowBits);
+  ZLibBaseDecompressor() = default;
+  explicit ZLibBaseDecompressor(int windowBits);
 
 
 private:
   char inbuf[ZLIB_COMPLETE_CHUNK];
   char outbuf[ZLIB_COMPLETE_CHUNK];
-  z_stream stream;
-  bool use_decompression;
+  z_stream stream{};
+  bool use_decompression{false};
 };
 
 class ZLibDecompressor : public ZLibBaseDecompressor {

@@ -1,6 +1,13 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
 
 #include "cgimap/json_formatter.hpp"
-#include "cgimap/config.hpp"
 
 #include <chrono>
 
@@ -27,8 +34,7 @@ const std::string &element_type_name(element_type elt) {
 
 } // anonymous namespace
 
-json_formatter::json_formatter(std::unique_ptr<json_writer> w) : writer(std::move(w)),
-    is_in_elements_array(false) {}
+json_formatter::json_formatter(std::unique_ptr<json_writer> w) : writer(std::move(w)) {}
 
 json_formatter::~json_formatter() = default;
 
@@ -41,9 +47,9 @@ void json_formatter::write_tags(const tags_t &tags) {
 
   writer->object_key("tags");
   writer->start_object();
-  for (const auto& tag : tags) {
-    writer->object_key(tag.first);
-    writer->entry_string(tag.second);
+  for (const auto& [key, value] : tags) {
+    writer->object_key(key);
+    writer->entry_string(value);
   }
   writer->end_object();
 }
@@ -56,11 +62,11 @@ void json_formatter::start_document(
   const std::string &generator, const std::string &root_name) {
   writer->start_object();
 
-  WRITE_KV("version", string, "0.6");
+  WRITE_KV("version", string, output_formatter::API_VERSION);
   WRITE_KV("generator", string, generator);
-  WRITE_KV("copyright", string, "OpenStreetMap and contributors");
-  WRITE_KV("attribution", string, "http://www.openstreetmap.org/copyright");
-  WRITE_KV("license", string, "http://opendatacommons.org/licenses/odbl/1-0/");
+  WRITE_KV("copyright", string, output_formatter::COPYRIGHT);
+  WRITE_KV("attribution", string, output_formatter::ATTRIBUTION);
+  WRITE_KV("license", string, output_formatter::LICENSE);
 }
 
 void json_formatter::write_bounds(const bbox &bounds) {

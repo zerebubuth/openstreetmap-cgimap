@@ -1,5 +1,13 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #include "cgimap/backend.hpp"
-#include "cgimap/config.hpp"
 
 #include <fmt/core.h>
 #include <stdexcept>
@@ -33,7 +41,7 @@ po::variables_map first_pass_argments(int argc, char *argv[],
 }
 
 struct registry {
-  registry();
+  registry() = default;
 
   bool add(std::unique_ptr<backend> ptr);
   void setup_options(int argc, char *argv[], po::options_description &desc);
@@ -47,8 +55,6 @@ private:
   backend_map_t backends;
   std::optional<std::string> default_backend;
 };
-
-registry::registry() = default;
 
 bool registry::add(std::unique_ptr<backend> ptr) {
   if (default_backend) {
@@ -88,7 +94,7 @@ void registry::setup_options(int argc, char *argv[],
 
   po::variables_map vm = first_pass_argments(argc, argv, desc);
 
-  std::string backend = *default_backend;
+  std::string bcknd = *default_backend;
 
   // little hack - we want to print *all* the backends when --help is passed, so
   // we don't add one here when it's present. it's a nasty way to do it, but i
@@ -99,14 +105,14 @@ void registry::setup_options(int argc, char *argv[],
       auto itr =
           backends.find(vm["backend"].as<std::string>());
       if (itr != backends.end()) {
-        backend = itr->first;
+        bcknd = itr->first;
       }
       else {
         throw std::runtime_error(fmt::format("unknown backend provided, available options are: {}", all_backends));
       }
     }
 
-    desc.add(backends[backend]->options());
+    desc.add(backends[bcknd]->options());
   }
 }
 
@@ -118,48 +124,48 @@ void registry::output_options(std::ostream &out) {
 
 std::unique_ptr<data_selection::factory>
 registry::create(const po::variables_map &options) {
-  std::string backend = *default_backend;
+  std::string bcknd = *default_backend;
 
   if (options.count("backend")) {
     auto itr =
         backends.find(options["backend"].as<std::string>());
     if (itr != backends.end()) {
-      backend = itr->first;
+      bcknd = itr->first;
     }
   }
 
-  return backends[backend]->create(options);
+  return backends[bcknd]->create(options);
 }
 
 std::unique_ptr<data_update::factory>
 registry::create_data_update(const po::variables_map &options) {
-  std::string backend = *default_backend;
+  std::string bcknd = *default_backend;
 
   if (options.count("backend")) {
     auto itr =
         backends.find(options["backend"].as<std::string>());
     if (itr != backends.end()) {
-      backend = itr->first;
+      bcknd = itr->first;
     }
   }
 
-  return backends[backend]->create_data_update(options);
+  return backends[bcknd]->create_data_update(options);
 }
 
 
 std::unique_ptr<oauth::store>
 registry::create_oauth_store(const boost::program_options::variables_map &options) {
-  std::string backend = *default_backend;
+  std::string bcknd = *default_backend;
 
   if (options.count("backend")) {
     auto itr =
         backends.find(options["backend"].as<std::string>());
     if (itr != backends.end()) {
-      backend = itr->first;
+      bcknd = itr->first;
     }
   }
 
-  return backends[backend]->create_oauth_store(options);
+  return backends[bcknd]->create_oauth_store(options);
 }
 
 registry *registry_ptr = NULL;

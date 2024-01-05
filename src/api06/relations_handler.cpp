@@ -1,26 +1,37 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #include "cgimap/api06/relations_handler.hpp"
 #include "cgimap/api06/handler_utils.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
-#include "cgimap/infix_ostream_iterator.hpp"
-#include "cgimap/api06/id_version_io.hpp"
 
+#include <fmt/core.h>
+#include <fmt/format.h>
 
 #include <sstream>
+#include <string>
+#include <vector>
 
-using std::stringstream;
 using std::vector;
 using std::string;
 
 namespace api06 {
 
-relations_responder::relations_responder(mime::type mt, vector<id_version> ids_,
-                                         data_selection &s_)
-    : osm_current_responder(mt, s_), ids(ids_) {
+relations_responder::relations_responder(mime::type mt, const vector<id_version> &ids,
+                                         data_selection &s)
+    : osm_current_responder(mt, s) {
+
   vector<osm_nwr_id_t> current_ids;
   vector<osm_edition_t> historic_ids;
 
-  for (id_version idv : ids_) {
+  for (id_version idv : ids) {
     if (idv.version) {
       historic_ids.push_back(std::make_pair(idv.id, *idv.version));
     } else {
@@ -38,26 +49,22 @@ relations_responder::relations_responder(mime::type mt, vector<id_version> ids_,
   }
 }
 
-relations_handler::relations_handler(request &req)
+relations_handler::relations_handler(const request &req)
     : ids(validate_request(req)) {}
 
 std::string relations_handler::log_name() const {
-  stringstream msg;
-  msg << "relations?relations=";
-  std::copy(ids.begin(), ids.end(),
-            infix_ostream_iterator<id_version>(msg, ", "));
-  return msg.str();
+  return fmt::format("relations?relations={}",fmt::join(ids,","));
 }
 
 responder_ptr_t relations_handler::responder(data_selection &x) const {
-  return responder_ptr_t(new relations_responder(mime_type, ids, x));
+  return std::make_unique<relations_responder>(mime_type, ids, x);
 }
 
 /**
  * Validates an FCGI request, returning the valid list of ids or
  * throwing an error if there was no valid list of node ids.
  */
-vector<id_version> relations_handler::validate_request(request &req) {
+vector<id_version> relations_handler::validate_request(const request &req) {
   vector<id_version> myids = parse_id_list_params(req, "relations");
 
   if (myids.empty()) {

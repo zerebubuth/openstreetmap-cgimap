@@ -1,0 +1,11 @@
+# definitions for autotools compatibility
+function(target_add_autotools_compatibility_definitions target)
+    target_compile_definitions(${target} INTERFACE "PACKAGE_NAME=\"${CMAKE_PROJECT_NAME}\"")
+    target_compile_definitions(${target} INTERFACE "PACKAGE_VERSION=\"${CMAKE_PROJECT_VERSION}\"")
+    target_compile_definitions(${target} INTERFACE "VERSION=\"${CMAKE_PROJECT_VERSION}\"")
+    target_compile_definitions(${target} INTERFACE "PACKAGE_STRING=\"${CMAKE_PROJECT_NAME} ${CMAKE_PROJECT_VERSION}\"")
+    string(TOLOWER "${CMAKE_PROJECT_NAME}-${CMAKE_PROJECT_VERSION}" AUTOTOOLS_PACKAGE_VAR)
+    target_compile_definitions(${target} INTERFACE "PACKAGE=\"${AUTOTOOLS_PACKAGE_VAR}\"")
+    target_compile_definitions(${target} INTERFACE "PACKAGE_URL=\"${CMAKE_PROJECT_HOMEPAGE_URL}\"")
+    target_compile_definitions(${target} INTERFACE "PACKAGE_BUGREPORT=\"${CMAKE_PROJECT_BUGREPORT_URL}\"")
+endfunction()

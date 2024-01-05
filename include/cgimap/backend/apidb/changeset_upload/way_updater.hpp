@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef APIDB_WAY_UPDATER
 #define APIDB_WAY_UPDATER
 
@@ -20,32 +29,32 @@ class ApiDB_Way_Updater : public api06::Way_Updater {
 
 public:
   ApiDB_Way_Updater(Transaction_Manager &_m,
-		    api06::OSMChange_Tracking &ct);
+                    api06::OSMChange_Tracking &ct);
 
-  virtual ~ApiDB_Way_Updater();
+  ~ApiDB_Way_Updater() override = default;
 
   void add_way(osm_changeset_id_t changeset_id, osm_nwr_signed_id_t old_id,
-               const api06::WayNodeList &nodes, const api06::TagList &tags);
+               const api06::WayNodeList &nodes, const api06::TagList &tags) override;
 
   void modify_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id,
                   osm_version_t version, const api06::WayNodeList &nodes,
-                  const api06::TagList &tags);
+                  const api06::TagList &tags) override;
 
   void delete_way(osm_changeset_id_t changeset_id, osm_nwr_id_t id,
-                  osm_version_t version, bool if_unused);
+                  osm_version_t version, bool if_unused) override;
 
-  void process_new_ways();
+  void process_new_ways() override;
 
-  void process_modify_ways();
+  void process_modify_ways() override;
 
-  void process_delete_ways();
+  void process_delete_ways() override;
 
-  unsigned int get_num_changes();
+  unsigned int get_num_changes() const override;
 
-  bbox_t bbox();
+  bbox_t bbox() const override;
 
 private:
-  bbox_t m_bbox;
+  bbox_t m_bbox{};
 
   struct way_node_t {
     osm_nwr_id_t node_id;

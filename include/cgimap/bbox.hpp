@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef BBOX_HPP
 #define BBOX_HPP
 
@@ -7,11 +16,11 @@
  * Container for a simple lat/lon bounding box.
  */
 struct bbox {
-  double minlat, minlon, maxlat, maxlon;
+  double minlat{0.0}, minlon{0.0}, maxlat{0.0}, maxlon{0.0};
 
   bbox(double minlat_, double minlon_, double maxlat_, double maxlon_);
 
-  bbox();
+  constexpr bbox() = default;
 
   bool operator==(const bbox &) const;
 

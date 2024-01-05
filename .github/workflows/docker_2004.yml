@@ -1,0 +1,15 @@
+name: Build on Ubuntu 20.04
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build Docker images
+        uses: docker/build-push-action@v2.1.0
+        with:
+           file: docker/ubuntu/Dockerfile

@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
 
 #include <cryptopp/base64.h>
@@ -11,12 +20,10 @@
 #include <sys/types.h>
 #include <argon2.h>
 #include <cassert>
-#include <iostream>
 #include <regex>
 #include <string>
 
 #include <boost/algorithm/string.hpp>
-
 
 #include "cgimap/basicauth.hpp"
 #include "cgimap/options.hpp"
@@ -25,8 +32,8 @@
 using namespace CryptoPP;
 
 bool PasswordHash::check(const std::string& pass_crypt,
-			 const std::string& pass_salt,
-			 const std::string& candidate) {
+                         const std::string& pass_salt,
+                         const std::string& candidate) {
 
   std::string hashed_candidate;
 

@@ -1,4 +1,12 @@
-#include "cgimap/config.hpp"
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #include "cgimap/choose_formatter.hpp"
 #include "cgimap/output_writer.hpp"
 #include "cgimap/mime_types.hpp"
@@ -6,8 +14,10 @@
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/xml_writer.hpp"
 #include "cgimap/xml_formatter.hpp"
+#if HAVE_YAJL
 #include "cgimap/json_writer.hpp"
 #include "cgimap/json_formatter.hpp"
+#endif
 #include "cgimap/text_writer.hpp"
 #include "cgimap/text_formatter.hpp"
 #include "cgimap/logger.hpp"
@@ -32,11 +42,9 @@
 
 using std::list;
 using std::map;
-using std::numeric_limits;
 using std::make_pair;
 
 using std::string;
-using std::vector;
 using std::pair;
 
 
@@ -44,10 +52,10 @@ namespace {
 
 class acceptable_types {
 public:
-  acceptable_types(const std::string &accept_header);
+  explicit acceptable_types(const std::string &accept_header);
   bool is_acceptable(mime::type) const;
   // note: returns mime::unspecified_type if none were acceptable
-  mime::type most_acceptable_of(const list<mime::type> &available) const;
+  mime::type most_acceptable_of(const std::vector<mime::type> &available) const;
 
 private:
   map<mime::type, float> mapping;
@@ -75,7 +83,7 @@ namespace ascii = boost::spirit::ascii;
 
 template <typename iterator>
 struct http_accept_grammar
-    : qi::grammar<iterator, vector<media_range>(), ascii::blank_type> {
+    : qi::grammar<iterator, std::vector<media_range>(), ascii::blank_type> {
   http_accept_grammar() : http_accept_grammar::base_type(start) {
     using qi::lit;
     using qi::char_;
@@ -109,13 +117,13 @@ struct http_accept_grammar
   qi::rule<iterator, string()> token, quoted_string, mime_type;
   qi::rule<iterator, pair<string, string>(), ascii::blank_type> param;
   qi::rule<iterator, media_range(), ascii::blank_type> range;
-  qi::rule<iterator, vector<media_range>(), ascii::blank_type> start;
+  qi::rule<iterator, std::vector<media_range>(), ascii::blank_type> start;
 };
 /*
       = lit("* / *")      [_val = mime::any_type]
       | lit("text/xml") [_val = mime::application_xml]
       | lit("application/xml") [_val = mime::application_xml]
-#ifdef HAVE_YAJL
+#if HAVE_YAJL
       | lit("application/json")[_val = mime::application_json]
 #endif
       ;
@@ -126,7 +134,7 @@ acceptable_types::acceptable_types(const std::string &accept_header) {
   using iterator_type = std::string::const_iterator;
   using grammar = http_accept_grammar<iterator_type>;
 
-  vector<media_range> ranges;
+  std::vector<media_range> ranges;
   grammar g;
   iterator_type itr = accept_header.begin();
   iterator_type end = accept_header.end();
@@ -165,10 +173,9 @@ bool acceptable_types::is_acceptable(mime::type mt) const {
   return mapping.find(mt) != mapping.end();
 }
 
-mime::type
-acceptable_types::most_acceptable_of(const list<mime::type> &available) const {
+mime::type acceptable_types::most_acceptable_of(const std::vector<mime::type> &available) const {
   mime::type best = mime::unspecified_type;
-  float score = numeric_limits<float>::min();
+  float score = std::numeric_limits<float>::min();
   for (mime::type type : available) {
     auto itr = mapping.find(type);
     if ((itr != mapping.end()) && (itr->second > score)) {
@@ -194,13 +201,13 @@ acceptable_types::most_acceptable_of(const list<mime::type> &available) const {
  * figures out the preferred mime type(s) from the Accept headers, mapped to
  * their relative acceptability.
  */
-acceptable_types header_mime_type(request &req) {
+acceptable_types header_mime_type(const request &req) {
   // need to look at HTTP_ACCEPT request environment
   string accept_header = fcgi_get_env(req, "HTTP_ACCEPT", "*/*");
   return acceptable_types(accept_header);
 }
 
-std::string mime_types_to_string(const std::list<mime::type> mime_types)
+std::string mime_types_to_string(const std::vector<mime::type> &mime_types)
 {
   std::string result;
 
@@ -215,10 +222,10 @@ std::string mime_types_to_string(const std::list<mime::type> mime_types)
 
 }
 
-mime::type choose_best_mime_type(request &req, const responder& hptr) {
+mime::type choose_best_mime_type(const request &req, const responder& hptr) {
   // figure out what, if any, the Accept-able resource mime types are
   acceptable_types types = header_mime_type(req);
-  const list<mime::type> types_available = hptr.types_available();
+  const std::vector<mime::type> types_available = hptr.types_available();
 
   mime::type best_type = hptr.resource_type();
   // check if the handler is capable of supporting an acceptable set of mime
@@ -227,12 +234,12 @@ mime::type choose_best_mime_type(request &req, const responder& hptr) {
     // check that this doesn't conflict with anything in the Accept header.
     if (!hptr.is_available(best_type))
       throw http::not_acceptable(fmt::format("Acceptable formats for {} are: {}",
-                                get_request_path(req),
-				mime_types_to_string(types_available)));
+                                 get_request_path(req),
+                                 mime_types_to_string(types_available)));
     else if (!types.is_acceptable(best_type))
       throw http::not_acceptable(fmt::format("Acceptable formats for {} are: {}",
-				get_request_path(req),
-				mime_types_to_string({best_type})));
+                                 get_request_path(req),
+                                 mime_types_to_string({best_type})));
   } else {
     best_type = types.most_acceptable_of(types_available);
     // if none were acceptable then...
@@ -256,7 +263,7 @@ std::unique_ptr<output_formatter> create_formatter(mime::type best_type, output_
     case mime::application_xml:
       return std::make_unique<xml_formatter>(std::make_unique<xml_writer>(out, true));
 
-#ifdef HAVE_YAJL
+#if HAVE_YAJL
     case mime::application_json:
       return std::make_unique<json_formatter>(std::make_unique<json_writer>(out, false));
 #endif

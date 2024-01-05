@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #include "cgimap/router.hpp"
 
 namespace match {
@@ -22,8 +31,6 @@ match_string::match_type match_string::match(part_iterator &begin,
   return match_type();
 }
 
-match_osm_id::match_osm_id() = default;
-
 match_osm_id::match_type match_osm_id::match(part_iterator &begin,
                                              const part_iterator &end) const {
   if (begin != end) {
@@ -44,8 +51,6 @@ match_osm_id::match_type match_osm_id::match(part_iterator &begin,
   throw error();
 }
 
-match_name::match_name() = default;
-
 match_name::match_type match_name::match(part_iterator &begin,
                                          const part_iterator &end) const {
   if (begin != end) {
@@ -58,8 +63,6 @@ match_name::match_type match_name::match(part_iterator &begin,
   }
   throw error();
 }
-
-match_begin::match_begin() = default;
 
 match_begin::match_type match_begin::match(part_iterator &,
                                            const part_iterator &) const {

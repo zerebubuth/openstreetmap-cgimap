@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef TYPES_HPP
 #define TYPES_HPP
 
@@ -26,12 +35,17 @@ enum class osm_user_role_t {
 
 // OSMChange message operations
 enum class operation {
-        op_undefined = 0, op_create = 1, op_modify = 2, op_delete = 3
+  op_undefined = 0,
+  op_create = 1,
+  op_modify = 2,
+  op_delete = 3
 };
 
 // OSMChange message object type
 enum class object_type {
-  node = 1, way = 2, relation = 3
+  node = 1,
+  way = 2,
+  relation = 3
 };
 
 

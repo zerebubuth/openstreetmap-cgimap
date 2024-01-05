@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef ROUTER_HPP
 #define ROUTER_HPP
 
@@ -112,7 +121,7 @@ struct match_string : public ops<match_string> {
   match_string(const char *s);
 
   // copy just copies the held string
-  inline match_string(const match_string &m) : str(m.str) {}
+  inline match_string(const match_string &m) = default;
 
   match_type match(part_iterator &begin, const part_iterator &end) const;
 
@@ -125,7 +134,7 @@ private:
  */
 struct match_osm_id : public ops<match_osm_id> {
   using match_type = list<osm_nwr_id_t>;
-  match_osm_id();
+  match_osm_id() = default;
   match_type match(part_iterator &begin, const part_iterator &end) const;
 };
 
@@ -134,7 +143,7 @@ struct match_osm_id : public ops<match_osm_id> {
  */
 struct match_name : public ops<match_name> {
   using match_type = list<std::string>;
-  match_name();
+  match_name() = default;
   match_type match(part_iterator &begin, const part_iterator &end) const;
 };
 
@@ -145,7 +154,7 @@ struct match_name : public ops<match_name> {
  */
 struct match_begin : public ops<match_begin> {
   using match_type = list<>;
-  match_begin();
+  match_begin() = default;
   match_type match(part_iterator &begin, const part_iterator &end) const;
 };
 

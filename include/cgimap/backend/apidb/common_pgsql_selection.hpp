@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef CGIMAP_BACKEND_APIDB_COMMON_PGSQL_SELECTION_HPP
 #define CGIMAP_BACKEND_APIDB_COMMON_PGSQL_SELECTION_HPP
 
@@ -7,6 +16,9 @@
 #include <chrono>
 #include <functional>
 #include <pqxx/pqxx>
+#include <string_view>
+#include <string>
+#include <vector>
 
 /* these functions take the results of "rolled-up" queries where tags, way
  * nodes and relation members are aggregated per-row.
@@ -38,5 +50,9 @@ void extract_changesets(
   std::map<osm_changeset_id_t, changeset> &cc,
   const std::chrono::system_clock::time_point &now,
   bool include_changeset_discussions);
+
+// parses psql array based on specs given
+// https://www.postgresql.org/docs/current/static/arrays.html#ARRAYS-IO
+std::vector<std::string> psql_array_to_vector(std::string_view str);
 
 #endif /* CGIMAP_BACKEND_APIDB_COMMON_PGSQL_SELECTION_HPP */

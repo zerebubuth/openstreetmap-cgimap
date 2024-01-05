@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef API06_CHANGESET_UPDATE_HANDLER_HPP
 #define API06_CHANGESET_UPDATE_HANDLER_HPP
 
@@ -13,36 +22,30 @@ namespace api06 {
 class changeset_update_responder : public text_responder {
 public:
   changeset_update_responder(mime::type,
-			     data_update &,
-			     osm_changeset_id_t id_,
+                             data_update &,
+                             osm_changeset_id_t id_,
                              const std::string & payload,
-			     std::optional<osm_user_id_t> user_id);
-
-private:
-  osm_changeset_id_t id;
+                             std::optional<osm_user_id_t> user_id);
 };
 
 class changeset_update_sel_responder : public osm_current_responder {
 public:
   changeset_update_sel_responder(mime::type,
-			     data_selection & sel,
-			     osm_changeset_id_t id_);
-
+                                 data_selection & sel,
+                                 osm_changeset_id_t id_);
 private:
   data_selection& sel;
-  osm_changeset_id_t id;
-  bool include_discussion;
 };
 
 class changeset_update_handler : public payload_enabled_handler {
 public:
-  changeset_update_handler(request &req, osm_changeset_id_t id);
+  changeset_update_handler(const request &req, osm_changeset_id_t id);
 
   std::string log_name() const override;
   responder_ptr_t responder(data_selection &x) const override;
 
   responder_ptr_t responder(data_update &,
-			    const std::string &payload,
+                            const std::string &payload,
                             std::optional<osm_user_id_t> user_id) const override;
   bool requires_selection_after_update() const override;
 

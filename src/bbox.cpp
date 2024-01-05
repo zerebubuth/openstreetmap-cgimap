@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #include "cgimap/bbox.hpp"
 #include <cmath>
 #include <vector>
@@ -12,8 +21,6 @@ using std::vector;
 
 bbox::bbox(double minlat_, double minlon_, double maxlat_, double maxlon_)
     : minlat(minlat_), minlon(minlon_), maxlat(maxlat_), maxlon(maxlon_) {}
-
-bbox::bbox() : minlat(0.0), minlon(0.0), maxlat(0.0), maxlon(0.0) {}
 
 bool bbox::operator==(const bbox &other) const {
   return ((minlat == other.minlat) &&

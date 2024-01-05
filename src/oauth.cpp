@@ -1,4 +1,12 @@
-#include "cgimap/config.hpp"
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #include "cgimap/oauth.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/request_helpers.hpp"
@@ -58,7 +66,7 @@ std::string upcase(const std::string &s) {
 }
 #endif /* HAVE_BOOST_LOCALE */
 
-std::string scheme(request &req) {
+std::string scheme(const request &req) {
   const char *https = req.get_param("HTTPS");
 
   if (https == NULL) {
@@ -69,7 +77,7 @@ std::string scheme(request &req) {
   }
 }
 
-std::string authority(request &req) {
+std::string authority(const request &req) {
   // from the OAuth 1.0a spec:
   // > URL scheme and authority MUST be lowercase and include the
   // > port number; http default port 80 and https default port 443
@@ -120,7 +128,7 @@ std::string authority(request &req) {
   return host;
 }
 
-std::string path(request &req) {
+std::string path(const request &req) {
   return get_request_path(req);
 }
 
@@ -231,7 +239,7 @@ bool parse_oauth_authorization(const char *auth_header, std::vector<param> &para
   return (success && (itr == end));
 }
 
-std::string request_method(request &req) {
+std::string request_method(const request &req) {
   const char *method = req.get_param("REQUEST_METHOD");
   if (method == NULL) {
     throw http::server_error("Request didn't set $REQUEST_METHOD parameter.");
@@ -243,7 +251,7 @@ std::string urlnormalise(const std::string &str) {
   return http::urlencode(http::urldecode(str));
 }
 
-bool get_all_request_parameters(request &req, std::vector<param> &params) {
+bool get_all_request_parameters(const request &req, std::vector<param> &params) {
   using params_t = std::vector<std::pair<std::string, std::string> >;
 
   { // add oauth params, except realm
@@ -285,7 +293,7 @@ bool get_all_request_parameters(request &req, std::vector<param> &params) {
   return true;
 }
 
-std::optional<std::string> find_auth_header_value(const std::string &key, request &req) {
+std::optional<std::string> find_auth_header_value(const std::string &key, const request &req) {
   std::vector<param> params;
   if (!get_all_request_parameters(req, params)) {
     return {};
@@ -301,15 +309,15 @@ std::optional<std::string> find_auth_header_value(const std::string &key, reques
   return {};
 }
 
-std::optional<std::string> signature_method(request &req) {
+std::optional<std::string> signature_method(const request &req) {
   return find_auth_header_value("oauth_signature_method", req);
 }
 
-std::optional<std::string> get_consumer_key(request &req) {
+std::optional<std::string> get_consumer_key(const request &req) {
   return find_auth_header_value("oauth_consumer_key", req);
 }
 
-std::optional<std::string> get_token_id(request &req) {
+std::optional<std::string> get_token_id(const request &req) {
   return find_auth_header_value("oauth_token", req);
 }
 
@@ -364,7 +372,7 @@ std::string base64_encode(const std::string &str) {
   return ostr.str();
 }
 
-std::optional<std::string> normalise_request_parameters(request &req) {
+std::optional<std::string> normalise_request_parameters(const request &req) {
   std::vector<param> params;
 
   if (!get_all_request_parameters(req, params)) {
@@ -383,7 +391,7 @@ std::optional<std::string> normalise_request_parameters(request &req) {
   return out.str();
 }
 
-std::string normalise_request_url(request &req) {
+std::string normalise_request_url(const request &req) {
   std::ostringstream out;
 
   out << downcase(scheme(req)) << "://"
@@ -397,7 +405,7 @@ std::string normalise_request_url(request &req) {
   return out.str();
 }
 
-std::optional<std::string> signature_base_string(request &req) {
+std::optional<std::string> signature_base_string(const request &req) {
   std::ostringstream out;
 
   std::optional<std::string> request_params =
@@ -414,7 +422,7 @@ std::optional<std::string> signature_base_string(request &req) {
   return out.str();
 }
 
-std::optional<std::string> hashed_signature(request &req, secret_store &store) {
+std::optional<std::string> hashed_signature(const request &req, secret_store &store) {
   std::optional<std::string> method = signature_method(req);
   if (!method || ((*method != "HMAC-SHA1") && (*method != "PLAINTEXT"))) {
     return {};
@@ -460,7 +468,7 @@ std::optional<std::string> hashed_signature(request &req, secret_store &store) {
 }
 
 validity::validity is_valid_signature(
-  request &req, secret_store &store,
+  const request &req, secret_store &store,
   nonce_store &nonces, token_store &tokens) {
 
   std::optional<std::string>
@@ -550,7 +558,7 @@ validity::validity is_valid_signature(
 } // namespace detail
 
 validity::validity is_valid_signature(
-  request &req, secret_store &store,
+  const request &req, secret_store &store,
   nonce_store &nonces, token_store &tokens) {
 
   try {
@@ -561,10 +569,5 @@ validity::validity is_valid_signature(
     return validity::bad_request();
   }
 }
-
-secret_store::~secret_store() = default;
-nonce_store::~nonce_store() = default;
-token_store::~token_store() = default;
-store::~store() = default;
 
 } // namespace oauth

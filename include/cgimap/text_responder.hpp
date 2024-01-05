@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef TEXT_RESPONDER_HPP
 #define TEXT_RESPONDER_HPP
 
@@ -5,7 +14,9 @@
 #include "cgimap/bbox.hpp"
 #include "cgimap/data_selection.hpp"
 
-#include <sstream>
+#include <string>
+#include <chrono>
+#include <vector>
 
 /**
  * utility class - use this as a base class when the derived class is going to
@@ -15,21 +26,20 @@ class text_responder : public responder {
 public:
   // construct, passing the mime type down to the responder.
   // optional bounds are stored at this level, but available to derived classes.
-  text_responder(mime::type);
+  explicit text_responder(mime::type);
 
-  virtual ~text_responder();
+  ~text_responder() override = default;
 
   // lists the standard types that OSM format can respond in, currently XML and,
-  // if
-  // the yajl library is provided, JSON.
-  virtual std::list<mime::type> types_available() const;
+  // if the yajl library is provided, JSON.
+  std::vector<mime::type> types_available() const override;
 
   // quick hack to add headers to the response
-  std::string extra_response_headers() const;
+  std::string extra_response_headers() const override;
 
   void write(output_formatter& f,
              const std::string &generator,
-             const std::chrono::system_clock::time_point &now);
+             const std::chrono::system_clock::time_point &now) override;
 
 protected:
 

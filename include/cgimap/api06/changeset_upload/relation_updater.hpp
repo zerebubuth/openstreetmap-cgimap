@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef API06_CHANGESET_UPLOAD_RELATION_UPDATER
 #define API06_CHANGESET_UPLOAD_RELATION_UPDATER
 
@@ -8,7 +17,6 @@
 #include "cgimap/api06/changeset_upload/relation.hpp"
 
 #include <map>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -41,9 +49,9 @@ public:
 
   virtual void process_delete_relations() = 0;
 
-  virtual uint32_t get_num_changes() = 0;
+  virtual uint32_t get_num_changes() const = 0;
 
-  virtual bbox_t bbox() = 0;
+  virtual bbox_t bbox() const = 0;
 };
 
 } // namespace api06

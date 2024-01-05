@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef WAY_HPP
 #define WAY_HPP
 
@@ -14,15 +23,15 @@ namespace api06 {
 class Way : public OSMObject {
 
 public:
-  Way() : OSMObject() {};
+  Way() = default;
 
-  virtual ~Way() = default;
+  ~Way() override = default;
 
   void add_way_node(osm_nwr_signed_id_t waynode) {
     m_way_nodes.emplace_back(waynode);
   }
 
-  void add_way_node(const char *waynode) {
+  void add_way_node(const std::string &waynode) {
 
     osm_nwr_signed_id_t _waynode = 0;
 
@@ -68,7 +77,7 @@ public:
     }
   }
 
-  std::string get_type_name() { return "Way"; }
+  std::string get_type_name() override { return "Way"; }
 
 private:
   std::vector<osm_nwr_signed_id_t> m_way_nodes;
