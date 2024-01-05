@@ -1,3 +1,9 @@
+openstreetmap-cgimap (0.8.11-1~jammy1) jammy; urgency=medium
+
+  * Test build 0.8.11 unofficial
+
+ -- mmd osm <mmd.osm@gmail.com>  Fri, 5 Jan 2024 18:10:00 +0000
+
 openstreetmap-cgimap (0.8.10-1~jammy1) jammy; urgency=medium
 
   * Added changeset upload rate limiting (#296) (#297)
