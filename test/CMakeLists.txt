@@ -77,22 +77,6 @@ if(BUILD_TESTING)
 
 
     ###########
-    # test_oauth
-    ###########
-    add_executable(test_oauth
-        test_oauth.cpp)
-
-    target_link_libraries(test_oauth
-        cgimap_common_compiler_options
-        cgimap_core
-        Boost::program_options
-        PQXX::PQXX)
-
-    add_test(NAME test_oauth
-        COMMAND test_oauth)
-
-
-    ###########
     # test_oauth2
     ###########
     add_executable(test_oauth2
@@ -194,26 +178,6 @@ if(BUILD_TESTING)
 
         add_test(NAME test_apidb_backend_nodes
             COMMAND pg_virtualenv "$<TARGET_FILE:test_apidb_backend_nodes>" --db-schema "${CMAKE_CURRENT_SOURCE_DIR}/structure.sql")
-
-
-        ##########################
-        # test_apidb_backend_oauth
-        ##########################
-        add_executable(test_apidb_backend_oauth
-            test_apidb_backend_oauth.cpp
-            test_formatter.cpp
-            test_database.cpp
-            test_request.cpp)
-
-        target_link_libraries(test_apidb_backend_oauth
-            cgimap_common_compiler_options
-            cgimap_core
-            cgimap_apidb
-            cgimap_staticxml
-            Boost::program_options)
-
-        add_test(NAME test_apidb_backend_oauth
-            COMMAND pg_virtualenv "$<TARGET_FILE:test_apidb_backend_oauth>" --db-schema "${CMAKE_CURRENT_SOURCE_DIR}/structure.sql")
 
 
         ###########################

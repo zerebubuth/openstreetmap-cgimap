@@ -14,7 +14,6 @@ if(ENABLE_APIDB)
         pgsql_update.cpp
         changeset.cpp
         quad_tile.cpp
-        oauth_store.cpp
         transaction_manager.cpp
         utils.cpp
         changeset_upload/changeset_updater.cpp
