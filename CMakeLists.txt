@@ -137,6 +137,32 @@ target_link_libraries(openstreetmap_cgimap
     PQXX::PQXX)
 
 
+
+#############################################################
+# Optional "clang-tidy" target
+#############################################################
+
+find_program(CLANG_TIDY
+             NAMES clang-tidy clang-tidy-16 clang-tidy-15 clang-tidy-14 clang-tidy-13 clang-tidy-12 clang-tidy-11)
+
+if (CLANG_TIDY)
+    message(STATUS "Looking for clang-tidy - found ${CLANG_TIDY}")
+
+    file(GLOB CT_CHECK_FILES src/*.cpp src/api06/*.cpp src/api06/changeset_upload/*.cpp src/api07/*.cpp
+                             src/backend/apidb/*.cpp src/backend/apidb/changeset_upload/*.cpp
+                             src/backend/staticxml/*.cpp test/*.cpp test/*.hpp)
+
+    add_custom_target(clang-tidy
+        ${CLANG_TIDY}
+        -extra-arg=-std=c++17
+        -p ${CMAKE_BINARY_DIR}
+        ${CT_CHECK_FILES}
+    )
+else()
+    message(STATUS "Looking for clang-tidy - not found")
+endif()
+
+
 #############################################################
 # Install
 #############################################################
