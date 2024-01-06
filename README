@@ -4,19 +4,11 @@
 
 ## Overview
 
-CGImap is a C++ implementation of some parts of the OpenStreetMap API as an FastCGI process.
+CGImap is a C++ implementation of performance critical parts of the OpenStreetMap API as an FastCGI process.
 
-The rails implementation of the "map" call had a few problems with memory -
-it uses a lot of it and there is a leak which makes it annoying to use
-in long-running environments, such as the main OSM server.
+As CGImap doesn't manage any database schemas and tables on its own, it can only be deployed alongside the openstreetmap-website application to replace selected API endpoints by their performance optimized counterparts. CGImap directly interacts with the APIDB, and completely bypasses the openstreetmap-website Rails application. See the [CGImap wiki page](https://wiki.openstreetmap.org/wiki/CGImap) for further details.
 
-CGImap attempts to address these memory problems and makes it easier
-to optimise the queries, something which is also a bit of a pain to do
-in Rails.
-
-Over time, many more API 0.6 endpoints were added.
-
-Currently, CGImap implements:
+CGImap implements the following 25 [OSM API 0.6](https://wiki.openstreetmap.org/wiki/API_v0.6) endpoints:
 
 * the "map" API call,
 * single node, way and relation fetches,
@@ -34,60 +26,38 @@ Currently, CGImap implements:
 * changeset downloads,
 * changeset uploads.
 
-Note that changeset metadata isn't the same thing as the changeset
-download (i.e: `osmChange` data).
-
 ## Requirements
 
-CGImap uses a PostgreSQL server for the APIDB backend. A minimum server version of 9.5 is required.
-
-CGImap depends on the following libraries. Versions used during development are in brackets.
-Respective library versions for Ubuntu 20.04 and Ubuntu 22.04 are supported at this time.
-Other versions may work, but YMMV.
-
-On Ubuntu 20.04:
-
-* libxml2-dev        (2.9.10+dfsg-5ubuntu0.20.04.3)
-* libpqxx-dev        (6.4.5-2build1)
-* libfcgi-dev        (2.4.0-10build1)
-* zlib1g-dev         (1:1.2.11.dfsg-2ubuntu1.3)
-* libboost-dev       (1.71.0.0ubuntu2)
-* libboost-program-options-dev (1.71.0.0ubuntu2)
-* libfmt-dev         (6.1.2+ds-2)
-* libmemcached-dev   (1.0.18-4.2ubuntu2)
-* libcrypto++-dev    (5.6.4-9build1)
-* libargon2-dev      (0~20171227-0.2)
-* libyajl-dev        (2.1.0-3)
-
+CGImap uses a PostgreSQL server for the APIDB backend.
 
 If you're running a Debian or Ubuntu system these can be installed
 using the following command:
 
     sudo apt-get install libxml2-dev libpqxx-dev libfcgi-dev zlib1g-dev \
-      libboost-dev libboost-program-options-dev libfmt-dev \
-      libmemcached-dev libcrypto++-dev libargon2-dev libyajl-dev
+      libboost-program-options-dev libfmt-dev libmemcached-dev libcrypto++-dev \
+      libargon2-dev libyajl-dev
 
 Note that C++17 is _required_ to build CGImap.
 
-The build system used is GNU Make, using pkg-config to provide some of
-the flags.
+The build system used is cmake.
 
 Note that the full set of packages needed from a fresh install (tested
 with Ubuntu 20.04 and 22.04) - you may already have many or all of these - is:
 
-    sudo apt-get install git build-essential automake autoconf libtool
+    sudo apt-get install git build-essential cmake make
 
 To build the system from scratch, first check out the source code (skip
 this step if you've already got the source):
 
     git clone https://github.com/zerebubuth/openstreetmap-cgimap.git
 
-Then change to the source code directory to configure and build:
+Then change to the source code directory to configure and build using cmake:
 
     cd openstreetmap-cgimap/
-    ./autogen.sh
-    ./configure
-    make
+    mkdir build
+    cd build
+    cmake ..
+    cmake --build .
 
 You should now have a "./openstreetmap-cgimap" executable in the current
 directory. For system-wide installation you still need to run:
@@ -99,16 +69,21 @@ originally intended for reuse by other applications. As there are no real world
 consumers of these libraries, you might want to run the `configure`
 script with the following parameters to create a static build instead:
 
-    ./configure --enable-static --disable-shared
+    cmake .. -DBUILD_SHARED_LIBS=OFF
 
 ## Setup
 
 To run CGImap binary, use the command:
 
-    ./openstreetmap-cgimap --socket :54321 --backend apidb \
-      --dbname openstreetmap
+    ./openstreetmap-cgimap --dbname=openstreetmap --username=user --password=pass \
+         --dbport=5432 --socket=:54321 --logfile=/tmp/logfile \
+         --daemon --instances=10
 
-Note: CGImap has to be used with a FastCGI enabled server like lighttpd, apache2 etc. See the instructions below to use CGImap with lighttpd or apache2.
+Instead of a world-accessible TCP socket 54321, you might want to use 127.0.0.1:54321
+to restrict access to the current host, or use plain filename like "--socket mysocket"
+for a Unix domain socket instead.
+
+CGImap has to be used with a FastCGI enabled HTTP server like lighttpd, apache2 etc. See the instructions below to use CGImap with lighttpd or apache2.
 
 A sample lighttd.conf file is provided, which can be used for testing purposes only. To test CGImap with lighttpd you will need to install lighttpd:
 
@@ -207,34 +182,43 @@ The read only apidb backend requires permissions to SELECT on the Postgres serve
 OAuth and update database connections require additional permissions to INSERT/UPDATE/DELETE
 data, as well as creating temporary tables.
 
-It is recommended that a separate account is created for
-CGImap to avoid any possibility of data corruption. Care has been
-taken programming CGImap but, as with most C++ applications, there is
-the chance of an exploitable flaw leading to complete pwnage.
+It is recommended that a separate unix account is used for
+CGImap to avoid any possibility of data corruption.
 
 ## Testing
 
-To run the test suite using `make check` you will need additional packages installed:
+To run the test suite you will need additional packages installed:
 
     sudo apt-get install postgresql-all postgresql-common postgresql-server-dev-all
 
+Tests can be built by using the Debug build type or explicitly setting the BUILD_TESTING: option
+
+    cmake .. -DCMAKE_BUILD_TYPE=Debug
+
+or
+
+    cmake .. -DBUILD_TESTING=ON
+
+The test suite can then be run using `cmake --build . -t test` / `ctest` as normal.
+
 Test cases are executed under `pg_virtualenv`, i.e. no further steps are needed to create databases as your user.
 
-
+<!--
 ## Formatting
 
 The CGImap code is formatted using
 [clang-format](http://clang.llvm.org/docs/ClangFormat.html) in a style
 which is based on the "LLVM style" which ships with
-`clang-format`. Note that version 3.6 or later is needed to avoid
-introducing problems with formatting try-catch blocks. To enable an
-automatic reformatting option, provide the `--with-clang-format`
+`clang-format`.
+<!--
+To enable an automatic reformatting option, provide the `--with-clang-format`
 option to `configure` and then reformatting can be done across the
 whole set of source files by running:
 
     make clang-format
 
 Ideally, this should be done before committing each set of changes.
+-->
 
 ## Acknowledgements
 

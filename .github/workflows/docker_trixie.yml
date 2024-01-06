@@ -12,5 +12,5 @@ jobs:
       - name: Build Docker images
         uses: docker/build-push-action@v2.1.0
         with:
-           file: Dockerfile_trixie
+           file: docker/debian/Dockerfile_trixie
 

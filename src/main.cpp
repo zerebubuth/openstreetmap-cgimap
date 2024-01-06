@@ -48,7 +48,6 @@ using namespace std::chrono_literals;
 #include "cgimap/fcgi_request.hpp"
 #include "cgimap/options.hpp"
 #include "cgimap/process_request.hpp"
-#include "cgimap/config.hpp"
 
 #ifdef ENABLE_APIDB
 #include "cgimap/backend/apidb/apidb.hpp"
@@ -271,7 +270,6 @@ void install_signal_handlers() {
  */
 void daemonise() {
   pid_t pid;
-  struct sigaction sa;
 
   // fork to make sure we aren't a session leader
   if ((pid = fork()) < 0) {

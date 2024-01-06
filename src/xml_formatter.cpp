@@ -8,7 +8,6 @@
  */
 
 #include "cgimap/xml_formatter.hpp"
-#include "cgimap/config.hpp"
 #include <string>
 #include <stdexcept>
 

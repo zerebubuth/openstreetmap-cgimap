@@ -1,14 +1,15 @@
 # vim:set ft=dockerfile:
-FROM debian:trixie-slim AS builder
+FROM ubuntu:20.04 AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -qq && \
-    apt-get install -y gcc g++ make autoconf automake libtool \
+    apt-get install -y gcc g++ make cmake \
        libfcgi-dev libxml2-dev libmemcached-dev \
-       libboost-program-options-dev libcrypto++-dev libyajl-dev \
+       libboost-program-options-dev \
+       libcrypto++-dev libyajl-dev \
        libpqxx-dev zlib1g-dev libargon2-dev libfmt-dev \
-       postgresql-16 postgresql-server-dev-all \
+       postgresql-12 postgresql-server-dev-all \
        --no-install-recommends && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -19,18 +20,20 @@ WORKDIR /app
 COPY . ./
 
 # Compile, install and remove source
-RUN ./autogen.sh && \
-    ./configure --enable-static --disable-shared --enable-yajl CXXFLAGS="-Wall -Wextra -Wpedantic -Wno-unused-parameter" && \
-    make -j${nproc} check TESTS= && \
-    make check || ( cat ./test-suite.log ; exit 1 ) && \
-    strip openstreetmap-cgimap
+RUN mkdir build && cd build && \
+     CXXFLAGS="-Wall -Wextra -Wpedantic -Wno-unused-parameter" cmake .. -DBUILD_SHARED_LIBS=OFF -DENABLE_FMT_HEADER=OFF -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release && \
+     make -j${nproc} && \
+     ctest --output-on-failure && \
+     strip openstreetmap-cgimap && \
+     cp openstreetmap-cgimap ../
 
-FROM debian:trixie
+
+FROM ubuntu:20.04
 
 RUN apt-get update -qq && \
     apt-get install -y \
-       libfcgi-bin libmemcached11 libboost-program-options1.74.0 \
-       libxml2 libcrypto++8 libyajl2 libpqxx-7.8 zlib1g libargon2-1 argon2 libfmt9 \
+       libfcgi-bin libmemcached11 libboost-locale1.71.0 libboost-program-options1.71.0 \
+       libxml2 libcrypto++6 libyajl2 libpqxx-6.4 zlib1g libargon2-1 \
        --no-install-recommends && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*

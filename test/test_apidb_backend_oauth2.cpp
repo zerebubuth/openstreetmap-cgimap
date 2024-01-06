@@ -13,7 +13,6 @@
 #include <sys/time.h>
 #include <cstdio>
 
-#include "cgimap/config.hpp"
 #include "cgimap/time.hpp"
 #include "cgimap/oauth.hpp"
 #include "cgimap/rate_limiter.hpp"
@@ -25,7 +24,7 @@
 #include "test_request.hpp"
 
 
-#define CATCH_CONFIG_MAIN
+#define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
 
 namespace {
@@ -124,8 +123,14 @@ int fetch_relation(test_database &tdb, const std::string &token) {
 
 class DatabaseTestsFixture
 {
+public:
+  static void setTestDatabaseSchema(const std::filesystem::path& db_sql) {
+    test_db_sql = db_sql;
+  }
+
 protected:
   DatabaseTestsFixture() = default;
+  inline static std::filesystem::path test_db_sql{"test/structure.sql"};
   static test_database tdb;
 };
 
@@ -137,7 +142,7 @@ struct CGImapListener : Catch::TestEventListenerBase, DatabaseTestsFixture {
 
     void testRunStarting( Catch::TestRunInfo const& testRunInfo ) override {
       // load database schema when starting up tests
-      tdb.setup();
+      tdb.setup(test_db_sql);
     }
 
     void testCaseStarting( Catch::TestCaseInfo const& testInfo ) override {
@@ -318,3 +323,28 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_oauth2_end_to_end", "[oauth2][db]" 
   }
 }
 
+
+int main(int argc, char *argv[]) {
+  Catch::Session session;
+
+  std::filesystem::path test_db_sql{ "test/structure.sql" };
+
+  using namespace Catch::clara;
+  auto cli =
+      session.cli()
+      | Opt(test_db_sql,
+            "db-schema")    // bind variable to a new option, with a hint string
+            ["--db-schema"] // the option names it will respond to
+      ("test database schema file"); // description string for the help output
+
+  session.cli(cli);
+
+  int returnCode = session.applyCommandLine(argc, argv);
+  if (returnCode != 0)
+    return returnCode;
+
+  if (!test_db_sql.empty())
+    DatabaseTestsFixture::setTestDatabaseSchema(test_db_sql);
+
+  return session.run();
+}

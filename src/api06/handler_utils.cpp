@@ -8,7 +8,6 @@
  */
 
 #include "cgimap/api06/handler_utils.hpp"
-
 #include "cgimap/http.hpp"
 #include "cgimap/request_helpers.hpp"
 

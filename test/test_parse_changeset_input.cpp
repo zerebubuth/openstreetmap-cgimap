@@ -10,7 +10,6 @@
 #include "cgimap/api06/changeset_upload/osmobject.hpp"
 #include "cgimap/api06/changeset_upload/changeset_input_format.hpp"
 
-
 #include <iostream>
 #include <sstream>
 #include <stdexcept>

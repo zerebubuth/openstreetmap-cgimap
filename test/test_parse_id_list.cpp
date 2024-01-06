@@ -25,7 +25,7 @@ std::vector<api06::id_version> parse_query_str(std::string query_str) {
 
 namespace api06 {
   extern bool valid_string(std::string_view str);
-};
+}
 
 TEST_CASE("Valid string", "[idlist]") {
   CHECK(api06::valid_string("foobar") == true);

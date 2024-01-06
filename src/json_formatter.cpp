@@ -7,9 +7,7 @@
  * For a full list of authors see the git log.
  */
 
-
 #include "cgimap/json_formatter.hpp"
-#include "cgimap/config.hpp"
 
 #include <chrono>
 

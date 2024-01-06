@@ -12,4 +12,4 @@ jobs:
       - name: Build Docker images
         uses: docker/build-push-action@v2.1.0
         with:
-           file: Dockerfile
+           file: docker/ubuntu/Dockerfile

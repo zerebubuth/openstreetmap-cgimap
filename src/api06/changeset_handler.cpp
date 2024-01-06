@@ -10,7 +10,6 @@
 #include "cgimap/api06/changeset_handler.hpp"
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/http.hpp"
-#include "cgimap/config.hpp"
 
 #include <fmt/core.h>
 

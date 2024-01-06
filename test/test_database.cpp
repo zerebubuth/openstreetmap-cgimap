@@ -36,11 +36,11 @@ std::string random_db_name() {
 
 // reads a file of SQL statements, splits on ';' and tries to
 // execute them in a transaction.
-std::string read_file_contents(const std::string &filename) {
+std::string read_file_contents(const std::filesystem::path& filename) {
 
   std::streamsize size = fs::file_size(filename);
   std::string query(size, '\0');
-  std::ifstream in(filename.c_str());
+  std::ifstream in(filename);
   in.read(&query[0], size);
   if (in.fail() || (size != in.gcount())) {
     throw std::runtime_error("Unable to read input SQL file.");
@@ -91,9 +91,9 @@ test_database::test_database() {
  * involved with the table creation per se, so can error independently
  * and cause a rollback / table drop.
  */
-void test_database::setup() {
+void test_database::setup(const std::filesystem::path& sql_file) {
   pqxx::connection conn(fmt::format("dbname={}", m_db_name));
-  setup_schema(conn);
+  setup_schema(conn, sql_file);
 
   std::shared_ptr<backend> apidb = make_apidb_backend();
 
@@ -237,6 +237,6 @@ int test_database::run_sql(const std::string &sql) {
   return exec_sql_string(conn, sql);
 }
 
-void test_database::setup_schema(pqxx::connection &conn) {
-  exec_sql_string(conn, read_file_contents("test/structure.sql"));
+void test_database::setup_schema(pqxx::connection &conn, const std::filesystem::path& sql_file) {
+  exec_sql_string(conn, read_file_contents(sql_file));
 }

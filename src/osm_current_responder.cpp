@@ -7,7 +7,6 @@
  * For a full list of authors see the git log.
  */
 
-#include "cgimap/config.hpp"
 #include "cgimap/logger.hpp"
 #include "cgimap/osm_current_responder.hpp"
 

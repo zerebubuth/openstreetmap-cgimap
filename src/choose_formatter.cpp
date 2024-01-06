@@ -7,7 +7,6 @@
  * For a full list of authors see the git log.
  */
 
-#include "cgimap/config.hpp"
 #include "cgimap/choose_formatter.hpp"
 #include "cgimap/output_writer.hpp"
 #include "cgimap/mime_types.hpp"
