@@ -66,10 +66,10 @@ directory. For system-wide installation you still need to run:
 
 For historic reasons, CGImap provides a number of shared libraries which were
 originally intended for reuse by other applications. As there are no real world
-consumers of these libraries, you might want to run the `configure`
-script with the following parameters to create a static build instead:
+consumers of these libraries, a static build is used by default. If you want 
+to build with dynamic libraries instead, you can use the following cmake parameters:
 
-    cmake .. -DBUILD_SHARED_LIBS=OFF
+    cmake .. -DBUILD_SHARED_LIBS=ON
 
 ## Setup
 
