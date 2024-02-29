@@ -1,0 +1,27 @@
+# Regression test for double values mistakenly being truncated to 11 characters in json output https://github.com/zerebubuth/openstreetmap-cgimap/issues/363
+Request-Method: GET
+Request-URI: /api/0.6/node/4.json
+HTTP-Accept: */*
+---
+Content-Type: application/json; charset=utf-8
+!Content-Disposition: 
+Status: 200 OK
+---
+{ "version": "0.6",
+  "generator": "***",
+  "copyright": "***",
+  "attribution": "***",
+  "license": "***",
+  "elements": [
+      { "type": "node",
+        "id": 4,
+	"lat": 48.1730392,
+	"lon": -117.0671669,
+	"timestamp": "2013-10-20T00:00:00Z",
+	"version": 1,
+	"changeset": 4,
+	"user": "foo",
+	"uid": 1
+      }
+  ]
+}
