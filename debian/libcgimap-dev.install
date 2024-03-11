@@ -1,7 +1,0 @@
-usr/include/*
-usr/lib/*/libcgimap*.a
-usr/lib/*/libcgimap*.la
-usr/lib/*/libcgimap_apidb*.so
-usr/lib/*/libcgimap_core*.so
-usr/lib/*/libcgimap_fcgi*.so
-usr/lib/*/libcgimap_staticxml*.so

@@ -2,52 +2,14 @@ Source: openstreetmap-cgimap
 Section: libs
 Priority: optional
 Maintainer: Matt Amos <zerebubuth@gmail.com>
-Build-Depends: debhelper (>=10), autotools-dev, dh-autoreconf, pkg-config, zlib1g-dev, libxml2-dev, libpqxx-dev, libfcgi-dev, libboost-dev, libboost-regex-dev, libboost-program-options-dev, libfmt-dev, libmemcached-dev, libcrypto++-dev, libargon2-dev, libyajl-dev, postgresql-all, postgresql-common (>= 148~), postgresql-server-dev-all
+Build-Depends: debhelper (>=10), pkg-config, zlib1g-dev, libxml2-dev, libpqxx-dev, libfcgi-dev, libboost-program-options-dev, libfmt-dev, libmemcached-dev, libcrypto++-dev, libargon2-dev, libyajl-dev, postgresql-all, postgresql-common (>= 148~), postgresql-server-dev-all, cmake
 Homepage: https://github.com/zerebubuth/openstreetmap-cgimap
 Standards-Version: 3.9.7
-
-Package: libcgimap-dev
-Section: contrib/libdevel
-Architecture: any
-Depends: libcgimap-apidb0 (= ${binary:Version}), libcgimap-core0 (= ${binary:Version}), libcgimap-fcgi0 (= ${binary:Version}), libcgimap-staticxml0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: Development packages for CGImap, the C++ OpenStreetMap API
- Development files for developing applications or libraries against CGImap.
-
-Package: libcgimap-apidb0
-Section: contrib/libs
-Architecture: any
-Depends: libcgimap-core0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: Library for connecting CGImap to an "apidb" schema database
- The "apidb" schema database is that used natively by the OpenStreetMap website
- code, and exported by Osmosis "apidb" functions.
-
-Package: libcgimap-core0
-Section: contrib/libs
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: Common code shared by CGImap components
- Includes code to work with bounding boxes, logging, output in XML and JSON
- formats.
-
-Package: libcgimap-fcgi0
-Section: contrib/libs
-Architecture: any
-Depends: libcgimap-core0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: Library for exposing CGImap functionality via FCGI
- Connects CGImap via FCGI to a web server such as Apache.
-
-Package: libcgimap-staticxml0
-Section: contrib/libs
-Architecture: any
-Depends: libcgimap-core0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: Library for serving XML files on disk via CGImap
- Used by CGImap for mock implementations of the database, but can also be
- useful for offline, stand-alone APIs.
 
 Package: openstreetmap-cgimap-bin
 Section: contrib/net
 Architecture: any
-Depends: libcgimap-core0 (= ${binary:Version}), libcgimap-apidb0 (= ${binary:Version}), libcgimap-fcgi0 (= ${binary:Version}), libcgimap-staticxml0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: CGImap is a C++ implementation of the OpenStreetMap API map call
  CGImap is a C++ implementation of some parts of the OpenStreetMap API as an
  FCGI process. The rails implementation of the "map" call had a few problems

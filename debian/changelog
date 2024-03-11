@@ -1,3 +1,19 @@
+openstreetmap-cgimap (0.9.0-1~jammy1) jammy; urgency=medium
+
+  * Replace autotools by cmake by @Woazboat in #317 and @mmd-osm in #358
+  * Fix json output incorrectly truncating coordinates by @Woazboat in #364
+  * Fix test_parse_id_list unit test failure on ARM64 in #347
+  * Adjustments for changes in underlying libpqxx 7.x.x library version in #301
+  * Fix program option --instances in #339
+  * Daemon mode improvements (multiple PRs)
+  * Check node lat lon not NaN or infinite by @Woazboat in (7d058d5)
+  * Use std::string / std::string_view for psql_array_to_vector by @Woazboat in #344
+  * Reduce temporary allocations for xml serialization by @Woazboat in #342
+  * Migrate unit tests to Catch2 framework, increased unit test coverage (multiple PRs)
+  * Code cleanups (multiple PRs)
+
+ -- mmd osm <mmd.osm@gmail.com>  Mon, 11 Mar 2024 19:47:12 +0000
+
 openstreetmap-cgimap (0.8.10-1~jammy1) jammy; urgency=medium
 
   * Added changeset upload rate limiting (#296) (#297)
