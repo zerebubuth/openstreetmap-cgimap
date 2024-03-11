@@ -1,13 +1,24 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/zlib.hpp"
+
 #include <sstream>
 #include <cassert>
 #include <cstring>
+
 #include <fmt/core.h>
 
 using std::string;
 
-string fcgi_get_env(request &req, const char *name, const char *default_value) {
+string fcgi_get_env(const request &req, const char *name, const char *default_value) {
   assert(name);
   const char *v = req.get_param(name);
 
@@ -24,7 +35,7 @@ string fcgi_get_env(request &req, const char *name, const char *default_value) {
   return string(v);
 }
 
-string get_query_string(request &req) {
+string get_query_string(const request &req) {
   // try the query string that's supposed to be present first
   const char *query_string = req.get_param("QUERY_STRING");
 
@@ -53,7 +64,7 @@ string get_query_string(request &req) {
   }
 }
 
-std::string get_request_path(request &req) {
+std::string get_request_path(const request &req) {
   const char *request_uri = req.get_param("REQUEST_URI");
 
   if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
@@ -80,7 +91,7 @@ std::string get_request_path(request &req) {
 /**
  * get encoding to use for response.
  */
-std::unique_ptr<http::encoding> get_encoding(request &req) {
+std::unique_ptr<http::encoding> get_encoding(const request &req) {
   const char *accept_encoding = req.get_param("HTTP_ACCEPT_ENCODING");
 
   if (accept_encoding) {
@@ -90,73 +101,6 @@ std::unique_ptr<http::encoding> get_encoding(request &req) {
   }
 }
 
-namespace {
-const char *http_message_status_200 = "OK";
-const char *http_message_status_400 = "Bad Request";
-const char *http_message_status_401 = "Unauthorized";
-const char *http_message_status_403 = "Forbidden";
-const char *http_message_status_404 = "Not Found";
-const char *http_message_status_405 = "Method Not Allowed";
-const char *http_message_status_406 = "Not Acceptable";
-const char *http_message_status_409 = "Conflict";
-const char *http_message_status_410 = "Gone";
-const char *http_message_status_412 = "Precondition Failed";
-const char *http_message_status_413 = "Payload Too Large";
-const char *http_message_status_415 = "Unsupported Media Type";
-const char *http_message_status_509 = "Bandwidth Limit Exceeded";
-const char *http_message_status_500 = "Internal Server Error";
-} // anonymous namespace
-
-const char *status_message(int code) {
-  const char *msg;
-
-  switch (code) {
-  case 200:
-    msg = http_message_status_200;
-    break;
-  case 400:
-    msg = http_message_status_400;
-    break;
-  case 401:
-    msg = http_message_status_401;
-    break;
-  case 403:
-    msg = http_message_status_403;
-    break;
-  case 404:
-    msg = http_message_status_404;
-    break;
-  case 405:
-    msg = http_message_status_405;
-    break;
-  case 406:
-    msg = http_message_status_406;
-    break;
-  case 409:
-    msg = http_message_status_409;
-    break;
-  case 410:
-    msg = http_message_status_410;
-    break;
-  case 412:
-    msg = http_message_status_412;
-    break;
-  case 413:
-    msg = http_message_status_413;
-    break;
-  case 415:
-    msg = http_message_status_415;
-    break;
-  case 509:
-    msg = http_message_status_509;
-    break;
-  default:
-    msg = http_message_status_500;
-    break;
-  }
-
-  return msg;
-}
 
 namespace {
 /**
@@ -184,13 +128,13 @@ public:
     r.flush();
   }
 
-  virtual ~fcgi_output_buffer() = default;
+  ~fcgi_output_buffer() override = default;
 
-  fcgi_output_buffer(request &req) : r(req), w(0) {}
+  explicit fcgi_output_buffer(request &req) : r(req) {}
 
 private:
   request &r;
-  int w;
+  int w{0};
 };
 
 } // anonymous namespace

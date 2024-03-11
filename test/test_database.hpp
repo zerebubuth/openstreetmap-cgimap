@@ -1,11 +1,21 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef TEST_TEST_DATABASE_HPP
 #define TEST_TEST_DATABASE_HPP
 
+
+#include <filesystem>
 #include <stdexcept>
 #include <string>
 
 #include <fmt/core.h>
-
 #include <pqxx/pqxx>
 
 #include "cgimap/data_selection.hpp"
@@ -24,9 +34,9 @@ struct test_database {
   // allow the test to be skipped, as people might not have or want an
   // apidb database set up on their local machines.
   struct setup_error : public std::exception {
-    setup_error(std::string fmt);
-    ~setup_error() noexcept;
-    virtual const char *what() const noexcept;
+    explicit setup_error(const std::string &fmt);
+    ~setup_error() noexcept override = default;
+    const char *what() const noexcept override;
 
   private:
     const std::string m_str;
@@ -44,7 +54,7 @@ struct test_database {
   ~test_database();
 
   // create table structure and fill with fake data.
-  void setup();
+  void setup(const std::filesystem::path& sql_file = "test/structure.sql");
 
   // run a test. func will be called twice - once with each of a
   // writeable and readonly data selection available from the
@@ -62,11 +72,15 @@ struct test_database {
   // return a data update factory pointing at the current database
   std::shared_ptr<data_update::factory> get_data_update_factory();
 
+  // return a new data update factory pointing at the current database,
+  // with a fresh database connection
+  std::unique_ptr<data_update::factory> get_new_data_update_factory();
+
   // return a data selection pointing at the current database
-  std::shared_ptr<data_selection> get_data_selection();
+  std::unique_ptr<data_selection> get_data_selection();
 
   // return a data updater pointing at the current database
-  std::shared_ptr<data_update> get_data_update();
+  std::unique_ptr<data_update> get_data_update();
 
   // return an oauth store pointing at the current database
   std::shared_ptr<oauth::store> get_oauth_store();
@@ -75,15 +89,20 @@ struct test_database {
   // intended for setting up data that the test needs.
   int run_sql(const std::string &sql);
 
-private:
-  // create a random, and hopefully unique, database name.
-  static std::string random_db_name();
+  // clean up database tables before new test case starts
+  void testcase_starting();
 
+  // clean up internal buffers when test case ended
+  void testcase_ended();
+
+private:
   // set up the schema of the database
-  static void setup_schema(pqxx::connection &w);
+  static void setup_schema(pqxx::connection &w, const std::filesystem::path& sql_file);
 
   // the name of the test database.
   std::string m_db_name;
+
+  po::variables_map vm;
 
   // factories using the test database which produce read-only data selections.
   std::shared_ptr<data_selection::factory> m_readonly_factory;
@@ -95,7 +114,6 @@ private:
 
   std::unique_ptr<Transaction_Owner_Base> txn_owner_readonly;
   std::unique_ptr<Transaction_Owner_Base> txn_owner_readwrite;
-
 };
 
 #endif /* TEST_TEST_DATABASE_HPP */

@@ -1,14 +1,25 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef DATA_SELECTION_HPP
 #define DATA_SELECTION_HPP
 
 #include "cgimap/types.hpp"
 #include "cgimap/output_formatter.hpp"
-#include "cgimap/backend/apidb/transaction_manager.hpp"
 
 #include <chrono>
 #include <memory>
-#include <sstream>
+#include <set>
 #include <vector>
+#include <string>
+
+class Transaction_Owner_Base;
 
 /**
  * represents a selected set of data which can be written out to
@@ -161,8 +172,16 @@ public:
   // is user currently blocked?
   virtual bool is_user_blocked(const osm_user_id_t) = 0;
 
-  virtual bool get_user_id_pass(const std::string& display_name, osm_user_id_t &,
-				std::string & pass_crypt, std::string & pass_salt) = 0;
+  virtual bool get_user_id_pass(const std::string& display_name, 
+                                osm_user_id_t &,
+                                std::string & pass_crypt, 
+                                std::string & pass_salt) = 0;
+
+  virtual std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t id) = 0;
+
+  virtual std::optional< osm_user_id_t > get_user_id_for_oauth2_token(
+      const std::string &token_id, bool &expired, bool &revoked,
+      bool &allow_api_write) = 0;
 
   // is user status confirmed or active?
   virtual bool is_user_active(const osm_user_id_t) = 0;
@@ -186,15 +205,10 @@ public:
 
     /// get a handle to a selection which can be used to build up
     /// a working set of data.
-    virtual std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) = 0;
+    virtual std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) const = 0;
 
     virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() = 0;
   };
 };
-
-
-// parses psql array based on specs given
-// https://www.postgresql.org/docs/current/static/arrays.html#ARRAYS-IO
-std::vector<std::string> psql_array_to_vector(std::string str);
 
 #endif /* DATA_SELECTION_HPP */

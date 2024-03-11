@@ -1,27 +1,28 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #include "cgimap/backend/staticxml/staticxml.hpp"
 #include "cgimap/backend.hpp"
 #include "cgimap/output_formatter.hpp"
 #include "cgimap/api06/id_version.hpp"
 
-#include <libxml/parser.h>
+#include <map>
+#include <sstream>
+#include <string_view>
+#include <unordered_set>
 
 #include <fmt/core.h>
-
-#include <functional>
-#include <sstream>
-#include <unordered_set>
+#include <libxml/parser.h>
 
 namespace po = boost::program_options;
 
-using std::string;
 using api06::id_version;
-
-Transaction_Owner_Void::Transaction_Owner_Void() {}
-
-pqxx::transaction_base& Transaction_Owner_Void::get_transaction() {
-  throw std::runtime_error ("get_transaction is not supported by Transaction_Owner_Void");
-}
-
 
 namespace {
 
@@ -75,22 +76,11 @@ struct database {
 };
 
 template <typename T>
-T get_attribute(const char *name, size_t len, const xmlChar **attributes) {
-  while (*attributes != NULL) {
-    if (strncmp(((const char *)(*attributes++)), name, len) == 0) {
-      return boost::lexical_cast<T>((const char *)(*attributes));
-    }
-    ++attributes;
-  }
-  throw std::runtime_error(
-      fmt::format("Unable to find attribute {}.", name));
-}
-
-template <typename T>
-std::optional<T> opt_attribute(const char *name, size_t len,
-                                 const xmlChar **attributes) {
-  while (*attributes != NULL) {
-    if (strncmp(((const char *)(*attributes++)), name, len) == 0) {
+std::optional<T> opt_attribute(std::string_view name, const xmlChar **attributes) {
+  while (*attributes != nullptr) {
+    auto name_attr = (const char *)(*attributes++);
+    std::string_view attr((const char *)name_attr);
+    if (attr == name) {
       return boost::lexical_cast<T>((const char *)(*attributes));
     }
     ++attributes;
@@ -98,127 +88,120 @@ std::optional<T> opt_attribute(const char *name, size_t len,
   return {};
 }
 
+template <typename T>
+T get_attribute(std::string_view name, const xmlChar **attributes) {
+  auto res = opt_attribute<T>(name, attributes);
+  if (res)
+    return *res;
+
+  throw std::runtime_error(fmt::format("Unable to find attribute {}.", name));
+}
+
+
 void parse_info(element_info &info, const xmlChar **attributes) {
-  info.id = get_attribute<osm_nwr_id_t>("id", 3, attributes);
-  info.version = get_attribute<osm_nwr_id_t>("version", 8, attributes);
-  info.changeset = get_attribute<osm_changeset_id_t>("changeset", 10, attributes);
-  info.timestamp = get_attribute<std::string>("timestamp", 10, attributes);
-  info.uid = opt_attribute<osm_user_id_t>("uid", 4, attributes);
-  info.display_name = opt_attribute<std::string>("user", 5, attributes);
-  info.visible = get_attribute<bool_alpha>("visible", 8, attributes);
-  info.redaction = opt_attribute<osm_redaction_id_t>("redaction", 10, attributes);
+  info.id = get_attribute<osm_nwr_id_t>("id", attributes);
+  info.version = get_attribute<osm_nwr_id_t>("version", attributes);
+  info.changeset = get_attribute<osm_changeset_id_t>("changeset", attributes);
+  info.timestamp = get_attribute<std::string>("timestamp", attributes);
+  info.uid = opt_attribute<osm_user_id_t>("uid", attributes);
+  info.display_name = opt_attribute<std::string>("user", attributes);
+  info.visible = get_attribute<bool_alpha>("visible", attributes);
+  info.redaction = opt_attribute<osm_redaction_id_t>("redaction", attributes);
 }
 
 void parse_changeset_info(changeset_info &info, const xmlChar **attributes) {
-  info.id = get_attribute<osm_changeset_id_t>("id", 3, attributes);
-  info.created_at = get_attribute<std::string>("created_at", 11, attributes);
-  info.closed_at = get_attribute<std::string>("closed_at", 10, attributes);
-  info.uid = opt_attribute<osm_user_id_t>("uid", 4, attributes);
-  info.display_name = opt_attribute<std::string>("user", 5, attributes);
+  info.id = get_attribute<osm_changeset_id_t>("id", attributes);
+  info.created_at = get_attribute<std::string>("created_at", attributes);
+  info.closed_at = get_attribute<std::string>("closed_at", attributes);
+  info.uid = opt_attribute<osm_user_id_t>("uid", attributes);
+  info.display_name = opt_attribute<std::string>("user", attributes);
+  info.bounding_box = {};
 
-  const std::optional<double>
-    min_lat = opt_attribute<double>("min_lat", 8, attributes),
-    min_lon = opt_attribute<double>("min_lon", 8, attributes),
-    max_lat = opt_attribute<double>("max_lat", 8, attributes),
-    max_lon = opt_attribute<double>("max_lon", 8, attributes);
+  std::optional<double> min_lat = opt_attribute<double>("min_lat", attributes);
+  std::optional<double> min_lon = opt_attribute<double>("min_lon", attributes);
+  std::optional<double> max_lat = opt_attribute<double>("max_lat", attributes);
+  std::optional<double> max_lon = opt_attribute<double>("max_lon", attributes);
 
-  if (bool(min_lat) && bool(min_lon) && bool(max_lat) &&
-      bool(max_lon)) {
+  if ((min_lat) && (min_lon) && (max_lat) && (max_lon)) {
     info.bounding_box = bbox(*min_lat, *min_lon, *max_lat, *max_lon);
-  } else {
-    info.bounding_box = {};
   }
 
-  info.num_changes = get_attribute<size_t>("num_changes", 11, attributes);
+  info.num_changes = get_attribute<size_t>("num_changes", attributes);
   info.comments_count = 0;
 }
 
 struct xml_parser {
   xml_parser(database *db)
-    : m_db(db),
-      m_cur_node(NULL),
-      m_cur_way(NULL),
-      m_cur_rel(NULL),
-      m_cur_tags(NULL),
-      m_cur_changeset(NULL),
-      m_in_text(false)
-    {}
+    : m_db(db) {}
 
-  static void start_element(void *ctx, const xmlChar *name,
+  static void start_element(void *ctx, const xmlChar *name_cstr,
                             const xmlChar **attributes) {
     auto *parser = static_cast<xml_parser *>(ctx);
 
-    if (strncmp((const char *)name, "node", 5) == 0) {
+    std::string_view name((const char *)name_cstr);
+
+    if (name == "node") {
       node n;
       parse_info(n.m_info, attributes);
-      n.m_lon = get_attribute<double>("lon", 4, attributes);
-      n.m_lat = get_attribute<double>("lat", 4, attributes);
+      n.m_lon = get_attribute<double>("lon", attributes);
+      n.m_lat = get_attribute<double>("lat", attributes);
       id_version idv(n.m_info.id, n.m_info.version);
-      std::pair<std::map<id_version, node>::iterator, bool> status =
-          parser->m_db->m_nodes.insert(std::make_pair(idv, n));
+      auto status = parser->m_db->m_nodes.insert(std::make_pair(idv, n));
       parser->m_cur_node = &(status.first->second);
       parser->m_cur_tags = &(parser->m_cur_node->m_tags);
-      parser->m_cur_way = NULL;
-      parser->m_cur_rel = NULL;
-      parser->m_cur_changeset = NULL;
-
-    } else if (strncmp((const char *)name, "way", 4) == 0) {
+      parser->m_cur_way = nullptr;
+      parser->m_cur_rel = nullptr;
+      parser->m_cur_changeset = nullptr;
+    }
+    else if (name == "way") {
       way w;
       parse_info(w.m_info, attributes);
       id_version idv(w.m_info.id, w.m_info.version);
-      std::pair<std::map<id_version, way>::iterator, bool> status =
-          parser->m_db->m_ways.insert(std::make_pair(idv, w));
+      auto status = parser->m_db->m_ways.insert(std::make_pair(idv, w));
       parser->m_cur_way = &(status.first->second);
       parser->m_cur_tags = &(parser->m_cur_way->m_tags);
-      parser->m_cur_node = NULL;
-      parser->m_cur_rel = NULL;
-      parser->m_cur_changeset = NULL;
-
-    } else if (strncmp((const char *)name, "relation", 9) == 0) {
+      parser->m_cur_node = nullptr;
+      parser->m_cur_rel = nullptr;
+      parser->m_cur_changeset = nullptr;
+    }
+    else if (name == "relation") {
       relation r;
       parse_info(r.m_info, attributes);
       id_version idv(r.m_info.id, r.m_info.version);
-      std::pair<std::map<id_version, relation>::iterator, bool> status =
-          parser->m_db->m_relations.insert(std::make_pair(idv, r));
+      auto status = parser->m_db->m_relations.insert(std::make_pair(idv, r));
       parser->m_cur_rel = &(status.first->second);
       parser->m_cur_tags = &(parser->m_cur_rel->m_tags);
-      parser->m_cur_node = NULL;
-      parser->m_cur_way = NULL;
-      parser->m_cur_changeset = NULL;
-
-    } else if (strncmp((const char *)name, "changeset", 10) == 0) {
+      parser->m_cur_node = nullptr;
+      parser->m_cur_way = nullptr;
+      parser->m_cur_changeset = nullptr;
+    }
+    else if (name == "changeset") {
       changeset c;
-
       parse_changeset_info(c.m_info, attributes);
-      std::pair<std::map<osm_changeset_id_t, changeset>::iterator, bool> status =
-        parser->m_db->m_changesets.insert(std::make_pair(c.m_info.id, c));
-
+      auto status = parser->m_db->m_changesets.insert(std::make_pair(c.m_info.id, c));
       parser->m_cur_changeset = &(status.first->second);
       parser->m_cur_tags = &(parser->m_cur_changeset->m_tags);
-      parser->m_cur_node = NULL;
-      parser->m_cur_way = NULL;
-      parser->m_cur_rel = NULL;
-
-    } else if (strncmp((const char *)name, "tag", 4) == 0) {
-      if (parser->m_cur_tags != NULL) {
-        std::string k = get_attribute<std::string>("k", 2, attributes);
-        std::string v = get_attribute<std::string>("v", 2, attributes);
-
+      parser->m_cur_node = nullptr;
+      parser->m_cur_way = nullptr;
+      parser->m_cur_rel = nullptr;
+    }
+    else if (name == "tag") {
+      if (parser->m_cur_tags != nullptr) {
+        auto k = get_attribute<std::string>("k", attributes);
+        auto v = get_attribute<std::string>("v", attributes);
         parser->m_cur_tags->push_back(std::make_pair(k, v));
       }
-
-    } else if (strncmp((const char *)name, "nd", 3) == 0) {
-      if (parser->m_cur_way != NULL) {
+    }
+    else if (name == "nd") {
+      if (parser->m_cur_way != nullptr) {
         parser->m_cur_way->m_nodes.push_back(
-            get_attribute<osm_nwr_id_t>("ref", 4, attributes));
+            get_attribute<osm_nwr_id_t>("ref", attributes));
       }
-
-    } else if (strncmp((const char *)name, "member", 7) == 0) {
-      if (parser->m_cur_rel != NULL) {
+    }
+    else if (name == "member") {
+      if (parser->m_cur_rel != nullptr) {
         member_info m;
-        std::string member_type =
-            get_attribute<std::string>("type", 5, attributes);
-
+        auto member_type = get_attribute<std::string>("type", attributes);
         if (member_type == "node") {
           m.type = element_type_node;
         } else if (member_type == "way") {
@@ -226,29 +209,27 @@ struct xml_parser {
         } else if (member_type == "relation") {
           m.type = element_type_relation;
         } else {
-          throw std::runtime_error(
-              fmt::format("Unknown member type `{}'.", member_type));
+          throw std::runtime_error(fmt::format("Unknown member type `{}'.", member_type));
         }
-
-        m.ref = get_attribute<osm_nwr_id_t>("ref", 4, attributes);
-        m.role = get_attribute<std::string>("role", 5, attributes);
-
+        m.ref = get_attribute<osm_nwr_id_t>("ref", attributes);
+        m.role = get_attribute<std::string>("role", attributes);
         parser->m_cur_rel->m_members.push_back(m);
       }
-    } else if (strncmp((const char *)name, "comment", 8) == 0) {
-      if (parser->m_cur_changeset != NULL) {
-        parser->m_cur_changeset->m_info.comments_count += 1;
-
+    }
+    else if (name == "comment") {
+      if (parser->m_cur_changeset != nullptr) {
+        parser->m_cur_changeset->m_info.comments_count++;
         changeset_comment_info info;
-        info.id = get_attribute<osm_changeset_comment_id_t>("id", 3, attributes);
-        info.author_id = get_attribute<osm_user_id_t>("uid", 4, attributes);
-        info.author_display_name = get_attribute<std::string>("user", 5, attributes);
-        info.created_at = get_attribute<std::string>("date", 5, attributes);
+        info.id = get_attribute<osm_changeset_comment_id_t>("id", attributes);
+        info.author_id = get_attribute<osm_user_id_t>("uid", attributes);
+        info.author_display_name = get_attribute<std::string>("user", attributes);
+        info.created_at = get_attribute<std::string>("date", attributes);
         parser->m_cur_changeset->m_comments.push_back(info);
       }
-    } else if (strncmp((const char *)name, "text", 5) == 0) {
-      if ((parser->m_cur_changeset != NULL) &&
-          (parser->m_cur_changeset->m_comments.size() > 0)) {
+    }
+    else if (name == "text") {
+      if ((parser->m_cur_changeset != nullptr) &&
+          (!parser->m_cur_changeset->m_comments.empty())) {
         parser->m_in_text = true;
       }
     }
@@ -280,19 +261,17 @@ struct xml_parser {
     throw std::runtime_error(fmt::format("XML ERROR: {}", buffer));
   }
 
-  database *m_db;
-  node *m_cur_node;
-  way *m_cur_way;
-  relation *m_cur_rel;
-  tags_t *m_cur_tags;
-  changeset *m_cur_changeset;
-  bool m_in_text;
+  database *m_db = nullptr;
+  node *m_cur_node = nullptr;
+  way *m_cur_way = nullptr;
+  relation *m_cur_rel = nullptr;
+  tags_t *m_cur_tags = nullptr;
+  changeset *m_cur_changeset = nullptr;
+  bool m_in_text = false;
 };
 
 std::unique_ptr<database> parse_xml(const char *filename) {
-  xmlSAXHandler handler;
-  memset(&handler, 0, sizeof(handler));
-
+  xmlSAXHandler handler{};
   handler.initialized = XML_SAX2_MAGIC;
   handler.startElement = &xml_parser::start_element;
   handler.endElement = &xml_parser::end_element;
@@ -300,7 +279,7 @@ std::unique_ptr<database> parse_xml(const char *filename) {
   handler.error = &xml_parser::error;
   handler.characters = &xml_parser::characters;
 
-  std::unique_ptr<database> db = std::make_unique<database>();
+  auto db = std::make_unique<database>();
   xml_parser parser(db.get());
   int status = xmlSAXUserParseFile(&handler, &parser, filename);
   if (status != 0) {
@@ -333,11 +312,15 @@ inline void write_element<relation>(const relation &r, output_formatter &formatt
 }
 
 struct static_data_selection : public data_selection {
-  explicit static_data_selection(database& db)
-    : m_db(db)
-    , m_include_changeset_comments(false)
-    , m_redactions_visible(false) {}
-  ~static_data_selection() = default;
+  explicit static_data_selection(database& db) : static_data_selection(db, {}) {}
+
+  explicit static_data_selection(database& db, user_roles_t m_user_roles)
+  : m_db(db)
+  , m_include_changeset_comments(false)
+  , m_redactions_visible(false)
+  , m_user_roles(m_user_roles) {}
+
+  ~static_data_selection() override = default;
 
   void write_nodes(output_formatter &formatter) override {
     write_elements<node>(m_historic_nodes, m_nodes, formatter);
@@ -483,12 +466,7 @@ struct static_data_selection : public data_selection {
   }
 
   void select_relations_from_nodes() override {
-    using relation_map_t = std::map<id_version, relation>;
-    const relation_map_t::const_iterator end = m_db.m_relations.end();
-    for (relation_map_t::const_iterator itr = m_db.m_relations.begin();
-         itr != end; ++itr) {
-      auto next = itr; ++next;
-      const relation &r = itr->second;
+    for (auto const & [_, r] : m_db.m_relations) {
       for (const member_info &m : r.m_members) {
         if ((m.type == element_type_node) && (m_nodes.count(m.ref) > 0)) {
           m_relations.insert(r.m_info.id);
@@ -500,12 +478,7 @@ struct static_data_selection : public data_selection {
 
   void select_relations_from_relations(bool drop_relations = false) override {
     std::set<osm_nwr_id_t> tmp_relations;
-    using relation_map_t = std::map<id_version, relation>;
-    const relation_map_t::const_iterator end = m_db.m_relations.end();
-    for (relation_map_t::const_iterator itr = m_db.m_relations.begin();
-         itr != end; ++itr) {
-      auto next = itr; ++next;
-      const relation &r = itr->second;
+    for (auto const & [_, r] : m_db.m_relations) {
       for (const member_info &m : r.m_members) {
         if ((m.type == element_type_relation) &&
             (m_relations.count(m.ref) > 0)) {
@@ -606,6 +579,24 @@ struct static_data_selection : public data_selection {
   bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &) override { return false; };
   bool is_user_active(const osm_user_id_t) override { return true; }
 
+  std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t id) override {
+    std::set<osm_user_role_t> roles;
+    auto itr = m_user_roles.find(id);
+    if (itr != m_user_roles.end()) {
+      roles = itr->second;
+    }
+    return roles;
+  }
+
+  std::optional< osm_user_id_t > get_user_id_for_oauth2_token(
+        const std::string &token_id, bool &expired, bool &revoked,
+        bool &allow_api_write) override {
+    expired = false;
+    revoked = false;
+    allow_api_write = false;
+    return {};
+  }
+
 private:
   template <typename T>
   const std::map<id_version, T> &map_of() const;
@@ -673,9 +664,8 @@ private:
       } else {
         return data_selection::deleted;
       }
-    } else {
-      return data_selection::non_exist;
     }
+    return data_selection::non_exist;
   }
 
   template <typename T>
@@ -760,6 +750,7 @@ private:
   std::set<osm_nwr_id_t> m_nodes, m_ways, m_relations;
   std::set<osm_edition_t> m_historic_nodes, m_historic_ways, m_historic_relations;
   bool m_include_changeset_comments, m_redactions_visible;
+  user_roles_t m_user_roles;
 };
 
 template <>
@@ -778,56 +769,63 @@ const std::map<id_version, relation> &static_data_selection::map_of<relation>() 
 }
 
 struct factory : public data_selection::factory {
-  factory(const std::string &file)
-    : m_database(parse_xml(file.c_str())) {}
+  explicit factory(const std::string &file) : factory(file, {}) {}
 
-  virtual ~factory() = default;
+  explicit factory(const std::string &file, user_roles_t user_roles)
+    : m_database(parse_xml(file.c_str())),
+      m_user_roles(user_roles) {}
 
-  virtual std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
-    return std::make_unique<static_data_selection>(*m_database);
+  ~factory() override = default;
+
+  std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) const override {
+    return std::make_unique<static_data_selection>(*m_database, m_user_roles);
   }
 
-  virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() {
+  std::unique_ptr<Transaction_Owner_Base> get_default_transaction() override {
     return std::make_unique<Transaction_Owner_Void>();
   }
 
 private:
   std::unique_ptr<database> m_database;
+  user_roles_t m_user_roles;
 };
 
 struct staticxml_backend : public backend {
-  staticxml_backend()
-      : m_name("staticxml"), m_options("Static XML backend options") {
-    m_options.add_options()("file", po::value<string>()->required(),
+  staticxml_backend() : staticxml_backend(user_roles_t{}) {}
+
+  staticxml_backend(user_roles_t user_roles) {
+    m_options.add_options()("file", po::value<std::string>()->required(),
                             "file to load static OSM XML from.");
+    m_user_roles = user_roles;
   }
-  virtual ~staticxml_backend() = default;
 
-  const string &name() const { return m_name; }
-  const po::options_description &options() const { return m_options; }
+  ~staticxml_backend() override = default;
 
-  std::unique_ptr<data_selection::factory> create(const po::variables_map &opts) {
+  const std::string &name() const override { return m_name; }
+  const po::options_description &options() const override { return m_options; }
+
+  std::unique_ptr<data_selection::factory> create(const po::variables_map &opts) override {
     std::string file = opts["file"].as<std::string>();
-    return std::make_unique<factory>(file);
+    return std::make_unique<factory>(file, m_user_roles);
   }
 
-  std::unique_ptr<data_update::factory> create_data_update(const po::variables_map &) {
+  std::unique_ptr<data_update::factory> create_data_update(const po::variables_map &) override {
     return nullptr;   // Data update operations not supported by staticxml backend
   }
 
-
-  std::unique_ptr<oauth::store> create_oauth_store(
-    const po::variables_map &) {
+  std::unique_ptr<oauth::store> create_oauth_store(const po::variables_map &) override {
     return std::unique_ptr<oauth::store>();
   }
 
 private:
-  string m_name;
-  po::options_description m_options;
+  std::string m_name{"staticxml"};
+  po::options_description m_options{"Static XML backend options"};
+  user_roles_t m_user_roles;
 };
 
 } // anonymous namespace
 
-std::unique_ptr<backend> make_staticxml_backend() {
-  return std::make_unique<staticxml_backend>();
+
+std::unique_ptr<backend> make_staticxml_backend(user_roles_t user_roles) {
+  return std::make_unique<staticxml_backend>(user_roles);
 }

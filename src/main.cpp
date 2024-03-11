@@ -1,4 +1,15 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
+#if ENABLE_APIDB
 #include <pqxx/pqxx>
+#endif
 #include <iostream>
 #include <sstream>
 
@@ -7,6 +18,7 @@
 
 #include <algorithm>
 #include <cerrno>
+#include <chrono>
 #include <csignal>
 #include <cmath>
 #include <fstream>
@@ -15,8 +27,12 @@
 #include <stdexcept>
 #include <string>
 #include <sstream>
+#include <thread>
 #include <vector>
 #include <sys/wait.h>
+#include <atomic>
+
+using namespace std::chrono_literals;
 
 #include "cgimap/bbox.hpp"
 #include "cgimap/http.hpp"
@@ -32,7 +48,6 @@
 #include "cgimap/fcgi_request.hpp"
 #include "cgimap/options.hpp"
 #include "cgimap/process_request.hpp"
-#include "cgimap/config.hpp"
 
 #ifdef ENABLE_APIDB
 #include "cgimap/backend/apidb/apidb.hpp"
@@ -40,28 +55,40 @@
 
 #include "cgimap/backend/staticxml/staticxml.hpp"
 
-using std::runtime_error;
-using std::vector;
-using std::string;
-using std::map;
-using std::ostringstream;
-
-
-namespace al = boost::algorithm;
 namespace po = boost::program_options;
+
+namespace {
 
 /**
  * global flags set by signal handlers.
  */
-static bool terminate_requested = false;
-static bool reload_requested = false;
+static std::atomic<bool> terminate_requested = false;
+static std::atomic<bool> reload_requested = false;
+
+static_assert(std::atomic<bool>::is_always_lock_free);
+
+/**
+ * SIGTERM handler.
+ */
+void terminate(int) {
+  // termination has been requested
+  terminate_requested = true;
+}
+
+/**
+ * SIGHUP handler.
+ */
+void reload(int) {
+  // reload has been requested
+  reload_requested = true;
+}
 
 /**
  * make a string to be used as the generator header
  * attribute of output files. includes some instance
  * identifying information.
  */
-static string get_generator_string() {
+std::string get_generator_string() {
   char hostname[HOST_NAME_MAX];
   if (gethostname(hostname, sizeof hostname) != 0) {
     throw std::runtime_error("gethostname returned error.");
@@ -73,8 +100,10 @@ static string get_generator_string() {
 /**
  * parse the comment line and environment for options.
  */
-static void get_options(int argc, char **argv, po::variables_map &options) {
+void get_options(int argc, char **argv, po::variables_map &options) {
   po::options_description desc(PACKAGE_STRING ": Allowed options");
+
+  using std::string;
 
   // clang-format off
   desc.add_options()
@@ -89,7 +118,7 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
     ("maxdebt", po::value<long>(), "maximum debt (in Mb) to allow each client before rate limiting")
     ("moderator-maxdebt", po::value<long>(), "maximum debt (in Mb) to allow each moderator before rate limiting")
     ("port", po::value<int>(), "FCGI port number (e.g. 8000) to listen on. This option is for backwards compatibility, please use --socket for new configurations.")
-    ("socket", po::value<string>(), "FCGI port number (e.g. :8000) or UNIX socket to listen on")
+    ("socket", po::value<string>(), "FCGI port number (e.g. :8000, or 127.0.0.1:8000) or UNIX domain socket to listen on")
     ("configfile", po::value<string>(), "Config file")
     ;
   // clang-format on
@@ -160,7 +189,7 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
 
   // for ability to accept both the old --port option in addition to socket if not available.
   if (options.count("daemon") != 0 && options.count("socket") == 0 && options.count("port") == 0) {
-    throw runtime_error("an FCGI port number or UNIX socket is required in daemon mode");
+    throw std::runtime_error("an FCGI port number or UNIX socket is required in daemon mode");
   }
 }
 
@@ -168,12 +197,12 @@ static void get_options(int argc, char **argv, po::variables_map &options) {
  * loop processing fasctgi requests until are asked to stop by
  * somebody sending us a TERM signal.
  */
-static void process_requests(int socket, const po::variables_map &options) {
+void process_requests(int socket, const po::variables_map &options) {
   // generator string - identifies the cgimap instance.
-  string generator = get_generator_string();
+  auto generator = get_generator_string();
   // open any log file
   if (options.count("logfile")) {
-    logger::initialise(options["logfile"].as<string>());
+    logger::initialise(options["logfile"].as<std::string>());
   }
 
   // create the rate limiter
@@ -198,7 +227,7 @@ static void process_requests(int socket, const po::variables_map &options) {
     // process any reload request
     if (reload_requested) {
       if (options.count("logfile")) {
-        logger::initialise(options["logfile"].as<string>());
+        logger::initialise(options["logfile"].as<std::string>());
       }
 
       reload_requested = false;
@@ -216,47 +245,15 @@ static void process_requests(int socket, const po::variables_map &options) {
   req.dispose();
 }
 
-/**
- * SIGTERM handler.
- */
-static void terminate(int) {
-  // termination has been requested
-  terminate_requested = true;
-}
-
-/**
- * SIGHUP handler.
- */
-static void reload(int) {
-  // reload has been requested
-  reload_requested = true;
-}
-
-/**
- * make the process into a daemon by detaching from the console.
- */
-static void daemonise() {
-  pid_t pid;
+void install_signal_handlers() {
   struct sigaction sa;
-
-  // fork to make sure we aren't a session leader
-  if ((pid = fork()) < 0) {
-    throw runtime_error("fork failed.");
-  } else if (pid > 0) {
-    exit(0);
-  }
-
-  // start a new session
-  if (setsid() < 0) {
-    throw runtime_error("setsid failed");
-  }
 
   // install a SIGTERM handler
   sa.sa_handler = terminate;
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = 0;
   if (sigaction(SIGTERM, &sa, NULL) < 0) {
-    throw runtime_error("sigaction failed");
+    throw std::runtime_error("sigaction failed");
   }
 
   // install a SIGHUP handler
@@ -264,8 +261,29 @@ static void daemonise() {
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = 0;
   if (sigaction(SIGHUP, &sa, NULL) < 0) {
-    throw runtime_error("sigaction failed");
+    throw std::runtime_error("sigaction failed");
   }
+}
+
+/**
+ * make the process into a daemon by detaching from the console.
+ */
+void daemonise() {
+  pid_t pid;
+
+  // fork to make sure we aren't a session leader
+  if ((pid = fork()) < 0) {
+    throw std::runtime_error("fork failed.");
+  } else if (pid > 0) {
+    exit(0);
+  }
+
+  // start a new session
+  if (setsid() < 0) {
+    throw std::runtime_error("setsid failed");
+  }
+
+  install_signal_handlers();
 
   // close standard descriptors
   close(0);
@@ -280,10 +298,135 @@ void setup_backends() {
   register_backend(make_staticxml_backend());
 }
 
+
+void daemon_mode(const po::variables_map &options, int socket)
+{
+  size_t instances = 0;
+
+  {
+    int opt_instances = options["instances"].as<int>();
+    if (opt_instances > 0) {
+      instances = opt_instances;
+    } else {
+      throw std::runtime_error(
+          "Number of instances must be strictly positive.");
+    }
+  }
+
+  bool children_terminated = false;
+  std::set<pid_t> children;
+
+  // make ourselves into a daemon
+  daemonise();
+
+  // record our pid if requested
+  if (options.count("pidfile")) {
+    std::ofstream pidfile(options["pidfile"].as<std::string>().c_str());
+    pidfile << getpid() << std::endl;
+  }
+
+  // loop until we have been asked to stop and have no more children
+  while (!terminate_requested || children.size() > 0) {
+    pid_t pid;
+
+    // start more children if we don't have enough
+    while (!terminate_requested && (children.size() < instances)) {
+      if ((pid = fork()) < 0) {
+        throw std::runtime_error("fork failed.");
+      } else if (pid == 0) {
+        const auto start = std::chrono::steady_clock::now();
+        try {
+          process_requests(socket, options);
+        } catch(...) {
+          const auto end = std::chrono::steady_clock::now();
+          const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+          if (elapsed < 1000ms) {
+            std::this_thread::sleep_for(1000ms - elapsed);
+          }
+          throw;
+        }
+        exit(0);
+      }
+
+      children.insert(pid);
+    }
+
+    // wait for a child to exit
+    if ((pid = wait(NULL)) >= 0) {
+      children.erase(pid);
+    } else if (errno != EINTR) {
+      throw std::runtime_error("wait failed.");
+    }
+
+    // pass on any termination request to our children
+    if (terminate_requested && !children_terminated) {
+      for (auto pid : children) { kill(pid, SIGTERM); }
+
+      children_terminated = true;
+    }
+
+    // pass on any reload request to our children
+    if (reload_requested) {
+      for (auto pid : children) { kill(pid, SIGHUP); }
+
+      reload_requested = false;
+    }
+  }
+
+  // remove any pid file
+  if (options.count("pidfile")) {
+    remove(options["pidfile"].as<std::string>().c_str());
+  }
+}
+
+void non_daemon_mode(const po::variables_map &options, int socket)
+{
+  if (options.count("instances") && !options["instances"].defaulted()) {
+    std::cerr << "[WARN] The --instances parameter is ignored in non-daemon mode, running as single process only.\n"
+                 "[WARN] If the process terminates, it must be restarted externally.\n";
+  }
+
+  install_signal_handlers();
+
+  // record our pid if requested
+  if (options.count("pidfile")) {
+    std::ofstream pidfile(options["pidfile"].as<std::string>().c_str());
+    pidfile << getpid() << std::endl;
+  }
+
+  // do work here
+  process_requests(socket, options);
+
+  // remove any pid file
+  if (options.count("pidfile")) {
+    remove(options["pidfile"].as<std::string>().c_str());
+  }
+}
+
+int init_socket(const po::variables_map &options)
+{
+  int socket = 0;
+
+  if (options.count("socket")) {
+    if ((socket = fcgi_request::open_socket(options["socket"].as<std::string>(), 5)) < 0) {
+      throw std::runtime_error("Couldn't open FCGX socket.");
+    }
+    // fall back to the old --port option if socket isn't available.
+  } else if (options.count("port")) {
+    auto sock_str = fmt::format(":{:d}", options["port"].as<int>());
+    if ((socket = fcgi_request::open_socket(sock_str, 5)) < 0) {
+      throw std::runtime_error("Couldn't open FCGX socket (from port).");
+    }
+  }
+  return socket;
+}
+
+} // anonymous namespace
+
+
 int main(int argc, char **argv) {
   try {
     po::variables_map options;
-    int socket;
 
     // set up all the backends
     setup_backends();
@@ -295,116 +438,36 @@ int main(int argc, char **argv) {
     global_settings::set_configuration(std::make_unique<global_settings_via_options>(options));
 
     // get the socket to use
-    if (options.count("socket")) {
-      if ((socket = fcgi_request::open_socket(options["socket"].as<string>(), 5)) < 0) {
-        throw runtime_error("Couldn't open FCGX socket.");
-      }
-      // fall back to the old --port option if socket isn't available.
-    } else if (options.count("port")) {
-      std::ostringstream sock_str;
-      sock_str << ":" << options["port"].as<int>();
-      if ((socket = fcgi_request::open_socket(sock_str.str(), 5)) < 0) {
-        throw runtime_error("Couldn't open FCGX socket (from port).");
-      }
-    } else {
-      socket = 0;
-    }
+    auto socket = init_socket(options);
 
     // are we supposed to run as a daemon?
     if (options.count("daemon")) {
-      size_t instances = 0;
-      {
-        int opt_instances = options["instances"].as<int>();
-        if (opt_instances > 0) {
-          instances = opt_instances;
-        } else {
-          throw std::runtime_error(
-              "Number of instances must be strictly positive.");
-        }
-      }
-
-      bool children_terminated = false;
-      std::set<pid_t> children;
-
-      // make ourselves into a daemon
-      daemonise();
-
-      // record our pid if requested
-      if (options.count("pidfile")) {
-        std::ofstream pidfile(options["pidfile"].as<string>().c_str());
-        pidfile << getpid() << std::endl;
-      }
-
-      // loop until we have been asked to stop and have no more children
-      while (!terminate_requested || children.size() > 0) {
-        pid_t pid;
-
-        // start more children if we don't have enough
-        while (!terminate_requested && (children.size() < instances)) {
-          if ((pid = fork()) < 0) {
-            throw runtime_error("fork failed.");
-          } else if (pid == 0) {
-            process_requests(socket, options);
-            exit(0);
-          }
-
-          children.insert(pid);
-        }
-
-        // wait for a child to exit
-        if ((pid = wait(NULL)) >= 0) {
-          children.erase(pid);
-        } else if (errno != EINTR) {
-          throw runtime_error("wait failed.");
-        }
-
-        // pass on any termination request to our children
-        if (terminate_requested && !children_terminated) {
-          for (auto pid : children) { kill(pid, SIGTERM); }
-
-          children_terminated = true;
-        }
-
-        // pass on any reload request to our children
-        if (reload_requested) {
-          for (auto pid : children) { kill(pid, SIGHUP); }
-
-          reload_requested = false;
-        }
-      }
-
-      // remove any pid file
-      if (options.count("pidfile")) {
-        remove(options["pidfile"].as<string>().c_str());
-      }
+      daemon_mode(options, socket);
     } else {
-      // record our pid if requested
-      if (options.count("pidfile")) {
-        std::ofstream pidfile(options["pidfile"].as<string>().c_str());
-        pidfile << getpid() << std::endl;
-      }
-
-      // do work here
-      process_requests(socket, options);
-
-      // remove any pid file
-      if (options.count("pidfile")) {
-        remove(options["pidfile"].as<string>().c_str());
-      }
+      non_daemon_mode(options, socket);
     }
   } catch (const po::error & e) {
     std::cerr << "Error: " << e.what() << "\n(\"openstreetmap-cgimap --help\" for help)" << std::endl;
     return 1;
+
+#if ENABLE_APIDB
   } catch (const pqxx::sql_error &er) {
+    logger::message(er.what());
     // Catch-all for query related postgres exceptions
     std::cerr << "Error: " << er.what() << std::endl
               << "Caused by: " << er.query() << std::endl;
     return 1;
 
+#if PQXX_VERSION_MAJOR < 7
+
   } catch (const pqxx::pqxx_exception &e) {
     // Catch-all for any other postgres exceptions
+    logger::message(e.base().what());
     std::cerr << "Error: " << e.base().what() << std::endl;
     return 1;
+
+#endif
+#endif
 
   } catch (const std::exception &e) {
     logger::message(e.what());

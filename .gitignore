@@ -46,6 +46,7 @@ test/test_basicauth
 test/test_oauth
 test/test_oauth2
 test/test_parse_changeset_input
+test/test_parse_options
 test/test_parse_osmchange_input
 test/test_parse_time
 test/*.trs
@@ -66,3 +67,5 @@ ltmain.sh
 # a file created by bear for use with irony-server and irony-mode for
 # autocomplete in emacs.
 compile_commands.json
+/.vscode/
+/build/

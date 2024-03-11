@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #include "cgimap/process_request.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
@@ -161,7 +170,7 @@ void respond_error(const http::exception &e, request &r) {
  * Return a 405 error.
  */
 
-void process_not_allowed(request &req, handler& handler) {
+void process_not_allowed(request &req, const handler& handler) {
   req.status(405)
      .add_header("Allow", http::list_methods(handler.allowed_methods()))
      .add_header("Content-Type", "text/html")
@@ -232,7 +241,7 @@ std::size_t generate_response(request &req, responder &responder, const string &
  * process a GET request.
  */
 std::tuple<string, size_t>
-process_get_request(request &req, handler& handler,
+process_get_request(request &req, const handler& handler,
                     data_selection& selection,
                     const string &ip, const string &generator) {
   // request start logging
@@ -245,15 +254,15 @@ process_get_request(request &req, handler& handler,
   // Generate full XML/JSON/text response message for previously collected object ids
   std::size_t bytes_written = generate_response(req, *responder, generator);
 
-  return std::make_tuple(request_name, bytes_written);
+  return {request_name, bytes_written};
 }
 
 /**
  * process a POST/PUT request.
  */
 std::tuple<string, size_t>
-process_post_put_request(request &req, handler& handler,
-                    data_selection::factory& factory,
+process_post_put_request(request &req, const handler& handler,
+                    const data_selection::factory& factory,
                     data_update::factory& update_factory,
                     std::optional<osm_user_id_t> user_id,
                     const string &ip, const string &generator) {
@@ -265,7 +274,7 @@ process_post_put_request(request &req, handler& handler,
   logger::message(fmt::format("Started request for {} from {}", request_name, ip));
 
   try {
-    payload_enabled_handler& pe_handler = dynamic_cast< payload_enabled_handler& >(handler);
+    const auto & pe_handler = dynamic_cast< const payload_enabled_handler& >(handler);
 
     // Process request, perform database update
     {
@@ -315,7 +324,7 @@ process_post_put_request(request &req, handler& handler,
  * process a HEAD request.
  */
 std::tuple<string, size_t>
-process_head_request(request &req, handler& handler,
+process_head_request(request &req, const handler& handler,
                      data_selection& selection,
                      const string &ip) {
   // request start logging
@@ -348,14 +357,14 @@ process_head_request(request &req, handler& handler,
   // ensure the request is finished
   req.finish();
 
-  return std::make_tuple(request_name, 0);
+  return {request_name, 0};
 }
 
 /**
  * process an OPTIONS request.
  */
 std::tuple<string, size_t> process_options_request(
-  request &req, handler& handler) {
+  request &req, const handler& handler) {
 
   static const string request_name = "OPTIONS";
   const char *origin = req.get_param("HTTP_ORIGIN");
@@ -424,13 +433,12 @@ struct oauth_status_response  {
 
 // look in the request get parameters to see if the user requested that
 // redactions be shown
-bool show_redactions_requested(request &req) {
-  using params_t = std::vector<std::pair<std::string, std::string> >;
+bool show_redactions_requested(const request &req) {
   std::string decoded = http::urldecode(get_query_string(req));
-  const params_t params = http::parse_params(decoded);
+  const auto params = http::parse_params(decoded);
   auto itr = std::find_if(
     params.begin(), params.end(),
-    [](const params_t::value_type &param) -> bool {
+    [](const auto &param) -> bool {
       return param.first == "show_redactions" && param.second == "true";
     });
   return itr != params.end();
@@ -438,7 +446,7 @@ bool show_redactions_requested(request &req) {
 
 
 // Determine user id and allow_api_write flag based on Basic Auth or OAuth header
-std::optional<osm_user_id_t> determine_user_id (request& req,
+std::optional<osm_user_id_t> determine_user_id (const request& req,
 			        data_selection& selection,
 			        oauth::store* store,
 			        bool& allow_api_write)
@@ -446,15 +454,12 @@ std::optional<osm_user_id_t> determine_user_id (request& req,
   // Try to authenticate user via Basic Auth
   std::optional<osm_user_id_t>  user_id = basicauth::authenticate_user (req, selection);
 
-  if (!store)
-    return user_id;
-
   // Try to authenticate user via OAuth2 Bearer Token
   if (!user_id)
-    user_id = oauth2::validate_bearer_token (req, store, allow_api_write);
+    user_id = oauth2::validate_bearer_token (req, selection, allow_api_write);
 
   // Try to authenticate user via OAuth 1.0a
-  if (!user_id && global_settings::get_oauth_10_support())
+  if (!user_id && store && global_settings::get_oauth_10_support())
   {
     oauth::validity::validity oauth_valid = oauth::is_valid_signature (
         req, *store, *store, *store);
@@ -492,7 +497,7 @@ std::optional<osm_user_id_t> determine_user_id (request& req,
  * process a single request.
  */
 void process_request(request &req, rate_limiter &limiter,
-                     const string &generator, routes &route,
+                     const string &generator, const routes &route,
                      data_selection::factory& factory,
                      data_update::factory* update_factory,
                      oauth::store* store) {
@@ -522,8 +527,7 @@ void process_request(request &req, rate_limiter &limiter,
     // set the client key and user roles accordingly
     if (user_id) {
         client_key = (fmt::format("{}{}", user_prefix, (*user_id)));
-        if (store)
-          user_roles = store->get_roles_for_user(*user_id);
+        user_roles = selection->get_roles_for_user(*user_id);
     }
 
     auto is_moderator = user_roles.count(osm_user_role_t::moderator) > 0;

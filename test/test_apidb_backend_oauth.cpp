@@ -1,3 +1,13 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
+#include <filesystem>
 #include <iostream>
 #include <stdexcept>
 #include <fmt/core.h>
@@ -5,8 +15,8 @@
 
 #include <sys/time.h>
 #include <cstdio>
+#include <memory>
 
-#include "cgimap/config.hpp"
 #include "cgimap/time.hpp"
 #include "cgimap/oauth.hpp"
 #include "cgimap/options.hpp"
@@ -17,6 +27,18 @@
 #include "test_formatter.hpp"
 #include "test_database.hpp"
 #include "test_request.hpp"
+#include "test_empty_selection.hpp"
+
+
+/***********************************************************************************
+ *
+ *
+ * NOTE: OAuth1.0a is scheduled to be removed in 0.9 - no catch2 migration needed
+ *
+ *
+ *
+ ***********************************************************************************/
+
 
 using roles_t = std::set<osm_user_role_t>;
 
@@ -60,7 +82,7 @@ template <> struct fmt::formatter<roles_t> {
     ostr << r;
     return format_to(ctx.out(), "{}", ostr.str());
   }
-  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+  constexpr auto parse(const format_parse_context& ctx) const { return ctx.begin(); }
 };
 
 namespace {
@@ -237,83 +259,38 @@ void test_get_user_id_for_token(test_database &tdb) {
     "non-existent token does not belong to anyone");
 }
 
-class empty_data_selection
-  : public data_selection {
+class oauth_data_selection : public empty_data_selection {
 public:
 
-  virtual ~empty_data_selection() = default;
+  ~oauth_data_selection() override = default;
 
-  void write_nodes(output_formatter &formatter) override {}
-  void write_ways(output_formatter &formatter) override {}
-  void write_relations(output_formatter &formatter) override {}
-  void write_changesets(output_formatter &formatter,
-                        const std::chrono::system_clock::time_point &now) override {}
-
-  visibility_t check_node_visibility(osm_nwr_id_t id) override { return non_exist; }
-  visibility_t check_way_visibility(osm_nwr_id_t id) override { return non_exist; }
-  visibility_t check_relation_visibility(osm_nwr_id_t id) override { return non_exist; }
-
-  int select_nodes(const std::vector<osm_nwr_id_t> &) override { return 0; }
-  int select_ways(const std::vector<osm_nwr_id_t> &) override { return 0; }
-  int select_relations(const std::vector<osm_nwr_id_t> &) override { return 0; }
-  int select_nodes_from_bbox(const bbox &bounds, int max_nodes) override { return 0; }
-  void select_nodes_from_relations() override {}
-  void select_ways_from_nodes() override {}
-  void select_ways_from_relations() override {}
-  void select_relations_from_ways() override {}
-  void select_nodes_from_way_nodes() override {}
-  void select_relations_from_nodes() override {}
-  void select_relations_from_relations(bool drop_relations = false) override {}
-  void select_relations_members_of_relations() override {}
-  int select_changesets(const std::vector<osm_changeset_id_t> &) override { return 0; }
-  void select_changeset_discussions() override {}
-  void drop_nodes() override {}
-  void drop_ways() override {}
-  void drop_relations() override {}
-
-  bool supports_user_details() const override { return false; }
-  bool is_user_blocked(const osm_user_id_t) override { return true; }
-  bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &) override { return false; };
   bool is_user_active(const osm_user_id_t id) override { return (id != 1000); }
 
-  int select_historical_nodes(const std::vector<osm_edition_t> &) override { return 0; }
-  int select_nodes_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
-  int select_historical_ways(const std::vector<osm_edition_t> &) override { return 0; }
-  int select_ways_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
-  int select_historical_relations(const std::vector<osm_edition_t> &) override { return 0; }
-  int select_relations_with_history(const std::vector<osm_nwr_id_t> &) override { return 0; }
-  void set_redactions_visible(bool) override {}
-  int select_historical_by_changesets(const std::vector<osm_changeset_id_t> &) override { return 0; }
-
-
-  struct factory
-    : public data_selection::factory {
-    virtual ~factory() = default;
-    virtual std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) {
-      return std::make_unique<empty_data_selection>();
+  struct factory : public data_selection::factory {
+    ~factory() override = default;
+    
+    std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) const override {
+      return std::make_unique<oauth_data_selection>();
     }
-    virtual std::unique_ptr<Transaction_Owner_Base> get_default_transaction() {
-      {
-        return std::unique_ptr<Transaction_Owner_Void>(new Transaction_Owner_Void());
-      }
+    std::unique_ptr<Transaction_Owner_Base> get_default_transaction() override {
+      return std::make_unique<Transaction_Owner_Void>();
     }
   };
 };
 
-struct recording_rate_limiter
-  : public rate_limiter {
-  ~recording_rate_limiter() = default;
+struct recording_rate_limiter : public rate_limiter {
+  ~recording_rate_limiter() override = default;
 
-  std::tuple<bool, int> check(const std::string &key, bool moderator) {
+  std::tuple<bool, int> check(const std::string &key, bool moderator) override {
     m_keys_seen.insert(key);
     return std::make_tuple(false, 0);
   }
 
-  void update(const std::string &key, int bytes, bool moderator) {
+  void update(const std::string &key, int bytes, bool moderator) override {
     m_keys_seen.insert(key);
   }
 
-  bool saw_key(const std::string &key) {
+  bool saw_key(const std::string &key) const {
     return m_keys_seen.count(key) > 0;
   }
 
@@ -347,7 +324,7 @@ void test_oauth_end_to_end(test_database &tdb) {
   recording_rate_limiter limiter;
   std::string generator("test_apidb_backend.cpp");
   routes route;
-  auto factory = std::make_unique<empty_data_selection::factory>();
+  auto factory = std::make_unique<oauth_data_selection::factory>();
 
   test_request req;
   req.set_header("SCRIPT_URL", "/api/0.6/relation/165475/full");
@@ -400,6 +377,9 @@ void test_oauth_end_to_end(test_database &tdb) {
                      "saw user:1 as a rate limit key");
 }
 
+
+
+// TODO: !! Don't remove this test case when removing OAuth 1.0a !!
 void test_oauth_get_roles_for_user(test_database &tdb) {
   tdb.run_sql(
     "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
@@ -414,28 +394,30 @@ void test_oauth_get_roles_for_user(test_database &tdb) {
     "  (2, 1, 'moderator', 1), "
     "  (3, 2, 'moderator', 1);"
     "");
+
+  auto sel = tdb.get_data_selection();
   auto store = tdb.get_oauth_store();
 
   // user 3 has no roles -> should return empty set
-  assert_equal<roles_t>(roles_t(), store->get_roles_for_user(3),
+  assert_equal<roles_t>(roles_t(), sel->get_roles_for_user(3),
     "roles for normal user");
 
   // user 2 is a moderator
   assert_equal<roles_t>(
     roles_t({osm_user_role_t::moderator}),
-    store->get_roles_for_user(2),
+    sel->get_roles_for_user(2),
     "roles for moderator user");
 
   // user 1 is an administrator and a moderator
   assert_equal<roles_t>(
     roles_t({osm_user_role_t::moderator, osm_user_role_t::administrator}),
-    store->get_roles_for_user(1),
+    sel->get_roles_for_user(1),
     "roles for admin+moderator user");
 }
 
 void test_oauth_disabled_by_global_config(test_database &tdb) {
 
-  auto test_settings = std::unique_ptr<global_settings_test_no_oauth1>(new global_settings_test_no_oauth1());
+  auto test_settings = std::make_unique<global_settings_test_no_oauth1>();
   global_settings::set_configuration(std::move(test_settings));
 
   // TODO
@@ -444,10 +426,26 @@ void test_oauth_disabled_by_global_config(test_database &tdb) {
 
 } // anonymous namespace
 
-int main(int, char **) {
+int main(int argc, char** argv) {
+  std::filesystem::path test_db_sql;
+  boost::program_options::options_description desc("Allowed options");
+  desc.add_options()
+      ("help", "print help message")
+      ("db-schema", po::value<std::filesystem::path>(&test_db_sql)->default_value("test/structure.sql"), "test database schema")
+  ;
+
+  boost::program_options::variables_map vm;
+  boost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc), vm);
+  boost::program_options::notify(vm);
+
+  if (vm.count("help")) {
+    std::cout << desc << "\n";
+    return 1;
+  }
+
   try {
     test_database tdb;
-    tdb.setup();
+    tdb.setup(test_db_sql);
 
     tdb.run(std::function<void(test_database&)>(
         &test_nonce_store));

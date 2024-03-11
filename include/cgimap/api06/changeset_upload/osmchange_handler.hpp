@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef OSMCHANGE_HANDLER_HPP
 #define OSMCHANGE_HANDLER_HPP
 
@@ -24,24 +33,24 @@ public:
                     Relation_Updater&,
                     osm_changeset_id_t changeset);
 
-  virtual ~OSMChange_Handler() = default;
+  ~OSMChange_Handler() override = default;
 
   // checks common to all objects
   void check_osm_object(const OSMObject &o) const;
 
-  void start_document();
+  void start_document() override;
 
-  void end_document();
+  void end_document() override;
 
-  void process_node(const Node &node, operation op, bool if_unused);
+  void process_node(const Node &node, operation op, bool if_unused) override;
 
-  void process_way(const Way &way, operation op, bool if_unused);
+  void process_way(const Way &way, operation op, bool if_unused) override;
 
-  void process_relation(const Relation &relation, operation op, bool if_unused);
+  void process_relation(const Relation &relation, operation op, bool if_unused) override;
 
-  unsigned int get_num_changes();
+  unsigned int get_num_changes() const;
 
-  bbox_t get_bbox();
+  bbox_t get_bbox() const;
 
 private:
   enum class state {

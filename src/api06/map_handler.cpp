@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #include "cgimap/api06/map_handler.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/request_helpers.hpp"
@@ -9,7 +18,6 @@
 
 
 using std::string;
-using std::auto_ptr;
 using std::map;
 using std::pair;
 using std::vector;
@@ -64,24 +72,20 @@ string map_handler::log_name() const {
 }
 
 responder_ptr_t map_handler::responder(data_selection &x) const {
-  return responder_ptr_t(new map_responder(mime_type, bounds, x));
+  return std::make_unique<map_responder>(mime_type, bounds, x);
 }
 
-namespace {
-bool is_bbox(const pair<string, string> &p) {
-  return p.first == "bbox";
-}
-} // anonymous namespace
 
 /**
  * Validates an FCGI request, returning the valid bounding box or
  * throwing an error if there was no valid bounding box.
  */
-bbox map_handler::validate_request(request &req) {
+bbox map_handler::validate_request(const request &req) {
   string decoded = http::urldecode(get_query_string(req));
-  const vector<pair<string, string> > params = http::parse_params(decoded);
+  const auto params = http::parse_params(decoded);
   auto itr =
-    std::find_if(params.begin(), params.end(), is_bbox);
+    std::find_if(params.begin(), params.end(),
+        [](const pair<string, string> &p) { return p.first == "bbox"; });
 
   bbox bounds;
   if ((itr == params.end()) || !bounds.parse(itr->second)) {

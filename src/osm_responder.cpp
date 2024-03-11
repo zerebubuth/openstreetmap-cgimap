@@ -1,17 +1,21 @@
-#include "cgimap/config.hpp"
-#include "cgimap/osm_responder.hpp"
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
 
-using std::list;
+#include "cgimap/osm_responder.hpp"
 
 osm_responder::osm_responder(mime::type mt, std::optional<bbox> b)
     : responder(mt), bounds(b) {}
 
-osm_responder::~osm_responder() = default;
-
-list<mime::type> osm_responder::types_available() const {
-  list<mime::type> types;
+std::vector<mime::type> osm_responder::types_available() const {
+  std::vector<mime::type> types;
   types.push_back(mime::application_xml);
-#ifdef HAVE_YAJL
+#if HAVE_YAJL
   types.push_back(mime::application_json);
 #endif
   return types;

@@ -1,4 +1,11 @@
-#include "util.hpp"
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
 
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 #include "cgimap/backend/apidb/changeset_upload/relation_updater.hpp"
@@ -6,6 +13,7 @@
 #include "cgimap/backend/apidb/utils.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
+#include "cgimap/util.hpp"
 
 #include <algorithm>
 #include <iterator>
@@ -19,11 +27,11 @@
 
 
 
-ApiDB_Relation_Updater::ApiDB_Relation_Updater(
-    Transaction_Manager &_m, api06::OSMChange_Tracking &ct)
-    : m_bbox(), m(_m), ct(ct) {}
-
-ApiDB_Relation_Updater::~ApiDB_Relation_Updater() = default;
+ApiDB_Relation_Updater::ApiDB_Relation_Updater(Transaction_Manager &_m, 
+                                               api06::OSMChange_Tracking &ct)
+  : m(_m),
+    ct(ct) 
+{}
 
 void ApiDB_Relation_Updater::add_relation(osm_changeset_id_t changeset_id,
                                           osm_nwr_signed_id_t old_id,
@@ -327,7 +335,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
 
   // Prepare mapping tables
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_relations;
-  for (auto i : created_relation_id_mapping) {
+  for (auto &i : created_relation_id_mapping) {
     auto res = map_relations.insert(
         std::pair<osm_nwr_signed_id_t, osm_nwr_id_t>(i.old_id, i.new_id));
     if (!res.second)
@@ -336,7 +344,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
   }
 
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_ways;
-  for (auto i : created_way_id_mapping) {
+  for (auto &i : created_way_id_mapping) {
     auto res = map_ways.insert(
         std::pair<osm_nwr_signed_id_t, osm_nwr_id_t>(i.old_id, i.new_id));
     if (!res.second)
@@ -345,7 +353,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
   }
 
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_nodes;
-  for (auto i : created_node_id_mapping) {
+  for (auto &i : created_node_id_mapping) {
     auto res = map_nodes.insert(
         std::pair<osm_nwr_signed_id_t, osm_nwr_id_t>(i.old_id, i.new_id));
     if (!res.second)
@@ -1675,9 +1683,9 @@ void ApiDB_Relation_Updater::delete_current_relation_tags(
   pqxx::result r = m.exec_prepared("delete_current_relation_tags", ids);
 }
 
-uint32_t ApiDB_Relation_Updater::get_num_changes() {
+uint32_t ApiDB_Relation_Updater::get_num_changes() const {
   return (ct.created_relation_ids.size() + ct.modified_relation_ids.size() +
           ct.deleted_relation_ids.size());
 }
 
-bbox_t ApiDB_Relation_Updater::bbox() { return m_bbox; }
+bbox_t ApiDB_Relation_Updater::bbox() const { return m_bbox; }

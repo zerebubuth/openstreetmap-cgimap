@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #include <yajl/yajl_gen.h>
 #include <memory>
 #include <cstdio>
@@ -5,14 +14,13 @@
 #include <utility>
 
 #include "cgimap/json_writer.hpp"
-#include "cgimap/config.hpp"
 
 struct json_writer::pimpl_ {
   // not sure whether the config.hppas to live as long as the generator itself,
   // so seems best to be on the safe side.
   yajl_gen gen;
 
-#ifdef HAVE_YAJL2
+#if HAVE_YAJL2
   yajl_alloc_funcs alloc_funcs;
 #else
   yajl_gen_config config;
@@ -36,7 +44,7 @@ static void wrap_write(void *context, const char *str, unsigned int len) {
 
 json_writer::json_writer(output_buffer &out, bool indent)
     : pimpl(std::make_unique<pimpl_>()), out(out) {
-#ifdef HAVE_YAJL2
+#if HAVE_YAJL2
   pimpl->gen = yajl_gen_alloc(NULL);
 
 #else  /* older version of YAJL */
@@ -56,7 +64,7 @@ json_writer::json_writer(output_buffer &out, bool indent)
     throw std::runtime_error("error creating json writer.");
   }
 
-#ifdef HAVE_YAJL2
+#if HAVE_YAJL2
   if (indent) {
     yajl_gen_config(pimpl->gen, yajl_gen_beautify, 1);
     yajl_gen_config(pimpl->gen, yajl_gen_indent_string, " ");

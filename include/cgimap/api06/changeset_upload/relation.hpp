@@ -1,7 +1,16 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef RELATION_HPP
 #define RELATION_HPP
 
-#include "osmobject.hpp"
+#include "cgimap/api06/changeset_upload/osmobject.hpp"
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
 
@@ -14,37 +23,37 @@ namespace api06 {
 class RelationMember {
 
 public:
-  RelationMember() : m_role("") {};
+  RelationMember() = default;
 
-  RelationMember(std::string _m_type, osm_nwr_signed_id_t _m_ref, std::string _m_role) :
-    m_role(_m_role), m_ref(_m_ref), m_type(_m_type) {};
+  RelationMember(const std::string &m_type, osm_nwr_signed_id_t m_ref, const std::string &m_role) :
+    m_role(m_role), 
+    m_ref(m_ref), 
+    m_type(m_type) {}
 
-  void set_type(const char *type) {
+  void set_type(const std::string &type) {
 
-    std::string t = std::string(type);
-
-    if (boost::iequals(t, "Node"))
+    if (boost::iequals(type, "Node"))
       m_type = "Node";
-    else if (boost::iequals(t, "Way"))
+    else if (boost::iequals(type, "Way"))
       m_type = "Way";
-    else if (boost::iequals(t, "Relation"))
+    else if (boost::iequals(type, "Relation"))
       m_type = "Relation";
     else
       throw xml_error(
           fmt::format("Invalid type {} in member relation", type));
   }
 
-  void set_role(const char *role) {
+  void set_role(const std::string &role) {
 
     if (unicode_strlen(role) > 255) {
       throw xml_error(
           "Relation Role has more than 255 unicode characters");
     }
 
-    m_role = std::string(role);
+    m_role = role;
   }
 
-  void set_ref(const char *ref) {
+  void set_ref(const std::string &ref) {
 
     osm_nwr_signed_id_t _ref = 0;
 
@@ -64,7 +73,7 @@ public:
     m_ref = _ref;
   }
 
-  bool is_valid() {
+  bool is_valid() const {
 
     if (!m_type)
       throw xml_error("Missing 'type' attribute in Relation member");
@@ -89,9 +98,9 @@ private:
 
 class Relation : public OSMObject {
 public:
-  Relation() : OSMObject() {};
+  Relation() = default;
 
-  virtual ~Relation() = default;
+  ~Relation() override = default;
 
   void add_member(RelationMember &member) {
     if (!member.is_valid())
@@ -104,7 +113,7 @@ public:
     return m_relation_member;
   }
 
-  std::string get_type_name() { return "Relation"; }
+  std::string get_type_name() override { return "Relation"; }
 
   bool is_valid(operation op) const {
 

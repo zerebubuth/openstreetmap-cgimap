@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef FCGI_REQUEST_HPP
 #define FCGI_REQUEST_HPP
 
@@ -7,7 +16,7 @@
 
 struct fcgi_request : public request {
   fcgi_request(int socket, const std::chrono::system_clock::time_point &now);
-  virtual ~fcgi_request();
+  ~fcgi_request() override;
   const char *get_param(const char *key) const override;
   const std::string get_payload() override;
 
@@ -23,7 +32,7 @@ struct fcgi_request : public request {
   void dispose() override;
 
 protected:
-  void write_header_info(int status, const request::headers_t &headers) override;
+  void write_header_info(int status, const http::headers_t &headers) override;
   output_buffer& get_buffer_internal() override;
   void finish_internal() override;
 

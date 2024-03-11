@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #include "cgimap/backend/apidb/common_pgsql_selection.hpp"
 #include "cgimap/backend/apidb/apidb.hpp"
 #include "cgimap/backend/apidb/utils.hpp"
@@ -224,7 +233,8 @@ void extract(
     extract_elem(row, elem, cc);
     extra.extract(row);
     extract_tags(row, tags);
-    notify(elem);     // let callback function know about a new element we're processing
+    if (notify)
+      notify(elem);     // let callback function know about a new element we're processing
     T::write(formatter, elem, extra, tags);
   }
 }
@@ -235,14 +245,14 @@ void extract_nodes(
   const pqxx::result &rows, output_formatter &formatter,
   std::function<void(const element_info&)> notify,
   std::map<osm_changeset_id_t, changeset> &cc) {
-  extract<node>(rows, formatter, notify, cc);
+  extract<node>(rows, formatter, std::move(notify), cc);
 }
 
 void extract_ways(
   const pqxx::result &rows, output_formatter &formatter,
   std::function<void(const element_info&)> notify,
   std::map<osm_changeset_id_t, changeset> &cc) {
-  extract<way>(rows, formatter, notify, cc);
+  extract<way>(rows, formatter, std::move(notify), cc);
 }
 
 // extract relations from the results of the query and write them to the
@@ -251,7 +261,7 @@ void extract_relations(
   const pqxx::result &rows, output_formatter &formatter,
   std::function<void(const element_info&)> notify,
   std::map<osm_changeset_id_t, changeset> &cc) {
-  extract<relation>(rows, formatter, notify, cc);
+  extract<relation>(rows, formatter, std::move(notify), cc);
 }
 
 void extract_changesets(
@@ -271,4 +281,57 @@ void extract_changesets(
     formatter.write_changeset(
       elem, tags, include_changeset_discussions, comments, now);
   }
+}
+
+std::vector<std::string> psql_array_to_vector(std::string_view str) {
+  std::vector<std::string> strs;
+  std::string value;
+  bool quotedValue = false;
+  bool escaped = false;
+  bool write = false;
+
+  if (str == "{NULL}" || str.empty())
+    return strs;
+
+  const auto str_size = str.size();
+  for (unsigned int i = 1; i < str_size; i++) {
+    if (str[i] == ',') {
+      if (quotedValue) {
+        value += ",";
+      } else {
+        write = true;
+      }
+    } else if (str[i] == '\"') {
+      if (escaped) {
+        value += "\"";
+        escaped = false;
+      } else if (quotedValue) {
+        quotedValue = false;
+      } else {
+        quotedValue = true;
+      }
+    } else if (str[i] == '\\') {
+      if (escaped) {
+        value += "\\";
+        escaped = false;
+      } else {
+        escaped = true;
+      }
+    } else if (str[i] == '}') {
+      if (quotedValue) {
+        value += "}";
+      } else {
+        write = true;
+      }
+    } else {
+      value += str[i];
+    }
+
+    if (write) {
+      strs.push_back(value);
+      value.clear();
+      write = false;
+    }
+  }
+  return strs;
 }

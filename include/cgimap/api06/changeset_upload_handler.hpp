@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef API06_CHANGESET_UPLOAD_HANDLER_HPP
 #define API06_CHANGESET_UPLOAD_HANDLER_HPP
 
@@ -18,13 +27,13 @@ public:
 
 class changeset_upload_handler : public payload_enabled_handler {
 public:
-  changeset_upload_handler(request &req, osm_changeset_id_t id);
+  changeset_upload_handler(const request &req, osm_changeset_id_t id);
 
   std::string log_name() const override;
   responder_ptr_t responder(data_selection &x) const override;
 
   responder_ptr_t responder(data_update &,
-			    const std::string &payload,
+                            const std::string &payload,
                             std::optional<osm_user_id_t> user_id) const override;
   bool requires_selection_after_update() const override;
 

@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef OSMOBJECT_HPP
 #define OSMOBJECT_HPP
 
@@ -16,7 +25,7 @@ namespace api06 {
     std::string error_string;
 
     explicit xml_error(const std::string &message)
-    : http::bad_request(message), error_code(), error_string(message) {}
+      : http::bad_request(message), error_string(message) {}
   };
 
   class OSMObject {
@@ -34,7 +43,7 @@ namespace api06 {
 
     // Setters with string conversions
 
-    void set_changeset(const char *changeset) {
+    void set_changeset(const std::string &changeset) {
 
       osm_changeset_id_t _changeset = 0;
 
@@ -53,7 +62,7 @@ namespace api06 {
       set_changeset(_changeset);
     }
 
-    void set_version(const char *version) {
+    void set_version(const std::string &version) {
 
       int64_t _version = 0;
 
@@ -72,7 +81,7 @@ namespace api06 {
       set_version(_version);
     }
 
-    void set_id(const char *id) {
+    void set_id(const std::string &id) {
 
       osm_nwr_signed_id_t _id = 0;
 
@@ -97,14 +106,14 @@ namespace api06 {
 
     osm_nwr_signed_id_t id() const { return *m_id; }
 
-    bool has_changeset() const {  return ((m_changeset) ? true : false); }
-    bool has_id() const { return ((m_id) ? true : false); };
-    bool has_version() const { return ((m_version) ? true : false); }
+    constexpr bool has_changeset() const {  return m_changeset.has_value(); }
+    constexpr bool has_id() const { return m_id.has_value(); };
+    constexpr bool has_version() const { return m_version.has_value(); }
 
 
     std::map<std::string, std::string> tags() const { return m_tags; }
 
-    void add_tag(std::string key, std::string value) {
+    void add_tag(const std::string& key, const std::string& value) {
 
       if (key.empty()) {
 	  throw xml_error(fmt::format("Key may not be empty in {}", to_string()));
@@ -147,7 +156,7 @@ namespace api06 {
 
     virtual std::string to_string() {
 
-      return fmt::format("{} {:d}", get_type_name(), ((m_id) ? *m_id : 0));
+      return fmt::format("{} {:d}", get_type_name(), m_id.value_or(0));
     }
 
   private:

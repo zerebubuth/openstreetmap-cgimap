@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #include "cgimap/output_formatter.hpp"
 #include "test_formatter.hpp"
 
@@ -131,8 +140,6 @@ bool test_formatter::changeset_t::operator==(const changeset_t &other) const {
 #undef CMP
   return std::equal(m_tags.begin(), m_tags.end(), other.m_tags.begin());
 }
-
-test_formatter::~test_formatter() = default;
 
 mime::type test_formatter::mime_type() const {
   throw std::runtime_error("Unimplemented");

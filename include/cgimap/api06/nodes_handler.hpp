@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef API06_NODES_HANDLER_HPP
 #define API06_NODES_HANDLER_HPP
 
@@ -13,15 +22,12 @@ namespace api06 {
 
 class nodes_responder : public osm_current_responder {
 public:
-  nodes_responder(mime::type, std::vector<id_version>, data_selection &);
-
-private:
-  std::vector<id_version> ids;
+  nodes_responder(mime::type, const std::vector<id_version>&, data_selection &);
 };
 
 class nodes_handler : public handler {
 public:
-  nodes_handler(request &req);
+  explicit nodes_handler(const request &req);
 
   std::string log_name() const override;
   responder_ptr_t responder(data_selection &x) const override;
@@ -29,7 +35,7 @@ public:
 private:
   std::vector<id_version> ids;
 
-  static std::vector<id_version> validate_request(request &req);
+  static std::vector<id_version> validate_request(const request &req);
 };
 
 } // namespace api06

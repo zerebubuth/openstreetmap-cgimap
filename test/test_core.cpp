@@ -1,8 +1,16 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #include "cgimap/process_request.hpp"
 #include "cgimap/output_buffer.hpp"
 #include "cgimap/backend/staticxml/staticxml.hpp"
 #include "cgimap/request_helpers.hpp"
-#include "cgimap/config.hpp"
 #include "cgimap/time.hpp"
 
 #include <boost/program_options.hpp>
@@ -470,7 +478,7 @@ void check_response(std::istream &expected, std::istream &actual) {
  *  - compares the result to what's expected in the test case.
  */
 void run_test(fs::path test_case, rate_limiter &limiter,
-              const std::string &generator, routes &route,
+              const std::string &generator, const routes &route,
               data_selection::factory& factory,
               oauth::store* store) {
   try {
@@ -519,10 +527,36 @@ osm_user_role_t parse_role(const std::string &str) {
   }
 }
 
-struct test_oauth
-  : public oauth::store {
+user_roles_t get_user_roles(const pt::ptree &config)
+{
+  user_roles_t user_roles;
+  boost::optional< const pt::ptree& > users = config.get_child_optional("users");
+  if (users)
+  {
+    for (const auto &entry : *users)
+    {
+      auto id = boost::lexical_cast< osm_user_id_t >(entry.first);
+      boost::optional< const pt::ptree& > roles =
+          entry.second.get_child_optional("roles");
 
-  test_oauth(const pt::ptree &config) {
+      std::set< osm_user_role_t > r;
+      if (roles)
+      {
+        for (const auto &role : *roles)
+        {
+          r.insert(parse_role(role.second.get_value< std::string >()));
+        }
+      }
+
+      user_roles.emplace(id, std::move(r));
+    }
+  }
+  return user_roles;
+}
+
+struct test_oauth : public oauth::store {
+
+  explicit test_oauth(const pt::ptree &config) {
     boost::optional<const pt::ptree &> consumers =
       config.get_child_optional("consumers");
     if (consumers) {
@@ -548,30 +582,11 @@ struct test_oauth
         m_users.emplace(key, user_id);
       }
     }
-
-    boost::optional<const pt::ptree &> users =
-      config.get_child_optional("users");
-    if (users) {
-      for (const auto &entry : *users) {
-        auto id = boost::lexical_cast<osm_user_id_t>(entry.first);
-        boost::optional<const pt::ptree &> roles =
-          entry.second.get_child_optional("roles");
-
-        std::set<osm_user_role_t> r;
-        if (roles) {
-          for (const auto &role : *roles) {
-            r.insert(parse_role(role.second.get_value<std::string>()));
-          }
-        }
-
-        m_user_roles.emplace(id, std::move(r));
-      }
-    }
   }
 
-  virtual ~test_oauth() = default;
+  ~test_oauth() override = default;
 
-  std::optional<std::string> consumer_secret(const std::string &consumer_key) {
+  std::optional<std::string> consumer_secret(const std::string &consumer_key) override {
     auto itr = m_consumers.find(consumer_key);
     if (itr != m_consumers.end()) {
       return itr->second;
@@ -580,7 +595,7 @@ struct test_oauth
     }
   }
 
-  std::optional<std::string> token_secret(const std::string &token_id) {
+  std::optional<std::string> token_secret(const std::string &token_id) override {
     auto itr = m_tokens.find(token_id);
     if (itr != m_tokens.end()) {
       return itr->second;
@@ -589,22 +604,22 @@ struct test_oauth
     }
   }
 
-  bool use_nonce(const std::string &nonce, uint64_t timestamp) {
+  bool use_nonce(const std::string &nonce, uint64_t timestamp) override {
     // pretend all nonces are new for these tests
     return true;
   }
 
-  bool allow_read_api(const std::string &token_id) {
+  bool allow_read_api(const std::string &token_id) override {
     // everyone can read the api
     return true;
   }
 
-  bool allow_write_api(const std::string &token_id) {
+  bool allow_write_api(const std::string &token_id) override {
     // everyone can write the api for the moment
     return true;
   }
 
-  std::optional<osm_user_id_t> get_user_id_for_token(const std::string &token_id) {
+  std::optional<osm_user_id_t> get_user_id_for_token(const std::string &token_id) override {
     auto itr = m_users.find(token_id);
     if (itr != m_users.end()) {
       return itr->second;
@@ -613,26 +628,9 @@ struct test_oauth
     }
   }
 
-  std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t id) {
-    std::set<osm_user_role_t> roles;
-    auto itr = m_user_roles.find(id);
-    if (itr != m_user_roles.end()) {
-      roles = itr->second;
-    }
-    return roles;
-  }
-
-  std::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, bool& expired, bool& revoked, bool& allow_api_write) {
-    expired = false;
-    revoked = false;
-    allow_api_write = false;
-    return {};
-  }
-
 private:
   std::map<std::string, std::string> m_consumers, m_tokens;
   std::map<std::string, osm_user_id_t> m_users;
-  std::map<osm_user_id_t, std::set<osm_user_role_t> > m_user_roles;
 };
 
 int main(int argc, char *argv[]) {
@@ -644,9 +642,11 @@ int main(int argc, char *argv[]) {
   fs::path test_directory = argv[1];
   fs::path data_file = test_directory / "data.osm";
   fs::path oauth_file = test_directory / "oauth.json";
+  fs::path roles_file = test_directory / "roles.json";
   std::vector<fs::path> test_cases;
 
   std::unique_ptr<oauth::store> store;
+  user_roles_t user_roles;
 
   try {
     if (fs::is_directory(test_directory) == false) {
@@ -666,6 +666,18 @@ int main(int argc, char *argv[]) {
       if (ext == ".case") {
         test_cases.push_back(filename);
       }
+    }
+
+    if (fs::is_regular_file(roles_file)) {
+      pt::ptree config;
+
+      try {
+        pt::read_json(roles_file.string(), config);
+      } catch (const std::exception &ex) {
+        throw std::runtime_error
+          (fmt::format("{}, while reading expected JSON.", ex.what()));
+      }
+      user_roles = get_user_roles(config);
     }
 
     if (fs::is_regular_file(oauth_file)) {
@@ -695,7 +707,7 @@ int main(int argc, char *argv[]) {
     vm.insert(std::make_pair(std::string("file"),
                              po::variable_value(data_file.native(), false)));
 
-    auto data_backend = make_staticxml_backend();
+    auto data_backend = make_staticxml_backend(user_roles);
     auto factory = data_backend->create(vm);
     null_rate_limiter limiter;
     routes route;

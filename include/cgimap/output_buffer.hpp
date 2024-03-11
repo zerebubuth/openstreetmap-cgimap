@@ -1,15 +1,27 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef OUTPUT_BUFFER_HPP
 #define OUTPUT_BUFFER_HPP
+
+#include <string_view>
 
 /**
  * Implement this interface to provide custom output.
  */
 struct output_buffer {
   virtual int write(const char *buffer, int len) = 0;
+  virtual int write(std::string_view str) { return write(str.data(), str.size()); }
   virtual int written() = 0;
   virtual int close() = 0;
   virtual void flush() = 0;
-  virtual ~output_buffer();
+  virtual ~output_buffer() = default;
 
   output_buffer() = default;
 
@@ -23,7 +35,7 @@ struct output_buffer {
 class identity_output_buffer : public output_buffer
 {
 public:
-    identity_output_buffer(output_buffer& o) : out(o) {}
+    explicit identity_output_buffer(output_buffer& o) : out(o) {}
 
     int write(const char *buffer, int len) override { return out.write(buffer, len); }
     int written() override { return out.written(); }

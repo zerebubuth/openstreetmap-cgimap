@@ -1,5 +1,11 @@
-
-#include "util.hpp"
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
 
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 #include "cgimap/backend/apidb/changeset_upload/node_updater.hpp"
@@ -9,6 +15,7 @@
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
 #include "cgimap/options.hpp"
+#include "cgimap/util.hpp"
 
 
 #include <algorithm>
@@ -25,10 +32,10 @@
 
 
 ApiDB_Node_Updater::ApiDB_Node_Updater(Transaction_Manager &_m,
-				       api06::OSMChange_Tracking &ct)
-    : m_bbox(), m(_m), ct(ct) {}
-
-ApiDB_Node_Updater::~ApiDB_Node_Updater() = default;
+                                       api06::OSMChange_Tracking &ct)
+    : m(_m), 
+      ct(ct)
+{}
 
 void ApiDB_Node_Updater::add_node(double lat, double lon,
                                   osm_changeset_id_t changeset_id,
@@ -43,8 +50,7 @@ void ApiDB_Node_Updater::add_node(double lat, double lon,
   new_node.changeset_id = changeset_id;
   new_node.old_id = old_id;
   for (const auto &tag : tags)
-    new_node.tags.emplace_back(
-        std::pair<std::string, std::string>(tag.first, tag.second));
+    new_node.tags.emplace_back(tag.first, tag.second);
   create_nodes.push_back(new_node);
 
   ct.osmchange_orig_sequence.push_back({ operation::op_create,
@@ -236,7 +242,7 @@ void ApiDB_Node_Updater::replace_old_ids_in_nodes(
         &created_node_id_mapping) {
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map;
 
-  for (auto i : created_node_id_mapping) {
+  for (auto &i : created_node_id_mapping) {
     auto res = map.insert( { i.old_id, i.new_id } );
     if (!res.second)
       throw http::bad_request(
@@ -379,7 +385,7 @@ ApiDB_Node_Updater::build_packages(const std::vector<node_t> &nodes) {
       ++id_to_package[node.id];
 
     if (id_to_package[node.id] + 1 > result.size())
-      result.emplace_back(std::vector<ApiDB_Node_Updater::node_t>());
+      result.emplace_back();
 
     result.at(id_to_package[node.id]).emplace_back(node);
   }
@@ -606,7 +612,7 @@ void ApiDB_Node_Updater::update_current_nodes(
   }
 
   // update modified nodes table
-  for (auto row : r)
+  for (const auto &row : r)
     ct.modified_node_ids.push_back({ id_to_old_id[row["id"].as<osm_nwr_id_t>()],
                                       row["id"].as<osm_nwr_id_t>(),
                                       row["version"].as<osm_version_t>() });
@@ -907,9 +913,9 @@ void ApiDB_Node_Updater::delete_current_node_tags(
   pqxx::result r = m.exec_prepared("delete_current_node_tags", ids);
 }
 
-uint32_t ApiDB_Node_Updater::get_num_changes() {
+uint32_t ApiDB_Node_Updater::get_num_changes() const {
   return (ct.created_node_ids.size() + ct.modified_node_ids.size() +
           ct.deleted_node_ids.size());
 }
 
-bbox_t ApiDB_Node_Updater::bbox() { return m_bbox; }
+bbox_t ApiDB_Node_Updater::bbox() const { return m_bbox; }

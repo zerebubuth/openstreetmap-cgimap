@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #include "cgimap/backend/apidb/readonly_pgsql_selection.hpp"
 #include "cgimap/backend/apidb/common_pgsql_selection.hpp"
 #include "cgimap/backend/apidb/apidb.hpp"
@@ -6,9 +15,9 @@
 #include "cgimap/logger.hpp"
 #include "cgimap/options.hpp"
 #include "cgimap/backend/apidb/quad_tile.hpp"
-#include "cgimap/infix_ostream_iterator.hpp"
 
 #include <functional>
+#include <set>
 #include <sstream>
 #include <list>
 #include <vector>
@@ -99,11 +108,7 @@ inline int insert_results(const pqxx::result &res, set<T> &elems) {
 
 readonly_pgsql_selection::readonly_pgsql_selection(
     Transaction_Owner_Base& to)
-    : m(to)
-    , include_changeset_discussions(false)
-    , m_redactions_visible(false) {}
-
-readonly_pgsql_selection::~readonly_pgsql_selection() = default;
+    : m(to) {}
 
 void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
 
@@ -152,19 +157,16 @@ void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
     std::vector<osm_nwr_id_t> ids;
     std::vector<osm_nwr_id_t> versions;
 
-    for (const auto &ed : sel_historic_nodes) {
-      ids.emplace_back(ed.first);
-      versions.emplace_back(ed.second);
+    for (const auto &[id, version] : sel_historic_nodes) {
+      ids.emplace_back(id);
+      versions.emplace_back(version);
     }
 
     auto result = m.exec_prepared("extract_historic_nodes", ids, versions);
 
     fetch_changesets(extract_changeset_ids(result), cc);
 
-    extract_nodes(result,
-		  formatter,
-		  [&](const element_info&) {},
-		  cc);
+    extract_nodes(result, formatter, {}, cc);
   }
 }
 
@@ -235,19 +237,16 @@ void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
     ids.reserve(sel_historic_ways.size());
     versions.reserve(sel_historic_ways.size());
 
-    for (const auto &ed : sel_historic_ways) {
-      ids.emplace_back(ed.first);
-      versions.emplace_back(ed.second);
+    for (const auto &[id, version] : sel_historic_ways) {
+      ids.emplace_back(id);
+      versions.emplace_back(version);
     }
 
     auto result = m.exec_prepared("extract_historic_ways", ids, versions);
 
     fetch_changesets(extract_changeset_ids(result), cc);
 
-    extract_ways(result,
-		 formatter,
-		 [&](const element_info&) {},
-		 cc);
+    extract_ways(result, formatter, {}, cc);
   }
 }
 
@@ -316,19 +315,16 @@ void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
     ids.reserve(sel_historic_relations.size());
     versions.reserve(sel_historic_relations.size());
 
-    for (const auto &ed : sel_historic_relations) {
-      ids.emplace_back(ed.first);
-      versions.emplace_back(ed.second);
+    for (const auto &[id, version] : sel_historic_relations) {
+      ids.emplace_back(id);
+      versions.emplace_back(version);
     }
 
     auto result = m.exec_prepared("extract_historic_relations", ids, versions);
 
     fetch_changesets(extract_changeset_ids(result), cc);
 
-    extract_relations(result,
-		      formatter,
-	              [&](const element_info&) {},
-		      cc);
+    extract_relations(result, formatter, {}, cc);
   }
 }
 
@@ -589,9 +585,9 @@ int readonly_pgsql_selection::select_historical_nodes(
   ids.reserve(eds.size());
   vers.reserve(eds.size());
 
-  for (const auto &ed : eds) {
-    ids.emplace_back(ed.first);
-    vers.emplace_back(ed.second);
+  for (const auto &[id, version] : eds) {
+    ids.emplace_back(id);
+    vers.emplace_back(version);
   }
 
   return insert_results(
@@ -619,9 +615,9 @@ int readonly_pgsql_selection::select_historical_ways(
   ids.reserve(eds.size());
   vers.reserve(eds.size());
 
-  for (const auto &ed : eds) {
-    ids.emplace_back(ed.first);
-    vers.emplace_back(ed.second);
+  for (const auto &[id, version] : eds) {
+    ids.emplace_back(id);
+    vers.emplace_back(version);
   }
 
   return insert_results(
@@ -649,9 +645,9 @@ int readonly_pgsql_selection::select_historical_relations(
   ids.reserve(eds.size());
   vers.reserve(eds.size());
 
-  for (const auto &ed : eds) {
-    ids.emplace_back(ed.first);
-    vers.emplace_back(ed.second);
+  for (const auto &[id, version] : eds) {
+    ids.emplace_back(id);
+    vers.emplace_back(version);
   }
 
   return insert_results(
@@ -829,6 +825,60 @@ bool readonly_pgsql_selection::get_user_id_pass(const std::string& user_name, os
   return true;
 }
 
+std::set< osm_user_role_t > readonly_pgsql_selection::get_roles_for_user(osm_user_id_t id)
+{
+  std::set<osm_user_role_t> roles;
+
+  // return all the roles to which the user belongs.
+  m.prepare("roles_for_user",
+    "SELECT role FROM user_roles WHERE user_id = $1");
+
+  auto res = m.exec_prepared("roles_for_user", id);
+
+  for (const auto &tuple : res) {
+    auto role = tuple[0].as<std::string>();
+    if (role == "moderator") {
+      roles.insert(osm_user_role_t::moderator);
+    } else if (role == "administrator") {
+      roles.insert(osm_user_role_t::administrator);
+    }
+  }
+
+  return roles;
+}
+
+std::optional< osm_user_id_t > readonly_pgsql_selection::get_user_id_for_oauth2_token(
+    const std::string &token_id, bool &expired, bool &revoked,
+    bool &allow_api_write)
+{
+  // return details for OAuth 2.0 access token
+  m.prepare("oauth2_access_token",
+    R"(SELECT resource_owner_id as user_id,
+         CASE WHEN expires_in IS NULL THEN false
+              ELSE (created_at + expires_in * interval '1' second)  < now() at time zone 'utc'
+         END as expired,
+         COALESCE(revoked_at < now() at time zone 'utc', false) as revoked,
+         'write_api' = any(string_to_array(scopes, ' ')) as allow_api_write
+       FROM oauth_access_tokens
+       WHERE token = $1)");
+
+  auto res = m.exec_prepared("oauth2_access_token", token_id);
+
+  if (!res.empty()) {
+    auto uid = res[0]["user_id"].as<osm_user_id_t>();
+    expired = res[0]["expired"].as<bool>();
+    revoked = res[0]["revoked"].as<bool>();
+    allow_api_write = res[0]["allow_api_write"].as<bool>();
+    return uid;
+
+  } else {
+    expired = true;
+    revoked = true;
+    allow_api_write = false;
+    return {};
+  }
+}
+
 bool readonly_pgsql_selection::is_user_active(const osm_user_id_t id)
 {
   m.prepare("is_user_active",
@@ -840,7 +890,7 @@ bool readonly_pgsql_selection::is_user_active(const osm_user_id_t id)
   return (!res.empty());
 }
 
-std::set< osm_changeset_id_t > readonly_pgsql_selection::extract_changeset_ids(pqxx::result& result) {
+std::set< osm_changeset_id_t > readonly_pgsql_selection::extract_changeset_ids(const pqxx::result& result) const {
 
   std::set< osm_changeset_id_t > changeset_ids;
   for (const auto & row : result) {
@@ -917,22 +967,24 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
   // set the connections to use the appropriate charset.
   m_connection.set_client_encoding(opts["charset"].as<std::string>());
 
+#if PQXX_VERSION_MAJOR < 7
   // set the connection to use readonly transaction.
   m_connection.set_variable("default_transaction_read_only", "true");
+#else
+  m_connection.set_session_var("default_transaction_read_only", "true");
+#endif
 }
-
-readonly_pgsql_selection::factory::~factory() = default;
 
 
 std::unique_ptr<data_selection>
-readonly_pgsql_selection::factory::make_selection(Transaction_Owner_Base& to) {
+readonly_pgsql_selection::factory::make_selection(Transaction_Owner_Base& to) const {
   return std::make_unique<readonly_pgsql_selection>(to);
 }
 
 std::unique_ptr<Transaction_Owner_Base>
 readonly_pgsql_selection::factory::get_default_transaction()
 {
-  return std::make_unique<Transaction_Owner_ReadOnly>(std::ref(m_connection));
+  return std::make_unique<Transaction_Owner_ReadOnly>(std::ref(m_connection), m_prep_stmt);
 }
 
 

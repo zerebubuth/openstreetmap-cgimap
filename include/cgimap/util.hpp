@@ -1,7 +1,15 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef UTIL_HPP
 #define UTIL_HPP
 
-#include "infix_ostream_iterator.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
 #include "cgimap/options.hpp"
@@ -15,7 +23,10 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <type_traits>
 
+#include <fmt/core.h>
+#include <fmt/format.h>
 
 
 inline size_t unicode_strlen(const std::string & s)
@@ -24,8 +35,8 @@ inline size_t unicode_strlen(const std::string & s)
 
    std::setlocale(LC_ALL, "C.UTF-8");          // TODO: check location for setlocale
 
-   std::mbstate_t state = std::mbstate_t();
-   std::size_t len = std::mbsrtowcs(NULL, &mbstr, 0, &state);
+   std::mbstate_t state{};
+   std::size_t len = std::mbsrtowcs(nullptr, &mbstr, 0, &state);
 
    if (len == static_cast<std::size_t> (-1)) {
      throw http::bad_request("Invalid UTF-8 string encountered");
@@ -36,7 +47,7 @@ inline size_t unicode_strlen(const std::string & s)
 
 
 // TODO: Proper escaping function
-inline std::string escape(std::string input)
+inline std::string escape(std::string_view input)
 {
 
 	std::string result = "\"";
@@ -68,10 +79,7 @@ inline std::string friendly_name(const std::string & input)
 
 template <typename T>
 inline std::string to_string(const std::set<T> &ids) {
-  std::stringstream ostr;
-  std::copy(ids.begin(), ids.end(),
-            infix_ostream_iterator<T>(ostr, ","));
-  return ostr.str();
+  return fmt::format("{}", fmt::join(ids, ","));
 }
 
 
@@ -104,7 +112,7 @@ public:
 		maxlon = std::max(maxlon, bbox.maxlon);
 	}
 
-	bool operator==(const bbox_t& bbox)
+	bool operator==(const bbox_t& bbox) const
 	{
 	  return( minlat == bbox.minlat &&
 			  minlon == bbox.minlon &&

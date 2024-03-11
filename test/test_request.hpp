@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef TEST_TEST_REQUEST_HPP
 #define TEST_TEST_REQUEST_HPP
 
@@ -15,7 +24,7 @@
  */
 struct test_output_buffer : public output_buffer {
   explicit test_output_buffer(std::ostream &out, std::ostream &body);
-  virtual ~test_output_buffer();
+  ~test_output_buffer() override = default;
   int write(const char *buffer, int len) override;
   int written() override;
   int close() override;
@@ -24,7 +33,7 @@ struct test_output_buffer : public output_buffer {
 private:
   std::ostream &m_out;
   std::ostream &m_body;
-  int m_written;
+  int m_written{0};
 };
 
 /**
@@ -32,10 +41,10 @@ private:
  * body for comparison to what we expect.
  */
 struct test_request : public request {
-  test_request();
+  test_request() = default;
 
   /// implementation of request interface
-  virtual ~test_request();
+  ~test_request() override = default;
   const char *get_param(const char *key) const override;
   const std::string get_payload() override;
   void set_payload(const std::string&);
@@ -54,12 +63,12 @@ struct test_request : public request {
   int response_status() const;
 
 protected:
-  void write_header_info(int status, const headers_t &headers) override;
+  void write_header_info(int status, const http::headers_t &headers) override;
   output_buffer& get_buffer_internal() override;
   void finish_internal() override;
 
 private:
-  int m_status;
+  int m_status{-1};
   std::stringstream m_output;
   std::stringstream m_header;
   std::stringstream m_body;

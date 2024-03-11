@@ -1,3 +1,12 @@
+/**
+ * SPDX-License-Identifier: GPL-2.0-only
+ *
+ * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
+ *
+ * Copyright (C) 2009-2023 by the CGImap developer community.
+ * For a full list of authors see the git log.
+ */
+
 #ifndef OSMCHANGE_INPUT_FORMAT_HPP
 #define OSMCHANGE_INPUT_FORMAT_HPP
 
@@ -7,20 +16,17 @@
 #include "cgimap/api06/changeset_upload/relation.hpp"
 #include "cgimap/api06/changeset_upload/way.hpp"
 #include "cgimap/types.hpp"
+#include "parsers/saxparser.hpp"
 
 #include <libxml/parser.h>
 #include <fmt/core.h>
 
-#include <algorithm>
 #include <cassert>
-#include <cstdint>
-#include <cstring>
-#include <functional>
 #include <memory>
-#include <optional>
-#include <sstream>
 #include <string>
-#include "parsers/saxparser.hpp"
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace api06 {
 
@@ -48,16 +54,17 @@ public:
     }
   }
 
-
 protected:
 
-  void on_start_element(const char *element, const char **attrs) override {
+  void on_start_element(const char *elem, const char **attrs) override {
 
     assert (!m_context.empty());
 
+    const std::string_view element(elem);
+
     switch (m_context.back()) {
     case context::root:
-      if (!std::strcmp(element, "osmChange")) {
+      if (element == "osmChange") {
         m_callback.start_document();
       } else {
         throw xml_error{
@@ -70,17 +77,17 @@ protected:
 
     case context::top:
 
-      if (!std::strcmp(element, "create")) {
+      if (element == "create") {
         m_context.push_back(context::in_create);
         m_operation = operation::op_create;
-      } else if (!std::strcmp(element, "modify")) {
+      } else if (element == "modify") {
         m_context.push_back(context::in_modify);
         m_operation = operation::op_modify;
-      } else if (!std::strcmp(element, "delete")) {
+      } else if (element == "delete") {
         m_if_unused = false;
-        check_attributes(attrs, [&](const char *name, const char *) {
+        check_attributes(attrs, [&](std::string_view name, const std::string & /*unused*/ ) {
 
-          if (!std::strcmp(name, "if-unused")) {
+          if (name == "if-unused") {
             m_if_unused = true;
           }
         });
@@ -99,16 +106,16 @@ protected:
     case context::in_create:
     case context::in_modify:
 
-      if (!std::strcmp(element, "node")) {
+      if (element == "node") {
         m_node.reset(new Node{});
         init_object(*m_node, attrs);
         init_node(*m_node, attrs);
         m_context.push_back(context::node);
-      } else if (!std::strcmp(element, "way")) {
+      } else if (element == "way") {
         m_way.reset(new Way{});
         init_object(*m_way, attrs);
         m_context.push_back(context::way);
-      } else if (!std::strcmp(element, "relation")) {
+      } else if (element == "relation") {
         m_relation.reset(new Relation{});
         init_object(*m_relation, attrs);
         m_context.push_back(context::relation);
@@ -123,16 +130,16 @@ protected:
 
     case context::node:
       m_context.push_back(context::in_object);
-      if (!std::strcmp(element, "tag")) {
+      if (element == "tag") {
         add_tag(*m_node, attrs);
       }
       break;
     case context::way:
       m_context.push_back(context::in_object);
-      if (!std::strcmp(element, "nd")) {
+      if (element == "nd") {
 	bool ref_found = false;
-        check_attributes(attrs, [&](const char *name, const char *value) {
-          if (!std::strcmp(name, "ref")) {
+        check_attributes(attrs, [&](std::string_view name, const std::string &value) {
+          if (name == "ref") {
             m_way->add_way_node(value);
             ref_found = true;
           }
@@ -141,20 +148,20 @@ protected:
           throw xml_error{fmt::format(
                                 "Missing mandatory ref field on way node {}",
                             m_way->to_string()) };
-      } else if (!std::strcmp(element, "tag")) {
+      } else if (element == "tag") {
         add_tag(*m_way, attrs);
       }
       break;
     case context::relation:
       m_context.push_back(context::in_object);
-      if (!std::strcmp(element, "member")) {
+      if (element == "member") {
         RelationMember member;
-        check_attributes(attrs, [&member](const char *name, const char *value) {
-          if (!std::strcmp(name, "type")) {
+        check_attributes(attrs, [&member](std::string_view name, const std::string &value) {
+          if (name == "type") {
             member.set_type(value);
-          } else if (!std::strcmp(name, "ref")) {
+          } else if (name == "ref") {
             member.set_ref(value);
-          } else if (!std::strcmp(name, "role")) {
+          } else if (name == "role") {
             member.set_role(value);
           }
         });
@@ -164,7 +171,7 @@ protected:
                             m_relation->to_string()) };
         }
         m_relation->add_member(member);
-      } else if (!std::strcmp(element, "tag")) {
+      } else if (element == "tag") {
         add_tag(*m_relation, attrs);
       }
       break;
@@ -174,38 +181,40 @@ protected:
     }
   }
 
-  void on_end_element(const char *element) override {
+  void on_end_element(const char *elem) override {
 
     assert (!m_context.empty());
+
+    const std::string_view element(elem);
 
     switch (m_context.back()) {
     case context::root:
       assert(false);
       break;
     case context::top:
-      assert(!std::strcmp(element, "osmChange"));
+      assert(element == "osmChange");
       m_context.pop_back();
       m_operation = operation::op_undefined;
       m_callback.end_document();
       break;
     case context::in_create:
-      assert(!std::strcmp(element, "create"));
+      assert(element == "create");
       m_operation = operation::op_undefined;
       m_context.pop_back();
       break;
     case context::in_modify:
-      assert(!std::strcmp(element, "modify"));
+      assert(element == "modify");
       m_operation = operation::op_undefined;
       m_context.pop_back();
       break;
     case context::in_delete:
-      assert(!std::strcmp(element, "delete"));
+      assert(element == "delete");
       m_operation = operation::op_undefined;
       m_context.pop_back();
       m_if_unused = false;
       break;
     case context::node:
-      assert(!std::strcmp(element, "node"));
+      assert(element == "node");
       if (!m_node->is_valid(m_operation)) {
         throw xml_error{
           fmt::format("{} does not include all mandatory fields",
@@ -217,7 +226,7 @@ protected:
       m_context.pop_back();
       break;
     case context::way:
-      assert(!std::strcmp(element, "way"));
+      assert(element == "way");
       if (!m_way->is_valid(m_operation)) {
         throw xml_error{
           fmt::format("{} does not include all mandatory fields",
@@ -230,7 +239,7 @@ protected:
       m_context.pop_back();
       break;
     case context::relation:
-      assert(!std::strcmp(element, "relation"));
+      assert(element == "relation");
       if (!m_relation->is_valid(m_operation)) {
         throw xml_error{
           fmt::format("{} does not include all mandatory fields",
@@ -247,7 +256,6 @@ protected:
     }
   }
 
-
   void on_enhance_exception(xmlParserInputPtr& location) override {
 
     try {
@@ -258,7 +266,6 @@ protected:
   }
 
 private:
-
 
   enum class context {
     root,
@@ -274,7 +281,7 @@ private:
 
   template <typename T>
   static void check_attributes(const char **attrs, T check) {
-    if (attrs == NULL)
+    if (attrs == nullptr)
       return;
 
     while (*attrs) {
@@ -285,13 +292,13 @@ private:
 
   void init_object(OSMObject &object, const char **attrs) {
 
-    check_attributes(attrs, [&object](const char *name, const char *value) {
+    check_attributes(attrs, [&object](std::string_view name, const std::string &value) {
 
-      if (!std::strcmp(name, "id")) {
+      if (name == "id") {
         object.set_id(value);
-      } else if (!std::strcmp(name, "changeset")) {
+      } else if (name == "changeset") {
         object.set_changeset(value);
-      } else if (!std::strcmp(name, "version")) {
+      } else if (name == "version") {
         object.set_version(value);
       } // don't parse any other attributes here
     });
@@ -325,11 +332,11 @@ private:
   }
 
   void init_node(Node &node, const char **attrs) {
-    check_attributes(attrs, [&node](const char *name, const char *value) {
+    check_attributes(attrs, [&node](std::string_view name, const std::string &value) {
 
-      if (!std::strcmp(name, "lon")) {
+      if (name == "lon") {
         node.set_lon(value);
-      } else if (!std::strcmp(name, "lat")) {
+      } else if (name == "lat") {
         node.set_lat(value);
       }
     });
@@ -340,12 +347,12 @@ private:
     std::optional<std::string> k;
     std::optional<std::string> v;
 
-    check_attributes(attrs, [&k, &v](const char *name, const char *value) {
+    check_attributes(attrs, [&k, &v](std::string_view name, std::string && value) {
 
-      if (name[0] == 'k' && name[1] == 0) {
-        k = value;
-      } else if (name[0] == 'v' && name[1] == 0) {
-        v = value;
+      if (name == "k") {
+        k = std::move(value);
+      } else if (name == "v") {
+        v = std::move(value);
       }
     });
 
@@ -389,7 +396,6 @@ private:
   std::unique_ptr<Relation> m_relation{};
 
   bool m_if_unused = false;
-
 };
 
 } // namespace api06
