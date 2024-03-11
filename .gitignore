@@ -24,6 +24,7 @@ src/**/*.lo
 src/*.la
 src/.libs/
 *~
+*#
 include/*~
 src/*~
 test-suite.log
@@ -69,3 +70,9 @@ ltmain.sh
 compile_commands.json
 /.vscode/
 /build/
+
+# profiling / code coverage
+*.gcda
+*.gcno
+heaptrack.*.zst
+gmon.out

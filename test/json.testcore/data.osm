@@ -7,6 +7,10 @@
     <tag k='foo' v='bar1' />
   </node>
   <node visible="true" id='3' timestamp='2012-09-25T00:01:00Z' uid='1' user='foo' version='2' changeset='3' lat='0.0' lon='0.0' />
+
+  <!-- Regression test for double values mistakenly being truncated to 11 characters https://github.com/zerebubuth/openstreetmap-cgimap/issues/363 -->
+  <node visible="true" id='4' timestamp='2013-10-20T00:00:00Z' uid='1' user='foo' version='1' changeset='4' lat='48.1730392' lon='-117.0671669' /> 
+
   <node visible="true" id='40050' timestamp='2012-09-25T00:00:01Z' uid='1' user='foo' version='1' changeset='1' lat='0.99587530072' lon='1.15459870878' />
   <node visible="true" id='40051' timestamp='2012-09-25T00:00:02Z' uid='1' user='foo' version='1' changeset='1' lat='0.99684898006' lon='1.15459552634' />
   <node visible="true" id='40053' timestamp='2012-09-25T00:00:03Z' uid='1' user='foo' version='1' changeset='1' lat='0.99657533165' lon='1.15587486714'>
