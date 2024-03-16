@@ -12,7 +12,9 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 #include <stdexcept>
+#include <yajl/yajl_gen.h>
 #include "cgimap/output_buffer.hpp"
 #include "cgimap/output_writer.hpp"
 
@@ -38,22 +40,30 @@ public:
   void start_array();
   void end_array();
 
-  void entry_bool(bool b);
-  void entry_int(int32_t i);
-  void entry_int(int64_t i);
-  void entry_int(uint32_t i);
-  void entry_int(uint64_t i);
-  void entry_double(double d);
-  void entry_string(const std::string &s);
+  void entry(bool b);
+  void entry(double d);
+
+  template<typename TInteger, std::enable_if_t<std::is_integral_v<TInteger>, bool> = true>
+  void entry(TInteger i) {
+    yajl_gen_integer(gen, i);
+  }
+
+  void entry(const char* s);
+  void entry(std::string_view sv);
+
+  template <typename TKey, typename TValue>
+  void property(TKey&& key, TValue&& val) {
+    object_key(std::forward<TKey>(key));
+    entry(std::forward<TValue>(val));
+  }
 
   void flush() override;
 
   void error(const std::string &) override;
 
 private:
-  // PIMPL idiom
-  struct pimpl_;
-  std::unique_ptr<pimpl_> pimpl;
+  yajl_gen gen;
+  yajl_alloc_funcs alloc_funcs;
   output_buffer& out;
 };
 
