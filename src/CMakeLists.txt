@@ -4,7 +4,8 @@
 add_library(cgimap_core)
 
 target_include_directories(cgimap_core PUBLIC
-    ../include)
+    ../include
+    ../contrib/libxml++)
 
 target_sources(cgimap_core PRIVATE
     backend.cpp
@@ -38,12 +39,12 @@ target_sources(cgimap_core PRIVATE
     xml_writer.cpp
     zlib.cpp
 
-    parsers/exception.cpp
-    parsers/internal_error.cpp
-    parsers/parse_error.cpp
-    parsers/parser.cpp
-    parsers/saxparser.cpp
-    parsers/wrapped_exception.cpp
+    ../contrib/libxml++/parsers/exception.cpp
+    ../contrib/libxml++/parsers/internal_error.cpp
+    ../contrib/libxml++/parsers/parse_error.cpp
+    ../contrib/libxml++/parsers/parser.cpp
+    ../contrib/libxml++/parsers/saxparser.cpp
+    ../contrib/libxml++/parsers/wrapped_exception.cpp
 
     api06/changeset_close_handler.cpp
     api06/changeset_create_handler.cpp
