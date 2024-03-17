@@ -1,0 +1,55 @@
+Original repo https://github.com/libxmlplusplus/libxmlplusplus
+
+
+Sources have been stripped down & modified:
+
+saxparser.hpp
+-------------
+
+Class SaxParser: added method:
+
+  // provides current location information to parser to provide option
+  // to enhance exception with location information
+  virtual void on_enhance_exception(xmlParserInputPtr& location);
+
+
+saxparser.cpp
+-------------
+
+void SaxParser::on_enhance_exception(xmlParserInputPtr& location)
+{
+  throw;
+}
+
+void SaxParserCallback::start_element
+
+  try
+  {
+    try {
+       parser->on_start_element(reinterpret_cast<const char *>(name), reinterpret_cast<const char **>(p));
+    } catch (...) {
+       parser->on_enhance_exception(the_context->input);
+    }
+  }
+  catch (...)
+  {
+    parser->handle_exception();
+  }
+    
+void SaxParserCallback::end_element(void* context, const xmlChar* name)
+
+
+  try
+  {
+     try {
+       parser->on_end_element(reinterpret_cast<const char *>(name));
+     } catch(...) {
+        parser->on_enhance_exception(the_context->input);
+     }
+  }
+  catch (...)
+  {
+    parser->handle_exception();
+  }
+     
+     
