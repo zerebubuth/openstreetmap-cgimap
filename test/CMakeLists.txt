@@ -19,8 +19,6 @@ if(BUILD_TESTING)
 
 
     file(GLOB test_core_test_dirs LIST_DIRECTORIES true "${CMAKE_CURRENT_SOURCE_DIR}/*.testcore")
-    add_test(NAME test_core_node
-        COMMAND test_core "${CMAKE_CURRENT_SOURCE_DIR}/node.testcore")
     foreach (test ${test_core_test_dirs})
     get_filename_component (TName "${test}" NAME_WE)
     add_test(NAME "${TName}.testcore" COMMAND test_core "${test}")
