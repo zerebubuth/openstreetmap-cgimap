@@ -7,7 +7,7 @@
  * For a full list of authors see the git log.
  */
 
-#include "cgimap/backend/staticxml/staticxml.hpp"
+#include "staticxml.hpp"
 #include "cgimap/backend.hpp"
 #include "cgimap/output_formatter.hpp"
 #include "cgimap/api06/id_version.hpp"
