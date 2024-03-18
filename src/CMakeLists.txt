@@ -4,8 +4,7 @@
 add_library(cgimap_core)
 
 target_include_directories(cgimap_core PUBLIC
-    ../include
-    ../contrib/libxml++)
+    ../include)
 
 target_sources(cgimap_core PRIVATE
     backend.cpp
@@ -38,13 +37,6 @@ target_sources(cgimap_core PRIVATE
     xml_formatter.cpp
     xml_writer.cpp
     zlib.cpp
-
-    ../contrib/libxml++/parsers/exception.cpp
-    ../contrib/libxml++/parsers/internal_error.cpp
-    ../contrib/libxml++/parsers/parse_error.cpp
-    ../contrib/libxml++/parsers/parser.cpp
-    ../contrib/libxml++/parsers/saxparser.cpp
-    ../contrib/libxml++/parsers/wrapped_exception.cpp
 
     api06/changeset_close_handler.cpp
     api06/changeset_create_handler.cpp
@@ -81,7 +73,7 @@ target_sources(cgimap_core PRIVATE
 
 target_link_libraries(cgimap_core
     cgimap_common_compiler_options
-    LibXml2::LibXml2
+    libxml++
     ZLIB::ZLIB
     CryptoPP::CryptoPP
     Libmemcached::Libmemcached
