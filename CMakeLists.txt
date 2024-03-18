@@ -115,6 +115,7 @@ target_link_libraries(cgimap_common_compiler_options INTERFACE
 ###########################
 # source subdirectories
 ###########################
+add_subdirectory(contrib)
 add_subdirectory(src)
 add_subdirectory(test)
 
