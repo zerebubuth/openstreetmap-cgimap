@@ -17,7 +17,7 @@ using std::transform;
 
 xml_formatter::xml_formatter(std::unique_ptr<xml_writer> w) : writer(std::move(w)) {}
 
-mime::type xml_formatter::mime_type() const { return mime::application_xml; }
+mime::type xml_formatter::mime_type() const { return mime::type::application_xml; }
 
 void xml_formatter::start_document(
   const std::string &generator, const std::string &root_name) {

@@ -15,7 +15,7 @@ json_formatter::json_formatter(std::unique_ptr<json_writer> w) : writer(std::mov
 
 json_formatter::~json_formatter() = default;
 
-mime::type json_formatter::mime_type() const { return mime::application_json; }
+mime::type json_formatter::mime_type() const { return mime::type::application_json; }
 
 void json_formatter::write_tags(const tags_t &tags) {
 

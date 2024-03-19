@@ -16,7 +16,7 @@
  * simple set of supported mime types.
  */
 namespace mime {
-enum type {
+enum class type {
   unspecified_type, // a "null" type, used to indicate no choice.
   text_plain,
   application_xml,

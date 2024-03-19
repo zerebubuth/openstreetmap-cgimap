@@ -42,7 +42,7 @@ changeset_create_responder::changeset_create_responder(mime::type mt,
 }
 
 changeset_create_handler::changeset_create_handler(const request &)
-    : payload_enabled_handler(mime::text_plain,
+    : payload_enabled_handler(mime::type::text_plain,
                               http::method::PUT | http::method::OPTIONS) {}
 
 std::string changeset_create_handler::log_name() const {
