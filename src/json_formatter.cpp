@@ -11,26 +11,6 @@
 
 #include <chrono>
 
-namespace {
-
-const std::string &element_type_name(element_type elt) {
-  static std::string name_node("node"), name_way("way"),
-      name_relation("relation");
-
-  switch (elt) {
-  case element_type_node:
-    return name_node;
-  case element_type_way:
-    return name_way;
-  case element_type_relation:
-    return name_relation;
-  default:
-    throw std::runtime_error("Unknown element type in element_type_name().");
-  }
-}
-
-} // anonymous namespace
-
 json_formatter::json_formatter(std::unique_ptr<json_writer> w) : writer(std::move(w)) {}
 
 json_formatter::~json_formatter() = default;

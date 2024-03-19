@@ -22,11 +22,11 @@ namespace {
     switch (o) {
 
       case object_type::node:
-	return element_type_node;
+	return element_type::node;
       case object_type::way:
-	return element_type_way;
+	return element_type::way;
       case object_type::relation:
-	return element_type_relation;
+	return element_type::relation;
 
     }
 

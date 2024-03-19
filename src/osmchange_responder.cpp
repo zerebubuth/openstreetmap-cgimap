@@ -102,7 +102,7 @@ struct sorting_formatter : public output_formatter {
     const tags_t &tags) override {
 
     element node{
-      element_type_node, elem, tags, element::lonlat{lon, lat},
+      element_type::node, elem, tags, element::lonlat{lon, lat},
         nodes_t(), members_t()};
 
     m_elements.emplace_back(std::move(node));
@@ -114,7 +114,7 @@ struct sorting_formatter : public output_formatter {
     const tags_t &tags) override {
 
     element way{
-      element_type_way, elem, tags, element::lonlat{},
+      element_type::way, elem, tags, element::lonlat{},
         nodes, members_t()};
 
     m_elements.emplace_back(std::move(way));
@@ -126,7 +126,7 @@ struct sorting_formatter : public output_formatter {
     const tags_t &tags) override {
 
     element rel{
-      element_type_relation, elem, tags, element::lonlat{},
+      element_type::relation, elem, tags, element::lonlat{},
         nodes_t(), members};
 
     m_elements.emplace_back(std::move(rel));
@@ -181,19 +181,19 @@ struct sorting_formatter : public output_formatter {
     std::sort(m_elements.begin(), m_elements.end());
     for (const auto &e : m_elements) {
       if (e.m_info.version == 1) {
-        fmt.start_action(action_type_create);
+        fmt.start_action(action_type::create);
         write_element(e, fmt);
-        fmt.end_action(action_type_create);
+        fmt.end_action(action_type::create);
 
       } else if (e.m_info.visible) {
-        fmt.start_action(action_type_modify);
+        fmt.start_action(action_type::modify);
         write_element(e, fmt);
-        fmt.end_action(action_type_modify);
+        fmt.end_action(action_type::modify);
 
       } else {
-        fmt.start_action(action_type_delete);
+        fmt.start_action(action_type::del);
         write_element(e, fmt);
-        fmt.end_action(action_type_delete);
+        fmt.end_action(action_type::del);
       }
     }
   }
@@ -203,16 +203,16 @@ private:
 
   void write_element(const element &e, output_formatter &fmt) {
     switch (e.m_type) {
-    case element_type_node:
+    case element_type::node:
       fmt.write_node(e.m_info, e.m_lonlat.m_lon, e.m_lonlat.m_lat, e.m_tags);
       break;
-    case element_type_way:
+    case element_type::way:
       fmt.write_way(e.m_info, e.m_nds, e.m_tags);
       break;
-    case element_type_relation:
+    case element_type::relation:
       fmt.write_relation(e.m_info, e.m_members, e.m_tags);
       break;
-    case element_type_changeset:
+    case element_type::changeset:
       break;
     }
   }
