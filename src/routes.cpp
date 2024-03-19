@@ -297,7 +297,7 @@ namespace {
       std::size_t json_found = path.rfind(".json");
 
       if (json_found != string::npos && json_found == path.length() - 5) {
-	  return make_pair(path.substr(0, json_found), mime::application_json);
+	  return make_pair(path.substr(0, json_found), mime::type::application_json);
       }
     }
 #endif
@@ -306,11 +306,11 @@ namespace {
       std::size_t xml_found = path.rfind(".xml");
 
       if (xml_found != string::npos && xml_found == path.length() - 4) {
-	  return make_pair(path.substr(0, xml_found), mime::application_xml);
+	  return make_pair(path.substr(0, xml_found), mime::type::application_xml);
       }
     }
 
-    return make_pair(path, mime::unspecified_type);
+    return make_pair(path, mime::type::unspecified_type);
 }
 
 handler_ptr_t route_resource(request &req, const string &path,

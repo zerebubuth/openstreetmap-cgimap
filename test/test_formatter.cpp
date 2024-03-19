@@ -292,7 +292,7 @@ std::ostream &operator<<(std::ostream &out, const test_formatter::way_t &w) {
 }
 
 std::ostream &operator<<(std::ostream &out, const member_info &m) {
-  out << "member_info(type=" << m.type << ", "
+  out << "member_info(type=" << element_type_name(m.type) << ", "
       << "ref=" << m.ref << ", "
       << "role=\"" << m.role << "\")";
   return out;

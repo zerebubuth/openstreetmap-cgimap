@@ -109,17 +109,17 @@ element_type type_from_name(const char *name) {
   switch (name[0]) {
   case 'N':
   case 'n':
-    type = element_type_node;
+    type = element_type::node;
     break;
 
   case 'W':
   case 'w':
-    type = element_type_way;
+    type = element_type::way;
     break;
 
   case 'R':
   case 'r':
-    type = element_type_relation;
+    type = element_type::relation;
     break;
 
   default:

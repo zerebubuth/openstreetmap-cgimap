@@ -906,9 +906,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
               element_info(relation_id, 1, 1, f.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
               members_t(
                   {
-        { element_type_node, node_new_ids[0], "role1" },
-        { element_type_node, node_new_ids[1], "role2" },
-        { element_type_way,  way_new_id, "" }
+        { element_type::node, node_new_ids[0], "role1" },
+        { element_type::node, node_new_ids[1], "role2" },
+        { element_type::way,  way_new_id, "" }
                   }
               ),
               tags_t({{"boundary", "administrative"}})
@@ -930,9 +930,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
               element_info(relation_id, 1, 1, f2.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
               members_t(
                   {
-        { element_type_node, node_new_ids[0], "role1" },
-        { element_type_node, node_new_ids[1], "role2" },
-        { element_type_way,  way_new_id, "" }
+        { element_type::node, node_new_ids[0], "role1" },
+        { element_type::node, node_new_ids[1], "role2" },
+        { element_type::way,  way_new_id, "" }
                   }
               ),
               tags_t({{"boundary", "administrative"}})
@@ -1000,9 +1000,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
               element_info(r_id, r_version, 1, f.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
               members_t(
                   {
-        { element_type_node, n_new_ids[0], "role1" },
-        { element_type_node, n_new_ids[1], "role2" },
-        { element_type_way,  change_tracking.created_way_ids[0].new_id, "" }
+        { element_type::node, n_new_ids[0], "role1" },
+        { element_type::node, n_new_ids[1], "role2" },
+        { element_type::way,  change_tracking.created_way_ids[0].new_id, "" }
                   }
               ),
               tags_t({{"boundary", "administrative"}})
@@ -1024,9 +1024,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
               element_info(r_id, r_version, 1, f2.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
               members_t(
                   {
-        { element_type_node, n_new_ids[0], "role1" },
-        { element_type_node, n_new_ids[1], "role2" },
-        { element_type_way,  change_tracking.created_way_ids[0].new_id, "" }
+        { element_type::node, n_new_ids[0], "role1" },
+        { element_type::node, n_new_ids[1], "role2" },
+        { element_type::way,  change_tracking.created_way_ids[0].new_id, "" }
                   }
               ),
               tags_t({{"boundary", "administrative"}})
@@ -1192,8 +1192,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
               element_info(relation_id, relation_version, 1, f.m_relations[0].elem.timestamp, 1, std::string("user_1"), true),
               members_t(
                   {
-        { element_type_node, node_new_ids[0], "stop_position" },
-        { element_type_way,  way_new_id, "outer" }
+        { element_type::node, node_new_ids[0], "stop_position" },
+        { element_type::way,  way_new_id, "outer" }
                   }
               ),
               tags_t({{"admin_level", "4"}, {"boundary","administrative"}})
@@ -1215,8 +1215,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
               element_info(relation_id, relation_version, 1, f2.m_relations[1].elem.timestamp, 1, std::string("user_1"), true),
               members_t(
                   {
-        { element_type_node, node_new_ids[0], "stop_position" },
-        { element_type_way,  way_new_id, "outer" }
+        { element_type::node, node_new_ids[0], "stop_position" },
+        { element_type::way,  way_new_id, "outer" }
                   }
               ),
               tags_t({{"admin_level", "4"}, {"boundary","administrative"}})

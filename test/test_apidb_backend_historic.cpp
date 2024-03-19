@@ -230,7 +230,7 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_historic_dup_relation", "[historic]
     // check number of relations written
     CHECK(f.m_relations.size() == 1);
 
-    members_t relation1_members { member_info(element_type_node, 3, "foo") };
+    members_t relation1_members { member_info(element_type::node, 3, "foo") };
 
     CHECK(
         test_formatter::relation_t(
@@ -401,8 +401,8 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_relation_history", "[historic][db]"
     // check number of relations written"
     CHECK(f.m_relations.size() == 2);
 
-    members_t relation1v1_members{member_info(element_type_node, 3, "bar")};
-    members_t relation1v2_members{member_info(element_type_node, 3, "foo")};
+    members_t relation1v1_members{member_info(element_type::node, 3, "bar")};
+    members_t relation1v2_members{member_info(element_type::node, 3, "foo")};
 
     CHECK(
       test_formatter::relation_t(
@@ -710,7 +710,7 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_relation_with_history_redacted", "[
       CHECK(f.m_relations.size() == 1);
 
       members_t relation1v2_members;
-      relation1v2_members.push_back(member_info(element_type_node, 3, "foo"));
+      relation1v2_members.push_back(member_info(element_type::node, 3, "foo"));
 
       CHECK(
           test_formatter::relation_t(
@@ -730,8 +730,8 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_relation_with_history_redacted", "[
       // check number of relations written for moderator
       CHECK(f.m_relations.size() == 2);
 
-      const members_t relation1v1_members { member_info(element_type_node, 3, "bar") };
-      const members_t relation1v2_members { member_info(element_type_node, 3, "foo") };
+      const members_t relation1v1_members { member_info(element_type::node, 3, "bar") };
+      const members_t relation1v2_members { member_info(element_type::node, 3, "foo") };
 
       CHECK(
           test_formatter::relation_t(
@@ -800,7 +800,7 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_historical_relations_redacted", "[h
     // check number of relations written for moderator
     CHECK(f.m_relations.size() == 1);
 
-    members_t relation1v1_members { member_info(element_type_node, 3, "bar") };
+    members_t relation1v1_members { member_info(element_type::node, 3, "bar") };
 
     CHECK(
         test_formatter::relation_t(

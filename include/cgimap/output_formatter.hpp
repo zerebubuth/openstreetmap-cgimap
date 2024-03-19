@@ -25,19 +25,37 @@
 /**
  * What type of element the formatter is starting to write.
  */
-enum element_type {
-  element_type_changeset,
-  element_type_node,
-  element_type_way,
-  element_type_relation
+enum class element_type {
+  changeset,
+  node,
+  way,
+  relation
 };
 
-// TODO: document me.
-enum action_type {
-  action_type_create,
-  action_type_modify,
-  action_type_delete
+enum class action_type {
+  create,
+  modify,
+  del    // delete is a reserved keyword
 };
+
+namespace {
+
+const char* element_type_name(element_type elt) {
+
+  switch (elt) {
+  case element_type::node:
+    return "node";
+  case element_type::way:
+    return "way";
+  case element_type::relation:
+    return "relation";
+  case element_type::changeset:
+    return "changeset";
+  }
+  return "";
+}
+
+} // anonymous namespace
 
 struct element_info {
 

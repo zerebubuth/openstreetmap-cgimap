@@ -15,14 +15,14 @@ using std::runtime_error;
 
 namespace mime {
 string to_string(type t) {
-  if (any_type == t) {
+  if (mime::type::any_type == t) {
     return "*/*";
-  } else if (text_plain == t) {
+  } else if (mime::type::text_plain == t) {
     return "text/plain";
-  } else if (application_xml == t) {
+  } else if (mime::type::application_xml == t) {
     return "application/xml";
 #if HAVE_YAJL
-  } else if (application_json == t) {
+  } else if (mime::type::application_json == t) {
     return "application/json";
 #endif
   } else {
@@ -31,26 +31,25 @@ string to_string(type t) {
 }
 
 type parse_from(const std::string &name) {
-  type t = unspecified_type;
 
   if (name == "*") {
-    t = any_type;
+    return mime::type::any_type;
   } else if (name == "*/*") {
-    t = any_type;
+    return mime::type::any_type;
   } else if (name == "text/*") {
-    t = any_type;
+    return mime::type::any_type;
   } else if (name == "text/plain") {
-    t = text_plain;
+    return mime::type::text_plain;
   } else if (name == "text/xml") {     // alias according to RFC 7303, section 9.2
-    t = application_xml;
+    return mime::type:: application_xml;
   } else if (name == "application/xml") {
-    t = application_xml;
+    return mime::type::application_xml;
 #if HAVE_YAJL
   } else if (name == "application/json") {
-    t = application_json;
+    return mime::type::application_json;
 #endif
   }
 
-  return t;
+  return mime::type::unspecified_type;
 }
 }

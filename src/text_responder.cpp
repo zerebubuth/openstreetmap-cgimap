@@ -14,7 +14,7 @@ text_responder::text_responder(mime::type mt)
 
 std::vector<mime::type> text_responder::types_available() const {
   std::vector<mime::type> types;
-  types.push_back(mime::text_plain);
+  types.push_back(mime::type::text_plain);
   return types;
 }
 
