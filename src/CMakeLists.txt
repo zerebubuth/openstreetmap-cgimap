@@ -72,7 +72,7 @@ target_sources(cgimap_core PRIVATE
 
 target_link_libraries(cgimap_core
     cgimap_common_compiler_options
-    libxml++
+    cgimap_libxml++
     ZLIB::ZLIB
     CryptoPP::CryptoPP
     Libmemcached::Libmemcached
