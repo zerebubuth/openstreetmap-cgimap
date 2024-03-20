@@ -18,24 +18,15 @@ target_sources(libxml++
 
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.23.0)
     target_sources(libxml++
-        PRIVATE
-            FILE_SET libxmlpp_private_headers
-            TYPE HEADERS
-            BASE_DIRS ./
+        PUBLIC
+            FILE_SET HEADERS
             FILES
                 parsers/exception.hpp
                 parsers/internal_error.hpp
                 parsers/parse_error.hpp
                 parsers/parser.hpp
+                parsers/saxparser.hpp
                 parsers/wrapped_exception.hpp)
-
-    target_sources(libxml++
-        PUBLIC
-            FILE_SET libxmlpp_public_headers
-            TYPE HEADERS
-            BASE_DIRS ./
-            FILES
-                parsers/saxparser.hpp)
 else()
     target_include_directories(libxml++ PUBLIC
         ./)
