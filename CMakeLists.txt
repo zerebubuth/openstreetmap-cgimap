@@ -97,11 +97,10 @@ target_compile_definitions(cgimap_common_compiler_options INTERFACE
     HAVE_CRYPTOPP=$<BOOL:${CryptoPP_FOUND}>)
 
 if(ENABLE_YAJL)
-    find_package(YAJL REQUIRED)
+    find_package(YAJL 2 REQUIRED)
 endif()
 target_compile_definitions(cgimap_common_compiler_options INTERFACE
-    HAVE_YAJL=$<BOOL:${YAJL_FOUND}>
-    HAVE_YAJL2=$<VERSION_GREATER_EQUAL:${YAJL_VERSION},2>)
+    HAVE_YAJL=$<BOOL:${YAJL_FOUND}>)
 
 find_package(Fcgi REQUIRED)
 target_compile_definitions(cgimap_common_compiler_options INTERFACE
