@@ -184,19 +184,28 @@ if(ENABLE_INSTALL)
     if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.23.0)
         set(CGIMAP_HEADER_FILE_SET_INSTALL_ARTIFACTS
             FILE_SET HEADERS
+                COMPONENT Development
                 DESTINATION ${CGIMAP_INSTALL_INCLUDEDIR})
     endif()
 
     install(TARGETS openstreetmap_cgimap ${CGIMAP_LIBS}
+        RUNTIME
+            COMPONENT Runtime
+        LIBRARY
+            COMPONENT Libraries
         PUBLIC_HEADER
+            COMPONENT Development
             DESTINATION ${CGIMAP_INSTALL_INCLUDEDIR}
         PRIVATE_HEADER
+            COMPONENT Development
             DESTINATION ${CGIMAP_INSTALL_INCLUDEDIR}
         ${CGIMAP_HEADER_FILE_SET_INSTALL_ARTIFACTS})
 
-    install(FILES openstreetmap-cgimap.1 TYPE MAN)
+    install(FILES openstreetmap-cgimap.1 TYPE MAN
+        COMPONENT Runtime)
 
-    install(FILES README TYPE DOC)
+    install(FILES README TYPE DOC
+        COMPONENT Runtime)
 endif()
 
 
@@ -219,7 +228,30 @@ set(CPACK_VERBATIM_VARIABLES YES)
 
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "mmd <${CPACK_PACKAGE_CONTACT}>")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS YES)
+set(CPACK_DEBIAN_ENABLE_COMPONENT_DEPENDS YES)
 set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION TRUE)
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+# Set to YES to create individual packages for components instead of everything in one package
+set(CPACK_DEB_COMPONENT_INSTALL NO)
+
+set(CPACK_DEBIAN_RUNTIME_PACKAGE_NAME "${PROJECT_NAME}")
+set(CPACK_DEBIAN_LIBRARIES_PACKAGE_NAME "${PROJECT_NAME}-libs")
+set(CPACK_DEBIAN_DEVELOPMENT_PACKAGE_NAME "${PROJECT_NAME}-dev")
 
 include(CPack)
+
+cpack_add_component(Libraries
+                    DISPLAY_NAME "openstreetmap-cgimap libraries"
+                    DESCRIPTION "Libraries required to run openstreetmap-cgimap")
+
+if(BUILD_SHARED_LIBS)
+    set(CGIMAP_RUNTIME_COMPONENT_DEPENDENCIES Libraries)
+endif()
+cpack_add_component(Runtime
+                    DISPLAY_NAME "openstreetmap-cgimap runtime binary"
+                    DEPENDS ${CGIMAP_RUNTIME_COMPONENT_DEPENDENCIES})
+
+cpack_add_component(Development
+                    DISPLAY_NAME "openstreetmap-cgimap development headers"
+                    DESCRIPTION "Header files required for development using openstreetmap-cgimap libraries"
+                    DEPENDS Libraries)
