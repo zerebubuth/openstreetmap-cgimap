@@ -178,7 +178,7 @@ if(ENABLE_INSTALL)
     set(CGIMAP_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
 
     if(BUILD_SHARED_LIBS)
-        set(CGIMAP_LIBS cgimap_core cgimap_fcgi cgimap_apidb libxml++)
+        set(CGIMAP_LIBS cgimap_core cgimap_fcgi cgimap_apidb cgimap_libxml++)
     endif()
 
     if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.23.0)
