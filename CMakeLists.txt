@@ -167,20 +167,36 @@ endif()
 # Install
 #############################################################
 
-if (ENABLE_INSTALL)
-  install(TARGETS openstreetmap_cgimap
-          PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-          DESTINATION "bin")
+if(ENABLE_INSTALL)
+    include(GNUInstallDirs)
 
-  install(FILES openstreetmap-cgimap.1 DESTINATION share/man/man1)
+    set(CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
+        OWNER_READ OWNER_WRITE OWNER_EXECUTE
+        GROUP_READ GROUP_EXECUTE
+        WORLD_READ WORLD_EXECUTE)
 
-  install(FILES README DESTINATION share/doc/openstreetmap-cgimap)
+    set(CGIMAP_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
 
-  if (BUILD_SHARED_LIBS)
-    install(TARGETS cgimap_core DESTINATION lib)
-    install(TARGETS cgimap_fcgi DESTINATION lib)
-    install(TARGETS cgimap_apidb DESTINATION lib)
-  endif()
+    if(BUILD_SHARED_LIBS)
+        set(CGIMAP_LIBS cgimap_core cgimap_fcgi cgimap_apidb libxml++)
+    endif()
+
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.23.0)
+        set(CGIMAP_HEADER_FILE_SET_INSTALL_ARTIFACTS
+            FILE_SET HEADERS
+                DESTINATION ${CGIMAP_INSTALL_INCLUDEDIR})
+    endif()
+
+    install(TARGETS openstreetmap_cgimap ${CGIMAP_LIBS}
+        PUBLIC_HEADER
+            DESTINATION ${CGIMAP_INSTALL_INCLUDEDIR}
+        PRIVATE_HEADER
+            DESTINATION ${CGIMAP_INSTALL_INCLUDEDIR}
+        ${CGIMAP_HEADER_FILE_SET_INSTALL_ARTIFACTS})
+
+    install(FILES openstreetmap-cgimap.1 TYPE MAN)
+
+    install(FILES README TYPE DOC)
 endif()
 
 
@@ -193,11 +209,6 @@ set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 set(CPACK_PACKAGE_CONTACT "mmd.osm@gmail.com")
-set(CPACK_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
-    OWNER_READ OWNER_WRITE OWNER_EXECUTE
-    GROUP_READ GROUP_EXECUTE
-    WORLD_READ WORLD_EXECUTE
-)
 set(CPACK_PACKAGE_DESCRIPTION "A comprehensive list of supported endpoints can be found at https://github.com/zerebubuth/openstreetmap-cgimap")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "OpenStreetMap CGImap - Performance optimized implementation of selected parts of the OSM API")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README")
