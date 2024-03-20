@@ -7,14 +7,15 @@ set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
 ################
-# CGImap project
+# openstreetmap-cgimap project
 ################
 string(TIMESTAMP CURRENT_TIMESTAMP %y%m%d%H%M UTC)
 
-project(CGImap LANGUAGES CXX
-               VERSION "0.10.0.${CURRENT_TIMESTAMP}"
-               DESCRIPTION "CGImap is a C++ implementation of some parts of the OpenStreetMap API as a FastCGI process."
-               HOMEPAGE_URL "https://github.com/zerebubuth/openstreetmap-cgimap")
+project(openstreetmap-cgimap
+        LANGUAGES CXX
+        VERSION "0.10.0.${CURRENT_TIMESTAMP}"
+        DESCRIPTION "CGImap is a C++ implementation of some parts of the OpenStreetMap API as a FastCGI process."
+        HOMEPAGE_URL "https://github.com/zerebubuth/openstreetmap-cgimap")
 set(CMAKE_PROJECT_BUGREPORT_URL "https://github.com/zerebubuth/openstreetmap-cgimap/issues")
 
 
@@ -191,9 +192,7 @@ set(CPACK_GENERATOR "DEB")
 set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
-set(CPACK_DEBIAN_PACKAGE_NAME "openstreetmap-cgimap")
 set(CPACK_PACKAGE_CONTACT "mmd.osm@gmail.com")
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "mmd")
 set(CPACK_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
     OWNER_READ OWNER_WRITE OWNER_EXECUTE
     GROUP_READ GROUP_EXECUTE
@@ -201,9 +200,15 @@ set(CPACK_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
 )
 set(CPACK_PACKAGE_DESCRIPTION "A comprehensive list of supported endpoints can be found at https://github.com/zerebubuth/openstreetmap-cgimap")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "OpenStreetMap CGImap - Performance optimized implementation of selected parts of the OSM API")
-set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS YES)
-set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/zerebubuth/openstreetmap-cgimap")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/COPYING")
+set(CPACK_PACKAGING_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 set(CPACK_STRIP_FILES "TRUE")
-INCLUDE(CPack)
+set(CPACK_VERBATIM_VARIABLES YES)
 
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "mmd <${CPACK_PACKAGE_CONTACT}>")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS YES)
+set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION TRUE)
+set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+
+include(CPack)
