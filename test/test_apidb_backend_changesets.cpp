@@ -88,6 +88,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_negative_changeset_ids", "[changes
       "  (7, 90000000, 90000000, -1, true,  '2016-04-16T15:09:00Z', 3229120632, 1); "
       );
 
+
   }
 
   SECTION("Validate data") {
@@ -365,9 +366,8 @@ void init_changesets(test_database &tdb) {
   tdb.run_sql(R"(
 	 INSERT INTO users (id, email, pass_crypt, pass_salt, creation_time, display_name, data_public, status)
 	 VALUES
-	   (31, 'demo@example.com', '$argon2id$v=19$m=65536,t=1,p=1$KXGHWfWMf5H5kY4uU3ua8A$YroVvX6cpJpljTio62k19C6UpuIPtW7me2sxyU2dyYg',
-                                   null,
-                                   '2013-11-14T02:10:00Z', 'demo', true, 'confirmed'),
+           (1, 'user_1@example.com', 'x', null, '2013-11-14T02:10:00Z', 'user_1', true, 'confirmed'),
+	   (31, 'demo@example.com', 'x', null, '2013-11-14T02:10:00Z', 'demo', true, 'confirmed'),
 	   (32, 'user_2@example.com', '', '', '2013-11-14T02:10:00Z', 'user_2', false, 'active');
 
 	INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes)
@@ -388,6 +388,13 @@ void init_changesets(test_database &tdb) {
       INSERT INTO user_blocks (user_id, creator_id, reason, ends_at, needs_view)
       VALUES (31,  32, '', now() at time zone 'utc' - ('1 hour' ::interval), false);
 
+     INSERT INTO oauth_applications (id, owner_type, owner_id, name, uid, secret, redirect_uri, scopes, confidential, created_at, updated_at) 
+         VALUES (3, 'User', 1, 'App 1', 'dHKmvGkmuoMjqhCNmTJkf-EcnA61Up34O1vOHwTSvU8', '965136b8fb8d00e2faa2faaaed99c0ec10225518d0c8d9fb1d2af701e87eb68c', 
+                'http://demo.localhost:3000', 'write_api read_gpx', false, '2021-04-12 17:53:30', '2021-04-12 17:53:30');
+  
+      INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token) 
+         VALUES (67, 31, 3, '4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8', NULL, NULL, NULL, '2021-04-14 19:38:21', 'write_api', '');
+
       )"
   );
 
@@ -396,7 +403,7 @@ void init_changesets(test_database &tdb) {
 TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_create", "[changeset][db]" ) {
 
 
-    const std::string baseauth = "Basic ZGVtbzpwYXNzd29yZA==";
+    const std::string bearertoken = "Bearer 4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8";
     const std::string generator = "Test";
 
     auto sel_factory = tdb.get_data_selection_factory();
@@ -433,13 +440,13 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_create", "[changeset][db
 	REQUIRE(req.response_status() == 401);
     }
 
-    SECTION("User providing wrong password")
+    SECTION("User providing wrong bearer token")
     {
 	// set up request headers from test case
 	test_request req;
 	req.set_header("REQUEST_METHOD", "PUT");
 	req.set_header("REQUEST_URI", "/api/0.6/changeset/create");
-	req.set_header("HTTP_AUTHORIZATION", "Basic ZGVtbzppbnZhbGlkcGFzc3dvcmQK");
+	req.set_header("HTTP_AUTHORIZATION", "Bearer ZGVtbzppbnZhbGlkcGFzc3dvcmQK");
 	req.set_header("REMOTE_ADDR", "127.0.0.1");
 
 	req.set_payload(R"(
@@ -465,7 +472,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_create", "[changeset][db
 	test_request req;
 	req.set_header("REQUEST_METHOD", "PUT");
 	req.set_header("REQUEST_URI", "/api/0.6/changeset/create");
-	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("HTTP_AUTHORIZATION", bearertoken);
 	req.set_header("REMOTE_ADDR", "127.0.0.1");
 
 	req.set_payload(R"(
@@ -497,7 +504,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_create", "[changeset][db
 	test_request req;
 	req.set_header("REQUEST_METHOD", "PUT");
 	req.set_header("REQUEST_URI", "/api/0.6/changeset/create");
-	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("HTTP_AUTHORIZATION", bearertoken);
 	req.set_header("REMOTE_ADDR", "127.0.0.1");
 
 	req.set_payload(R"(
@@ -531,7 +538,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_create", "[changeset][db
 	test_request req;
 	req.set_header("REQUEST_METHOD", "PUT");
 	req.set_header("REQUEST_URI", "/api/0.6/changeset/create");
-	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("HTTP_AUTHORIZATION", bearertoken);
 	req.set_header("REMOTE_ADDR", "127.0.0.1");
 
 	req.set_payload(R"( <osm>
@@ -590,7 +597,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_create", "[changeset][db
 TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][db]" ) {
 
 
-    const std::string baseauth = "Basic ZGVtbzpwYXNzd29yZA==";
+    const std::string bearertoken = "Bearer 4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8";
     const std::string generator = "Test";
 
     auto sel_factory = tdb.get_data_selection_factory();
@@ -627,13 +634,13 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][db
 
     }
 
-    SECTION("wrong user/password")
+    SECTION("wrong bearer token")
     {
 	// set up request headers from test case
 	test_request req;
 	req.set_header("REQUEST_METHOD", "PUT");
 	req.set_header("REQUEST_URI", "/api/0.6/changeset/51");
-	req.set_header("HTTP_AUTHORIZATION", "Basic ZGVtbzppbnZhbGlkcGFzc3dvcmQK");
+	req.set_header("HTTP_AUTHORIZATION", "Bearer ZGVtbzppbnZhbGlkcGFzc3dvcmQK");
 	req.set_header("REMOTE_ADDR", "127.0.0.1");
 
 	req.set_payload(R"(
@@ -658,7 +665,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][db
 	test_request req;
 	req.set_header("REQUEST_METHOD", "PUT");
 	req.set_header("REQUEST_URI", "/api/0.6/changeset/53");
-	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("HTTP_AUTHORIZATION", bearertoken);
 	req.set_header("REMOTE_ADDR", "127.0.0.1");
 
 	req.set_payload(R"( <osm>
@@ -682,7 +689,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][db
 	test_request req;
 	req.set_header("REQUEST_METHOD", "PUT");
 	req.set_header("REQUEST_URI", "/api/0.6/changeset/666");
-	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("HTTP_AUTHORIZATION", bearertoken);
 	req.set_header("REMOTE_ADDR", "127.0.0.1");
 
 	req.set_payload(R"( <osm>
@@ -705,7 +712,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][db
 	test_request req;
 	req.set_header("REQUEST_METHOD", "PUT");
 	req.set_header("REQUEST_URI", "/api/0.6/changeset/54");
-	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("HTTP_AUTHORIZATION", bearertoken);
 	req.set_header("REMOTE_ADDR", "127.0.0.1");
 
 	req.set_payload(R"( <osm>
@@ -731,7 +738,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][db
 	test_request req;
 	req.set_header("REQUEST_METHOD", "PUT");
 	req.set_header("REQUEST_URI", "/api/0.6/changeset/56");
-	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("HTTP_AUTHORIZATION", bearertoken);
 	req.set_header("REMOTE_ADDR", "127.0.0.1");
 
 	req.set_payload(R"( <osm>
@@ -761,7 +768,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][db
 	test_request req;
 	req.set_header("REQUEST_METHOD", "PUT");
 	req.set_header("REQUEST_URI", "/api/0.6/changeset/52");
-	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("HTTP_AUTHORIZATION", bearertoken);
 	req.set_header("REMOTE_ADDR", "127.0.0.1");
 
 	req.set_payload(R"( <osm>
@@ -815,7 +822,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][db
 
 TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_close", "[changeset][db]" ) {
 
-    const std::string baseauth = "Basic ZGVtbzpwYXNzd29yZA==";
+    const std::string bearertoken = "Bearer 4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8";
     const std::string generator = "Test";
 
     auto sel_factory = tdb.get_data_selection_factory();
@@ -848,7 +855,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_close", "[changeset][db]
 	test_request req;
 	req.set_header("REQUEST_METHOD", "PUT");
 	req.set_header("REQUEST_URI", "/api/0.6/changeset/51/close");
-	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("HTTP_AUTHORIZATION", bearertoken);
 	req.set_header("REMOTE_ADDR", "127.0.0.1");
 
 	// execute the request
@@ -864,7 +871,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_close", "[changeset][db]
 	test_request req;
 	req.set_header("REQUEST_METHOD", "PUT");
 	req.set_header("REQUEST_URI", "/api/0.6/changeset/53/close");
-	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("HTTP_AUTHORIZATION", bearertoken);
 	req.set_header("REMOTE_ADDR", "127.0.0.1");
 
 	// execute the request
@@ -879,7 +886,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_close", "[changeset][db]
 	test_request req;
 	req.set_header("REQUEST_METHOD", "PUT");
 	req.set_header("REQUEST_URI", "/api/0.6/changeset/666/close");
-	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("HTTP_AUTHORIZATION", bearertoken);
 	req.set_header("REMOTE_ADDR", "127.0.0.1");
 
 	// execute the request
@@ -894,7 +901,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_close", "[changeset][db]
 	test_request req;
 	req.set_header("REQUEST_METHOD", "PUT");
 	req.set_header("REQUEST_URI", "/api/0.6/changeset/54/close");
-	req.set_header("HTTP_AUTHORIZATION", baseauth);
+	req.set_header("HTTP_AUTHORIZATION", bearertoken);
 	req.set_header("REMOTE_ADDR", "127.0.0.1");
 
 	// execute the request

@@ -15,7 +15,6 @@ target_sources(cgimap_core PRIVATE
     http.cpp
     logger.cpp
     mime_types.cpp
-    basicauth.cpp
     oauth2.cpp
     options.cpp
     osm_responder.cpp
@@ -76,7 +75,6 @@ target_link_libraries(cgimap_core
     ZLIB::ZLIB
     CryptoPP::CryptoPP
     Libmemcached::Libmemcached
-    Argon2::Argon2
     $<$<BOOL:${ENABLE_YAJL}>:YAJL::YAJL>
     PQXX::PQXX)
 

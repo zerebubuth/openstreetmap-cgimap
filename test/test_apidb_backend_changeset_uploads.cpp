@@ -1945,7 +1945,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_message", "[changeset][u
 
 TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset][upload][db]" ) {
 
-  const std::string baseauth = "Basic ZGVtbzpwYXNzd29yZA==";
+  const std::string bearertoken = "Bearer 4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8";
   const std::string generator = "Test";
 
   const std::optional<std::string> none{};
@@ -1960,7 +1960,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
   req.set_header("REQUEST_METHOD", "POST");
   req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
   req.set_header("REMOTE_ADDR", "127.0.0.1");
-  req.set_header("HTTP_AUTHORIZATION", baseauth);
+  req.set_header("HTTP_AUTHORIZATION", bearertoken);
 
   // Prepare users, changesets
   SECTION("Initialize test data") {
@@ -1968,10 +1968,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     tdb.run_sql(R"(
          INSERT INTO users (id, email, pass_crypt, pass_salt, creation_time, display_name, data_public, status)
          VALUES
-           (1, 'demo@example.com', '3wYbPiOxk/tU0eeIDjUhdvi8aDP3AbFtwYKKxF1IhGg=',
-                                     'sha512!10000!OUQLgtM7eD8huvanFT5/WtWaCwdOdrir8QOtFwxhO0A=',
-                                     '2013-11-14T02:10:00Z', 'demo', true, 'confirmed'),
-           (2, 'user_2@example.com', '', '', '2013-11-14T02:10:00Z', 'user_2', false, 'active');
+           (1, 'demo@example.com', 'x', '', '2013-11-14T02:10:00Z', 'demo', true, 'confirmed'),
+           (2, 'user_2@example.com', 'x', '', '2013-11-14T02:10:00Z', 'user_2', false, 'active');
   
         INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes)
         VALUES
@@ -1984,7 +1982,13 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
   
         INSERT INTO user_blocks (user_id, creator_id, reason, ends_at, needs_view)
         VALUES (1,  2, '', now() at time zone 'utc' - ('1 hour' ::interval), false);
+
+        INSERT INTO oauth_applications (id, owner_type, owner_id, name, uid, secret, redirect_uri, scopes, confidential, created_at, updated_at) 
+         VALUES (3, 'User', 1, 'App 1', 'dHKmvGkmuoMjqhCNmTJkf-EcnA61Up34O1vOHwTSvU8', '965136b8fb8d00e2faa2faaaed99c0ec10225518d0c8d9fb1d2af701e87eb68c', 
+                'http://demo.localhost:3000', 'write_api read_gpx', false, '2021-04-12 17:53:30', '2021-04-12 17:53:30');
   
+        INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token) 
+         VALUES (67, 1, 3, '4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8', NULL, NULL, NULL, '2021-04-14 19:38:21', 'write_api', '');
         )"
     );
   }
@@ -1992,7 +1996,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
   SECTION("User providing wrong password"){
 
     // set up request headers from test case
-    req.set_header("HTTP_AUTHORIZATION", "Basic ZGVtbzppbnZhbGlkcGFzc3dvcmQK");
+    req.set_header("HTTP_AUTHORIZATION", "Bearer ZGVtbzppbnZhbGlkcGFzc3dvcmQK");
 
     req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
            <osmChange version="0.6" generator="iD">
@@ -2005,6 +2009,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     REQUIRE(req.response_status() == 401);
   }
 
+/*
   SECTION("User logging on with display name (different case)")
   {
     // set up request headers from test case
@@ -2073,6 +2078,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
 
     tdb.run_sql(R"(UPDATE users SET status = 'confirmed' where id = 1;)");
   }
+*/
 
   SECTION("User is blocked (needs_view)")
   {
@@ -2454,7 +2460,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
       new global_settings_enable_upload_rate_limiter_test_class());
   global_settings::set_configuration(std::move(test_settings));
 
-  const std::string baseauth = "Basic ZGVtbzpwYXNzd29yZA==";
+  const std::string bearertoken = "Bearer 4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8";
   const std::string generator = "Test";
 
   auto sel_factory = tdb.get_data_selection_factory();
@@ -2468,9 +2474,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
     tdb.run_sql(R"(
              INSERT INTO users (id, email, pass_crypt, pass_salt, creation_time, display_name, data_public, status)
              VALUES
-               (1, 'demo@example.com', '3wYbPiOxk/tU0eeIDjUhdvi8aDP3AbFtwYKKxF1IhGg=',
-                                         'sha512!10000!OUQLgtM7eD8huvanFT5/WtWaCwdOdrir8QOtFwxhO0A=',
-                                         '2013-11-14T02:10:00Z', 'demo', true, 'confirmed'),
+               (1, 'demo@example.com', 'xx', '', '2013-11-14T02:10:00Z', 'demo', true, 'confirmed'),
                (2, 'user_2@example.com', '', '', '2013-11-14T02:10:00Z', 'user_2', false, 'active');
   
             INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes)
@@ -2485,6 +2489,13 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
             VALUES (1,  2, '', now() at time zone 'utc' - ('1 hour' ::interval), false);
 
             SELECT setval('current_nodes_id_seq', 14000000000, false);
+
+            INSERT INTO oauth_applications (id, owner_type, owner_id, name, uid, secret, redirect_uri, scopes, confidential, created_at, updated_at) 
+             VALUES (3, 'User', 1, 'App 1', 'dHKmvGkmuoMjqhCNmTJkf-EcnA61Up34O1vOHwTSvU8', '965136b8fb8d00e2faa2faaaed99c0ec10225518d0c8d9fb1d2af701e87eb68c', 
+                'http://demo.localhost:3000', 'write_api read_gpx', false, '2021-04-12 17:53:30', '2021-04-12 17:53:30');
+
+            INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token) 
+              VALUES (67, 1, 3, '4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8', NULL, NULL, NULL, '2021-04-14 19:38:21', 'write_api', '');
   
             )"
     );
@@ -2525,7 +2536,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
     test_request req;
     req.set_header("REQUEST_METHOD", "POST");
     req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
-    req.set_header("HTTP_AUTHORIZATION", baseauth);
+    req.set_header("HTTP_AUTHORIZATION", bearertoken);
     req.set_header("REMOTE_ADDR", "127.0.0.1");
 
     req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
@@ -2559,7 +2570,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
       test_request req;
       req.set_header("REQUEST_METHOD", "POST");
       req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
-      req.set_header("HTTP_AUTHORIZATION", baseauth);
+      req.set_header("HTTP_AUTHORIZATION", bearertoken);
       req.set_header("REMOTE_ADDR", "127.0.0.1");
 
       std::string nodes;

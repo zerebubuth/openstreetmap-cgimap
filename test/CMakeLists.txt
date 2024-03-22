@@ -58,24 +58,6 @@ if(BUILD_TESTING)
         COMMAND test_parse_id_list)
 
 
-    ################
-    # test_basicauth
-    ################
-    add_executable(test_basicauth
-        test_basicauth.cpp
-        test_request.cpp)
-
-    target_link_libraries(test_basicauth
-        cgimap_common_compiler_options
-        cgimap_core
-        Boost::program_options
-        PQXX::PQXX
-        catch2)
-
-    add_test(NAME test_basicauth
-        COMMAND test_basicauth)
-
-
     ###########
     # test_oauth2
     ###########
@@ -290,7 +272,6 @@ if(BUILD_TESTING)
 
     add_dependencies(check test_core
                            test_parse_id_list
-                           test_basicauth
                            test_oauth2
                            test_http
                            test_parse_time

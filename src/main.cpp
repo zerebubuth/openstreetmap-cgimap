@@ -138,7 +138,6 @@ void get_options(int argc, char **argv, po::variables_map &options) {
     ("scale", po::value<long>(), "conversion factor from double lat/lon to internal int format")
     ("max-relation-members", po::value<int>(), "max number of relation members per relation")
     ("max-element-tags", po::value<int>(), "max number of tags per OSM element")
-    ("basic_auth_support", po::value<bool>(), "enable HTTP basic authentication support")
     ("ratelimit-upload", po::value<bool>(), "enable rate limiting for changeset upload")
     ;
   // clang-format on
