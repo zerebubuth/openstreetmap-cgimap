@@ -88,10 +88,6 @@ FCGI port number (e.g. 8000) to listen on. This option is for backwards compatib
 .TP
 .BR \-\-socket =\fISOCKET\fR
 FCGI port number (e.g. :8000) or UNIX socket to listen on.
-.TP
-.BR \-\-backend =\fIBACKEND\fR
-Backend to use, available options are: apidb, staticxml.
-Default is apidb.
 .SS ApiDB backend options
 .TP
 .BR \-\-dbname =\fIDBNAME\fR
@@ -155,7 +151,4 @@ Database character set to use for API write operations, if different from \-\-ch
 .TP
 .BR \-\-update\-dbport =\fIUPDATEPORT\fR
 Database port number or UNIX socket file name to use for API write operations, if different from \-\-dbport.
-.SS Static XML backend options:
-.TP
-.BR \-\-file =\fIFILE\fR
-File to load static OSM XML from.
+

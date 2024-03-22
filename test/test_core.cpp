@@ -9,9 +9,9 @@
 
 #include "cgimap/process_request.hpp"
 #include "cgimap/output_buffer.hpp"
-#include "cgimap/backend/staticxml/staticxml.hpp"
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/time.hpp"
+#include "staticxml.hpp"
 
 #include <boost/program_options.hpp>
 #include <fmt/core.h>

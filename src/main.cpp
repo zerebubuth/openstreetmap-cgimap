@@ -53,8 +53,6 @@ using namespace std::chrono_literals;
 #include "cgimap/backend/apidb/apidb.hpp"
 #endif
 
-#include "cgimap/backend/staticxml/staticxml.hpp"
-
 namespace po = boost::program_options;
 
 namespace {
@@ -295,7 +293,6 @@ void setup_backends() {
 #if ENABLE_APIDB
   register_backend(make_apidb_backend());
 #endif
-  register_backend(make_staticxml_backend());
 }
 
 

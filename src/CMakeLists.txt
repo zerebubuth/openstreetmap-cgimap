@@ -99,4 +99,4 @@ target_link_libraries(cgimap_fcgi
 
 
 add_subdirectory(backend/apidb)
-add_subdirectory(backend/staticxml)
+
