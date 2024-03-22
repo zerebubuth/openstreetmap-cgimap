@@ -291,7 +291,6 @@ if(BUILD_TESTING)
     add_dependencies(check test_core
                            test_parse_id_list
                            test_basicauth
-                           test_oauth
                            test_oauth2
                            test_http
                            test_parse_time
@@ -300,7 +299,6 @@ if(BUILD_TESTING)
 
     if(ENABLE_APIDB)
       add_dependencies(check test_apidb_backend_nodes
-                             test_apidb_backend_oauth
                              test_apidb_backend_oauth2
                              test_apidb_backend_historic
                              test_apidb_backend_changesets
