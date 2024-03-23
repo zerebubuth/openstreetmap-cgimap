@@ -10,7 +10,6 @@
 #include "cgimap/backend/apidb/apidb.hpp"
 #include "cgimap/backend/apidb/readonly_pgsql_selection.hpp"
 #include "cgimap/backend/apidb/pgsql_update.hpp"
-#include "cgimap/backend/apidb/oauth_store.hpp"
 #include "cgimap/backend.hpp"
 #include "cgimap/options.hpp"
 
@@ -35,18 +34,6 @@ struct apidb_backend : public backend {
       ("disable-api-write", "disable API write operations")
       ("dbport", po::value<string>(),
        "database port number or UNIX socket file name")
-      ("oauth-dbname", po::value<string>(),
-       "database name to use for OAuth, if different from --dbname")
-      ("oauth-host", po::value<string>(),
-       "database server host for OAuth, if different from --host")
-      ("oauth-username", po::value<string>(),
-       "database user name for OAuth, if different from --username")
-      ("oauth-password", po::value<string>(),
-       "database password for OAuth, if different from --password")
-      ("oauth-charset", po::value<string>(),
-       "database character set for OAuth, if different from --charset")
-      ("oauth-dbport", po::value<string>(),
-       "database port for OAuth, if different from --dbport")
       ("update-dbname", po::value<string>(),
        "database name to use for API write operations, if different from --dbname")
       ("update-host", po::value<string>(),
@@ -72,10 +59,6 @@ struct apidb_backend : public backend {
 
   std::unique_ptr<data_update::factory> create_data_update(const po::variables_map &opts) override {
     return std::make_unique<pgsql_update::factory>(opts);
-  }
-
-  std::unique_ptr<oauth::store> create_oauth_store(const po::variables_map &opts) override {
-    return std::make_unique<oauth_store>(opts);
   }
 
 private:

@@ -479,8 +479,7 @@ void check_response(std::istream &expected, std::istream &actual) {
  */
 void run_test(fs::path test_case, rate_limiter &limiter,
               const std::string &generator, const routes &route,
-              data_selection::factory& factory,
-              oauth::store* store) {
+              data_selection::factory& factory) {
   try {
     test_request req;
 
@@ -489,7 +488,7 @@ void run_test(fs::path test_case, rate_limiter &limiter,
     setup_request_headers(req, in);
 
     // execute the request
-    process_request(req, limiter, generator, route, factory, nullptr, store);
+    process_request(req, limiter, generator, route, factory, nullptr);
 
     // compare the result to what we're expecting
     try {
@@ -527,7 +526,7 @@ osm_user_role_t parse_role(const std::string &str) {
   }
 }
 
-user_roles_t get_user_roles(const pt::ptree &config)
+user_roles_t parse_user_roles(const pt::ptree &config)
 {
   user_roles_t user_roles;
   boost::optional< const pt::ptree& > users = config.get_child_optional("users");
@@ -554,84 +553,65 @@ user_roles_t get_user_roles(const pt::ptree &config)
   return user_roles;
 }
 
-struct test_oauth : public oauth::store {
-
-  explicit test_oauth(const pt::ptree &config) {
-    boost::optional<const pt::ptree &> consumers =
-      config.get_child_optional("consumers");
-    if (consumers) {
-      for (const auto &entry : *consumers) {
-        std::string key = entry.first;
-        std::string data = entry.second.data();
-
-        if (!key.empty() && !data.empty()) {
-          m_consumers.emplace(key, data);
-        }
-      }
+user_roles_t get_user_roles(const fs::path &roles_file)
+{
+  if (fs::is_regular_file(roles_file))
+  {
+    try
+    {
+      pt::ptree config;
+      pt::read_json(roles_file.string(), config);
+      return parse_user_roles(config);
     }
-
-    boost::optional<const pt::ptree &> tokens =
-      config.get_child_optional("tokens");
-    if (tokens) {
-      for (const auto &entry : *tokens) {
-        std::string key = entry.first;
-        auto user_id = entry.second.get<osm_user_id_t>("user_id");
-        std::string secret = entry.second.get<std::string>("secret");
-
-        m_tokens.emplace(key, secret);
-        m_users.emplace(key, user_id);
-      }
+    catch (const std::exception &ex)
+    {
+      throw std::runtime_error(
+          fmt::format("{}, while reading expected JSON.", ex.what()));
     }
   }
+  return {};
+}
 
-  ~test_oauth() override = default;
 
-  std::optional<std::string> consumer_secret(const std::string &consumer_key) override {
-    auto itr = m_consumers.find(consumer_key);
-    if (itr != m_consumers.end()) {
-      return itr->second;
-    } else {
-      return {};
+oauth2_tokens parse_oauth2_tokens(const pt::ptree &config)
+{
+  oauth2_tokens oauth2_tokens;
+  boost::optional< const pt::ptree& > tokens = config.get_child_optional("tokens");
+  if (tokens)
+  {
+    for (const auto &entry : *tokens)
+    {
+      oauth2_token_detail_t detail;
+      auto token = entry.first;
+      detail.api_write = entry.second.get<bool>("api_write", false);
+      detail.expired = entry.second.get<bool>("expired", true);
+      detail.revoked = entry.second.get<bool>("revoked", true);
+      detail.user_id = entry.second.get<osm_user_id_t>("user_id", {});
+      oauth2_tokens[token] = std::move(detail);
     }
   }
+  return oauth2_tokens;
+}
 
-  std::optional<std::string> token_secret(const std::string &token_id) override {
-    auto itr = m_tokens.find(token_id);
-    if (itr != m_tokens.end()) {
-      return itr->second;
-    } else {
-      return {};
+oauth2_tokens get_oauth2_tokens(const fs::path &oauth2_file)
+{
+  if (fs::is_regular_file(oauth2_file))
+  {
+    try
+    {
+      pt::ptree config;
+      pt::read_json(oauth2_file.string(), config);
+      return parse_oauth2_tokens(config);
+    }
+    catch (const std::exception &ex)
+    {
+      throw std::runtime_error(
+          fmt::format("{}, while reading expected JSON.", ex.what()));
     }
   }
+  return {};
+}
 
-  bool use_nonce(const std::string &nonce, uint64_t timestamp) override {
-    // pretend all nonces are new for these tests
-    return true;
-  }
-
-  bool allow_read_api(const std::string &token_id) override {
-    // everyone can read the api
-    return true;
-  }
-
-  bool allow_write_api(const std::string &token_id) override {
-    // everyone can write the api for the moment
-    return true;
-  }
-
-  std::optional<osm_user_id_t> get_user_id_for_token(const std::string &token_id) override {
-    auto itr = m_users.find(token_id);
-    if (itr != m_users.end()) {
-      return itr->second;
-    } else {
-      return {};
-    }
-  }
-
-private:
-  std::map<std::string, std::string> m_consumers, m_tokens;
-  std::map<std::string, osm_user_id_t> m_users;
-};
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {
@@ -641,12 +621,12 @@ int main(int argc, char *argv[]) {
 
   fs::path test_directory = argv[1];
   fs::path data_file = test_directory / "data.osm";
-  fs::path oauth_file = test_directory / "oauth.json";
+  fs::path oauth2_file = test_directory / "oauth2.json";
   fs::path roles_file = test_directory / "roles.json";
   std::vector<fs::path> test_cases;
 
-  std::unique_ptr<oauth::store> store;
   user_roles_t user_roles;
+  oauth2_tokens oauth2_tokens;
 
   try {
     if (fs::is_directory(test_directory) == false) {
@@ -668,30 +648,8 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    if (fs::is_regular_file(roles_file)) {
-      pt::ptree config;
-
-      try {
-        pt::read_json(roles_file.string(), config);
-      } catch (const std::exception &ex) {
-        throw std::runtime_error
-          (fmt::format("{}, while reading expected JSON.", ex.what()));
-      }
-      user_roles = get_user_roles(config);
-    }
-
-    if (fs::is_regular_file(oauth_file)) {
-      pt::ptree config;
-
-      try {
-        pt::read_json(oauth_file.string(), config);
-      } catch (const std::exception &ex) {
-        throw std::runtime_error
-          (fmt::format("{}, while reading expected JSON.", ex.what()));
-      }
-
-      store = std::make_unique<test_oauth>(config);
-    }
+    user_roles = get_user_roles(roles_file);
+    oauth2_tokens = get_oauth2_tokens(oauth2_file);
 
   } catch (const std::exception &e) {
     std::cerr << "EXCEPTION: " << e.what() << std::endl;
@@ -707,14 +665,14 @@ int main(int argc, char *argv[]) {
     vm.insert(std::make_pair(std::string("file"),
                              po::variable_value(data_file.native(), false)));
 
-    auto data_backend = make_staticxml_backend(user_roles);
+    auto data_backend = make_staticxml_backend(user_roles, oauth2_tokens);
     auto factory = data_backend->create(vm);
     null_rate_limiter limiter;
     routes route;
 
     for (fs::path test_case : test_cases) {
       std::string generator = fmt::format(PACKAGE_STRING " (test {})", test_case.string());
-      run_test(test_case, limiter, generator, route, *factory, store.get());
+      run_test(test_case, limiter, generator, route, *factory);
     }
 
   } catch (const std::exception &e) {

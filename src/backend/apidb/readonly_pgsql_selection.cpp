@@ -789,42 +789,6 @@ bool readonly_pgsql_selection::is_user_blocked(const osm_user_id_t id) {
   return !res.empty();
 }
 
-bool readonly_pgsql_selection::get_user_id_pass(const std::string& user_name, osm_user_id_t & id,
-						 std::string & pass_crypt, std::string & pass_salt) {
-
-  std::string email = boost::algorithm::trim_copy(user_name);
-
-  m.prepare("get_user_id_pass",
-    R"(SELECT id, pass_crypt, COALESCE(pass_salt, '') as pass_salt FROM users
-           WHERE (email = $1 OR display_name = $2)
-             AND (status = 'active' or status = 'confirmed') LIMIT 1
-      )");
-
-  m.prepare("get_user_id_pass_case_insensitive",
-    R"(SELECT id, pass_crypt, COALESCE(pass_salt, '') as pass_salt FROM users
-           WHERE (LOWER(email) = LOWER($1) OR LOWER(display_name) = LOWER($2))
-             AND (status = 'active' or status = 'confirmed')
-      )");
-
-
-  auto res = m.exec_prepared("get_user_id_pass", email, user_name);
-
-  if (res.empty()) {
-    // try case insensitive query
-    res = m.exec_prepared("get_user_id_pass_case_insensitive", email, user_name);
-    // failure, in case no entries or multiple entries were found
-    if (res.size() != 1)
-      return false;
-  }
-
-  auto row = res[0];
-  id = row["id"].as<osm_user_id_t>();
-  pass_crypt = row["pass_crypt"].as<std::string>();
-  pass_salt = row["pass_salt"].as<std::string>();
-
-  return true;
-}
-
 std::set< osm_user_role_t > readonly_pgsql_selection::get_roles_for_user(osm_user_id_t id)
 {
   std::set<osm_user_role_t> roles;

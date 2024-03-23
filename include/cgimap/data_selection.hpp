@@ -172,11 +172,6 @@ public:
   // is user currently blocked?
   virtual bool is_user_blocked(const osm_user_id_t) = 0;
 
-  virtual bool get_user_id_pass(const std::string& display_name, 
-                                osm_user_id_t &,
-                                std::string & pass_crypt, 
-                                std::string & pass_salt) = 0;
-
   virtual std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t id) = 0;
 
   virtual std::optional< osm_user_id_t > get_user_id_for_oauth2_token(
