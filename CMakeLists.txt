@@ -133,7 +133,6 @@ target_link_libraries(openstreetmap_cgimap
     cgimap_common_compiler_options
     cgimap_core
     cgimap_fcgi
-    cgimap_staticxml
     $<$<BOOL:${ENABLE_APIDB}>:cgimap_apidb>
     Boost::program_options
     PQXX::PQXX)
@@ -152,7 +151,7 @@ if (CLANG_TIDY)
 
     file(GLOB CT_CHECK_FILES src/*.cpp src/api06/*.cpp src/api06/changeset_upload/*.cpp src/api07/*.cpp
                              src/backend/apidb/*.cpp src/backend/apidb/changeset_upload/*.cpp
-                             src/backend/staticxml/*.cpp test/*.cpp test/*.hpp)
+                             test/*.cpp test/*.hpp)
 
     add_custom_target(clang-tidy
         ${CLANG_TIDY}
@@ -181,7 +180,6 @@ if (ENABLE_INSTALL)
   if (BUILD_SHARED_LIBS)
     install(TARGETS cgimap_core DESTINATION lib)
     install(TARGETS cgimap_fcgi DESTINATION lib)
-    install(TARGETS cgimap_staticxml DESTINATION lib)
     if (ENABLE_APIDB)
       install(TARGETS cgimap_apidb DESTINATION lib)
     endif()
