@@ -10,6 +10,7 @@ target_sources(cgimap_core PRIVATE
     backend.cpp
     backend.cpp
     bbox.cpp
+    brotli.cpp
     choose_formatter.cpp
     handler.cpp
     http.cpp
@@ -78,6 +79,9 @@ target_link_libraries(cgimap_core
     CryptoPP::CryptoPP
     Libmemcached::Libmemcached
     Argon2::Argon2
+    $<$<BOOL:${ENABLE_BROTLI}>:Brotli::common>
+    $<$<BOOL:${ENABLE_BROTLI}>:Brotli::encoder>
+    $<$<BOOL:${ENABLE_BROTLI}>:Brotli::decoder>
     $<$<BOOL:${ENABLE_YAJL}>:YAJL::YAJL>
     PQXX::PQXX)
 

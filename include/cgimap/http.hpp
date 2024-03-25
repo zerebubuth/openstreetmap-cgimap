@@ -21,6 +21,10 @@
 #ifdef HAVE_LIBZ
 #include "cgimap/zlib.hpp"
 #endif
+#if HAVE_BROTLI
+#include "cgimap/brotli.hpp"
+#endif
+
 #include "cgimap/output_buffer.hpp"
 
 /**
@@ -283,6 +287,17 @@ public:
   }
 };
 #endif /* HAVE_LIBZ */
+
+#if HAVE_BROTLI
+
+class brotli : public encoding {
+public:
+  brotli() : encoding("br"){}
+  std::unique_ptr<output_buffer> buffer(output_buffer& out) override {
+    return std::make_unique<brotli_output_buffer>(out);
+  }
+};
+#endif
 
 /*
  * Parses an Accept-Encoding header and returns the chosen

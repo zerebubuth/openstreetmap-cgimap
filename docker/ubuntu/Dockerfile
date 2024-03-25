@@ -5,7 +5,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -qq && \
     apt-get install -y gcc g++ make cmake \
-       libfcgi-dev libxml2-dev libmemcached-dev \
+       libfcgi-dev libxml2-dev libmemcached-dev libbrotli-dev \
        libboost-program-options-dev \
        libcrypto++-dev libyajl-dev \
        libpqxx-dev zlib1g-dev libargon2-dev libfmt-dev \

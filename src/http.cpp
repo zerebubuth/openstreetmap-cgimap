@@ -233,6 +233,7 @@ std::unique_ptr<encoding> choose_encoding(const string &accept_encoding) {
   float identity_quality = 0.001;
   float deflate_quality = 0.000;
   float gzip_quality = 0.000;
+  float brotli_quality = 0.000;
 
   for (const string &encoding : encodings) {
     std::smatch what;
@@ -262,6 +263,8 @@ std::unique_ptr<encoding> choose_encoding(const string &accept_encoding) {
       deflate_quality = quality;
     } else if (al::iequals(name, "gzip")) {
       gzip_quality = quality;
+    } else if (al::iequals(name, "br")) {
+      brotli_quality = quality;
     } else if (al::iequals(name, "*")) {
       if (identity_quality == 0.000)
         identity_quality = quality;
@@ -269,9 +272,18 @@ std::unique_ptr<encoding> choose_encoding(const string &accept_encoding) {
         deflate_quality = quality;
       if (gzip_quality == 0.001)
         gzip_quality = quality;
+      if (brotli_quality == 0.001)
+        brotli_quality = quality;
     }
   }
 
+#if HAVE_BROTLI
+  if (brotli_quality > 0.0 && brotli_quality >= identity_quality &&
+      brotli_quality >= deflate_quality &&
+      brotli_quality >= gzip_quality) {
+    return std::make_unique<brotli>();
+  }
+#endif
 #ifdef HAVE_LIBZ
 #ifdef ENABLE_DEFLATE
   if (deflate_quality > 0.0 && deflate_quality >= gzip_quality &&

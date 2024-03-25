@@ -37,6 +37,7 @@ endif()
 ###############
 option(ENABLE_APIDB "Enable APIDB backend, as used by the OSM servers" ON)
 option(ENABLE_YAJL "Enable JSON output with the YAJL library" ON)
+option(ENABLE_BROTLI "Enable Brotli library" ON)
 option(ENABLE_FMT_HEADER "Enable FMT header only mode" ON)
 option(ENABLE_COVERAGE "Compile with coverage info collection" OFF)
 option(ENABLE_PROFILING "Compile with profiling" OFF)
@@ -101,6 +102,12 @@ if(ENABLE_YAJL)
 endif()
 target_compile_definitions(cgimap_common_compiler_options INTERFACE
     HAVE_YAJL=$<BOOL:${YAJL_FOUND}>)
+
+if(ENABLE_BROTLI)
+    find_package(Brotli COMPONENTS encoder decoder common REQUIRED)
+endif()
+target_compile_definitions(cgimap_common_compiler_options INTERFACE
+    HAVE_BROTLI=$<BOOL:${Brotli_FOUND}>)
 
 find_package(Fcgi REQUIRED)
 target_compile_definitions(cgimap_common_compiler_options INTERFACE
