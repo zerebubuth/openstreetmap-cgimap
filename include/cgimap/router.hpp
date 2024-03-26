@@ -12,10 +12,10 @@
 
 #include "cgimap/types.hpp"
 
-#include <string>
-#include <list>
-#include <stdexcept>
 #include <iostream>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 #include <boost/fusion/container/generation/make_cons.hpp>
 #include <boost/fusion/include/make_cons.hpp>
@@ -43,7 +43,7 @@ using boost::fusion::as_list;
 namespace result_of = boost::fusion::result_of;
 
 // iterates over the split up parts of the item being matched.
-using part_iterator = std::list<std::string>::const_iterator;
+using part_iterator = std::vector<std::string>::const_iterator;
 
 /**
  * thrown when a match error occurs, giving some information about the
