@@ -15,7 +15,6 @@
 
 #include "cgimap/data_selection.hpp"
 #include "cgimap/http.hpp"
-#include "cgimap/oauth.hpp"
 #include "cgimap/request_helpers.hpp"
 
 namespace oauth2 {

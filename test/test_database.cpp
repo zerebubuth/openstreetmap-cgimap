@@ -105,7 +105,6 @@ void test_database::setup(const std::filesystem::path& sql_file) {
     vm.notify();
     m_readonly_factory = apidb->create(vm);
     m_update_factory = apidb->create_data_update(vm);
-    m_oauth_store = apidb->create_oauth_store(vm);
   }
 }
 
@@ -122,9 +121,6 @@ test_database::~test_database() {
   }
   if (m_update_factory) {
       m_update_factory.reset();
-  }
-  if (m_oauth_store) {
-    m_oauth_store.reset();
   }
 
   if (!m_db_name.empty()) {
@@ -222,14 +218,6 @@ std::unique_ptr<data_update> test_database::get_data_update() {
   txn_owner_readwrite.reset();
   txn_owner_readwrite = m_update_factory->get_default_transaction();
   return (*m_update_factory).make_data_update(*txn_owner_readwrite);
-}
-
-std::shared_ptr<oauth::store> test_database::get_oauth_store() {
-  if (!m_oauth_store) {
-    throw std::runtime_error("OAuth store not available.");
-  }
-
-  return m_oauth_store;
 }
 
 int test_database::run_sql(const std::string &sql) {

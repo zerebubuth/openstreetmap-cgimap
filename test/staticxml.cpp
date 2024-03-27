@@ -312,13 +312,14 @@ inline void write_element<relation>(const relation &r, output_formatter &formatt
 }
 
 struct static_data_selection : public data_selection {
-  explicit static_data_selection(database& db) : static_data_selection(db, {}) {}
+  explicit static_data_selection(database& db) : static_data_selection(db, {}, {}) {}
 
-  explicit static_data_selection(database& db, user_roles_t m_user_roles)
+  explicit static_data_selection(database& db, user_roles_t m_user_roles, oauth2_tokens m_oauth2_tokens)
   : m_db(db)
   , m_include_changeset_comments(false)
   , m_redactions_visible(false)
-  , m_user_roles(m_user_roles) {}
+  , m_user_roles(m_user_roles)
+  , m_oauth2_tokens(m_oauth2_tokens){}
 
   ~static_data_selection() override = default;
 
@@ -591,6 +592,16 @@ struct static_data_selection : public data_selection {
   std::optional< osm_user_id_t > get_user_id_for_oauth2_token(
         const std::string &token_id, bool &expired, bool &revoked,
         bool &allow_api_write) {
+
+    auto itr = m_oauth2_tokens.find(token_id);
+    if (itr != m_oauth2_tokens.end())
+    {
+      expired = itr->second.expired;
+      revoked = itr->second.revoked;
+      allow_api_write = itr->second.api_write;
+      return itr->second.user_id;
+    }
+
     expired = false;
     revoked = false;
     allow_api_write = false;
@@ -751,6 +762,7 @@ private:
   std::set<osm_edition_t> m_historic_nodes, m_historic_ways, m_historic_relations;
   bool m_include_changeset_comments, m_redactions_visible;
   user_roles_t m_user_roles;
+  oauth2_tokens m_oauth2_tokens;
 };
 
 template <>
@@ -769,16 +781,17 @@ const std::map<id_version, relation> &static_data_selection::map_of<relation>() 
 }
 
 struct factory : public data_selection::factory {
-  explicit factory(const std::string &file) : factory(file, {}) {}
+  explicit factory(const std::string &file) : factory(file, {}, {}) {}
 
-  explicit factory(const std::string &file, user_roles_t user_roles)
-    : m_database(parse_xml(file.c_str())),
-      m_user_roles(user_roles) {}
+  explicit factory(const std::string &file, user_roles_t user_roles, oauth2_tokens oauth2_tokens)
+    : m_database(parse_xml(file.c_str()))
+    , m_user_roles(user_roles)
+    , m_oauth2_tokens(oauth2_tokens) {}
 
   ~factory() override = default;
 
   std::unique_ptr<data_selection> make_selection(Transaction_Owner_Base&) const override {
-    return std::make_unique<static_data_selection>(*m_database, m_user_roles);
+    return std::make_unique<static_data_selection>(*m_database, m_user_roles, m_oauth2_tokens);
   }
 
   std::unique_ptr<Transaction_Owner_Base> get_default_transaction() override {
@@ -788,15 +801,17 @@ struct factory : public data_selection::factory {
 private:
   std::unique_ptr<database> m_database;
   user_roles_t m_user_roles;
+  oauth2_tokens m_oauth2_tokens;
 };
 
 struct staticxml_backend : public backend {
-  staticxml_backend() : staticxml_backend(user_roles_t{}) {}
+  staticxml_backend() : staticxml_backend(user_roles_t{}, oauth2_tokens{}) {}
 
-  staticxml_backend(user_roles_t user_roles) {
+  staticxml_backend(user_roles_t user_roles, oauth2_tokens oauth2_tokens) {
     m_options.add_options()("file", po::value<std::string>()->required(),
                             "file to load static OSM XML from.");
     m_user_roles = user_roles;
+    m_oauth2_tokens = oauth2_tokens;
   }
 
   ~staticxml_backend() override = default;
@@ -806,26 +821,23 @@ struct staticxml_backend : public backend {
 
   std::unique_ptr<data_selection::factory> create(const po::variables_map &opts) override {
     std::string file = opts["file"].as<std::string>();
-    return std::make_unique<factory>(file, m_user_roles);
+    return std::make_unique<factory>(file, m_user_roles, m_oauth2_tokens);
   }
 
   std::unique_ptr<data_update::factory> create_data_update(const po::variables_map &) override {
     return nullptr;   // Data update operations not supported by staticxml backend
   }
 
-  std::unique_ptr<oauth::store> create_oauth_store(const po::variables_map &) override {
-    return std::unique_ptr<oauth::store>();
-  }
-
 private:
   std::string m_name{"staticxml"};
   po::options_description m_options{"Static XML backend options"};
   user_roles_t m_user_roles;
+  oauth2_tokens m_oauth2_tokens;
 };
 
 } // anonymous namespace
 
 
-std::unique_ptr<backend> make_staticxml_backend(user_roles_t user_roles) {
-  return std::make_unique<staticxml_backend>(user_roles);
+std::unique_ptr<backend> make_staticxml_backend(user_roles_t user_roles, oauth2_tokens oauth2_tokens) {
+  return std::make_unique<staticxml_backend>(user_roles, oauth2_tokens);
 }

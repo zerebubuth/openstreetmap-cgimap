@@ -28,13 +28,6 @@ openstreetmap-cgimap \- FCGI version of the OpenStreetMap API
 [\fB\-\-cachesize \fISIZE\fR]
 [\fB\-\-dbport \fIPORT\fR]
 ] [
-[\fB\-\-oauth\-dbname \fIOAUTHDBNAME\fR]
-[\fB\-\-oauth\-host \fIOAUTHHOST\fR]
-[\fB\-\-oauth\-username \fIOAUTHUSER\fR]
-[\fB\-\-oauth\-password \fIOAUTHPASS\fR]
-[\fB\-\-oauth\-charset \fIOAUTHCHARSET\fR]
-[\fB\-\-oauth\-dbport \fIOAUTHPORT\fR]
-] [
 [\fB\-\-update\-dbname \fIUPDATEDBNAME\fR]
 [\fB\-\-update\-host \fIUPDATEHOST\fR]
 [\fB\-\-update\-username \fIUPDATEUSER\fR]
@@ -115,24 +108,6 @@ Default is 1000.
 .TP
 .BR \-\-dbport =\fIPORT\fR
 Database port number or UNIX socket file name.
-.TP
-.BR \-\-oauth\-dbname =\fIOAUTHDBNAME\fR
-Database name to use for OAuth, if different from \-\-dbname.
-.TP
-.BR \-\-oauth\-host =\fIOAUTHHOST\fR
-Database server host to use for OAuth, if different from \-\-host.
-.TP
-.BR \-\-oauth\-username =\fIOAUTHUSER\fR
-Database user name to use for OAuth, if different from \-\-username.
-.TP
-.BR \-\-oauth\-password =\fIOAUTHPASS\fR
-Database password to use for OAuth, if different from \-\-password.
-.TP
-.BR \-\-oauth\-charset =\fIOAUTHCHARSET\fR
-Database character set to use for OAuth, if different from \-\-charset.
-.TP
-.BR \-\-oauth\-dbport =\fIOAUTHPORT\fR
-Database port number or UNIX socket file name to use for OAuth, if different from \-\-dbport.
 .TP
 .BR \-\-update\-dbname =\fIUPDATEDBNAME\fR
 Database name to use for API write operations, if different from \-\-dbname.

@@ -401,35 +401,6 @@ struct is_copacetic  {
   bool operator()(const T &) const { return false; }
 };
 
-template <>
-bool is_copacetic::operator()<oauth::validity::copacetic>(
-  const oauth::validity::copacetic &) const {
-  return true;
-}
-
-struct get_oauth_token {
-  template <typename T>
-  std::string operator()(const T &) const {
-    throw std::runtime_error("Type does not contain an OAuth token.");
-  }
-};
-
-template <>
-std::string get_oauth_token::operator()<oauth::validity::copacetic>(
-  const oauth::validity::copacetic &c) const {
-  return c.token;
-}
-
-struct oauth_status_response  {
-  void operator()(const oauth::validity::copacetic &) const {}
-  void operator()(const oauth::validity::not_signed &) const {}
-  void operator()(const oauth::validity::bad_request &) const {
-    throw http::bad_request("Bad OAuth request.");
-  }
-  void operator()(const oauth::validity::unauthorized &u) const {
-    throw http::unauthorized(fmt::format("Unauthorized OAuth request, because {}", u.reason));
-  }
-};
 
 // look in the request get parameters to see if the user requested that
 // redactions be shown
@@ -448,7 +419,6 @@ bool show_redactions_requested(const request &req) {
 // Determine user id and allow_api_write flag based on Basic Auth or OAuth header
 std::optional<osm_user_id_t> determine_user_id (const request& req,
 			        data_selection& selection,
-			        oauth::store* store,
 			        bool& allow_api_write)
 {
   // Try to authenticate user via Basic Auth
@@ -457,36 +427,6 @@ std::optional<osm_user_id_t> determine_user_id (const request& req,
   // Try to authenticate user via OAuth2 Bearer Token
   if (!user_id)
     user_id = oauth2::validate_bearer_token (req, selection, allow_api_write);
-
-  // Try to authenticate user via OAuth 1.0a
-  if (!user_id && store && global_settings::get_oauth_10_support())
-  {
-    oauth::validity::validity oauth_valid = oauth::is_valid_signature (
-        req, *store, *store, *store);
-    if (std::visit(is_copacetic(), oauth_valid))
-    {
-      string token = std::visit(get_oauth_token(), oauth_valid);
-      user_id = store->get_user_id_for_token (token);
-      if (!user_id)
-      {
-        // we can get here if there's a valid OAuth signature, with an
-        // authorised token matching the secret stored in the database,
-        // but that's not assigned to a user ID. perhaps this can
-        // happen due to concurrent revocation? in any case, we don't
-        // want to go any further.
-        logger::message (
-            fmt::format ("Unable to find user ID for token {}.", token));
-        throw http::server_error ("Unable to find user ID for token.");
-      }
-      allow_api_write = store->allow_write_api (token);
-    }
-    else
-    {
-      std::visit(oauth_status_response(), oauth_valid);
-      // if we got here then oauth_status_response didn't throw, which means
-      // the request must have been unsigned.
-    }
-  }
 
   return user_id;
 }
@@ -499,8 +439,7 @@ std::optional<osm_user_id_t> determine_user_id (const request& req,
 void process_request(request &req, rate_limiter &limiter,
                      const string &generator, const routes &route,
                      data_selection::factory& factory,
-                     data_update::factory* update_factory,
-                     oauth::store* store) {
+                     data_update::factory* update_factory) {
   try {
 
     std::set<osm_user_role_t> user_roles;
@@ -518,7 +457,7 @@ void process_request(request &req, rate_limiter &limiter,
     // create a data selection for the request
     auto selection = factory.make_selection(*default_transaction);
 
-    std::optional<osm_user_id_t> user_id = determine_user_id (req, *selection, store, allow_api_write);
+    std::optional<osm_user_id_t> user_id = determine_user_id (req, *selection, allow_api_write);
 
     // Initially assume IP based client key
     string client_key = addr_prefix + ip;

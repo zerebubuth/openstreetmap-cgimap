@@ -48,7 +48,6 @@ struct registry {
   void output_options(std::ostream &out);
   std::unique_ptr<data_selection::factory> create(const po::variables_map &options);
   std::unique_ptr<data_update::factory> create_data_update(const po::variables_map &options);
-  std::unique_ptr<oauth::store> create_oauth_store(const boost::program_options::variables_map &opts);
 
 private:
   using backend_map_t = std::map<std::string, std::unique_ptr<backend> >;
@@ -152,22 +151,6 @@ registry::create_data_update(const po::variables_map &options) {
   return backends[bcknd]->create_data_update(options);
 }
 
-
-std::unique_ptr<oauth::store>
-registry::create_oauth_store(const boost::program_options::variables_map &options) {
-  std::string bcknd = *default_backend;
-
-  if (options.count("backend")) {
-    auto itr =
-        backends.find(options["backend"].as<std::string>());
-    if (itr != backends.end()) {
-      bcknd = itr->first;
-    }
-  }
-
-  return backends[bcknd]->create_oauth_store(options);
-}
-
 registry *registry_ptr = NULL;
 std::mutex registry_mut;
 
@@ -223,12 +206,3 @@ create_update_backend(const po::variables_map &options) {
   return registry_ptr->create_data_update(options);
 }
 
-std::unique_ptr<oauth::store>
-create_oauth_store(const po::variables_map &options) {
-  std::unique_lock<std::mutex> lock(registry_mut);
-  if (registry_ptr == NULL) {
-    registry_ptr = new registry;
-  }
-
-  return registry_ptr->create_oauth_store(options);
-}

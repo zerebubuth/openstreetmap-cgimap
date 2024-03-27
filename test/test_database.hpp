@@ -20,7 +20,6 @@
 
 #include "cgimap/data_selection.hpp"
 #include "cgimap/data_update.hpp"
-#include "cgimap/oauth.hpp"
 
 #include "cgimap/backend/apidb/transaction_manager.hpp"
 
@@ -82,9 +81,6 @@ struct test_database {
   // return a data updater pointing at the current database
   std::unique_ptr<data_update> get_data_update();
 
-  // return an oauth store pointing at the current database
-  std::shared_ptr<oauth::store> get_oauth_store();
-
   // run a (possible set of) SQL strings against the database.
   // intended for setting up data that the test needs.
   int run_sql(const std::string &sql);
@@ -108,9 +104,6 @@ private:
   std::shared_ptr<data_selection::factory> m_readonly_factory;
 
   std::shared_ptr<data_update::factory> m_update_factory;
-
-  // oauth store based on the writeable connection.
-  std::shared_ptr<oauth::store> m_oauth_store;
 
   std::unique_ptr<Transaction_Owner_Base> txn_owner_readonly;
   std::unique_ptr<Transaction_Owner_Base> txn_owner_readwrite;

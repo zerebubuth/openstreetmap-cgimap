@@ -33,7 +33,6 @@ public:
   virtual std::optional<uint32_t> get_relation_max_members() const = 0;
   virtual std::optional<uint32_t> get_element_max_tags() const = 0;
   virtual bool get_basic_auth_support() const = 0;
-  virtual bool get_oauth_10_support() const = 0;
   virtual uint32_t get_ratelimiter_ratelimit(bool) const = 0;
   virtual uint32_t get_ratelimiter_maxdebt(bool) const = 0;
   virtual bool get_ratelimiter_upload() const = 0;
@@ -83,10 +82,6 @@ public:
   }
 
   bool get_basic_auth_support() const override {
-    return true;
-  }
-
-  bool get_oauth_10_support() const override {
     return true;
   }
 
@@ -171,10 +166,6 @@ public:
     return m_basic_auth_support;
   }
 
-  bool get_oauth_10_support() const override {
-    return m_oauth_10_support;
-  }
-
   uint32_t get_ratelimiter_ratelimit(bool moderator) const override {
     if (moderator) {
        return m_moderator_ratelimiter_ratelimit;
@@ -207,7 +198,6 @@ private:
   void set_relation_max_members(const po::variables_map &options);
   void set_element_max_tags(const po::variables_map &options);
   void set_basic_auth_support(const po::variables_map &options);
-  void set_oauth_10_support(const po::variables_map &options);
   void set_ratelimiter_ratelimit(const po::variables_map &options);
   void set_ratelimiter_maxdebt(const po::variables_map &options);
   void set_ratelimiter_upload(const po::variables_map &options);
@@ -224,7 +214,6 @@ private:
   std::optional<uint32_t> m_relation_max_members;
   std::optional<uint32_t> m_element_max_tags;
   bool m_basic_auth_support;
-  bool m_oauth_10_support;
   uint32_t m_ratelimiter_ratelimit;
   uint32_t m_moderator_ratelimiter_ratelimit;
   uint32_t m_ratelimiter_maxdebt;
@@ -271,9 +260,6 @@ public:
 
   // Enable HTTP basic authentication support
   static bool get_basic_auth_support() { return settings->get_basic_auth_support(); }
-
-  // Enable legacy OAuth 1.0 support
-  static bool get_oauth_10_support() { return settings->get_oauth_10_support(); }
 
   // average number of bytes/s to allow each client/moderator
   static uint32_t get_ratelimiter_ratelimit(bool moderator) { return settings->get_ratelimiter_ratelimit(moderator);  }

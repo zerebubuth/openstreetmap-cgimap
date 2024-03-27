@@ -16,7 +16,6 @@
 #include <boost/program_options.hpp>
 #include "cgimap/data_update.hpp"
 #include "cgimap/data_selection.hpp"
-#include "cgimap/oauth.hpp"
 
 /* implement this interface to add a new backend which will be selectable
  * on the command line.
@@ -37,9 +36,6 @@ struct backend {
   // create a data update factory from the arguments passed to cgimap.
   virtual std::unique_ptr<data_update::factory>
   create_data_update(const boost::program_options::variables_map &) = 0;
-  // create an oauth store based on arguments.
-  virtual std::unique_ptr<oauth::store>
-  create_oauth_store(const boost::program_options::variables_map &) = 0;
 };
 
 // figures out which backend should be selected and adds its options to the
@@ -55,10 +51,6 @@ create_backend(const boost::program_options::variables_map &);
 // singleton call to create a backend from a given set of options.
 std::unique_ptr<data_update::factory>
 create_update_backend(const boost::program_options::variables_map &);
-
-// singleton call to create an OAuth store from options.
-std::unique_ptr<oauth::store>
-create_oauth_store(const boost::program_options::variables_map &);
 
 // this function registers a backend for use when creating backends
 // from user-provided options.

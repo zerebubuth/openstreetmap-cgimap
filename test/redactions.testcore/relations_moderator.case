@@ -3,7 +3,7 @@ Request-Method: GET
 Request-URI: /api/0.6/relations?relations=1v1,1v2&show_redactions=true
 Http-Host: cgimap.example.com
 Date: 2017-02-03T17:26:00Z
-Http-Authorization: OAuth realm="http://cgimap.example.com/api/0.6/relations", oauth_consumer_key="heqfjrcolc", oauth_token="scgncknxqr", oauth_nonce="s5ikn2rEXP8sEY4yWioL", oauth_timestamp="1486142760", oauth_signature_method="HMAC-SHA1", oauth_version="1.0", oauth_signature="OQMjxYyDtdnAkz%2Fz%2FYVN7cQDj6w%3D"
+Http-Authorization: Bearer 1yi2RI2WhIVMLoLaDLg0nrPJPU4WQSIX4Hh_jxfRRxI
 ---
 Status: 200 OK
 Content-Type: application/xml; charset=utf-8
