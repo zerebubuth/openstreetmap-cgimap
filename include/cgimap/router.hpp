@@ -65,7 +65,7 @@ struct error : public std::runtime_error {
 struct match_string;
 struct match_osm_id;
 struct match_begin;
-struct match_name;
+
 template <typename LeftType, typename RightType> struct match_and;
 
 /**
@@ -82,9 +82,6 @@ template <typename Self> struct ops {
   }
   match_and<Self, match_osm_id> operator/(const match_osm_id &rhs) const {
     return match_and<Self, match_osm_id>(*static_cast<const Self *>(this), rhs);
-  }
-  match_and<Self, match_name> operator/(const match_name &rhs) const {
-    return match_and<Self, match_name>(*static_cast<const Self *>(this), rhs);
   }
 };
 
@@ -139,15 +136,6 @@ struct match_osm_id : public ops<match_osm_id> {
 };
 
 /**
- * match any string.
- */
-struct match_name : public ops<match_name> {
-  using match_type = list<std::string>;
-  match_name() = default;
-  match_type match(part_iterator &begin, const part_iterator &end) const;
-};
-
-/**
  * null match - it'll match anything. it's only here to anchor the expression
  * with the correct type, allowing us to write the rest of the expression
  * without needing explicit constructors for the string literal matches.
@@ -155,13 +143,14 @@ struct match_name : public ops<match_name> {
 struct match_begin : public ops<match_begin> {
   using match_type = list<>;
   match_begin() = default;
-  match_type match(part_iterator &begin, const part_iterator &end) const;
+  inline match_type match(part_iterator &begin, const part_iterator &end) const {
+    return match_type();
+  }
 };
 
 // match items, given nicer names so that expressions are easier to read.
 static const match_begin root_;
 static const match_osm_id osm_id_;
-static const match_name name_;
 }
 
 #endif /* ROUTER_HPP */

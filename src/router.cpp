@@ -21,8 +21,8 @@ match_string::match_type match_string::match(part_iterator &begin,
                                              const part_iterator &end) const {
   bool matches = false;
   if (begin != end) {
-    std::string bit = *begin;
-    matches = bit == str;
+    const std::string& bit = *begin;
+    matches = (bit == str);
     ++begin;
   }
   if (!matches) {
@@ -35,7 +35,7 @@ match_osm_id::match_type match_osm_id::match(part_iterator &begin,
                                              const part_iterator &end) const {
   if (begin != end) {
     try {
-      std::string bit = *begin;
+      const std::string& bit = *begin;
       // note that osm_nwr_id_t is actually unsigned, so we lose a bit of
       // precision here, but it's OK since IDs are postgres 'bigint' types
       // which are also signed, so element 2^63 is unlikely to exist.
@@ -51,25 +51,6 @@ match_osm_id::match_type match_osm_id::match(part_iterator &begin,
   throw error();
 }
 
-match_name::match_type match_name::match(part_iterator &begin,
-                                         const part_iterator &end) const {
-  if (begin != end) {
-    try {
-      std::string bit = *begin++;
-      return match_type(bit);
-    } catch (std::exception &e) {
-      throw error();
-    }
-  }
-  throw error();
-}
-
-match_begin::match_type match_begin::match(part_iterator &,
-                                           const part_iterator &) const {
-  return match_type();
-}
-
 extern const match_begin root_; // @suppress("Unused variable declaration in file scope")
 extern const match_osm_id osm_id_; // @suppress("Unused variable declaration in file scope")
-extern const match_name name_; // @suppress("Unused variable declaration in file scope")
 }
