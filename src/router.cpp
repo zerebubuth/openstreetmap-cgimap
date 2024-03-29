@@ -9,6 +9,9 @@
 
 #include "cgimap/router.hpp"
 
+#include <algorithm>
+#include <charconv>
+
 namespace match {
 
 error::error() : std::runtime_error("error!") {}
@@ -31,18 +34,20 @@ std::pair<match_string::match_type, bool> match_string::match(part_iterator &beg
 std::pair<match_osm_id::match_type, bool> match_osm_id::match(part_iterator &begin,
                                              const part_iterator &end) const noexcept {
   if (begin != end) {
-    try {
-      const std::string& bit = *begin;
-      // note that osm_nwr_id_t is actually unsigned, so we lose a bit of
-      // precision here, but it's OK since IDs are postgres 'bigint' types
-      // which are also signed, so element 2^63 is unlikely to exist.
-      auto x = std::stol(bit);
-      if (x > 0) {
-        ++begin;
-        return {match_type(x), false};
-      }
-    } catch (std::exception &e) {
+
+    const std::string& bit = *begin;
+
+    if (bit.end() != std::find_if(bit.begin(), bit.end(),
+        [](unsigned char c)->bool { return !isdigit(c); })) {
       return {match_type(), true};
+    }
+
+    osm_nwr_id_t x{};
+    auto [ptr, ec] = std::from_chars(bit.data(), bit.data() + bit.size(), x);
+
+    if (ec == std::errc() && x > 0) {
+      ++begin;
+      return {match_type(x), false};
     }
   }
   return {match_type(), true};
