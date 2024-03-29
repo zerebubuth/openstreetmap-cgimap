@@ -15,6 +15,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <boost/fusion/container/generation/make_cons.hpp>
@@ -90,14 +91,21 @@ template <typename Self> struct ops {
  */
 template <typename LeftType, typename RightType>
 struct match_and : public ops<match_and<LeftType, RightType> > {
+
   using match_type = typename result_of::as_list<typename result_of::join<
       typename LeftType::match_type,
       typename RightType::match_type>::type>::type;
+
   match_and(const LeftType &l, const RightType &r) : lhs(l), rhs(r) {}
-  match_type match(part_iterator &begin, const part_iterator &end) const {
-    typename LeftType::match_type lval = lhs.match(begin, end);
-    typename RightType::match_type rval = rhs.match(begin, end);
-    return as_list(join(lval, rval));
+
+  std::pair<match_type, bool> match(part_iterator &begin, const part_iterator &end) const {
+    auto [ lval, lerror ] = lhs.match(begin, end);
+    if (lerror)
+      return {as_list(join(typename LeftType::match_type(), typename RightType::match_type())), true};
+    auto [ rval, rerror ] = rhs.match(begin, end);
+    if (rerror)
+      return {as_list(join(typename LeftType::match_type(), typename RightType::match_type())), true};
+    return {as_list(join(lval, rval)), false};
   }
 
 private:
@@ -120,7 +128,7 @@ struct match_string : public ops<match_string> {
   // copy just copies the held string
   inline match_string(const match_string &m) = default;
 
-  match_type match(part_iterator &begin, const part_iterator &end) const;
+  std::pair<match_type, bool> match(part_iterator &begin, const part_iterator &end) const;
 
 private:
   std::string str;
@@ -132,7 +140,7 @@ private:
 struct match_osm_id : public ops<match_osm_id> {
   using match_type = list<osm_nwr_id_t>;
   match_osm_id() = default;
-  match_type match(part_iterator &begin, const part_iterator &end) const;
+  std::pair<match_type, bool> match(part_iterator &begin, const part_iterator &end) const;
 };
 
 /**
@@ -143,8 +151,8 @@ struct match_osm_id : public ops<match_osm_id> {
 struct match_begin : public ops<match_begin> {
   using match_type = list<>;
   match_begin() = default;
-  inline match_type match(part_iterator &begin, const part_iterator &end) const {
-    return match_type();
+  inline std::pair<match_type, bool> match(part_iterator &begin, const part_iterator &end) const {
+    return {match_type(), false};
   }
 };
 

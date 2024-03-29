@@ -84,21 +84,22 @@ struct router {
     bool invoke_if(const std::vector<std::string> &parts,
                    request &params,
                    handler_ptr_t &ptr) override {
-      try {
-        auto begin = parts.begin();
-        auto sequence = r.match(begin, parts.end());
 
-        if (begin != parts.end())
-          return false; // no match
+      auto begin = parts.begin();
+      auto [sequence, error] = r.match(begin, parts.end());
 
-        // the function to call (used later as constructor factory)
-        boost::factory<Handler *> func{};
-
-        ptr.reset(
-            boost::fusion::invoke(func, boost::fusion::make_cons(std::ref(params), sequence)));
-      } catch (const match::error &e) {
+      if (error)
         return false;
-      }
+
+      if (begin != parts.end())
+        return false; // no match
+
+      // the function to call (used later as constructor factory)
+      boost::factory<Handler *> func{};
+
+      ptr.reset(
+          boost::fusion::invoke(func, boost::fusion::make_cons(std::ref(params), sequence)));
+
       return true;
     }
 

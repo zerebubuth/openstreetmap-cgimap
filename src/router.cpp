@@ -17,7 +17,7 @@ match_string::match_string(const std::string &s) : str(s) {}
 
 match_string::match_string(const char *s) : str(s) {}
 
-match_string::match_type match_string::match(part_iterator &begin,
+std::pair<match_string::match_type, bool> match_string::match(part_iterator &begin,
                                              const part_iterator &end) const {
   bool matches = false;
   if (begin != end) {
@@ -25,13 +25,10 @@ match_string::match_type match_string::match(part_iterator &begin,
     matches = (bit == str);
     ++begin;
   }
-  if (!matches) {
-    throw error();
-  }
-  return match_type();
+  return {match_type(), !matches}; // raises error if not matching
 }
 
-match_osm_id::match_type match_osm_id::match(part_iterator &begin,
+std::pair<match_osm_id::match_type, bool> match_osm_id::match(part_iterator &begin,
                                              const part_iterator &end) const {
   if (begin != end) {
     try {
@@ -42,13 +39,13 @@ match_osm_id::match_type match_osm_id::match(part_iterator &begin,
       auto x = std::stol(bit);
       if (x > 0) {
         ++begin;
-        return match_type(x);
+        return {match_type(x), false};
       }
     } catch (std::exception &e) {
-      throw error();
+      return {match_type(), true};
     }
   }
-  throw error();
+  return {match_type(), true};
 }
 
 extern const match_begin root_; // @suppress("Unused variable declaration in file scope")
