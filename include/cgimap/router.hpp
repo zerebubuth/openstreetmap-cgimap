@@ -128,7 +128,7 @@ struct match_string : public ops<match_string> {
   // copy just copies the held string
   inline match_string(const match_string &m) = default;
 
-  std::pair<match_type, bool> match(part_iterator &begin, const part_iterator &end) const;
+  std::pair<match_type, bool> match(part_iterator &begin, const part_iterator &end) const noexcept;
 
 private:
   std::string str;
@@ -140,7 +140,7 @@ private:
 struct match_osm_id : public ops<match_osm_id> {
   using match_type = list<osm_nwr_id_t>;
   match_osm_id() = default;
-  std::pair<match_type, bool> match(part_iterator &begin, const part_iterator &end) const;
+  std::pair<match_type, bool> match(part_iterator &begin, const part_iterator &end) const noexcept;
 };
 
 /**
@@ -151,7 +151,7 @@ struct match_osm_id : public ops<match_osm_id> {
 struct match_begin : public ops<match_begin> {
   using match_type = list<>;
   match_begin() = default;
-  inline std::pair<match_type, bool> match(part_iterator &begin, const part_iterator &end) const {
+  inline std::pair<match_type, bool> match(part_iterator &begin, const part_iterator &end) const noexcept{
     return {match_type(), false};
   }
 };

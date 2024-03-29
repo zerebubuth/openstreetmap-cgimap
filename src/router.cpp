@@ -18,7 +18,7 @@ match_string::match_string(const std::string &s) : str(s) {}
 match_string::match_string(const char *s) : str(s) {}
 
 std::pair<match_string::match_type, bool> match_string::match(part_iterator &begin,
-                                             const part_iterator &end) const {
+                                             const part_iterator &end) const noexcept {
   bool matches = false;
   if (begin != end) {
     const std::string& bit = *begin;
@@ -29,7 +29,7 @@ std::pair<match_string::match_type, bool> match_string::match(part_iterator &beg
 }
 
 std::pair<match_osm_id::match_type, bool> match_osm_id::match(part_iterator &begin,
-                                             const part_iterator &end) const {
+                                             const part_iterator &end) const noexcept {
   if (begin != end) {
     try {
       const std::string& bit = *begin;
