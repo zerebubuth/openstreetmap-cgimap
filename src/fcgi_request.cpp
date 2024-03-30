@@ -78,8 +78,6 @@ const char *fcgi_request::get_param(const char *key) const {
 
 const std::string fcgi_request::get_payload() {
 
-  const unsigned int BUFFER_LEN = 512000;
-
   // fetch and parse the content length
   const char *content_length_str = FCGX_GetParam("CONTENT_LENGTH", m_impl->req.envp);
   const char *content_encoding = FCGX_GetParam("HTTP_CONTENT_ENCODING",  m_impl->req.envp);
@@ -93,8 +91,6 @@ const std::string fcgi_request::get_payload() {
 
   if (content_length_str)
     content_length = http::parse_content_length(content_length_str);
-
-  std::array<char, BUFFER_LEN> content_buffer{};
 
   std::string result{};
 
