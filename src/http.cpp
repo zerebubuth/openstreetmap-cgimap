@@ -228,6 +228,11 @@ vector<pair<string, string> > parse_params(const string &p) {
 std::unique_ptr<encoding> choose_encoding(const string &accept_encoding) {
   vector<string> encodings;
 
+  static const std::regex regex1("\\s*([^()<>@,;:\\\\\"/[\\]\\\\?={} "
+      "\\t]+)\\s*;\\s*q\\s*=(\\d+(\\.\\d+)?)\\s*");
+
+  static const std::regex regex2( R"(\s*([^()<>@,;:\\"/[\]\\?={} \t]+)\s*)");
+
   al::split(encodings, accept_encoding, al::is_any_of(","));
 
   float identity_quality = 0.001;
@@ -242,14 +247,12 @@ std::unique_ptr<encoding> choose_encoding(const string &accept_encoding) {
 
     if (std::regex_match(
             encoding, what,
-            std::regex("\\s*([^()<>@,;:\\\\\"/[\\]\\\\?={} "
-                         "\\t]+)\\s*;\\s*q\\s*=(\\d+(\\.\\d+)?)\\s*"))) {
+            regex1)) {
       name = what[1];
       quality = std::atof(string(what[2]).c_str());
     } else if (std::regex_match(
                    encoding, what,
-                   std::regex(
-                       R"(\s*([^()<>@,;:\\"/[\]\\?={} \t]+)\s*)"))) {
+                   regex2)) {
       name = what[1];
       quality = 1.0;
     } else {
