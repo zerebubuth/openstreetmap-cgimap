@@ -55,9 +55,9 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
-#include <boost/algorithm/string.hpp>
 #include <fmt/core.h>
 
 
@@ -70,18 +70,17 @@ struct router {
   // interface through which all matches and constructions are performed.
   struct rule_base {
     virtual ~rule_base() = default;
-    virtual bool invoke_if(const std::vector<std::string> &, request &, handler_ptr_t &) = 0;
+    virtual bool invoke_if(const std::vector<std::string_view> &, request &, handler_ptr_t &) = 0;
   };
 
   // concrete rule match / constructor class
   template <typename Handler, typename Rule>
   struct rule : public rule_base {
     explicit rule(Rule&& r) : r(std::move(r)) {}
-    ~rule() override = default;
 
     // try to match the expression. if it succeeds, call the provided function
     // with the provided params and the matched DSL arguments.
-    bool invoke_if(const std::vector<std::string> &parts,
+    bool invoke_if(const std::vector<std::string_view> &parts,
                    request &params,
                    handler_ptr_t &ptr) override {
 
@@ -147,7 +146,7 @@ struct router {
    * and the matched params.
    */
 
-  handler_ptr_t match(const std::vector<std::string> &p, request &params) {
+  handler_ptr_t match(const std::vector<std::string_view> &p, request &params) {
 
     handler_ptr_t hptr;
 
@@ -296,17 +295,33 @@ namespace {
   return make_pair(path, mime::type::unspecified_type);
 }
 
+std::vector<std::string_view> split(std::string_view str, char delim)
+{
+  std::vector< std::string_view > result;
+  auto left = str.begin();
+  for (auto it = left; it != str.end(); ++it)
+  {
+    if (*it == delim)
+    {
+      result.emplace_back(&*left, it - left);
+      left = it + 1;
+      if (left == str.end())
+        result.emplace_back(&*it, 0);
+    }
+  }
+  if (left != str.end())
+    result.emplace_back(&*left, str.end() - left);
+  return result;
+}
+
 handler_ptr_t route_resource(request &req, const std::string &path,
                              const std::unique_ptr<router> &r) {
-
-  namespace al = boost::algorithm;
 
   // strip off the format-spec, if there is one
   auto [resource, mime_type] = resource_mime_type(path);
 
   // split the URL into bits to be matched.
-  std::vector<std::string> path_components;
-  al::split(path_components, resource, al::is_any_of("/"));
+  auto path_components = split(resource, '/');
 
   auto hptr(r->match(path_components, req));
 

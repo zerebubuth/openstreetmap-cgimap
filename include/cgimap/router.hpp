@@ -15,6 +15,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -44,7 +45,7 @@ using boost::fusion::as_list;
 namespace result_of = boost::fusion::result_of;
 
 // iterates over the split up parts of the item being matched.
-using part_iterator = std::vector<std::string>::const_iterator;
+using part_iterator = std::vector<std::string_view>::const_iterator;
 
 /**
  * thrown when a match error occurs, giving some information about the
@@ -122,7 +123,6 @@ struct match_string : public ops<match_string> {
 
   // implicit constructor intended, so that the use of this class is
   // hidden and easier / nicer to read.
-  match_string(const std::string &s);
   match_string(const char *s);
 
   // copy just copies the held string
@@ -131,7 +131,7 @@ struct match_string : public ops<match_string> {
   std::pair<match_type, bool> match(part_iterator &begin, const part_iterator &end) const noexcept;
 
 private:
-  std::string str;
+  std::string_view str;
 };
 
 /**
@@ -157,8 +157,8 @@ struct match_begin : public ops<match_begin> {
 };
 
 // match items, given nicer names so that expressions are easier to read.
-static const match_begin root_;
-static const match_osm_id osm_id_;
+static constexpr match_begin root_;
+static constexpr match_osm_id osm_id_;
 }
 
 #endif /* ROUTER_HPP */

@@ -16,15 +16,13 @@ namespace match {
 
 error::error() : std::runtime_error("error!") {}
 
-match_string::match_string(const std::string &s) : str(s) {}
-
-match_string::match_string(const char *s) : str(s) {}
+match_string::match_string(const char *s) : str(std::string_view(s)) {}
 
 std::pair<match_string::match_type, bool> match_string::match(part_iterator &begin,
                                              const part_iterator &end) const noexcept {
   bool matches = false;
   if (begin != end) {
-    const std::string& bit = *begin;
+    auto& bit = *begin;
     matches = (bit == str);
     ++begin;
   }
@@ -35,7 +33,7 @@ std::pair<match_osm_id::match_type, bool> match_osm_id::match(part_iterator &beg
                                              const part_iterator &end) const noexcept {
   if (begin != end) {
 
-    const std::string& bit = *begin;
+    auto& bit = *begin;
 
     if (bit.end() != std::find_if(bit.begin(), bit.end(),
         [](unsigned char c)->bool { return !isdigit(c); })) {
