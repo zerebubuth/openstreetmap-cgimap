@@ -38,6 +38,8 @@ protected:
 
 private:
   struct pimpl;
+  constexpr static unsigned int BUFFER_LEN = 512000;
+  std::array<char, BUFFER_LEN> content_buffer{};
   std::unique_ptr<pimpl> m_impl;
   std::unique_ptr<output_buffer> m_buffer;
 };
