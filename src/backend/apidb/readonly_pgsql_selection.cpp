@@ -331,6 +331,9 @@ void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
 void readonly_pgsql_selection::write_changesets(output_formatter &formatter,
                                                 const std::chrono::system_clock::time_point &now) {
 
+  if (sel_changesets.empty())
+    return;
+
   m.prepare("extract_changesets",
       "SELECT c.id, "
         "to_char(c.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at, "
