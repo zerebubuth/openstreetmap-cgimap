@@ -55,8 +55,12 @@ json_writer::~json_writer() noexcept {
 
 void json_writer::start_object() { yajl_gen_map_open(gen); }
 
-void json_writer::object_key(const std::string &s) {
+void json_writer::object_key(const char* s) {
   entry(s);
+}
+
+void json_writer::object_key(std::string_view sv) {
+  entry(sv);
 }
 
 void json_writer::end_object() {

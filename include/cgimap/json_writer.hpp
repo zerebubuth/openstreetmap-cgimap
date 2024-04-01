@@ -34,7 +34,8 @@ public:
   ~json_writer() noexcept override;
 
   void start_object();
-  void object_key(const std::string &s);
+  void object_key(const char* s);
+  void object_key(std::string_view sv);
   void end_object();
 
   void start_array();
