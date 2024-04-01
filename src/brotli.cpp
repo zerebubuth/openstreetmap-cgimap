@@ -69,7 +69,7 @@ int brotli_output_buffer::close() {
   return out.close();
 }
 
-int brotli_output_buffer::written() { return bytes_in; }
+int brotli_output_buffer::written() const { return bytes_in; }
 
 
 void brotli_output_buffer::flush() {

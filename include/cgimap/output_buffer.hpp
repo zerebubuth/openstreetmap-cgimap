@@ -18,7 +18,7 @@
 struct output_buffer {
   virtual int write(const char *buffer, int len) = 0;
   virtual int write(std::string_view str) { return write(str.data(), str.size()); }
-  virtual int written() = 0;
+  virtual int written() const = 0;
   virtual int close() = 0;
   virtual void flush() = 0;
   virtual ~output_buffer() = default;
@@ -38,7 +38,7 @@ public:
     explicit identity_output_buffer(output_buffer& o) : out(o) {}
 
     int write(const char *buffer, int len) override { return out.write(buffer, len); }
-    int written() override { return out.written(); }
+    int written() const override { return out.written(); }
     int close() override { return out.close(); }
     void flush() override { out.flush(); }
 

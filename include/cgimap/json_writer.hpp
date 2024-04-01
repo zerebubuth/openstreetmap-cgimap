@@ -62,9 +62,13 @@ public:
   void error(const std::string &) override;
 
 private:
+  void output_yajl_buffer(bool ignore_buffer_size);
+
   yajl_gen gen;
   yajl_alloc_funcs alloc_funcs;
   output_buffer& out;
+
+  constexpr static int MAX_BUFFER = 16384;
 };
 
 #endif /* JSON_WRITER_HPP */
