@@ -68,3 +68,42 @@ if(ENABLE_BUILD_LINT_IWYU)
         message(STATUS "Looking for include-what-you-use - not found")
     endif()
 endif()
+
+
+########################################################
+# Disable / save / restore lint config utility functions
+########################################################
+
+set(BUILD_LINT_CONFIGS CMAKE_CXX_CLANG_TIDY CMAKE_CXX_CPPCHECK CMAKE_CXX_CPPLINT CMAKE_CXX_INCLUDE_WHAT_YOU_USE)
+
+function(save_build_lint_config LINT_CONFIG_VAR)
+    foreach(LINT_CONFIG IN LISTS BUILD_LINT_CONFIGS)
+        string(REPLACE ";" "@SEMICOLON@" ${LINT_CONFIG} "${${LINT_CONFIG}}")
+        list(APPEND LINT_CONFIGS_LIST "${${LINT_CONFIG}}")
+    endforeach()
+
+    set(${LINT_CONFIG_VAR} ${LINT_CONFIGS_LIST} PARENT_SCOPE)
+endfunction()
+
+
+function(restore_build_lint_config LINT_CONFIG_VAR)
+    foreach(LINT_CONFIG IN LISTS BUILD_LINT_CONFIGS)
+        list(POP_FRONT ${LINT_CONFIG_VAR} ${LINT_CONFIG})
+        string(REPLACE "@SEMICOLON@" ";" ${LINT_CONFIG} "${${LINT_CONFIG}}")
+        set(${LINT_CONFIG} ${${LINT_CONFIG}} PARENT_SCOPE)
+    endforeach()
+endfunction()
+
+
+macro(disable_build_lint)
+    foreach(LINT_CONFIG IN LISTS BUILD_LINT_CONFIGS)
+        unset(${LINT_CONFIG})
+    endforeach()
+endmacro()
+
+
+function(print_build_lint_config)
+    foreach(LINT_CONFIG IN LISTS BUILD_LINT_CONFIGS)
+        message("lint config ${LINT_CONFIG}: ${${LINT_CONFIG}}")
+    endforeach()
+endfunction()
