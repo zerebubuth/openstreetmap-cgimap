@@ -39,8 +39,12 @@ json_writer::json_writer(output_buffer &out, bool indent)
 
 json_writer::~json_writer() noexcept {
 
-  // there should be nothing left to do, except clearing the yajl buffer
-  output_yajl_buffer(true);
+  try {
+    // there should be nothing left to do, except clearing the yajl buffer
+    output_yajl_buffer(true);
+  } catch (...) {
+    // ignore
+  }
 
   yajl_gen_free(gen);
 
