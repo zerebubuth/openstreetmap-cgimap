@@ -37,7 +37,7 @@ public:
   zlib_output_buffer(const zlib_output_buffer &old);
   ~zlib_output_buffer() override = default;
   int write(const char *buffer, int len) override;
-  int written() override;
+  int written() const override;
   int close() override;
   void flush() override;
 

@@ -41,7 +41,7 @@ struct fcgi_buffer : public output_buffer {
     return bytes;
   }
 
-  int written() override { return m_written; }
+  int written() const override { return m_written; }
 
   int close() override { return FCGX_FClose(m_req.out); }
 

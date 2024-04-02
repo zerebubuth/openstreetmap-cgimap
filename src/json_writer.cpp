@@ -18,27 +18,13 @@
 
 #include "cgimap/json_writer.hpp"
 
-static void wrap_write(void *context, const char *str, unsigned int len) {
-  auto *out = static_cast<output_buffer *>(context);
-  if (out == 0) {
-    throw output_writer::write_error(
-        "Output buffer was NULL in json_writer wrap_write().");
-  }
-
-  int wrote_len = out->write(str, len);
-
-  if (wrote_len != int(len)) {
-    throw output_writer::write_error(
-        "Output buffer wrote a different amount than was expected.");
-  }
-}
 
 json_writer::json_writer(output_buffer &out, bool indent)
     : out(out) {
 
-  gen = yajl_gen_alloc(NULL);
+  gen = yajl_gen_alloc(nullptr);
 
-  if (gen == 0) {
+  if (gen == nullptr) {
     throw std::runtime_error("error creating json writer.");
   }
 
@@ -49,12 +35,13 @@ json_writer::json_writer(output_buffer &out, bool indent)
     yajl_gen_config(gen, yajl_gen_beautify, 0);
     yajl_gen_config(gen, yajl_gen_indent_string, "");
   }
-  yajl_gen_config(gen, yajl_gen_print_callback, &wrap_write,
-                  (void *)&out);
 }
 
 json_writer::~json_writer() noexcept {
-  yajl_gen_clear(gen);
+
+  // there should be nothing left to do, except clearing the yajl buffer
+  output_yajl_buffer(true);
+
   yajl_gen_free(gen);
 
   try {
@@ -68,15 +55,26 @@ json_writer::~json_writer() noexcept {
 
 }
 
-void json_writer::start_object() { yajl_gen_map_open(gen); }
+void json_writer::start_object() {
+  yajl_gen_map_open(gen);
+}
 
-void json_writer::object_key(const std::string &s) {
+void json_writer::object_key(const char* s) {
   entry(s);
 }
 
-void json_writer::end_object() { yajl_gen_map_close(gen); }
+void json_writer::object_key(std::string_view sv) {
+  entry(sv);
+}
 
-void json_writer::entry(bool b) { yajl_gen_bool(gen, b ? 1 : 0); }
+void json_writer::end_object() {
+  yajl_gen_map_close(gen);
+  output_yajl_buffer(false);
+}
+
+void json_writer::entry(bool b) {
+  yajl_gen_bool(gen, b ? 1 : 0);
+}
 
 void json_writer::entry(double d) {
   const char* str = nullptr;
@@ -108,14 +106,55 @@ void json_writer::entry(std::string_view sv) {
   yajl_gen_string(gen, (const unsigned char *)sv.data(), sv.size());
 }
 
-void json_writer::start_array() { yajl_gen_array_open(gen); }
+void json_writer::start_array() {
+  yajl_gen_array_open(gen);
+}
 
-void json_writer::end_array() { yajl_gen_array_close(gen); }
+void json_writer::end_array() {
+  yajl_gen_array_close(gen);
+  output_yajl_buffer(false);
+}
 
-void json_writer::flush() { yajl_gen_clear(gen); }
+void json_writer::flush() {
+  output_yajl_buffer(true);
+}
 
 void json_writer::error(const std::string &s) {
   start_object();
   property("error", s);
   end_object();
+
+  output_yajl_buffer(true);
+}
+
+void json_writer::output_yajl_buffer(bool ignore_buffer_size)
+{
+  const unsigned char *yajl_buf;
+  size_t yajl_buf_len;
+
+  auto status = yajl_gen_get_buf(gen, &yajl_buf, &yajl_buf_len);
+
+  if (status != yajl_gen_status_ok)
+    throw output_writer::write_error("Expected yajl_gen_status_ok");
+
+  // Keep adding more JSON elements, if the yajl buffer size hasn't
+  // reached our threshold value yet.
+  // Setting ignore_buffer_size to true will skip this check.
+  if (!ignore_buffer_size && yajl_buf_len < MAX_BUFFER)
+    return;
+
+  // empty yajl buffer -> don't send anything to out
+  if (yajl_buf_len != 0) {
+
+    // Write yajl buffer to output
+    int wrote_len = out.write((const char*) yajl_buf, yajl_buf_len);
+
+    if (wrote_len != int(yajl_buf_len)) {
+      throw output_writer::write_error(
+          "Output buffer wrote a different amount than was expected.");
+    }
+  }
+
+  // clear YAJL internal buffer
+  yajl_gen_clear(gen);
 }

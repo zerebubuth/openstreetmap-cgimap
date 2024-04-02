@@ -34,7 +34,8 @@ public:
   ~json_writer() noexcept override;
 
   void start_object();
-  void object_key(const std::string &s);
+  void object_key(const char* s);
+  void object_key(std::string_view sv);
   void end_object();
 
   void start_array();
@@ -62,9 +63,13 @@ public:
   void error(const std::string &) override;
 
 private:
+  void output_yajl_buffer(bool ignore_buffer_size);
+
   yajl_gen gen;
   yajl_alloc_funcs alloc_funcs;
   output_buffer& out;
+
+  constexpr static int MAX_BUFFER = 16384;
 };
 
 #endif /* JSON_WRITER_HPP */

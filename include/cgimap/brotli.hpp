@@ -32,7 +32,7 @@ public:
   brotli_output_buffer(const brotli_output_buffer &old) = delete;
   ~brotli_output_buffer() override = default;
   int write(const char *buffer, int len) override;
-  int written() override;
+  int written() const override;
   int close() override;
   void flush() override;
 
