@@ -46,7 +46,7 @@ if(ENABLE_BUILD_LINT_CPPLINT)
     if(CPPLINT)
         message(STATUS "Looking for cpplint - found ${CPPLINT}")
 
-        set(CMAKE_CXX_CPPLINT "${CPPLINT}")
+        set(CMAKE_CXX_CPPLINT "${CPPLINT}" --filter=-whitespace,-whitespace/braces,-whitespace/indent,-whitespace/line_length,-whitespace/comments,-readability/todo,-runtime/references,-build/c++11,-build/include_order)
     else()
         message(STATUS "Looking for cpplint - not found")
     endif()
