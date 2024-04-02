@@ -12,7 +12,7 @@ if(CLANG_TIDY)
     message(STATUS "Looking for clang-tidy - found ${CLANG_TIDY}")
 
     if(ENABLE_BUILD_LINT_CLANG_TIDY)
-        set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY}")
+        set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY}" -extra-arg=-std=c++17)
     endif()
 else()
     message(STATUS "Looking for clang-tidy - not found")
