@@ -46,8 +46,7 @@ void ApiDB_Way_Updater::add_way(osm_changeset_id_t changeset_id,
   new_way.old_id = old_id;
 
   for (const auto &tag : tags)
-    new_way.tags.push_back(
-        std::pair<std::string, std::string>(tag.first, tag.second));
+    new_way.tags.emplace_back(tag.first, tag.second);
 
   // If the following conditions are still not met, although our XML parser
   // raised an exception for it, it's clearly a programming error.
@@ -78,8 +77,7 @@ void ApiDB_Way_Updater::modify_way(osm_changeset_id_t changeset_id,
   modify_way.changeset_id = changeset_id;
 
   for (const auto &tag : tags)
-    modify_way.tags.push_back(
-        std::pair<std::string, std::string>(tag.first, tag.second));
+    modify_way.tags.emplace_back(tag.first, tag.second);
 
   // If the following conditions are still not met, although our XML parser
   // raised an exception for it, it's clearly a programming error.
@@ -460,7 +458,7 @@ ApiDB_Way_Updater::build_packages(const std::vector<way_t> &ways) {
       ++id_to_package[way.id];
 
     if (id_to_package[way.id] + 1 > result.size())
-      result.emplace_back(std::vector<ApiDB_Way_Updater::way_t>());
+      result.emplace_back();
 
     result.at(id_to_package[way.id]).emplace_back(way);
   }

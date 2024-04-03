@@ -24,7 +24,7 @@ po::variables_map first_pass_argments(int argc, char *argv[],
   // them
   std::vector<std::string> args;
   for (int i = 1; i < argc; ++i) {
-    args.push_back(argv[i]);
+    args.emplace_back(argv[i]);
   }
 
   po::variables_map vm;

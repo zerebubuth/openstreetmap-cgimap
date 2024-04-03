@@ -45,8 +45,7 @@ void ApiDB_Relation_Updater::add_relation(osm_changeset_id_t changeset_id,
   new_relation.old_id = old_id;
 
   for (const auto &tag : tags)
-    new_relation.tags.emplace_back(
-        std::pair<std::string, std::string>(tag.first, tag.second));
+    new_relation.tags.emplace_back(tag.first, tag.second);
 
   osm_sequence_id_t member_seq = 0;
   for (const auto &member : members) {
@@ -80,8 +79,7 @@ void ApiDB_Relation_Updater::modify_relation(osm_changeset_id_t changeset_id,
   modify_relation.changeset_id = changeset_id;
 
   for (const auto &tag : tags)
-    modify_relation.tags.emplace_back(
-        std::pair<std::string, std::string>(tag.first, tag.second));
+    modify_relation.tags.emplace_back(tag.first, tag.second);
 
   osm_sequence_id_t member_seq = 0;
   for (const auto &member : members) {
@@ -559,7 +557,7 @@ ApiDB_Relation_Updater::build_packages(
       ++id_to_package[relation.id];
 
     if (id_to_package[relation.id] + 1 > result.size())
-      result.emplace_back(std::vector<ApiDB_Relation_Updater::relation_t>());
+      result.emplace_back();
 
     result.at(id_to_package[relation.id]).emplace_back(relation);
   }
