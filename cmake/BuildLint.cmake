@@ -63,7 +63,7 @@ if(ENABLE_BUILD_LINT_IWYU)
     if(IWYU)
         message(STATUS "Looking for include-what-you-use - found ${IWYU}")
 
-        set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "${IWYU}")
+        set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE "${IWYU}" -std=c++17 -Xiwyu --cxx17ns -Xiwyu --no_fwd_decls -Xiwyu "--mapping_file=${CMAKE_SOURCE_DIR}/.iwyu_mappings.imp")
     else()
         message(STATUS "Looking for include-what-you-use - not found")
     endif()
