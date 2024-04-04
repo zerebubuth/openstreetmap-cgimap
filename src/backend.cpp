@@ -73,7 +73,7 @@ bool registry::add(std::unique_ptr<backend> ptr) {
 
 void registry::setup_options(int argc, char *argv[],
                              po::options_description &desc) {
-  if (backends.empty() || (!(default_backend))) {
+  if (backends.empty() || !default_backend) {
     throw std::runtime_error("No backends available - this is most likely a "
                              "compile-time configuration error.");
   }
