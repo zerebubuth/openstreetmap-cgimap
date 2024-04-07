@@ -19,14 +19,118 @@ namespace {
 using pqxx_tuple = pqxx::result::reference;
 using pqxx_field = pqxx::field;
 
-void extract_elem(const pqxx_tuple &row, element_info &elem,
-                  std::map<osm_changeset_id_t, changeset> &changeset_cache) {
+struct elem_columns
+{
+  elem_columns(const pqxx::result &rows) :
 
-  elem.id        = row["id"].as<osm_nwr_id_t>();
-  elem.version   = row["version"].as<int>();
-  elem.timestamp = row["timestamp"].c_str();
-  elem.changeset = row["changeset_id"].as<osm_changeset_id_t>();
-  elem.visible   = row["visible"].as<bool>();
+    id_col(rows.column_number("id")),
+    version_col(rows.column_number("version")),
+    timestamp_col(rows.column_number("timestamp")),
+    changeset_id_col(rows.column_number("changeset_id")),
+    visible_col(rows.column_number("visible")) {}
+
+  const pqxx::row_size_type id_col;
+  const pqxx::row_size_type version_col;
+  const pqxx::row_size_type timestamp_col;
+  const pqxx::row_size_type changeset_id_col;
+  const pqxx::row_size_type visible_col;
+};
+
+struct changeset_columns
+{
+  changeset_columns(const pqxx::result &rows) :
+    id_col(rows.column_number("id")),
+    created_at_col(rows.column_number("created_at")),
+    closed_at_col(rows.column_number("closed_at")),
+    min_lat_col(rows.column_number("min_lat")),
+    max_lat_col(rows.column_number("max_lat")),
+    min_lon_col(rows.column_number("min_lon")),
+    max_lon_col(rows.column_number("max_lon")),
+    num_changes_col(rows.column_number("num_changes"))
+  {}
+
+   const pqxx::row_size_type id_col;
+   const pqxx::row_size_type created_at_col;
+   const pqxx::row_size_type closed_at_col;
+   const pqxx::row_size_type min_lat_col;
+   const pqxx::row_size_type max_lat_col;
+   const pqxx::row_size_type min_lon_col;
+   const pqxx::row_size_type max_lon_col;
+   const pqxx::row_size_type num_changes_col;
+};
+
+struct tag_columns
+{
+  tag_columns(const pqxx::result &rows) :
+    tag_k_col(rows.column_number("tag_k")),
+    tag_v_col(rows.column_number("tag_v"))
+  {}
+
+  const pqxx::row_size_type tag_k_col;
+  const pqxx::row_size_type tag_v_col;
+};
+
+struct node_extra_columns
+{
+  node_extra_columns(const pqxx::result &rows) :
+    longitude_col(rows.column_number("longitude")),
+    latitude_col(rows.column_number("latitude"))
+ {}
+
+  const pqxx::row_size_type longitude_col;
+  const pqxx::row_size_type latitude_col;
+};
+
+struct way_extra_columns
+{
+  way_extra_columns(const pqxx::result &rows) :
+    node_ids_col(rows.column_number("node_ids"))
+ {}
+
+  const pqxx::row_size_type node_ids_col;
+};
+
+struct relation_extra_columns
+{
+  relation_extra_columns(const pqxx::result &rows) :
+    member_types_col(rows.column_number("member_types")),
+    member_ids_col(rows.column_number("member_ids")),
+    member_roles_col(rows.column_number("member_roles"))
+ {}
+
+  const pqxx::row_size_type member_types_col;
+  const pqxx::row_size_type member_ids_col;
+  const pqxx::row_size_type member_roles_col;
+};
+
+struct comments_columns
+{
+  comments_columns(const pqxx::result &rows) :
+
+    comment_id_col(rows.column_number("comment_id")),
+    comment_author_id_col(rows.column_number("comment_author_id")),
+    comment_display_name_col(rows.column_number("comment_display_name")),
+    comment_body_col(rows.column_number("comment_body")),
+    comment_created_at_col(rows.column_number("comment_created_at")) {}
+
+  const pqxx::row_size_type comment_id_col;
+  const pqxx::row_size_type comment_author_id_col;
+  const pqxx::row_size_type comment_display_name_col;
+  const pqxx::row_size_type comment_body_col;
+  const pqxx::row_size_type comment_created_at_col;
+};
+
+// -------------------------------------------------------------------------------------
+
+void extract_elem(const pqxx_tuple &row, element_info &elem,
+                  std::map<osm_changeset_id_t, changeset> &changeset_cache,
+                  const elem_columns& col) {
+
+  elem.id        = row[col.id_col].as<osm_nwr_id_t>();
+  elem.version   = row[col.version_col].as<int>();
+  elem.timestamp = row[col.timestamp_col].c_str();
+  elem.changeset = row[col.changeset_id_col].as<osm_changeset_id_t>();
+  elem.visible   = row[col.visible_col].as<bool>();
 
   changeset & cs = changeset_cache[elem.changeset];
 
@@ -50,10 +154,11 @@ std::optional<T> extract_optional(const pqxx_field &f) {
 
 void extract_changeset(const pqxx_tuple &row,
                        changeset_info &elem,
-                       std::map<osm_changeset_id_t, changeset> &changeset_cache) {
-  elem.id = row["id"].as<osm_changeset_id_t>();
-  elem.created_at = row["created_at"].c_str();
-  elem.closed_at = row["closed_at"].c_str();
+                       std::map<osm_changeset_id_t, changeset> &changeset_cache,
+                       const changeset_columns& col) {
+  elem.id = row[col.id_col].as<osm_changeset_id_t>();
+  elem.created_at = row[col.created_at_col].c_str();
+  elem.closed_at = row[col.closed_at_col].c_str();
 
   const auto & cs = changeset_cache[elem.id];
 
@@ -65,10 +170,10 @@ void extract_changeset(const pqxx_tuple &row,
     elem.display_name = {};
   }
 
-  auto min_lat = extract_optional<int64_t>(row["min_lat"]);
-  auto max_lat = extract_optional<int64_t>(row["max_lat"]);
-  auto min_lon = extract_optional<int64_t>(row["min_lon"]);
-  auto max_lon = extract_optional<int64_t>(row["max_lon"]);
+  auto min_lat = extract_optional<int64_t>(row[col.min_lat_col]);
+  auto max_lat = extract_optional<int64_t>(row[col.max_lat_col]);
+  auto min_lon = extract_optional<int64_t>(row[col.min_lon_col]);
+  auto max_lon = extract_optional<int64_t>(row[col.max_lon_col]);
 
   if (bool(min_lat) && bool(min_lon) && bool(max_lat) && bool(max_lon)) {
     elem.bounding_box = bbox(double(*min_lat) / global_settings::get_scale(),
@@ -79,14 +184,14 @@ void extract_changeset(const pqxx_tuple &row,
     elem.bounding_box = {};
   }
 
-  elem.num_changes = row["num_changes"].as<size_t>();
+  elem.num_changes = row[col.num_changes_col].as<size_t>();
 }
 
-void extract_tags(const pqxx_tuple &row, tags_t &tags) {
+void extract_tags(const pqxx_tuple &row, tags_t &tags, const tag_columns& col) {
   tags.clear();
 
-  auto keys   = psql_array_to_vector(row["tag_k"].c_str());
-  auto values = psql_array_to_vector(row["tag_v"].c_str());
+  auto keys   = psql_array_to_vector(row[col.tag_k_col].c_str());
+  auto values = psql_array_to_vector(row[col.tag_v_col].c_str());
 
   if (keys.size()!=values.size()) {
     throw std::runtime_error("Mismatch in tags key and value size");
@@ -96,9 +201,12 @@ void extract_tags(const pqxx_tuple &row, tags_t &tags) {
      tags.push_back(std::make_pair(keys[i], values[i]));
 }
 
-void extract_nodes(const pqxx_tuple &row, nodes_t &nodes) {
+struct way;
+struct relation;
+
+void extract_nodes(const pqxx_tuple &row, nodes_t &nodes, const way_extra_columns& col) {
   nodes.clear();
-  auto ids = psql_array_to_vector(row["node_ids"].c_str());
+  auto ids = psql_array_to_vector(row[col.node_ids_col].c_str());
   for (const auto & id : ids)
     nodes.push_back(std::stol(id));
 }
@@ -131,13 +239,15 @@ element_type type_from_name(const char *name) {
   return type;
 }
 
-void extract_members(const pqxx_tuple &row, members_t &members) {
+struct relation;
+
+void extract_members(const pqxx_tuple &row, members_t &members, const relation_extra_columns& col) {
   member_info member;
   members.clear();
 
-  auto types = psql_array_to_vector(row["member_types"].c_str());
-  auto ids   = psql_array_to_vector(row["member_ids"].c_str());
-  auto roles = psql_array_to_vector(row["member_roles"].c_str());
+  auto types = psql_array_to_vector(row[col.member_types_col].c_str());
+  auto ids   = psql_array_to_vector(row[col.member_ids_col].c_str());
+  auto roles = psql_array_to_vector(row[col.member_roles_col].c_str());
 
   if (types.size()!=ids.size() || ids.size()!=roles.size()) {
     throw std::runtime_error("Mismatch in members types, ids and roles size");
@@ -151,15 +261,15 @@ void extract_members(const pqxx_tuple &row, members_t &members) {
   }
 }
 
-void extract_comments(const pqxx_tuple &row, comments_t &comments) {
+void extract_comments(const pqxx_tuple &row, comments_t &comments, const comments_columns& col) {
   changeset_comment_info comment;
   comments.clear();
 
-  auto id           = psql_array_to_vector(row["comment_id"].c_str());
-  auto author_id    = psql_array_to_vector(row["comment_author_id"].c_str());
-  auto display_name = psql_array_to_vector(row["comment_display_name"].c_str());
-  auto body         = psql_array_to_vector(row["comment_body"].c_str());
-  auto created_at   = psql_array_to_vector(row["comment_created_at"].c_str());
+  auto id           = psql_array_to_vector(row[col.comment_id_col].c_str());
+  auto author_id    = psql_array_to_vector(row[col.comment_author_id_col].c_str());
+  auto display_name = psql_array_to_vector(row[col.comment_display_name_col].c_str());
+  auto body         = psql_array_to_vector(row[col.comment_body_col].c_str());
+  auto created_at   = psql_array_to_vector(row[col.comment_created_at_col].c_str());
 
   if (id.size()!=author_id.size() || author_id.size()!=display_name.size()
       || display_name.size()!=body.size() || body.size()!=created_at.size()) {
@@ -176,12 +286,16 @@ void extract_comments(const pqxx_tuple &row, comments_t &comments) {
   }
 }
 
+
 struct node {
+
+  using extra_columns = node_extra_columns;
+
   struct extra_info {
     double lon, lat;
-    inline void extract(const pqxx_tuple &row) {
-      lon = double(row["longitude"].as<int64_t>()) / (global_settings::get_scale());
-      lat = double(row["latitude"].as<int64_t>()) / (global_settings::get_scale());
+    inline void extract(const pqxx_tuple &row, const extra_columns& col) {
+      lon = double(row[col.longitude_col].as<int64_t>()) / (global_settings::get_scale());
+      lat = double(row[col.latitude_col].as<int64_t>()) / (global_settings::get_scale());
     }
   };
   static inline void write(
@@ -192,12 +306,16 @@ struct node {
 };
 
 struct way {
+
+  using extra_columns = way_extra_columns;
+
   struct extra_info {
     nodes_t nodes;
-    inline void extract(const pqxx_tuple &row) {
-      extract_nodes(row, nodes);
+    inline void extract(const pqxx_tuple &row, const extra_columns& col) {
+      extract_nodes(row, nodes, col);
     }
   };
+
   static inline void write(
     output_formatter &formatter, const element_info &elem,
     const extra_info &extra, const tags_t &tags) {
@@ -206,12 +324,16 @@ struct way {
 };
 
 struct relation {
+
+  using extra_columns = relation_extra_columns;
+
   struct extra_info {
     members_t members;
-    inline void extract(const pqxx_tuple &row) {
-      extract_members(row, members);
+    inline void extract(const pqxx_tuple &row, const extra_columns& col) {
+      extract_members(row, members, col);
     }
   };
+
   static inline void write(
     output_formatter &formatter, const element_info &elem,
     const extra_info &extra, const tags_t &tags) {
@@ -227,12 +349,16 @@ void extract(
 
   element_info elem;
   typename T::extra_info extra;
+  typename T::extra_columns extra_cols(rows);
   tags_t tags;
 
+  const elem_columns elem_cols(rows);
+  const tag_columns tag_cols(rows);
+
   for (const auto &row : rows) {
-    extract_elem(row, elem, cc);
-    extra.extract(row);
-    extract_tags(row, tags);
+    extract_elem(row, elem, cc, elem_cols);
+    extra.extract(row, extra_cols);
+    extract_tags(row, tags, tag_cols);
     if (notify)
       notify(elem);     // let callback function know about a new element we're processing
     T::write(formatter, elem, extra, tags);
@@ -273,10 +399,14 @@ void extract_changesets(
   tags_t tags;
   comments_t comments;
 
+  const changeset_columns changeset_cols(rows);
+  const comments_columns comments_cols(rows);
+  const tag_columns tag_cols(rows);
+
   for (const auto &row : rows) {
-    extract_changeset(row, elem, cc);
-    extract_tags(row, tags);
-    extract_comments(row, comments);
+    extract_changeset(row, elem, cc, changeset_cols);
+    extract_tags(row, tags, tag_cols);
+    extract_comments(row, comments, comments_cols);
     elem.comments_count = comments.size();
     formatter.write_changeset(
       elem, tags, include_changeset_discussions, comments, now);
