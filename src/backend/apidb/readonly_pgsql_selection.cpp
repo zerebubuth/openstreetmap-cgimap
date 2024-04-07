@@ -70,21 +70,21 @@ check_table_visibility(Transaction_Manager  &m, osm_nwr_id_t id,
 
 using pqxx_tuple = pqxx::result::reference;
 
-template <typename T> T id_of(const pqxx_tuple &);
+template <typename T> T id_of(const pqxx_tuple &, pqxx::row_size_type col);
 
 template <>
-osm_nwr_id_t id_of<osm_nwr_id_t>(const pqxx_tuple &row) {
-  return row["id"].as<osm_nwr_id_t>();
+osm_nwr_id_t id_of<osm_nwr_id_t>(const pqxx_tuple &row, pqxx::row_size_type col) {
+  return row[col].as<osm_nwr_id_t>();
 }
 
 template <>
-osm_changeset_id_t id_of<osm_changeset_id_t>(const pqxx_tuple &row) {
-  return row["id"].as<osm_changeset_id_t>();
+osm_changeset_id_t id_of<osm_changeset_id_t>(const pqxx_tuple &row, pqxx::row_size_type col) {
+  return row[col].as<osm_changeset_id_t>();
 }
 
 template <>
-osm_edition_t id_of<osm_edition_t>(const pqxx_tuple &row) {
-  auto id = row["id"].as<osm_nwr_id_t>();
+osm_edition_t id_of<osm_edition_t>(const pqxx_tuple &row, pqxx::row_size_type col) {
+  auto id = row[col].as<osm_nwr_id_t>();
   auto ver = row["version"].as<osm_version_t>();
   return osm_edition_t(id, ver);
 }
@@ -93,8 +93,10 @@ template <typename T>
 inline int insert_results(const pqxx::result &res, set<T> &elems) {
   int num_inserted = 0;
 
+  auto const id_col = res.column_number("id");
+
   for (const auto & row : res) {
-    const T id = id_of<T>(row);
+    const T id = id_of<T>(row, id_col);
 
     // note: only count the *new* rows inserted.
     if (elems.insert(id).second) {
@@ -896,8 +898,10 @@ bool readonly_pgsql_selection::is_user_active(const osm_user_id_t id)
 std::set< osm_changeset_id_t > readonly_pgsql_selection::extract_changeset_ids(const pqxx::result& result) const {
 
   std::set< osm_changeset_id_t > changeset_ids;
+  auto const changeset_id_col = result.column_number("changeset_id");
+
   for (const auto & row : result) {
-    changeset_ids.insert(row["changeset_id"].as<osm_changeset_id_t>());
+    changeset_ids.insert(row[changeset_id_col].as<osm_changeset_id_t>());
   }
   return changeset_ids;
 }
