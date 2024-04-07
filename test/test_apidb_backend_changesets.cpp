@@ -130,9 +130,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset", "[changeset][db]" ) {
       "VALUES "
       "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true); "
 
-      "INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes) "
+      "INSERT INTO changesets (id, user_id, min_lat, max_lat, min_lon, max_lon, created_at, closed_at, num_changes) "
       "VALUES "
-      "  (1, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 2);"
+      "  (1, 1, 387436644, 535639226, -91658156, 190970588, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 2);"
       );
   }
 
@@ -156,7 +156,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset", "[changeset][db]" ) {
           "2013-11-14T03:10:00Z", // closed_at
           1, // uid
           std::string("user_1"), // display_name
-          {}, // bounding box
+          bbox{38.7436644, -9.1658156, 53.5639226, 19.0970588}, // bounding box
           2, // num_changes
           0 // comments_count
           ),
