@@ -132,7 +132,21 @@ struct changeset_comment_info {
   std::string created_at;
   std::string author_display_name;
 
-  bool operator==(const changeset_comment_info &) const;
+  changeset_comment_info() = default;
+  changeset_comment_info(const changeset_comment_info&) = default;
+  changeset_comment_info(osm_changeset_comment_id_t id,
+                         osm_user_id_t author_id,
+                         std::string body,
+                         std::string created_at,
+                         std::string author_display_name);
+
+  constexpr bool operator==(const changeset_comment_info &other) const {
+    return ((id == other.id) &&
+            (author_id == other.author_id) &&
+            (body == other.body) &&
+            (created_at == other.created_at) &&
+            (author_display_name == other.author_display_name));
+  }
 };
 
 struct member_info {
@@ -141,10 +155,7 @@ struct member_info {
   std::string role;
 
   member_info() = default;
-  member_info(element_type type_, osm_nwr_id_t ref_, const std::string &role_)
-    : type(type_), 
-      ref(ref_), 
-      role(role_) {}
+  member_info(element_type type_, osm_nwr_id_t ref_, std::string role_);
 
   constexpr bool operator==(const member_info &other) const {
     return ((type == other.type) &&
@@ -153,9 +164,9 @@ struct member_info {
   }
 };
 
-using nodes_t = std::list<osm_nwr_id_t>;
-using members_t = std::list<member_info>;
-using tags_t = std::list<std::pair<std::string, std::string> >;
+using nodes_t = std::vector<osm_nwr_id_t>;
+using members_t = std::vector<member_info>;
+using tags_t = std::vector<std::pair<std::string, std::string> >;
 using comments_t = std::vector<changeset_comment_info>;
 
 /**

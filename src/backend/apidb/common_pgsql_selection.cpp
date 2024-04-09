@@ -12,6 +12,7 @@
 #include "cgimap/backend/apidb/utils.hpp"
 
 #include <chrono>
+#include <charconv>
 
 
 namespace {
@@ -122,9 +123,11 @@ struct comments_columns
 
 // -------------------------------------------------------------------------------------
 
-void extract_elem(const pqxx_tuple &row, element_info &elem,
+[[nodiscard]] element_info extract_elem(const pqxx_tuple &row,
                   std::map<osm_changeset_id_t, changeset> &changeset_cache,
                   const elem_columns& col) {
+
+  element_info elem;
 
   elem.id        = row[col.id_col].as<osm_nwr_id_t>();
   elem.version   = row[col.version_col].as<int>();
@@ -141,6 +144,7 @@ void extract_elem(const pqxx_tuple &row, element_info &elem,
     elem.uid = {};
     elem.display_name = {};
   }
+  return elem;
 }
 
 template <typename T>
@@ -152,10 +156,12 @@ std::optional<T> extract_optional(const pqxx_field &f) {
   }
 }
 
-void extract_changeset(const pqxx_tuple &row,
-                       changeset_info &elem,
+[[nodiscard]] changeset_info extract_changeset(const pqxx_tuple &row,
                        std::map<osm_changeset_id_t, changeset> &changeset_cache,
                        const changeset_columns& col) {
+
+  changeset_info elem;
+
   elem.id = row[col.id_col].as<osm_changeset_id_t>();
   elem.created_at = row[col.created_at_col].c_str();
   elem.closed_at = row[col.closed_at_col].c_str();
@@ -185,30 +191,50 @@ void extract_changeset(const pqxx_tuple &row,
   }
 
   elem.num_changes = row[col.num_changes_col].as<size_t>();
+
+  return elem;
 }
 
-void extract_tags(const pqxx_tuple &row, tags_t &tags, const tag_columns& col) {
-  tags.clear();
+[[nodiscard]] tags_t extract_tags(const pqxx_tuple &row, const tag_columns& col) {
+
+  tags_t tags;
 
   auto keys   = psql_array_to_vector(row[col.tag_k_col].c_str());
   auto values = psql_array_to_vector(row[col.tag_v_col].c_str());
 
-  if (keys.size()!=values.size()) {
+  if (keys.size() != values.size()) {
     throw std::runtime_error("Mismatch in tags key and value size");
   }
 
+  tags.reserve(keys.size());
+
   for(std::size_t i=0; i<keys.size(); i++)
      tags.push_back(std::make_pair(keys[i], values[i]));
+
+  return tags;
 }
 
-struct way;
-struct relation;
+[[nodiscard]] nodes_t extract_nodes(const pqxx_tuple &row, const way_extra_columns& col) {
 
-void extract_nodes(const pqxx_tuple &row, nodes_t &nodes, const way_extra_columns& col) {
-  nodes.clear();
+  nodes_t nodes;
+
   auto ids = psql_array_to_vector(row[col.node_ids_col].c_str());
-  for (const auto & id : ids)
-    nodes.push_back(std::stol(id));
+
+  nodes.reserve(ids.size());
+
+  for (const auto & id : ids) {
+    osm_nwr_id_t node;
+
+    auto [_, ec] = std::from_chars(id.data(), id.data() + id.size(), node);
+
+    if (ec != std::errc()) {
+     throw std::runtime_error("Node id conversion to integer failed");
+    }
+
+    nodes.push_back(node);
+  }
+
+  return nodes;
 }
 
 element_type type_from_name(const char *name) {
@@ -239,31 +265,43 @@ element_type type_from_name(const char *name) {
   return type;
 }
 
-struct relation;
+[[nodiscard]] members_t extract_members(const pqxx_tuple &row, const relation_extra_columns& col) {
 
-void extract_members(const pqxx_tuple &row, members_t &members, const relation_extra_columns& col) {
-  member_info member;
-  members.clear();
+  members_t members;
 
   auto types = psql_array_to_vector(row[col.member_types_col].c_str());
   auto ids   = psql_array_to_vector(row[col.member_ids_col].c_str());
   auto roles = psql_array_to_vector(row[col.member_roles_col].c_str());
 
-  if (types.size()!=ids.size() || ids.size()!=roles.size()) {
+  if (types.size() != ids.size() ||
+      ids.size() != roles.size()) {
     throw std::runtime_error("Mismatch in members types, ids and roles size");
   }
 
+  members.reserve(ids.size());
+
   for (std::size_t i=0; i<ids.size(); i++) {
+    member_info member;
     member.type = type_from_name(types[i].c_str());
-    member.ref = std::stol(ids[i]);
+
+    {
+      auto [_, ec] = std::from_chars(ids[i].data(), ids[i].data() + ids[i].size(), member.ref);
+
+      if (ec != std::errc()) {
+       throw std::runtime_error("Member ref conversion to integer failed");
+      }
+    }
+
     member.role = roles[i];
     members.push_back(member);
   }
+
+  return members;
 }
 
-void extract_comments(const pqxx_tuple &row, comments_t &comments, const comments_columns& col) {
-  changeset_comment_info comment;
-  comments.clear();
+[[nodiscard]] comments_t extract_comments(const pqxx_tuple &row, const comments_columns& col) {
+
+  comments_t comments;
 
   auto id           = psql_array_to_vector(row[col.comment_id_col].c_str());
   auto author_id    = psql_array_to_vector(row[col.comment_author_id_col].c_str());
@@ -271,24 +309,46 @@ void extract_comments(const pqxx_tuple &row, comments_t &comments, const comment
   auto body         = psql_array_to_vector(row[col.comment_body_col].c_str());
   auto created_at   = psql_array_to_vector(row[col.comment_created_at_col].c_str());
 
-  if (id.size()!=author_id.size() || author_id.size()!=display_name.size()
-      || display_name.size()!=body.size() || body.size()!=created_at.size()) {
+  if (id.size() != author_id.size() ||
+      author_id.size() != display_name.size() ||
+      display_name.size() != body.size() ||
+      body.size() != created_at.size()) {
     throw std::runtime_error("Mismatch in comments author_id, display_name, body and created_at size");
   }
 
+  comments.reserve(id.size());
+
   for (std::size_t i=0; i<id.size(); i++) {
-    comment.id = std::stol(id[i]);
-    comment.author_id = std::stol(author_id[i]);
+
+    changeset_comment_info comment;
+
+    {
+      auto [_, ec] = std::from_chars(id[i].data(), id[i].data() + id[i].size(), comment.id);
+
+      if (ec != std::errc()) {
+       throw std::runtime_error("Comment id conversion to integer failed");
+      }
+    }
+
+    {
+      auto [_, ec] = std::from_chars(author_id[i].data(), author_id[i].data() + author_id[i].size(), comment.author_id);
+
+      if (ec != std::errc()) {
+       throw std::runtime_error("Author id conversion to integer failed");
+      }
+    }
+
     comment.author_display_name = display_name[i];
     comment.body = body[i];
     comment.created_at = created_at[i];
     comments.push_back(comment);
   }
+
+  return comments;
 }
 
 
 struct node {
-
   using extra_columns = node_extra_columns;
 
   struct extra_info {
@@ -306,13 +366,12 @@ struct node {
 };
 
 struct way {
-
   using extra_columns = way_extra_columns;
 
   struct extra_info {
     nodes_t nodes;
     inline void extract(const pqxx_tuple &row, const extra_columns& col) {
-      extract_nodes(row, nodes, col);
+      nodes = extract_nodes(row, col);
     }
   };
 
@@ -324,13 +383,12 @@ struct way {
 };
 
 struct relation {
-
   using extra_columns = relation_extra_columns;
 
   struct extra_info {
     members_t members;
     inline void extract(const pqxx_tuple &row, const extra_columns& col) {
-      extract_members(row, members, col);
+      members = extract_members(row, col);
     }
   };
 
@@ -347,18 +405,15 @@ void extract(
   std::function<void(const element_info&)> notify,
   std::map<osm_changeset_id_t, changeset> &cc) {
 
-  element_info elem;
-  typename T::extra_info extra;
-  typename T::extra_columns extra_cols(rows);
-  tags_t tags;
-
+  const typename T::extra_columns extra_cols(rows);
   const elem_columns elem_cols(rows);
   const tag_columns tag_cols(rows);
 
   for (const auto &row : rows) {
-    extract_elem(row, elem, cc, elem_cols);
+    typename T::extra_info extra;
+    auto elem = extract_elem(row, cc, elem_cols);
     extra.extract(row, extra_cols);
-    extract_tags(row, tags, tag_cols);
+    auto tags = extract_tags(row, tag_cols);
     if (notify)
       notify(elem);     // let callback function know about a new element we're processing
     T::write(formatter, elem, extra, tags);
@@ -392,21 +447,18 @@ void extract_relations(
 
 void extract_changesets(
   const pqxx::result &rows, output_formatter &formatter,
-  std::map<osm_changeset_id_t, changeset> &cc, const std::chrono::system_clock::time_point &now,
+  std::map<osm_changeset_id_t, changeset> &cc,
+  const std::chrono::system_clock::time_point &now,
   bool include_changeset_discussions) {
-
-  changeset_info elem;
-  tags_t tags;
-  comments_t comments;
 
   const changeset_columns changeset_cols(rows);
   const comments_columns comments_cols(rows);
   const tag_columns tag_cols(rows);
 
   for (const auto &row : rows) {
-    extract_changeset(row, elem, cc, changeset_cols);
-    extract_tags(row, tags, tag_cols);
-    extract_comments(row, comments, comments_cols);
+    auto elem = extract_changeset(row, cc, changeset_cols);
+    auto tags = extract_tags(row, tag_cols);
+    auto comments = extract_comments(row, comments_cols);
     elem.comments_count = comments.size();
     formatter.write_changeset(
       elem, tags, include_changeset_discussions, comments, now);
