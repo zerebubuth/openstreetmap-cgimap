@@ -40,7 +40,8 @@ enum class action_type {
 
 namespace {
 
-const char* element_type_name(element_type elt) {
+template <typename T = const char *>
+T element_type_name(element_type elt) noexcept {
 
   switch (elt) {
   case element_type::node:
