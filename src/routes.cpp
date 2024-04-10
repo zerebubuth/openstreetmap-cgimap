@@ -57,6 +57,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <utility>
 
 #include <fmt/core.h>
 
@@ -119,7 +120,7 @@ struct router {
     static_assert(std::is_base_of<handler, Handler>::value, "GET rule requires handler subclass");
     static_assert(!std::is_base_of<payload_enabled_handler, Handler>::value, "GET rule cannot use payload enabled handler subclass");
 
-    rules_get.push_back(std::make_unique<rule<Handler, Rule> >(std::move(r)));
+    rules_get.push_back(std::make_unique<rule<Handler, Rule> >(std::forward<Rule>(r)));
     return *this;
   }
 
@@ -128,7 +129,7 @@ struct router {
 
     static_assert(std::is_base_of<payload_enabled_handler, Handler>::value, "POST rule requires payload enabled handler subclass");
 
-    rules_post.push_back(std::make_unique<rule<Handler, Rule> >(std::move(r)));
+    rules_post.push_back(std::make_unique<rule<Handler, Rule> >(std::forward<Rule>(r)));
     return *this;
   }
 
@@ -137,7 +138,7 @@ struct router {
 
     static_assert(std::is_base_of<payload_enabled_handler, Handler>::value, "PUT rule requires payload enabled handler subclass");
 
-    rules_put.push_back(std::make_unique<rule<Handler, Rule> >(std::move(r)));
+    rules_put.push_back(std::make_unique<rule<Handler, Rule> >(std::forward<Rule>(r)));
     return *this;
   }
 
