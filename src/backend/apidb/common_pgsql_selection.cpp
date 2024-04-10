@@ -208,8 +208,8 @@ std::optional<T> extract_optional(const pqxx_field &f) {
 
   tags.reserve(keys.size());
 
-  for(std::size_t i=0; i<keys.size(); i++)
-     tags.push_back(std::make_pair(keys[i], values[i]));
+  for (std::size_t i = 0; i < keys.size(); i++)
+    tags.emplace_back(keys[i], values[i]);
 
   return tags;
 }
