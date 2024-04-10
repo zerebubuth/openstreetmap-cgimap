@@ -41,7 +41,7 @@ type parse_from(const std::string &name) {
   } else if (name == "text/plain") {
     return mime::type::text_plain;
   } else if (name == "text/xml") {     // alias according to RFC 7303, section 9.2
-    return mime::type:: application_xml;
+    return mime::type::application_xml;
   } else if (name == "application/xml") {
     return mime::type::application_xml;
 #if HAVE_YAJL
