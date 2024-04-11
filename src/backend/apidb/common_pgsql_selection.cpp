@@ -131,7 +131,7 @@ struct comments_columns
 
   elem.id        = row[col.id_col].as<osm_nwr_id_t>();
   elem.version   = row[col.version_col].as<int>();
-  elem.timestamp = row[col.timestamp_col].c_str();
+  elem.timestamp = row[col.timestamp_col].as<std::string>();
   elem.changeset = row[col.changeset_id_col].as<osm_changeset_id_t>();
   elem.visible   = row[col.visible_col].as<bool>();
 
@@ -163,8 +163,8 @@ std::optional<T> extract_optional(const pqxx_field &f) {
   changeset_info elem;
 
   elem.id = row[col.id_col].as<osm_changeset_id_t>();
-  elem.created_at = row[col.created_at_col].c_str();
-  elem.closed_at = row[col.closed_at_col].c_str();
+  elem.created_at = row[col.created_at_col].as<std::string>();
+  elem.closed_at = row[col.closed_at_col].as<std::string>();
 
   const auto & cs = changeset_cache[elem.id];
 

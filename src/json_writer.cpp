@@ -63,10 +63,6 @@ void json_writer::start_object() {
   yajl_gen_map_open(gen);
 }
 
-void json_writer::object_key(const char* s) {
-  entry(s);
-}
-
 void json_writer::object_key(std::string_view sv) {
   entry(sv);
 }
@@ -100,14 +96,6 @@ void json_writer::entry(double d) {
 #endif
 
   yajl_gen_number(gen, str, len);
-}
-
-void json_writer::entry(const char* s) {
-  entry(std::string_view(s));
-}
-
-void json_writer::entry(std::string_view sv) {
-  yajl_gen_string(gen, (const unsigned char *)sv.data(), sv.size());
 }
 
 void json_writer::start_array() {

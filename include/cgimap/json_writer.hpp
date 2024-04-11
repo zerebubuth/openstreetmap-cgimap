@@ -39,7 +39,6 @@ public:
   ~json_writer() noexcept override;
 
   void start_object();
-  void object_key(const char* s);
   void object_key(std::string_view sv);
   void end_object();
 
@@ -73,8 +72,14 @@ public:
     yajl_gen_number(gen, str, len);
   }
 
-  void entry(const char* s);
-  void entry(std::string_view sv);
+  template <typename T,
+            std::enable_if_t<std::is_convertible_v<T&&, std::string_view>,
+                             bool> = true>
+  void entry(T&& s)
+  {
+    auto sv = std::string_view(s);
+    yajl_gen_string(gen, (const unsigned char *)sv.data(), sv.size());
+  }
 
   template <typename TKey, typename TValue>
   void property(TKey&& key, TValue&& val) {
