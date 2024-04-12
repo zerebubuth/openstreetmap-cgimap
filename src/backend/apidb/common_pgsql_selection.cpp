@@ -199,8 +199,8 @@ std::optional<T> extract_optional(const pqxx_field &f) {
 
   tags_t tags;
 
-  auto keys   = psql_array_to_vector(row[col.tag_k_col].c_str());
-  auto values = psql_array_to_vector(row[col.tag_v_col].c_str());
+  auto keys   = psql_array_to_vector(row[col.tag_k_col]);
+  auto values = psql_array_to_vector(row[col.tag_v_col]);
 
   if (keys.size() != values.size()) {
     throw std::runtime_error("Mismatch in tags key and value size");
@@ -218,7 +218,7 @@ std::optional<T> extract_optional(const pqxx_field &f) {
 
   nodes_t nodes;
 
-  auto ids = psql_array_to_vector(row[col.node_ids_col].c_str());
+  auto ids = psql_array_to_vector(row[col.node_ids_col]);
 
   nodes.reserve(ids.size());
 
@@ -269,9 +269,9 @@ element_type type_from_name(const char *name) {
 
   members_t members;
 
-  auto types = psql_array_to_vector(row[col.member_types_col].c_str());
-  auto ids   = psql_array_to_vector(row[col.member_ids_col].c_str());
-  auto roles = psql_array_to_vector(row[col.member_roles_col].c_str());
+  auto types = psql_array_to_vector(row[col.member_types_col]);
+  auto ids   = psql_array_to_vector(row[col.member_ids_col]);
+  auto roles = psql_array_to_vector(row[col.member_roles_col]);
 
   if (types.size() != ids.size() ||
       ids.size() != roles.size()) {
@@ -303,11 +303,11 @@ element_type type_from_name(const char *name) {
 
   comments_t comments;
 
-  auto id           = psql_array_to_vector(row[col.comment_id_col].c_str());
-  auto author_id    = psql_array_to_vector(row[col.comment_author_id_col].c_str());
-  auto display_name = psql_array_to_vector(row[col.comment_display_name_col].c_str());
-  auto body         = psql_array_to_vector(row[col.comment_body_col].c_str());
-  auto created_at   = psql_array_to_vector(row[col.comment_created_at_col].c_str());
+  auto id           = psql_array_to_vector(row[col.comment_id_col]);
+  auto author_id    = psql_array_to_vector(row[col.comment_author_id_col]);
+  auto display_name = psql_array_to_vector(row[col.comment_display_name_col]);
+  auto body         = psql_array_to_vector(row[col.comment_body_col]);
+  auto created_at   = psql_array_to_vector(row[col.comment_created_at_col]);
 
   if (id.size() != author_id.size() ||
       author_id.size() != display_name.size() ||
@@ -463,6 +463,10 @@ void extract_changesets(
     formatter.write_changeset(
       elem, tags, include_changeset_discussions, comments, now);
   }
+}
+
+std::vector<std::string> psql_array_to_vector(const pqxx::field& field) {
+  return psql_array_to_vector(std::string_view(field.c_str(), field.size()));
 }
 
 std::vector<std::string> psql_array_to_vector(std::string_view str) {
