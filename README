@@ -187,6 +187,8 @@ CGImap to avoid any possibility of data corruption.
 
 ## Testing
 
+### Test suite
+
 To run the test suite you will need additional packages installed:
 
     sudo apt-get install postgresql-all postgresql-common postgresql-server-dev-all
@@ -219,6 +221,34 @@ whole set of source files by running:
 
 Ideally, this should be done before committing each set of changes.
 -->
+
+### Testing API calls without a web server
+
+To test API calls during local development without having to set up a http server, you can use the [cgi-fcgi](https://manpages.debian.org/testing/libfcgi-bin/cgi-fcgi.1.en.html) tool provided by the `libfcgi-bin` package (Debian/Ubuntu). `cgi-fcgi` converts [CGI](https://en.wikipedia.org/wiki/Common_Gateway_Interface) calls to the [FastCGI](https://en.wikipedia.org/wiki/FastCGI) interface that is used by openstreetmap-cgimap. 
+
+Start the `openstreetmap-cgimap` application. A database needs to be already set up and running (e.g. via [docker](https://github.com/openstreetmap/openstreetmap-website/blob/master/DOCKER.md)).
+```bash
+./openstreetmap-cgimap --socket :8000 --host localhost --dbport 54321 --dbname openstreetmap --username openstreetmap --password openstreetmap --logfile=/dev/stdout
+```
+
+In a different terminal window, run `cgi-fcgi` to perform an API call. The request parameters can be set via environment variables as usual for CGI. Request data is read from stdin, the server response will be returned via stdout.
+
+Examples:
+
+* Simple unauthenticated call to `GET` `/api/0.6/nodes?nodes=1,2,3`:
+```bash
+REMOTE_ADDR=127.0.0.1 REQUEST_METHOD=GET REQUEST_URI="/api/0.6/nodes" QUERY_STRING="nodes=1,2,3" cgi-fcgi -bind -connect :8000
+```
+
+* Authenticated `PUT` `/api/0.6/changeset/create` call with body data using username/password basic auth:
+
+```bash
+# Calculate base64 encoded parameter for http authorization header
+echo -n "testuser:testpassword" | base64
+# dGVzdHVzZXI6dGVzdHBhc3N3b3Jk
+
+echo -n "<osm><changeset><tag k=\"created_by\" v=\"cgimap_test\" /></changeset></osm>" | REMOTE_ADDR=127.0.0.1 REQUEST_METHOD=PUT REQUEST_URI="/api/0.6/changeset/create" HTTP_AUTHORIZATION="Basic dGVzdHVzZXI6dGVzdHBhc3N3b3Jk" CONTENT_LENGTH=72 cgi-fcgi -bind -connect :8000
+```
 
 ## Acknowledgements
 
