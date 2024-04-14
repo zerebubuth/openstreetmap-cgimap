@@ -2,7 +2,7 @@ Source: openstreetmap-cgimap
 Section: libs
 Priority: optional
 Maintainer: Matt Amos <zerebubuth@gmail.com>
-Build-Depends: debhelper (>=10), pkg-config, zlib1g-dev, libxml2-dev, libpqxx-dev, libfcgi-dev, libboost-program-options-dev, libfmt-dev, libmemcached-dev, libcrypto++-dev, libargon2-dev, libyajl-dev, postgresql-all, postgresql-common (>= 148~), postgresql-server-dev-all, cmake
+Build-Depends: debhelper (>=10), pkg-config, zlib1g-dev, libbrotli-dev, libxml2-dev, libpqxx-dev, libfcgi-dev, libboost-program-options-dev, libfmt-dev, libmemcached-dev, libcrypto++-dev, libargon2-dev, libyajl-dev, postgresql-all, postgresql-common (>= 148~), postgresql-server-dev-all, cmake
 Homepage: https://github.com/zerebubuth/openstreetmap-cgimap
 Standards-Version: 3.9.7
 
