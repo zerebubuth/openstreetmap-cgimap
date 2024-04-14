@@ -1,15 +1,23 @@
-########
-# catch2
-########
-add_library(catch2 INTERFACE)
-target_include_directories(catch2 INTERFACE
-    ../contrib/catch2/single_include)
-
-
 ############
 # unit tests
 ############
 if(BUILD_TESTING)
+
+    ##################
+    # cgimap_staticxml
+    ##################
+    add_library(cgimap_staticxml)
+
+    target_include_directories(cgimap_staticxml PUBLIC
+        .)
+
+    target_sources(cgimap_staticxml PRIVATE
+        staticxml.cpp)
+
+    target_link_libraries(cgimap_staticxml
+        cgimap_common_compiler_options
+        LibXml2::LibXml2
+        cgimap_core)
 
     ###########
     # test_core
@@ -27,8 +35,6 @@ if(BUILD_TESTING)
 
 
     file(GLOB test_core_test_dirs LIST_DIRECTORIES true "${CMAKE_CURRENT_SOURCE_DIR}/*.testcore")
-    add_test(NAME test_core_node
-        COMMAND test_core "${CMAKE_CURRENT_SOURCE_DIR}/node.testcore")
     foreach (test ${test_core_test_dirs})
     get_filename_component (TName "${test}" NAME_WE)
     add_test(NAME "${TName}.testcore" COMMAND test_core "${test}")

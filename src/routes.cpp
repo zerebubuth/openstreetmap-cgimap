@@ -52,20 +52,15 @@
 #include "cgimap/http.hpp"
 #include "cgimap/mime_types.hpp"
 
+#include <memory>
 #include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
+#include <utility>
 
-#include <boost/algorithm/string.hpp>
 #include <fmt/core.h>
 
-using std::list;
-using std::string;
-using std::pair;
-using std::unique_ptr;
-
-using boost::fusion::make_cons;
-using boost::fusion::invoke;
-
-namespace al = boost::algorithm;
 
 /**
  * maps router DSL expressions to constructors for handlers. this means it's
@@ -76,42 +71,41 @@ struct router {
   // interface through which all matches and constructions are performed.
   struct rule_base {
     virtual ~rule_base() = default;
-    virtual bool invoke_if(const list<string> &, request &, handler_ptr_t &) = 0;
+    virtual bool invoke_if(const std::vector<std::string_view> &, request &, handler_ptr_t &) = 0;
   };
 
-  using rule_ptr = std::unique_ptr<rule_base>;
-
   // concrete rule match / constructor class
-  template <typename rule_t, typename func_t> 
+  template <typename Handler, typename Rule>
   struct rule : public rule_base {
-    // the DSL rule expression to match
-    rule_t r;
-
-    // the function to call (used later as constructor factory)
-    func_t func;
-
-    rule(rule_t r_, func_t f_) : 
-      r(std::move(r_)), 
-      func(f_) 
-    {}
+    explicit rule(Rule&& r) : r(std::move(r)) {}
 
     // try to match the expression. if it succeeds, call the provided function
     // with the provided params and the matched DSL arguments.
-    bool invoke_if(const list<string> &parts, 
+    bool invoke_if(const std::vector<std::string_view> &parts,
                    request &params,
                    handler_ptr_t &ptr) override {
-      try {
-        auto begin = parts.begin();
-        auto sequence = r.match(begin, parts.end());
-        if(begin!=parts.end())
-          throw match::error();
-        ptr.reset(
-            invoke(func, make_cons(std::ref(params), sequence)));
-        return true;
-      } catch (const match::error &e) {
+
+      auto begin = parts.begin();
+      auto [sequence, error] = r.match(begin, parts.end());
+
+      if (error)
         return false;
-      }
+
+      if (begin != parts.end())
+        return false; // no match
+
+      // the function to call (used later as constructor factory)
+      boost::factory<Handler *> func{};
+
+      ptr.reset(
+          boost::fusion::invoke(func, boost::fusion::make_cons(std::ref(params), sequence)));
+
+      return true;
     }
+
+    private:
+      // the DSL rule expression to match
+      Rule r;
   };
 
   /* add a match all methods rule (a DSL expression) which constructs the Handler
@@ -121,50 +115,39 @@ struct router {
    */
 
   // add rule to match HTTP GET method only
-  template <typename Handler, typename Rule> router& GET(Rule r) {
-    // functor to create Handler instances
-    boost::factory<Handler *> ctor;
+  template <typename Handler, typename Rule> router& GET(Rule&& r) {
 
     static_assert(std::is_base_of<handler, Handler>::value, "GET rule requires handler subclass");
     static_assert(!std::is_base_of<payload_enabled_handler, Handler>::value, "GET rule cannot use payload enabled handler subclass");
 
-    rules_get.push_back(
-        rule_ptr(new rule<Rule, boost::factory<Handler *> >(std::move(r), ctor)));
+    rules_get.push_back(std::make_unique<rule<Handler, Rule> >(std::forward<Rule>(r)));
     return *this;
   }
 
   // add rule to match HTTP POST method only
-  template <typename Handler, typename Rule> router& POST(Rule r) {
-    // functor to create Handler instances
-    boost::factory<Handler *> ctor;
+  template <typename Handler, typename Rule> router& POST(Rule&& r) {
 
     static_assert(std::is_base_of<payload_enabled_handler, Handler>::value, "POST rule requires payload enabled handler subclass");
 
-    rules_post.push_back(
-        rule_ptr(new rule<Rule, boost::factory<Handler *> >(std::move(r), ctor)));
+    rules_post.push_back(std::make_unique<rule<Handler, Rule> >(std::forward<Rule>(r)));
     return *this;
   }
 
-
   // add rule to match HTTP PUT method only
-  template <typename Handler, typename Rule> router& PUT(Rule r) {
-    // functor to create Handler instances
-    boost::factory<Handler *> ctor;
+  template <typename Handler, typename Rule> router& PUT(Rule&& r) {
 
     static_assert(std::is_base_of<payload_enabled_handler, Handler>::value, "PUT rule requires payload enabled handler subclass");
 
-    rules_put.push_back(
-        rule_ptr(new rule<Rule, boost::factory<Handler *> >(std::move(r), ctor)));
+    rules_put.push_back(std::make_unique<rule<Handler, Rule> >(std::forward<Rule>(r)));
     return *this;
   }
 
   /* match the list of path components given in p. if a match is found,
-   * construct an
-   * object of the handler type with the provided params and the matched
-   * params.
+   * construct an object of the handler type with the provided params
+   * and the matched params.
    */
 
-  handler_ptr_t match(const list<string> &p, request &params) {
+  handler_ptr_t match(const std::vector<std::string_view> &p, request &params) {
 
     handler_ptr_t hptr;
 
@@ -223,9 +206,11 @@ struct router {
   }
 
 private:
-  list<rule_ptr> rules_get;
-  list<rule_ptr> rules_post;
-  list<rule_ptr> rules_put;
+  using rule_ptr = std::unique_ptr<rule_base>;
+
+  std::vector<rule_ptr> rules_get;
+  std::vector<rule_ptr> rules_post;
+  std::vector<rule_ptr> rules_put;
 };
 
 routes::routes()
@@ -290,46 +275,63 @@ namespace {
  * figures out the mime type from the path specification, e.g: a resource ending
  * in .xml should be application/xml, .json should be application/json, etc...
  */
-  pair<string, mime::type> resource_mime_type(const string &path) {
+  std::pair<std::string, mime::type> resource_mime_type(const std::string &path) {
 
 #if HAVE_YAJL
-    {
-      std::size_t json_found = path.rfind(".json");
 
-      if (json_found != string::npos && json_found == path.length() - 5) {
-	  return make_pair(path.substr(0, json_found), mime::application_json);
-      }
-    }
+  std::size_t json_found = path.rfind(".json");
+
+  if (json_found != std::string::npos && json_found == path.length() - 5) {
+      return {path.substr(0, json_found), mime::type::application_json};
+  }
+
 #endif
 
-    {
-      std::size_t xml_found = path.rfind(".xml");
+  std::size_t xml_found = path.rfind(".xml");
 
-      if (xml_found != string::npos && xml_found == path.length() - 4) {
-	  return make_pair(path.substr(0, xml_found), mime::application_xml);
-      }
-    }
+  if (xml_found != std::string::npos && xml_found == path.length() - 4) {
+      return {path.substr(0, xml_found), mime::type::application_xml};
+  }
 
-    return make_pair(path, mime::unspecified_type);
+  return make_pair(path, mime::type::unspecified_type);
 }
 
-handler_ptr_t route_resource(request &req, const string &path,
-                             const unique_ptr<router> &r) {
+std::vector<std::string_view> split(std::string_view str, char delim)
+{
+  std::vector< std::string_view > result;
+  auto left = str.begin();
+  for (auto it = left; it != str.end(); ++it)
+  {
+    if (*it == delim)
+    {
+      result.emplace_back(&*left, it - left);
+      left = it + 1;
+      if (left == str.end())
+        result.emplace_back(&*it, 0);
+    }
+  }
+  if (left != str.end())
+    result.emplace_back(&*left, str.end() - left);
+  return result;
+}
+
+handler_ptr_t route_resource(request &req, const std::string &path,
+                             const std::unique_ptr<router> &r) {
+
   // strip off the format-spec, if there is one
-  pair<string, mime::type> resource = resource_mime_type(path);
+  auto [resource, mime_type] = resource_mime_type(path);
 
   // split the URL into bits to be matched.
-  list<string> path_components;
-  al::split(path_components, resource.first, al::is_any_of("/"));
+  auto path_components = split(resource, '/');
 
-  handler_ptr_t hptr(r->match(path_components, req));
+  auto hptr(r->match(path_components, req));
 
   // if the pointer points at something, then the path was found. otherwise,
   // it must have exhausted all the possible routes.
   if (hptr) {
     // ugly hack - need this info later on to choose the output formatter,
     // but don't want to parse the URI again...
-    hptr->set_resource_type(resource.second);
+    hptr->set_resource_type(mime_type);
   }
 
   return hptr;
@@ -338,16 +340,16 @@ handler_ptr_t route_resource(request &req, const string &path,
 
 handler_ptr_t routes::operator()(request &req) const {
   // full path from request handler
-  string path = get_request_path(req);
+  auto path = get_request_path(req);
   handler_ptr_t hptr;
   // check the prefix
   if (path.compare(0, common_prefix.size(), common_prefix) == 0) {
-    hptr = route_resource(req, string(path, common_prefix.size()), r);
+    hptr = route_resource(req, std::string(path, common_prefix.size()), r);
 
 #ifdef ENABLE_API07
   } else if (path.compare(0, experimental_prefix.size(), experimental_prefix) ==
              0) {
-    hptr = route_resource(req, string(path, experimental_prefix.size()),
+    hptr = route_resource(req, std::string(path, experimental_prefix.size()),
                           r_experimental);
 #endif /* ENABLE_API07 */
   }

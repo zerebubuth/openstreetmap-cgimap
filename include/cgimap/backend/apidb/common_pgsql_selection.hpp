@@ -54,5 +54,6 @@ void extract_changesets(
 // parses psql array based on specs given
 // https://www.postgresql.org/docs/current/static/arrays.html#ARRAYS-IO
 std::vector<std::string> psql_array_to_vector(std::string_view str);
+std::vector<std::string> psql_array_to_vector(const pqxx::field& field);
 
 #endif /* CGIMAP_BACKEND_APIDB_COMMON_PGSQL_SELECTION_HPP */

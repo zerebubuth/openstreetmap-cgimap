@@ -10,6 +10,7 @@ target_sources(cgimap_core PRIVATE
     backend.cpp
     backend.cpp
     bbox.cpp
+    brotli.cpp
     choose_formatter.cpp
     handler.cpp
     http.cpp
@@ -37,13 +38,6 @@ target_sources(cgimap_core PRIVATE
     xml_formatter.cpp
     xml_writer.cpp
     zlib.cpp
-
-    parsers/exception.cpp
-    parsers/internal_error.cpp
-    parsers/parse_error.cpp
-    parsers/parser.cpp
-    parsers/saxparser.cpp
-    parsers/wrapped_exception.cpp
 
     api06/changeset_close_handler.cpp
     api06/changeset_create_handler.cpp
@@ -80,11 +74,14 @@ target_sources(cgimap_core PRIVATE
 
 target_link_libraries(cgimap_core
     cgimap_common_compiler_options
-    LibXml2::LibXml2
+    libxml++
     ZLIB::ZLIB
     CryptoPP::CryptoPP
     Libmemcached::Libmemcached
     Argon2::Argon2
+    $<$<BOOL:${ENABLE_BROTLI}>:Brotli::common>
+    $<$<BOOL:${ENABLE_BROTLI}>:Brotli::encoder>
+    $<$<BOOL:${ENABLE_BROTLI}>:Brotli::decoder>
     $<$<BOOL:${ENABLE_YAJL}>:YAJL::YAJL>
     PQXX::PQXX)
 
@@ -106,4 +103,4 @@ target_link_libraries(cgimap_fcgi
 
 
 add_subdirectory(backend/apidb)
-add_subdirectory(backend/staticxml)
+

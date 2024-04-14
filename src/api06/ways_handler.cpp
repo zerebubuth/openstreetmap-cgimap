@@ -26,7 +26,7 @@ ways_responder::ways_responder(mime::type mt, const std::vector<id_version>& ids
 
   for (id_version idv : ids) {
     if (idv.version) {
-      historic_ids.push_back(std::make_pair(idv.id, *idv.version));
+      historic_ids.emplace_back(idv.id, *idv.version);
     } else {
       current_ids.push_back(idv.id);
     }

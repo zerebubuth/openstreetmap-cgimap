@@ -503,15 +503,33 @@ void process_request(request &req, rate_limiter &limiter,
                      oauth::store* store) {
   try {
 
-    std::set<osm_user_role_t> user_roles;
 
-    bool allow_api_write = true;
 
     // get the client IP address
     const std::string ip = fcgi_get_env(req, "REMOTE_ADDR");
 
     // fetch and parse the request method
     std::optional<http::method> maybe_method = http::parse_method(fcgi_get_env(req, "REQUEST_METHOD"));
+
+    // figure how to handle the request
+    handler_ptr_t handler = route(req);
+
+    // if handler doesn't accept this method, then return method not
+    // allowed.
+    if (!maybe_method || !handler->allows_method(*maybe_method)) {
+      process_not_allowed(req, *handler);
+      return;
+    }
+    const http::method method = *maybe_method;
+
+    // override the default access control allow methods header
+    req.set_default_methods(handler->allowed_methods());
+
+    // ------
+
+    std::set<osm_user_role_t> user_roles;
+
+    bool allow_api_write = true;
 
     auto default_transaction = factory.get_default_transaction();
 
@@ -542,20 +560,6 @@ void process_request(request &req, rate_limiter &limiter,
     }
 
     auto start_time = std::chrono::high_resolution_clock::now();
-
-    // figure how to handle the request
-    handler_ptr_t handler = route(req);
-
-    // if handler doesn't accept this method, then return method not
-    // allowed.
-    if (!maybe_method || !handler->allows_method(*maybe_method)) {
-      process_not_allowed(req, *handler);
-      return;
-    }
-    http::method method = *maybe_method;
-
-    // override the default access control allow methods header
-    req.set_default_methods(handler->allowed_methods());
 
     if (is_moderator && show_redactions_requested(req)) {
       selection->set_redactions_visible(true);

@@ -61,7 +61,7 @@ public:
                                                   http::method::HEAD | 
                                                   http::method::OPTIONS;
 
-  handler(mime::type default_type = mime::unspecified_type,
+  handler(mime::type default_type = mime::type::unspecified_type,
           http::method methods = default_methods);
   virtual ~handler() = default;
 
@@ -90,7 +90,7 @@ using handler_ptr_t = std::unique_ptr<handler>;
 
 class payload_enabled_handler : public handler {
 public:
-  payload_enabled_handler(mime::type default_type = mime::unspecified_type,
+  payload_enabled_handler(mime::type default_type = mime::type::unspecified_type,
                           http::method methods = http::method::POST | http::method::OPTIONS);
 
   // Responder used to update the database

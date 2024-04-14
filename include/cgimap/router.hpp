@@ -12,10 +12,12 @@
 
 #include "cgimap/types.hpp"
 
-#include <string>
-#include <list>
-#include <stdexcept>
 #include <iostream>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 #include <boost/fusion/container/generation/make_cons.hpp>
 #include <boost/fusion/include/make_cons.hpp>
@@ -43,7 +45,7 @@ using boost::fusion::as_list;
 namespace result_of = boost::fusion::result_of;
 
 // iterates over the split up parts of the item being matched.
-using part_iterator = std::list<std::string>::const_iterator;
+using part_iterator = std::vector<std::string_view>::const_iterator;
 
 /**
  * thrown when a match error occurs, giving some information about the
@@ -65,7 +67,7 @@ struct error : public std::runtime_error {
 struct match_string;
 struct match_osm_id;
 struct match_begin;
-struct match_name;
+
 template <typename LeftType, typename RightType> struct match_and;
 
 /**
@@ -83,9 +85,6 @@ template <typename Self> struct ops {
   match_and<Self, match_osm_id> operator/(const match_osm_id &rhs) const {
     return match_and<Self, match_osm_id>(*static_cast<const Self *>(this), rhs);
   }
-  match_and<Self, match_name> operator/(const match_name &rhs) const {
-    return match_and<Self, match_name>(*static_cast<const Self *>(this), rhs);
-  }
 };
 
 /**
@@ -93,14 +92,21 @@ template <typename Self> struct ops {
  */
 template <typename LeftType, typename RightType>
 struct match_and : public ops<match_and<LeftType, RightType> > {
+
   using match_type = typename result_of::as_list<typename result_of::join<
       typename LeftType::match_type,
       typename RightType::match_type>::type>::type;
+
   match_and(const LeftType &l, const RightType &r) : lhs(l), rhs(r) {}
-  match_type match(part_iterator &begin, const part_iterator &end) const {
-    typename LeftType::match_type lval = lhs.match(begin, end);
-    typename RightType::match_type rval = rhs.match(begin, end);
-    return as_list(join(lval, rval));
+
+  std::pair<match_type, bool> match(part_iterator &begin, const part_iterator &end) const {
+    auto [ lval, lerror ] = lhs.match(begin, end);
+    if (lerror)
+      return {as_list(join(typename LeftType::match_type(), typename RightType::match_type())), true};
+    auto [ rval, rerror ] = rhs.match(begin, end);
+    if (rerror)
+      return {as_list(join(typename LeftType::match_type(), typename RightType::match_type())), true};
+    return {as_list(join(lval, rval)), false};
   }
 
 private:
@@ -117,16 +123,15 @@ struct match_string : public ops<match_string> {
 
   // implicit constructor intended, so that the use of this class is
   // hidden and easier / nicer to read.
-  match_string(const std::string &s);
   match_string(const char *s);
 
   // copy just copies the held string
   inline match_string(const match_string &m) = default;
 
-  match_type match(part_iterator &begin, const part_iterator &end) const;
+  std::pair<match_type, bool> match(part_iterator &begin, const part_iterator &end) const noexcept;
 
 private:
-  std::string str;
+  std::string_view str;
 };
 
 /**
@@ -135,16 +140,7 @@ private:
 struct match_osm_id : public ops<match_osm_id> {
   using match_type = list<osm_nwr_id_t>;
   match_osm_id() = default;
-  match_type match(part_iterator &begin, const part_iterator &end) const;
-};
-
-/**
- * match any string.
- */
-struct match_name : public ops<match_name> {
-  using match_type = list<std::string>;
-  match_name() = default;
-  match_type match(part_iterator &begin, const part_iterator &end) const;
+  std::pair<match_type, bool> match(part_iterator &begin, const part_iterator &end) const noexcept;
 };
 
 /**
@@ -155,13 +151,14 @@ struct match_name : public ops<match_name> {
 struct match_begin : public ops<match_begin> {
   using match_type = list<>;
   match_begin() = default;
-  match_type match(part_iterator &begin, const part_iterator &end) const;
+  inline std::pair<match_type, bool> match(part_iterator &begin, const part_iterator &end) const noexcept{
+    return {match_type(), false};
+  }
 };
 
 // match items, given nicer names so that expressions are easier to read.
-static const match_begin root_;
-static const match_osm_id osm_id_;
-static const match_name name_;
+static constexpr match_begin root_;
+static constexpr match_osm_id osm_id_;
 }
 
 #endif /* ROUTER_HPP */

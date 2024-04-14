@@ -54,7 +54,7 @@ class acceptable_types {
 public:
   explicit acceptable_types(const std::string &accept_header);
   bool is_acceptable(mime::type) const;
-  // note: returns mime::unspecified_type if none were acceptable
+  // note: returns mime::type::unspecified_type if none were acceptable
   mime::type most_acceptable_of(const std::vector<mime::type> &available) const;
 
 private:
@@ -121,10 +121,10 @@ struct http_accept_grammar
 };
 /*
       = lit("* / *")      [_val = mime::any_type]
-      | lit("text/xml") [_val = mime::application_xml]
-      | lit("application/xml") [_val = mime::application_xml]
+      | lit("text/xml") [_val = mime::type::application_xml]
+      | lit("application/xml") [_val = mime::type::application_xml]
 #if HAVE_YAJL
-      | lit("application/json")[_val = mime::application_json]
+      | lit("application/json")[_val = mime::type::application_json]
 #endif
       ;
 */
@@ -144,7 +144,7 @@ acceptable_types::acceptable_types(const std::string &accept_header) {
     for (media_range range : ranges) {
       // figure out the mime::type from the string.
       mime::type mime_type = mime::parse_from(range.mime_type);
-      if (mime_type == mime::unspecified_type) {
+      if (mime_type == mime::type::unspecified_type) {
         // if it's unknown then skip this type...
         continue;
       }
@@ -174,7 +174,7 @@ bool acceptable_types::is_acceptable(mime::type mt) const {
 }
 
 mime::type acceptable_types::most_acceptable_of(const std::vector<mime::type> &available) const {
-  mime::type best = mime::unspecified_type;
+  mime::type best = mime::type::unspecified_type;
   float score = std::numeric_limits<float>::min();
   for (mime::type type : available) {
     auto itr = mapping.find(type);
@@ -188,7 +188,7 @@ mime::type acceptable_types::most_acceptable_of(const std::vector<mime::type> &a
 
   // also check the full wildcard.
   if (!available.empty()) {
-    auto itr = mapping.find(mime::any_type);
+    auto itr = mapping.find(mime::type::any_type);
     if ((itr != mapping.end()) && (itr->second > score)) {
       best = available.front();
     }
@@ -230,7 +230,7 @@ mime::type choose_best_mime_type(const request &req, const responder& hptr) {
   mime::type best_type = hptr.resource_type();
   // check if the handler is capable of supporting an acceptable set of mime
   // types.
-  if (best_type != mime::unspecified_type) {
+  if (best_type != mime::type::unspecified_type) {
     // check that this doesn't conflict with anything in the Accept header.
     if (!hptr.is_available(best_type))
       throw http::not_acceptable(fmt::format("Acceptable formats for {} are: {}",
@@ -243,11 +243,11 @@ mime::type choose_best_mime_type(const request &req, const responder& hptr) {
   } else {
     best_type = types.most_acceptable_of(types_available);
     // if none were acceptable then...
-    if (best_type == mime::unspecified_type) {
+    if (best_type == mime::type::unspecified_type) {
 	      throw http::not_acceptable(fmt::format("Acceptable formats for {} are: {}",
 	                                get_request_path(req),
 					mime_types_to_string(types_available)));
-    } else if (best_type == mime::any_type) {
+    } else if (best_type == mime::type::any_type) {
       // choose the first of the available types if nothing is preferred.
       best_type = *(hptr.types_available().begin());
     }
@@ -260,14 +260,14 @@ mime::type choose_best_mime_type(const request &req, const responder& hptr) {
 std::unique_ptr<output_formatter> create_formatter(mime::type best_type, output_buffer& out) {
 
   switch (best_type) {
-    case mime::application_xml:
+    case mime::type::application_xml:
       return std::make_unique<xml_formatter>(std::make_unique<xml_writer>(out, true));
 
 #if HAVE_YAJL
-    case mime::application_json:
+    case mime::type::application_json:
       return std::make_unique<json_formatter>(std::make_unique<json_writer>(out, false));
 #endif
-    case mime::text_plain:
+    case mime::type::text_plain:
       return std::make_unique<text_formatter>(std::make_unique<text_writer>(out, true));
 
     default:

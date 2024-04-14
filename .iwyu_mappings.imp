@@ -1,0 +1,10 @@
+[ 
+  { include: ["@<libmemcached-.*/.*>", "public", "<libmemcached/memcached.h>", "public"] },
+  { include: ["@<boost/algorithm/string/.*>", "public", "<boost/algorithm/string.hpp>", "public"] },
+  { include: ["@<boost/program_options/.*>", "public", "<boost/program_options.hpp>", "public"] },
+  { include: ["@<boost/lexical_cast/.*>", "public", "<boost/lexical_cast.hpp>", "public"] },
+  { include: ["@<pqxx/.*\\.h.*>", "private", "<pqxx/pqxx>", "public"] },
+  { include: ["<cryptopp/config_int.h>", "private", "<cryptopp/config.h>", "public"] },
+  { include: ["<bits/chrono.h>", "private", "<chrono>", "public"] },
+  { include: ["<bits/local_lim.h>", "private", "<limits.h>", "public"] },
+] 

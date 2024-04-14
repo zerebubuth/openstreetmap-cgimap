@@ -222,7 +222,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_select_relation", "[chan
     REQUIRE(
       test_formatter::relation_t(
         element_info(1, 1, 2, "2017-03-19T20:15:00Z", 1, std::string("user_1"), true),
-        members_t{member_info(element_type_node, 1, "foo")},
+        members_t{member_info(element_type::node, 1, "foo")},
         tags_t()) == f.m_relations.front());  // relation 1, version 1 in changeset 1
   }
 }

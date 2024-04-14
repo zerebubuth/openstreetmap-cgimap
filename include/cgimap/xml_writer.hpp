@@ -14,6 +14,9 @@
 #include "cgimap/output_writer.hpp"
 #include "cgimap/util.hpp"
 
+#include <libxml/encoding.h>
+#include <libxml/xmlwriter.h>
+
 #include <memory>
 #include <string>
 #include <stdexcept>
@@ -30,10 +33,6 @@ public:
   xml_writer& operator=(const xml_writer &) = delete;
   xml_writer(xml_writer &&) = default;
   xml_writer& operator=(xml_writer &&) = default;
-
-  // create a new XML writer writing to file_name, which can be
-  // "-" for stdout.
-  explicit xml_writer(const std::string &file_name, bool indent = false);
 
   // create a new XML writer using writer callback functions
   explicit xml_writer(output_buffer &out, bool indent = false);
@@ -87,14 +86,9 @@ public:
   void error(const std::string &) override;
 
 private:
-  // shared initialisation code
-  void init(bool indent);
-
   int writeAttribute(const char* name, const char* value);
 
-  // PIMPL ideom
-  struct pimpl_;
-  std::unique_ptr<pimpl_> pimpl;
+  xmlTextWriterPtr writer;
 };
 
 #endif /* WRITER_HPP */

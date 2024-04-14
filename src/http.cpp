@@ -228,11 +228,17 @@ vector<pair<string, string> > parse_params(const string &p) {
 std::unique_ptr<encoding> choose_encoding(const string &accept_encoding) {
   vector<string> encodings;
 
+  static const std::regex regex1("\\s*([^()<>@,;:\\\\\"/[\\]\\\\?={} "
+      "\\t]+)\\s*;\\s*q\\s*=(\\d+(\\.\\d+)?)\\s*");
+
+  static const std::regex regex2( R"(\s*([^()<>@,;:\\"/[\]\\?={} \t]+)\s*)");
+
   al::split(encodings, accept_encoding, al::is_any_of(","));
 
   float identity_quality = 0.001;
   float deflate_quality = 0.000;
   float gzip_quality = 0.000;
+  float brotli_quality = 0.000;
 
   for (const string &encoding : encodings) {
     std::smatch what;
@@ -241,14 +247,12 @@ std::unique_ptr<encoding> choose_encoding(const string &accept_encoding) {
 
     if (std::regex_match(
             encoding, what,
-            std::regex("\\s*([^()<>@,;:\\\\\"/[\\]\\\\?={} "
-                         "\\t]+)\\s*;\\s*q\\s*=(\\d+(\\.\\d+)?)\\s*"))) {
+            regex1)) {
       name = what[1];
       quality = std::atof(string(what[2]).c_str());
     } else if (std::regex_match(
                    encoding, what,
-                   std::regex(
-                       R"(\s*([^()<>@,;:\\"/[\]\\?={} \t]+)\s*)"))) {
+                   regex2)) {
       name = what[1];
       quality = 1.0;
     } else {
@@ -262,6 +266,8 @@ std::unique_ptr<encoding> choose_encoding(const string &accept_encoding) {
       deflate_quality = quality;
     } else if (al::iequals(name, "gzip")) {
       gzip_quality = quality;
+    } else if (al::iequals(name, "br")) {
+      brotli_quality = quality;
     } else if (al::iequals(name, "*")) {
       if (identity_quality == 0.000)
         identity_quality = quality;
@@ -269,9 +275,18 @@ std::unique_ptr<encoding> choose_encoding(const string &accept_encoding) {
         deflate_quality = quality;
       if (gzip_quality == 0.001)
         gzip_quality = quality;
+      if (brotli_quality == 0.001)
+        brotli_quality = quality;
     }
   }
 
+#if HAVE_BROTLI
+  if (brotli_quality > 0.0 && brotli_quality >= identity_quality &&
+      brotli_quality >= deflate_quality &&
+      brotli_quality >= gzip_quality) {
+    return std::make_unique<brotli>();
+  }
+#endif
 #ifdef HAVE_LIBZ
 #ifdef ENABLE_DEFLATE
   if (deflate_quality > 0.0 && deflate_quality >= gzip_quality &&

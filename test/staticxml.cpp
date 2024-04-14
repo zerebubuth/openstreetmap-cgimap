@@ -7,7 +7,7 @@
  * For a full list of authors see the git log.
  */
 
-#include "cgimap/backend/staticxml/staticxml.hpp"
+#include "staticxml.hpp"
 #include "cgimap/backend.hpp"
 #include "cgimap/output_formatter.hpp"
 #include "cgimap/api06/id_version.hpp"
@@ -203,11 +203,11 @@ struct xml_parser {
         member_info m;
         auto member_type = get_attribute<std::string>("type", attributes);
         if (member_type == "node") {
-          m.type = element_type_node;
+          m.type = element_type::node;
         } else if (member_type == "way") {
-          m.type = element_type_way;
+          m.type = element_type::way;
         } else if (member_type == "relation") {
-          m.type = element_type_relation;
+          m.type = element_type::relation;
         } else {
           throw std::runtime_error(fmt::format("Unknown member type `{}'.", member_type));
         }
@@ -399,7 +399,7 @@ struct static_data_selection : public data_selection {
       auto r = find_current<relation>(id);
       if (r) {
         for (const member_info &m : r->get().m_members) {
-          if (m.type == element_type_node) {
+          if (m.type == element_type::node) {
             m_nodes.insert(m.ref);
           }
         }
@@ -430,7 +430,7 @@ struct static_data_selection : public data_selection {
       auto r = find_current<relation>(id);
       if (r) {
         for (const member_info &m : r->get().m_members) {
-          if (m.type == element_type_way) {
+          if (m.type == element_type::way) {
             m_ways.insert(m.ref);
           }
         }
@@ -447,7 +447,7 @@ struct static_data_selection : public data_selection {
       const relation &r = itr->second;
       if (next == end || next->second.m_info.id != r.m_info.id) {
         for (const member_info &m : r.m_members) {
-          if ((m.type == element_type_way) && (m_ways.count(m.ref) > 0)) {
+          if ((m.type == element_type::way) && (m_ways.count(m.ref) > 0)) {
             m_relations.insert(r.m_info.id);
             break;
           }
@@ -468,7 +468,7 @@ struct static_data_selection : public data_selection {
   void select_relations_from_nodes() override {
     for (auto const & [_, r] : m_db.m_relations) {
       for (const member_info &m : r.m_members) {
-        if ((m.type == element_type_node) && (m_nodes.count(m.ref) > 0)) {
+        if ((m.type == element_type::node) && (m_nodes.count(m.ref) > 0)) {
           m_relations.insert(r.m_info.id);
           break;
         }
@@ -480,7 +480,7 @@ struct static_data_selection : public data_selection {
     std::set<osm_nwr_id_t> tmp_relations;
     for (auto const & [_, r] : m_db.m_relations) {
       for (const member_info &m : r.m_members) {
-        if ((m.type == element_type_relation) &&
+        if ((m.type == element_type::relation) &&
             (m_relations.count(m.ref) > 0)) {
           tmp_relations.insert(r.m_info.id);
           break;
@@ -497,7 +497,7 @@ struct static_data_selection : public data_selection {
       auto r = find_current<relation>(id);
       if (r) {
         for (const member_info &m : r->get().m_members) {
-          if (m.type == element_type_relation) {
+          if (m.type == element_type::relation) {
             m_relations.insert(m.ref);
           }
         }
@@ -590,7 +590,7 @@ struct static_data_selection : public data_selection {
 
   std::optional< osm_user_id_t > get_user_id_for_oauth2_token(
         const std::string &token_id, bool &expired, bool &revoked,
-        bool &allow_api_write) override {
+        bool &allow_api_write) {
     expired = false;
     revoked = false;
     allow_api_write = false;

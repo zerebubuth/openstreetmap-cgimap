@@ -75,7 +75,7 @@ changeset_upload_responder::changeset_upload_responder(mime::type mt,
 
 changeset_upload_handler::changeset_upload_handler(const request &,
                                                    osm_changeset_id_t id)
-    : payload_enabled_handler(mime::unspecified_type,
+    : payload_enabled_handler(mime::type::unspecified_type,
                               http::method::POST | http::method::OPTIONS),
       id(id) {}
 

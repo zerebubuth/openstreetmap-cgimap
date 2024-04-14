@@ -78,4 +78,7 @@ TEST_CASE("http_check_choose_encoding", "[http]") {
   CHECK(http::choose_encoding("identity")->name() == "identity");
   CHECK(http::choose_encoding("*")->name() == "identity");
   CHECK(http::choose_encoding("deflate")->name() == "identity");
+#if HAVE_BROTLI
+  CHECK(http::choose_encoding("gzip, deflate, br")->name() == "br");
+#endif
 }

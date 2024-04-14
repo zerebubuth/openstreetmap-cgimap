@@ -9,67 +9,48 @@
 
 #include "cgimap/router.hpp"
 
+#include <algorithm>
+#include <charconv>
+
 namespace match {
 
 error::error() : std::runtime_error("error!") {}
 
-match_string::match_string(const std::string &s) : str(s) {}
+match_string::match_string(const char *s) : str(std::string_view(s)) {}
 
-match_string::match_string(const char *s) : str(s) {}
-
-match_string::match_type match_string::match(part_iterator &begin,
-                                             const part_iterator &end) const {
+std::pair<match_string::match_type, bool> match_string::match(part_iterator &begin,
+                                             const part_iterator &end) const noexcept {
   bool matches = false;
   if (begin != end) {
-    std::string bit = *begin;
-    matches = bit == str;
+    auto& bit = *begin;
+    matches = (bit == str);
     ++begin;
   }
-  if (!matches) {
-    throw error();
-  }
-  return match_type();
+  return {match_type(), !matches}; // raises error if not matching
 }
 
-match_osm_id::match_type match_osm_id::match(part_iterator &begin,
-                                             const part_iterator &end) const {
+std::pair<match_osm_id::match_type, bool> match_osm_id::match(part_iterator &begin,
+                                             const part_iterator &end) const noexcept {
   if (begin != end) {
-    try {
-      std::string bit = *begin;
-      // note that osm_nwr_id_t is actually unsigned, so we lose a bit of
-      // precision here, but it's OK since IDs are postgres 'bigint' types
-      // which are also signed, so element 2^63 is unlikely to exist.
-      auto x = std::stol(bit);
-      if (x > 0) {
-        ++begin;
-        return match_type(x);
-      }
-    } catch (std::exception &e) {
-      throw error();
+
+    auto& bit = *begin;
+
+    if (bit.end() != std::find_if(bit.begin(), bit.end(),
+        [](unsigned char c)->bool { return !isdigit(c); })) {
+      return {match_type(), true};
+    }
+
+    osm_nwr_id_t x{};
+    auto [ptr, ec] = std::from_chars(bit.data(), bit.data() + bit.size(), x);
+
+    if (ec == std::errc() && x > 0) {
+      ++begin;
+      return {match_type(x), false};
     }
   }
-  throw error();
-}
-
-match_name::match_type match_name::match(part_iterator &begin,
-                                         const part_iterator &end) const {
-  if (begin != end) {
-    try {
-      std::string bit = *begin++;
-      return match_type(bit);
-    } catch (std::exception &e) {
-      throw error();
-    }
-  }
-  throw error();
-}
-
-match_begin::match_type match_begin::match(part_iterator &,
-                                           const part_iterator &) const {
-  return match_type();
+  return {match_type(), true};
 }
 
 extern const match_begin root_; // @suppress("Unused variable declaration in file scope")
 extern const match_osm_id osm_id_; // @suppress("Unused variable declaration in file scope")
-extern const match_name name_; // @suppress("Unused variable declaration in file scope")
 }

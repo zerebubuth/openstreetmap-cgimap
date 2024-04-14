@@ -14,30 +14,10 @@
 using std::string;
 using std::transform;
 
-namespace {
-
-const std::string &element_type_name(element_type elt) {
-  static std::string name_node("node"), name_way("way"),
-      name_relation("relation");
-
-  switch (elt) {
-  case element_type_node:
-    return name_node;
-  case element_type_way:
-    return name_way;
-  case element_type_relation:
-    return name_relation;
-  default:
-    // in case the switch isn't exhaustive?
-    throw std::runtime_error("Unhandled element type in element_type_name().");
-  }
-}
-
-} // anonymous namespace
 
 xml_formatter::xml_formatter(std::unique_ptr<xml_writer> w) : writer(std::move(w)) {}
 
-mime::type xml_formatter::mime_type() const { return mime::application_xml; }
+mime::type xml_formatter::mime_type() const { return mime::type::application_xml; }
 
 void xml_formatter::start_document(
   const std::string &generator, const std::string &root_name) {
@@ -74,13 +54,13 @@ void xml_formatter::end_element_type(element_type) {
 
 void xml_formatter::start_action(action_type type) {
   switch (type) {
-  case action_type_create:
+  case action_type::create:
     writer->start("create");
     break;
-  case action_type_modify:
+  case action_type::modify:
     writer->start("modify");
     break;
-  case action_type_delete:
+  case action_type::del:
     writer->start("delete");
     break;
   }
@@ -88,9 +68,9 @@ void xml_formatter::start_action(action_type type) {
 
 void xml_formatter::end_action(action_type type) {
   switch (type) {
-  case action_type_create:
-  case action_type_modify:
-  case action_type_delete:
+  case action_type::create:
+  case action_type::modify:
+  case action_type::del:
     writer->end();
     break;
   }
