@@ -1,3 +1,31 @@
+openstreetmap-cgimap (0.9.1-1~jammy1) jammy; urgency=medium
+
+  * Added support for brotli response body compression (#375)
+  * Drop support for staticxml backend in production code (#376)
+  * Require YAJL v2 in CMakeLists (#373)
+  * yajl: output json in larger chunks (#380)
+  * json writer: fmt for formatting integer values (#390)
+  * Reuse available string length (#385)
+  * Skip db query if no changesets were requested (#379)
+  * libpqxx: cache column names (#383)
+  * Skip changeset discussions unless requested (#388)
+  * Small performance improvements (#378)
+  * Use emplace_back instead of push_back, remove unnecessary temp objects by @Woazboat (#389)
+  * Move modified libxml++ lib to contrib directory(#367)
+  * Create separate cmake files for contrib libs by @Woazboat (#369)
+  * Remove duplicated cmake test definition by @Woazboat (#370)
+  * Remove unused catch2 automake reporter header file by @Woazboat (#371)
+  * Integrate clang-tidy in cmake build by @Woazboat (#382)
+  * A bit of refactoring in XML / JSON writer (#366)
+  * Change some enums to enum class (#372)
+  * Minor router cleanups (#377)
+  * Some cleanups from @Woazboat psql-array-iterator branch (#384)
+  * Use raw string literal for bearer token regex by @Woazboat (#387)
+  * Use std::forward for forwarding references instead of std::move by @Woazboat (#386)
+  * pqxx::field wrapper for psql_array_to_vector (#391)
+
+ -- mmd osm <mmd.osm@gmail.com>  Sun, 14 Apr 2024 17:19:00 +0000
+
 openstreetmap-cgimap (0.9.0-1~jammy1) jammy; urgency=medium
 
   * Replace autotools by cmake by @Woazboat in #317 and @mmd-osm in #358
