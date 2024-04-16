@@ -120,7 +120,7 @@ public:
     return 0;
   }
 
-  int written() override { return w; }
+  int written() const override { return w; }
 
   void flush() override {
     // there's a note that says this causes too many writes and decreases

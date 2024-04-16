@@ -130,9 +130,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset", "[changeset][db]" ) {
       "VALUES "
       "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true); "
 
-      "INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes) "
+      "INSERT INTO changesets (id, user_id, min_lat, max_lat, min_lon, max_lon, created_at, closed_at, num_changes) "
       "VALUES "
-      "  (1, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 2);"
+      "  (1, 1, 387436644, 535639226, -91658156, 190970588, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 2);"
       );
   }
 
@@ -156,7 +156,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset", "[changeset][db]" ) {
           "2013-11-14T03:10:00Z", // closed_at
           1, // uid
           std::string("user_1"), // display_name
-          {}, // bounding box
+          bbox{38.7436644, -9.1658156, 53.5639226, 19.0970588}, // bounding box
           2, // num_changes
           0 // comments_count
           ),
@@ -290,7 +290,8 @@ void check_changeset_with_comments_impl(
   REQUIRE(f.m_changesets.size() == 1);
 
   comments_t comments;
-  {
+
+  if (include_discussion) {
     changeset_comment_info comment;
     comment.id = 1;
     comment.author_id = 3;
@@ -311,7 +312,7 @@ void check_changeset_with_comments_impl(
         std::string("user_1"), // display_name
         {}, // bounding box
         0, // num_changes
-        1 // comments_count
+        include_discussion ? 1 : 0 // comments_count
         ),
       tags_t(),
       include_discussion,

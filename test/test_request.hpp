@@ -26,7 +26,7 @@ struct test_output_buffer : public output_buffer {
   explicit test_output_buffer(std::ostream &out, std::ostream &body);
   ~test_output_buffer() override = default;
   int write(const char *buffer, int len) override;
-  int written() override;
+  int written() const override;
   int close() override;
   void flush() override;
 

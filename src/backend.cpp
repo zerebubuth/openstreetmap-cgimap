@@ -24,7 +24,7 @@ po::variables_map first_pass_argments(int argc, char *argv[],
   // them
   std::vector<std::string> args;
   for (int i = 1; i < argc; ++i) {
-    args.push_back(argv[i]);
+    args.emplace_back(argv[i]);
   }
 
   po::variables_map vm;
@@ -72,7 +72,7 @@ bool registry::add(std::unique_ptr<backend> ptr) {
 
 void registry::setup_options(int argc, char *argv[],
                              po::options_description &desc) {
-  if (backends.empty() || (!(default_backend))) {
+  if (backends.empty() || !default_backend) {
     throw std::runtime_error("No backends available - this is most likely a "
                              "compile-time configuration error.");
   }

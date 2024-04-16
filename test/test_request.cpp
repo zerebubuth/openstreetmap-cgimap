@@ -25,7 +25,7 @@ int test_output_buffer::write(const char *buffer, int len) {
   return len;
 }
 
-int test_output_buffer::written() {
+int test_output_buffer::written() const {
   return m_written;
 }
 

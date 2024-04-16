@@ -157,7 +157,7 @@ void json_formatter::write_relation(const element_info &elem,
       writer->start_array();
       for (const auto & member : members) {
 	  writer->start_object();
-	  writer->property("type", element_type_name(member.type));
+	  writer->property("type", element_type_name<std::string_view>(member.type));
 	  writer->property("ref",  member.ref);
 	  writer->property("role", member.role);
 	  writer->end_object();

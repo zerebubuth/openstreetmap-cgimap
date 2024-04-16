@@ -53,10 +53,20 @@ bool changeset_info::is_open_at(const std::chrono::system_clock::time_point &now
   return (closed_at_time > now) && (num_changes <= global_settings::get_changeset_max_elements());  // according to changeset.rb, is_open
 }
 
-bool changeset_comment_info::operator==(const changeset_comment_info &other) const {
-  return ((id == other.id) &&
-          (author_id == other.author_id) &&
-          (body == other.body) &&
-          (created_at == other.created_at) &&
-          (author_display_name == other.author_display_name));
-}
+changeset_comment_info::changeset_comment_info(osm_changeset_comment_id_t id,
+                                               osm_user_id_t author_id,
+                                               std::string body,
+                                               std::string created_at,
+                                               std::string author_display_name)
+  : id(id),
+    author_id(author_id),
+    body(std::move(body)),
+    created_at(std::move(created_at)),
+    author_display_name(std::move(author_display_name))
+{}
+
+member_info::member_info(element_type type_, osm_nwr_id_t ref_, std::string role_)
+  : type(type_),
+    ref(ref_),
+    role(std::move(role_))
+{}

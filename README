@@ -33,7 +33,7 @@ CGImap uses a PostgreSQL server for the APIDB backend.
 If you're running a Debian or Ubuntu system these can be installed
 using the following command:
 
-    sudo apt-get install libxml2-dev libpqxx-dev libfcgi-dev zlib1g-dev \
+    sudo apt-get install libxml2-dev libpqxx-dev libfcgi-dev zlib1g-dev libbrotli-dev \
       libboost-program-options-dev libfmt-dev libmemcached-dev libcrypto++-dev \
       libargon2-dev libyajl-dev
 

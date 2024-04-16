@@ -12,7 +12,7 @@ set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 string(TIMESTAMP CURRENT_TIMESTAMP %y%m%d%H%M UTC)
 
 project(CGImap LANGUAGES CXX
-               VERSION "0.9.0"
+               VERSION "0.10.0.${CURRENT_TIMESTAMP}"
                DESCRIPTION "CGImap is a C++ implementation of some parts of the OpenStreetMap API as a FastCGI process."
                HOMEPAGE_URL "https://github.com/zerebubuth/openstreetmap-cgimap")
 set(CMAKE_PROJECT_BUGREPORT_URL "https://github.com/zerebubuth/openstreetmap-cgimap/issues")
@@ -37,6 +37,7 @@ endif()
 ###############
 option(ENABLE_APIDB "Enable APIDB backend, as used by the OSM servers" ON)
 option(ENABLE_YAJL "Enable JSON output with the YAJL library" ON)
+option(ENABLE_BROTLI "Enable Brotli library" ON)
 option(ENABLE_FMT_HEADER "Enable FMT header only mode" ON)
 option(ENABLE_COVERAGE "Compile with coverage info collection" OFF)
 option(ENABLE_PROFILING "Compile with profiling" OFF)
@@ -52,6 +53,7 @@ endif()
 
 include(CTest)
 include(AutotoolsCompatibilityDefinitions)
+include(BuildLint)
 
 #########################
 # common compiler options
@@ -101,6 +103,12 @@ endif()
 target_compile_definitions(cgimap_common_compiler_options INTERFACE
     HAVE_YAJL=$<BOOL:${YAJL_FOUND}>)
 
+if(ENABLE_BROTLI)
+    find_package(Brotli COMPONENTS encoder decoder common REQUIRED)
+endif()
+target_compile_definitions(cgimap_common_compiler_options INTERFACE
+    HAVE_BROTLI=$<BOOL:${Brotli_FOUND}>)
+
 find_package(Fcgi REQUIRED)
 target_compile_definitions(cgimap_common_compiler_options INTERFACE
     HAVE_FCGI=$<BOOL:${Fcgi_FOUND}>)
@@ -137,17 +145,12 @@ target_link_libraries(openstreetmap_cgimap
     PQXX::PQXX)
 
 
-
 #############################################################
 # Optional "clang-tidy" target
 #############################################################
 
-find_program(CLANG_TIDY
-             NAMES clang-tidy clang-tidy-16 clang-tidy-15 clang-tidy-14 clang-tidy-13 clang-tidy-12 clang-tidy-11)
-
-if (CLANG_TIDY)
-    message(STATUS "Looking for clang-tidy - found ${CLANG_TIDY}")
-
+# BuildLint module already checks for clang-tidy
+if(CLANG_TIDY)
     file(GLOB CT_CHECK_FILES src/*.cpp src/api06/*.cpp src/api06/changeset_upload/*.cpp src/api07/*.cpp
                              src/backend/apidb/*.cpp src/backend/apidb/changeset_upload/*.cpp
                              test/*.cpp test/*.hpp)
@@ -158,8 +161,6 @@ if (CLANG_TIDY)
         -p ${CMAKE_BINARY_DIR}
         ${CT_CHECK_FILES}
     )
-else()
-    message(STATUS "Looking for clang-tidy - not found")
 endif()
 
 

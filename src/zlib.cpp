@@ -101,7 +101,7 @@ int zlib_output_buffer::close() {
   return out.close();
 }
 
-int zlib_output_buffer::written() { return bytes_in; }
+int zlib_output_buffer::written() const { return bytes_in; }
 
 void zlib_output_buffer::flush_output() {
   out.write(outbuf, sizeof(outbuf) - stream.avail_out);

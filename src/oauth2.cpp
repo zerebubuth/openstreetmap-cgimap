@@ -35,6 +35,9 @@ namespace oauth2 {
 
   [[nodiscard]] std::optional<osm_user_id_t> validate_bearer_token(const request &req, data_selection& selection, bool& allow_api_write)
   {
+
+    static const std::regex r(R"(Bearer ([A-Za-z0-9~_\-\.\+\/]+=*))");   // according to RFC 6750, section 2.1
+
     const char * auth_hdr = req.get_param ("HTTP_AUTHORIZATION");
     if (auth_hdr == nullptr)
       return std::nullopt;
@@ -44,8 +47,6 @@ namespace oauth2 {
     std::smatch sm;
 
     try {
-	std::regex r("Bearer ([A-Za-z0-9~_\\-\\.\\+\\/]+=*)");   // according to RFC 6750, section 2.1
-
 	if (!std::regex_match(auth_header, sm, r))
 	  return std::nullopt;
 

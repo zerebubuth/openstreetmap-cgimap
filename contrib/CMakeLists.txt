@@ -1,3 +1,6 @@
+# Disable linters during build of contrib libraries
+disable_build_lint()
+
 add_subdirectory(catch2)
 add_subdirectory(libxml++)
 
