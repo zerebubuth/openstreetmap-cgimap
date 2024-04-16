@@ -17,7 +17,6 @@ target_sources(cgimap_core PRIVATE
     logger.cpp
     mime_types.cpp
     basicauth.cpp
-    oauth.cpp
     oauth2.cpp
     options.cpp
     osm_responder.cpp

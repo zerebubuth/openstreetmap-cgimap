@@ -179,7 +179,7 @@ https://github.com/zerebubuth/openstreetmap-cgimap/pull/213 has additional confi
 ## Database Permissions
 
 The read only apidb backend requires permissions to SELECT on the Postgres server.
-OAuth and update database connections require additional permissions to INSERT/UPDATE/DELETE
+Update database connections require additional permissions to INSERT/UPDATE/DELETE
 data, as well as creating temporary tables.
 
 It is recommended that a separate unix account is used for
