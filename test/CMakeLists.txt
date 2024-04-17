@@ -159,7 +159,6 @@ if(BUILD_TESTING)
         COMMAND test_parse_changeset_input)
 
 
-    if(ENABLE_APIDB)
         ##########################
         # test_apidb_backend_nodes
         ##########################
@@ -283,7 +282,6 @@ if(BUILD_TESTING)
 
         add_test(NAME test_apidb_backend_changeset_uploads
             COMMAND pg_virtualenv "$<TARGET_FILE:test_apidb_backend_changeset_uploads>" --db-schema "${CMAKE_CURRENT_SOURCE_DIR}/structure.sql")
-    endif()
 
     # define check alias target for autotools compatibility
     add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
@@ -297,13 +295,11 @@ if(BUILD_TESTING)
                            test_parse_osmchange_input
                            test_parse_changeset_input)
 
-    if(ENABLE_APIDB)
       add_dependencies(check test_apidb_backend_nodes
                              test_apidb_backend_oauth2
                              test_apidb_backend_historic
                              test_apidb_backend_changesets
                              test_apidb_backend_changeset_downloads
                              test_apidb_backend_changeset_uploads)
-    endif()
 
 endif()

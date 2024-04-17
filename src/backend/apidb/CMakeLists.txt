@@ -1,7 +1,7 @@
 ##############
 # cgimap_apidb
 ##############
-if(ENABLE_APIDB)
+
     add_library(cgimap_apidb)
 
     target_include_directories(cgimap_apidb PUBLIC
@@ -26,4 +26,4 @@ if(ENABLE_APIDB)
         cgimap_common_compiler_options
         cgimap_core
         PQXX::PQXX)
-endif()
+
