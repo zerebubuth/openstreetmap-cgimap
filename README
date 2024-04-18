@@ -96,7 +96,7 @@ Edit the supplied lighttpd.config file to include your CGImap path and run it wi
 You can then access the running instance at `http://localhost:31337/api/0.6/map?bbox=...`
 
 The api.osm.org instance runs CGImap as a daemon and Apache with
-[mod_fastcgi_handler](https://github.com/hollow/mod_fastcgi_handler).
+[mod_proxy_fcgi](https://httpd.apache.org/docs/trunk/mod/mod_proxy_fcgi.html).
 
 ### Specifying configuration options
 
