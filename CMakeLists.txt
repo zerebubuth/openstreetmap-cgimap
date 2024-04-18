@@ -35,7 +35,6 @@ endif()
 ###############
 # build options
 ###############
-option(ENABLE_APIDB "Enable APIDB backend, as used by the OSM servers" ON)
 option(ENABLE_YAJL "Enable JSON output with the YAJL library" ON)
 option(ENABLE_BROTLI "Enable Brotli library" ON)
 option(ENABLE_FMT_HEADER "Enable FMT header only mode" ON)
@@ -61,7 +60,6 @@ include(BuildLint)
 add_library(cgimap_common_compiler_options INTERFACE)
 
 target_compile_features(cgimap_common_compiler_options INTERFACE cxx_std_17)
-target_compile_definitions(cgimap_common_compiler_options INTERFACE "ENABLE_APIDB=$<BOOL:${ENABLE_APIDB}>")
 target_compile_definitions(cgimap_common_compiler_options INTERFACE CMAKE=1)
 target_add_autotools_compatibility_definitions(cgimap_common_compiler_options)
 
@@ -141,7 +139,7 @@ target_link_libraries(openstreetmap_cgimap
     cgimap_common_compiler_options
     cgimap_core
     cgimap_fcgi
-    $<$<BOOL:${ENABLE_APIDB}>:cgimap_apidb>
+    cgimap_apidb
     Boost::program_options
     PQXX::PQXX)
 
@@ -181,9 +179,7 @@ if (ENABLE_INSTALL)
   if (BUILD_SHARED_LIBS)
     install(TARGETS cgimap_core DESTINATION lib)
     install(TARGETS cgimap_fcgi DESTINATION lib)
-    if (ENABLE_APIDB)
-      install(TARGETS cgimap_apidb DESTINATION lib)
-    endif()
+    install(TARGETS cgimap_apidb DESTINATION lib)
   endif()
 endif()
 
