@@ -416,17 +416,13 @@ bool show_redactions_requested(const request &req) {
 }
 
 
-// Determine user id and allow_api_write flag based on Basic Auth or OAuth header
+// Determine user id and allow_api_write flag based on OAuth header
 std::optional<osm_user_id_t> determine_user_id (const request& req,
 			        data_selection& selection,
 			        bool& allow_api_write)
 {
-  // Try to authenticate user via Basic Auth
-  std::optional<osm_user_id_t>  user_id = basicauth::authenticate_user (req, selection);
-
   // Try to authenticate user via OAuth2 Bearer Token
-  if (!user_id)
-    user_id = oauth2::validate_bearer_token (req, selection, allow_api_write);
+  std::optional<osm_user_id_t>  user_id = oauth2::validate_bearer_token (req, selection, allow_api_write);
 
   return user_id;
 }

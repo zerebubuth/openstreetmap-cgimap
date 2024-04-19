@@ -49,7 +49,6 @@ TEST_CASE("Set all supported options" "[options]") {
   vm.emplace("max-way-nodes", po::variable_value((int) 200, false));
   vm.emplace("max-relation-members", po::variable_value((int) 50, false));
   vm.emplace("max-element-tags", po::variable_value((int) 10, false));
-  vm.emplace("basic_auth_support", po::variable_value(false, false));
   vm.emplace("ratelimit", po::variable_value((long) 1000000, false));
   vm.emplace("moderator-ratelimit", po::variable_value((long) 10000000, false));
   vm.emplace("maxdebt", po::variable_value((long) 500, false));
@@ -67,7 +66,6 @@ TEST_CASE("Set all supported options" "[options]") {
   REQUIRE( global_settings::get_scale() == 100 );
   REQUIRE( global_settings::get_relation_max_members() == 50 );
   REQUIRE( global_settings::get_element_max_tags() == 10 );
-  REQUIRE( global_settings::get_basic_auth_support() == false );
   REQUIRE( global_settings::get_ratelimiter_ratelimit(false) == 1000000 );
   REQUIRE( global_settings::get_ratelimiter_maxdebt(false) == 500l * 1024 * 1024 );
   REQUIRE( global_settings::get_ratelimiter_ratelimit(true) == 10000000 );

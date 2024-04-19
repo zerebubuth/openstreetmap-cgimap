@@ -28,7 +28,6 @@ void global_settings_via_options::init_fallback_values(const global_settings_bas
   m_scale = def.get_scale();
   m_relation_max_members = def.get_relation_max_members();
   m_element_max_tags = def.get_element_max_tags();
-  m_basic_auth_support = def.get_basic_auth_support();
   m_ratelimiter_ratelimit = def.get_ratelimiter_ratelimit(false);
   m_moderator_ratelimiter_ratelimit = def.get_ratelimiter_ratelimit(true);
   m_ratelimiter_maxdebt = def.get_ratelimiter_maxdebt(false);
@@ -48,7 +47,6 @@ void global_settings_via_options::set_new_options(const po::variables_map &optio
   set_scale(options);
   set_relation_max_members(options);
   set_element_max_tags(options);
-  set_basic_auth_support(options);
   set_ratelimiter_ratelimit(options);
   set_ratelimiter_maxdebt(options);
   set_ratelimiter_upload(options);
@@ -138,12 +136,6 @@ void global_settings_via_options::set_element_max_tags(const po::variables_map &
     if (element_max_tags <= 0)
       throw std::invalid_argument("max-element-tags must be a positive number");
     m_element_max_tags = element_max_tags;
-  }
-}
-
-void global_settings_via_options::set_basic_auth_support(const po::variables_map &options) {
-  if (options.count("basic_auth_support")) {
-    m_basic_auth_support = options["basic_auth_support"].as<bool>();
   }
 }
 

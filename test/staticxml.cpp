@@ -577,7 +577,6 @@ struct static_data_selection : public data_selection {
 
   bool supports_user_details() const override { return false; }
   bool is_user_blocked(const osm_user_id_t) override { return true; }
-  bool get_user_id_pass(const std::string&, osm_user_id_t &, std::string &, std::string &) override { return false; };
   bool is_user_active(const osm_user_id_t) override { return true; }
 
   std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t id) override {

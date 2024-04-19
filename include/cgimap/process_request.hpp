@@ -15,7 +15,6 @@
 #include "cgimap/data_update.hpp"
 #include "cgimap/data_selection.hpp"
 #include "cgimap/routes.hpp"
-#include "cgimap/basicauth.hpp"
 #include "cgimap/oauth2.hpp"
 #include <string>
 
