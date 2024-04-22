@@ -1,0 +1,15 @@
+name: Build on Ubuntu 24.04
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker images
+        uses: docker/build-push-action@v5
+        with:
+           file: docker/ubuntu/Dockerfile2404
