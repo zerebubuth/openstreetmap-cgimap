@@ -146,7 +146,7 @@ void get_options(int argc, char **argv, po::variables_map &options) {
   if (options.count("help")) {
     std::cout << desc << std::endl;
     output_backend_options(std::cout);
-    exit(1);
+    exit(0);
   }
 
   po::store(po::parse_environment(desc,
