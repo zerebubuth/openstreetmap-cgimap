@@ -7,10 +7,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Build Docker images
         uses: docker/build-push-action@v5
         with:
            file: docker/debian/Dockerfile_bookworm
-
+           load: true
+           tags: cgimap:bookworm
+      - name: Running Docker image
+        run: |
+           docker run --entrypoint /bin/bash cgimap:bookworm -c "/usr/local/bin/openstreetmap-cgimap --help"
