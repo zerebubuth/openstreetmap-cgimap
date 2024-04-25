@@ -290,8 +290,7 @@ void check_changeset_with_comments_impl(
   REQUIRE(f.m_changesets.size() == 1);
 
   comments_t comments;
-
-  if (include_discussion) {
+  {
     changeset_comment_info comment;
     comment.id = 1;
     comment.author_id = 3;
@@ -312,7 +311,7 @@ void check_changeset_with_comments_impl(
         std::string("user_1"), // display_name
         {}, // bounding box
         0, // num_changes
-        include_discussion ? 1 : 0 // comments_count
+        1 // comments_count
         ),
       tags_t(),
       include_discussion,
