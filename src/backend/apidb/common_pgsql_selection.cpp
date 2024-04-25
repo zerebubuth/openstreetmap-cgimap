@@ -458,7 +458,7 @@ void extract_changesets(
   for (const auto &row : rows) {
     auto elem = extract_changeset(row, cc, changeset_cols);
     auto tags = extract_tags(row, tag_cols);
-    auto comments = (include_changeset_discussions ? extract_comments(row, comments_cols) : comments_t{});
+    auto comments = extract_comments(row, comments_cols);
     elem.comments_count = comments.size();
     formatter.write_changeset(
       elem, tags, include_changeset_discussions, comments, now);
