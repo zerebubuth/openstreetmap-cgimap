@@ -362,10 +362,10 @@ void readonly_pgsql_selection::write_changesets(output_formatter &formatter,
            "to_char(cc.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at "
            "FROM changeset_comments cc JOIN users u ON cc.author_id = u.id "
            "where cc.changeset_id=c.id AND cc.visible ORDER BY cc.created_at) x "
-         ")cc ON $2 "
+         ")cc ON true "
       "WHERE c.id = ANY($1)");
 
-  pqxx::result changesets = m.exec_prepared("extract_changesets", sel_changesets, include_changeset_discussions);
+  pqxx::result changesets = m.exec_prepared("extract_changesets", sel_changesets);
 
   fetch_changesets(sel_changesets, cc);
 
