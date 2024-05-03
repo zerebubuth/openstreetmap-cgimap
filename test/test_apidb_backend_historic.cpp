@@ -431,8 +431,8 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_node_with_history_redacted", "[hist
     init_user_changeset(tdb);
     tdb.run_sql(R"(
 
-        INSERT INTO redactions (id, title, created_at, updated_at, user_id)
-        VALUES (1, 'test redaction', '2017-02-04T16:56:00Z', '2017-02-04T16:56:00Z', 1);
+        INSERT INTO redactions (id, title, description, created_at, updated_at, user_id)
+        VALUES (1, 'test redaction', 'test redaction description', '2017-02-04T16:56:00Z', '2017-02-04T16:56:00Z', 1);
 
         INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
         VALUES (3, 0, 0, 2, TRUE, '2017-02-04T16:57:00Z', 3221225472, 2);
@@ -494,8 +494,8 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_historical_nodes_redacted", "[histo
     init_user_changeset(tdb);
     tdb.run_sql(R"(
     
-      INSERT INTO redactions (id, title, created_at, updated_at, user_id)
-      VALUES (1, 'test redaction', '2017-02-04T16:56:00Z', '2017-02-04T16:56:00Z', 1);
+      INSERT INTO redactions (id, title, description, created_at, updated_at, user_id)
+      VALUES (1, 'test redaction', 'test redaction description', '2017-02-04T16:56:00Z', '2017-02-04T16:56:00Z', 1);
       
       INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
       VALUES (3, 0, 0, 2, TRUE, '2017-02-04T16:57:00Z', 3221225472, 2);
@@ -547,8 +547,8 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_way_with_history_redacted", "[histo
     init_user_changeset(tdb);
     tdb.run_sql(R"(
      
-      INSERT INTO redactions (id, title, created_at, updated_at, user_id)
-      VALUES (1, 'test redaction', '2017-02-17T16:56:00Z', '2017-02-17T16:56:00Z', 1);
+      INSERT INTO redactions (id, title, description, created_at, updated_at, user_id)
+      VALUES (1, 'test redaction', 'test redaction description', '2017-02-17T16:56:00Z', '2017-02-17T16:56:00Z', 1);
       
       INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
       VALUES (3, 0, 0, 3, FALSE, '2017-02-17T18:27:00Z', 3221225472, 2);
@@ -617,8 +617,8 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_historical_ways_redacted", "[histor
     init_user_changeset(tdb);
     tdb.run_sql(R"(
       
-      INSERT INTO redactions (id, title, created_at, updated_at, user_id)
-      VALUES (1, 'test redaction', '2017-02-17T16:56:00Z', '2017-02-17T16:56:00Z', 1);
+      INSERT INTO redactions (id, title, description, created_at, updated_at, user_id)
+      VALUES (1, 'test redaction', 'test redaction description', '2017-02-17T16:56:00Z', '2017-02-17T16:56:00Z', 1);
       
       INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
       VALUES (3, 0, 0, 3, FALSE, '2017-02-17T18:27:00Z', 3221225472, 2);
@@ -676,8 +676,8 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_relation_with_history_redacted", "[
     init_user_changeset(tdb);
     tdb.run_sql(R"(
       
-      INSERT INTO redactions (id, title, created_at, updated_at, user_id)
-      VALUES (1, 'test redaction', '2017-02-17T16:56:00Z', '2017-02-17T16:56:00Z', 1);
+      INSERT INTO redactions (id, title, description, created_at, updated_at, user_id)
+      VALUES (1, 'test redaction', 'test redaction description', '2017-02-17T16:56:00Z', '2017-02-17T16:56:00Z', 1);
       
       INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
       VALUES (3, 0, 0, 3, FALSE, '2017-02-17T15:34:00Z', 3221225472, 2);
@@ -757,8 +757,8 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_historical_relations_redacted", "[h
     init_user_changeset(tdb);
     tdb.run_sql(R"(
 
-        INSERT INTO redactions (id, title, created_at, updated_at, user_id)
-        VALUES (1, 'test redaction', '2017-02-17T16:56:00Z', '2017-02-17T16:56:00Z', 1);
+        INSERT INTO redactions (id, title, description, created_at, updated_at, user_id)
+        VALUES (1, 'test redaction', 'test redaction description', '2017-02-17T16:56:00Z', '2017-02-17T16:56:00Z', 1);
 
         INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
         VALUES (3, 0, 0, 3, FALSE, '2017-02-17T15:34:00Z', 3221225472, 2);
