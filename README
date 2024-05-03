@@ -167,9 +167,9 @@ The apache modules mod_proxy and mod_fastcgi_handler must also be enabled.
 
 ## Docker
 
-This repository includes a `Dockerfile` and `Dockerfile2204`, which can be used to build a cgimap image based on Ubuntu 20.04 / 22.04 respectively:
+This repository includes a `Dockerfile`, which can be used to build a cgimap image based on Ubuntu 24.04:
 
-    docker build -f Dockerfile . -t cgimap
+    docker build -f docker/ubuntu/Dockerfile2404 . -t cgimap
 
 Due to the multi-stage build process, Docker version 17.05 or higher is required. The resulting cgimap image has a total size of about 140MB. `openstreetmap-cgimap` is built as a static binary.
 
