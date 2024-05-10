@@ -1,9 +1,10 @@
 name: Build on Debian Trixie
 
-on: [push, pull_request]
+on: []
 
 jobs:
   build:
+    if: ${{ false }}
     runs-on: ubuntu-latest
 
     steps:

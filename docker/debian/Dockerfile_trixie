@@ -26,7 +26,7 @@ RUN mkdir build && cd build && \
      strip openstreetmap-cgimap && \
      cp openstreetmap-cgimap ../
 
-FROM debian:trixie
+FROM debian:trixie-slim
 
 RUN apt-get update -qq && \
     apt-get install -y \
