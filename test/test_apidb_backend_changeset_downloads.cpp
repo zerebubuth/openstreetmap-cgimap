@@ -243,9 +243,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_redacted", "[changeset][
       "  (2, 1, '2017-03-19T20:18:00Z', '2017-03-19T20:18:00Z', 1),"
       "  (3, 1, '2017-03-19T20:18:00Z', '2017-03-19T20:18:00Z', 1);"
 
-      "INSERT INTO redactions (id, title, created_at, updated_at, user_id) "
+      "INSERT INTO redactions (id, title, description, created_at, updated_at, user_id) "
       "VALUES "
-      "  (1, 'test redaction', '2017-03-19T20:18:00Z', '2017-03-19T20:18:00Z', 1); "
+      "  (1, 'test redaction', 'test redaction description', '2017-03-19T20:18:00Z', '2017-03-19T20:18:00Z', 1); "
 
       "INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, \"timestamp\", tile, version) "
       " VALUES "

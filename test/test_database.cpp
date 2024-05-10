@@ -74,7 +74,7 @@ test_database::test_database() {
     pqxx::connection conn("dbname=postgres");
     pqxx::nontransaction w(conn);
 
-    w.exec(fmt::format("CREATE DATABASE {}", db_name));
+    w.exec(fmt::format("CREATE DATABASE {} ENCODING 'UTF8' TEMPLATE template0", db_name));
     w.commit();
     m_db_name = db_name;
 

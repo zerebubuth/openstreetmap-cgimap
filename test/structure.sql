@@ -1,5 +1,6 @@
 SET statement_timeout = 0;
 SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -7,20 +8,6 @@ SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
-
---
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: -
---
-
-CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
-
-
---
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: -
---
-
-COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
-
 
 --
 -- Name: btree_gist; Type: EXTENSION; Schema: -; Owner: -
@@ -111,7 +98,8 @@ CREATE TYPE public.nwr_enum AS ENUM (
 
 CREATE TYPE public.user_role_enum AS ENUM (
     'administrator',
-    'moderator'
+    'moderator',
+    'importer'
 );
 
 
@@ -128,9 +116,69 @@ CREATE TYPE public.user_status_enum AS ENUM (
 );
 
 
+--
+-- Name: api_rate_limit(bigint); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.api_rate_limit(user_id bigint) RETURNS integer
+    LANGUAGE plpgsql STABLE
+    AS $$
+    DECLARE
+      min_changes_per_hour int4 := 100;
+      initial_changes_per_hour int4 := 1000;
+      max_changes_per_hour int4 := 100000;
+      days_to_max_changes int4 := 7;
+      importer_changes_per_hour int4 := 1000000;
+      moderator_changes_per_hour int4 := 1000000;
+      roles text[];
+      last_block timestamp without time zone;
+      first_change timestamp without time zone;
+      active_reports int4;
+      time_since_first_change double precision;
+      max_changes double precision;
+      recent_changes int4;
+    BEGIN
+      SELECT ARRAY_AGG(user_roles.role) INTO STRICT roles FROM user_roles WHERE user_roles.user_id = api_rate_limit.user_id;
+
+      IF 'moderator' = ANY(roles) THEN
+        max_changes := moderator_changes_per_hour;
+      ELSIF 'importer' = ANY(roles) THEN
+        max_changes := importer_changes_per_hour;
+      ELSE
+        SELECT user_blocks.created_at INTO last_block FROM user_blocks WHERE user_blocks.user_id = api_rate_limit.user_id ORDER BY user_blocks.created_at DESC LIMIT 1;
+
+        IF FOUND THEN
+          SELECT changesets.created_at INTO first_change FROM changesets WHERE changesets.user_id = api_rate_limit.user_id AND changesets.created_at > last_block ORDER BY changesets.created_at LIMIT 1;
+        ELSE
+          SELECT changesets.created_at INTO first_change FROM changesets WHERE changesets.user_id = api_rate_limit.user_id ORDER BY changesets.created_at LIMIT 1;
+        END IF;
+
+        IF NOT FOUND THEN
+          first_change := CURRENT_TIMESTAMP AT TIME ZONE 'UTC';
+        END IF;
+
+        SELECT COUNT(*) INTO STRICT active_reports
+        FROM issues INNER JOIN reports ON reports.issue_id = issues.id
+        WHERE issues.reported_user_id = api_rate_limit.user_id AND issues.status = 'open' AND reports.updated_at >= COALESCE(issues.resolved_at, '1970-01-01');
+
+        time_since_first_change := EXTRACT(EPOCH FROM CURRENT_TIMESTAMP AT TIME ZONE 'UTC' - first_change);
+
+        max_changes := max_changes_per_hour * POWER(time_since_first_change, 2) / POWER(days_to_max_changes * 24 * 60 * 60, 2);
+        max_changes := GREATEST(initial_changes_per_hour, LEAST(max_changes_per_hour, FLOOR(max_changes)));
+        max_changes := max_changes / POWER(2, active_reports);
+        max_changes := GREATEST(min_changes_per_hour, LEAST(max_changes_per_hour, max_changes));
+      END IF;
+
+      SELECT COALESCE(SUM(changesets.num_changes), 0) INTO STRICT recent_changes FROM changesets WHERE changesets.user_id = api_rate_limit.user_id AND changesets.created_at >= CURRENT_TIMESTAMP AT TIME ZONE 'UTC' - '1 hour'::interval;
+
+      RETURN max_changes - recent_changes;
+    END;
+    $$;
+
+
 SET default_tablespace = '';
 
-SET default_with_oids = false;
+SET default_table_access_method = heap;
 
 --
 -- Name: acls; Type: TABLE; Schema: public; Owner: -
@@ -209,8 +257,9 @@ CREATE TABLE public.active_storage_blobs (
     content_type character varying,
     metadata text,
     byte_size bigint NOT NULL,
-    checksum character varying NOT NULL,
-    created_at timestamp without time zone NOT NULL
+    checksum character varying,
+    created_at timestamp without time zone NOT NULL,
+    service_name character varying NOT NULL
 );
 
 
@@ -231,6 +280,36 @@ CREATE SEQUENCE public.active_storage_blobs_id_seq
 --
 
 ALTER SEQUENCE public.active_storage_blobs_id_seq OWNED BY public.active_storage_blobs.id;
+
+
+--
+-- Name: active_storage_variant_records; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.active_storage_variant_records (
+    id bigint NOT NULL,
+    blob_id bigint NOT NULL,
+    variation_digest character varying NOT NULL
+);
+
+
+--
+-- Name: active_storage_variant_records_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.active_storage_variant_records_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: active_storage_variant_records_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.active_storage_variant_records_id_seq OWNED BY public.active_storage_variant_records.id;
 
 
 --
@@ -264,6 +343,7 @@ CREATE TABLE public.changeset_comments (
 --
 
 CREATE SEQUENCE public.changeset_comments_id_seq
+    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -365,6 +445,7 @@ CREATE TABLE public.client_applications (
 --
 
 CREATE SEQUENCE public.client_applications_id_seq
+    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -664,7 +745,8 @@ CREATE TABLE public.diary_entry_subscriptions (
 CREATE TABLE public.friends (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
-    friend_user_id bigint NOT NULL
+    friend_user_id bigint NOT NULL,
+    created_at timestamp without time zone
 );
 
 
@@ -707,7 +789,7 @@ CREATE TABLE public.gps_points (
 --
 
 CREATE TABLE public.gpx_file_tags (
-    gpx_id bigint DEFAULT 0 NOT NULL,
+    gpx_id bigint NOT NULL,
     tag character varying NOT NULL,
     id bigint NOT NULL
 );
@@ -789,6 +871,7 @@ CREATE TABLE public.issue_comments (
 --
 
 CREATE SEQUENCE public.issue_comments_id_seq
+    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -828,6 +911,7 @@ CREATE TABLE public.issues (
 --
 
 CREATE SEQUENCE public.issues_id_seq
+    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -867,7 +951,8 @@ CREATE TABLE public.messages (
     to_user_id bigint NOT NULL,
     to_user_visible boolean DEFAULT true NOT NULL,
     from_user_visible boolean DEFAULT true NOT NULL,
-    body_format public.format_enum DEFAULT 'markdown'::public.format_enum NOT NULL
+    body_format public.format_enum DEFAULT 'markdown'::public.format_enum NOT NULL,
+    muted boolean DEFAULT false NOT NULL
 );
 
 
@@ -1135,6 +1220,36 @@ ALTER SEQUENCE public.oauth_nonces_id_seq OWNED BY public.oauth_nonces.id;
 
 
 --
+-- Name: oauth_openid_requests; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.oauth_openid_requests (
+    id bigint NOT NULL,
+    access_grant_id bigint NOT NULL,
+    nonce character varying NOT NULL
+);
+
+
+--
+-- Name: oauth_openid_requests_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.oauth_openid_requests_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: oauth_openid_requests_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.oauth_openid_requests_id_seq OWNED BY public.oauth_openid_requests.id;
+
+
+--
 -- Name: oauth_tokens; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1168,6 +1283,7 @@ CREATE TABLE public.oauth_tokens (
 --
 
 CREATE SEQUENCE public.oauth_tokens_id_seq
+    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1188,8 +1304,8 @@ ALTER SEQUENCE public.oauth_tokens_id_seq OWNED BY public.oauth_tokens.id;
 
 CREATE TABLE public.redactions (
     id integer NOT NULL,
-    title character varying,
-    description text,
+    title character varying NOT NULL,
+    description text NOT NULL,
     created_at timestamp without time zone,
     updated_at timestamp without time zone,
     user_id bigint NOT NULL,
@@ -1202,6 +1318,7 @@ CREATE TABLE public.redactions (
 --
 
 CREATE SEQUENCE public.redactions_id_seq
+    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1221,7 +1338,7 @@ ALTER SEQUENCE public.redactions_id_seq OWNED BY public.redactions.id;
 --
 
 CREATE TABLE public.relation_members (
-    relation_id bigint DEFAULT 0 NOT NULL,
+    relation_id bigint NOT NULL,
     member_type public.nwr_enum NOT NULL,
     member_id bigint NOT NULL,
     member_role character varying NOT NULL,
@@ -1235,7 +1352,7 @@ CREATE TABLE public.relation_members (
 --
 
 CREATE TABLE public.relation_tags (
-    relation_id bigint DEFAULT 0 NOT NULL,
+    relation_id bigint NOT NULL,
     k character varying DEFAULT ''::character varying NOT NULL,
     v character varying DEFAULT ''::character varying NOT NULL,
     version bigint NOT NULL
@@ -1247,7 +1364,7 @@ CREATE TABLE public.relation_tags (
 --
 
 CREATE TABLE public.relations (
-    relation_id bigint DEFAULT 0 NOT NULL,
+    relation_id bigint NOT NULL,
     changeset_id bigint NOT NULL,
     "timestamp" timestamp without time zone NOT NULL,
     version bigint NOT NULL,
@@ -1276,6 +1393,7 @@ CREATE TABLE public.reports (
 --
 
 CREATE SEQUENCE public.reports_id_seq
+    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1322,6 +1440,7 @@ CREATE TABLE public.user_blocks (
 --
 
 CREATE SEQUENCE public.user_blocks_id_seq
+    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1334,6 +1453,38 @@ CREATE SEQUENCE public.user_blocks_id_seq
 --
 
 ALTER SEQUENCE public.user_blocks_id_seq OWNED BY public.user_blocks.id;
+
+
+--
+-- Name: user_mutes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_mutes (
+    id bigint NOT NULL,
+    owner_id bigint NOT NULL,
+    subject_id bigint NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: user_mutes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_mutes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_mutes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_mutes_id_seq OWNED BY public.user_mutes.id;
 
 
 --
@@ -1366,6 +1517,7 @@ CREATE TABLE public.user_roles (
 --
 
 CREATE SEQUENCE public.user_roles_id_seq
+    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1378,38 +1530,6 @@ CREATE SEQUENCE public.user_roles_id_seq
 --
 
 ALTER SEQUENCE public.user_roles_id_seq OWNED BY public.user_roles.id;
-
-
---
--- Name: user_tokens; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.user_tokens (
-    id bigint NOT NULL,
-    user_id bigint NOT NULL,
-    token character varying NOT NULL,
-    expiry timestamp without time zone NOT NULL,
-    referer text
-);
-
-
---
--- Name: user_tokens_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.user_tokens_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: user_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.user_tokens_id_seq OWNED BY public.user_tokens.id;
 
 
 --
@@ -1485,7 +1605,7 @@ CREATE TABLE public.way_nodes (
 --
 
 CREATE TABLE public.way_tags (
-    way_id bigint DEFAULT 0 NOT NULL,
+    way_id bigint NOT NULL,
     k character varying NOT NULL,
     v character varying NOT NULL,
     version bigint NOT NULL
@@ -1497,7 +1617,7 @@ CREATE TABLE public.way_tags (
 --
 
 CREATE TABLE public.ways (
-    way_id bigint DEFAULT 0 NOT NULL,
+    way_id bigint NOT NULL,
     changeset_id bigint NOT NULL,
     "timestamp" timestamp without time zone NOT NULL,
     version bigint NOT NULL,
@@ -1525,6 +1645,13 @@ ALTER TABLE ONLY public.active_storage_attachments ALTER COLUMN id SET DEFAULT n
 --
 
 ALTER TABLE ONLY public.active_storage_blobs ALTER COLUMN id SET DEFAULT nextval('public.active_storage_blobs_id_seq'::regclass);
+
+
+--
+-- Name: active_storage_variant_records id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.active_storage_variant_records ALTER COLUMN id SET DEFAULT nextval('public.active_storage_variant_records_id_seq'::regclass);
 
 
 --
@@ -1675,6 +1802,13 @@ ALTER TABLE ONLY public.oauth_nonces ALTER COLUMN id SET DEFAULT nextval('public
 
 
 --
+-- Name: oauth_openid_requests id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_openid_requests ALTER COLUMN id SET DEFAULT nextval('public.oauth_openid_requests_id_seq'::regclass);
+
+
+--
 -- Name: oauth_tokens id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1703,17 +1837,17 @@ ALTER TABLE ONLY public.user_blocks ALTER COLUMN id SET DEFAULT nextval('public.
 
 
 --
+-- Name: user_mutes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_mutes ALTER COLUMN id SET DEFAULT nextval('public.user_mutes_id_seq'::regclass);
+
+
+--
 -- Name: user_roles id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.user_roles ALTER COLUMN id SET DEFAULT nextval('public.user_roles_id_seq'::regclass);
-
-
---
--- Name: user_tokens id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_tokens ALTER COLUMN id SET DEFAULT nextval('public.user_tokens_id_seq'::regclass);
 
 
 --
@@ -1748,6 +1882,14 @@ ALTER TABLE ONLY public.active_storage_blobs
 
 
 --
+-- Name: active_storage_variant_records active_storage_variant_records_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.active_storage_variant_records
+    ADD CONSTRAINT active_storage_variant_records_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: ar_internal_metadata ar_internal_metadata_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1761,6 +1903,14 @@ ALTER TABLE ONLY public.ar_internal_metadata
 
 ALTER TABLE ONLY public.changeset_comments
     ADD CONSTRAINT changeset_comments_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: changeset_tags changeset_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.changeset_tags
+    ADD CONSTRAINT changeset_tags_pkey PRIMARY KEY (changeset_id, k);
 
 
 --
@@ -1800,7 +1950,7 @@ ALTER TABLE ONLY public.current_nodes
 --
 
 ALTER TABLE ONLY public.current_relation_members
-    ADD CONSTRAINT current_relation_members_pkey PRIMARY KEY (relation_id, member_type, member_id, member_role, sequence_id);
+    ADD CONSTRAINT current_relation_members_pkey PRIMARY KEY (relation_id, sequence_id);
 
 
 --
@@ -1996,6 +2146,14 @@ ALTER TABLE ONLY public.oauth_nonces
 
 
 --
+-- Name: oauth_openid_requests oauth_openid_requests_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_openid_requests
+    ADD CONSTRAINT oauth_openid_requests_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: oauth_tokens oauth_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2016,7 +2174,7 @@ ALTER TABLE ONLY public.redactions
 --
 
 ALTER TABLE ONLY public.relation_members
-    ADD CONSTRAINT relation_members_pkey PRIMARY KEY (relation_id, version, member_type, member_id, member_role, sequence_id);
+    ADD CONSTRAINT relation_members_pkey PRIMARY KEY (relation_id, version, sequence_id);
 
 
 --
@@ -2060,6 +2218,14 @@ ALTER TABLE ONLY public.user_blocks
 
 
 --
+-- Name: user_mutes user_mutes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_mutes
+    ADD CONSTRAINT user_mutes_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: user_preferences user_preferences_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2073,14 +2239,6 @@ ALTER TABLE ONLY public.user_preferences
 
 ALTER TABLE ONLY public.user_roles
     ADD CONSTRAINT user_roles_pkey PRIMARY KEY (id);
-
-
---
--- Name: user_tokens user_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_tokens
-    ADD CONSTRAINT user_tokens_pkey PRIMARY KEY (id);
 
 
 --
@@ -2120,13 +2278,6 @@ ALTER TABLE ONLY public.ways
 --
 
 CREATE INDEX acls_k_idx ON public.acls USING btree (k);
-
-
---
--- Name: changeset_tags_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX changeset_tags_id_idx ON public.changeset_tags USING btree (changeset_id);
 
 
 --
@@ -2249,13 +2400,6 @@ CREATE INDEX diary_entry_user_id_created_at_index ON public.diary_entries USING 
 
 
 --
--- Name: friends_user_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX friends_user_id_idx ON public.friends USING btree (user_id);
-
-
---
 -- Name: gpx_file_tags_gpxid_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2333,6 +2477,20 @@ CREATE UNIQUE INDEX index_active_storage_blobs_on_key ON public.active_storage_b
 
 
 --
+-- Name: index_active_storage_variant_records_uniqueness; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_active_storage_variant_records_uniqueness ON public.active_storage_variant_records USING btree (blob_id, variation_digest);
+
+
+--
+-- Name: index_changeset_comments_on_author_id_and_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_changeset_comments_on_author_id_and_created_at ON public.changeset_comments USING btree (author_id, created_at);
+
+
+--
 -- Name: index_changeset_comments_on_changeset_id_and_created_at; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2344,6 +2502,13 @@ CREATE INDEX index_changeset_comments_on_changeset_id_and_created_at ON public.c
 --
 
 CREATE INDEX index_changeset_comments_on_created_at ON public.changeset_comments USING btree (created_at);
+
+
+--
+-- Name: index_changesets_on_user_id_and_closed_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_changesets_on_user_id_and_closed_at ON public.changesets USING btree (user_id, closed_at);
 
 
 --
@@ -2379,6 +2544,13 @@ CREATE INDEX index_client_applications_on_user_id ON public.client_applications 
 --
 
 CREATE INDEX index_diary_entry_subscriptions_on_diary_entry_id ON public.diary_entry_subscriptions USING btree (diary_entry_id);
+
+
+--
+-- Name: index_friends_on_user_id_and_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_friends_on_user_id_and_created_at ON public.friends USING btree (user_id, created_at);
 
 
 --
@@ -2428,6 +2600,13 @@ CREATE INDEX index_issues_on_status ON public.issues USING btree (status);
 --
 
 CREATE INDEX index_issues_on_updated_by ON public.issues USING btree (updated_by);
+
+
+--
+-- Name: index_note_comments_on_author_id_and_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_note_comments_on_author_id_and_created_at ON public.note_comments USING btree (author_id, created_at);
 
 
 --
@@ -2515,6 +2694,13 @@ CREATE UNIQUE INDEX index_oauth_nonces_on_nonce_and_timestamp ON public.oauth_no
 
 
 --
+-- Name: index_oauth_openid_requests_on_access_grant_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_oauth_openid_requests_on_access_grant_id ON public.oauth_openid_requests USING btree (access_grant_id);
+
+
+--
 -- Name: index_oauth_tokens_on_token; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2543,10 +2729,24 @@ CREATE INDEX index_reports_on_user_id ON public.reports USING btree (user_id);
 
 
 --
+-- Name: index_user_blocks_on_creator_id_and_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_user_blocks_on_creator_id_and_id ON public.user_blocks USING btree (creator_id, id);
+
+
+--
 -- Name: index_user_blocks_on_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX index_user_blocks_on_user_id ON public.user_blocks USING btree (user_id);
+
+
+--
+-- Name: index_user_mutes_on_owner_id_and_subject_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_user_mutes_on_owner_id_and_subject_id ON public.user_mutes USING btree (owner_id, subject_id);
 
 
 --
@@ -2662,20 +2862,6 @@ CREATE UNIQUE INDEX user_roles_id_role_unique ON public.user_roles USING btree (
 
 
 --
--- Name: user_tokens_token_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX user_tokens_token_idx ON public.user_tokens USING btree (token);
-
-
---
--- Name: user_tokens_user_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX user_tokens_user_id_idx ON public.user_tokens USING btree (user_id);
-
-
---
 -- Name: users_auth_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2683,17 +2869,17 @@ CREATE UNIQUE INDEX users_auth_idx ON public.users USING btree (auth_provider, a
 
 
 --
+-- Name: users_display_name_canonical_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX users_display_name_canonical_idx ON public.users USING btree (lower(NORMALIZE(display_name, NFKC)));
+
+
+--
 -- Name: users_display_name_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE UNIQUE INDEX users_display_name_idx ON public.users USING btree (display_name);
-
-
---
--- Name: users_display_name_lower_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX users_display_name_lower_idx ON public.users USING btree (lower((display_name)::text));
 
 
 --
@@ -2923,11 +3109,35 @@ ALTER TABLE ONLY public.oauth_access_grants
 
 
 --
+-- Name: user_mutes fk_rails_591dad3359; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_mutes
+    ADD CONSTRAINT fk_rails_591dad3359 FOREIGN KEY (owner_id) REFERENCES public.users(id);
+
+
+--
 -- Name: oauth_access_tokens fk_rails_732cb83ab7; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.oauth_access_tokens
     ADD CONSTRAINT fk_rails_732cb83ab7 FOREIGN KEY (application_id) REFERENCES public.oauth_applications(id) NOT VALID;
+
+
+--
+-- Name: oauth_openid_requests fk_rails_77114b3b09; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.oauth_openid_requests
+    ADD CONSTRAINT fk_rails_77114b3b09 FOREIGN KEY (access_grant_id) REFERENCES public.oauth_access_grants(id) ON DELETE CASCADE;
+
+
+--
+-- Name: active_storage_variant_records fk_rails_993965df05; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.active_storage_variant_records
+    ADD CONSTRAINT fk_rails_993965df05 FOREIGN KEY (blob_id) REFERENCES public.active_storage_blobs(id);
 
 
 --
@@ -2952,6 +3162,14 @@ ALTER TABLE ONLY public.active_storage_attachments
 
 ALTER TABLE ONLY public.oauth_applications
     ADD CONSTRAINT fk_rails_cc886e315a FOREIGN KEY (owner_id) REFERENCES public.users(id) NOT VALID;
+
+
+--
+-- Name: user_mutes fk_rails_e9dd4fb6c3; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_mutes
+    ADD CONSTRAINT fk_rails_e9dd4fb6c3 FOREIGN KEY (subject_id) REFERENCES public.users(id);
 
 
 --
@@ -3219,14 +3437,6 @@ ALTER TABLE ONLY public.user_roles
 
 
 --
--- Name: user_tokens user_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.user_tokens
-    ADD CONSTRAINT user_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
 -- Name: way_nodes way_nodes_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3265,113 +3475,136 @@ ALTER TABLE ONLY public.ways
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
-('1'),
-('10'),
-('11'),
-('12'),
-('13'),
-('14'),
-('15'),
-('16'),
-('17'),
-('18'),
-('19'),
-('2'),
-('20'),
-('20100513171259'),
-('20100516124737'),
-('20100910084426'),
-('20101114011429'),
-('20110322001319'),
-('20110508145337'),
-('20110521142405'),
-('20110925112722'),
-('20111116184519'),
-('20111212183945'),
-('20120123184321'),
-('20120208122334'),
-('20120208194454'),
-('20120214210114'),
-('20120219161649'),
-('20120318201948'),
-('20120328090602'),
-('20120404205604'),
-('20120808231205'),
-('20121005195010'),
-('20121012044047'),
-('20121119165817'),
-('20121202155309'),
-('20121203124841'),
-('20130328184137'),
-('20131212124700'),
-('20140115192822'),
-('20140117185510'),
-('20140210003018'),
-('20140507110937'),
-('20140519141742'),
-('20150110152606'),
-('20150111192335'),
-('20150222101847'),
-('20150818224516'),
-('20160822153055'),
-('20161002153425'),
-('20161011010929'),
-('20170222134109'),
-('20180204153242'),
-('20181020114000'),
-('20181031113522'),
-('20190518115041'),
-('20190623093642'),
-('20190702193519'),
-('20190716173946'),
-('20191120140058'),
-('20201004105659'),
-('20201006213836'),
-('20201006220807'),
-('20201214144017'),
-('21'),
-('22'),
-('23'),
-('24'),
-('25'),
-('26'),
-('27'),
-('28'),
-('29'),
-('3'),
-('30'),
-('31'),
-('32'),
-('33'),
-('34'),
-('35'),
-('36'),
-('37'),
-('38'),
-('39'),
-('4'),
-('40'),
-('41'),
-('42'),
-('43'),
-('44'),
-('45'),
-('46'),
-('47'),
-('48'),
-('49'),
-('5'),
-('50'),
-('51'),
-('52'),
-('53'),
-('54'),
-('55'),
-('56'),
-('57'),
-('6'),
-('7'),
+('9'),
 ('8'),
-('9');
-
+('7'),
+('6'),
+('57'),
+('56'),
+('55'),
+('54'),
+('53'),
+('52'),
+('51'),
+('50'),
+('5'),
+('49'),
+('48'),
+('47'),
+('46'),
+('45'),
+('44'),
+('43'),
+('42'),
+('41'),
+('40'),
+('4'),
+('39'),
+('38'),
+('37'),
+('36'),
+('35'),
+('34'),
+('33'),
+('32'),
+('31'),
+('30'),
+('3'),
+('29'),
+('28'),
+('27'),
+('26'),
+('25'),
+('24'),
+('23'),
+('22'),
+('21'),
+('20240405083825'),
+('20240307181018'),
+('20240307180830'),
+('20240228205723'),
+('20240117185445'),
+('20231213182102'),
+('20231206141457'),
+('20231117170422'),
+('20231101222146'),
+('20231029151516'),
+('20231010203028'),
+('20231010201451'),
+('20231010194809'),
+('20231007141103'),
+('20230830115220'),
+('20230830115219'),
+('20230825162137'),
+('20230816135800'),
+('20220223140543'),
+('20220201183346'),
+('20211216185316'),
+('20210511104518'),
+('20210510083028'),
+('20210510083027'),
+('20201214144017'),
+('20201006220807'),
+('20201006213836'),
+('20201004105659'),
+('20191120140058'),
+('20190716173946'),
+('20190702193519'),
+('20190623093642'),
+('20190518115041'),
+('20181031113522'),
+('20181020114000'),
+('20180204153242'),
+('20170222134109'),
+('20161011010929'),
+('20161002153425'),
+('20160822153055'),
+('20150818224516'),
+('20150222101847'),
+('20150111192335'),
+('20150110152606'),
+('20140519141742'),
+('20140507110937'),
+('20140210003018'),
+('20140117185510'),
+('20140115192822'),
+('20131212124700'),
+('20130328184137'),
+('20121203124841'),
+('20121202155309'),
+('20121119165817'),
+('20121012044047'),
+('20121005195010'),
+('20120808231205'),
+('20120404205604'),
+('20120328090602'),
+('20120318201948'),
+('20120219161649'),
+('20120214210114'),
+('20120208194454'),
+('20120208122334'),
+('20120123184321'),
+('20111212183945'),
+('20111116184519'),
+('20110925112722'),
+('20110521142405'),
+('20110508145337'),
+('20110322001319'),
+('20101114011429'),
+('20100910084426'),
+('20100516124737'),
+('20100513171259'),
+('20'),
+('2'),
+('19'),
+('18'),
+('17'),
+('16'),
+('15'),
+('14'),
+('13'),
+('12'),
+('11'),
+('10'),
+('1');
 
