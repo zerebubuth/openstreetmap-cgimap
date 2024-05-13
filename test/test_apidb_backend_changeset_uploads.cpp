@@ -2009,61 +2009,11 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     REQUIRE(req.response_status() == 401);
   }
 
-/*
-  SECTION("User logging on with display name (different case)")
-  {
-    // set up request headers from test case
-    req.set_header("HTTP_AUTHORIZATION", "Basic REVNTzpwYXNzd29yZA==");
-
-    req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
-           <osmChange version="0.6" generator="iD">
-           <create><node id="-1" lon="11" lat="46" changeset="1"/></create>
-           </osmChange>)" );
-
-    // execute the request
-    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
-
-    REQUIRE(req.response_status() == 200);
-  }
-
-  SECTION("User logging on with email address rather than display name")
-  {
-    // set up request headers from test case
-    req.set_header("HTTP_AUTHORIZATION", "Basic ZGVtb0BleGFtcGxlLmNvbTpwYXNzd29yZA==");
-
-    req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
-           <osmChange version="0.6" generator="iD">
-           <create><node id="-1" lon="11" lat="46" changeset="1"/></create>
-           </osmChange>)" );
-
-    // execute the request
-    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
-
-    REQUIRE(req.response_status() == 200);
-  }
-
-  SECTION("User logging on with email address with different case and additional whitespace rather than display name")
-  {
-    // set up request headers from test case
-    req.set_header("HTTP_AUTHORIZATION", "Basic ICAgZGVtb0BleGFtcGxlLkNPTSAgIDpwYXNzd29yZA==");
-
-    req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
-           <osmChange version="0.6" generator="iD">
-           <create><node id="-1" lon="11" lat="46" changeset="1"/></create>
-           </osmChange>)" );
-
-    // execute the request
-    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
-
-    REQUIRE(req.response_status() == 200);
-  }
-
   SECTION("User is in status pending")
   {
     tdb.run_sql(R"(UPDATE users SET status = 'pending' where id = 1;)");
 
     // set up request headers from test case
-
     req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
            <osmChange version="0.6" generator="iD">
            <create><node id="-5" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1"/></create>
@@ -2072,13 +2022,11 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     // execute the request
     process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
-    // Basic Auth in status "pending" should return status HTTP 401
-    REQUIRE(req.response_status() == 401);
-    REQUIRE_THAT(req.body().str(), Equals("Incorrect user or password"));
+    // User in status "pending" should return status HTTP 403
+    REQUIRE(req.response_status() == 403);
 
     tdb.run_sql(R"(UPDATE users SET status = 'confirmed' where id = 1;)");
   }
-*/
 
   SECTION("User is blocked (needs_view)")
   {
