@@ -91,6 +91,13 @@ void YajlParser::throwParsingError() {
   } else {
     yajl_error = "Unknown YAJL error\n";  // LCOV_EXCL_LINE
   }
+  std::string error_offset = "\nError occurred at offset " + std::to_string(yajl_get_bytes_consumed(_yajl_handle.get())) + ".";
+  if (!_sjparser_error.empty()) {
+    _sjparser_error += error_offset;
+  }
+  if (!yajl_error.empty()) {
+    yajl_error += error_offset;
+  }
   throw ParsingError(_sjparser_error, yajl_error);
 }
 
