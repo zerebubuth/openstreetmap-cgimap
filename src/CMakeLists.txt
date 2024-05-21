@@ -76,6 +76,7 @@ target_link_libraries(cgimap_core
     ZLIB::ZLIB
     CryptoPP::CryptoPP
     Libmemcached::Libmemcached
+    sjparser
     $<$<BOOL:${ENABLE_BROTLI}>:Brotli::common>
     $<$<BOOL:${ENABLE_BROTLI}>:Brotli::encoder>
     $<$<BOOL:${ENABLE_BROTLI}>:Brotli::decoder>
