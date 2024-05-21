@@ -246,8 +246,7 @@ template <typename ParserT> void SMap<ParserT>::childParsed() {
       && !_on_element(Map<ParserT>::currentKey(), Map<ParserT>::parser())) {
     throw std::runtime_error("Element callback returned false");
   }
-  _values.insert_or_assign(
-      std::pair(Map<ParserT>::currentKey(), Map<ParserT>::parser().pop()));
+  _values.insert_or_assign(Map<ParserT>::currentKey(), Map<ParserT>::parser().pop());
 }
 
 template <typename ParserT> void SMap<ParserT>::finish() {
