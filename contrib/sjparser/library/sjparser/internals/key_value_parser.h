@@ -324,7 +324,7 @@ KeyValueParser<NameT, ParserTs...>::MemberParser<n, ParserT, ParserTDs...>::
   std::ignore = _;
   if (!inserted) {
     std::stringstream error;
-    error << "Member " << name << " appears more, than once";
+    error << "Member " << name << " appears more than once";
     throw std::runtime_error(error.str());
   }
 }
