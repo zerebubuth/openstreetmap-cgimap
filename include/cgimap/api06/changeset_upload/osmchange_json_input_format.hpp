@@ -143,11 +143,7 @@ private:
     } else if (action == "delete") {
       m_operation = operation::op_delete;
     } else {
-      throw json_error{
-          fmt::format(
-              "Unknown action {}, choices are create, modify, delete",
-          action)
-      };
+      throw json_error{fmt::format("Unknown action {}, choices are create, modify, delete", action)};
     }
   }
 
@@ -171,12 +167,9 @@ private:
       process_way(parser);
     } else if (type == "relation") {
       process_relation(parser);
+    } else {
+      throw json_error{fmt::format("Unknown element {}, expecting node, way or relation", type)};
     }
-    throw json_error{
-        fmt::format(
-              "Unknown element {}, expecting node, way or relation",
-          type)
-      };
   }
 
   void process_node(ElementsParser& parser) {
@@ -195,10 +188,7 @@ private:
     process_tags(node, parser);
 
     if (!node.is_valid(m_operation)) {
-      throw json_error{
-        fmt::format("{} does not include all mandatory fields",
-          node.to_string())
-      };
+      throw json_error{fmt::format("{} does not include all mandatory fields", node.to_string())};
     }
 
     m_callback.process_node(node, m_operation, m_if_unused);
@@ -219,10 +209,7 @@ private:
     process_tags(way, parser);
 
     if (!way.is_valid(m_operation)) {
-      throw json_error{
-        fmt::format("{} does not include all mandatory fields",
-          way.to_string())
-      };
+      throw json_error{fmt::format("{} does not include all mandatory fields", way.to_string())};
     }
 
     m_callback.process_way(way, m_operation, m_if_unused);
@@ -238,10 +225,7 @@ private:
     process_tags(relation, parser);
 
     if (!relation.is_valid(m_operation)) {
-      throw json_error{
-        fmt::format("{} does not include all mandatory fields",
-          relation.to_string())
-      };
+      throw json_error{fmt::format("{} does not include all mandatory fields", relation.to_string())};
     }
 
     m_callback.process_relation(relation, m_operation, m_if_unused);
@@ -262,9 +246,7 @@ private:
       member.set_role(role);
 
       if (!member.is_valid()) {
-        throw json_error{ fmt::format(
-                              "Missing mandatory field on relation member in {}",
-                          relation.to_string()) };
+        throw json_error{fmt::format("Missing mandatory field on relation member in {}", relation.to_string()) };
       }
       relation.add_member(member);
     }
@@ -300,8 +282,7 @@ private:
     }
 
     if (!object.has_changeset()) {
-      throw json_error{ fmt::format("Changeset id is missing for {}",
-                        object.to_string()) };
+      throw json_error{fmt::format("Changeset id is missing for {}", object.to_string()) };
     }
 
     if (m_operation == operation::op_create) {
@@ -312,13 +293,10 @@ private:
                m_operation == operation::op_modify) {
       // objects for other operations must have a positive version number
       if (!object.has_version()) {
-        throw json_error{ fmt::format(
-                              "Version is required when updating {}",
-                          object.to_string()) };
+        throw json_error{fmt::format("Version is required when updating {}", object.to_string()) };
       }
       if (object.version() < 1) {
-        throw json_error{ fmt::format("Invalid version number {} in {}",
-                          object.version(), object.to_string()) };
+        throw json_error{ fmt::format("Invalid version number {} in {}", object.version(), object.to_string()) };
       }
     }
   }

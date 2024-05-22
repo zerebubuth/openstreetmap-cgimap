@@ -77,7 +77,7 @@ public:
     }
   }
 
-  std::string get_type_name() override { return "Way"; }
+  std::string get_type_name() const override { return "Way"; }
 
 private:
   std::vector<osm_nwr_signed_id_t> m_way_nodes;

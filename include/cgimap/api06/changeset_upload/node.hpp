@@ -86,7 +86,7 @@ public:
     }
   }
 
-  std::string get_type_name() override { return "Node"; }
+  std::string get_type_name() const override { return "Node"; }
 
 private:
   std::optional<double> m_lat;

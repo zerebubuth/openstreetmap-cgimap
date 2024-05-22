@@ -121,7 +121,7 @@ public:
     return m_relation_member;
   }
 
-  std::string get_type_name() override { return "Relation"; }
+  std::string get_type_name() const override { return "Relation"; }
 
   bool is_valid(operation op) const {
 

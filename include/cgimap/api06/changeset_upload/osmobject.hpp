@@ -161,9 +161,9 @@ namespace api06 {
       return (m_changeset && m_id && m_version);
     }
 
-    virtual std::string get_type_name() = 0;
+    virtual std::string get_type_name() const = 0;
 
-    virtual std::string to_string() {
+    virtual std::string to_string() const {
 
       return fmt::format("{} {:d}", get_type_name(), m_id.value_or(0));
     }
