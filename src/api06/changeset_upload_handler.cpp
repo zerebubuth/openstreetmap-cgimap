@@ -13,6 +13,7 @@
 
 #include "cgimap/api06/changeset_upload/osmchange_handler.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_input_format.hpp"
+#include "cgimap/api06/changeset_upload/osmchange_json_input_format.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 #include "cgimap/api06/changeset_upload_handler.hpp"
 #include "cgimap/backend/apidb/changeset_upload/changeset_updater.hpp"

@@ -28,6 +28,15 @@ namespace api06 {
       : http::bad_request(message), error_string(message) {}
   };
 
+  struct json_error : public http::bad_request {
+
+    std::string error_code;
+    std::string error_string;
+
+    explicit json_error(const std::string &message)
+      : http::bad_request(message), error_string(message) {}
+  };
+
   class OSMObject {
 
   public:

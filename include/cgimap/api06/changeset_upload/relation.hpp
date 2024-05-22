@@ -26,8 +26,8 @@ public:
   RelationMember() = default;
 
   RelationMember(const std::string &m_type, osm_nwr_signed_id_t m_ref, const std::string &m_role) :
-    m_role(m_role), 
-    m_ref(m_ref), 
+    m_role(m_role),
+    m_ref(m_ref),
     m_type(m_type) {}
 
   void set_type(const std::string &type) {
@@ -51,6 +51,14 @@ public:
     }
 
     m_role = role;
+  }
+
+  void set_ref(int64_t ref) {
+    osm_nwr_signed_id_t _ref = 0;
+    if (_ref == 0) {
+      throw xml_error("Relation member 'ref' attribute may not be 0");
+    }
+    m_ref = _ref;
   }
 
   void set_ref(const std::string &ref) {
