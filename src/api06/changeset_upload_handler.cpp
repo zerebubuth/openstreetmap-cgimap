@@ -12,7 +12,7 @@
 #include "cgimap/request_helpers.hpp"
 
 #include "cgimap/api06/changeset_upload/osmchange_handler.hpp"
-#include "cgimap/api06/changeset_upload/osmchange_input_format.hpp"
+#include "cgimap/api06/changeset_upload/osmchange_xml_input_format.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_json_input_format.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 #include "cgimap/api06/changeset_upload_handler.hpp"
@@ -29,9 +29,9 @@
 
 namespace api06 {
 
-changeset_upload_responder::changeset_upload_responder(mime::type mt, 
-                                                       data_update& upd, 
-                                                       osm_changeset_id_t changeset, 
+changeset_upload_responder::changeset_upload_responder(mime::type mt,
+                                                       data_update& upd,
+                                                       osm_changeset_id_t changeset,
                                                        const std::string &payload,
                                                        std::optional<osm_user_id_t> user_id)
     : osm_diffresult_responder(mt) {
@@ -89,8 +89,8 @@ responder_ptr_t changeset_upload_handler::responder(data_selection &) const {
       "changeset_upload_handler: data_selection unsupported");
 }
 
-responder_ptr_t changeset_upload_handler::responder(data_update & upd, 
-                                                    const std::string &payload, 
+responder_ptr_t changeset_upload_handler::responder(data_update & upd,
+                                                    const std::string &payload,
                                                     std::optional<osm_user_id_t> user_id) const {
   return std::make_unique<changeset_upload_responder>(mime_type, upd, id, payload, user_id);
 }

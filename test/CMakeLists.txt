@@ -109,20 +109,20 @@ if(BUILD_TESTING)
         COMMAND test_parse_time)
 
 
-    ############################
-    # test_parse_osmchange_input
-    ############################
-    add_executable(test_parse_osmchange_input
-        test_parse_osmchange_input.cpp)
+    ################################
+    # test_parse_osmchange_xml_input
+    ################################
+    add_executable(test_parse_osmchange_xml_input
+        test_parse_osmchange_xml_input.cpp)
 
-    target_link_libraries(test_parse_osmchange_input
+    target_link_libraries(test_parse_osmchange_xml_input
         cgimap_common_compiler_options
         cgimap_core
         Boost::program_options
         catch2)
 
-    add_test(NAME test_parse_osmchange_input
-        COMMAND test_parse_osmchange_input)
+    add_test(NAME test_parse_osmchange_xml_input
+        COMMAND test_parse_osmchange_xml_input)
 
     #################################
     # test_parse_osmchange_json_input

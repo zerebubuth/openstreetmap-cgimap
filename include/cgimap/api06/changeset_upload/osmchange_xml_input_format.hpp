@@ -7,8 +7,8 @@
  * For a full list of authors see the git log.
  */
 
-#ifndef OSMCHANGE_INPUT_FORMAT_HPP
-#define OSMCHANGE_INPUT_FORMAT_HPP
+#ifndef OSMCHANGE_XML_INPUT_FORMAT_HPP
+#define OSMCHANGE_XML_INPUT_FORMAT_HPP
 
 #include "cgimap/api06/changeset_upload/node.hpp"
 #include "cgimap/api06/changeset_upload/osmobject.hpp"
@@ -400,4 +400,4 @@ private:
 
 } // namespace api06
 
-#endif // OSMCHANGE_INPUT_FORMAT_HPP
+#endif // OSMCHANGE_INPUT_XML_FORMAT_HPP
