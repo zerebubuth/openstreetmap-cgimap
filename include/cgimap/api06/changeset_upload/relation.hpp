@@ -54,11 +54,10 @@ public:
   }
 
   void set_ref(int64_t ref) {
-    osm_nwr_signed_id_t _ref = 0;
-    if (_ref == 0) {
+    if (ref == 0) {
       throw xml_error("Relation member 'ref' attribute may not be 0");
     }
-    m_ref = _ref;
+    m_ref = ref;
   }
 
   void set_ref(const std::string &ref) {
@@ -115,6 +114,11 @@ public:
   Relation() = default;
 
   ~Relation() override = default;
+
+  void add_members(std::vector<RelationMember>&& members) {
+    for (auto& mbr : members)
+      add_member(mbr);
+  }
 
   void add_member(RelationMember &member) {
     if (!member.is_valid())

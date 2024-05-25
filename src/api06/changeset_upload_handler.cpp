@@ -47,9 +47,12 @@ changeset_upload_responder::changeset_upload_responder(mime::type mt,
 
   OSMChange_Handler handler(*node_updater, *way_updater, *relation_updater, changeset);
 
-  OSMChangeXMLParser parser(handler);
-
-  parser.process_message(payload);
+  if (true) {
+    OSMChangeXMLParser(handler).process_message(payload);
+  }
+  else {
+    OSMChangeJSONParser(handler).process_message(payload);
+  }
 
   // store diffresult for output handling in class osm_diffresult_responder
   m_diffresult = change_tracking.assemble_diffresult();

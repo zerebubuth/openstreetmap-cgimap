@@ -735,3 +735,71 @@ TEST_CASE("Create node", "[osmchange][node][json]") {
       }
     )", cb));
 }
+
+TEST_CASE("Create way", "[osmchange][way][json]") {
+
+  Test_Parser_Callback cb{};
+  api06::Way way;
+  way.set_id(-1);
+  way.set_changeset(124176968);
+  way.set_version(0); // operation create forces version 0, regardless of JSON contents
+  way.add_way_nodes({1,2,3,4});
+  way.add_tags({{"highway", "residential"},{"name", "Via Monte"}});
+
+  cb.ways.emplace_back(way, operation::op_create, false);
+
+  REQUIRE_NOTHROW(process_testmsg(
+    R"(
+      {
+        "version": "0.6",
+        "generator": "demo",
+        "osmChange": [
+          {
+            "type": "way",
+            "action": "create",
+            "id": -1,
+            "changeset": 124176968,
+            "nodes": [1,2,3,4],
+            "tags": {
+              "highway": "residential",
+              "name": "Via Monte"
+            }
+          }
+        ]
+      }
+    )", cb));
+}
+
+TEST_CASE("Create relation", "[osmchange][relation][json]") {
+
+  Test_Parser_Callback cb{};
+  api06::Relation rel;
+  rel.set_id(-1);
+  rel.set_changeset(124176968);
+  rel.set_version(0); // operation create forces version 0, regardless of JSON contents
+  rel.add_tags({{"route", "bus"},{"ref", "23"}});
+  rel.add_members({{"Node", -1, ""}});
+
+  cb.relations.emplace_back(rel, operation::op_create, false);
+
+  REQUIRE_NOTHROW(process_testmsg(
+    R"(
+      {
+        "version": "0.6",
+        "generator": "demo",
+        "osmChange": [
+          {
+            "type": "relation",
+            "action": "create",
+            "id": -1,
+            "changeset": 124176968,
+            "members": [{"type": "Node", "ref": -1}],
+            "tags": {
+              "route": "bus",
+              "ref": "23"
+            }
+          }
+        ]
+      }
+    )", cb));
+}
