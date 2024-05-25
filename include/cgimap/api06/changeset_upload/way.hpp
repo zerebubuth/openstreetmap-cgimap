@@ -79,6 +79,11 @@ public:
 
   std::string get_type_name() const override { return "Way"; }
 
+  bool operator==(const Way &o) const {
+    return (OSMObject::operator==(o) &&
+            o.m_way_nodes == m_way_nodes);
+  }
+
 private:
   std::vector<osm_nwr_signed_id_t> m_way_nodes;
   using OSMObject::is_valid;

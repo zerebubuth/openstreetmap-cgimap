@@ -122,6 +122,12 @@ namespace api06 {
 
     std::map<std::string, std::string> tags() const { return m_tags; }
 
+    void add_tags(const std::map<std::string, std::string>& tags) {
+      for (const auto& [key, value] : tags) {
+        add_tag(key, value);
+      }
+    }
+
     void add_tag(const std::string& key, const std::string& value) {
 
       if (key.empty()) {
@@ -167,6 +173,14 @@ namespace api06 {
 
       return fmt::format("{} {:d}", get_type_name(), m_id.value_or(0));
     }
+
+    bool operator==(const OSMObject &o) const {
+     return (o.m_changeset == m_changeset &&
+            o.m_id == m_id &&
+            o.m_version == m_version &&
+            o.m_tags == m_tags);
+    }
+
 
   private:
     std::optional<osm_changeset_id_t> m_changeset;

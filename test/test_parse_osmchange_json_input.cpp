@@ -15,6 +15,7 @@
 #include "cgimap/http.hpp"
 
 #include <iostream>
+#include <list>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
@@ -25,20 +26,63 @@
 class Test_Parser_Callback : public api06::Parser_Callback {
 
 public:
-  Test_Parser_Callback() : start_executed(false), end_executed(false) {}
+  Test_Parser_Callback() = default;
 
   void start_document() override { start_executed = true; }
 
-  void end_document() override { end_executed = true; }
+  void end_document() override {
+    end_executed = true;
+    REQUIRE(nodes.empty());
+    REQUIRE(ways.empty());
+    REQUIRE(relations.empty());
+  }
 
-  void process_node(const api06::Node &n, operation op, bool if_unused) override {}
+  void process_node(const api06::Node &n, operation op, bool if_unused) override {
+    REQUIRE(!nodes.empty());
 
-  void process_way(const api06::Way &w, operation op, bool if_unused) override {}
+    auto const& [n_expected, op_expected, if_unused_expected] = nodes.front();
 
-  void process_relation(const api06::Relation &r, operation op, bool if_unused) override {}
+    REQUIRE(n_expected == n);
+    REQUIRE(op == op_expected);
+    REQUIRE(if_unused == if_unused_expected);
 
-  bool start_executed;
-  bool end_executed;
+    nodes.pop_front();
+  }
+
+  void process_way(const api06::Way &w, operation op, bool if_unused) override {
+    REQUIRE(!ways.empty());
+
+    auto const& [w_expected, op_expected, if_unused_expected] = ways.front();
+
+    REQUIRE(w_expected == w);
+    REQUIRE(op == op_expected);
+    REQUIRE(if_unused == if_unused_expected);
+
+    ways.pop_front();
+  }
+
+  void process_relation(const api06::Relation &r, operation op, bool if_unused) override {
+    REQUIRE(!relations.empty());
+
+    auto const& [r_expected, op_expected, if_unused_expected] = relations.front();
+
+    REQUIRE(r_expected == r);
+    REQUIRE(op == op_expected);
+    REQUIRE(if_unused == if_unused_expected);
+
+    relations.pop_front();
+  }
+
+  bool start_executed{false};
+  bool end_executed{false};
+
+  using node_tuple = std::tuple<api06::Node, operation, bool>;
+  using way_tuple = std::tuple<api06::Way, operation, bool>;
+  using relation_tuple = std::tuple<api06::Relation, operation, bool>;
+
+  std::list< node_tuple > nodes;
+  std::list< way_tuple> ways;
+  std::list< relation_tuple > relations;
 };
 
 class global_settings_test_class : public global_settings_default {
@@ -64,12 +108,21 @@ std::string repeat(const std::string &input, size_t num) {
   return os.str();
 }
 
-void process_testmsg(const std::string &payload) {
+void process_testmsg(const std::string &payload, Test_Parser_Callback& cb) {
 
-  Test_Parser_Callback cb;
   api06::OSMChangeJSONParser parser(cb);
   parser.process_message(payload);
+
+  REQUIRE(cb.start_executed);
+  REQUIRE(cb.end_executed);
 }
+
+void process_testmsg(const std::string &payload) {
+
+  Test_Parser_Callback cb{};
+  process_testmsg(payload, cb);
+}
+
 
 // OSMCHANGE STRUCTURE TESTS
 /*
@@ -649,31 +702,36 @@ TEST_CASE("Create relation, members >= max members", "[osmchange][relation][json
 
 TEST_CASE("Create node", "[osmchange][node][json]") {
 
-    REQUIRE_NOTHROW(process_testmsg(
-      R"(
-        {
-          "version": "0.6",
-          "generator": "demo",
-          "osmChange": [
-            {
-              "type": "node",
-              "action": "create",
-              "id": -1,
-              "lat": 42.7957187,
-              "lon": 13.5690032,
-              "changeset": 124176968,
-              "tags": {
-                "communication:microwave": "yes",
-                "communication:radio": "fm",
-                "description": "Radio Subasio",
-                "frequency": "105.5 MHz",
-                "man_made": "mast",
-                "name": "Monte Piselli - San Giacomo",
-                "tower:construction": "lattice",
-                "tower:type": "communication"
-              }
+  Test_Parser_Callback cb{};
+  api06::Node node;
+  node.set_id(-1);
+  node.set_lat(42.7957187);
+  node.set_lon(13.5690032);
+  node.set_changeset(124176968);
+  node.set_version(0); // operation create forces version 0, regardless of JSON contents
+  node.add_tags({{"man_made", "mast"},{"name", "Monte Piselli - San Giacomo"}});
+
+  cb.nodes.emplace_back(node, operation::op_create, false);
+
+  REQUIRE_NOTHROW(process_testmsg(
+    R"(
+      {
+        "version": "0.6",
+        "generator": "demo",
+        "osmChange": [
+          {
+            "type": "node",
+            "action": "create",
+            "id": -1,
+            "lat": 42.7957187,
+            "lon": 13.5690032,
+            "changeset": 124176968,
+            "tags": {
+              "man_made": "mast",
+              "name": "Monte Piselli - San Giacomo"
             }
-          ]
-        }
-      )"));
+          }
+        ]
+      }
+    )", cb));
 }

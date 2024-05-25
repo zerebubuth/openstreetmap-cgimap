@@ -88,6 +88,12 @@ public:
 
   std::string get_type_name() const override { return "Node"; }
 
+  bool operator==(const Node &o) const {
+    return (OSMObject::operator==(o) &&
+            o.m_lat == m_lat &&
+            o.m_lon == m_lon);
+  }
+
 private:
   std::optional<double> m_lat;
   std::optional<double> m_lon;

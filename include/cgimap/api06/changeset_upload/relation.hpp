@@ -98,6 +98,12 @@ public:
 
   osm_nwr_signed_id_t ref() const { return *m_ref; }
 
+  bool operator==(const RelationMember &o) const {
+    return (o.m_role == m_role &&
+            o.m_ref == m_ref &&
+            o.m_type == m_type);
+  }
+
 private:
   std::string m_role;
   std::optional<osm_nwr_signed_id_t> m_ref;
@@ -142,6 +148,11 @@ public:
 
       return (is_valid());
     }
+  }
+
+  bool operator==(const Relation &o) const {
+    return (OSMObject::operator==(o) &&
+            o.m_relation_member == m_relation_member);
   }
 
 private:

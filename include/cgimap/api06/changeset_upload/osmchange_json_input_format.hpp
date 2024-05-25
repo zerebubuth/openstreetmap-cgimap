@@ -103,8 +103,10 @@ public:
   void process_message(const std::string &data) {
 
     try {
+      m_callback.start_document();
       _parser.parse(data);
       _parser.finish();
+      m_callback.end_document();
     } catch (const std::exception& e) {
       throw http::bad_request(e.what());    // rethrow JSON parser error as HTTP 400 Bad request
     }
