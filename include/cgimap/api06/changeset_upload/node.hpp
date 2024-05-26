@@ -36,9 +36,9 @@ public:
     try {
       _lat = std::stod(lat);
     } catch (std::invalid_argument &e) {
-      throw xml_error("Latitude is not numeric");
+      throw payload_error("Latitude is not numeric");
     } catch (std::out_of_range &e) {
-      throw xml_error("Latitude value is too large");
+      throw payload_error("Latitude value is too large");
     }
 
     set_lat(_lat);
@@ -51,9 +51,9 @@ public:
     try {
       _lon = std::stod(lon);
     } catch (std::invalid_argument &e) {
-      throw xml_error("Longitude is not numeric");
+      throw payload_error("Longitude is not numeric");
     } catch (std::out_of_range &e) {
-      throw xml_error("Longitude value is too large");
+      throw payload_error("Longitude value is too large");
     }
 
     set_lon(_lon);
@@ -61,17 +61,17 @@ public:
 
   void set_lat(double lat) {
     if (lat < -90 || lat > 90)
-      throw xml_error("Latitude outside of valid range");
+      throw payload_error("Latitude outside of valid range");
     else if (!std::isfinite(lat))
-      throw xml_error("Latitude not a valid finite number");
+      throw payload_error("Latitude not a valid finite number");
     m_lat = lat;
   }
 
   void set_lon(double lon) {
     if (lon < -180 || lon > 180)
-      throw xml_error("Longitude outside of valid range");
+      throw payload_error("Longitude outside of valid range");
     else if (!std::isfinite(lon))
-      throw xml_error("Longitude not a valid finite number");
+      throw payload_error("Longitude not a valid finite number");
     m_lon = lon;
   }
 
