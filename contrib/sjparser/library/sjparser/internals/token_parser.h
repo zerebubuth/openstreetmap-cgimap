@@ -26,7 +26,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <vector>
 
 namespace SJParser {
 
@@ -46,10 +45,6 @@ template <typename TokenT> struct TokenTypeResolver {
 
 template <> struct TokenTypeResolver<std::string> {
   using type = std::string_view;
-};
-
-template <> struct TokenTypeResolver<double> {
-  using type = double;
 };
 
 template <typename TokenT>

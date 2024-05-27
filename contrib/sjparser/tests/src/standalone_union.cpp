@@ -514,7 +514,7 @@ TEST(StandaloneUnion, RepeatingMembers) {
 
     FAIL() << "No exception thrown";
   } catch (std::runtime_error &e) {
-    ASSERT_STREQ("Member 1 appears more, than once", e.what());
+    ASSERT_STREQ("Member 1 appears more than once", e.what());
   } catch (...) {
     FAIL() << "Invalid exception thrown";
   }
