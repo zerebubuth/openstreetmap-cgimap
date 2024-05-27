@@ -598,43 +598,114 @@ TEST_CASE("Invalid data", "[osmchange][json]") {
   REQUIRE_THROWS_AS(process_testmsg("\x3C\x00\x00\x00\x00\x0A\x01\x00"), http::bad_request);
 }
 
+*/
 
 // LARGE MESSAGE TESTS
 
-TEST_CASE("Very large XML message", "[osmchange][node][json]") {
+TEST_CASE("Very large JSON message", "[osmchange][node][json]") {
 
-  // Test XML chunking with a very large message
+  // Test JSON processing with a very large message
   std::stringstream s;
 
-  s << "<osmChange>";
+  s << R"(
+      {
+        "version": "0.6",
+        "generator": "demo",
+        "osmChange": [  
+     )";
+
+  Test_Parser_Callback cb{};
 
   for (int i = 1; i < 100000; i++) {
 
+    if (i > 1) {
+      s << ",\n";
+    }
+
+    api06::Node node;
+    node.set_id(-i);
+    node.set_changeset(123);
+    node.add_tags({{"some key", "some value"}});
+
     switch (i % 3) {
     case 0:
-      s << "<create>";
-      s << R"(<node changeset="123" lat="1" lon="2" id="-)" << i
-        << R"("><tag k="some key" v="some value"/></node>)";
-      s << "</create>";
+      node.set_lat(1);
+      node.set_lon(2);
+      node.set_version(0); // operation create forces version 0, regardless of JSON contents
+
+      cb.nodes.emplace_back(node, operation::op_create, false);
+
+      s << fmt::format(R"(
+          {{
+            "type": "node",
+            "action": "{}",
+            "id": {},
+            "lat": 1,
+            "lon": 2,
+            "changeset": 123,
+            "tags": {{
+              "some key": "some value"
+            }}
+          }}
+         )", "create", -i);
+
       break;
+
     case 1:
-      s << "<modify>";
-      s << R"(<node changeset="234" version="1" lat="1" lon="2" id=")" << i
-        << R"("><tag k="some key" v="some value"/></node>)";
-      s << "</modify>";
+      node.set_lat(1);
+      node.set_lon(2);
+      node.set_version(1);
+
+      cb.nodes.emplace_back(node, operation::op_modify, false);
+
+      s << fmt::format(R"(
+          {{
+            "type": "node",
+            "action": "{}",
+            "id": {},
+            "lat": 1,
+            "lon": 2,
+            "version": 1,
+            "changeset": 123,
+            "tags": {{
+              "some key": "some value"
+            }}
+          }}
+         )", "modify", -i);
       break;
+
     case 2:
-      s << "<delete>";
-      s << R"(<node changeset="456" version="1" id=")" << i << R"("></node>)";
-      s << "</delete>";
+      node.set_version(1);
+      cb.nodes.emplace_back(node, operation::op_delete, false);
+
+      s << fmt::format(R"(
+          {{
+            "type": "node",
+            "action": "{}",
+            "id": {},
+            "version": 1,
+            "changeset": 123,
+            "tags": {{
+              "some key": "some value"
+            }}
+          }}
+         )", "delete", -i);
+
+      break;
+
     }
   }
 
-  s << "</osmChange>";
+  s << R"(
+        ]
+      }
+    )";
 
-  REQUIRE_NOTHROW(process_testmsg(s.str()));
+  REQUIRE_NOTHROW(process_testmsg(s.str(), cb));
+
 }
 
+/*
 
 // OBJECT LIMIT TESTS
 
