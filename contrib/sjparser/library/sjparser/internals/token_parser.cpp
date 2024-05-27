@@ -88,5 +88,9 @@ void TokenParser::on(ArrayEndT /*unused*/) {
   unexpectedToken("array end");
 }  // LCOV_EXCL_LINE
 
+void TokenParser::on(DummyT) {
+  unexpectedToken("dummy");
+}
+
 void TokenParser::childParsed() {}
 }  // namespace SJParser
