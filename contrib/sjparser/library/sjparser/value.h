@@ -111,6 +111,7 @@ template <typename ValueT> class Value : public TokenParser {
 
  private:
   void on(TokenType<ValueType> value) override;
+  void on(TokenSecondaryType<ValueType> value) override;
   void finish() override;
 
   ValueType _value;

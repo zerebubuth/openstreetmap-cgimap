@@ -26,9 +26,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace SJParser {
 
+struct DummyT {}; // not used by yajl
 struct NullT {};
 struct MapStartT {};
 struct MapKeyT {
@@ -46,8 +48,27 @@ template <> struct TokenTypeResolver<std::string> {
   using type = std::string_view;
 };
 
+template <> struct TokenTypeResolver<double> {
+  using type = double;
+};
+
 template <typename TokenT>
 using TokenType = typename TokenTypeResolver<std::decay_t<TokenT>>::type;
+
+// TokenSecondaryTypeResolver is used to indicate that a type (e.g. double)
+// should also process yajl events for other data types (e.g. integers)
+// Yajl treats numbers without decimal points as integer, and this
+// triggers an error in case of Value<double>.
+template <typename TokenT> struct TokenSecondaryTypeResolver {
+  using type = DummyT;
+};
+
+template <> struct TokenSecondaryTypeResolver<double> {
+  using type = int64_t;
+};
+
+template <typename TokenT>
+using TokenSecondaryType = typename TokenSecondaryTypeResolver<std::decay_t<TokenT>>::type;
 
 class Dispatcher;
 
@@ -70,6 +91,7 @@ class TokenParser {
   virtual void on(MapEndT /*unused*/);
   virtual void on(ArrayStartT /*unused*/);
   virtual void on(ArrayEndT /*unused*/);
+  virtual void on(DummyT);
 
   virtual void childParsed();
 

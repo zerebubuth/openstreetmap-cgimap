@@ -63,6 +63,14 @@ template <typename ValueT> void Value<ValueT>::on(TokenType<ValueT> value) {
   endParsing();
 }
 
+template <typename ValueT> void Value<ValueT>::on(TokenSecondaryType<ValueT> value) {
+  if constexpr (!std::is_same_v<TokenSecondaryType<ValueT>, SJParser::DummyT>) {
+    setNotEmpty();
+    _value = value;
+    endParsing();
+  }
+}
+
 template <typename ValueT> void Value<ValueT>::finish() {
   if (_on_finish && !_on_finish(_value)) {
     throw std::runtime_error("Callback returned false");
