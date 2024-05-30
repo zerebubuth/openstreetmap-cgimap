@@ -106,6 +106,15 @@ public:
       m_callback.start_document();
       _parser.parse(data);
       _parser.finish();
+
+      if (_parser.parser().isEmpty()) {
+        throw payload_error("Empty JSON payload");
+      }
+
+      if (element_count == 0) {
+        throw payload_error("osmChange array is empty");
+      }
+
       m_callback.end_document();
     } catch (const std::exception& e) {
       throw http::bad_request(e.what());    // rethrow JSON parser error as HTTP 400 Bad request
@@ -121,6 +130,8 @@ private:
 
   // OSM element callback
   bool process_element(ElementsParser &parser) {
+
+    element_count++;
 
     // process action
     process_action(parser);
@@ -306,6 +317,7 @@ private:
   operation m_operation = operation::op_undefined;
   Parser_Callback& m_callback;
   bool m_if_unused = false;
+  int element_count = 0;
 };
 
 } // namespace api06

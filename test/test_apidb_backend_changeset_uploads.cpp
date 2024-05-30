@@ -14,6 +14,7 @@
 #include <iostream>
 #include <optional>
 #include <stdexcept>
+#include <sstream>
 #include <memory>
 #include <thread>
 #include <fmt/core.h>
@@ -21,6 +22,10 @@
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
 #include <boost/program_options.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 #include <sys/time.h>
 
@@ -45,6 +50,9 @@
 using Catch::Matchers::StartsWith;
 using Catch::Matchers::EndsWith;
 using Catch::Matchers::Equals;
+
+namespace al = boost::algorithm;
+namespace pt = boost::property_tree;
 
 class global_settings_enable_upload_rate_limiter_test_class : public global_settings_default {
 
@@ -2396,6 +2404,66 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     CAPTURE(req.body().str());
 
     REQUIRE(req.response_status() == 200);
+  }
+
+  SECTION("JSON upload")
+  {
+    std::string payload = R"(
+        {
+          "version": "0.6",
+          "generator": "demo",
+          "osmChange": [
+            {
+              "type": "node",
+              "action": "create",
+              "id": -1,
+              "lat": 42,
+              "lon": 13,
+              "changeset": 1
+            },
+            {
+              "type": "node",
+              "action": "modify",
+              "id": -1,
+              "version": 1,
+              "lat": 42.7957187,
+              "lon": 13.5690032,
+              "changeset": 1,
+              "tags": {
+                "man_made": "mast",
+                "name": "Monte Piselli - San Giacomo"
+              }
+            }
+          ]
+        }
+      )";
+
+    req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload.json");
+    req.set_payload(payload);
+
+    // execute the request
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
+
+    CAPTURE(req.body().str());
+
+    REQUIRE(req.response_status() == 200);
+
+    SECTION("Validate diffResult in JSON format")
+    {
+      pt::ptree act_tree;
+      std::stringstream ss(req.body().str());
+      pt::read_json(ss, act_tree);
+
+      auto diffResult = act_tree.get_child("diffResult");
+      int version = 1;
+      for (auto & entry : diffResult) {
+        REQUIRE(entry.second.get<std::string>("type") == "node");
+        REQUIRE(entry.second.get<int64_t>("old_id") == -1);
+        REQUIRE(entry.second.get<int64_t>("new_id") > 0);
+        REQUIRE(entry.second.get<int64_t>("new_version") == version);
+        version++;
+      }
+    }
   }
 
 }

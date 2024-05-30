@@ -47,7 +47,8 @@ changeset_upload_responder::changeset_upload_responder(mime::type mt,
 
   OSMChange_Handler handler(*node_updater, *way_updater, *relation_updater, changeset);
 
-  if (true) {
+  // TODO: check HTTP Accept header
+  if (mt != mime::type::application_json) {
     OSMChangeXMLParser(handler).process_message(payload);
   }
   else {

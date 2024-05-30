@@ -152,6 +152,9 @@ void test_formatter::start_document(
 void test_formatter::end_document() {
 }
 
+void test_formatter::start_diffresult() {
+}
+
 void test_formatter::write_bounds(const bbox &bounds) {
 }
 

@@ -56,6 +56,23 @@ T element_type_name(element_type elt) noexcept {
   return "";
 }
 
+template <typename T = const char*>
+T action_type_name(action_type action) noexcept {
+
+  switch (action) {
+  case action_type::create:
+    return "create";
+    break;
+  case action_type::modify:
+    return "modify";
+    break;
+  case action_type::del:
+    return "delete";
+    break;
+  }
+  return "";
+}
+
 } // anonymous namespace
 
 struct element_info {
@@ -213,6 +230,9 @@ struct output_formatter {
 
   // end a type of element. this is called once for nodes, ways or relations
   virtual void end_element_type(element_type type) = 0;
+
+  // marks the beginning of diffResult response processing
+  virtual void start_diffresult() = 0;
 
   // TODO: document me.
   virtual void start_action(action_type type) = 0;

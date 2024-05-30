@@ -125,11 +125,12 @@ void process_testmsg(const std::string &payload) {
 
 
 // OSMCHANGE STRUCTURE TESTS
-/*
+
 TEST_CASE("Invalid JSON", "[osmchange][json]") {
-  auto i = GENERATE(R"(<osmChange>)", R"(bla)");
+  auto i = GENERATE(R"({})", R"(bla)");
   REQUIRE_THROWS_AS(process_testmsg(i), http::bad_request);
 }
+/*
 
 TEST_CASE("XML without any changes", "[osmchange][json]") {
   REQUIRE_NOTHROW(process_testmsg(R"(<osmChange/>)"));
@@ -165,22 +166,23 @@ TEST_CASE("osmchange: create invalid object", "[osmchange][json]") {
     Catch::Message("Unknown element bla, expecting node, way or relation at line 1, column 24"));
 }
 
-
+*/
 
 // NODE TESTS
 
 TEST_CASE("Create empty node without details", "[osmchange][node][json]") {
-  REQUIRE_THROWS_AS(process_testmsg(R"(<osmChange><create><node/></create></osmChange>)"), http::bad_request);
+  REQUIRE_THROWS_AS(process_testmsg(R"({"osmChange": [{ "type": "node", "action": "create"}]})"), http::bad_request);
 }
 
 TEST_CASE("Create node, details except changeset info missing", "[osmchange][node][json]") {
-  REQUIRE_THROWS_AS(process_testmsg(R"(<osmChange><create><node changeset="123"/></create></osmChange>)"), http::bad_request);
+  REQUIRE_THROWS_AS(process_testmsg(R"({"osmChange": [{ "type": "node", "action": "create", changeset: 1}]})"), http::bad_request);
 }
 
 TEST_CASE("Create node, lat lon missing", "[osmchange][node][json]") {
-  REQUIRE_THROWS_AS(process_testmsg(R"(<osmChange><create><node changeset="123" id="-1"/></create></osmChange>)"), http::bad_request);
+  REQUIRE_THROWS_AS(process_testmsg(R"({"osmChange": [{ "type": "node", "action": "create", changeset: 12, id: -1}]})"), http::bad_request);
 }
 
+/*
 TEST_CASE("Create node, lat missing", "[osmchange][node][json]") {
   REQUIRE_THROWS_AS(process_testmsg(R"(<osmChange><create><node changeset="858" id="-1" lon="2"/></create></osmChange>)"), http::bad_request);
 }
@@ -335,22 +337,6 @@ TEST_CASE("Create node, tag key with > 255 unicode characters", "[osmchange][nod
     http::bad_request, Catch::Message("Key has more than 255 unicode characters in Node -1 at line 2, column 303"));
 }
 
-TEST_CASE("Create valid node, tag value with ampersand character", "[osmchange][node][json]") {
-  // Tag: Value with ampersand character: libxml2 parser needs XML_PARSE_NOENT option so that the &amp;
-  // character doesn't get replaced by &#38; but a proper & character. Otherwise, the string will
-  // exceed the 255 unicode character check, and an exception would be raised.
-  REQUIRE_NOTHROW(process_testmsg(R"(
-     <osmChange version="0.6" generator="JOSM">
-     <create>
-       <node id='-39094' changeset='1135' lat='40.72184689864' lon='-73.99968913726'>
-         <tag k='amenity' v='cafe' />
-         <tag k='cuisine' v='coffee_shop' />
-         <tag k='description' v='&quot;Project Cozy is the latest addition to Nolita serving La Colombe coffee, specialty drinks like the Cozy Mint Coffee and Charcoal Latte, fresh &amp; made to order juices and smoothies, sandwiches, and pastries by Bibble &amp; Sip, a renowned bakery in Midtown&quot;' />
-       </node>
-     </create>
-     </osmChange>
-    )"));
-}
 
 // NODE: INVALID ARGUMENTS, OUT OF RANGE VALUES
 
@@ -848,8 +834,8 @@ TEST_CASE("Create relation", "[osmchange][relation][json]") {
   rel.set_id(-1);
   rel.set_changeset(124176968);
   rel.set_version(0); // operation create forces version 0, regardless of JSON contents
-  rel.add_tags({{"route", "bus"},{"ref", "23"}});
-  rel.add_members({{"Node", -1, ""}});
+  rel.add_tags({{"route", "bus"}, {"ref", "23"}});  // last ref tag wins
+  rel.add_members({{"Node", -1, "stop"}, {"Way", -2, ""}, {"Relation", -3, "parent"}});
 
   cb.relations.emplace_back(rel, operation::op_create, false);
 
@@ -864,8 +850,13 @@ TEST_CASE("Create relation", "[osmchange][relation][json]") {
             "action": "create",
             "id": -1,
             "changeset": 124176968,
-            "members": [{"type": "Node", "ref": -1}],
+            "members": [
+                          {"type": "Node", "ref": -1, "role": "stop"},
+                          {"type": "Way", "ref": -2},
+                          {"type": "Relation", "ref": -3, "role": "parent"}
+                       ],
             "tags": {
+              "ref": "123",
               "route": "bus",
               "ref": "23"
             }
