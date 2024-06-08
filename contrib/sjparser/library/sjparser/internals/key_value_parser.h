@@ -63,40 +63,36 @@ class KeyValueParser : public TokenParser {
 
   void onMember(InternalNameType member);
 
-  template <size_t n, typename ParserT, typename... ParserTDs> struct NthTypes {
-   private:
-    using NextLevel = NthTypes<n - 1, ParserTDs...>;
+template <typename... ParserTDs>
+struct NthTypes {
+    using Tuple = std::tuple<ParserTDs...>;
+    static constexpr auto Size = sizeof...(ParserTDs);
 
-   public:
-    using ParserType = typename NextLevel::ParserType;
+    template <std::size_t N>
+    using Nth = typename std::tuple_element<N, Tuple>::type;
 
-    template <typename U = NextLevel>
-    using ValueType = typename U::template ValueType<>;
+    template <std::size_t N>
+    using ParserType = std::decay_t<Nth<N>>;
 
-    static constexpr bool has_value_type = NextLevel::has_value_type;
-  };
+    template <std::size_t N, typename U = ParserType<N>>
+    using ValueType = typename U::ValueType;
 
-  template <typename ParserT, typename... ParserTDs>
-  struct NthTypes<0, ParserT, ParserTDs...> {
-    using ParserType = std::decay_t<ParserT>;
-
-    template <typename U = ParserType> using ValueType = typename U::ValueType;
-
-    static constexpr bool has_value_type = IsStorageParser<ParserT>;
-  };
+    template <std::size_t N>
+    static constexpr bool has_value_type = IsStorageParser<ParserType<N>>;
+};
 
   template <size_t n>
-  using ParserType = typename NthTypes<n, ParserTs...>::ParserType;
+  using ParserType = typename NthTypes<ParserTs...>::template ParserType<n>;
 
-  // Returns NthTypes<n, ParserTs...>::template ValueType<> if it is
-  // available, otherwise NthTypes<n, ParserTs...>::ParserType
+  // Returns NthTypes<ParserTs...>::template ValueType<n> if it is
+  // available, otherwise NthTypes<ParserTs...>::template ParserType<n>
   template <size_t n>[[nodiscard]] auto &get();
 
   template <size_t n>
-  [[nodiscard]] typename NthTypes<n, ParserTs...>::ParserType &parser();
+  [[nodiscard]] typename NthTypes<ParserTs...>::template ParserType<n> &parser();
 
   template <size_t n>
-  typename NthTypes<n, ParserTs...>::template ValueType<> pop();
+  typename NthTypes<ParserTs...>::template ValueType<n> pop();
 
  protected:
   template <size_t n, typename... ParserTDs> struct MemberParser {
@@ -252,7 +248,7 @@ template <size_t n>
 auto &KeyValueParser<NameT, ParserTs...>::get() {
   auto &member = _member_parsers.template get<n>();
 
-  if constexpr (NthTypes<n, ParserTs...>::has_value_type) {
+  if constexpr (NthTypes<ParserTs...>::template has_value_type<n>) {
     if (!member.parser.isSet() && member.default_value.value) {
       return static_cast<const typename decltype(
           member.default_value.value)::value_type &>(
@@ -267,16 +263,14 @@ auto &KeyValueParser<NameT, ParserTs...>::get() {
 
 template <typename NameT, typename... ParserTs>
 template <size_t n>
-typename KeyValueParser<NameT, ParserTs...>::template NthTypes<
-    n, ParserTs...>::ParserType &
+typename KeyValueParser<NameT, ParserTs...>::template NthTypes<ParserTs...>::template ParserType<n> &
 KeyValueParser<NameT, ParserTs...>::parser() {
   return _member_parsers.template get<n>().parser;
 }
 
 template <typename NameT, typename... ParserTs>
 template <size_t n>
-typename KeyValueParser<NameT, ParserTs...>::template NthTypes<
-    n, ParserTs...>::template ValueType<>
+typename KeyValueParser<NameT, ParserTs...>::template NthTypes<ParserTs...>::template ValueType<n>
 KeyValueParser<NameT, ParserTs...>::pop() {
   auto &member = _member_parsers.template get<n>();
 

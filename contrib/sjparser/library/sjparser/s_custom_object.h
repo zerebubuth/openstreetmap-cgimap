@@ -64,7 +64,7 @@ class SCustomObject : public Object<ParserTs...> {
    */
   template <size_t n> struct ParserType {
     /** n-th member parser type */
-    using ParserType = NthTypes<n, TDs...>::ParserType;
+    using ParserType = NthTypes<TDs...>::template ParserType<n>;
   };
 #endif
 
@@ -176,7 +176,7 @@ class SCustomObject : public Object<ParserTs...> {
    * @return Reference to n-th member parser.
    */
   [[nodiscard]] template <size_t n>
-  typename NthTypes<n, ParserTs...>::ParserType &parser();
+  typename NthTypes<ParserTs...>::template ParserType<n> &parser();
 #endif
   using Object<ParserTs...>::get;
 
@@ -202,7 +202,7 @@ class SCustomObject : public Object<ParserTs...> {
    * value was parsed or #pop was called for the member parser).
    */
   template <size_t n>
-  typename NthTypes<n, ParserTs...>::template ValueType<> &&pop();
+  typename NthTypes<ParserTs...>::template ValueType<n> &&pop();
 #endif
   using Object<ParserTs...>::pop;
 
