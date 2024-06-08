@@ -63,23 +63,23 @@ class KeyValueParser : public TokenParser {
 
   void onMember(InternalNameType member);
 
-template <typename... ParserTDs>
-struct NthTypes {
-    using Tuple = std::tuple<ParserTDs...>;
-    static constexpr auto Size = sizeof...(ParserTDs);
+  template <typename... ParserTDs>
+  struct NthTypes {
+      using Tuple = std::tuple<ParserTDs...>;
+      static constexpr auto Size = sizeof...(ParserTDs);
 
-    template <std::size_t N>
-    using Nth = typename std::tuple_element<N, Tuple>::type;
+      template <std::size_t N>
+      using Nth = typename std::tuple_element<N, Tuple>::type;
 
-    template <std::size_t N>
-    using ParserType = std::decay_t<Nth<N>>;
+      template <std::size_t N>
+      using ParserType = std::decay_t<Nth<N>>;
 
-    template <std::size_t N, typename U = ParserType<N>>
-    using ValueType = typename U::ValueType;
+      template <std::size_t N, typename U = ParserType<N>>
+      using ValueType = typename U::ValueType;
 
-    template <std::size_t N>
-    static constexpr bool has_value_type = IsStorageParser<ParserType<N>>;
-};
+      template <std::size_t N>
+      static constexpr bool has_value_type = IsStorageParser<ParserType<N>>;
+  };
 
   template <size_t n>
   using ParserType = typename NthTypes<ParserTs...>::template ParserType<n>;
