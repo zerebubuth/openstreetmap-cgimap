@@ -174,7 +174,7 @@ class SUnion : public Union<TypeMemberT, ParserTs...> {
    * @return Reference to n-th member parser.
    */
   [[nodiscard]] template <size_t n>
-  typename NthTypes<ParserTs...>::template ParserType<n> &parser();
+  ParserType<n> &parser();
 #endif
 
   /** @brief Get the parsed value and unset the parser.

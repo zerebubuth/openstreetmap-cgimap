@@ -157,7 +157,7 @@ class Object : public KeyValueParser<std::string, ParserTs...> {
    * @return Reference to n-th member parser.
    */
   [[nodiscard]] template <size_t n>
-  typename NthTypes<ParserTs...>::template ParserType<n> &parser();
+  ParserType<n> &parser();
 
   /** @brief Get the member parsed value and unset the member parser.
    *
@@ -172,7 +172,7 @@ class Object : public KeyValueParser<std::string, ParserTs...> {
    * value was parsed or #pop was called for the member parser).
    */
   template <size_t n>
-  typename NthTypes<ParserTs...>::template ValueType<n> &&pop();
+  ValueType<n> &&pop();
 #endif
 
  protected:

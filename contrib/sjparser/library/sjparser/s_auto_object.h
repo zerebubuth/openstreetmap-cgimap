@@ -164,7 +164,7 @@ template <typename... ParserTs> class SAutoObject : public Object<ParserTs...> {
    * @return Reference to n-th member parser.
    */
   [[nodiscard]] template <size_t n>
-  typename NthTypes<ParserTs...>::template ParserType<n> &parser();
+  ParserType<n> &parser();
 #endif
 
  private:
