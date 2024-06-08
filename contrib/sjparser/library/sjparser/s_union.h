@@ -66,7 +66,7 @@ class SUnion : public Union<TypeMemberT, ParserTs...> {
    */
   template <size_t n> struct ParserType {
     /** n-th member parser type */
-    using ParserType = NthTypes<n, ParserTDs...>::ParserType;
+    using ParserType = NthTypes<ParserTDs...>::template ParserType<n>;
   };
 #endif
 
@@ -174,7 +174,7 @@ class SUnion : public Union<TypeMemberT, ParserTs...> {
    * @return Reference to n-th member parser.
    */
   [[nodiscard]] template <size_t n>
-  typename NthTypes<n, ParserTs...>::ParserType &parser();
+  typename NthTypes<ParserTs...>::template ParserType<n> &parser();
 #endif
 
   /** @brief Get the parsed value and unset the parser.
