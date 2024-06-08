@@ -9,6 +9,7 @@ Update via `git subtree pull --prefix=contrib/sjparser/ --squash https://gitlab.
 
 List of changes to sjparser:
 
+* MemberParser: replace recursive template metaprogramming by folds
 * NthTypes: get rid of recursive template metaprogramming
 * Value<double> should also support yajl integers
 * if key appears multiple times, last one wins
