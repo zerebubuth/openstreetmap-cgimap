@@ -7,10 +7,6 @@ add_executable(sjparser_tests
   src/object.cpp
   src/scustomobject.cpp
   src/sautoobject.cpp
-  src/standalone_union.cpp
-  src/standalone_sunion.cpp
-  src/embedded_union.cpp
-  src/embedded_sunion.cpp
   src/parsing_error.cpp
   src/yajl_parser.cpp
   src/dispatcher.cpp

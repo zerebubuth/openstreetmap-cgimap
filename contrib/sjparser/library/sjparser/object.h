@@ -23,9 +23,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "internals/key_value_parser.h"
-
 #include <functional>
+
+#include "internals/key_value_parser.h"
 
 namespace SJParser {
 
@@ -156,8 +156,7 @@ class Object : public KeyValueParser<std::string, ParserTs...> {
    *
    * @return Reference to n-th member parser.
    */
-  [[nodiscard]] template <size_t n>
-  ParserType<n> &parser();
+  [[nodiscard]] template <size_t n> ParserType<n> &parser();
 
   /** @brief Get the member parsed value and unset the member parser.
    *
@@ -171,8 +170,7 @@ class Object : public KeyValueParser<std::string, ParserTs...> {
    * @throw std::runtime_error thrown if the member parser value is unset (no
    * value was parsed or #pop was called for the member parser).
    */
-  template <size_t n>
-  ValueType<n> &&pop();
+  template <size_t n> ValueType<n> &&pop();
 #endif
 
  protected:
@@ -206,11 +204,11 @@ namespace std {
  */
 
 template <typename... ParserTs>
-struct tuple_size<SJParser::Object<ParserTs...>> // NOLINT
+struct tuple_size<SJParser::Object<ParserTs...>>  // NOLINT
     : std::integral_constant<std::size_t, sizeof...(ParserTs)> {};
 
 template <std::size_t n, typename... ParserTs>
-struct tuple_element<n, SJParser::Object<ParserTs...>> { // NOLINT
+struct tuple_element<n, SJParser::Object<ParserTs...>> {  // NOLINT
   using type =
       decltype(std::declval<SJParser::Object<ParserTs...>>().template get<n>());
 };

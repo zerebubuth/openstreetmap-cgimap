@@ -23,9 +23,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "map.h"
-
 #include <map>
+
+#include "map.h"
 
 namespace SJParser {
 
@@ -173,11 +173,11 @@ template <typename ParserT> class SMap : public Map<ParserT> {
   Callback _on_finish;
 };
 
-template <typename ParserT> SMap(SMap<ParserT> &&)->SMap<SMap<ParserT>>;
+template <typename ParserT> SMap(SMap<ParserT> &&) -> SMap<SMap<ParserT>>;
 
-template <typename ParserT> SMap(SMap<ParserT> &)->SMap<SMap<ParserT> &>;
+template <typename ParserT> SMap(SMap<ParserT> &) -> SMap<SMap<ParserT> &>;
 
-template <typename ParserT> SMap(ParserT &&)->SMap<ParserT>;
+template <typename ParserT> SMap(ParserT &&) -> SMap<ParserT>;
 
 /****************************** Implementations *******************************/
 
@@ -246,7 +246,8 @@ template <typename ParserT> void SMap<ParserT>::childParsed() {
       && !_on_element(Map<ParserT>::currentKey(), Map<ParserT>::parser())) {
     throw std::runtime_error("Element callback returned false");
   }
-  _values.insert_or_assign(Map<ParserT>::currentKey(), Map<ParserT>::parser().pop());
+  _values.insert_or_assign(Map<ParserT>::currentKey(),
+                           Map<ParserT>::parser().pop());
 }
 
 template <typename ParserT> void SMap<ParserT>::finish() {

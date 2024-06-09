@@ -15,5 +15,7 @@ List of changes to sjparser:
 * if key appears multiple times, last one wins
 * Include error location in error message
 * Typo fixes
+* Removed union.h and s_union.h, as well as standalone/embedded (s_)union test cases
+
 
 

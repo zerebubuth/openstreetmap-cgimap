@@ -24,6 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 #include <type_traits>
+
 #include "internals/default_value.h"
 #include "internals/traits.h"
 
@@ -112,39 +113,40 @@ template <typename NameT, typename ParserT> struct Member {
 };
 
 template <typename ParserT>
-Member(const char *, ParserT &&)->Member<std::string, ParserT>;
+Member(const char *, ParserT &&) -> Member<std::string, ParserT>;
 
-template <typename ParserT> Member(int, ParserT &&)->Member<int64_t, ParserT>;
+template <typename ParserT> Member(int, ParserT &&) -> Member<int64_t, ParserT>;
 
-template <typename ParserT> Member(float, ParserT &&)->Member<double, ParserT>;
+template <typename ParserT>
+Member(float, ParserT &&) -> Member<double, ParserT>;
 
 template <typename NameT, typename ParserT>
-Member(NameT, ParserT &&)->Member<NameT, ParserT>;
+Member(NameT, ParserT &&) -> Member<NameT, ParserT>;
 
 template <typename ParserT>
-Member(const char *, ParserT &&, Presence)->Member<std::string, ParserT>;
+Member(const char *, ParserT &&, Presence) -> Member<std::string, ParserT>;
 
 template <typename ParserT>
-Member(int, ParserT &&, Presence)->Member<int64_t, ParserT>;
+Member(int, ParserT &&, Presence) -> Member<int64_t, ParserT>;
 
 template <typename ParserT>
-Member(float, ParserT &&, Presence)->Member<double, ParserT>;
+Member(float, ParserT &&, Presence) -> Member<double, ParserT>;
 
 template <typename NameT, typename ParserT>
-Member(NameT, ParserT &&, Presence)->Member<NameT, ParserT>;
+Member(NameT, ParserT &&, Presence) -> Member<NameT, ParserT>;
 
 template <typename ParserT, typename ValueT>
 Member(const char *, ParserT &&, Presence, ValueT)
-    ->Member<std::string, ParserT>;
+    -> Member<std::string, ParserT>;
 
 template <typename ParserT, typename ValueT>
-Member(int, ParserT &&, Presence, ValueT)->Member<int64_t, ParserT>;
+Member(int, ParserT &&, Presence, ValueT) -> Member<int64_t, ParserT>;
 
 template <typename ParserT, typename ValueT>
-Member(float, ParserT &&, Presence, ValueT)->Member<double, ParserT>;
+Member(float, ParserT &&, Presence, ValueT) -> Member<double, ParserT>;
 
 template <typename NameT, typename ParserT, typename ValueT>
-Member(NameT, ParserT &&, Presence, ValueT)->Member<NameT, ParserT>;
+Member(NameT, ParserT &&, Presence, ValueT) -> Member<NameT, ParserT>;
 
 /****************************** Implementations *******************************/
 

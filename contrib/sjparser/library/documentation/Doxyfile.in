@@ -802,9 +802,7 @@ INPUT                  = @SJPARSER_SOURCE_DIR@/sjparser/s_custom_object.h \
                          @SJPARSER_SOURCE_DIR@/sjparser/array.h \
                          @SJPARSER_SOURCE_DIR@/sjparser/yajl_parser.h \
                          @SJPARSER_SOURCE_DIR@/sjparser/s_auto_object.h \
-                         @SJPARSER_SOURCE_DIR@/sjparser/s_union.h \
                          @SJPARSER_SOURCE_DIR@/sjparser/parser.h \
-                         @SJPARSER_SOURCE_DIR@/sjparser/union.h \
                          @SJPARSER_SOURCE_DIR@/sjparser/member.h \
                          @SJPARSER_SOURCE_DIR@/sjparser/options.h \
                          @CUT_README@

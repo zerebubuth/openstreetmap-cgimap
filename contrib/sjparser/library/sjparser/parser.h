@@ -65,7 +65,7 @@ class Parser : public ImplHolder::type {
   ParserT _parser;
 };
 
-template <typename ParserT> Parser(ParserT &&)->Parser<ParserT>;
+template <typename ParserT> Parser(ParserT &&) -> Parser<ParserT>;
 
 /****************************** Implementations *******************************/
 
