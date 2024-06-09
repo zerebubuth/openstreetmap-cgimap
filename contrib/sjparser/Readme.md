@@ -6,18 +6,18 @@
 [//]: # (end nodoc)
 # SJParser
 
-Streaming json parser, written on top of yajl.  
+Streaming json parser, written on top of yajl.
 
-The main use case for this parser is very long json documents with known structure, e.g. importing some data from a json representation, or reading a json from network and processing it chunk by chunk.  
+The main use case for this parser is very long json documents with known structure, e.g. importing some data from a json representation, or reading a json from network and processing it chunk by chunk.
 
 This is an event-driven parser on steroids - you specify the expected json structure and your callbacks, and they will be called after a whole piece of document is parsed (an object, for example), not just on `MapKey` or `ArrayEnd` events.
 
 [//]: # (start nodoc)
 ## Documentation
 
-[Class reference](https://dhurum.gitlab.io/sjparser/).  
+[Class reference](https://dhurum.gitlab.io/sjparser/).
 
-[Tutorial](https://gitlab.com/dhurum/sjparser_tutorial).  
+[Tutorial](https://gitlab.com/dhurum/sjparser_tutorial).
 
 Also you can check the [Concepts](#concepts).
 
@@ -124,7 +124,7 @@ For building sjparser you will need:
 ~~~bash
 mkdir build
 cd build
-cmake ../ -DCMAKE_BUILD_TYPE=Release 
+cmake ../ -DCMAKE_BUILD_TYPE=Release
 make
 ~~~
 
@@ -153,17 +153,6 @@ cmake ../ -DCMAKE_BUILD_TYPE=Debug
 ~~~bash
 make test
 ~~~
-
-### Generating documentation
-
-For the documentation you will need `doxygen`.
-
-~~~bash
-make documentation
-~~~
-
-The documentation will be available in `documentation/html`.
-
 
 ### Coverage
 
@@ -199,18 +188,18 @@ make format
 [//]: # (end nodoc)
 ## Concepts <a name="concepts"></a>
 
-Expected json structure is specified as constructor arguments of `SJParser::Parser` and entities parsers.  
+Expected json structure is specified as constructor arguments of `SJParser::Parser` and entities parsers.
 
-Membersof `SJParser::Object`, `SJParser::SCustomObject`, `SJParser::SAutoObject`, `SJParser::Union` and `SJParser::SUnion` are mandatory.
+Membersof `SJParser::Object`, `SJParser::SCustomObject` and `SJParser::SAutoObject` are mandatory.
 You can pass `SJParser::Presence::Optional` to a `SJParser::Member` constructor to make the member optional.
 
-Members of  `` in a standalone mode with a default value are not mandatory, even empty object would be successfully parsed.  
+Members of  `` in a standalone mode with a default value are not mandatory, even empty object would be successfully parsed.
 
-If you call `get()` or `pop()` on a parser of an entity, that was not present in the parsed object, exception will be thrown.  
-You can check if member was parsed with method `isSet()`.  
-So, for your mandatory members you can just use `get()` or `pop()`, and for optional you can do checks with `isSet()` first.  
+If you call `get()` or `pop()` on a parser of an entity, that was not present in the parsed object, exception will be thrown.
+You can check if member was parsed with method `isSet()`.
+So, for your mandatory members you can just use `get()` or `pop()`, and for optional you can do checks with `isSet()` first.
 
 For the `SJParser::Object` parsers there are two methods for accessing the members parsers:
  - `parser<n>()` - Returns a refecence to the n-th member parser;
- - `get<n>()` - If the n-th member stores parsed value (is  a `SJParser::Value`, `SJParser::SAutoObject`, `SJParser::SCustomObject`, `SJParser::SUnion` or `SJParser::SArray`), then a reference to a parsed value will be returned (or, if the entity was not present in the json - an exception will be thrown). Otherwise, a reference to the member parser will be returned;
- - `pop<n>()` - If the n-th member stores parsed value (is  a `SJParser::Value`, `SJParser::SAutoObject`, `SJPArser::SCustomObject`, `SJParser::SUnion` or `SJParser::SArray`), then an rvalue reference to a parsed value will be returned (or, if the entity was not present in the json - an exception will be thrown). Otherwise, this method is not defined;
+ - `get<n>()` - If the n-th member stores parsed value (is  a `SJParser::Value`, `SJParser::SAutoObject`, `SJParser::SCustomObject` or `SJParser::SArray`), then a reference to a parsed value will be returned (or, if the entity was not present in the json - an exception will be thrown). Otherwise, a reference to the member parser will be returned;
+ - `pop<n>()` - If the n-th member stores parsed value (is  a `SJParser::Value`, `SJParser::SAutoObject`, `SJPArser::SCustomObject` or `SJParser::SArray`), then an rvalue reference to a parsed value will be returned (or, if the entity was not present in the json - an exception will be thrown). Otherwise, this method is not defined;

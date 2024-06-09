@@ -36,10 +36,9 @@ enum class Presence {
   Optional
 };
 
-/** @brief Member of object or union parsers specification.
+/** @brief Member of object parsers specification.
  *
- * This structure holds a specification of individual member for object and
- * union parsers.
+ * This structure holds a specification of individual member for object parsers.
  *
  * @tparam NameT Type of member name
  *

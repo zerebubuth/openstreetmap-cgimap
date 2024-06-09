@@ -51,19 +51,6 @@ class Object : public KeyValueParser<std::string, ParserTs...> {
   /** @endcond */
 
  public:
-#ifdef DOXYGEN_ONLY
-  /** @brief %Member parser type.
-   *
-   * Resolves to n-th member parser type
-   *
-   * @tparam n %Member index
-   */
-  template <size_t n> struct ParserType {
-    /** n-th member parser type */
-    using ParserType = NthTypes<ParserTDs...>::template ParserType<n>;
-  };
-#endif
-
   /** Finish callback type. */
   using Callback = std::function<bool(Object<ParserTs...> &)>;
 
@@ -120,58 +107,6 @@ class Object : public KeyValueParser<std::string, ParserTs...> {
    * If the callback returns false, parsing will be stopped with an error.
    */
   void setFinishCallback(Callback on_finish);
-
-#ifdef DOXYGEN_ONLY
-  /** @brief Check if the parser has a value.
-   *
-   * @return True if the parser parsed something or false otherwise.
-   */
-  [[nodiscard]] bool isSet();
-
-  /** @brief Check if the parsed object was empy (null).
-   *
-   * @return True if the parsed object was empty (null) or false otherwise.
-   */
-  [[nodiscard]] bool isEmpty();
-
-  /** @brief Universal member getter.
-   *
-   * @tparam n Index of the parser's member.
-   *
-   * @return If the n-th member parser stores value (is a Value, SAutoObject,
-   * SCustomObject, SUnion or SArray), then the method returns a const reference
-   * to the n-th member parser value or a default value (if a default value is
-   * set and the member is not present). Otherwise, returns a reference to the
-   * n-th member parser.
-   *
-   * @throw std::runtime_error thrown if the member parser value is unset (no
-   * value was parsed and no default value was specified or #pop was called for
-   * the member parser).
-   */
-  [[nodiscard]] template <size_t n> auto &get();
-
-  /** @brief Member parser getter.
-   *
-   * @tparam n Index of the parser's member.
-   *
-   * @return Reference to n-th member parser.
-   */
-  [[nodiscard]] template <size_t n> ParserType<n> &parser();
-
-  /** @brief Get the member parsed value and unset the member parser.
-   *
-   * Moves the n-th member parsed value out of the member parser.
-   *
-   * @tparam n Index of the parser's member.
-   *
-   * @return Rvalue reference to the n-th member parser value or a default value
-   * (if a default value is set and the member is not present).
-   *
-   * @throw std::runtime_error thrown if the member parser value is unset (no
-   * value was parsed or #pop was called for the member parser).
-   */
-  template <size_t n> ValueType<n> &&pop();
-#endif
 
  protected:
   /** @cond INTERNAL */
