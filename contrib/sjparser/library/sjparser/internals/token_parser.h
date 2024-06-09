@@ -29,7 +29,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace SJParser {
 
-struct DummyT {}; // not used by yajl
+struct DummyT {};  // not used by yajl
 struct NullT {};
 struct MapStartT {};
 struct MapKeyT {
@@ -58,12 +58,11 @@ template <typename TokenT> struct TokenSecondaryTypeResolver {
   using type = DummyT;
 };
 
-template <> struct TokenSecondaryTypeResolver<double> {
-  using type = int64_t;
-};
+template <> struct TokenSecondaryTypeResolver<double> { using type = int64_t; };
 
 template <typename TokenT>
-using TokenSecondaryType = typename TokenSecondaryTypeResolver<std::decay_t<TokenT>>::type;
+using TokenSecondaryType =
+    typename TokenSecondaryTypeResolver<std::decay_t<TokenT>>::type;
 
 class Dispatcher;
 
