@@ -23,6 +23,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+#include <sstream>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+
 #include "default_value.h"
 #include "dispatcher.h"
 #include "ignore.h"
@@ -30,11 +35,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "sjparser/options.h"
 #include "token_parser.h"
 #include "traits.h"
-
-#include <sstream>
-#include <string>
-#include <string_view>
-#include <unordered_map>
 
 namespace SJParser {
 
@@ -68,8 +68,7 @@ class KeyValueParser : public TokenParser {
   template <std::size_t n>
   using Nth = typename std::tuple_element<n, ParserTupleType>::type;
 
-  template <std::size_t n>
-  using ParserType = std::decay_t<Nth<n>>;
+  template <std::size_t n> using ParserType = std::decay_t<Nth<n>>;
 
   template <std::size_t n, typename U = ParserType<n>>
   using ValueType = typename U::ValueType;
@@ -81,75 +80,70 @@ class KeyValueParser : public TokenParser {
   using ParsersMapType = std::unordered_map<InternalNameType, TokenParser *>;
 
   // Returns ValueType<n> if it is available, otherwise ParserType<n>
-  template <size_t n>
-  [[nodiscard]] auto &get();
+  template <size_t n> [[nodiscard]] auto &get();
 
-  template <size_t n>
-  [[nodiscard]] ParserType<n> &parser();
+  template <size_t n> [[nodiscard]] ParserType<n> &parser();
 
-  template <size_t n>
-  ValueType<n> pop();
+  template <size_t n> ValueType<n> pop();
 
  protected:
-  template <typename ParserT>
-  struct MemberParser {
-      MemberParser() = delete;
-      MemberParser(const MemberParser&) = delete;
-      MemberParser& operator=(const MemberParser&) = delete;
-      MemberParser(MemberParser&& other) noexcept = default;
-      MemberParser& operator=(MemberParser&& other) noexcept = default;
+  template <typename ParserT> struct MemberParser {
+    MemberParser() = delete;
+    MemberParser(const MemberParser &) = delete;
+    MemberParser &operator=(const MemberParser &) = delete;
+    MemberParser(MemberParser &&other) noexcept = default;
+    MemberParser &operator=(MemberParser &&other) noexcept = default;
 
-      MemberParser(Member<NameT, ParserT>& xs)
-          : parser(std::forward<ParserT>(xs.parser)),
-            name(std::move(xs.name)),
-            optional(xs.optional),
-            default_value(std::move(xs.default_value)) {}
+    MemberParser(Member<NameT, ParserT> &xs)
+        : parser(std::forward<ParserT>(xs.parser)),
+          name(std::move(xs.name)),
+          optional(xs.optional),
+          default_value(std::move(xs.default_value)) {}
 
-      ParserT parser;
-      NameT name;
-      bool optional;
-      DefaultValue<ParserT> default_value;
+    ParserT parser;
+    NameT name;
+    bool optional;
+    DefaultValue<ParserT> default_value;
   };
 
   struct MemberParsers {
-      MemberParsers() = delete;
-      MemberParsers(const MemberParsers&) = delete;
-      MemberParsers& operator=(const MemberParsers&) = delete;
-      MemberParsers(MemberParsers&& other) noexcept = default;
-      MemberParsers& operator=(MemberParsers&& other) noexcept = default;
+    MemberParsers() = delete;
+    MemberParsers(const MemberParsers &) = delete;
+    MemberParsers &operator=(const MemberParsers &) = delete;
+    MemberParsers(MemberParsers &&other) noexcept = default;
+    MemberParsers &operator=(MemberParsers &&other) noexcept = default;
 
-      MemberParsers(ParsersArrayType& parsers_array,
-                    ParsersMapType& parsers_map,
-                    std::tuple<Member<NameT, ParserTs>...>& members)
-          : mbr_parsers(to_member_parser_tuple(members)) {
-          registerParsers(parsers_array, parsers_map);
-      }
+    MemberParsers(ParsersArrayType &parsers_array, ParsersMapType &parsers_map,
+                  std::tuple<Member<NameT, ParserTs>...> &members)
+        : mbr_parsers(to_member_parser_tuple(members)) {
+      registerParsers(parsers_array, parsers_map);
+    }
 
-      template <size_t n>
-      [[nodiscard]] auto& get() {
-          return std::get<n>(mbr_parsers);
-      }
+    template <size_t n> [[nodiscard]] auto &get() {
+      return std::get<n>(mbr_parsers);
+    }
 
-      void registerParsers(ParsersArrayType& parsers_array, ParsersMapType& parsers_map);
+    void registerParsers(ParsersArrayType &parsers_array,
+                         ParsersMapType &parsers_map);
 
-     private:
-      template <typename ParserT>
-      void registerParser(ParserT& parser, NameT& name, int i,
-                          ParsersArrayType& parsers_array,
-                          ParsersMapType& parsers_map);
+   private:
+    template <typename ParserT>
+    void registerParser(ParserT &parser, NameT &name, int i,
+                        ParsersArrayType &parsers_array,
+                        ParsersMapType &parsers_map);
 
-      void check_duplicate(bool inserted, NameT& name);
+    void check_duplicate(bool inserted, NameT &name);
 
-      [[nodiscard]] auto to_member_parser_tuple(
-          std::tuple<Member<NameT, ParserTs>...>& members) {
-          return (std::apply(
-              [](auto&&... xs) {
-                  return (std::tuple{MemberParser<ParserTs>(xs)...});
-              },
-              members));
-      }
+    [[nodiscard]] auto to_member_parser_tuple(
+        std::tuple<Member<NameT, ParserTs>...> &members) {
+      return (std::apply(
+          [](auto &&...xs) {
+            return (std::tuple{MemberParser<ParserTs>(xs)...});
+          },
+          members));
+    }
 
-      std::tuple<MemberParser<ParserTs>...> mbr_parsers;
+    std::tuple<MemberParser<ParserTs>...> mbr_parsers;
   };
 
   [[nodiscard]] auto &parsersArray();
@@ -183,8 +177,8 @@ KeyValueParser<NameT, ParserTs...>::KeyValueParser(
 }
 
 template <typename NameT, typename... ParserTs>
-KeyValueParser<NameT, ParserTs...> &KeyValueParser<NameT, ParserTs...>::
-operator=(KeyValueParser &&other) noexcept {
+KeyValueParser<NameT, ParserTs...> &
+KeyValueParser<NameT, ParserTs...>::operator=(KeyValueParser &&other) noexcept {
   TokenParser::operator=(std::move(other));
   _member_parsers = std::move(other._member_parsers);
   _parsers_map.clear();
@@ -253,8 +247,8 @@ auto &KeyValueParser<NameT, ParserTs...>::get() {
 
   if constexpr (has_value_type<n>) {
     if (!member.parser.isSet() && member.default_value.value) {
-      return static_cast<const typename decltype(
-          member.default_value.value)::value_type &>(
+      return static_cast<
+          const typename decltype(member.default_value.value)::value_type &>(
           *member.default_value.value);
     }
     return member.parser.get();
@@ -266,8 +260,8 @@ auto &KeyValueParser<NameT, ParserTs...>::get() {
 
 template <typename NameT, typename... ParserTs>
 template <size_t n>
-typename KeyValueParser<NameT, ParserTs...>::template ParserType<n> &
-KeyValueParser<NameT, ParserTs...>::parser() {
+typename KeyValueParser<NameT, ParserTs...>::template ParserType<n>
+    &KeyValueParser<NameT, ParserTs...>::parser() {
   return _member_parsers.template get<n>().parser;
 }
 
@@ -305,41 +299,35 @@ auto &KeyValueParser<NameT, ParserTs...>::memberParsers() {
 
 template <typename NameT, typename... ParserTs>
 void KeyValueParser<NameT, ParserTs...>::MemberParsers::registerParsers(
-    ParsersArrayType &parsers_array,
-    ParsersMapType &parsers_map) {
-
+    ParsersArrayType &parsers_array, ParsersMapType &parsers_map) {
   parsers_map.clear();
 
-  std::apply([&](auto &&... xs)
-  {
-    int i = 0;
-    ((registerParser(xs.parser, xs.name, i++, parsers_array,
-                parsers_map)),
-        ...);
-  }, mbr_parsers);
+  std::apply(
+      [&](auto &&...xs) {
+        int i = 0;
+        ((registerParser(xs.parser, xs.name, i++, parsers_array, parsers_map)),
+         ...);
+      },
+      mbr_parsers);
 }
 
 template <typename NameT, typename... ParserTs>
 template <typename ParserT>
-void KeyValueParser< NameT, ParserTs... >::MemberParsers::registerParser(
-    ParserT &parser, NameT &name, int i,
-    ParsersArrayType &parsers_array,
+void KeyValueParser<NameT, ParserTs...>::MemberParsers::registerParser(
+    ParserT &parser, NameT &name, int i, ParsersArrayType &parsers_array,
     ParsersMapType &parsers_map) {
-
   parsers_array[i] = &parser;
 
-  auto [_, inserted] = parsers_map.insert({ name, &parser });
+  auto [_, inserted] = parsers_map.insert({name, &parser});
   std::ignore = _;
 
   check_duplicate(inserted, name);
 }
 
 template <typename NameT, typename... ParserTs>
-void KeyValueParser< NameT, ParserTs... >::MemberParsers::check_duplicate(
+void KeyValueParser<NameT, ParserTs...>::MemberParsers::check_duplicate(
     bool inserted, NameT &name) {
-
-  if (!inserted)
-  {
+  if (!inserted) {
     std::stringstream error;
     error << "Member " << name << " appears more than once";
     throw std::runtime_error(error.str());

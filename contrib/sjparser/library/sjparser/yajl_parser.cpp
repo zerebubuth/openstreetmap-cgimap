@@ -22,6 +22,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 *******************************************************************************/
 
 #include "yajl_parser.h"
+
 #include "parsing_error.h"
 
 namespace SJParser {
@@ -91,7 +92,9 @@ void YajlParser::throwParsingError() {
   } else {
     yajl_error = "Unknown YAJL error\n";  // LCOV_EXCL_LINE
   }
-  std::string error_offset = "\nError occurred at offset " + std::to_string(yajl_get_bytes_consumed(_yajl_handle.get())) + ".";
+  std::string error_offset =
+      "\nError occurred at offset "
+      + std::to_string(yajl_get_bytes_consumed(_yajl_handle.get())) + ".";
   if (!_sjparser_error.empty()) {
     _sjparser_error += error_offset;
   }
