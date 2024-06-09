@@ -58,7 +58,7 @@ template <typename ParserT> class SMap : public Map<ParserT> {
    *
    * @param [in] parser %Parser for map elements values, can be an lvalue
    * reference or an rvalue. It must be one of the parsers that store values
-   * (Value, SArray, SAutoObject, SCustomObject, SUnion, SMap).
+   * (Value, SArray, SAutoObject, SCustomObject, SMap).
    *
    * @param [in] on_finish (optional) Callback, that will be called after the
    * map is parsed.
@@ -75,7 +75,7 @@ template <typename ParserT> class SMap : public Map<ParserT> {
    *
    * @param [in] parser %Parser for map elements values, can be an lvalue
    * reference or an rvalue. It must be one of the parsers that store values
-   * (Value, SArray, SAutoObject, SCustomObject, SUnion, SMap).
+   * (Value, SArray, SAutoObject, SCustomObject, SMap).
    *
    * @param [in] on_element Callback, that will be called after an element of
    * the map is parsed.
@@ -122,26 +122,6 @@ template <typename ParserT> class SMap : public Map<ParserT> {
    * If the callback returns false, parsing will be stopped with an error.
    */
   void setFinishCallback(Callback on_finish);
-
-#ifdef DOXYGEN_ONLY
-  /** @brief Check if the parser has a value.
-   *
-   * @return True if the parser has some value stored or false otherwise.
-   */
-  [[nodiscard]] bool isSet();
-
-  /** @brief Check if the parsed array was empy (null).
-   *
-   * @return True if the parsed array was empty (null) or false otherwise.
-   */
-  [[nodiscard]] bool isEmpty();
-
-  /** @brief Elements value parser getter.
-   *
-   * @return Reference to the elements parser.
-   */
-  [[nodiscard]] ParserType &parser();
-#endif
 
   /** @brief Parsed value getter.
    *

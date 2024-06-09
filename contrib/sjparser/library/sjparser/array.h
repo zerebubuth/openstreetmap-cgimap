@@ -76,20 +76,6 @@ template <typename ParserT> class Array : public ArrayParser {
    */
   void setFinishCallback(Callback on_finish);
 
-#ifdef DOXYGEN_ONLY
-  /** @brief Check if the parser has a value.
-   *
-   * @return True if the parser parsed something or false otherwise.
-   */
-  [[nodiscard]] bool isSet();
-
-  /** @brief Check if the parsed array was empy (null).
-   *
-   * @return True if the parsed array was empty (null) or false otherwise.
-   */
-  [[nodiscard]] bool isEmpty();
-#endif
-
   /** @brief Elements parser getter.
    *
    * @return Reference to the elements parser.

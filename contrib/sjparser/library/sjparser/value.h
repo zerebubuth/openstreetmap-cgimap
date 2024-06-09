@@ -75,20 +75,6 @@ template <typename ValueT> class Value : public TokenParser {
    */
   void setFinishCallback(Callback on_finish);
 
-#ifdef DOXYGEN_ONLY
-  /** @brief Check if the parser has a value.
-   *
-   * @return True if the parser has some value stored or false otherwise.
-   */
-  [[nodiscard]] bool isSet();
-
-  /** @brief Check if the parsed value was empy (null).
-   *
-   * @return True if the parsed value was empty (null) or false otherwise.
-   */
-  [[nodiscard]] bool isEmpty();
-#endif
-
   /** @brief Parsed value getter.
    *
    * @return Const reference to a parsed value.

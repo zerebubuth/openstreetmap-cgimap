@@ -43,19 +43,6 @@ namespace SJParser {
 
 template <typename... ParserTs> class SAutoObject : public Object<ParserTs...> {
  public:
-#ifdef DOXYGEN_ONLY
-  /** @brief %Member parser type.
-   *
-   * Resolves to n-th member parser type
-   *
-   * @tparam n %Member index
-   */
-  template <size_t n> struct ParserType {
-    /** n-th member parser type */
-    using ParserType = NthTypes<ParserTDs...>::template ParserType<n>;
-  };
-#endif
-
   /** Stored value type */
   using ValueType = std::tuple<typename std::decay_t<ParserTs>::ValueType...>;
 
@@ -117,20 +104,6 @@ template <typename... ParserTs> class SAutoObject : public Object<ParserTs...> {
    */
   void setFinishCallback(Callback on_finish);
 
-#ifdef DOXYGEN_ONLY
-  /** @brief Check if the parser has a value.
-   *
-   * @return True if the parser has some value stored or false otherwise.
-   */
-  [[nodiscard]] bool isSet();
-
-  /** @brief Check if the parsed object was empy (null).
-   *
-   * @return True if the parsed object was empty (null) or false otherwise.
-   */
-  [[nodiscard]] bool isEmpty();
-#endif
-
   /** @brief Parsed value getter.
    *
    * @return Const reference to a parsed value or a default value (if a default
@@ -155,16 +128,6 @@ template <typename... ParserTs> class SAutoObject : public Object<ParserTs...> {
    * parsed or #pop was called).
    */
   ValueType &&pop();
-
-#ifdef DOXYGEN_ONLY
-  /** @brief Member parser getter.
-   *
-   * @tparam n Index of the parser's member.
-   *
-   * @return Reference to n-th member parser.
-   */
-  [[nodiscard]] template <size_t n> ParserType<n> &parser();
-#endif
 
  private:
   void finish() override;
