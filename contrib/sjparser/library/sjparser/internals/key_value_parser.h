@@ -76,7 +76,6 @@ class KeyValueParser : public TokenParser {
   template <std::size_t n>
   static constexpr bool has_value_type = IsStorageParser<ParserType<n>>;
 
-  using ParsersArrayType = std::array<TokenParser *, sizeof...(ParserTs)>;
   using ParsersMapType = std::unordered_map<InternalNameType, TokenParser *>;
 
   // Returns ValueType<n> if it is available, otherwise ParserType<n>
@@ -113,23 +112,21 @@ class KeyValueParser : public TokenParser {
     MemberParsers(MemberParsers &&other) noexcept = default;
     MemberParsers &operator=(MemberParsers &&other) noexcept = default;
 
-    MemberParsers(ParsersArrayType &parsers_array, ParsersMapType &parsers_map,
+    MemberParsers(ParsersMapType &parsers_map,
                   std::tuple<Member<NameT, ParserTs>...> &members)
         : mbr_parsers(to_member_parser_tuple(members)) {
-      registerParsers(parsers_array, parsers_map);
+      registerParsers(parsers_map);
     }
 
     template <size_t n> [[nodiscard]] auto &get() {
       return std::get<n>(mbr_parsers);
     }
 
-    void registerParsers(ParsersArrayType &parsers_array,
-                         ParsersMapType &parsers_map);
+    void registerParsers(ParsersMapType &parsers_map);
 
    private:
     template <typename ParserT>
-    void registerParser(ParserT &parser, NameT &name, int i,
-                        ParsersArrayType &parsers_array,
+    void registerParser(ParserT &parser, NameT &name,
                         ParsersMapType &parsers_map);
 
     void check_duplicate(bool inserted, NameT &name);
@@ -146,12 +143,10 @@ class KeyValueParser : public TokenParser {
     std::tuple<MemberParser<ParserTs>...> mbr_parsers;
   };
 
-  [[nodiscard]] auto &parsersArray();
   [[nodiscard]] auto &parsersMap();
   [[nodiscard]] auto &memberParsers();
 
  private:
-  ParsersArrayType _parsers_array;
   ParsersMapType _parsers_map;
   MemberParsers _member_parsers;
   Ignore _ignore_parser;
@@ -163,8 +158,7 @@ class KeyValueParser : public TokenParser {
 template <typename NameT, typename... ParserTs>
 KeyValueParser<NameT, ParserTs...>::KeyValueParser(
     std::tuple<Member<NameT, ParserTs>...> members, ObjectOptions options)
-    : _member_parsers(_parsers_array, _parsers_map, members),
-      _options{options} {}
+    : _member_parsers(_parsers_map, members), _options{options} {}
 
 template <typename NameT, typename... ParserTs>
 KeyValueParser<NameT, ParserTs...>::KeyValueParser(
@@ -173,7 +167,7 @@ KeyValueParser<NameT, ParserTs...>::KeyValueParser(
       _member_parsers{std::move(other._member_parsers)},
       _ignore_parser{std::move(other._ignore_parser)},
       _options{other._options} {
-  _member_parsers.registerParsers(_parsers_array, _parsers_map);
+  _member_parsers.registerParsers(_parsers_map);
 }
 
 template <typename NameT, typename... ParserTs>
@@ -182,7 +176,7 @@ KeyValueParser<NameT, ParserTs...>::operator=(KeyValueParser &&other) noexcept {
   TokenParser::operator=(std::move(other));
   _member_parsers = std::move(other._member_parsers);
   _parsers_map.clear();
-  _member_parsers.registerParsers(_parsers_array, _parsers_map);
+  _member_parsers.registerParsers(_parsers_map);
   _ignore_parser = std::move(other._ignore_parser);
   _options = std::move(other._options);
 
@@ -283,11 +277,6 @@ KeyValueParser<NameT, ParserTs...>::pop() {
 }
 
 template <typename NameT, typename... ParserTs>
-auto &KeyValueParser<NameT, ParserTs...>::parsersArray() {
-  return _parsers_array;
-}
-
-template <typename NameT, typename... ParserTs>
 auto &KeyValueParser<NameT, ParserTs...>::parsersMap() {
   return _parsers_map;
 }
@@ -299,14 +288,12 @@ auto &KeyValueParser<NameT, ParserTs...>::memberParsers() {
 
 template <typename NameT, typename... ParserTs>
 void KeyValueParser<NameT, ParserTs...>::MemberParsers::registerParsers(
-    ParsersArrayType &parsers_array, ParsersMapType &parsers_map) {
+    ParsersMapType &parsers_map) {
   parsers_map.clear();
 
   std::apply(
       [&](auto &&...xs) {
-        int i = 0;
-        ((registerParser(xs.parser, xs.name, i++, parsers_array, parsers_map)),
-         ...);
+        ((registerParser(xs.parser, xs.name, parsers_map)), ...);
       },
       mbr_parsers);
 }
@@ -314,10 +301,7 @@ void KeyValueParser<NameT, ParserTs...>::MemberParsers::registerParsers(
 template <typename NameT, typename... ParserTs>
 template <typename ParserT>
 void KeyValueParser<NameT, ParserTs...>::MemberParsers::registerParser(
-    ParserT &parser, NameT &name, int i, ParsersArrayType &parsers_array,
-    ParsersMapType &parsers_map) {
-  parsers_array[i] = &parser;
-
+    ParserT &parser, NameT &name, ParsersMapType &parsers_map) {
   auto [_, inserted] = parsers_map.insert({name, &parser});
   std::ignore = _;
 

@@ -26,9 +26,7 @@ set_property(TARGET sjparser PROPERTY SJPARSER_HEADERS
   sjparser/array.h
   sjparser/yajl_parser.h
   sjparser/s_auto_object.h
-  sjparser/s_union.h
   sjparser/parser.h
-  sjparser/union.h
   sjparser/member.h
   sjparser/options.h
 
@@ -46,7 +44,7 @@ setup_compilation_options(sjparser)
 
 target_link_libraries(sjparser PUBLIC ${YAJL_LIB})
 
-target_include_directories(sjparser PUBLIC 
+target_include_directories(sjparser PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:include>
 )

@@ -31,6 +31,4 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "s_auto_object.h"
 #include "s_custom_object.h"
 #include "s_map.h"
-#include "s_union.h"
-#include "union.h"
 #include "value.h"

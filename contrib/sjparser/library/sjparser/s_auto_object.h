@@ -163,8 +163,7 @@ template <typename... ParserTs> class SAutoObject : public Object<ParserTs...> {
    *
    * @return Reference to n-th member parser.
    */
-  [[nodiscard]] template <size_t n>
-  ParserType<n> &parser();
+  [[nodiscard]] template <size_t n> ParserType<n> &parser();
 #endif
 
  private:

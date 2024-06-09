@@ -23,10 +23,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+#include <functional>
+
 #include "internals/dispatcher.h"
 #include "internals/token_parser.h"
-
-#include <functional>
 
 namespace SJParser {
 
@@ -145,11 +145,11 @@ template <typename ParserT> class Map : public TokenParser {
   Callback _on_finish;
 };
 
-template <typename ParserT> Map(Map<ParserT> &&)->Map<Map<ParserT>>;
+template <typename ParserT> Map(Map<ParserT> &&) -> Map<Map<ParserT>>;
 
-template <typename ParserT> Map(Map<ParserT> &)->Map<Map<ParserT> &>;
+template <typename ParserT> Map(Map<ParserT> &) -> Map<Map<ParserT> &>;
 
-template <typename ParserT> Map(ParserT &&)->Map<ParserT>;
+template <typename ParserT> Map(ParserT &&) -> Map<ParserT>;
 
 /****************************** Implementations *******************************/
 

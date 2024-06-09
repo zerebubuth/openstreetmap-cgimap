@@ -23,9 +23,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "token_parser.h"
-
 #include <list>
+
+#include "token_parser.h"
 
 namespace SJParser {
 

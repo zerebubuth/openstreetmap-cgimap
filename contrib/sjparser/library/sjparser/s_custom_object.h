@@ -175,8 +175,7 @@ class SCustomObject : public Object<ParserTs...> {
    *
    * @return Reference to n-th member parser.
    */
-  [[nodiscard]] template <size_t n>
-  ParserType<n> &parser();
+  [[nodiscard]] template <size_t n> ParserType<n> &parser();
 #endif
   using Object<ParserTs...>::get;
 
@@ -201,8 +200,7 @@ class SCustomObject : public Object<ParserTs...> {
    * @throw std::runtime_error thrown if the member parser value is unset (no
    * value was parsed or #pop was called for the member parser).
    */
-  template <size_t n>
-  ValueType<n> &&pop();
+  template <size_t n> ValueType<n> &&pop();
 #endif
   using Object<ParserTs...>::pop;
 

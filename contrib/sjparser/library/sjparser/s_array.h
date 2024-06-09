@@ -23,9 +23,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-#include "array.h"
-
 #include <vector>
+
+#include "array.h"
 
 namespace SJParser {
 
@@ -133,12 +133,13 @@ template <typename ParserT> class SArray : public Array<ParserT> {
   Callback _on_finish;
 };
 
-template <typename ParserT> SArray(SArray<ParserT> &&)->SArray<SArray<ParserT>>;
+template <typename ParserT>
+SArray(SArray<ParserT> &&) -> SArray<SArray<ParserT>>;
 
 template <typename ParserT>
-SArray(SArray<ParserT> &)->SArray<SArray<ParserT> &>;
+SArray(SArray<ParserT> &) -> SArray<SArray<ParserT> &>;
 
-template <typename ParserT> SArray(ParserT &&)->SArray<ParserT>;
+template <typename ParserT> SArray(ParserT &&) -> SArray<ParserT>;
 
 /****************************** Implementations *******************************/
 
