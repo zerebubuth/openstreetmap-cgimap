@@ -19,6 +19,57 @@
 
 #include <iostream>
 
+#if PQXX_VERSION_MAJOR >= 7
+
+class Stream_Wrapper
+{
+public:
+  Stream_Wrapper(pqxx::transaction_base &txn, std::string_view table,
+      std::string_view columns) :
+
+      m_stream(pqxx::stream_to::raw_table(txn, table, columns)), m_table(table), m_start(
+          std::chrono::steady_clock::now())
+  {
+  }
+
+  ~Stream_Wrapper()
+  {
+    if (m_stream)
+      m_stream.complete();
+  }
+
+  template< typename ... Ts > void write_values(Ts const &...fields)
+  {
+    m_stream.write_values(std::forward<Ts const& >(fields)...);
+    row_count++;
+  }
+
+  void complete()
+  {
+    m_stream.complete();
+    log_stats();
+  }
+
+  int row_count = 0;
+
+private:
+
+  void log_stats()
+  {
+    const auto end = std::chrono::steady_clock::now();
+    const auto elapsed = std::chrono::duration_cast < std::chrono::milliseconds > (end - m_start);
+
+    logger::message(fmt::format(
+            "Executed COPY statement for table {} in {:d} ms, inserted {:d} rows",
+            m_table, elapsed.count(), row_count));
+  }
+
+  pqxx::stream_to m_stream;
+  const std::string_view m_table;
+  const std::chrono::steady_clock::time_point m_start;
+
+};
+#endif
 
 class Transaction_Owner_Base
 {
@@ -101,6 +152,12 @@ public:
 			       res.affected_rows()));
     return res;
   }
+
+#if PQXX_VERSION_MAJOR >= 7
+  Stream_Wrapper to_stream(std::string_view table, std::string_view columns) {
+    return Stream_Wrapper(m_txn, table, columns);
+  }
+#endif
 
 private:
   pqxx::transaction_base & m_txn;
