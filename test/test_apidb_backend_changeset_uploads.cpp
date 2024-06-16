@@ -53,6 +53,14 @@ public:
   bool get_ratelimiter_upload() const override { return true; }
 };
 
+class global_settings_bbox_size_test_class : public global_settings_default {
+
+public:
+  // limit bbox upload size
+  double get_bbox_max_size_1d() const override { return 1.0; }
+  double get_bbox_max_size_2d() const override { return 1.0; }
+};
+
 
 std::unique_ptr<xmlDoc, void (*)(xmlDoc *)> getDocument(const std::string &document)
 {
@@ -1945,6 +1953,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_message", "[changeset][u
 
 TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset][upload][db]" ) {
 
+  auto test_settings = std::unique_ptr<global_settings_bbox_size_test_class>(new global_settings_bbox_size_test_class());
+  global_settings::set_configuration(std::move(test_settings));
+
   const std::string bearertoken = "Bearer 4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8";
   const std::string generator = "Test";
 
@@ -2150,13 +2161,13 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
                 <osmChange version="0.6" generator="iD">
                 <create>
-                  <node id="-5" lon="11" lat="46" version="0" changeset="1">
+                  <node id="-5" lon="11.11" lat="46.46" version="0" changeset="1">
                      <tag k="highway" v="bus_stop" />
                   </node>
-                  <node id="-6" lon="13" lat="47" version="0" changeset="1">
+                  <node id="-6" lon="11.13" lat="46.47" version="0" changeset="1">
                      <tag k="highway" v="bus_stop" />
                   </node>
-                  <node id="-7" lon="-54" lat="12" version="0" changeset="1"/>
+                  <node id="-7" lon="11.54" lat="46.12" version="0" changeset="1"/>
                   <way id="-10" version="0" changeset="1">
                     <nd ref="-5"/>
                     <nd ref="-6"/>
@@ -2232,11 +2243,11 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
                 <osmChange version="0.6" generator="iD">
                 <create>
-                  <node id="-15" lon="4" lat="2" version="0" changeset="1"/>
-                  <node id="-16" lon="3" lat="7" version="0" changeset="1"/>
+                  <node id="-15" lon="11.4" lat="46.2" version="0" changeset="1"/>
+                  <node id="-16" lon="11.3" lat="46.7" version="0" changeset="1"/>
                 </create>
                 <modify>
-                  <node id="12000000000" lon="-11" lat="-46" version="1" changeset="1">
+                  <node id="12000000000" lon="11" lat="46" version="1" changeset="1">
                      <tag k="highway" v="bus_stop" />
                      <tag k="name" v="Repubblica" />
                   </node>
@@ -2396,6 +2407,22 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     CAPTURE(req.body().str());
 
     REQUIRE(req.response_status() == 200);
+  }
+
+  SECTION("Try to upload data beyond the options-set maximum bbox size") {
+
+      req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+             <osmChange version="0.6" generator="iD">
+             <create>
+               <node id="-6" lon="-5" lat="-40" version="0" changeset="1"/>
+             </create>
+             </osmChange>)" );
+
+      // execute the request
+      process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
+
+      REQUIRE(req.response_status() == 400);
+      REQUIRE_THAT(req.body().str(), Equals("The changeset area is greater than the maximum allowed by this server."));
   }
 
 }

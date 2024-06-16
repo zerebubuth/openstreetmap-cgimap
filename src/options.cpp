@@ -33,6 +33,8 @@ void global_settings_via_options::init_fallback_values(const global_settings_bas
   m_ratelimiter_maxdebt = def.get_ratelimiter_maxdebt(false);
   m_moderator_ratelimiter_maxdebt = def.get_ratelimiter_maxdebt(true);
   m_ratelimiter_upload = def.get_ratelimiter_upload();
+  m_bbox_max_size_1d = def.get_bbox_max_size_1d();
+  m_bbox_max_size_2d = def.get_bbox_max_size_2d();
 }
 
 void global_settings_via_options::set_new_options(const po::variables_map &options) {
@@ -50,6 +52,8 @@ void global_settings_via_options::set_new_options(const po::variables_map &optio
   set_ratelimiter_ratelimit(options);
   set_ratelimiter_maxdebt(options);
   set_ratelimiter_upload(options);
+  set_bbox_max_size_1d(options);
+  set_bbox_max_size_2d(options);
 }
 
 void global_settings_via_options::set_payload_max_size(const po::variables_map &options)  {
@@ -185,6 +189,23 @@ void global_settings_via_options::set_ratelimiter_upload(const po::variables_map
   }
 }
 
+void global_settings_via_options::set_bbox_max_size_1d(const po::variables_map &options) {
+  if (options.count("max-bbox-1d")) {
+      m_bbox_max_size_1d = options["max-bbox-1d"].as<double>();
+      if (m_bbox_max_size_1d < 0 || m_bbox_max_size_1d > 360.0) {
+        throw std::invalid_argument("max-bbox-1d (in degrees) must be between 0 and 360");
+      }
+  }
+}
+
+void global_settings_via_options::set_bbox_max_size_2d(const po::variables_map &options) {
+  if (options.count("max-bbox-2d")) {
+      m_bbox_max_size_1d = options["max-bbox-2d"].as<double>();
+      if (m_bbox_max_size_1d < 0 || m_bbox_max_size_1d > 360.0*180.0) {
+        throw std::invalid_argument("max-bbox-2d (in degrees) must be between 0 and 360*180");
+      }
+  }
+}
 
 bool global_settings_via_options::validate_timeout(const std::string &timeout) const {
   std::smatch sm;

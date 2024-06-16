@@ -35,6 +35,8 @@ public:
   virtual uint32_t get_ratelimiter_ratelimit(bool) const = 0;
   virtual uint32_t get_ratelimiter_maxdebt(bool) const = 0;
   virtual bool get_ratelimiter_upload() const = 0;
+  virtual double get_bbox_max_size_1d() const = 0;
+  virtual double get_bbox_max_size_2d() const = 0;
 };
 
 class global_settings_default : public global_settings_base {
@@ -96,6 +98,14 @@ public:
 
   bool get_ratelimiter_upload() const override {
     return false;
+  }
+
+  double get_bbox_max_size_1d() const override {
+    return 360.0;
+  }
+
+  double get_bbox_max_size_2d() const override {
+    return 180.0 * 360.0;
   }
 };
 
@@ -175,6 +185,14 @@ public:
     return m_ratelimiter_upload;
   }
 
+  double get_bbox_max_size_1d() const override {
+    return m_bbox_max_size_1d;
+  }
+
+  double get_bbox_max_size_2d() const override {
+    return m_bbox_max_size_2d;
+  }
+
 private:
   void init_fallback_values(const global_settings_base &def);
   void set_new_options(const po::variables_map &options);
@@ -191,6 +209,8 @@ private:
   void set_ratelimiter_ratelimit(const po::variables_map &options);
   void set_ratelimiter_maxdebt(const po::variables_map &options);
   void set_ratelimiter_upload(const po::variables_map &options);
+  void set_bbox_max_size_1d(const po::variables_map &options);
+  void set_bbox_max_size_2d(const po::variables_map &options);
   bool validate_timeout(const std::string &timeout) const;
 
   uint32_t m_payload_max_size;
@@ -208,6 +228,8 @@ private:
   uint32_t m_ratelimiter_maxdebt;
   uint32_t m_moderator_ratelimiter_maxdebt;
   bool m_ratelimiter_upload;
+  double m_bbox_max_size_1d;
+  double m_bbox_max_size_2d;
 };
 
 class global_settings final {
@@ -255,6 +277,12 @@ public:
 
   // Use ratelimiter for changeset uploads
   static bool get_ratelimiter_upload() { return settings->get_ratelimiter_upload(); }
+
+  // Maximum size of a bounding box in either dimension (lat or lon)
+  static double get_bbox_max_size_1d() { return settings->get_bbox_max_size_1d(); }
+
+  // Maximum size of a bounding box in both dimensions (lat * lon)
+  static double get_bbox_max_size_2d() { return settings->get_bbox_max_size_2d(); }
 
 private:
   static std::unique_ptr<global_settings_base> settings;  // gets initialized with global_settings_default instance

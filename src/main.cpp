@@ -135,6 +135,8 @@ void get_options(int argc, char **argv, po::variables_map &options) {
     ("max-relation-members", po::value<int>(), "max number of relation members per relation")
     ("max-element-tags", po::value<int>(), "max number of tags per OSM element")
     ("ratelimit-upload", po::value<bool>(), "enable rate limiting for changeset upload")
+    ("max-bbox-1d", po::value<double>(), "max size in degrees of a changeset in either dimension")
+    ("max-bbox-2d", po::value<double>(), "max size in square degrees of a changeset in both dimensions")
     ;
   // clang-format on
 

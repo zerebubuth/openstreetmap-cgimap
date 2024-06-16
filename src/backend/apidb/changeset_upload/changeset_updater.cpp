@@ -119,6 +119,13 @@ void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
        )");
 
   if (valid_bbox) {
+      double dx = 1.0 * (cs_bbox.maxlon - cs_bbox.minlon) / global_settings::get_scale();
+      double dy = 1.0 * (cs_bbox.maxlat - cs_bbox.minlat) / global_settings::get_scale();
+      if (dy > global_settings::get_bbox_max_size_1d() ||
+          dx > global_settings::get_bbox_max_size_1d() ||
+          (dy * dx) > global_settings::get_bbox_max_size_2d()) {
+        throw http::bad_request("The changeset area is greater than the maximum allowed by this server.");
+      }
       auto r = m.exec_prepared("changeset_update_w_bbox", cs_num_changes, cs_bbox.minlat, cs_bbox.minlon,
 			  cs_bbox.maxlat, cs_bbox.maxlon,
 			  global_settings::get_changeset_timeout_open_max(),
