@@ -74,6 +74,8 @@ std::ostream &operator<<(
       out << "moderator";
     } else if (r == osm_user_role_t::administrator) {
       out << "administrator";
+    } else if (r == osm_user_role_t::importer) {
+      out << "importer";
     }
   }
   out << "}";

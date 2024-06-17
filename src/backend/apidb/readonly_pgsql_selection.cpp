@@ -810,6 +810,8 @@ std::set< osm_user_role_t > readonly_pgsql_selection::get_roles_for_user(osm_use
       roles.insert(osm_user_role_t::moderator);
     } else if (role == "administrator") {
       roles.insert(osm_user_role_t::administrator);
+    } else if (role == "importer") {
+      roles.insert(osm_user_role_t::importer);
     }
   }
 

@@ -30,7 +30,8 @@ using osm_edition_t = std::pair<osm_nwr_id_t, osm_version_t>;
 // user roles, used in the OSM permissions system.
 enum class osm_user_role_t {
   administrator,
-  moderator
+  moderator,
+  importer
 };
 
 // OSMChange message operations
