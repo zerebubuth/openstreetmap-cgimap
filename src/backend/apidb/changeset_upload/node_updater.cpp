@@ -16,6 +16,7 @@
 #include "cgimap/logger.hpp"
 #include "cgimap/options.hpp"
 #include "cgimap/util.hpp"
+#include "cgimap/request_helpers.hpp"
 
 
 #include <algorithm>
@@ -32,8 +33,10 @@
 
 
 ApiDB_Node_Updater::ApiDB_Node_Updater(Transaction_Manager &_m,
+                                       const RequestContext& _req_ctx,
                                        api06::OSMChange_Tracking &ct)
     : m(_m), 
+      req_ctx(_req_ctx),
       ct(ct)
 {}
 

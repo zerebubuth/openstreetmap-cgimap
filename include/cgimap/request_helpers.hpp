@@ -10,9 +10,10 @@
 #ifndef REQUEST_HELPERS_HPP
 #define REQUEST_HELPERS_HPP
 
-#include <string>
 #include "cgimap/request.hpp"
 #include "cgimap/http.hpp"
+
+#include <string>
 #include <memory>
 
 /**

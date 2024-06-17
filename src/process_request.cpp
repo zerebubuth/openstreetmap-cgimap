@@ -11,6 +11,7 @@
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
 #include "cgimap/request_helpers.hpp"
+#include "cgimap/request_context.hpp"
 #include "cgimap/choose_formatter.hpp"
 #include "cgimap/output_formatter.hpp"
 #include "cgimap/output_writer.hpp"
@@ -261,11 +262,13 @@ process_get_request(request &req, const handler& handler,
  * process a POST/PUT request.
  */
 std::tuple<string, size_t>
-process_post_put_request(request &req, const handler& handler,
-                    const data_selection::factory& factory,
-                    data_update::factory& update_factory,
-                    std::optional<osm_user_id_t> user_id,
-                    const string &ip, const string &generator) {
+process_post_put_request(request &req, 
+                         RequestContext& req_ctx, 
+                         const handler& handler,
+                         const data_selection::factory& factory,
+                         data_update::factory& update_factory,
+                         const string &ip, 
+                         const string &generator) {
 
   std::size_t bytes_written = 0;
 
@@ -285,7 +288,7 @@ process_post_put_request(request &req, const handler& handler,
 
       // Executing the responder constructor parses the payload, performs db CRUD operations
       // and eventually calls db commit(), in case there are no issues with the data.
-      auto responder = pe_handler.responder(*data_update, payload, user_id);
+      auto responder = pe_handler.responder(*data_update, payload, req_ctx);
 
       // does the responder instance carry all the data which is needed to construct a response?
       if (!pe_handler.requires_selection_after_update())
@@ -422,7 +425,7 @@ std::optional<osm_user_id_t> determine_user_id (const request& req,
 			        bool& allow_api_write)
 {
   // Try to authenticate user via OAuth2 Bearer Token
-  std::optional<osm_user_id_t>  user_id = oauth2::validate_bearer_token (req, selection, allow_api_write);
+  std::optional<osm_user_id_t>  user_id = oauth2::validate_bearer_token(req, selection, allow_api_write);
 
   return user_id;
 }
@@ -438,7 +441,7 @@ void process_request(request &req, rate_limiter &limiter,
                      data_update::factory* update_factory) {
   try {
 
-
+    RequestContext req_ctx{};
 
     // get the client IP address
     const std::string ip = fcgi_get_env(req, "REMOTE_ADDR");
@@ -462,7 +465,6 @@ void process_request(request &req, rate_limiter &limiter,
 
     // ------
 
-    std::set<osm_user_role_t> user_roles;
 
     bool allow_api_write = true;
 
@@ -471,7 +473,7 @@ void process_request(request &req, rate_limiter &limiter,
     // create a data selection for the request
     auto selection = factory.make_selection(*default_transaction);
 
-    std::optional<osm_user_id_t> user_id = determine_user_id (req, *selection, allow_api_write);
+    std::optional<osm_user_id_t> user_id = determine_user_id(req, *selection, allow_api_write);
 
     // Initially assume IP based client key
     string client_key = addr_prefix + ip;
@@ -480,10 +482,14 @@ void process_request(request &req, rate_limiter &limiter,
     // set the client key and user roles accordingly
     if (user_id) {
         client_key = (fmt::format("{}{}", user_prefix, (*user_id)));
-        user_roles = selection->get_roles_for_user(*user_id);
+
+        // C++20: switch to designated initializer for readability
+        req_ctx.user = UserInfo{ *user_id, 
+                                 selection->get_roles_for_user(*user_id), 
+                                 allow_api_write };
     }
 
-    auto is_moderator = user_roles.count(osm_user_role_t::moderator) > 0;
+    auto is_moderator = req_ctx.user && (*req_ctx.user).has_role(osm_user_role_t::moderator);
 
     bool exceeded_limit;
     int retry_seconds;
@@ -495,6 +501,7 @@ void process_request(request &req, rate_limiter &limiter,
     }
 
     auto start_time = std::chrono::high_resolution_clock::now();
+    req_ctx.start_time = start_time;
 
     if (is_moderator && show_redactions_requested(req)) {
       selection->set_redactions_visible(true);
@@ -524,7 +531,7 @@ void process_request(request &req, rate_limiter &limiter,
 	    throw http::bad_request("Backend does not support given HTTP method");
 
 	  std::tie(request_name, bytes_written) =
-	      process_post_put_request(req, *handler, factory, *update_factory, user_id, ip, generator);
+	      process_post_put_request(req, req_ctx, *handler, factory, *update_factory, ip, generator);
 	}
 	break;
 
