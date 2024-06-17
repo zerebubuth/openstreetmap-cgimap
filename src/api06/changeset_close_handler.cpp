@@ -29,10 +29,10 @@ changeset_close_responder::changeset_close_responder(mime::type mt,
                                                      data_update & upd, 
                                                      osm_changeset_id_t changeset, 
                                                      const std::string &, 
-                                                     std::optional<osm_user_id_t> user_id)
+                                                     const RequestContext& req_ctx)
     : text_responder(mt) {
 
-  auto changeset_updater = upd.get_changeset_updater(changeset, *user_id);
+  auto changeset_updater = upd.get_changeset_updater(req_ctx, changeset);
   changeset_updater->api_close_changeset();
   upd.commit();
 }
@@ -55,8 +55,8 @@ responder_ptr_t changeset_close_handler::responder(data_selection &) const {
 
 responder_ptr_t changeset_close_handler::responder(data_update & upd, 
                                                    const std::string &payload, 
-                                                   std::optional<osm_user_id_t> user_id) const {
-  return std::make_unique<changeset_close_responder>(mime_type, upd, id, payload, user_id);
+                                                   const RequestContext& req_ctx) const {
+  return std::make_unique<changeset_close_responder>(mime_type, upd, id, payload, req_ctx);
 }
 
 bool changeset_close_handler::requires_selection_after_update() const {

@@ -25,7 +25,7 @@ public:
                              data_update &,
                              osm_changeset_id_t id_,
                              const std::string & payload,
-                             std::optional<osm_user_id_t> user_id);
+                             const RequestContext& req_ctx);
 };
 
 class changeset_update_sel_responder : public osm_current_responder {
@@ -46,7 +46,7 @@ public:
 
   responder_ptr_t responder(data_update &,
                             const std::string &payload,
-                            std::optional<osm_user_id_t> user_id) const override;
+                            const RequestContext& req_ctx) const override;
   bool requires_selection_after_update() const override;
 
 private:

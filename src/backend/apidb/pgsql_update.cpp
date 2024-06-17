@@ -24,6 +24,8 @@
 
 namespace po = boost::program_options;
 
+struct RequestContext;
+
 namespace {
 std::string connect_db_str(const po::variables_map &options) {
   // build the connection string.
@@ -107,27 +109,27 @@ bool pgsql_update::is_api_write_disabled() const {
 }
 
 std::unique_ptr<api06::Changeset_Updater>
-pgsql_update::get_changeset_updater(osm_changeset_id_t changeset, osm_user_id_t uid)
+pgsql_update::get_changeset_updater(const RequestContext& req_ctx, osm_changeset_id_t changeset)
 {
-  return std::make_unique<ApiDB_Changeset_Updater>(m, changeset, uid);
+  return std::make_unique<ApiDB_Changeset_Updater>(m, req_ctx, changeset);
 }
 
 std::unique_ptr<api06::Node_Updater>
-pgsql_update::get_node_updater(api06::OSMChange_Tracking &ct)
+pgsql_update::get_node_updater(const RequestContext& req_ctx, api06::OSMChange_Tracking &ct)
 {
-  return std::make_unique<ApiDB_Node_Updater>(m, ct);
+  return std::make_unique<ApiDB_Node_Updater>(m, req_ctx, ct);
 }
 
 std::unique_ptr<api06::Way_Updater>
-pgsql_update::get_way_updater(api06::OSMChange_Tracking &ct)
+pgsql_update::get_way_updater(const RequestContext& req_ctx, api06::OSMChange_Tracking &ct)
 {
-  return std::make_unique<ApiDB_Way_Updater>(m, ct);
+  return std::make_unique<ApiDB_Way_Updater>(m, req_ctx, ct);
 }
 
 std::unique_ptr<api06::Relation_Updater>
-pgsql_update::get_relation_updater(api06::OSMChange_Tracking &ct)
+pgsql_update::get_relation_updater(const RequestContext& req_ctx, api06::OSMChange_Tracking &ct)
 {
-  return std::make_unique<ApiDB_Relation_Updater>(m, ct);
+  return std::make_unique<ApiDB_Relation_Updater>(m, req_ctx, ct);
 }
 
 void pgsql_update::commit() {

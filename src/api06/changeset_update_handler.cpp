@@ -30,10 +30,10 @@ changeset_update_responder::changeset_update_responder(
     data_update &upd,
     osm_changeset_id_t changeset_id,
     const std::string &payload,
-    std::optional<osm_user_id_t> user_id)
+    const RequestContext& req_ctx)
     : text_responder(mt){
 
-  auto changeset_updater = upd.get_changeset_updater(changeset_id, *user_id);
+  auto changeset_updater = upd.get_changeset_updater(req_ctx, changeset_id);
 
   auto tags = ChangesetXMLParser().process_message(payload);
 
@@ -69,8 +69,8 @@ changeset_update_handler::responder(data_selection &sel) const {
 
 responder_ptr_t changeset_update_handler::responder(data_update & upd, 
                                                     const std::string &payload, 
-                                                    std::optional<osm_user_id_t> user_id) const {
-  return std::make_unique<changeset_update_responder>(mime_type, upd, id, payload, user_id);
+                                                    const RequestContext& req_ctx) const {
+  return std::make_unique<changeset_update_responder>(mime_type, upd, id, payload, req_ctx);
 }
 
 bool changeset_update_handler::requires_selection_after_update() const {

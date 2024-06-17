@@ -23,7 +23,7 @@ public:
   changeset_create_responder(mime::type, 
                              data_update &,
                              const std::string &,
-                             std::optional<osm_user_id_t>);
+                             const RequestContext& req_ctx);
 };
 
 class changeset_create_handler : public payload_enabled_handler {
@@ -35,7 +35,7 @@ public:
 
   responder_ptr_t responder(data_update &,
                             const std::string &payload,
-                            std::optional<osm_user_id_t> user_id) const override;
+                            const RequestContext& req_ctx) const override;
   bool requires_selection_after_update() const override;
 };
 

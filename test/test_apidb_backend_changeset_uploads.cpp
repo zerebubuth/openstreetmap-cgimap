@@ -31,6 +31,7 @@
 #include "cgimap/process_request.hpp"
 #include "cgimap/output_buffer.hpp"
 #include "cgimap/zlib.hpp"
+#include "cgimap/request_context.hpp"
 
 #include "cgimap/api06/changeset_upload/osmchange_handler.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_input_format.hpp"
@@ -159,11 +160,14 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
   static osm_nwr_id_t node_id;
   static osm_version_t node_version;
 
+  test_request req{};
+  RequestContext ctx{req};
+
   SECTION("Create new node")
   {
     api06::OSMChange_Tracking change_tracking{};
     auto upd = tdb.get_data_update();
-    auto node_updater = upd->get_node_updater(change_tracking);
+    auto node_updater = upd->get_node_updater(ctx, change_tracking);
 
     node_updater->add_node(-25.3448570, 131.0325171, 1, -1, { {"name", "Uluṟu"}, {"ele", "863"} });
     node_updater->process_new_nodes();
@@ -221,7 +225,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto node_updater = upd->get_node_updater(change_tracking);
+    auto node_updater = upd->get_node_updater(ctx, change_tracking);
 
     node_updater->add_node(0, 0 , 1, -2, {});
     node_updater->add_node(10, 20 , 1, -2, {});
@@ -233,7 +237,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
   {
     api06::OSMChange_Tracking change_tracking{};
     auto upd = tdb.get_data_update();
-    auto node_updater = upd->get_node_updater(change_tracking);
+    auto node_updater = upd->get_node_updater(ctx, change_tracking);
 
     node_updater->modify_node(10, 20, 1, node_id, node_version, {});
     node_updater->process_modify_nodes();
@@ -288,7 +292,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto node_updater = upd->get_node_updater(change_tracking);
+    auto node_updater = upd->get_node_updater(ctx, change_tracking);
 
     node_updater->modify_node(40, 50, 1, node_id, 666, {});
     REQUIRE_THROWS_MATCHES(node_updater->process_modify_nodes(), http::conflict,
@@ -299,7 +303,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
   {
     api06::OSMChange_Tracking change_tracking{};
     auto upd = tdb.get_data_update();
-    auto node_updater = upd->get_node_updater(change_tracking);
+    auto node_updater = upd->get_node_updater(ctx, change_tracking);
 
     int sign = -1;
 
@@ -353,7 +357,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
     api06::OSMChange_Tracking change_tracking{};
 
     auto upd = tdb.get_data_update();
-    auto node_updater = upd->get_node_updater(change_tracking);
+    auto node_updater = upd->get_node_updater(ctx, change_tracking);
 
     node_updater->delete_node(1, node_id, node_version++, false);
     node_updater->process_delete_nodes();
@@ -393,7 +397,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto node_updater = upd->get_node_updater(change_tracking);
+    auto node_updater = upd->get_node_updater(ctx, change_tracking);
 
     node_updater->delete_node(1, node_id, node_version, false);
     REQUIRE_THROWS_AS(node_updater->process_delete_nodes(), http::gone);
@@ -404,7 +408,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto node_updater = upd->get_node_updater(change_tracking);
+    auto node_updater = upd->get_node_updater(ctx, change_tracking);
 
     node_updater->delete_node(1, node_id, node_version, true);
     REQUIRE_NOTHROW(node_updater->process_delete_nodes());
@@ -418,7 +422,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto node_updater = upd->get_node_updater(change_tracking);
+    auto node_updater = upd->get_node_updater(ctx, change_tracking);
 
     node_updater->delete_node(1, 424471234567890, 1, false);
     REQUIRE_THROWS_MATCHES(node_updater->process_delete_nodes(), http::not_found,
@@ -430,7 +434,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto node_updater = upd->get_node_updater(change_tracking);
+    auto node_updater = upd->get_node_updater(ctx, change_tracking);
 
     node_updater->modify_node(40, 50, 1, 4712334567890, 1, {});
     REQUIRE_THROWS_MATCHES(node_updater->process_modify_nodes(), http::not_found,
@@ -444,6 +448,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
   static osm_nwr_id_t way_id;
   static osm_version_t way_version;
   static std::array<osm_nwr_id_t, 3> node_new_ids;
+
+  test_request req{};
+  RequestContext ctx{req};
 
   SECTION("Initialize test data") {
 
@@ -465,8 +472,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
   {
     api06::OSMChange_Tracking change_tracking{};
     auto upd = tdb.get_data_update();
-    auto node_updater = upd->get_node_updater(change_tracking);
-    auto way_updater = upd->get_way_updater(change_tracking);
+    auto node_updater = upd->get_node_updater(ctx, change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
 
     node_updater->add_node(-25.3448570, 131.0325171, 1, -1, { {"name", "Uluṟu"}, {"ele", "863"} });
     node_updater->add_node(-25.3448570, 131.2325171, 1, -2, { });
@@ -535,8 +542,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto node_updater = upd->get_node_updater(change_tracking);
-    auto way_updater = upd->get_way_updater(change_tracking);
+    auto node_updater = upd->get_node_updater(ctx, change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
 
 
     node_updater->add_node(0, 0 , 1, -1, {});
@@ -554,7 +561,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto way_updater = upd->get_way_updater(change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
 
     way_updater->add_way(1, -1, { -1, -2}, { {"highway", "path"}});
     REQUIRE_THROWS_MATCHES(way_updater->process_new_ways(), http::bad_request,
@@ -565,7 +572,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
   {
     api06::OSMChange_Tracking change_tracking{};
     auto upd = tdb.get_data_update();
-    auto way_updater = upd->get_way_updater(change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
 
     way_updater->modify_way(1, way_id, way_version,
         { static_cast<osm_nwr_signed_id_t>(node_new_ids[2]) },
@@ -579,12 +586,14 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     // foreign key relationship on the current_way_nodes table (current_way_nodes_node_id_fkey).
 
     auto future = std::async(std::launch::async, [&] {
+       test_request req2{};
+       RequestContext ctx2{req2};
        api06::OSMChange_Tracking change_tracking_2nd{};
        auto factory = tdb.get_new_data_update_factory();
        auto txn_2nd = factory->get_default_transaction();
        auto upd_2nd = factory->make_data_update(*txn_2nd);
 
-       auto node_updater = upd_2nd->get_node_updater(change_tracking_2nd);
+       auto node_updater = upd_2nd->get_node_updater(ctx2, change_tracking_2nd);
        node_updater->delete_node(2, static_cast<osm_nwr_signed_id_t>(node_new_ids[2]), 1, false);
        // throws precondition_failed exception once the main process commits and releases the lock.
        node_updater->process_delete_nodes();
@@ -650,7 +659,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto way_updater = upd->get_way_updater(change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
 
     way_updater->modify_way(1, way_id, 666, {static_cast<osm_nwr_signed_id_t>(node_new_ids[0])}, {});
     REQUIRE_THROWS_MATCHES(way_updater->process_modify_ways(), http::conflict,
@@ -662,7 +671,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto way_updater = upd->get_way_updater(change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
 
     way_updater->modify_way(1, way_id, 666, {static_cast<osm_nwr_signed_id_t>(5934531745)}, {});
     REQUIRE_THROWS_MATCHES(way_updater->process_modify_ways(), http::conflict,
@@ -674,7 +683,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto way_updater = upd->get_way_updater(change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
 
     way_updater->modify_way(1, way_id, way_version, {static_cast<osm_nwr_signed_id_t>(node_new_ids[0]), 9574853485634}, {});
     REQUIRE_THROWS_MATCHES(way_updater->process_modify_ways(), http::precondition_failed,
@@ -686,7 +695,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto way_updater = upd->get_way_updater(change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
 
     way_updater->modify_way(1, way_id, way_version, {-5}, {});
     REQUIRE_THROWS_MATCHES(way_updater->process_modify_ways(), http::bad_request,
@@ -698,7 +707,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto way_updater = upd->get_way_updater(change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
 
 
 
@@ -710,7 +719,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto node_updater = upd->get_node_updater(change_tracking);
+    auto node_updater = upd->get_node_updater(ctx, change_tracking);
 
     node_updater->delete_node(1, node_new_ids[2], 1, false);
     REQUIRE_THROWS_MATCHES(node_updater->process_delete_nodes(), http::precondition_failed,
@@ -722,7 +731,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto node_updater = upd->get_node_updater(change_tracking);
+    auto node_updater = upd->get_node_updater(ctx, change_tracking);
 
     node_updater->delete_node(1, node_new_ids[2], 1, true);
     REQUIRE_NOTHROW(node_updater->process_delete_nodes());
@@ -736,7 +745,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     api06::OSMChange_Tracking change_tracking{};
 
     auto upd = tdb.get_data_update();
-    auto way_updater = upd->get_way_updater(change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
 
     way_updater->delete_way(1, way_id, way_version++, false);
     way_updater->process_delete_ways();
@@ -773,7 +782,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto way_updater = upd->get_way_updater(change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
 
     way_updater->delete_way(1, way_id, way_version, false);
     REQUIRE_THROWS_MATCHES(way_updater->process_delete_ways(), http::gone,
@@ -785,7 +794,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto way_updater = upd->get_way_updater(change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
 
     way_updater->delete_way(1, way_id, way_version, true);
 
@@ -799,7 +808,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto way_updater = upd->get_way_updater(change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
 
     way_updater->delete_way(1, 424471234567890, 1, false);
     REQUIRE_THROWS_MATCHES(way_updater->process_delete_ways(), http::not_found,
@@ -811,7 +820,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto way_updater = upd->get_way_updater(change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
 
     way_updater->modify_way(1, 424471234567890, 1, {static_cast<osm_nwr_signed_id_t>(node_new_ids[0])}, {});
     REQUIRE_THROWS_MATCHES(way_updater->process_modify_ways(), http::not_found,
@@ -830,6 +839,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
   static osm_version_t relation_version_1;
   static osm_nwr_id_t relation_id_2;
   static osm_version_t relation_version_2;
+
+  test_request req{};
+  RequestContext ctx{req};
 
   SECTION("Initialize test data") {
 
@@ -853,9 +865,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
 
     auto upd = tdb.get_data_update();
-    auto node_updater = upd->get_node_updater(change_tracking);
-    auto way_updater = upd->get_way_updater(change_tracking);
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto node_updater = upd->get_node_updater(ctx, change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     node_updater->add_node(-25.3448570, 131.0325171, 1, -1, { {"name", "Uluṟu"}, {"ele", "863"} });
     node_updater->add_node(-25.3448570, 131.2325171, 1, -2, { });
@@ -951,9 +963,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
   {
     api06::OSMChange_Tracking change_tracking{};
     auto upd = tdb.get_data_update();
-    auto node_updater = upd->get_node_updater(change_tracking);
-    auto way_updater = upd->get_way_updater(change_tracking);
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto node_updater = upd->get_node_updater(ctx, change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     node_updater->add_node(-25.3448570, 131.0325171, 1, -1, { {"name", "Uluṟu"} });
     node_updater->add_node(-25.3448570, 131.2325171, 1, -2, { });
@@ -1046,7 +1058,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->add_relation(1, -1, {}, {});
     rel_updater->add_relation(1, -1, {}, {{"key", "value"}});
@@ -1059,7 +1071,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->add_relation(1, -1, { { "Relation", -1, "role1" }}, {{"key1", "value1"}});
     REQUIRE_THROWS_MATCHES(rel_updater->process_new_relations(), http::bad_request,
@@ -1071,7 +1083,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->add_relation(1, -1, { { "Relation", -2, "role1" }}, {{"key1", "value1"}});
     rel_updater->add_relation(1, -2, { { "Relation", -1, "role2" }}, {{"key2", "value2"}});
@@ -1084,7 +1096,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
 
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->add_relation(1, -1, { }, {{"key1", "value1"}});
     rel_updater->add_relation(1, -2, { { "Relation", -1, "role2" }}, {{"key2", "value2"}});
@@ -1129,7 +1141,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->add_relation(1, -1, { { "Node", -10, "role1" }}, {{"key1", "value1"}});
     REQUIRE_THROWS_MATCHES(rel_updater->process_new_relations(), http::bad_request,
@@ -1141,7 +1153,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->add_relation(1, -1, { { "Way", -10, "role1" }}, {{"key1", "value1"}});
     REQUIRE_THROWS_MATCHES(rel_updater->process_new_relations(), http::bad_request,
@@ -1153,7 +1165,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->add_relation(1, -1, { { "Relation", -10, "role1" }}, {{"key1", "value1"}});
     REQUIRE_THROWS_MATCHES(rel_updater->process_new_relations(), http::bad_request,
@@ -1164,8 +1176,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
   {
     api06::OSMChange_Tracking change_tracking{};
     auto upd = tdb.get_data_update();
-    auto way_updater = upd->get_way_updater(change_tracking);
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->modify_relation(1, relation_id, relation_version,
         {
@@ -1235,7 +1247,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->modify_relation(1, relation_id, 666,
         { {"Node", static_cast<osm_nwr_signed_id_t>(node_new_ids[0]), ""} }, {});
@@ -1248,7 +1260,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->modify_relation(1, relation_id, 666, { {"Node", static_cast<osm_nwr_signed_id_t>(1434253485634), ""} }, {});
     REQUIRE_THROWS_MATCHES(rel_updater->process_modify_relations(), http::conflict,
@@ -1260,8 +1272,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto way_updater = upd->get_way_updater(change_tracking);
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->modify_relation(1, relation_id, relation_version, { {"Node", 1434253485634, ""} }, {});
     REQUIRE_THROWS_MATCHES(rel_updater->process_modify_relations(), http::precondition_failed,
@@ -1273,7 +1285,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->modify_relation(1, relation_id, relation_version, { {"Way", 9574853485634, ""} }, {});
     REQUIRE_THROWS_MATCHES(rel_updater->process_modify_relations(), http::precondition_failed,
@@ -1285,7 +1297,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->modify_relation(1, relation_id, relation_version, { {"Relation", 9574853485634, ""} }, {});
     REQUIRE_THROWS_MATCHES(rel_updater->process_modify_relations(), http::precondition_failed,
@@ -1297,8 +1309,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto way_updater = upd->get_way_updater(change_tracking);
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->modify_relation(1, relation_id, relation_version, { {"Node", -10, ""} }, {});
     REQUIRE_THROWS_MATCHES(rel_updater->process_modify_relations(), http::bad_request,
@@ -1310,7 +1322,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->modify_relation(1, relation_id, relation_version, { {"Way", -10, ""} }, {});
     REQUIRE_THROWS_MATCHES(rel_updater->process_modify_relations(), http::bad_request,
@@ -1322,7 +1334,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->modify_relation(1, relation_id, relation_version, { {"Relation", -10, ""} }, {});
     REQUIRE_THROWS_MATCHES(rel_updater->process_modify_relations(), http::bad_request,
@@ -1334,8 +1346,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto way_updater = upd->get_way_updater(change_tracking);
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
 
 
@@ -1345,7 +1357,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
   {
     api06::OSMChange_Tracking change_tracking{};
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->add_relation(1, -1,
         {
@@ -1362,7 +1374,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto node_updater = upd->get_node_updater(change_tracking);
+    auto node_updater = upd->get_node_updater(ctx, change_tracking);
 
     node_updater->delete_node(1, node_new_ids[2], 1, false);
     REQUIRE_THROWS_MATCHES(node_updater->process_delete_nodes(), http::precondition_failed,
@@ -1374,7 +1386,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto node_updater = upd->get_node_updater(change_tracking);
+    auto node_updater = upd->get_node_updater(ctx, change_tracking);
 
     node_updater->delete_node(1, node_new_ids[2], 1, true);
     REQUIRE_NOTHROW(node_updater->process_delete_nodes());
@@ -1389,7 +1401,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto way_updater = upd->get_way_updater(change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
 
     way_updater->delete_way(1, way_new_id, 1, false);
     REQUIRE_THROWS_MATCHES(way_updater->process_delete_ways(), http::precondition_failed,
@@ -1401,7 +1413,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto way_updater = upd->get_way_updater(change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
 
     way_updater->delete_way(1, way_new_id, 1, true);
     REQUIRE_NOTHROW(way_updater->process_delete_ways());
@@ -1416,7 +1428,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->delete_relation(1, relation_id_1, relation_version_1, false);
     REQUIRE_THROWS_MATCHES(rel_updater->process_delete_relations(), http::precondition_failed,
@@ -1428,7 +1440,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->delete_relation(1, relation_id_1, relation_version_1, true);
     REQUIRE_NOTHROW(rel_updater->process_delete_relations());
@@ -1443,7 +1455,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
   {
     api06::OSMChange_Tracking change_tracking{};
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->delete_relation(1, relation_id, relation_version++, false);
     rel_updater->process_delete_relations();
@@ -1481,7 +1493,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->delete_relation(1, relation_id_1, relation_version_1, false);
     rel_updater->delete_relation(1, relation_id_2, relation_version_2, false);
@@ -1501,7 +1513,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
 
     rel_updater->modify_relation(1, relation_id_1, relation_version_1,
@@ -1517,7 +1529,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->delete_relation(1, relation_id, relation_version, false);
     REQUIRE_THROWS_MATCHES(rel_updater->process_delete_relations(), http::gone,
@@ -1529,7 +1541,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->delete_relation(1, relation_id, relation_version, true);
     REQUIRE_NOTHROW(rel_updater->process_delete_relations());
@@ -1543,7 +1555,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->delete_relation(1, 424471234567890, 1, false);
     REQUIRE_THROWS_MATCHES(rel_updater->process_delete_relations(), http::not_found,
@@ -1555,7 +1567,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     api06::OSMChange_Tracking change_tracking{};
     auto sel = tdb.get_data_selection();
     auto upd = tdb.get_data_update();
-    auto rel_updater = upd->get_relation_updater(change_tracking);
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
     rel_updater->modify_relation(1, 424471234567890, 1, {}, {});
     REQUIRE_THROWS_MATCHES(rel_updater->process_modify_relations(), http::not_found,
@@ -1578,7 +1590,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
       api06::OSMChange_Tracking change_tracking{};
 
       auto upd = tdb.get_data_update();
-      auto rel_updater = upd->get_relation_updater(change_tracking);
+      auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
       rel_updater->add_relation(1, -1, { }, {{"key1", "value1"}});
       rel_updater->add_relation(1, -2, { { "Relation", -1, "role2" }}, {{"key2", "value2"}});
@@ -1604,7 +1616,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
       api06::OSMChange_Tracking change_tracking{};
       auto sel = tdb.get_data_selection();
       auto upd = tdb.get_data_update();
-      auto rel_updater = upd->get_relation_updater(change_tracking);
+      auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
       rel_updater->delete_relation(1, relation_l3_id_1, relation_l3_version_1, true);
       rel_updater->delete_relation(1, relation_l3_id_2, relation_l3_version_2, true);
@@ -1628,9 +1640,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
       SECTION("Prepare data") {
 
         auto upd = tdb.get_data_update();
-        auto node_updater = upd->get_node_updater(change_tracking);
-        auto way_updater = upd->get_way_updater(change_tracking);
-        auto rel_updater = upd->get_relation_updater(change_tracking);
+        auto node_updater = upd->get_node_updater(ctx, change_tracking);
+        auto way_updater = upd->get_way_updater(ctx, change_tracking);
+        auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
         node_updater->add_node(-25.3448570, 131.0325171, 1, -1, { {"name", "Uluṟu"}, {"ele", "863"} });
         node_updater->add_node(-25.3448570, 131.2325171, 1, -2, { });
@@ -1669,7 +1681,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
         api06::OSMChange_Tracking change_tracking_new_rel{};
 
         auto upd = tdb.get_data_update();
-        auto rel_updater = upd->get_relation_updater(change_tracking_new_rel);
+        auto rel_updater = upd->get_relation_updater(ctx, change_tracking_new_rel);
 
         rel_updater->add_relation(1, -1,
             {
@@ -1685,12 +1697,14 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
         // while the new relation hasn't been committed yet
 
         auto future_node = std::async(std::launch::async, [&] {
+           test_request req2{};
+           RequestContext ctx2{req2};
            api06::OSMChange_Tracking change_tracking_2nd{};
            auto factory = tdb.get_new_data_update_factory();
            auto txn_2nd = factory->get_default_transaction();
            auto upd_2nd = factory->make_data_update(*txn_2nd);
 
-           auto node_updater = upd_2nd->get_node_updater(change_tracking_2nd);
+           auto node_updater = upd_2nd->get_node_updater(ctx2, change_tracking_2nd);
            node_updater->delete_node(2, static_cast<osm_nwr_signed_id_t>(node_new_ids[2]), 1, false);
            // throws precondition_failed exception once the main process commits and releases the lock.
            node_updater->process_delete_nodes();
@@ -1698,12 +1712,14 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
         });
 
         auto future_way = std::async(std::launch::async, [&] {
+           test_request req3{};
+           RequestContext ctx3{req3};
            api06::OSMChange_Tracking change_tracking_2nd{};
            auto factory = tdb.get_new_data_update_factory();
            auto txn_2nd = factory->get_default_transaction();
            auto upd_2nd = factory->make_data_update(*txn_2nd);
 
-           auto way_updater = upd_2nd->get_way_updater(change_tracking_2nd);
+           auto way_updater = upd_2nd->get_way_updater(ctx3, change_tracking_2nd);
            way_updater->delete_way(2, static_cast<osm_nwr_signed_id_t>(way_new_id), 1, false);
            // throws precondition_failed exception once the main process commits and releases the lock.
            way_updater->process_delete_ways();
@@ -1711,12 +1727,14 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
         });
 
         auto future_rel = std::async(std::launch::async, [&] {
+           test_request req4{};
+           RequestContext ctx4{req4};
            api06::OSMChange_Tracking change_tracking_2nd{};
            auto factory = tdb.get_new_data_update_factory();
            auto txn_2nd = factory->get_default_transaction();
            auto upd_2nd = factory->make_data_update(*txn_2nd);
 
-           auto rel_updater = upd_2nd->get_relation_updater(change_tracking_2nd);
+           auto rel_updater = upd_2nd->get_relation_updater(ctx4, change_tracking_2nd);
            rel_updater->delete_relation(2, static_cast<osm_nwr_signed_id_t>(relation_id), 1, false);
            // throws precondition_failed exception once the main process commits and releases the lock.
            rel_updater->process_delete_relations();
@@ -1764,12 +1782,18 @@ std::vector<api06::diffresult_t> process_payload(test_database &tdb, osm_changes
   auto sel = tdb.get_data_selection();
   auto upd = tdb.get_data_update();
 
+  // C++20: switch to designated initializer for readability
+  test_request req{};
+  UserInfo user{};
+  user.id = uid;
+  RequestContext ctx{req};
+  ctx.user = user;
   api06::OSMChange_Tracking change_tracking{};
 
-  auto changeset_updater = upd->get_changeset_updater(changeset, uid);
-  auto node_updater = upd->get_node_updater(change_tracking);
-  auto way_updater = upd->get_way_updater(change_tracking);
-  auto relation_updater = upd->get_relation_updater(change_tracking);
+  auto changeset_updater = upd->get_changeset_updater(ctx, changeset);
+  auto node_updater = upd->get_node_updater(ctx, change_tracking);
+  auto way_updater = upd->get_way_updater(ctx, change_tracking);
+  auto relation_updater = upd->get_relation_updater(ctx, change_tracking);
 
   changeset_updater->lock_current_changeset(true);
 
@@ -1792,9 +1816,15 @@ std::vector<api06::diffresult_t> process_payload(test_database &tdb, osm_changes
 
 
 TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][upload][db]" ) {
+  // C++20: switch to designated initializer for readability
+  test_request req{};
+  UserInfo user{};
+  user.id = 1;
+  RequestContext ctx{req};
+  ctx.user = user;
 
   auto upd = tdb.get_data_update();
-  auto changeset_updater = upd->get_changeset_updater(1, 1);
+  auto changeset_updater = upd->get_changeset_updater(ctx, 1);
 
   SECTION("Initialize test data") {
     tdb.run_sql(

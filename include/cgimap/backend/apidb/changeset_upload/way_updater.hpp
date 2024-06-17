@@ -21,6 +21,8 @@
 #include <memory>
 #include <set>
 
+struct RequestContext;
+
 /*  Way operations
  *
  */
@@ -29,6 +31,7 @@ class ApiDB_Way_Updater : public api06::Way_Updater {
 
 public:
   ApiDB_Way_Updater(Transaction_Manager &_m,
+                    const RequestContext& _req_ctx,
                     api06::OSMChange_Tracking &ct);
 
   ~ApiDB_Way_Updater() override = default;
@@ -130,6 +133,7 @@ private:
   void delete_current_way_nodes(std::vector<osm_nwr_id_t> ids);
 
   Transaction_Manager &m;
+  const RequestContext& req_ctx;
   api06::OSMChange_Tracking &ct;
 
   std::vector<way_t> create_ways;
