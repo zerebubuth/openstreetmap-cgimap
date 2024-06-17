@@ -521,6 +521,9 @@ osm_user_role_t parse_role(const std::string &str) {
   } else if (str == "moderator") {
     return osm_user_role_t::moderator;
 
+  } else if (str == "importer") {
+    return osm_user_role_t::importer;
+
   } else {
     throw std::runtime_error("Unable to parse role in config file.");
   }
