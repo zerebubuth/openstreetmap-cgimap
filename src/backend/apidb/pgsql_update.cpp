@@ -151,6 +151,25 @@ uint32_t pgsql_update::get_rate_limit(osm_user_id_t uid)
   return std::max(0, rate_limit);
 }
 
+uint64_t pgsql_update::get_bbox_size_limit(osm_user_id_t uid)
+{
+  {
+    m.prepare("api_size_limit",
+      R"(SELECT * FROM api_size_limit($1) LIMIT 1 )");
+
+    auto res = m.exec_prepared("api_size_limit", uid);
+
+    if (res.size() != 1) {
+      throw http::server_error("api_size_limit db function did not return any data");
+    }
+
+    auto row = res[0];
+    auto bbox_size_limit = row[0].as<int64_t>();
+
+    return std::max(bbox_size_limit, 0l);
+  }
+}
+
 
 pgsql_update::factory::factory(const po::variables_map &opts)
   : m_connection(connect_db_str(opts)), 

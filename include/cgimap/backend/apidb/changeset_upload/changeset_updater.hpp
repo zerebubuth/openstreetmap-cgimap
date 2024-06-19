@@ -30,6 +30,8 @@ public:
 
   void update_changeset(const uint32_t num_new_changes, const bbox_t bbox) override;
 
+  bbox_t get_bbox() const override;
+
   osm_changeset_id_t api_create_changeset(const std::map<std::string, std::string>&) override;
 
   void api_update_changeset(const std::map<std::string, std::string>&) override;

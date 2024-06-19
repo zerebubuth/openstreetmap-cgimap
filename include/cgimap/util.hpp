@@ -124,6 +124,10 @@ public:
 	    os << "[" << bbox.minlat << "," << bbox.minlon << "," << bbox.maxlat << "," << bbox.maxlon << "]";
 	    return os;
 	}
+
+	long linear_size() const {
+	  return ((maxlon - minlon) + (maxlat - minlat));
+	}
 };
 
 #endif

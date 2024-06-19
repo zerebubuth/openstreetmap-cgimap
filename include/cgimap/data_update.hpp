@@ -56,6 +56,9 @@ public:
   // get the current rate limit for changeset uploads for a given user id
   virtual uint32_t get_rate_limit(osm_user_id_t) = 0;
 
+  // get the current maximum bounding box size for a given user id
+  virtual uint64_t get_bbox_size_limit(osm_user_id_t uid) = 0;
+
   /**
    * factory for the creation of data updates. this abstracts away
    * the creation process of transactions, and allows some up-front

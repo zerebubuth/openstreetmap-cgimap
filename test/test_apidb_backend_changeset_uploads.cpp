@@ -55,6 +55,13 @@ public:
 };
 
 
+class global_setting_enable_bbox_size_limiter_test_class : public global_settings_default {
+
+public:
+  // enable bbox size limiter
+  bool get_bbox_size_limiter_upload() const override { return true; }
+};
+
 std::unique_ptr<xmlDoc, void (*)(xmlDoc *)> getDocument(const std::string &document)
 {
   return {xmlReadDoc((xmlChar *)(document.c_str()), NULL, NULL, XML_PARSE_PEDANTIC | XML_PARSE_NONET), xmlFreeDoc};
@@ -2447,6 +2454,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
 
 }
 
+
 TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changeset][upload][db]" ) {
 
   // Upload rate limiter enabling
@@ -2596,6 +2604,175 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
       }
 
     }
+  }
+}
+
+
+TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_bbox_size_limiter", "[changeset][upload][db]" ) {
+
+  // Upload bbox size limiter enabling
+  auto test_settings = std::unique_ptr<
+  global_setting_enable_bbox_size_limiter_test_class >(
+      new global_setting_enable_bbox_size_limiter_test_class());
+  global_settings::set_configuration(std::move(test_settings));
+
+  const std::string bearertoken = "Bearer 4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8";
+  const std::string generator = "Test";
+
+  auto sel_factory = tdb.get_data_selection_factory();
+  auto upd_factory = tdb.get_data_update_factory();
+
+  null_rate_limiter limiter;
+  routes route;
+
+  SECTION("Initialize test data") {
+
+    tdb.run_sql(R"(
+             INSERT INTO users (id, email, pass_crypt, pass_salt, creation_time, display_name, data_public, status)
+             VALUES
+               (1, 'demo@example.com', 'xx', '', '2013-11-14T02:10:00Z', 'demo', true, 'confirmed');
+  
+            INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes)
+            VALUES
+              (1, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 0),
+              (3, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 0);
+  
+            SELECT setval('current_nodes_id_seq', 14000000000, false);
+
+            INSERT INTO oauth_applications (id, owner_type, owner_id, name, uid, secret, redirect_uri, scopes, confidential, created_at, updated_at) 
+             VALUES (3, 'User', 1, 'App 1', 'dHKmvGkmuoMjqhCNmTJkf-EcnA61Up34O1vOHwTSvU8', '965136b8fb8d00e2faa2faaaed99c0ec10225518d0c8d9fb1d2af701e87eb68c', 
+                'http://demo.localhost:3000', 'write_api read_gpx', false, '2021-04-12 17:53:30', '2021-04-12 17:53:30');
+
+            INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token) 
+              VALUES (67, 1, 3, '4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8', NULL, NULL, NULL, '2021-04-14 19:38:21', 'write_api', '');
+  
+            )"
+    );
+
+    // Test api_size_limit database function.
+    // Real database function is managed outside of CGImap
+
+    tdb.run_sql(R"(
+  
+          CREATE OR REPLACE FUNCTION api_size_limit(user_id bigint)
+            RETURNS bigint
+            AS $$
+          BEGIN
+            RETURN 5000000;
+          END;
+          $$ LANGUAGE plpgsql STABLE;
+  
+        )");
+  }
+
+  SECTION("Try to upload one way with two nodes, with very large bbox")
+  {
+    // set up request headers from test case
+    test_request req;
+    req.set_header("REQUEST_METHOD", "POST");
+    req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
+    req.set_header("HTTP_AUTHORIZATION", bearertoken);
+    req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+    req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+               <osmChange version="0.6" generator="iD">
+               <create>
+                   <node id='-25355'  lat='68.13898255618' lon='-105.8206640625' changeset="1" />
+                   <node id='-25357' lat='-34.30685345531' lon='80.8590234375' changeset="1" />
+                   <way id='-579' changeset="1">
+                     <nd ref='-25355' />
+                     <nd ref='-25357' />
+                   </way>
+               </create>
+               </osmChange>)" );
+
+    // execute the request
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
+
+    CAPTURE(req.body().str());
+    REQUIRE(req.response_status() == 413);
+  }
+
+  SECTION("Try to upload twice in same changeset, two nodes with very large bbox")
+  {
+    // set up request headers from test case
+    {
+      test_request req;
+      req.set_header("REQUEST_METHOD", "POST");
+      req.set_header("REQUEST_URI", "/api/0.6/changeset/3/upload");
+      req.set_header("HTTP_AUTHORIZATION", bearertoken);
+      req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+      req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+                 <osmChange version="0.6" generator="iD">
+                 <create>
+                     <node id='-25355'  lat='68.13898255618' lon='-105.8206640625' changeset="3" />
+                 </create>
+                 </osmChange>)" );
+
+      // execute the request
+      process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
+
+      CAPTURE(req.body().str());
+      REQUIRE(req.response_status() == 200);
+    }
+
+    {
+      test_request req;
+      req.set_header("REQUEST_METHOD", "POST");
+      req.set_header("REQUEST_URI", "/api/0.6/changeset/3/upload");
+      req.set_header("HTTP_AUTHORIZATION", bearertoken);
+      req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+      req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+                 <osmChange version="0.6" generator="iD">
+                 <create>
+                     <node id='-25357' lat='-34.30685345531' lon='80.8590234375' changeset="3" />
+                 </create>
+                 </osmChange>)" );
+
+      // execute the request
+      process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
+
+      CAPTURE(req.body().str());
+      REQUIRE(req.response_status() == 413);
+    }
+  }
+
+  SECTION("Try to upload one way with two nodes, with very small bbox")
+  {
+    // set up request headers from test case
+    test_request req;
+    req.set_header("REQUEST_METHOD", "POST");
+    req.set_header("REQUEST_URI", "/api/0.6/changeset/1/upload");
+    req.set_header("HTTP_AUTHORIZATION", bearertoken);
+    req.set_header("REMOTE_ADDR", "127.0.0.1");
+
+    req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
+               <osmChange version="0.6" generator="iD">
+               <create>
+                   <node id='-25360' lat='51.50723246769' lon='-0.12171328202' changeset="1" />
+                   <node id='-25361' lat='51.50719824397' lon='-0.12160197034' changeset="1" />
+                   <way id='-582' changeset="1">
+                      <nd ref='-25360' />
+                      <nd ref='-25361' />
+                   </way>
+               </create>
+               </osmChange>)" );
+
+    // execute the request
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
+
+    CAPTURE(req.body().str());
+    REQUIRE(req.response_status() == 200);
+
+    auto doc = getDocument(req.body().str());
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[1]/@old_id") == "-25360");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[2]/@old_id") == "-25361");
+    REQUIRE(getXPath(doc.get(), "/diffResult/way[1]/@old_id") == "-582");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[1]/@new_version") == "1");
+    REQUIRE(getXPath(doc.get(), "/diffResult/node[2]/@new_version") == "1");
+    REQUIRE(getXPath(doc.get(), "/diffResult/way[1]/@new_version") == "1");
   }
 }
 
