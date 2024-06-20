@@ -33,6 +33,7 @@ void global_settings_via_options::init_fallback_values(const global_settings_bas
   m_ratelimiter_maxdebt = def.get_ratelimiter_maxdebt(false);
   m_moderator_ratelimiter_maxdebt = def.get_ratelimiter_maxdebt(true);
   m_ratelimiter_upload = def.get_ratelimiter_upload();
+  m_bbox_size_limiter_upload = def.get_bbox_size_limiter_upload();
 }
 
 void global_settings_via_options::set_new_options(const po::variables_map &options) {
@@ -50,6 +51,7 @@ void global_settings_via_options::set_new_options(const po::variables_map &optio
   set_ratelimiter_ratelimit(options);
   set_ratelimiter_maxdebt(options);
   set_ratelimiter_upload(options);
+  set_bbox_size_limiter_upload(options);
 }
 
 void global_settings_via_options::set_payload_max_size(const po::variables_map &options)  {
@@ -185,6 +187,11 @@ void global_settings_via_options::set_ratelimiter_upload(const po::variables_map
   }
 }
 
+void global_settings_via_options::set_bbox_size_limiter_upload(const po::variables_map &options) {
+  if (options.count("bbox-size-limit-upload")) {
+    m_bbox_size_limiter_upload = options["bbox-size-limit-upload"].as<bool>();
+  }
+}
 
 bool global_settings_via_options::validate_timeout(const std::string &timeout) const {
   std::smatch sm;

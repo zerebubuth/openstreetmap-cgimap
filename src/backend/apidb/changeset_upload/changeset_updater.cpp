@@ -344,3 +344,8 @@ void ApiDB_Changeset_Updater::changeset_insert_cs ()
     changeset = r[0]["id"].as<osm_changeset_id_t> ();
   }
 }
+
+bbox_t ApiDB_Changeset_Updater::get_bbox() const
+{
+  return cs_bbox;
+}

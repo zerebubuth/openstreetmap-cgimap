@@ -43,6 +43,8 @@ public:
 
   uint32_t get_rate_limit(osm_user_id_t uid) override;
 
+  uint64_t get_bbox_size_limit(osm_user_id_t uid) override;
+
   /**
    * abstracts the creation of transactions for the
    * data updates.
