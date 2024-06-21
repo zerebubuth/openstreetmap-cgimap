@@ -141,6 +141,7 @@ void get_options(int argc, char **argv, po::variables_map &options) {
     ("basic_auth_support", po::value<bool>(), "enable HTTP basic authentication support")
     ("oauth_10_support", po::value<bool>(), "enable legacy OAuth 1.0 support")
     ("ratelimit-upload", po::value<bool>(), "enable rate limiting for changeset upload")
+    ("bbox-size-limit-upload", po::value<bool>(), "enable bbox size limit for changeset upload")
     ;
   // clang-format on
 

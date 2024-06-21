@@ -70,6 +70,26 @@ changeset_upload_responder::changeset_upload_responder(mime::type mt,
 
   changeset_updater->update_changeset(new_changes, handler.get_bbox());
 
+  if (global_settings::get_bbox_size_limiter_upload()) {
+
+    auto const cs_bbox = changeset_updater->get_bbox();
+
+    if (!(cs_bbox == bbox_t()))   // valid bbox?
+    {
+      auto const max_bbox_size = upd.get_bbox_size_limit(*user_id);
+
+      if (cs_bbox.linear_size() > max_bbox_size) {
+
+        logger::message(
+            fmt::format(
+                "Upload of {} changes by user {} in changeset {} blocked due to bbox size limit exceeded, max bbox size {}",
+                new_changes, *user_id, changeset, max_bbox_size));
+
+        throw http::payload_too_large("Changeset bounding box size limit exceeded.");
+      }
+    }
+  }
+
   upd.commit();
 }
 
