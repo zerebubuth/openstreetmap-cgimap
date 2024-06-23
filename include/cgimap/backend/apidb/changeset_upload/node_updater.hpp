@@ -20,11 +20,14 @@
 #include <memory>
 #include <set>
 
+struct RequestContext;
+
 
 class ApiDB_Node_Updater : public api06::Node_Updater {
 
 public:
   ApiDB_Node_Updater(Transaction_Manager &_m,
+                     const RequestContext& req_ctx,
                      api06::OSMChange_Tracking &ct);
 
   ~ApiDB_Node_Updater() override = default;
@@ -108,6 +111,7 @@ private:
   void delete_current_node_tags(const std::vector<osm_nwr_id_t> &ids);
 
   Transaction_Manager &m;
+  const RequestContext& req_ctx;
   api06::OSMChange_Tracking &ct;
 
   std::vector<node_t> create_nodes;

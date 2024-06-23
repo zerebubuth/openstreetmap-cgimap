@@ -24,6 +24,8 @@
 #include <memory>
 #include <vector>
 
+struct RequestContext;
+
 class data_update {
 public:
   data_update() = default;
@@ -37,16 +39,16 @@ public:
   data_update& operator=(data_update&&) = delete;
 
   virtual std::unique_ptr<api06::Changeset_Updater>
-  get_changeset_updater(osm_changeset_id_t _changeset, osm_user_id_t _uid) = 0;
+  get_changeset_updater(const RequestContext& ctx, osm_changeset_id_t _changeset) = 0;
 
   virtual std::unique_ptr<api06::Node_Updater>
-  get_node_updater(api06::OSMChange_Tracking &ct) = 0;
+  get_node_updater(const RequestContext& ctx, api06::OSMChange_Tracking &ct) = 0;
 
   virtual std::unique_ptr<api06::Way_Updater>
-  get_way_updater(api06::OSMChange_Tracking &ct) = 0;
+  get_way_updater(const RequestContext& ctx, api06::OSMChange_Tracking &ct) = 0;
 
   virtual std::unique_ptr<api06::Relation_Updater>
-  get_relation_updater(api06::OSMChange_Tracking &ct) = 0;
+  get_relation_updater(const RequestContext& ctx, api06::OSMChange_Tracking &ct) = 0;
 
   virtual void
   commit() = 0;

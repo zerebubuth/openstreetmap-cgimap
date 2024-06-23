@@ -18,6 +18,8 @@
 #include <pqxx/pqxx>
 #include <boost/program_options.hpp>
 
+struct RequestContext;
+
 class pgsql_update : public data_update {
 
 public:
@@ -26,16 +28,16 @@ public:
   ~pgsql_update() override = default;
 
   std::unique_ptr<api06::Changeset_Updater>
-  get_changeset_updater(osm_changeset_id_t _changeset, osm_user_id_t _uid) override;
+  get_changeset_updater(const RequestContext& ctx, osm_changeset_id_t _changeset) override;
 
   std::unique_ptr<api06::Node_Updater>
-  get_node_updater(api06::OSMChange_Tracking &ct) override;
+  get_node_updater(const RequestContext& ctx, api06::OSMChange_Tracking &ct) override;
 
   std::unique_ptr<api06::Way_Updater>
-  get_way_updater(api06::OSMChange_Tracking &ct) override;
+  get_way_updater(const RequestContext& ctx, api06::OSMChange_Tracking &ct) override;
 
   std::unique_ptr<api06::Relation_Updater>
-  get_relation_updater(api06::OSMChange_Tracking &ct) override;
+  get_relation_updater(const RequestContext& ctx, api06::OSMChange_Tracking &ct) override;
 
   void commit() override;
 

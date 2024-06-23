@@ -96,7 +96,7 @@ public:
   // Responder used to update the database
   virtual responder_ptr_t responder(data_update &, 
                                     const std::string & payload, 
-                                    std::optional<osm_user_id_t> user_id) const = 0;
+                                    const RequestContext& req_ctx) const = 0;
 
   // Optional responder to return XML response back to caller of the API method
   responder_ptr_t responder(data_selection &) const override = 0;

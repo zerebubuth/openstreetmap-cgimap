@@ -28,8 +28,10 @@
 
 
 ApiDB_Relation_Updater::ApiDB_Relation_Updater(Transaction_Manager &_m, 
+                                               const RequestContext& _req_ctx,
                                                api06::OSMChange_Tracking &ct)
   : m(_m),
+    req_ctx(_req_ctx),
     ct(ct) 
 {}
 
