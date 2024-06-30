@@ -27,6 +27,11 @@ public:
 
   ~Way() override = default;
 
+  void add_way_nodes(const std::vector<osm_nwr_signed_id_t>& way_nodes) {
+    for (auto const wn : way_nodes)
+      m_way_nodes.emplace_back(wn);
+  }
+
   void add_way_node(osm_nwr_signed_id_t waynode) {
     m_way_nodes.emplace_back(waynode);
   }
@@ -38,13 +43,13 @@ public:
     try {
       _waynode = std::stol(waynode);
     } catch (std::invalid_argument& e) {
-      throw xml_error("Way node is not numeric");
+      throw payload_error("Way node is not numeric");
     } catch (std::out_of_range& e) {
-      throw xml_error("Way node value is too large");
+      throw payload_error("Way node value is too large");
     }
 
     if (_waynode == 0) {
-      throw xml_error("Way node value may not be 0");
+      throw payload_error("Way node value may not be 0");
     }
 
     add_way_node(_waynode);
@@ -77,7 +82,12 @@ public:
     }
   }
 
-  std::string get_type_name() override { return "Way"; }
+  std::string get_type_name() const override { return "Way"; }
+
+  bool operator==(const Way &o) const {
+    return (OSMObject::operator==(o) &&
+            o.m_way_nodes == m_way_nodes);
+  }
 
 private:
   std::vector<osm_nwr_signed_id_t> m_way_nodes;

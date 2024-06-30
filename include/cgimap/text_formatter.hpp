@@ -34,6 +34,7 @@ public:
   void write_bounds(const bbox &bounds) override;
   void start_element_type(element_type type) override;
   void end_element_type(element_type type) override;
+  void start_diffresult() override;
   void start_action(action_type type) override;
   void end_action(action_type type) override;
   void error(const std::exception &e) override;

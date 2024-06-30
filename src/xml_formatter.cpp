@@ -52,18 +52,12 @@ void xml_formatter::end_element_type(element_type) {
   // ditto - nothing needed here for XML.
 }
 
+void xml_formatter::start_diffresult() {
+  // not needed in case of xml
+}
+
 void xml_formatter::start_action(action_type type) {
-  switch (type) {
-  case action_type::create:
-    writer->start("create");
-    break;
-  case action_type::modify:
-    writer->start("modify");
-    break;
-  case action_type::del:
-    writer->start("delete");
-    break;
-  }
+  writer->start(action_type_name(type));
 }
 
 void xml_formatter::end_action(action_type type) {

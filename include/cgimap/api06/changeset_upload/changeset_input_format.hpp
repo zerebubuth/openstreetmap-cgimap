@@ -60,7 +60,7 @@ namespace api06 {
 	  if (element == "osm")
 	    m_context = context::top;
 	  else
-	    throw xml_error{ "Unknown top-level element, expecting osm"  };
+	    throw payload_error{ "Unknown top-level element, expecting osm"  };
 
 	  break;
 
@@ -70,7 +70,7 @@ namespace api06 {
 	    changeset_element_found = true;
 	  }
 	  else
-	    throw xml_error{ "Unknown element, expecting changeset" };
+	    throw payload_error{ "Unknown element, expecting changeset" };
 	  break;
 
 	case context::in_changeset:
@@ -79,7 +79,7 @@ namespace api06 {
 	    add_tag(attrs);
 	  }
 	  else
-	    throw xml_error{ "Unknown element, expecting tag" };
+	    throw payload_error{ "Unknown element, expecting tag" };
 	  break;
 
 	case context::in_tag:
@@ -100,7 +100,7 @@ namespace api06 {
 	  assert(element == "osm");
 	  m_context = context::root;
 	  if (!changeset_element_found)
-	    throw xml_error{ "Cannot parse valid changeset from xml string. XML doesn't contain an osm/changeset element" };
+	    throw payload_error{ "Cannot parse valid changeset from xml string. XML doesn't contain an osm/changeset element" };
 	  break;
 	case context::in_changeset:
 	  assert(element == "changeset");
@@ -116,7 +116,7 @@ namespace api06 {
 
       try {
           throw;
-      } catch (const xml_error& e) {
+      } catch (const payload_error& e) {
         throw_with_context(e, location);
       }
     }
@@ -128,13 +128,13 @@ namespace api06 {
     void add_tag(const std::string &key, const std::string &value) {
 
       if (key.empty())
-	throw xml_error("Key may not be empty");
+	throw payload_error("Key may not be empty");
 
       if (unicode_strlen(key) > 255)
-	throw xml_error("Key has more than 255 unicode characters");
+	throw payload_error("Key has more than 255 unicode characters");
 
       if (unicode_strlen(value) > 255)
-	throw xml_error("Value has more than 255 unicode characters");
+	throw payload_error("Value has more than 255 unicode characters");
 
       m_tags[key] = value;
 
@@ -166,10 +166,10 @@ namespace api06 {
       });
 
       if (!k)
-	throw xml_error{"Mandatory field k missing in tag element"};
+	throw payload_error{"Mandatory field k missing in tag element"};
 
       if (!v)
-	throw xml_error{"Mandatory field v missing in tag element"};
+	throw payload_error{"Mandatory field v missing in tag element"};
 
       add_tag(*k, *v);
     }

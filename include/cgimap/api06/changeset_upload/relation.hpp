@@ -26,8 +26,8 @@ public:
   RelationMember() = default;
 
   RelationMember(const std::string &m_type, osm_nwr_signed_id_t m_ref, const std::string &m_role) :
-    m_role(m_role), 
-    m_ref(m_ref), 
+    m_role(m_role),
+    m_ref(m_ref),
     m_type(m_type) {}
 
   void set_type(const std::string &type) {
@@ -39,18 +39,25 @@ public:
     else if (boost::iequals(type, "Relation"))
       m_type = "Relation";
     else
-      throw xml_error(
+      throw payload_error(
           fmt::format("Invalid type {} in member relation", type));
   }
 
   void set_role(const std::string &role) {
 
     if (unicode_strlen(role) > 255) {
-      throw xml_error(
+      throw payload_error(
           "Relation Role has more than 255 unicode characters");
     }
 
     m_role = role;
+  }
+
+  void set_ref(int64_t ref) {
+    if (ref == 0) {
+      throw payload_error("Relation member 'ref' attribute may not be 0");
+    }
+    m_ref = ref;
   }
 
   void set_ref(const std::string &ref) {
@@ -60,14 +67,14 @@ public:
     try {
       _ref = std::stol(ref);
     } catch (std::invalid_argument &e) {
-      throw xml_error("Relation member 'ref' attribute is not numeric");
+      throw payload_error("Relation member 'ref' attribute is not numeric");
     } catch (std::out_of_range &e) {
-      throw xml_error(
+      throw payload_error(
           "Relation member 'ref' attribute value is too large");
     }
 
     if (_ref == 0) {
-      throw xml_error("Relation member 'ref' attribute may not be 0");
+      throw payload_error("Relation member 'ref' attribute may not be 0");
     }
 
     m_ref = _ref;
@@ -76,10 +83,10 @@ public:
   bool is_valid() const {
 
     if (!m_type)
-      throw xml_error("Missing 'type' attribute in Relation member");
+      throw payload_error("Missing 'type' attribute in Relation member");
 
     if (!m_ref)
-      throw xml_error("Missing 'ref' attribute in Relation member");
+      throw payload_error("Missing 'ref' attribute in Relation member");
 
     return (m_ref && m_type);
   }
@@ -89,6 +96,12 @@ public:
   std::string role() const { return m_role; }
 
   osm_nwr_signed_id_t ref() const { return *m_ref; }
+
+  bool operator==(const RelationMember &o) const {
+    return (o.m_role == m_role &&
+            o.m_ref == m_ref &&
+            o.m_type == m_type);
+  }
 
 private:
   std::string m_role;
@@ -102,9 +115,14 @@ public:
 
   ~Relation() override = default;
 
+  void add_members(std::vector<RelationMember>&& members) {
+    for (auto& mbr : members)
+      add_member(mbr);
+  }
+
   void add_member(RelationMember &member) {
     if (!member.is_valid())
-      throw xml_error(
+      throw payload_error(
           "Relation member does not include all mandatory fields");
     m_relation_member.emplace_back(member);
   }
@@ -113,7 +131,7 @@ public:
     return m_relation_member;
   }
 
-  std::string get_type_name() override { return "Relation"; }
+  std::string get_type_name() const override { return "Relation"; }
 
   bool is_valid(operation op) const {
 
@@ -134,6 +152,11 @@ public:
 
       return (is_valid());
     }
+  }
+
+  bool operator==(const Relation &o) const {
+    return (OSMObject::operator==(o) &&
+            o.m_relation_member == m_relation_member);
   }
 
 private:
