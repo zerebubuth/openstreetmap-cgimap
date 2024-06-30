@@ -74,7 +74,7 @@ void YajlParser::finish() {
   }
 }
 
-void YajlParser::checkDispatcherStack() {
+void YajlParser::checkDispatcherStack() const {
   if (_dispatcher->emptyParsersStack()) {
     return;
   }
@@ -82,7 +82,7 @@ void YajlParser::checkDispatcherStack() {
   throw ParsingError("Dispatcher parsers stack is not empty in the end");
 }
 
-void YajlParser::throwParsingError() {
+[[noreturn]] void YajlParser::throwParsingError() {
   std::string yajl_error;
 
   if (auto *yajl_error_ptr = yajl_get_error(_yajl_handle.get(), 1, _data, _len);
@@ -105,47 +105,47 @@ void YajlParser::throwParsingError() {
 }
 
 int YajlParser::yajlOnNull(void *ctx) {
-  return reinterpret_cast<YajlParser *>(ctx)->on(NullT{});
+  return static_cast<YajlParser *>(ctx)->on(NullT{});
 }
 
 int YajlParser::yajlOnBool(void *ctx, int value) {
-  return reinterpret_cast<YajlParser *>(ctx)->on(static_cast<bool>(value));
+  return static_cast<YajlParser *>(ctx)->on(static_cast<bool>(value));
 }
 
 // Disable google-runtime-int long long -> int64_t
 int YajlParser::yajlOnInt(void *ctx, long long value) {  // NOLINT
-  return reinterpret_cast<YajlParser *>(ctx)->on(static_cast<int64_t>(value));
+  return static_cast<YajlParser *>(ctx)->on(static_cast<int64_t>(value));
 }
 
 int YajlParser::yajlOnDouble(void *ctx, double value) {
-  return reinterpret_cast<YajlParser *>(ctx)->on(value);
+  return static_cast<YajlParser *>(ctx)->on(value);
 }
 
 int YajlParser::yajlOnString(void *ctx, const unsigned char *value,
                              size_t len) {
-  return reinterpret_cast<YajlParser *>(ctx)->on(
+  return static_cast<YajlParser *>(ctx)->on(
       std::string_view(reinterpret_cast<const char *>(value), len));
 }
 
 int YajlParser::yajlOnMapStart(void *ctx) {
-  return reinterpret_cast<YajlParser *>(ctx)->on(MapStartT{});
+  return static_cast<YajlParser *>(ctx)->on(MapStartT{});
 }
 
 int YajlParser::yajlOnMapKey(void *ctx, const unsigned char *value,
                              size_t len) {
-  return reinterpret_cast<YajlParser *>(ctx)->on(
+  return static_cast<YajlParser *>(ctx)->on(
       MapKeyT{std::string_view(reinterpret_cast<const char *>(value), len)});
 }
 
 int YajlParser::yajlOnMapEnd(void *ctx) {
-  return reinterpret_cast<YajlParser *>(ctx)->on(MapEndT{});
+  return static_cast<YajlParser *>(ctx)->on(MapEndT{});
 }
 
 int YajlParser::yajlOnArrayStart(void *ctx) {
-  return reinterpret_cast<YajlParser *>(ctx)->on(ArrayStartT{});
+  return static_cast<YajlParser *>(ctx)->on(ArrayStartT{});
 }
 
 int YajlParser::yajlOnArrayEnd(void *ctx) {
-  return reinterpret_cast<YajlParser *>(ctx)->on(ArrayEndT{});
+  return static_cast<YajlParser *>(ctx)->on(ArrayEndT{});
 }
 }  // namespace SJParser

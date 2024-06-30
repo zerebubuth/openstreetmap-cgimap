@@ -111,8 +111,8 @@ class YajlParser {
  private:
   void resetYajlHandle();
   void freeYajlHandle();
-  void checkDispatcherStack();
-  void throwParsingError();
+  void checkDispatcherStack() const;
+  [[noreturn]] void throwParsingError();
 
   template <typename TokenT> int on(TokenT token) noexcept;
 

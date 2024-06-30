@@ -47,7 +47,7 @@ void Dispatcher::popParser() {
   }
 }
 
-bool Dispatcher::emptyParsersStack() {
+bool Dispatcher::emptyParsersStack() const {
   return _parsers.empty();
 }
 

@@ -93,7 +93,7 @@ class KeyValueParser : public TokenParser {
     MemberParser(MemberParser &&other) noexcept = default;
     MemberParser &operator=(MemberParser &&other) noexcept = default;
 
-    MemberParser(Member<NameT, ParserT> &xs)
+    explicit MemberParser(Member<NameT, ParserT> &xs)
         : parser(std::forward<ParserT>(xs.parser)),
           name(std::move(xs.name)),
           optional(xs.optional),
@@ -129,7 +129,7 @@ class KeyValueParser : public TokenParser {
     void registerParser(ParserT &parser, NameT &name,
                         ParsersMapType &parsers_map);
 
-    void check_duplicate(bool inserted, NameT &name);
+    void check_duplicate(bool inserted, NameT &name) const;
 
     [[nodiscard]] auto to_member_parser_tuple(
         std::tuple<Member<NameT, ParserTs>...> &members) {
@@ -310,7 +310,7 @@ void KeyValueParser<NameT, ParserTs...>::MemberParsers::registerParser(
 
 template <typename NameT, typename... ParserTs>
 void KeyValueParser<NameT, ParserTs...>::MemberParsers::check_duplicate(
-    bool inserted, NameT &name) {
+    bool inserted, NameT &name) const {
   if (!inserted) {
     std::stringstream error;
     error << "Member " << name << " appears more than once";

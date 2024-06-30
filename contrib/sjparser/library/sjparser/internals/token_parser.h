@@ -69,8 +69,8 @@ class Dispatcher;
 class TokenParser {
  public:
   virtual void setDispatcher(Dispatcher *dispatcher) noexcept;
-  [[nodiscard]] inline bool isSet() const noexcept;
-  [[nodiscard]] inline bool isEmpty() const noexcept;
+  [[nodiscard]] bool isSet() const noexcept;
+  [[nodiscard]] bool isEmpty() const noexcept;
   virtual void reset();
   void endParsing();
   virtual void finish() = 0;
@@ -100,7 +100,7 @@ class TokenParser {
  protected:
   inline void checkSet() const;
   inline void unset() noexcept;
-  static inline void unexpectedToken(const std::string &type);
+  [[noreturn]] static inline void unexpectedToken(const std::string &type);
   inline void setNotEmpty() noexcept;
   [[nodiscard]] inline Dispatcher *dispatcher() noexcept;
 
@@ -112,11 +112,11 @@ class TokenParser {
 
 /****************************** Implementations *******************************/
 
-bool TokenParser::isSet() const noexcept {
+inline bool TokenParser::isSet() const noexcept {
   return _set;
 }
 
-bool TokenParser::isEmpty() const noexcept {
+inline bool TokenParser::isEmpty() const noexcept {
   return _empty;
 }
 
@@ -130,7 +130,7 @@ void TokenParser::unset() noexcept {
   _set = false;
 }
 
-void TokenParser::unexpectedToken(const std::string &type) {
+[[noreturn]] void TokenParser::unexpectedToken(const std::string &type) {
   throw std::runtime_error("Unexpected token " + type);
 }
 
