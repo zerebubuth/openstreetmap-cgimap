@@ -235,7 +235,7 @@ void SCustomObject<TypeT, ParserTs...>::finish() {
 
   try {
     typename Object<ParserTs...>::template MemberChecker<0, ParserTs...>(*this);
-  } catch (std::exception &e) {
+  } catch (std::exception &) {
     TokenParser::unset();
     throw;
   }

@@ -36,7 +36,7 @@ class Dispatcher {
   explicit Dispatcher(TokenParser *parser);
   void pushParser(TokenParser *parser);
   void popParser();
-  [[nodiscard]] bool emptyParsersStack();
+  [[nodiscard]] bool emptyParsersStack() const;
   void reset();
 
   template <typename TokenT> void on(TokenT value);
