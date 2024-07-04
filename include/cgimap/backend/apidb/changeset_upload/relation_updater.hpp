@@ -21,6 +21,8 @@
 #include <memory>
 #include <set>
 
+struct RequestContext;
+
 using RelationMemberList = std::vector<api06::RelationMember>;
 using TagList = std::map<std::string, std::string>;
 
@@ -28,6 +30,7 @@ class ApiDB_Relation_Updater : public api06::Relation_Updater {
 
 public:
   ApiDB_Relation_Updater(Transaction_Manager &_m,
+                         const RequestContext& _req_ctx,
                          api06::OSMChange_Tracking &ct);
 
   ~ApiDB_Relation_Updater() override = default;
@@ -175,6 +178,7 @@ private:
       const std::set<osm_nwr_id_t> &direct_relation_ids);
 
   Transaction_Manager &m;
+  const RequestContext& req_ctx;
   api06::OSMChange_Tracking &ct;
 
   std::vector<relation_t> create_relations;

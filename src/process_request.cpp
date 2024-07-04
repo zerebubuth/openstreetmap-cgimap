@@ -11,6 +11,7 @@
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
 #include "cgimap/request_helpers.hpp"
+#include "cgimap/request_context.hpp"
 #include "cgimap/choose_formatter.hpp"
 #include "cgimap/output_formatter.hpp"
 #include "cgimap/output_writer.hpp"
@@ -241,7 +242,7 @@ std::size_t generate_response(request &req, responder &responder, const string &
  * process a GET request.
  */
 std::tuple<string, size_t>
-process_get_request(request &req, const handler& handler,
+process_get_request(RequestContext& req_ctx, const handler& handler,
                     data_selection& selection,
                     const string &ip, const string &generator) {
   // request start logging
@@ -252,7 +253,7 @@ process_get_request(request &req, const handler& handler,
   responder_ptr_t responder = handler.responder(selection);
 
   // Generate full XML/JSON/text response message for previously collected object ids
-  std::size_t bytes_written = generate_response(req, *responder, generator);
+  std::size_t bytes_written = generate_response(req_ctx.req, *responder, generator);
 
   return {request_name, bytes_written};
 }
@@ -261,11 +262,12 @@ process_get_request(request &req, const handler& handler,
  * process a POST/PUT request.
  */
 std::tuple<string, size_t>
-process_post_put_request(request &req, const handler& handler,
-                    const data_selection::factory& factory,
-                    data_update::factory& update_factory,
-                    std::optional<osm_user_id_t> user_id,
-                    const string &ip, const string &generator) {
+process_post_put_request(RequestContext& req_ctx, 
+                         const handler& handler,
+                         const data_selection::factory& factory,
+                         data_update::factory& update_factory,
+                         const string &ip, 
+                         const string &generator) {
 
   std::size_t bytes_written = 0;
 
@@ -278,19 +280,19 @@ process_post_put_request(request &req, const handler& handler,
 
     // Process request, perform database update
     {
-      const auto payload = req.get_payload();
+      const auto payload = req_ctx.req.get_payload();
       auto rw_transaction = update_factory.get_default_transaction();
       auto data_update = update_factory.make_data_update(*rw_transaction);
       check_db_readonly_mode(*data_update);
 
       // Executing the responder constructor parses the payload, performs db CRUD operations
       // and eventually calls db commit(), in case there are no issues with the data.
-      auto responder = pe_handler.responder(*data_update, payload, user_id);
+      auto responder = pe_handler.responder(*data_update, payload, req_ctx);
 
       // does the responder instance carry all the data which is needed to construct a response?
       if (!pe_handler.requires_selection_after_update())
       {
-        bytes_written = generate_response(req, *responder, generator);
+        bytes_written = generate_response(req_ctx.req, *responder, generator);
         return {request_name, bytes_written};
       }
     }
@@ -309,7 +311,7 @@ process_post_put_request(request &req, const handler& handler,
     // create a data selection for the request
     auto data_selection = factory.make_selection(*read_only_transaction);
     auto sel_responder = pe_handler.responder(*data_selection);
-    bytes_written = generate_response(req, *sel_responder, generator);
+    bytes_written = generate_response(req_ctx.req, *sel_responder, generator);
 
   } catch(std::bad_cast&) {
     // This may not happen, see static_assert in routes.cpp
@@ -324,7 +326,7 @@ process_post_put_request(request &req, const handler& handler,
  * process a HEAD request.
  */
 std::tuple<string, size_t>
-process_head_request(request &req, const handler& handler,
+process_head_request(RequestContext& req_ctx, const handler& handler,
                      data_selection& selection,
                      const string &ip) {
   // request start logging
@@ -341,21 +343,21 @@ process_head_request(request &req, const handler& handler,
   responder_ptr_t responder = handler.responder(selection);
 
   // get encoding to use
-  auto encoding = get_encoding(req);
+  auto encoding = get_encoding(req_ctx.req);
 
   // figure out best mime type
-  const mime::type best_mime_type = choose_best_mime_type(req, *responder);
+  const mime::type best_mime_type = choose_best_mime_type(req_ctx.req, *responder);
 
   // TODO: use handler/responder to setup response headers.
   // write the response header
-  req.status(200)
+  req_ctx.req.status(200)
      .add_header("Content-Type", fmt::format("{}; charset=utf-8",
                                   mime::to_string(best_mime_type)))
      .add_header("Content-Encoding", encoding->name())
      .add_header("Cache-Control", "no-cache");
 
   // ensure the request is finished
-  req.finish();
+  req_ctx.req.finish();
 
   return {request_name, 0};
 }
@@ -364,31 +366,31 @@ process_head_request(request &req, const handler& handler,
  * process an OPTIONS request.
  */
 std::tuple<string, size_t> process_options_request(
-  request &req, const handler& handler) {
+  RequestContext& req_ctx, const handler& handler) {
 
   static const string request_name = "OPTIONS";
-  const char *origin = req.get_param("HTTP_ORIGIN");
-  const char *method = req.get_param("HTTP_ACCESS_CONTROL_REQUEST_METHOD");
+  const char *origin = req_ctx.req.get_param("HTTP_ORIGIN");
+  const char *method = req_ctx.req.get_param("HTTP_ACCESS_CONTROL_REQUEST_METHOD");
 
   // NOTE: we don't echo back the method - the handler already lists all
   // the methods it understands.
   if (origin && method) {
 
     // write the response
-    req.status(200)
+    req_ctx.req.status(200)
        .add_header("Content-Type", "text/plain");
 
     // if extra headers were requested, then reply that we allow them too.
-    const char *headers = req.get_param("HTTP_ACCESS_CONTROL_REQUEST_HEADERS");
+    const char *headers = req_ctx.req.get_param("HTTP_ACCESS_CONTROL_REQUEST_HEADERS");
     if (headers) {
-      req.add_header("Access-Control-Allow-Headers", std::string(headers));
+      req_ctx.req.add_header("Access-Control-Allow-Headers", std::string(headers));
     }
 
     // ensure the request is finished
-    req.finish();
+    req_ctx.req.finish();
 
   } else {
-    process_not_allowed(req, handler);
+    process_not_allowed(req_ctx.req, handler);
   }
   return std::make_tuple(request_name, 0);
 }
@@ -422,7 +424,7 @@ std::optional<osm_user_id_t> determine_user_id (const request& req,
 			        bool& allow_api_write)
 {
   // Try to authenticate user via OAuth2 Bearer Token
-  std::optional<osm_user_id_t>  user_id = oauth2::validate_bearer_token (req, selection, allow_api_write);
+  std::optional<osm_user_id_t>  user_id = oauth2::validate_bearer_token(req, selection, allow_api_write);
 
   return user_id;
 }
@@ -438,7 +440,7 @@ void process_request(request &req, rate_limiter &limiter,
                      data_update::factory* update_factory) {
   try {
 
-
+    RequestContext req_ctx{req};
 
     // get the client IP address
     const std::string ip = fcgi_get_env(req, "REMOTE_ADDR");
@@ -462,7 +464,6 @@ void process_request(request &req, rate_limiter &limiter,
 
     // ------
 
-    std::set<osm_user_role_t> user_roles;
 
     bool allow_api_write = true;
 
@@ -471,7 +472,7 @@ void process_request(request &req, rate_limiter &limiter,
     // create a data selection for the request
     auto selection = factory.make_selection(*default_transaction);
 
-    std::optional<osm_user_id_t> user_id = determine_user_id (req, *selection, allow_api_write);
+    std::optional<osm_user_id_t> user_id = determine_user_id(req, *selection, allow_api_write);
 
     // Initially assume IP based client key
     string client_key = addr_prefix + ip;
@@ -480,10 +481,14 @@ void process_request(request &req, rate_limiter &limiter,
     // set the client key and user roles accordingly
     if (user_id) {
         client_key = (fmt::format("{}{}", user_prefix, (*user_id)));
-        user_roles = selection->get_roles_for_user(*user_id);
+
+        // C++20: switch to designated initializer for readability
+        req_ctx.user = UserInfo{ *user_id, 
+                                 selection->get_roles_for_user(*user_id), 
+                                 allow_api_write };
     }
 
-    auto is_moderator = user_roles.count(osm_user_role_t::moderator) > 0;
+    auto is_moderator = req_ctx.user && (*req_ctx.user).has_role(osm_user_role_t::moderator);
 
     bool exceeded_limit;
     int retry_seconds;
@@ -495,6 +500,7 @@ void process_request(request &req, rate_limiter &limiter,
     }
 
     auto start_time = std::chrono::high_resolution_clock::now();
+    req_ctx.start_time = start_time;
 
     if (is_moderator && show_redactions_requested(req)) {
       selection->set_redactions_visible(true);
@@ -507,33 +513,34 @@ void process_request(request &req, rate_limiter &limiter,
     // process request
     switch (method) {
 
-      case http::method::GET:
-	std::tie(request_name, bytes_written) = process_get_request(req, *handler, *selection, ip, generator);
-	break;
+    case http::method::GET:
+      std::tie(request_name, bytes_written) =
+          process_get_request(req_ctx, *handler, *selection, ip, generator);
+      break;
 
-      case http::method::HEAD:
-	std::tie(request_name, bytes_written) = process_head_request(req, *handler, *selection, ip);
-	break;
+    case http::method::HEAD:
+      std::tie(request_name, bytes_written) =
+          process_head_request(req_ctx, *handler, *selection, ip);
+      break;
 
-      case http::method::POST:
-      case http::method::PUT:
-	{
-	  validate_user_db_update_permission(user_id, *selection, allow_api_write);
+    case http::method::POST:
+    case http::method::PUT: {
+      validate_user_db_update_permission(user_id, *selection, allow_api_write);
 
-	  if (update_factory == nullptr)
-	    throw http::bad_request("Backend does not support given HTTP method");
+      if (update_factory == nullptr)
+        throw http::bad_request("Backend does not support given HTTP method");
 
-	  std::tie(request_name, bytes_written) =
-	      process_post_put_request(req, *handler, factory, *update_factory, user_id, ip, generator);
-	}
-	break;
+      std::tie(request_name, bytes_written) = process_post_put_request(
+          req_ctx, *handler, factory, *update_factory, ip, generator);
+    } break;
 
-      case http::method::OPTIONS:
-	std::tie(request_name, bytes_written) = process_options_request(req, *handler);
-	break;
+    case http::method::OPTIONS:
+      std::tie(request_name, bytes_written) =
+          process_options_request(req_ctx, *handler);
+      break;
 
-      default:
-	process_not_allowed(req, *handler);
+    default:
+      process_not_allowed(req_ctx.req, *handler);
     }
 
     // update the rate limiter, if anything was written
@@ -547,7 +554,7 @@ void process_request(request &req, rate_limiter &limiter,
     auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
     logger::message(fmt::format("Completed request for {} from {} in {:d} ms returning {:d} bytes",
                     request_name, ip,
-		    delta,
+                    delta,
                     bytes_written));
 
   } catch (const http::not_found &e) {

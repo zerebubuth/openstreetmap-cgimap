@@ -17,12 +17,14 @@
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 #include "cgimap/backend/apidb/transaction_manager.hpp"
 
+struct RequestContext;
+
 class ApiDB_Changeset_Updater : public api06::Changeset_Updater {
 
 public:
   ApiDB_Changeset_Updater(Transaction_Manager &_m,
-                          osm_changeset_id_t _changeset, 
-                          osm_user_id_t _uid);
+                          const RequestContext& _req_ctx, 
+                          osm_changeset_id_t _changeset);
 
   ~ApiDB_Changeset_Updater() override = default;
 
@@ -48,9 +50,9 @@ private:
   void changeset_insert_cs ();
 
   Transaction_Manager &m;
+  const RequestContext& req_ctx;
   uint32_t cs_num_changes{0};
   osm_changeset_id_t changeset;
-  osm_user_id_t uid;
   bbox_t cs_bbox{};
 };
 
