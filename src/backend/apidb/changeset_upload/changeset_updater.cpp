@@ -152,7 +152,7 @@ ApiDB_Changeset_Updater::changeset_update_users_cs_count ()
            SET "changesets_count" = COALESCE("changesets_count", 0) + 1 
 	   WHERE "id" = $1
      )");
-    pqxx::result r = m.exec_prepared ("update_users", (*req_ctx.user).id);
+    pqxx::result r = m.exec_prepared ("update_users", req_ctx.user->id);
     if (r.affected_rows () != 1)
       throw http::server_error (
 	  "Cannot create changeset - update changesets_count");
@@ -192,7 +192,7 @@ void ApiDB_Changeset_Updater::api_close_changeset()
        SET closed_at = now() at time zone 'utc'
            WHERE id = $1 AND user_id = $2 )");
 
-  auto r = m.exec_prepared("changeset_close", changeset, (*req_ctx.user).id);
+  auto r = m.exec_prepared("changeset_close", changeset, req_ctx.user->id);
 
   if (r.affected_rows() != 1)
     throw http::server_error("Cannot close changeset");
@@ -219,7 +219,7 @@ void ApiDB_Changeset_Updater::lock_cs(bool& is_closed, std::string& closed_at, s
 	  FOR UPDATE 
      )");
 
-  auto r = m.exec_prepared("changeset_current_lock", changeset, (*req_ctx.user).id);
+  auto r = m.exec_prepared("changeset_current_lock", changeset, req_ctx.user->id);
   if (r.affected_rows () != 1)
     throw http::conflict ("The user doesn't own that changeset");
 
@@ -250,7 +250,7 @@ void ApiDB_Changeset_Updater::check_user_owns_changeset()
   if (r.affected_rows () != 1)
     throw http::not_found ("");
 
-  if (r[0]["user_id"].as<osm_user_id_t> () != (*req_ctx.user).id)
+  if (r[0]["user_id"].as<osm_user_id_t> () != req_ctx.user->id)
     throw http::conflict ("The user doesn't own that changeset");
 
 }
@@ -265,7 +265,7 @@ void ApiDB_Changeset_Updater::changeset_insert_subscriber ()
         INSERT INTO "changesets_subscribers" ("subscriber_id", "changeset_id") VALUES ($1, $2)
      )");
 
-    pqxx::result r = m.exec_prepared ("insert_changeset_subscribers", (*req_ctx.user).id,
+    pqxx::result r = m.exec_prepared ("insert_changeset_subscribers", req_ctx.user->id,
 				      changeset);
     if (r.affected_rows () != 1)
       throw http::server_error (
@@ -343,7 +343,7 @@ void ApiDB_Changeset_Updater::changeset_insert_cs ()
               RETURNING id 
    )");
 
-    pqxx::result r = m.exec_prepared ("create_changeset", (*req_ctx.user).id, global_settings::get_changeset_timeout_idle());
+    pqxx::result r = m.exec_prepared ("create_changeset", req_ctx.user->id, global_settings::get_changeset_timeout_idle());
     if (r.affected_rows () != 1)
       throw http::server_error ("Cannot create changeset");
 

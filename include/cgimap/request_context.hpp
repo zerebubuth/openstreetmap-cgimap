@@ -23,15 +23,15 @@ struct UserInfo
     osm_user_id_t id = {};
     std::set<osm_user_role_t> user_roles = {};
     bool allow_api_write = false;
-
     bool has_role(osm_user_role_t role) const { return user_roles.count(role) > 0; }
 };
 
 struct RequestContext
 {
     request& req;
-    std::chrono::system_clock::time_point start_time = {};
     std::optional<UserInfo> user = {};
+
+    bool is_moderator() const { return user && user->has_role(osm_user_role_t::moderator); }
 };
 
 #endif /* REQUEST_CONTEXT_HPP */

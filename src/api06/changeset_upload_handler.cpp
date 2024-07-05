@@ -65,13 +65,13 @@ changeset_upload_responder::changeset_upload_responder(mime::type mt,
 
   if (global_settings::get_ratelimiter_upload()) {
 
-    auto max_changes = upd.get_rate_limit((*req_ctx.user).id);
+    auto max_changes = upd.get_rate_limit(req_ctx.user->id);
     if (new_changes > max_changes)
     {
       logger::message(
           fmt::format(
               "Upload of {} changes by user {} in changeset {} blocked due to rate limiting, max. {} changes allowed",
-              new_changes, (*req_ctx.user).id, changeset, max_changes));
+              new_changes, req_ctx.user->id, changeset, max_changes));
       throw http::too_many_requests("Upload has been blocked due to rate limiting. Please try again later.");
     }
   }
@@ -84,14 +84,14 @@ changeset_upload_responder::changeset_upload_responder(mime::type mt,
 
     if (!(cs_bbox == bbox_t()))   // valid bbox?
     {
-      auto const max_bbox_size = upd.get_bbox_size_limit((*req_ctx.user).id);
+      auto const max_bbox_size = upd.get_bbox_size_limit(req_ctx.user->id);
 
       if (cs_bbox.linear_size() > max_bbox_size) {
 
         logger::message(
             fmt::format(
                 "Upload of {} changes by user {} in changeset {} blocked due to bbox size limit exceeded, max bbox size {}",
-                new_changes, (*req_ctx.user).id, changeset, max_bbox_size));
+                new_changes, req_ctx.user->id, changeset, max_bbox_size));
 
         throw http::payload_too_large("Changeset bounding box size limit exceeded.");
       }

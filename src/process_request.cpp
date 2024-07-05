@@ -27,37 +27,29 @@
 #include <fmt/core.h>
 
 
-
-using std::runtime_error;
-using std::string;
-
-
-namespace al = boost::algorithm;
-namespace po = boost::program_options;
-
 namespace {
 
 void validate_user_db_update_permission (
-    const std::optional<osm_user_id_t>& user_id,
-    data_selection& selection, bool allow_api_write)
+    const RequestContext& req_ctx,
+    data_selection& selection)
 {
-  if (!user_id)
+  if (!req_ctx.user)
     throw http::unauthorized ("User is not authorized");
 
-  if (selection.supports_user_details ())
+  if (selection.supports_user_details())
   {
-    if (selection.is_user_blocked (*user_id))
+    if (selection.is_user_blocked (req_ctx.user->id))
       throw http::forbidden (
 	  "Your access to the API has been blocked. Please log-in to the web interface to find out more.");
 
     // User status has to be either active or confirmed, otherwise the request
     // to change the database will be rejected
-    if (!selection.is_user_active(*user_id))
+    if (!selection.is_user_active(req_ctx.user->id))
       throw http::forbidden (
           "You have not permitted the application access to this facility");
   }
 
-  if (!allow_api_write)
+  if (!req_ctx.user->allow_api_write)
     throw http::unauthorized ("You have not granted the modify map permission");
 }
 
@@ -130,17 +122,12 @@ void respond_error(const http::exception &e, request &r) {
 
   const char *error_format = r.get_param("HTTP_X_ERROR_FORMAT");
 
-  if (error_format && al::iequals(error_format, "xml")) {
+  if (error_format && boost::algorithm::iequals(error_format, "xml")) {
     r.status(200)
      .add_header("Content-Type", "application/xml; charset=utf-8");
 
-    std::ostringstream ostr;
-    ostr << "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\r\n"
-         << "<osmError>\r\n"
-         << "<status>" << e.code() << " " << e.header() << "</status>\r\n"
-         << "<message>" << e.what() << "</message>\r\n"
-         << "</osmError>\r\n";
-    r.put(ostr.str());
+    r.put(fmt::format("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\r\n" \
+        "<osmError>\r\n<status>{} {}</status>\r\n<message>{}</message>\r\n</osmError>\r\n", e.code(), e.header(), e.what()));
 
   } else {
     std::string message(e.what());
@@ -189,7 +176,7 @@ void process_not_allowed(request &req, const http::method_not_allowed& e) {
      .finish();
 }
 
-std::size_t generate_response(request &req, responder &responder, const string &generator)
+std::size_t generate_response(request &req, responder &responder, const std::string &generator)
 {
   // get encoding to use
   auto encoding = get_encoding(req);
@@ -241,10 +228,10 @@ std::size_t generate_response(request &req, responder &responder, const string &
 /**
  * process a GET request.
  */
-std::tuple<string, size_t>
-process_get_request(RequestContext& req_ctx, const handler& handler,
+std::tuple<std::string, size_t>
+process_get_request(request& req, const handler& handler,
                     data_selection& selection,
-                    const string &ip, const string &generator) {
+                    const std::string &ip, const std::string &generator) {
   // request start logging
   const std::string request_name = handler.log_name();
   logger::message(fmt::format("Started request for {} from {}", request_name, ip));
@@ -253,7 +240,7 @@ process_get_request(RequestContext& req_ctx, const handler& handler,
   responder_ptr_t responder = handler.responder(selection);
 
   // Generate full XML/JSON/text response message for previously collected object ids
-  std::size_t bytes_written = generate_response(req_ctx.req, *responder, generator);
+  std::size_t bytes_written = generate_response(req, *responder, generator);
 
   return {request_name, bytes_written};
 }
@@ -261,13 +248,13 @@ process_get_request(RequestContext& req_ctx, const handler& handler,
 /**
  * process a POST/PUT request.
  */
-std::tuple<string, size_t>
+std::tuple<std::string, size_t>
 process_post_put_request(RequestContext& req_ctx, 
                          const handler& handler,
                          const data_selection::factory& factory,
                          data_update::factory& update_factory,
-                         const string &ip, 
-                         const string &generator) {
+                         const std::string &ip,
+                         const std::string &generator) {
 
   std::size_t bytes_written = 0;
 
@@ -325,10 +312,10 @@ process_post_put_request(RequestContext& req_ctx,
 /**
  * process a HEAD request.
  */
-std::tuple<string, size_t>
-process_head_request(RequestContext& req_ctx, const handler& handler,
+std::tuple<std::string, size_t>
+process_head_request(request& req, const handler& handler,
                      data_selection& selection,
-                     const string &ip) {
+                     const std::string &ip) {
   // request start logging
   const std::string request_name = handler.log_name();
   logger::message(fmt::format("Started HEAD request for {} from {}", request_name, ip));
@@ -343,21 +330,21 @@ process_head_request(RequestContext& req_ctx, const handler& handler,
   responder_ptr_t responder = handler.responder(selection);
 
   // get encoding to use
-  auto encoding = get_encoding(req_ctx.req);
+  auto encoding = get_encoding(req);
 
   // figure out best mime type
-  const mime::type best_mime_type = choose_best_mime_type(req_ctx.req, *responder);
+  const mime::type best_mime_type = choose_best_mime_type(req, *responder);
 
   // TODO: use handler/responder to setup response headers.
   // write the response header
-  req_ctx.req.status(200)
+  req.status(200)
      .add_header("Content-Type", fmt::format("{}; charset=utf-8",
                                   mime::to_string(best_mime_type)))
      .add_header("Content-Encoding", encoding->name())
      .add_header("Cache-Control", "no-cache");
 
   // ensure the request is finished
-  req_ctx.req.finish();
+  req.finish();
 
   return {request_name, 0};
 }
@@ -365,43 +352,38 @@ process_head_request(RequestContext& req_ctx, const handler& handler,
 /**
  * process an OPTIONS request.
  */
-std::tuple<string, size_t> process_options_request(
-  RequestContext& req_ctx, const handler& handler) {
+std::tuple<std::string, size_t> process_options_request(
+    request& req, const handler& handler) {
 
-  static const string request_name = "OPTIONS";
-  const char *origin = req_ctx.req.get_param("HTTP_ORIGIN");
-  const char *method = req_ctx.req.get_param("HTTP_ACCESS_CONTROL_REQUEST_METHOD");
+  static const std::string request_name = "OPTIONS";
+  const char *origin = req.get_param("HTTP_ORIGIN");
+  const char *method = req.get_param("HTTP_ACCESS_CONTROL_REQUEST_METHOD");
 
   // NOTE: we don't echo back the method - the handler already lists all
   // the methods it understands.
   if (origin && method) {
 
     // write the response
-    req_ctx.req.status(200)
+    req.status(200)
        .add_header("Content-Type", "text/plain");
 
     // if extra headers were requested, then reply that we allow them too.
-    const char *headers = req_ctx.req.get_param("HTTP_ACCESS_CONTROL_REQUEST_HEADERS");
+    const char *headers = req.get_param("HTTP_ACCESS_CONTROL_REQUEST_HEADERS");
     if (headers) {
-      req_ctx.req.add_header("Access-Control-Allow-Headers", std::string(headers));
+      req.add_header("Access-Control-Allow-Headers", std::string(headers));
     }
 
     // ensure the request is finished
-    req_ctx.req.finish();
+    req.finish();
 
   } else {
-    process_not_allowed(req_ctx.req, handler);
+    process_not_allowed(req, handler);
   }
-  return std::make_tuple(request_name, 0);
+  return {request_name, 0};
 }
 
 const std::string addr_prefix("addr:");
 const std::string user_prefix("user:");
-
-struct is_copacetic  {
-  template <typename T>
-  bool operator()(const T &) const { return false; }
-};
 
 
 // look in the request get parameters to see if the user requested that
@@ -419,14 +401,14 @@ bool show_redactions_requested(const request &req) {
 
 
 // Determine user id and allow_api_write flag based on OAuth header
-std::optional<osm_user_id_t> determine_user_id (const request& req,
-			        data_selection& selection,
-			        bool& allow_api_write)
+std::pair<std::optional<osm_user_id_t>, bool> determine_user_id(const request& req, data_selection& selection)
 {
-  // Try to authenticate user via OAuth2 Bearer Token
-  std::optional<osm_user_id_t>  user_id = oauth2::validate_bearer_token(req, selection, allow_api_write);
+  bool allow_api_write = true;
 
-  return user_id;
+  // Try to authenticate user via OAuth2 Bearer Token
+  auto user_id = oauth2::validate_bearer_token(req, selection, allow_api_write);
+
+  return {user_id, allow_api_write};
 }
 
 } // anonymous namespace
@@ -435,7 +417,7 @@ std::optional<osm_user_id_t> determine_user_id (const request& req,
  * process a single request.
  */
 void process_request(request &req, rate_limiter &limiter,
-                     const string &generator, const routes &route,
+                     const std::string &generator, const routes &route,
                      data_selection::factory& factory,
                      data_update::factory* update_factory) {
   try {
@@ -443,13 +425,13 @@ void process_request(request &req, rate_limiter &limiter,
     RequestContext req_ctx{req};
 
     // get the client IP address
-    const std::string ip = fcgi_get_env(req, "REMOTE_ADDR");
+    const auto ip = fcgi_get_env(req, "REMOTE_ADDR");
 
     // fetch and parse the request method
-    std::optional<http::method> maybe_method = http::parse_method(fcgi_get_env(req, "REQUEST_METHOD"));
+    const auto maybe_method = http::parse_method(fcgi_get_env(req, "REQUEST_METHOD"));
 
     // figure how to handle the request
-    handler_ptr_t handler = route(req);
+    auto handler = route(req);
 
     // if handler doesn't accept this method, then return method not
     // allowed.
@@ -464,21 +446,17 @@ void process_request(request &req, rate_limiter &limiter,
 
     // ------
 
-
-    bool allow_api_write = true;
-
     auto default_transaction = factory.get_default_transaction();
 
     // create a data selection for the request
     auto selection = factory.make_selection(*default_transaction);
 
-    std::optional<osm_user_id_t> user_id = determine_user_id(req, *selection, allow_api_write);
+    const auto [user_id, allow_api_write] = determine_user_id(req, *selection);
 
     // Initially assume IP based client key
-    string client_key = addr_prefix + ip;
+    std::string client_key = addr_prefix + ip;
 
-    // If user has been authenticated either via Basic Auth or OAuth,
-    // set the client key and user roles accordingly
+    // If user has been authenticated via OAuth 2, set the client key and user roles accordingly
     if (user_id) {
         client_key = (fmt::format("{}{}", user_prefix, (*user_id)));
 
@@ -488,26 +466,23 @@ void process_request(request &req, rate_limiter &limiter,
                                  allow_api_write };
     }
 
-    auto is_moderator = req_ctx.user && (*req_ctx.user).has_role(osm_user_role_t::moderator);
+    const auto is_moderator = req_ctx.is_moderator();
 
-    bool exceeded_limit;
-    int retry_seconds;
-    std::tie(exceeded_limit, retry_seconds) = limiter.check(client_key, is_moderator);
     // check whether the client is being rate limited
-    if (exceeded_limit) {
+    if (auto [exceeded_limit, retry_seconds] = limiter.check(client_key, is_moderator);
+        exceeded_limit) {
       logger::message(fmt::format("Rate limiter rejected request from {}", client_key));
       throw http::bandwidth_limit_exceeded(retry_seconds);
     }
 
-    auto start_time = std::chrono::high_resolution_clock::now();
-    req_ctx.start_time = start_time;
+    const auto start_time = std::chrono::high_resolution_clock::now();
 
     if (is_moderator && show_redactions_requested(req)) {
       selection->set_redactions_visible(true);
     }
 
     // data returned from request methods
-    string request_name;
+    std::string request_name;
     size_t bytes_written = 0;
 
     // process request
@@ -515,17 +490,17 @@ void process_request(request &req, rate_limiter &limiter,
 
     case http::method::GET:
       std::tie(request_name, bytes_written) =
-          process_get_request(req_ctx, *handler, *selection, ip, generator);
+          process_get_request(req, *handler, *selection, ip, generator);
       break;
 
     case http::method::HEAD:
       std::tie(request_name, bytes_written) =
-          process_head_request(req_ctx, *handler, *selection, ip);
+          process_head_request(req, *handler, *selection, ip);
       break;
 
     case http::method::POST:
     case http::method::PUT: {
-      validate_user_db_update_permission(user_id, *selection, allow_api_write);
+      validate_user_db_update_permission(req_ctx, *selection);
 
       if (update_factory == nullptr)
         throw http::bad_request("Backend does not support given HTTP method");
@@ -536,11 +511,11 @@ void process_request(request &req, rate_limiter &limiter,
 
     case http::method::OPTIONS:
       std::tie(request_name, bytes_written) =
-          process_options_request(req_ctx, *handler);
+          process_options_request(req, *handler);
       break;
 
     default:
-      process_not_allowed(req_ctx.req, *handler);
+      process_not_allowed(req, *handler);
     }
 
     // update the rate limiter, if anything was written
@@ -550,8 +525,8 @@ void process_request(request &req, rate_limiter &limiter,
 
     // log the completion time (note: this comes last to avoid
     // logging twice when an error is thrown.)
-    auto end_time = std::chrono::high_resolution_clock::now();;
-    auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    const auto end_time = std::chrono::high_resolution_clock::now();
+    const auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
     logger::message(fmt::format("Completed request for {} from {} in {:d} ms returning {:d} bytes",
                     request_name, ip,
                     delta,
