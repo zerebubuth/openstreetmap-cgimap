@@ -168,7 +168,7 @@ int fcgi_request::accept_r() {
 
   // swap out the output buffer for a new one referencing the new
   // request.
-  m_buffer.reset(new fcgi_buffer(m_impl->req));
+  m_buffer = std::make_unique<fcgi_buffer>(m_impl->req);
 
   return status;
 }
