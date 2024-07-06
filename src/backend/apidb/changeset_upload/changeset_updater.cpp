@@ -279,7 +279,6 @@ void ApiDB_Changeset_Updater::changeset_insert_tags (
   if (tags.empty())
     return;
 
-
   m.prepare (
       "changeset_insert_tags",
       R"(
@@ -299,13 +298,13 @@ void ApiDB_Changeset_Updater::changeset_insert_tags (
   std::vector<std::string> vs;
   unsigned total_tags = 0;
 
-  for (const auto& tag : tags)
-    {
-      cs.emplace_back (changeset);
-      ks.emplace_back (escape (tag.first));
-      vs.emplace_back (escape (tag.second));
+  for (const auto& [key, value] : tags)
+  {
+      cs.emplace_back(changeset);
+      ks.emplace_back(escape(key));
+      vs.emplace_back(escape(value));
       ++total_tags;
-    }
+  }
 
   pqxx::result r = m.exec_prepared ("changeset_insert_tags", cs, ks, vs);
 

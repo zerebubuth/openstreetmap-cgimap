@@ -46,8 +46,8 @@ void ApiDB_Relation_Updater::add_relation(osm_changeset_id_t changeset_id,
   new_relation.changeset_id = changeset_id;
   new_relation.old_id = old_id;
 
-  for (const auto &tag : tags)
-    new_relation.tags.emplace_back(tag.first, tag.second);
+  for (const auto &[key, value] : tags)
+    new_relation.tags.emplace_back(key, value);
 
   osm_sequence_id_t member_seq = 0;
   for (const auto &member : members) {
@@ -80,8 +80,8 @@ void ApiDB_Relation_Updater::modify_relation(osm_changeset_id_t changeset_id,
   modify_relation.version = version;
   modify_relation.changeset_id = changeset_id;
 
-  for (const auto &tag : tags)
-    modify_relation.tags.emplace_back(tag.first, tag.second);
+  for (const auto &[key, value] : tags)
+    modify_relation.tags.emplace_back(key, value);
 
   osm_sequence_id_t member_seq = 0;
   for (const auto &member : members) {
