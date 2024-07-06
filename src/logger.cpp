@@ -29,7 +29,7 @@ void initialise(const std::string &filename) {
 
 void message(const std::string &m) {
   if (stream) {
-    time_t now = time(0);
+    time_t now = time(nullptr);
     *stream << "[" << std::put_time( std::gmtime( &now ), "%FT%T") << " #" << pid << "] " << m
             << std::endl;
   }

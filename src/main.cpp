@@ -244,7 +244,7 @@ void install_signal_handlers() {
   sa.sa_handler = terminate;
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = 0;
-  if (sigaction(SIGTERM, &sa, NULL) < 0) {
+  if (sigaction(SIGTERM, &sa, nullptr) < 0) {
     throw std::runtime_error("sigaction failed");
   }
 
@@ -252,7 +252,7 @@ void install_signal_handlers() {
   sa.sa_handler = reload;
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = 0;
-  if (sigaction(SIGHUP, &sa, NULL) < 0) {
+  if (sigaction(SIGHUP, &sa, nullptr) < 0) {
     throw std::runtime_error("sigaction failed");
   }
 }
@@ -311,7 +311,7 @@ void daemon_mode(const po::variables_map &options, int socket)
   }
 
   // loop until we have been asked to stop and have no more children
-  while (!terminate_requested || children.size() > 0) {
+  while (!terminate_requested || !children.empty()) {
     pid_t pid;
 
     // start more children if we don't have enough
@@ -337,7 +337,7 @@ void daemon_mode(const po::variables_map &options, int socket)
     }
 
     // wait for a child to exit
-    if ((pid = wait(NULL)) >= 0) {
+    if ((pid = wait(nullptr)) >= 0) {
       children.erase(pid);
     } else if (errno != EINTR) {
       throw std::runtime_error("wait failed.");

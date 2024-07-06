@@ -63,7 +63,7 @@ bool operator<(const element &a, const element &b) {
 
 struct sorting_formatter : public output_formatter {
 
-  virtual ~sorting_formatter() override = default;
+  ~sorting_formatter() override = default;
 
   mime::type mime_type() const override {
     throw std::runtime_error("sorting_formatter::mime_type unimplemented");
@@ -221,7 +221,7 @@ private:
 } // anonymous namespace
 
 osmchange_responder::osmchange_responder(mime::type mt, data_selection &s)
-  : osm_responder(mt, {}), 
+  : osm_responder(mt, {}),
     sel(s) {
 }
 
@@ -232,7 +232,7 @@ std::vector<mime::type> osmchange_responder::types_available() const {
 }
 
 void osmchange_responder::write(output_formatter& fmt,
-                                const std::string &generator, 
+                                const std::string &generator,
                                 const std::chrono::system_clock::time_point &now) {
 
   fmt.start_document(generator, "osmChange");

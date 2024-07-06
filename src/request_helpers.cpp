@@ -24,7 +24,7 @@ string fcgi_get_env(const request &req, const char *name, const char *default_va
 
   // since the map script is so simple i'm just going to assume that
   // any time we fail to get an environment variable is a fatal error.
-  if (v == NULL) {
+  if (v == nullptr) {
     if (default_value) {
       v = default_value;
     } else {
@@ -37,14 +37,14 @@ string fcgi_get_env(const request &req, const char *name, const char *default_va
 
 string get_query_string(const request &req) {
   // try the query string that's supposed to be present first
-  const char *query_string = req.get_param("QUERY_STRING");
+  auto *query_string = req.get_param("QUERY_STRING");
 
   // if that isn't present, then this may be being invoked as part of a
   // 404 handler, so look at the request uri instead.
-  if (query_string == NULL || strlen(query_string) == 0) {
+  if (query_string == nullptr || strlen(query_string) == 0) {
     const char *request_uri = req.get_param("REQUEST_URI");
 
-    if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
+    if ((request_uri == nullptr) || (strlen(request_uri) == 0)) {
       // fail. something has obviously gone massively wrong.
       throw http::server_error("request didn't set the $QUERY_STRING or $REQUEST_URI environment variables.");
     }
@@ -52,7 +52,7 @@ string get_query_string(const request &req) {
     const char *request_uri_end = request_uri + strlen(request_uri);
     // i think the only valid position for the '?' char is at the beginning
     // of the query string.
-    const char *question_mark = std::find(request_uri, request_uri_end, '?');
+    auto *question_mark = std::find(request_uri, request_uri_end, '?');
     if (question_mark == request_uri_end) {
       return string();
     } else {
@@ -67,20 +67,20 @@ string get_query_string(const request &req) {
 std::string get_request_path(const request &req) {
   const char *request_uri = req.get_param("REQUEST_URI");
 
-  if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
+  if ((request_uri == nullptr) || (strlen(request_uri) == 0)) {
     // fall back to PATH_INFO if REQUEST_URI isn't available.
     // the former is set by fcgi, the latter by Rack.
     request_uri = req.get_param("PATH_INFO");
   }
 
-  if ((request_uri == NULL) || (strlen(request_uri) == 0)) {
+  if ((request_uri == nullptr) || (strlen(request_uri) == 0)) {
     throw http::server_error("request didn't set the $QUERY_STRING or $REQUEST_URI environment variables.");
   }
 
   const char *request_uri_end = request_uri + strlen(request_uri);
   // i think the only valid position for the '?' char is at the beginning
   // of the query string.
-  const char *question_mark = std::find(request_uri, request_uri_end, '?');
+  auto *question_mark = std::find(request_uri, request_uri_end, '?');
   if (question_mark == request_uri_end) {
     return string(request_uri);
   } else {

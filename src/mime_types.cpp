@@ -10,11 +10,9 @@
 #include "cgimap/mime_types.hpp"
 #include <stdexcept>
 
-using std::string;
-using std::runtime_error;
 
 namespace mime {
-string to_string(type t) {
+std::string to_string(type t) {
   if (mime::type::any_type == t) {
     return "*/*";
   } else if (mime::type::text_plain == t) {
@@ -26,11 +24,11 @@ string to_string(type t) {
     return "application/json";
 #endif
   } else {
-    throw runtime_error("No string conversion for unspecified MIME type.");
+    throw std::runtime_error("No string conversion for unspecified MIME type.");
   }
 }
 
-type parse_from(const std::string &name) {
+type parse_from(std::string_view name) {
 
   if (name == "*") {
     return mime::type::any_type;
