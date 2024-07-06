@@ -2158,10 +2158,12 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     REQUIRE_THAT(req.body().str(), StartsWith("The changeset 2 was closed at "));
   }
 
-  SECTION("Try to add a node to a changeset that is already closed")
+  SECTION("Try to add a node to a changeset that is already closed, X-Error-Format: XML error format response")
   {
     // set up request headers from test case
     req.set_header("REQUEST_URI", "/api/0.6/changeset/3/upload");
+    // test x-error-format: xml http header
+    req.set_header("HTTP_X_ERROR_FORMAT", "xml");
 
     req.set_payload(R"(<?xml version="1.0" encoding="UTF-8"?>
                 <osmChange version="0.6" generator="iD">
@@ -2171,8 +2173,10 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     // execute the request
     process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
 
-    REQUIRE(req.response_status() == 409);
-    REQUIRE_THAT(req.body().str(), StartsWith("The changeset 3 was closed at "));
+    REQUIRE_THAT(req.body().str(), StartsWith("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\r\n<osmError>\r\n<status>409 Conflict</status>\r\n<message>The changeset 3 was closed"));
+    REQUIRE_THAT(req.body().str(), EndsWith("</message>\r\n</osmError>\r\n"));
+    // application_controller.rb, report_error sets http status to 200 instead of 409 in case of X-Format-Error format
+    REQUIRE(req.response_status() == 200);
   }
 
   SECTION("Try to add a nodes, ways, relations to a changeset")
