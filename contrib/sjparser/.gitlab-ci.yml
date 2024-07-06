@@ -1,0 +1,104 @@
+image: registry.gitlab.com/dhurum/docker_build_images/sjparser-build:master
+
+stages:
+  - configure
+  - build
+  - test
+  - deploy
+
+configuration:
+  stage: configure
+  script:
+    - mkdir build && cd build
+    - cmake ../ -DCMAKE_BUILD_TYPE=Release -DSJPARSER_WITH_TESTS=On
+  artifacts:
+    expire_in: 15 min
+    paths:
+      - build
+
+configuration-coverage:
+  stage: configure
+  script:
+    - mkdir build && cd build
+    - cmake ../ -DCMAKE_BUILD_TYPE=Debug -DSJPARSER_WITH_COVERAGE=On
+  artifacts:
+    expire_in: 15 min
+    paths:
+      - build
+
+build:
+  stage: build
+  script:
+    - cd build
+    - make -j `nproc`
+  dependencies:
+    - configuration
+  artifacts:
+    expire_in: 15 min
+    paths:
+      - build
+
+build-coverage:
+  stage: build
+  script:
+    - cd build
+    - make -j `nproc`
+  dependencies:
+    - configuration-coverage
+  artifacts:
+    expire_in: 15 min
+    paths:
+      - build
+
+checks:
+  stage: build
+  script:
+    - cd build
+    - make check
+    - make format
+    - git status -s
+    - '[[ -z $( git status -s ) ]]'
+  dependencies:
+    - configuration
+
+documentation:
+  stage: build
+  script:
+    - cd build
+    - make documentation
+    - mv documentation ../
+  dependencies:
+    - configuration
+  artifacts:
+    expire_in: 15 min
+    paths:
+      - documentation
+
+test:
+  stage: test
+  script:
+    - cd build
+    - make test
+  dependencies:
+    - build
+
+coverage:
+  stage: test
+  script:
+    - cd build
+    - make coverage
+  coverage: '/^TOTAL.*\s+(\d+\%)$/'
+  dependencies:
+    - build-coverage
+
+pages:
+  stage: deploy
+  only:
+    - master
+  script:
+    - mv documentation/html public
+  dependencies:
+    - documentation
+  artifacts:
+    paths:
+      - public

@@ -1,0 +1,22 @@
+
+
+Source: https://gitlab.com/dhurum/sjparser
+Commit: a53246dac850fd5fadd288277776b43cc2c9b819
+
+git subtree add --prefix contrib/sjparser https://gitlab.com/dhurum/sjparser.git improvements --squash
+
+Update via `git subtree pull --prefix=contrib/sjparser/ --squash https://gitlab.com/dhurum/sjparser.git <remote-ref>`
+
+List of changes to sjparser:
+
+* MemberParser: replace recursive template metaprogramming by folds
+* NthTypes: get rid of recursive template metaprogramming
+* Value<double> should also support yajl integers
+* if key appears multiple times, last one wins
+* Include error location in error message
+* Typo fixes
+* Removed union.h and s_union.h, as well as standalone/embedded (s_)union test cases (not relevant)
+* Removed doxygen & documentation directory (see original repo for documentation)
+
+
+
