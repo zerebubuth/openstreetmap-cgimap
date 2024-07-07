@@ -32,7 +32,7 @@ namespace {
 struct bool_alpha {
   bool data;
   bool_alpha() = default;
-  bool_alpha(bool data) : data(data) {}
+  explicit bool_alpha(bool data) : data(data) {}
   operator bool() const { return data; }
   friend std::ostream &operator<<(std::ostream &out, bool_alpha b) {
     out << std::boolalpha << b.data;
@@ -46,7 +46,8 @@ struct bool_alpha {
 
 struct node {
   element_info m_info;
-  double m_lon, m_lat;
+  double m_lon;
+  double m_lat;
   tags_t m_tags;
 };
 
@@ -78,8 +79,8 @@ struct database {
 template <typename T>
 std::optional<T> opt_attribute(std::string_view name, const xmlChar **attributes) {
   while (*attributes != nullptr) {
-    auto name_attr = (const char *)(*attributes++);
-    std::string_view attr((const char *)name_attr);
+    auto* name_attr = (const char *)(*attributes++);
+    std::string_view attr(name_attr);
     if (attr == name) {
       return boost::lexical_cast<T>((const char *)(*attributes));
     }
@@ -117,12 +118,12 @@ void parse_changeset_info(changeset_info &info, const xmlChar **attributes) {
   info.display_name = opt_attribute<std::string>("user", attributes);
   info.bounding_box = {};
 
-  std::optional<double> min_lat = opt_attribute<double>("min_lat", attributes);
-  std::optional<double> min_lon = opt_attribute<double>("min_lon", attributes);
-  std::optional<double> max_lat = opt_attribute<double>("max_lat", attributes);
-  std::optional<double> max_lon = opt_attribute<double>("max_lon", attributes);
+  auto min_lat = opt_attribute<double>("min_lat", attributes);
+  auto min_lon = opt_attribute<double>("min_lon", attributes);
+  auto max_lat = opt_attribute<double>("max_lat", attributes);
+  auto max_lon = opt_attribute<double>("max_lon", attributes);
 
-  if ((min_lat) && (min_lon) && (max_lat) && (max_lon)) {
+  if (min_lat && min_lon && max_lat && max_lon) {
     info.bounding_box = bbox(*min_lat, *min_lon, *max_lat, *max_lon);
   }
 
@@ -131,7 +132,7 @@ void parse_changeset_info(changeset_info &info, const xmlChar **attributes) {
 }
 
 struct xml_parser {
-  xml_parser(database *db)
+  explicit xml_parser(database *db)
     : m_db(db) {}
 
   static void start_element(void *ctx, const xmlChar *name_cstr,
@@ -314,10 +315,8 @@ inline void write_element<relation>(const relation &r, output_formatter &formatt
 struct static_data_selection : public data_selection {
   explicit static_data_selection(database& db) : static_data_selection(db, {}, {}) {}
 
-  explicit static_data_selection(database& db, user_roles_t m_user_roles, oauth2_tokens m_oauth2_tokens)
+  explicit static_data_selection(database& db, const user_roles_t& m_user_roles, const oauth2_tokens& m_oauth2_tokens)
   : m_db(db)
-  , m_include_changeset_comments(false)
-  , m_redactions_visible(false)
   , m_user_roles(m_user_roles)
   , m_oauth2_tokens(m_oauth2_tokens){}
 
@@ -590,7 +589,7 @@ struct static_data_selection : public data_selection {
 
   std::optional< osm_user_id_t > get_user_id_for_oauth2_token(
         const std::string &token_id, bool &expired, bool &revoked,
-        bool &allow_api_write) {
+        bool &allow_api_write) override {
 
     auto itr = m_oauth2_tokens.find(token_id);
     if (itr != m_oauth2_tokens.end())
@@ -680,7 +679,7 @@ private:
 
   template <typename T>
   int select(std::set<osm_nwr_id_t> &found_ids,
-             const std::vector<osm_nwr_id_t> select_ids) const {
+             const std::vector<osm_nwr_id_t>& select_ids) const {
     int selected = 0;
     for (osm_nwr_id_t id : select_ids) {
       auto t = find_current<T>(id);
@@ -715,7 +714,8 @@ private:
     int selected = 0;
     for (osm_nwr_id_t id : ids) {
       using element_map_t = std::map<id_version, T>;
-      id_version idv_start(id, 0), idv_end(id+1, 0);
+      id_version idv_start(id, 0);
+      id_version idv_end(id+1, 0);
       const element_map_t &m = map_of<T>();
       if (!m.empty()) {
         auto itr = m.lower_bound(idv_start);
@@ -757,9 +757,14 @@ private:
 
   database& m_db;
   std::set<osm_changeset_id_t> m_changesets;
-  std::set<osm_nwr_id_t> m_nodes, m_ways, m_relations;
-  std::set<osm_edition_t> m_historic_nodes, m_historic_ways, m_historic_relations;
-  bool m_include_changeset_comments, m_redactions_visible;
+  std::set<osm_nwr_id_t> m_nodes;
+  std::set<osm_nwr_id_t> m_ways;
+  std::set<osm_nwr_id_t> m_relations;
+  std::set<osm_edition_t> m_historic_nodes;
+  std::set<osm_edition_t> m_historic_ways;
+  std::set<osm_edition_t> m_historic_relations;
+  bool m_include_changeset_comments = false;
+  bool m_redactions_visible = false;
   user_roles_t m_user_roles;
   oauth2_tokens m_oauth2_tokens;
 };
@@ -782,7 +787,7 @@ const std::map<id_version, relation> &static_data_selection::map_of<relation>() 
 struct factory : public data_selection::factory {
   explicit factory(const std::string &file) : factory(file, {}, {}) {}
 
-  explicit factory(const std::string &file, user_roles_t user_roles, oauth2_tokens oauth2_tokens)
+  explicit factory(const std::string &file, const user_roles_t& user_roles, const oauth2_tokens& oauth2_tokens)
     : m_database(parse_xml(file.c_str()))
     , m_user_roles(user_roles)
     , m_oauth2_tokens(oauth2_tokens) {}
@@ -806,11 +811,11 @@ private:
 struct staticxml_backend : public backend {
   staticxml_backend() : staticxml_backend(user_roles_t{}, oauth2_tokens{}) {}
 
-  staticxml_backend(user_roles_t user_roles, oauth2_tokens oauth2_tokens) {
+  staticxml_backend(const user_roles_t& user_roles, const oauth2_tokens& oauth2_tokens) :
+    m_user_roles(user_roles), m_oauth2_tokens(oauth2_tokens)
+  {
     m_options.add_options()("file", po::value<std::string>()->required(),
                             "file to load static OSM XML from.");
-    m_user_roles = user_roles;
-    m_oauth2_tokens = oauth2_tokens;
   }
 
   ~staticxml_backend() override = default;
