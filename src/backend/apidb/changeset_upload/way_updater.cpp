@@ -48,8 +48,8 @@ void ApiDB_Way_Updater::add_way(osm_changeset_id_t changeset_id,
   new_way.changeset_id = changeset_id;
   new_way.old_id = old_id;
 
-  for (const auto &tag : tags)
-    new_way.tags.emplace_back(tag.first, tag.second);
+  for (const auto &[key, value] : tags)
+    new_way.tags.emplace_back(key, value);
 
   // If the following conditions are still not met, although our XML parser
   // raised an exception for it, it's clearly a programming error.
@@ -79,8 +79,8 @@ void ApiDB_Way_Updater::modify_way(osm_changeset_id_t changeset_id,
   modify_way.version = version;
   modify_way.changeset_id = changeset_id;
 
-  for (const auto &tag : tags)
-    modify_way.tags.emplace_back(tag.first, tag.second);
+  for (const auto &[key, value] : tags)
+    modify_way.tags.emplace_back(key, value);
 
   // If the following conditions are still not met, although our XML parser
   // raised an exception for it, it's clearly a programming error.

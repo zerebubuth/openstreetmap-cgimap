@@ -410,7 +410,7 @@ void extract(
   const tag_columns tag_cols(rows);
 
   for (const auto &row : rows) {
-    typename T::extra_info extra;
+    typename T::extra_info extra{};
     auto elem = extract_elem(row, cc, elem_cols);
     extra.extract(row, extra_cols);
     auto tags = extract_tags(row, tag_cols);

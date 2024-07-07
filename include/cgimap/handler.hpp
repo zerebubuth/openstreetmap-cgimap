@@ -30,7 +30,7 @@
  */
 class responder {
 public:
-  responder(mime::type);
+  explicit responder(mime::type);
   virtual ~responder() = default;
   virtual void write(output_formatter& f,
                      const std::string &generator,

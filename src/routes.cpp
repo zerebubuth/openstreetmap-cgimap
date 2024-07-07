@@ -304,19 +304,19 @@ std::vector<std::string_view> split(std::string_view str, char delim)
   {
     if (*it == delim)
     {
-      result.emplace_back(&*left, it - left);
+      result.emplace_back(left, it - left);
       left = it + 1;
       if (left == str.end())
-        result.emplace_back(&*it, 0);
+        result.emplace_back(it, 0);
     }
   }
   if (left != str.end())
-    result.emplace_back(&*left, str.end() - left);
+    result.emplace_back(left, str.end() - left);
   return result;
 }
 
 handler_ptr_t route_resource(request &req, const std::string &path,
-                             const std::unique_ptr<router> &r) {
+                             router* r) {
 
   // strip off the format-spec, if there is one
   auto [resource, mime_type] = resource_mime_type(path);
@@ -344,13 +344,13 @@ handler_ptr_t routes::operator()(request &req) const {
   handler_ptr_t hptr;
   // check the prefix
   if (path.compare(0, common_prefix.size(), common_prefix) == 0) {
-    hptr = route_resource(req, std::string(path, common_prefix.size()), r);
+    hptr = route_resource(req, std::string(path, common_prefix.size()), r.get());
 
 #ifdef ENABLE_API07
   } else if (path.compare(0, experimental_prefix.size(), experimental_prefix) ==
              0) {
     hptr = route_resource(req, std::string(path, experimental_prefix.size()),
-                          r_experimental);
+                          r_experimental.get());
 #endif /* ENABLE_API07 */
   }
 

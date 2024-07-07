@@ -36,7 +36,7 @@ std::pair<match_osm_id::match_type, bool> match_osm_id::match(part_iterator &beg
     auto& bit = *begin;
 
     if (bit.end() != std::find_if(bit.begin(), bit.end(),
-        [](unsigned char c)->bool { return !isdigit(c); })) {
+        [](unsigned char c) { return !isdigit(c); })) {
       return {match_type(), true};
     }
 

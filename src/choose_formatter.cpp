@@ -53,9 +53,9 @@ namespace {
 class acceptable_types {
 public:
   explicit acceptable_types(const std::string &accept_header);
-  bool is_acceptable(mime::type) const;
+  [[nodiscard]] bool is_acceptable(mime::type) const;
   // note: returns mime::type::unspecified_type if none were acceptable
-  mime::type most_acceptable_of(const std::vector<mime::type> &available) const;
+  [[nodiscard]] mime::type most_acceptable_of(const std::vector<mime::type> &available) const;
 
 private:
   map<mime::type, float> mapping;

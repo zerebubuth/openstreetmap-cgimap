@@ -32,5 +32,5 @@ std::vector<tile_id_t> tiles_for_area(double minlat, double minlon, double maxla
     }
   }
 
-  return std::vector<tile_id_t>(tiles.begin(), tiles.end());
+  return {tiles.begin(), tiles.end()};
 }

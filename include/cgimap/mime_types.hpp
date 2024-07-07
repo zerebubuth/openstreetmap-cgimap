@@ -11,6 +11,7 @@
 #define MIME_TYPES_HPP
 
 #include <string>
+#include <string_view>
 
 /**
  * simple set of supported mime types.
@@ -27,7 +28,7 @@ enum class type {
 };
 
 std::string to_string(type);
-type parse_from(const std::string &);
+type parse_from(std::string_view);
 }
 
 #endif /* MIME_TYPES_HPP */

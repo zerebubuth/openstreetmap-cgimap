@@ -124,9 +124,7 @@ void json_writer::output_yajl_buffer(bool ignore_buffer_size)
   const unsigned char *yajl_buf;
   size_t yajl_buf_len;
 
-  auto status = yajl_gen_get_buf(gen, &yajl_buf, &yajl_buf_len);
-
-  if (status != yajl_gen_status_ok)
+  if (yajl_gen_get_buf(gen, &yajl_buf, &yajl_buf_len) != yajl_gen_status_ok)
     throw output_writer::write_error("Expected yajl_gen_status_ok");
 
   // Keep adding more JSON elements, if the yajl buffer size hasn't

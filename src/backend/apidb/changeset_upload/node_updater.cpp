@@ -52,8 +52,8 @@ void ApiDB_Node_Updater::add_node(double lat, double lon,
   new_node.tile = xy2tile(lon2x(lon), lat2y(lat));
   new_node.changeset_id = changeset_id;
   new_node.old_id = old_id;
-  for (const auto &tag : tags)
-    new_node.tags.emplace_back(tag.first, tag.second);
+  for (const auto &[key, value] : tags)
+    new_node.tags.emplace_back(key, value);
   create_nodes.push_back(new_node);
 
   ct.osmchange_orig_sequence.push_back({ operation::op_create,
@@ -74,8 +74,8 @@ void ApiDB_Node_Updater::modify_node(double lat, double lon,
   modify_node.lon = round(lon * global_settings::get_scale());
   modify_node.tile = xy2tile(lon2x(lon), lat2y(lat));
   modify_node.changeset_id = changeset_id;
-  for (const auto &tag : tags)
-    modify_node.tags.emplace_back(std::make_pair(tag.first, tag.second));
+  for (const auto &[key, value] : tags)
+    modify_node.tags.emplace_back(key, value);
   modify_nodes.push_back(modify_node);
 
   ct.osmchange_orig_sequence.push_back({ operation::op_modify,

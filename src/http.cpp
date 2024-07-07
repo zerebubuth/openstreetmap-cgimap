@@ -215,10 +215,10 @@ vector<pair<string, string> > parse_params(const string &p) {
       al::split(kvTemp, kvPair, al::is_any_of("="));
 
       if (kvTemp.size() == 2) {
-        queryKVPairs.push_back(std::make_pair(kvTemp[0], kvTemp[1]));
+        queryKVPairs.emplace_back(kvTemp[0], kvTemp[1]);
 
       } else if (kvTemp.size() == 1) {
-        queryKVPairs.push_back(std::make_pair(kvTemp[0], std::string()));
+        queryKVPairs.emplace_back(kvTemp[0], std::string());
       }
     }
   }
