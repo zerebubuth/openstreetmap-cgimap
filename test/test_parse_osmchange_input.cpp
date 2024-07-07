@@ -586,7 +586,7 @@ TEST_CASE("Very large XML message", "[osmchange][node][xml]") {
 // OBJECT LIMIT TESTS
 
 TEST_CASE("Create node, tags < max tags", "[osmchange][node][xml]") {
-  auto test_settings = std::unique_ptr<global_settings_test_class>(new global_settings_test_class());
+  auto test_settings = std::make_unique<global_settings_test_class>();
   test_settings->m_element_max_tags = 50;
 
   global_settings::set_configuration(std::move(test_settings));
@@ -601,7 +601,7 @@ TEST_CASE("Create node, tags < max tags", "[osmchange][node][xml]") {
 }
 
 TEST_CASE("Create node, tags >= max tags", "[osmchange][node][xml]") {
-  auto test_settings = std::unique_ptr<global_settings_test_class>(new global_settings_test_class());
+  auto test_settings = std::make_unique<global_settings_test_class>();
   test_settings->m_element_max_tags = 50;
 
   global_settings::set_configuration(std::move(test_settings));
@@ -619,7 +619,7 @@ TEST_CASE("Create node, tags >= max tags", "[osmchange][node][xml]") {
 }
 
 TEST_CASE("Create relation, members < max members", "[osmchange][relation][xml]") {
-  auto test_settings = std::unique_ptr<global_settings_test_class>(new global_settings_test_class());
+  auto test_settings = std::make_unique<global_settings_test_class>();
   test_settings->m_relation_max_members = 32000;
 
   global_settings::set_configuration(std::move(test_settings));
@@ -631,7 +631,7 @@ TEST_CASE("Create relation, members < max members", "[osmchange][relation][xml]"
 }
 
 TEST_CASE("Create relation, members >= max members", "[osmchange][relation][xml]") {
-  auto test_settings = std::unique_ptr<global_settings_test_class>(new global_settings_test_class());
+  auto test_settings = std::make_unique<global_settings_test_class>();
   test_settings->m_relation_max_members = 32000;
 
   global_settings::set_configuration(std::move(test_settings));
