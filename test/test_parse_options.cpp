@@ -54,6 +54,7 @@ TEST_CASE("Set all supported options" "[options]") {
   vm.emplace("maxdebt", po::variable_value((long) 500, false));
   vm.emplace("moderator-maxdebt", po::variable_value((long) 1000, false));
   vm.emplace("ratelimit-upload", po::variable_value(true, false));
+  vm.emplace("bbox-size-limit-upload", po::variable_value(true, false));
   REQUIRE_NOTHROW(check_options(vm));
 
   REQUIRE( global_settings::get_payload_max_size() == 40000 );
@@ -71,4 +72,5 @@ TEST_CASE("Set all supported options" "[options]") {
   REQUIRE( global_settings::get_ratelimiter_ratelimit(true) == 10000000 );
   REQUIRE( global_settings::get_ratelimiter_maxdebt(true) == 1000l * 1024 * 1024 );
   REQUIRE( global_settings::get_ratelimiter_upload() == true );
+  REQUIRE( global_settings::get_bbox_size_limiter_upload() == false );
 }
