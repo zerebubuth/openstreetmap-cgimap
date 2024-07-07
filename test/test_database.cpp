@@ -28,7 +28,7 @@ std::string random_db_name() {
   // unique on this machine, in case we clash with anything else.
   auto hash = (unsigned int)getpid();
   struct timeval tv;
-  gettimeofday(&tv, NULL);
+  gettimeofday(&tv, nullptr);
   hash ^= (unsigned int)((tv.tv_usec & 0xffffu) << 16);
 
   return fmt::format("osm_test_{:08x}", hash);
@@ -195,12 +195,12 @@ const char *test_database::setup_error::what() const noexcept {
 }
 
 
-std::shared_ptr<data_selection::factory> test_database::get_data_selection_factory() {
+std::shared_ptr<data_selection::factory> test_database::get_data_selection_factory() const {
   return m_readonly_factory;
 }
 
 // return a data update factory pointing at the current database
-std::shared_ptr<data_update::factory> test_database:: get_data_update_factory() {
+std::shared_ptr<data_update::factory> test_database:: get_data_update_factory() const {
   return m_update_factory;
 }
 

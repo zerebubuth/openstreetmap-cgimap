@@ -66,10 +66,10 @@ struct test_database {
   void run_update(std::function<void(test_database&)> func);
 
   // return a data selection factory pointing at the current database
-  std::shared_ptr<data_selection::factory> get_data_selection_factory();
+  std::shared_ptr<data_selection::factory> get_data_selection_factory() const;
 
   // return a data update factory pointing at the current database
-  std::shared_ptr<data_update::factory> get_data_update_factory();
+  std::shared_ptr<data_update::factory> get_data_update_factory() const;
 
   // return a new data update factory pointing at the current database,
   // with a fresh database connection
