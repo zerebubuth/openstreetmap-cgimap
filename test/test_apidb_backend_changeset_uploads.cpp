@@ -64,10 +64,10 @@ public:
 
 std::unique_ptr<xmlDoc, void (*)(xmlDoc *)> getDocument(const std::string &document)
 {
-  return {xmlReadDoc((xmlChar *)(document.c_str()), NULL, NULL, XML_PARSE_PEDANTIC | XML_PARSE_NONET), xmlFreeDoc};
+  return {xmlReadDoc((xmlChar *)(document.c_str()), nullptr, nullptr, XML_PARSE_PEDANTIC | XML_PARSE_NONET), xmlFreeDoc};
 }
 
-std::optional<std::string> getXPath(xmlDoc* doc, std::string xpath)
+std::optional<std::string> getXPath(xmlDoc* doc, const std::string& xpath)
 {
   std::unique_ptr< xmlXPathContext, void (*)(xmlXPathContextPtr) > xpathCtx =
       { xmlXPathNewContext(doc), xmlXPathFreeContext };
@@ -123,7 +123,7 @@ struct CGImapListener : Catch::TestEventListenerBase, DatabaseTestsFixture {
 CATCH_REGISTER_LISTENER( CGImapListener )
 
 
-std::string get_compressed_payload(const std::string &payload)
+std::string get_compressed_payload(std::string_view payload)
 {
   std::stringstream body;
   std::stringstream output;
@@ -322,7 +322,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
       if (lat > maxlat) maxlat = lat;
       if (lon > maxlon) maxlon = lon;
 
-      node_updater->modify_node(lat, lon, 1, node_id, node_version++, {{"key", "value" + std::to_string(i)}});
+      node_updater->modify_node(lat, lon, 1, node_id, node_version, {{"key", "value" + std::to_string(i)}});
+      node_version++;
     }
     node_updater->process_modify_nodes();
     auto bbox = node_updater->bbox();
@@ -359,9 +360,11 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
     auto upd = tdb.get_data_update();
     auto node_updater = upd->get_node_updater(ctx, change_tracking);
 
-    node_updater->delete_node(1, node_id, node_version++, false);
+    node_updater->delete_node(1, node_id, node_version, false);
     node_updater->process_delete_nodes();
     upd->commit();
+
+    node_version++;
 
     REQUIRE(change_tracking.deleted_node_ids.size() == 1);
     REQUIRE(change_tracking.deleted_node_ids[0] == static_cast<osm_nwr_signed_id_t>(node_id));
@@ -493,7 +496,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     way_id = change_tracking.created_way_ids[0].new_id;
     way_version = change_tracking.created_way_ids[0].new_version;
 
-    for (const auto id : change_tracking.created_node_ids) {
+    for (const auto& id : change_tracking.created_node_ids) {
       node_new_ids[-1 * id.old_id - 1] = id.new_id;
     }
 
@@ -673,7 +676,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     auto upd = tdb.get_data_update();
     auto way_updater = upd->get_way_updater(ctx, change_tracking);
 
-    way_updater->modify_way(1, way_id, 666, {static_cast<osm_nwr_signed_id_t>(5934531745)}, {});
+    way_updater->modify_way(1, way_id, 666, {5934531745}, {});
     REQUIRE_THROWS_MATCHES(way_updater->process_modify_ways(), http::conflict,
         Catch::Message("Version mismatch: Provided 666, server had: 2 of Way 1"));
   }
@@ -747,9 +750,11 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     auto upd = tdb.get_data_update();
     auto way_updater = upd->get_way_updater(ctx, change_tracking);
 
-    way_updater->delete_way(1, way_id, way_version++, false);
+    way_updater->delete_way(1, way_id, way_version, false);
     way_updater->process_delete_ways();
     upd->commit();
+
+    way_version++;
 
     REQUIRE(change_tracking.deleted_way_ids.size() == 1);
     REQUIRE(change_tracking.deleted_way_ids[0] == static_cast<osm_nwr_signed_id_t>(way_id));
@@ -879,7 +884,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     way_updater->process_new_ways();
 
     // Remember new_ids for later tests. old_ids -1, -2, -3 are mapped to 0, 1, 2
-    for (const auto id : change_tracking.created_node_ids) {
+    for (const auto& id : change_tracking.created_node_ids) {
       node_new_ids[-1 * id.old_id - 1] = id.new_id;
     }
 
@@ -996,7 +1001,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
 
     std::array<osm_nwr_id_t,2> n_new_ids;
 
-    for (const auto id : change_tracking.created_node_ids) {
+    for (const auto& id : change_tracking.created_node_ids) {
       n_new_ids[-1 * id.old_id - 1] = id.new_id;
     }
 
@@ -1262,7 +1267,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto upd = tdb.get_data_update();
     auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
-    rel_updater->modify_relation(1, relation_id, 666, { {"Node", static_cast<osm_nwr_signed_id_t>(1434253485634), ""} }, {});
+    rel_updater->modify_relation(1, relation_id, 666, { {"Node", 1434253485634, ""} }, {});
     REQUIRE_THROWS_MATCHES(rel_updater->process_modify_relations(), http::conflict,
         Catch::Message("Version mismatch: Provided 666, server had: 2 of Relation 1"));
   }
@@ -1457,9 +1462,11 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     auto upd = tdb.get_data_update();
     auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
 
-    rel_updater->delete_relation(1, relation_id, relation_version++, false);
+    rel_updater->delete_relation(1, relation_id, relation_version, false);
     rel_updater->process_delete_relations();
     upd->commit();
+
+    relation_version++;
 
     REQUIRE(change_tracking.deleted_relation_ids.size() == 1);
     REQUIRE(change_tracking.deleted_relation_ids[0] == static_cast<osm_nwr_signed_id_t>(relation_id));
@@ -1653,7 +1660,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
         way_updater->process_new_ways();
 
         // Remember new_ids for later tests. old_ids -1, -2, -3 are mapped to 0, 1, 2
-        for (const auto id : change_tracking.created_node_ids) {
+        for (const auto& id : change_tracking.created_node_ids) {
           node_new_ids[-1 * id.old_id - 1] = id.new_id;
         }
 
@@ -1734,10 +1741,10 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
            auto txn_2nd = factory->get_default_transaction();
            auto upd_2nd = factory->make_data_update(*txn_2nd);
 
-           auto rel_updater = upd_2nd->get_relation_updater(ctx4, change_tracking_2nd);
-           rel_updater->delete_relation(2, static_cast<osm_nwr_signed_id_t>(relation_id), 1, false);
+           auto rel_updater2 = upd_2nd->get_relation_updater(ctx4, change_tracking_2nd);
+           rel_updater2->delete_relation(2, static_cast<osm_nwr_signed_id_t>(relation_id), 1, false);
            // throws precondition_failed exception once the main process commits and releases the lock.
-           rel_updater->process_delete_relations();
+           rel_updater2->process_delete_relations();
            upd_2nd->commit(); // not reached
         });
 
@@ -1777,7 +1784,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
 }
 
 
-std::vector<api06::diffresult_t> process_payload(test_database &tdb, osm_changeset_id_t changeset, osm_user_id_t uid, std::string payload)
+std::vector<api06::diffresult_t> process_payload(test_database &tdb, osm_changeset_id_t changeset, osm_user_id_t uid, const std::string& payload)
 {
   auto sel = tdb.get_data_selection();
   auto upd = tdb.get_data_update();
@@ -2445,9 +2452,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
 TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changeset][upload][db]" ) {
 
   // Upload rate limiter enabling
-  auto test_settings = std::unique_ptr<
-      global_settings_enable_upload_rate_limiter_test_class >(
-      new global_settings_enable_upload_rate_limiter_test_class());
+  auto test_settings = std::make_unique< global_settings_enable_upload_rate_limiter_test_class >();
   global_settings::set_configuration(std::move(test_settings));
 
   const std::string bearertoken = "Bearer 4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8";
@@ -2603,9 +2608,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
 TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_bbox_size_limiter", "[changeset][upload][db]" ) {
 
   // Upload bbox size limiter enabling
-  auto test_settings = std::unique_ptr<
-  global_setting_enable_bbox_size_limiter_test_class >(
-      new global_setting_enable_bbox_size_limiter_test_class());
+  auto test_settings = std::make_unique< global_setting_enable_bbox_size_limiter_test_class >();
   global_settings::set_configuration(std::move(test_settings));
 
   const std::string bearertoken = "Bearer 4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8";
