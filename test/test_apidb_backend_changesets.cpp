@@ -356,13 +356,6 @@ void init_changesets(test_database &tdb) {
 
   // Prepare users, changesets
 
-  // Note: previously used credentials for user id 31:
-  //
-  // pass_crypt:    '3wYbPiOxk/tU0eeIDjUhdvi8aDP3AbFtwYKKxF1IhGg='
-  // pass_salt:     'sha512!10000!OUQLgtM7eD8huvanFT5/WtWaCwdOdrir8QOtFwxhO0A='
-  //
-  // Those are still being used in test_apidb_backend_changeset_uploads.cpp
-
   tdb.run_sql(R"(
 	 INSERT INTO users (id, email, pass_crypt, pass_salt, creation_time, display_name, data_public, status)
 	 VALUES
