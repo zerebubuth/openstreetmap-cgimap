@@ -249,8 +249,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_with_tags", "[changeset]
     REQUIRE(f.m_changesets.size() == 1);
 
     tags_t tags;
-    tags.push_back(std::make_pair("test_key", "test_value"));
-    tags.push_back(std::make_pair("test_key2", "test_value2"));
+    tags.emplace_back("test_key", "test_value");
+    tags.emplace_back("test_key2", "test_value2");
     REQUIRE(
       f.m_changesets.front() ==
       test_formatter::changeset_t(
@@ -559,8 +559,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_create", "[changeset][db
 	REQUIRE(f.m_changesets.size() == 1);
 
 	tags_t tags;
-	tags.push_back(std::make_pair("comment", "Just adding some streetnames"));
-	tags.push_back(std::make_pair("created_by", "JOSM 1.61"));
+	tags.emplace_back("comment", "Just adding some streetnames");
+	tags.emplace_back("created_by", "JOSM 1.61");
 	REQUIRE(
 	  f.m_changesets.front() ==
 	  test_formatter::changeset_t(
@@ -789,9 +789,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][db
 	REQUIRE(f.m_changesets.size() == 1);   // should have written one changeset 52.
 
 	tags_t tags;
-	tags.push_back(std::make_pair("tag1", "value1"));
-	tags.push_back(std::make_pair("tag2", "value2"));
-	tags.push_back(std::make_pair("tag3", "value3"));
+	tags.emplace_back("tag1", "value1");
+	tags.emplace_back("tag2", "value2");
+	tags.emplace_back("tag3", "value3");
 
 	REQUIRE(
 	  f.m_changesets.front() ==
