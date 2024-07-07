@@ -218,23 +218,23 @@ TEST_CASE("test_psql_array_to_vector", "[nodb]") {
   SECTION("Complex pattern") {
     test = R"({"},\"",",{}}\\"})";
     values = psql_array_to_vector(test);
-    actual_values.push_back("},\"");
-    actual_values.push_back(",{}}\\");
+    actual_values.emplace_back("},\"");
+    actual_values.emplace_back(",{}}\\");
     REQUIRE (values == actual_values);
   }
 
   SECTION("test with semicolon in key") {
     test = R"({use_sidepath,secondary,3,1,yes,50,"Rijksweg Noord",asphalt,left|through;right})";
     values = psql_array_to_vector(test);
-    actual_values.push_back("use_sidepath");
-    actual_values.push_back("secondary");
-    actual_values.push_back("3");
-    actual_values.push_back("1");
-    actual_values.push_back("yes");
-    actual_values.push_back("50");
-    actual_values.push_back("Rijksweg Noord");
-    actual_values.push_back("asphalt");
-    actual_values.push_back("left|through;right");
+    actual_values.emplace_back("use_sidepath");
+    actual_values.emplace_back("secondary");
+    actual_values.emplace_back("3");
+    actual_values.emplace_back("1");
+    actual_values.emplace_back("yes");
+    actual_values.emplace_back("50");
+    actual_values.emplace_back("Rijksweg Noord");
+    actual_values.emplace_back("asphalt");
+    actual_values.emplace_back("left|through;right");
     REQUIRE (values == actual_values);
   }
 }

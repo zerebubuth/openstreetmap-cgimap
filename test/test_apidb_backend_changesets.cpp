@@ -249,8 +249,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_with_tags", "[changeset]
     REQUIRE(f.m_changesets.size() == 1);
 
     tags_t tags;
-    tags.push_back(std::make_pair("test_key", "test_value"));
-    tags.push_back(std::make_pair("test_key2", "test_value2"));
+    tags.emplace_back("test_key", "test_value");
+    tags.emplace_back("test_key2", "test_value2");
     REQUIRE(
       f.m_changesets.front() ==
       test_formatter::changeset_t(
@@ -355,13 +355,6 @@ void init_changesets(test_database &tdb) {
 
 
   // Prepare users, changesets
-
-  // Note: previously used credentials for user id 31:
-  //
-  // pass_crypt:    '3wYbPiOxk/tU0eeIDjUhdvi8aDP3AbFtwYKKxF1IhGg='
-  // pass_salt:     'sha512!10000!OUQLgtM7eD8huvanFT5/WtWaCwdOdrir8QOtFwxhO0A='
-  //
-  // Those are still being used in test_apidb_backend_changeset_uploads.cpp
 
   tdb.run_sql(R"(
 	 INSERT INTO users (id, email, pass_crypt, pass_salt, creation_time, display_name, data_public, status)
@@ -566,8 +559,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_create", "[changeset][db
 	REQUIRE(f.m_changesets.size() == 1);
 
 	tags_t tags;
-	tags.push_back(std::make_pair("comment", "Just adding some streetnames"));
-	tags.push_back(std::make_pair("created_by", "JOSM 1.61"));
+	tags.emplace_back("comment", "Just adding some streetnames");
+	tags.emplace_back("created_by", "JOSM 1.61");
 	REQUIRE(
 	  f.m_changesets.front() ==
 	  test_formatter::changeset_t(
@@ -586,9 +579,14 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_create", "[changeset][db
 	    comments_t(),
 	    t));
 
-        // TODO: check users changeset count
-	// TODO: check changesets_subscribers table
 
+	// User 31 should have 1 changeset in total
+	auto validate_cs_count = tdb.run_sql("SELECT * FROM users where id = 31 and changesets_count = 1");
+	REQUIRE(validate_cs_count == 1); // found 1 matching row
+
+	// Also user 31 should be subscribed to changeset 500
+	auto validate_cs_subscribers = tdb.run_sql("SELECT * FROM changesets_subscribers where subscriber_id = 31 and changeset_id = 500");
+	REQUIRE(validate_cs_subscribers == 1); // found 1 matching row
     }
 
 }
@@ -796,9 +794,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][db
 	REQUIRE(f.m_changesets.size() == 1);   // should have written one changeset 52.
 
 	tags_t tags;
-	tags.push_back(std::make_pair("tag1", "value1"));
-	tags.push_back(std::make_pair("tag2", "value2"));
-	tags.push_back(std::make_pair("tag3", "value3"));
+	tags.emplace_back("tag1", "value1");
+	tags.emplace_back("tag2", "value2");
+	tags.emplace_back("tag3", "value3");
 
 	REQUIRE(
 	  f.m_changesets.front() ==

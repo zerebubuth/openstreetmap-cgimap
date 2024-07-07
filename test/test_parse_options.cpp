@@ -38,22 +38,23 @@ TEST_CASE("Invalid max-payload", "[options]") {
 
 TEST_CASE("Set all supported options" "[options]") {
   po::variables_map vm;
-  vm.emplace("max-payload", po::variable_value((long) 40000, false));
-  vm.emplace("map-nodes", po::variable_value((int) 1000, false));
-  vm.emplace("map-area",  po::variable_value((double) 0.1, false));
+  vm.emplace("max-payload", po::variable_value(40000L, false));
+  vm.emplace("map-nodes", po::variable_value(1000, false));
+  vm.emplace("map-area",  po::variable_value(0.1, false));
   vm.emplace("changeset-timeout-open", po::variable_value(std::string("10 minutes"), false));
   vm.emplace("changeset-timeout-idle", po::variable_value(std::string("1 hour"), false));
-  vm.emplace("max-changeset-elements", po::variable_value((int) 1000, false));
-  vm.emplace("max-way-nodes", po::variable_value((int) 100, false));
-  vm.emplace("scale", po::variable_value((long) 100, false));
-  vm.emplace("max-way-nodes", po::variable_value((int) 200, false));
-  vm.emplace("max-relation-members", po::variable_value((int) 50, false));
-  vm.emplace("max-element-tags", po::variable_value((int) 10, false));
-  vm.emplace("ratelimit", po::variable_value((long) 1000000, false));
-  vm.emplace("moderator-ratelimit", po::variable_value((long) 10000000, false));
-  vm.emplace("maxdebt", po::variable_value((long) 500, false));
-  vm.emplace("moderator-maxdebt", po::variable_value((long) 1000, false));
+  vm.emplace("max-changeset-elements", po::variable_value(1000, false));
+  vm.emplace("max-way-nodes", po::variable_value(100, false));
+  vm.emplace("scale", po::variable_value(100L, false));
+  vm.emplace("max-way-nodes", po::variable_value(200, false));
+  vm.emplace("max-relation-members", po::variable_value(50, false));
+  vm.emplace("max-element-tags", po::variable_value(10, false));
+  vm.emplace("ratelimit", po::variable_value(1000000L, false));
+  vm.emplace("moderator-ratelimit", po::variable_value(10000000L, false));
+  vm.emplace("maxdebt", po::variable_value(500L, false));
+  vm.emplace("moderator-maxdebt", po::variable_value(1000L, false));
   vm.emplace("ratelimit-upload", po::variable_value(true, false));
+  vm.emplace("bbox-size-limit-upload", po::variable_value(true, false));
   REQUIRE_NOTHROW(check_options(vm));
 
   REQUIRE( global_settings::get_payload_max_size() == 40000 );
@@ -71,4 +72,5 @@ TEST_CASE("Set all supported options" "[options]") {
   REQUIRE( global_settings::get_ratelimiter_ratelimit(true) == 10000000 );
   REQUIRE( global_settings::get_ratelimiter_maxdebt(true) == 1000l * 1024 * 1024 );
   REQUIRE( global_settings::get_ratelimiter_upload() == true );
+  REQUIRE( global_settings::get_bbox_size_limiter_upload() == false );
 }

@@ -15,7 +15,7 @@
 
 #include <string_view>
 
-std::vector<api06::id_version> parse_query_str(std::string query_str) {
+std::vector<api06::id_version> parse_query_str(const std::string& query_str) {
   test_request req;
   req.set_header("REQUEST_METHOD", "GET");
   req.set_header("QUERY_STRING", query_str);

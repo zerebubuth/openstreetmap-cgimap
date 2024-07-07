@@ -58,15 +58,15 @@ test_formatter::node_t::node_t(const element_info &elem_, double lon_, double la
 
 bool test_formatter::node_t::operator==(const node_t &other) const {
 #define CMP(sym) { if ((sym) != other. sym) { return false; } }
-  CMP(elem.id);
-  CMP(elem.version);
-  CMP(elem.changeset);
-  CMP(elem.timestamp);
-  CMP(elem.uid);
-  CMP(elem.display_name);
-  CMP(elem.visible);
-  CMP(lon);
-  CMP(lat);
+  CMP(elem.id)
+  CMP(elem.version)
+  CMP(elem.changeset)
+  CMP(elem.timestamp)
+  CMP(elem.uid)
+  CMP(elem.display_name)
+  CMP(elem.visible)
+  CMP(lon)
+  CMP(lat)
 #undef CMP
   return equal_tags(tags, other.tags);
 }
@@ -77,13 +77,13 @@ test_formatter::way_t::way_t(const element_info &elem_, const nodes_t &nodes_,
 
 bool test_formatter::way_t::operator==(const way_t &other) const {
 #define CMP(sym) { if ((sym) != other. sym) { return false; } }
-  CMP(elem.id);
-  CMP(elem.version);
-  CMP(elem.changeset);
-  CMP(elem.timestamp);
-  CMP(elem.uid);
-  CMP(elem.display_name);
-  CMP(elem.visible);
+  CMP(elem.id)
+  CMP(elem.version)
+  CMP(elem.changeset)
+  CMP(elem.timestamp)
+  CMP(elem.uid)
+  CMP(elem.display_name)
+  CMP(elem.visible)
 #undef CMP
   return equal_tags(tags, other.tags) && equal_nodes(nodes, other.nodes);
 }
@@ -95,13 +95,13 @@ test_formatter::relation_t::relation_t(const element_info &elem_,
 
 bool test_formatter::relation_t::operator==(const relation_t &other) const {
 #define CMP(sym) { if ((sym) != other. sym) { return false; } }
-  CMP(elem.id);
-  CMP(elem.version);
-  CMP(elem.changeset);
-  CMP(elem.timestamp);
-  CMP(elem.uid);
-  CMP(elem.display_name);
-  CMP(elem.visible);
+  CMP(elem.id)
+  CMP(elem.version)
+  CMP(elem.changeset)
+  CMP(elem.timestamp)
+  CMP(elem.uid)
+  CMP(elem.display_name)
+  CMP(elem.visible)
 #undef CMP
   return equal_tags(tags, other.tags) && equal_members(members, other.members);
 }
@@ -120,23 +120,23 @@ test_formatter::changeset_t::changeset_t(const changeset_info &info,
 
 bool test_formatter::changeset_t::operator==(const changeset_t &other) const {
 #define CMP(sym) { if (!(sym == other.sym)) { return false; } }
-  CMP(m_info.id);
-  CMP(m_info.created_at);
-  CMP(m_info.closed_at);
-  CMP(m_info.uid);
-  CMP(m_info.display_name);
-  CMP(m_info.bounding_box);
-  CMP(m_info.num_changes);
-  CMP(m_info.comments_count);
-  CMP(m_tags.size());
-  CMP(m_include_comments);
+  CMP(m_info.id)
+  CMP(m_info.created_at)
+  CMP(m_info.closed_at)
+  CMP(m_info.uid)
+  CMP(m_info.display_name)
+  CMP(m_info.bounding_box)
+  CMP(m_info.num_changes)
+  CMP(m_info.comments_count)
+  CMP(m_tags.size())
+  CMP(m_include_comments)
   if (m_include_comments) {
-    CMP(m_comments.size());
+    CMP(m_comments.size())
     if (!std::equal(m_comments.begin(), m_comments.end(), other.m_comments.begin())) {
       return false;
     }
   }
-  CMP(m_time);
+  CMP(m_time)
 #undef CMP
   return std::equal(m_tags.begin(), m_tags.end(), other.m_tags.begin());
 }
@@ -169,22 +169,22 @@ void test_formatter::end_action(action_type type) {
 
 void test_formatter::write_node(const element_info &elem, double lon, double lat,
                                 const tags_t &tags) {
-  m_nodes.push_back(node_t(elem, lon, lat, tags));
+  m_nodes.emplace_back(elem, lon, lat, tags);
 }
 void test_formatter::write_way(const element_info &elem, const nodes_t &nodes,
                                const tags_t &tags) {
-  m_ways.push_back(way_t(elem, nodes, tags));
+  m_ways.emplace_back(elem, nodes, tags);
 }
 
 void test_formatter::write_relation(const element_info &elem,
                                     const members_t &members, const tags_t &tags) {
-  m_relations.push_back(relation_t(elem, members, tags));
+  m_relations.emplace_back(elem, members, tags);
 }
 
 void test_formatter::write_changeset(const changeset_info &elem, const tags_t &tags,
                                      bool include_comments, const comments_t &comments,
                                      const std::chrono::system_clock::time_point &time) {
-  m_changesets.push_back(changeset_t(elem, tags, include_comments, comments, time));
+  m_changesets.emplace_back(elem, tags, include_comments, comments, time);
 }
 
 void test_formatter::write_diffresult_create_modify(const element_type elem,
@@ -226,8 +226,8 @@ std::ostream &operator<<(std::ostream &out, const test_formatter::node_t &n) {
       << "lon=" << n.lon << ", "
       << "lat=" << n.lat << ", "
       << "tags{";
-  for (const tags_t::value_type &v : n.tags) {
-    out << "\"" << v.first << "\" => \"" << v.second << "\", ";
+  for (const auto& [key, value] : n.tags) {
+    out << "\"" << key << "\" => \"" << value << "\", ";
   }
   out << "})";
 
@@ -254,13 +254,13 @@ std::ostream &operator<<(std::ostream &out, const test_formatter::changeset_t &c
       << "num_changes=" << c.m_info.num_changes << ", "
       << "comments_count=" << c.m_info.comments_count << "), "
       << "tags{";
-  for (const tags_t::value_type &v : c.m_tags) {
-    out << "\"" << v.first << "\" => \"" << v.second << "\", ";
+  for (const auto& [key, value] : c.m_tags) {
+    out << "\"" << key << "\" => \"" << value << "\", ";
   }
   out << "}, "
       << "include_comments=" << c.m_include_comments << ", "
       << "comments[";
-  for (const comments_t::value_type &v : c.m_comments) {
+  for (const auto &v : c.m_comments) {
     out << "comment(id=" << v.id << ", "
         << "author_id=" << v.author_id << ", "
         << "body=\"" << v.body << "\", "
@@ -271,7 +271,7 @@ std::ostream &operator<<(std::ostream &out, const test_formatter::changeset_t &c
   std::time_t t = std::chrono::system_clock::to_time_t(c.m_time);
 
   out << "], "
-      << "time=" << std::put_time( std::gmtime( &t ), "%FT%T%z")
+      << "time=" << std::put_time(std::gmtime( &t ), "%FT%T%z")
       << ")";
 
   return out;
@@ -280,12 +280,12 @@ std::ostream &operator<<(std::ostream &out, const test_formatter::changeset_t &c
 std::ostream &operator<<(std::ostream &out, const test_formatter::way_t &w) {
   out << "way(" << w.elem << ", "
       << "[";
-  for (const nodes_t::value_type &v : w.nodes) {
+  for (const auto &v : w.nodes) {
     out << v << ", ";
   }
   out << "], {";
-  for (const tags_t::value_type &v : w.tags) {
-    out << "\"" << v.first << "\" => \"" << v.second << "\", ";
+  for (const auto& [key, value] : w.tags) {
+    out << "\"" << key << "\" => \"" << value << "\", ";
   }
   out << "})";
   return out;
@@ -305,8 +305,8 @@ std::ostream &operator<<(std::ostream &out, const test_formatter::relation_t &r)
     out << m << ", ";
   }
   out << "], {";
-  for (const tags_t::value_type &v : r.tags) {
-    out << "\"" << v.first << "\" => \"" << v.second << "\", ";
+  for (const auto& [key, value] : r.tags) {
+    out << "\"" << key << "\" => \"" << value << "\", ";
   }
   out << "})";
   return out;
