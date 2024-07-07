@@ -579,9 +579,14 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_create", "[changeset][db
 	    comments_t(),
 	    t));
 
-        // TODO: check users changeset count
-	// TODO: check changesets_subscribers table
 
+	// User 31 should have 1 changeset in total
+	auto validate_cs_count = tdb.run_sql("SELECT * FROM users where id = 31 and changesets_count = 1");
+	REQUIRE(validate_cs_count == 1); // found 1 matching row
+
+	// Also user 31 should be subscribed to changeset 500
+	auto validate_cs_subscribers = tdb.run_sql("SELECT * FROM changesets_subscribers where subscriber_id = 31 and changeset_id = 500");
+	REQUIRE(validate_cs_subscribers == 1); // found 1 matching row
     }
 
 }
