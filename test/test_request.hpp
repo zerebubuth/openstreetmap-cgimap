@@ -46,7 +46,7 @@ struct test_request : public request {
   /// implementation of request interface
   ~test_request() override = default;
   const char *get_param(const char *key) const override;
-  const std::string get_payload() override;
+  std::string get_payload() override;
   void set_payload(const std::string&);
 
   void dispose() override;

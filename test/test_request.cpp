@@ -45,7 +45,7 @@ const char *test_request::get_param(const char *key) const {
   }
 }
 
-const std::string test_request::get_payload() {
+std::string test_request::get_payload() {
 
   // TODO: still a bit too much duplication from fcgi_request.cpp::get_payload
 

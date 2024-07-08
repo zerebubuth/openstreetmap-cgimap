@@ -17,7 +17,7 @@ namespace po = boost::program_options;
 
 namespace {
 
-po::variables_map first_pass_argments(int argc, char *argv[],
+po::variables_map first_pass_arguments(int argc, char *argv[],
                                       const po::options_description &desc) {
   // copy args because boost::program_options seems to destructively consume
   // them
@@ -60,7 +60,7 @@ bool registry::set_backend(std::unique_ptr<backend> ptr) {
 void registry::setup_options(int argc, char *argv[],
                              po::options_description &desc) {
 
-  po::variables_map vm = first_pass_argments(argc, argv, desc);
+  po::variables_map vm = first_pass_arguments(argc, argv, desc);
 
   if (!vm.count("help")) {
     desc.add(backend_ptr->options());

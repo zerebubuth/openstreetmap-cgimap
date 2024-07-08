@@ -52,11 +52,11 @@ void text_formatter::error(const std::exception &e) {
   writer->text(e.what());
 }
 
-void text_formatter::write_tags(const tags_t &tags) {
+void text_formatter::write_tags(const tags_t &) {
   // nothing needed here
 }
 
-void text_formatter::write_common(const element_info &elem) {
+void text_formatter::write_common(const element_info &) {
   // nothing needed here
 }
 

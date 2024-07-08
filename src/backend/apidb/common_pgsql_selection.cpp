@@ -352,7 +352,8 @@ struct node {
   using extra_columns = node_extra_columns;
 
   struct extra_info {
-    double lon, lat;
+    double lon;
+    double lat;
     inline void extract(const pqxx_tuple &row, const extra_columns& col) {
       lon = double(row[col.longitude_col].as<int64_t>()) / (global_settings::get_scale());
       lat = double(row[col.latitude_col].as<int64_t>()) / (global_settings::get_scale());

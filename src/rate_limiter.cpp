@@ -15,7 +15,7 @@
 
 
 std::tuple<bool, int> null_rate_limiter::check(const std::string &, bool) {
-  return std::make_tuple(false, 0);
+  return {false, 0};
 }
 
 void null_rate_limiter::update(const std::string &, int, bool) {
@@ -28,7 +28,7 @@ struct memcached_rate_limiter::state {
 
 memcached_rate_limiter::memcached_rate_limiter(
     const boost::program_options::variables_map &options) {
-  if (options.count("memcache") && (ptr = memcached_create(NULL)) != NULL) {
+  if (options.count("memcache") && (ptr = memcached_create(nullptr)) != nullptr) {
     memcached_server_st *server_list;
 
     memcached_behavior_set(ptr, MEMCACHED_BEHAVIOR_NO_BLOCK, 1);
@@ -42,7 +42,7 @@ memcached_rate_limiter::memcached_rate_limiter(
 
     memcached_server_list_free(server_list);
   } else {
-    ptr = NULL;
+    ptr = nullptr;
   }
 }
 
@@ -64,10 +64,10 @@ std::tuple<bool, int> memcached_rate_limiter::check(const std::string &key, bool
 
   if (ptr &&
       (sp = (state *)memcached_get(ptr, mc_key.data(), mc_key.size(), &length,
-                                   &flags, &error)) != NULL) {
+                                   &flags, &error)) != nullptr) {
     assert(length == sizeof(state));
 
-    int64_t elapsed = time(NULL) - sp->last_update;
+    int64_t elapsed = time(nullptr) - sp->last_update;
 
     if (elapsed * bytes_per_sec < sp->bytes_served) {
       bytes_served = sp->bytes_served - elapsed * bytes_per_sec;
@@ -78,16 +78,16 @@ std::tuple<bool, int> memcached_rate_limiter::check(const std::string &key, bool
 
   auto max_bytes = global_settings::get_ratelimiter_maxdebt(moderator);
   if (bytes_served < max_bytes) {
-    return std::make_tuple(false, 0);
+    return {false, 0};
   } else {
     // + 1 to reverse effect of integer flooring seconds
-    return std::make_tuple(true, (bytes_served - max_bytes) / bytes_per_sec + 1);
+    return {true, (bytes_served - max_bytes) / bytes_per_sec + 1};
   }
 }
 
 void memcached_rate_limiter::update(const std::string &key, int bytes, bool moderator) {
   if (ptr) {
-    time_t now = time(NULL);
+    time_t now = time(nullptr);
     std::string mc_key;
     state *sp;
     size_t length;
@@ -101,7 +101,7 @@ void memcached_rate_limiter::update(const std::string &key, int bytes, bool mode
 
     if (ptr &&
         (sp = (state *)memcached_get(ptr, mc_key.data(), mc_key.size(), &length,
-                                     &flags, &error)) != NULL) {
+                                     &flags, &error)) != nullptr) {
       assert(length == sizeof(state));
 
       int64_t elapsed = now - sp->last_update;
