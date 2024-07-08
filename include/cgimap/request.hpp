@@ -47,7 +47,7 @@ struct request {
 
   // get payload provided for the request. this is useful in particular
   // for HTTP POST and PUT requests.
-  virtual const std::string get_payload() = 0;
+  virtual std::string get_payload() = 0;
 
   /********************** RESPONSE HEADER FUNCTIONS **************************/
 

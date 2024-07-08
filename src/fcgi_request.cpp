@@ -76,7 +76,7 @@ const char *fcgi_request::get_param(const char *key) const {
   return FCGX_GetParam(key, m_impl->req.envp);
 }
 
-const std::string fcgi_request::get_payload() {
+std::string fcgi_request::get_payload() {
 
   // fetch and parse the content length
   const char *content_length_str = FCGX_GetParam("CONTENT_LENGTH", m_impl->req.envp);

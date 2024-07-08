@@ -45,11 +45,11 @@ std::string connect_db_str(const po::variables_map &options) {
     ostr << " " << (b "=") << options[a].as<std::string>();             \
   }
 
-  CONNOPT("dbname", "dbname");
-  CONNOPT("host", "host");
-  CONNOPT("username", "user");
-  CONNOPT("password", "password");
-  CONNOPT("dbport", "port");
+  CONNOPT("dbname", "dbname")
+  CONNOPT("host", "host")
+  CONNOPT("username", "user")
+  CONNOPT("password", "password")
+  CONNOPT("dbport", "port")
 
 #undef CONNOPT
   return ostr.str();
@@ -168,7 +168,7 @@ uint64_t pgsql_update::get_bbox_size_limit(osm_user_id_t uid)
     auto row = res[0];
     auto bbox_size_limit = row[0].as<int64_t>();
 
-    return std::max(bbox_size_limit, 0l);
+    return std::max(bbox_size_limit, 0L);
   }
 }
 

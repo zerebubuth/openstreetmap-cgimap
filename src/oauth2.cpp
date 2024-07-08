@@ -57,7 +57,7 @@ namespace oauth2 {
       return std::nullopt;
     }
 
-    const auto bearer_token = sm[1];
+    const auto& bearer_token = sm[1];
 
     bool expired;
     bool revoked;

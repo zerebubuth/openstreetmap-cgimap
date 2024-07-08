@@ -165,7 +165,7 @@ struct router {
 
     // Process HEAD like GET, as per rfc2616: The HEAD method is identical to
     // GET except that the server MUST NOT return a message-body in the response.
-    for (auto& rptr : rules_get) {
+    for (const auto& rptr : rules_get) {
 	if (rptr->invoke_if(p, params, hptr)) {
 	    if (*maybe_method == http::method::GET    ||
 		*maybe_method == http::method::HEAD   ||
@@ -175,7 +175,7 @@ struct router {
 	}
     }
 
-    for (auto& rptr : rules_post) {
+    for (const auto& rptr : rules_post) {
 	if (rptr->invoke_if(p, params, hptr)) {
 	    if (*maybe_method == http::method::POST||
 		*maybe_method == http::method::OPTIONS)
@@ -184,7 +184,7 @@ struct router {
 	}
     }
 
-    for (auto& rptr : rules_put) {
+    for (const auto& rptr : rules_put) {
 	if (rptr->invoke_if(p, params, hptr)) {
 	    if (*maybe_method == http::method::PUT||
 		*maybe_method == http::method::OPTIONS)
