@@ -86,7 +86,7 @@ public:
   void commit();
 
   template<typename... Args>
-  pqxx::result exec_prepared(const std::string &statement, Args&&... args) {
+  [[nodiscard]] pqxx::result exec_prepared(const std::string &statement, Args&&... args) {
 
     const auto start = std::chrono::steady_clock::now();
     auto res(m_txn.exec_prepared(statement, std::forward<Args>(args)...));
