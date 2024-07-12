@@ -42,7 +42,7 @@ public:
   void update(const std::string &key, int bytes, bool moderator) override;
 
 private:
-  memcached_st *ptr;
+  memcached_st *ptr = nullptr;
 
   struct state;
 };
