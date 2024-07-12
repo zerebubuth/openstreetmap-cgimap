@@ -7,8 +7,11 @@
  * For a full list of authors see the git log.
  */
 
+#include <future>
 #include <iostream>
+#include <memory>
 #include <stdexcept>
+#include <thread>
 #include <fmt/core.h>
 #include <boost/program_options.hpp>
 
@@ -19,6 +22,7 @@
 #include "cgimap/rate_limiter.hpp"
 #include "cgimap/routes.hpp"
 #include "cgimap/process_request.hpp"
+#include "cgimap/request_context.hpp"
 
 #include "test_formatter.hpp"
 #include "test_database.hpp"
@@ -815,6 +819,57 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][db
 	    false,
 	    comments_t(),
 	    t));
+    }
+}
+
+TEST_CASE_METHOD( DatabaseTestsFixture, "parallel test_changeset_update", "[changeset][db]" ) {
+
+
+    const std::string bearertoken = "Bearer 4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8";
+    const std::string generator = "Test";
+
+    auto sel_factory = tdb.get_data_selection_factory();
+    auto upd_factory = tdb.get_data_update_factory();
+
+    null_rate_limiter limiter;
+    routes route;
+
+    SECTION("Initialize test data") {
+      init_changesets(tdb);
+    }
+
+    SECTION("Try to update the same changeset in parallel") {
+
+      test_request req{};
+      RequestContext ctx{req};
+      UserInfo user{};
+      user.id = 31;
+      ctx.user = user;
+
+      auto factory = tdb.get_new_data_update_factory();
+      auto txn = factory->get_default_transaction();
+      auto upd = factory->make_data_update(*txn);
+      auto cs_upd = upd->get_changeset_updater(ctx, 51);
+      cs_upd->api_update_changeset({});
+
+
+      // Try to update changeset in parallel thread while the main thread
+      // is holding an exclusive lock on changeset 51
+      auto future_cs = std::async(std::launch::async, [&req,ctx] {
+         auto factory = tdb.get_new_data_update_factory();
+         auto txn = factory->get_default_transaction();
+         auto upd = factory->make_data_update(*txn);
+
+         auto cs_upd = upd->get_changeset_updater(ctx, 51);
+         cs_upd->api_update_changeset({});
+         throw std::runtime_error("Should not reach this point");
+      });
+
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+      upd->commit();
+
+      REQUIRE_THROWS_MATCHES(future_cs.get(), http::conflict, Catch::Message("Changeset 51 is currently locked by another process."));
     }
 }
 

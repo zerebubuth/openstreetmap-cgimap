@@ -209,10 +209,20 @@ void ApiDB_Changeset_Updater::lock_cs(bool& is_closed, std::string& closed_at, s
 		 ((now() at time zone 'utc') > closed_at) as is_closed,
 		 to_char((now() at time zone 'utc'),'YYYY-MM-DD HH24:MI:SS "UTC"') as current_time
 	  FROM changesets WHERE id = $1 AND user_id = $2 
-	  FOR UPDATE 
+	  FOR UPDATE NOWAIT
      )");
 
-  auto r = m.exec_prepared("changeset_current_lock", changeset, req_ctx.user->id);
+  auto r = [&] {
+    try {
+      return m.exec_prepared("changeset_current_lock", changeset, req_ctx.user->id);
+    } catch (const pqxx::sql_error &e) {
+      if (e.sqlstate() == "55P03") // lock not available
+        throw http::conflict(fmt::format("Changeset {:d} is currently locked by another process.", changeset));
+      // rethrow all other sql errors
+      throw;
+    }
+  }();
+
   if (r.affected_rows () != 1)
     throw http::conflict ("The user doesn't own that changeset");
 
