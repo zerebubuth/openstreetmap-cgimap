@@ -31,7 +31,7 @@ FROM debian:trixie-slim
 RUN apt-get update -qq && \
     apt-get install -y \
        libfcgi-bin libmemcached11 libboost-program-options1.83.0 \
-       libxml2 libcrypto++8 libyajl2 libpqxx-7.8 zlib1g libbrotli1 libfmt9 \
+       libxml2 libcrypto++8 libyajl2 libpqxx-7.9 zlib1g libbrotli1 libfmt9 \
        --no-install-recommends && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
