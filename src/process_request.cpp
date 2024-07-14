@@ -501,6 +501,9 @@ void process_request(request &req, rate_limiter &limiter,
     case http::method::POST:
     case http::method::PUT: {
       validate_user_db_update_permission(req_ctx, *selection);
+      // data_selection based read only transaction no longer needed
+      selection.reset(nullptr);
+      default_transaction.reset(nullptr);
 
       if (update_factory == nullptr)
         throw http::bad_request("Backend does not support given HTTP method");
