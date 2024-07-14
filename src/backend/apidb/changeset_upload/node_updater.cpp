@@ -124,9 +124,9 @@ void ApiDB_Node_Updater::process_new_nodes() {
 
   lock_current_nodes(ids);
 
-  insert_new_current_node_tags(create_nodes);
+  const auto ids_with_tags = insert_new_current_node_tags(create_nodes);
   save_current_nodes_to_history(ids);
-  save_current_node_tags_to_history(ids);
+  save_current_node_tags_to_history(ids_with_tags);
 
   m_bbox.expand(calc_node_bbox(ids));
 
@@ -171,9 +171,9 @@ void ApiDB_Node_Updater::process_modify_nodes() {
     delete_current_node_tags(ids_package);
     update_current_nodes(modify_nodes_package);
 
-    insert_new_current_node_tags(modify_nodes_package);
+    const auto ids_with_tags = insert_new_current_node_tags(modify_nodes_package);
     save_current_nodes_to_history(ids_package);
-    save_current_node_tags_to_history(ids_package);
+    save_current_node_tags_to_history(ids_with_tags);
 
     m_bbox.expand(calc_node_bbox(ids_package));
   }
@@ -669,11 +669,11 @@ void ApiDB_Node_Updater::delete_current_nodes(
     ct.deleted_node_ids.push_back({ id_to_old_id[row["id"].as<osm_nwr_id_t>()] });
 }
 
-void ApiDB_Node_Updater::insert_new_current_node_tags(
+std::vector<osm_nwr_id_t> ApiDB_Node_Updater::insert_new_current_node_tags(
     const std::vector<node_t> &nodes) {
 
   if (nodes.empty())
-    return;
+    return {};
 
   m.prepare("insert_new_current_node_tags",
 
@@ -695,22 +695,27 @@ void ApiDB_Node_Updater::insert_new_current_node_tags(
 
   unsigned total_tags = 0;
 
-  for (const auto &node : nodes)
+  for (const auto &node : nodes) {
     for (const auto &tag : node.tags) {
       ids.emplace_back(node.id);
       ks.emplace_back(escape(tag.first));
       vs.emplace_back(escape(tag.second));
       ++total_tags;
     }
+  }
 
   if (total_tags == 0)
-    return;
+    return {};
 
-  pqxx::result r =
-      m.exec_prepared("insert_new_current_node_tags", ids, ks, vs);
+  auto r = m.exec_prepared("insert_new_current_node_tags", ids, ks, vs);
 
   if (r.affected_rows() != total_tags)
     throw http::server_error("Could not create new current node tags");
+
+  // prepare list of node ids with tags
+  std::sort(ids.begin(), ids.end());
+  ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
+  return ids;
 }
 
 void ApiDB_Node_Updater::save_current_nodes_to_history(

@@ -115,7 +115,7 @@ private:
 
   void update_current_ways(const std::vector<way_t> &ways, bool visible);
 
-  void insert_new_current_way_tags(const std::vector<way_t> &ways);
+  [[nodiscard]] std::vector<osm_nwr_id_t> insert_new_current_way_tags(const std::vector<way_t> &ways);
 
   void insert_new_current_way_nodes(const std::vector<way_t> &ways);
 

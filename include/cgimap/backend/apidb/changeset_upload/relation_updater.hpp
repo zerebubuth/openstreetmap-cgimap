@@ -152,7 +152,7 @@ private:
   void update_current_relations(const std::vector<relation_t> &relations,
                                 bool visible);
 
-  void
+  [[nodiscard]] std::vector<osm_nwr_id_t>
   insert_new_current_relation_tags(const std::vector<relation_t> &relations);
 
   void
