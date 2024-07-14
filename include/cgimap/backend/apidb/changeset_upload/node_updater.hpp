@@ -99,7 +99,7 @@ private:
 
   void delete_current_nodes(const std::vector<node_t> &nodes);
 
-  void insert_new_current_node_tags(const std::vector<node_t> &nodes);
+  [[nodiscard]] std::vector<osm_nwr_id_t> insert_new_current_node_tags(const std::vector<node_t> &nodes);
 
   void save_current_nodes_to_history(const std::vector<osm_nwr_id_t> &ids);
 

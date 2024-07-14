@@ -146,11 +146,11 @@ void ApiDB_Relation_Updater::process_new_relations() {
   lock_current_relations(ids);
   lock_future_members(create_relations, ids);
 
-  insert_new_current_relation_tags(create_relations);
+  const auto ids_with_tags = insert_new_current_relation_tags(create_relations);
   insert_new_current_relation_members(create_relations);
 
   save_current_relations_to_history(ids);
-  save_current_relation_tags_to_history(ids);
+  save_current_relation_tags_to_history(ids_with_tags);
   save_current_relation_members_to_history(ids);
 
   m_bbox.expand(calc_relation_bbox(ids));
@@ -242,11 +242,11 @@ void ApiDB_Relation_Updater::process_modify_relations() {
     delete_current_relation_members(ids_package);
 
     update_current_relations(modify_relations_package, true);
-    insert_new_current_relation_tags(modify_relations_package);
+    const auto ids_with_tags = insert_new_current_relation_tags(modify_relations_package);
     insert_new_current_relation_members(modify_relations_package);
 
     save_current_relations_to_history(ids_package);
-    save_current_relation_tags_to_history(ids_package);
+    save_current_relation_tags_to_history(ids_with_tags);
     save_current_relation_members_to_history(ids_package);
 
     /* After the database changes are done, check the updated
@@ -1290,11 +1290,11 @@ void ApiDB_Relation_Updater::update_current_relations(
   }
 }
 
-void ApiDB_Relation_Updater::insert_new_current_relation_tags(
+std::vector<osm_nwr_id_t>  ApiDB_Relation_Updater::insert_new_current_relation_tags(
     const std::vector<relation_t> &relations) {
 
   if (relations.empty())
-    return;
+    return {};
 
   m.prepare("insert_new_current_relation_tags",
 
@@ -1314,15 +1314,29 @@ void ApiDB_Relation_Updater::insert_new_current_relation_tags(
   std::vector<std::string> ks;
   std::vector<std::string> vs;
 
-  for (const auto &relation : relations)
+  unsigned total_tags = 0;
+
+  for (const auto &relation : relations) {
     for (const auto &tag : relation.tags) {
       ids.emplace_back(relation.id);
       ks.emplace_back(escape(tag.first));
       vs.emplace_back(escape(tag.second));
+      ++total_tags;
     }
+  }
 
-  pqxx::result r =
-      m.exec_prepared("insert_new_current_relation_tags", ids, ks, vs);
+  if (total_tags == 0)
+    return {};
+
+  auto r = m.exec_prepared("insert_new_current_relation_tags", ids, ks, vs);
+
+  if (r.affected_rows() != total_tags)
+    throw http::server_error("Could not create new current relation tags");
+
+  // prepare list of relation ids with tags
+  std::sort(ids.begin(), ids.end());
+  ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
+  return ids;
 }
 
 void ApiDB_Relation_Updater::insert_new_current_relation_members(

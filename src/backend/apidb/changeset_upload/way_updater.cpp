@@ -142,11 +142,11 @@ void ApiDB_Way_Updater::process_new_ways() {
   lock_current_ways(ids);
   lock_future_nodes(create_ways);
 
-  insert_new_current_way_tags(create_ways);
+  const auto ids_with_tags = insert_new_current_way_tags(create_ways);
   insert_new_current_way_nodes(create_ways);
 
   save_current_ways_to_history(ids);
-  save_current_way_tags_to_history(ids);
+  save_current_way_tags_to_history(ids_with_tags);
   save_current_way_nodes_to_history(ids);
 
   m_bbox.expand(calc_way_bbox(ids));
@@ -196,11 +196,11 @@ void ApiDB_Way_Updater::process_modify_ways() {
     delete_current_way_nodes(ids_package);
 
     update_current_ways(modify_ways_package, true);
-    insert_new_current_way_tags(modify_ways_package);
+    const auto ids_with_tags = insert_new_current_way_tags(modify_ways_package);
     insert_new_current_way_nodes(modify_ways_package);
 
     save_current_ways_to_history(ids_package);
-    save_current_way_tags_to_history(ids_package);
+    save_current_way_tags_to_history(ids_with_tags);
     save_current_way_nodes_to_history(ids_package);
 
     m_bbox.expand(calc_way_bbox(ids));
@@ -690,11 +690,11 @@ void ApiDB_Way_Updater::update_current_ways(const std::vector<way_t> &ways,
   }
 }
 
-void ApiDB_Way_Updater::insert_new_current_way_tags(
+std::vector<osm_nwr_id_t> ApiDB_Way_Updater::insert_new_current_way_tags(
     const std::vector<way_t> &ways) {
 
   if (ways.empty())
-    return;
+    return {};
 
   m.prepare("insert_new_current_way_tags",
 
@@ -714,15 +714,29 @@ void ApiDB_Way_Updater::insert_new_current_way_tags(
   std::vector<std::string> ks;
   std::vector<std::string> vs;
 
-  for (const auto &way : ways)
+  unsigned total_tags = 0;
+
+  for (const auto &way : ways) {
     for (const auto &tag : way.tags) {
       ids.emplace_back(way.id);
       ks.emplace_back(escape(tag.first));
       vs.emplace_back(escape(tag.second));
+      ++total_tags;
     }
+  }
 
-  pqxx::result r =
-      m.exec_prepared("insert_new_current_way_tags", ids, ks, vs);
+  if (total_tags == 0)
+    return {};
+
+  auto r = m.exec_prepared("insert_new_current_way_tags", ids, ks, vs);
+
+  if (r.affected_rows() != total_tags)
+    throw http::server_error("Could not create new current way tags");
+
+  // prepare list of way ids with tags
+  std::sort(ids.begin(), ids.end());
+  ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
+  return ids;
 }
 
 void ApiDB_Way_Updater::insert_new_current_way_nodes(
