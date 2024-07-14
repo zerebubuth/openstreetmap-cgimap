@@ -284,7 +284,7 @@ std::unique_ptr<database> parse_xml(const char *filename) {
   xml_parser parser(db.get());
   int status = xmlSAXUserParseFile(&handler, &parser, filename);
   if (status != 0) {
-    xmlErrorPtr err = xmlGetLastError();
+    const auto err = xmlGetLastError();
     throw std::runtime_error(
         fmt::format("XML ERROR: {}.", err->message));
   }
