@@ -234,3 +234,4 @@ CGImap contains code from and is partly based on the following:
   by The libxml++ development team
 * [Catch2](https://github.com/catchorg/Catch2)
   by Catch2 Authors
+* [SJParser](https://gitlab.com/dhurum/sjparser) by Denis Tikhomirov
