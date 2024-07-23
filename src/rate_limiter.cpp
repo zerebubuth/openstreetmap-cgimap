@@ -20,7 +20,7 @@ std::tuple<bool, int> null_rate_limiter::check(const std::string &, bool) {
   return {false, 0};
 }
 
-void null_rate_limiter::update(const std::string &, int, bool) {
+void null_rate_limiter::update(const std::string &, uint32_t, bool) {
 }
 
 struct memcached_rate_limiter::state {
@@ -89,7 +89,7 @@ std::tuple<bool, int> memcached_rate_limiter::check(const std::string &key, bool
   }
 }
 
-void memcached_rate_limiter::update(const std::string &key, int bytes, bool moderator) {
+void memcached_rate_limiter::update(const std::string &key, uint32_t bytes, bool moderator) {
 
   if (!ptr)
     return;
@@ -110,8 +110,8 @@ void memcached_rate_limiter::update(const std::string &key, int bytes, bool mode
 
   // calculate number of seconds after which the memcached entry is guaranteed
   // to be irrelevant (adding a bit of headroom).
-  const auto memcached_expiration = std::min(REALTIME_MAXDELTA,
-      2L * global_settings::get_ratelimiter_maxdebt(moderator) / bytes_per_sec);
+  const auto relevant_bytes = std::max(global_settings::get_ratelimiter_maxdebt(moderator), bytes);
+  const auto memcached_expiration = std::min(REALTIME_MAXDELTA, 2L * relevant_bytes / bytes_per_sec);
 
 retry:
 
