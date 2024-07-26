@@ -29,6 +29,7 @@ namespace {
 
 std::map<std::string, std::string> process_testmsg(const std::string &payload) {
 
+  std::setlocale(LC_ALL, "C.UTF-8");
   api06::ChangesetXMLParser parser{};
   return parser.process_message(payload);
 }

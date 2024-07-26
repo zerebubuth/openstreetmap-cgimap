@@ -33,8 +33,6 @@ inline size_t unicode_strlen(const std::string & s)
 {
    const char* mbstr = s.c_str();
 
-   std::setlocale(LC_ALL, "C.UTF-8");          // TODO: check location for setlocale
-
    std::mbstate_t state{};
    std::size_t len = std::mbsrtowcs(nullptr, &mbstr, 0, &state);
 

@@ -66,6 +66,7 @@ std::string repeat(const std::string &input, size_t num) {
 
 void process_testmsg(const std::string &payload) {
 
+  std::setlocale(LC_ALL, "C.UTF-8");
   Test_Parser_Callback cb;
   api06::OSMChangeXMLParser parser(cb);
   parser.process_message(payload);

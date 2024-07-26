@@ -420,9 +420,12 @@ void process_request(request &req, rate_limiter &limiter,
                      const std::string &generator, const routes &route,
                      data_selection::factory& factory,
                      data_update::factory* update_factory) {
+
   try {
 
     RequestContext req_ctx{req};
+
+    std::setlocale(LC_ALL, "C.UTF-8");
 
     // get the client IP address
     const auto ip = fcgi_get_env(req, "REMOTE_ADDR");
