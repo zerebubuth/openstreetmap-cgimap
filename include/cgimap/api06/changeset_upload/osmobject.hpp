@@ -13,9 +13,11 @@
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
 
-#include <fmt/core.h>
+#include <charconv>
 #include <map>
 #include <optional>
+
+#include <fmt/core.h>
 
 namespace api06 {
 
@@ -35,11 +37,32 @@ namespace api06 {
 
     virtual ~OSMObject() = default;
 
-    void set_changeset(osm_changeset_id_t changeset) { m_changeset = changeset; }
+    void set_changeset(osm_changeset_id_t changeset) {
 
-    void set_version(osm_version_t version) { m_version = version; }
+      if (changeset <= 0) {
+          throw xml_error("Changeset must be a positive number");
+      }
 
-    void set_id(osm_nwr_signed_id_t id) { m_id = id; }
+      m_changeset = changeset;
+    }
+
+    void set_version(osm_version_t version) {
+
+      if (version < 0) {
+          throw xml_error("Version may not be negative");
+      }
+
+      m_version = version;
+    }
+
+    void set_id(osm_nwr_signed_id_t id) {
+
+      if (id == 0) {
+          throw xml_error("Id must be different from 0");
+      }
+
+      m_id = id;
+    }
 
     // Setters with string conversions
 
@@ -47,57 +70,42 @@ namespace api06 {
 
       osm_changeset_id_t _changeset = 0;
 
-      try {
-	  _changeset = std::stol(changeset);
-      } catch (std::invalid_argument& e) {
-	  throw xml_error("Changeset is not numeric");
-      } catch (std::out_of_range& e) {
-	  throw xml_error("Changeset number is too large");
-      }
+      auto [_, ec] = std::from_chars(changeset.data(), changeset.data() + changeset.size(), _changeset);
 
-      if (_changeset <= 0) {
-	  throw xml_error("Changeset must be a positive number");
-      }
-
-      set_changeset(_changeset);
+      if (ec == std::errc())
+        set_changeset(_changeset);
+      else if (ec == std::errc::invalid_argument)
+        throw xml_error("Changeset is not numeric");
+      else if (ec == std::errc::result_out_of_range)
+        throw xml_error("Changeset number is too large");
     }
 
     void set_version(const std::string &version) {
 
       int64_t _version = 0;
 
-      try {
-	  _version = std::stoi(version);
-      } catch (std::invalid_argument& e) {
-	  throw xml_error("Version is not numeric");
-      } catch (std::out_of_range& e) {
-	  throw xml_error("Version value is too large");
-      }
+      auto [_, ec] = std::from_chars(version.data(), version.data() + version.size(), _version);
 
-      if (_version < 0) {
-	  throw xml_error("Version may not be negative");
-      }
-
-      set_version(_version);
+      if (ec == std::errc())
+        set_version(_version);
+      else if (ec == std::errc::invalid_argument)
+        throw xml_error("Version is not numeric");
+      else if (ec == std::errc::result_out_of_range)
+        throw xml_error("Version value is too large");
     }
 
     void set_id(const std::string &id) {
 
       osm_nwr_signed_id_t _id = 0;
 
-      try {
-	  _id = std::stol(id);
-      } catch (std::invalid_argument& e) {
-	  throw xml_error("Id is not numeric");
-      } catch (std::out_of_range& e) {
-	  throw xml_error("Id number is too large");
-      }
+      auto [_, ec] = std::from_chars(id.data(), id.data() + id.size(), _id);
 
-      if (_id == 0) {
-	  throw xml_error("Id must be different from 0");
-      }
-
-      set_id(_id);
+      if (ec == std::errc())
+        set_id(_id);
+      else if (ec == std::errc::invalid_argument)
+        throw xml_error("Id is not numeric");
+      else if (ec == std::errc::result_out_of_range)
+        throw xml_error("Id number is too large");
     }
 
     osm_changeset_id_t changeset() const { return *m_changeset; }
@@ -129,7 +137,7 @@ namespace api06 {
 	      fmt::format("Value has more than 255 unicode characters in {}", to_string()));
       }
 
-      if (!(m_tags.insert(std::pair<std::string, std::string>(key, value)))
+      if (!(m_tags.insert({key, value}))
 	  .second) {
 	  throw xml_error(
 	       fmt::format("{} has duplicate tags with key {}", to_string(), key));
