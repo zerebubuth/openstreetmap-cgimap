@@ -36,7 +36,7 @@ struct recording_rate_limiter : public rate_limiter {
     return std::make_tuple(false, 0);
   }
 
-  void update(const std::string &key, int bytes, bool moderator) override {
+  void update(const std::string &key, uint32_t bytes, bool moderator) override {
     m_keys_seen.insert(key);
   }
 
