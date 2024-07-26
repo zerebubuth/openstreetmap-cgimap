@@ -675,6 +675,8 @@ std::vector<osm_nwr_id_t> ApiDB_Node_Updater::insert_new_current_node_tags(
   if (nodes.empty())
     return {};
 
+#if PQXX_VERSION_MAJOR < 7
+
   m.prepare("insert_new_current_node_tags",
 
             R"(
@@ -711,6 +713,23 @@ std::vector<osm_nwr_id_t> ApiDB_Node_Updater::insert_new_current_node_tags(
 
   if (r.affected_rows() != total_tags)
     throw http::server_error("Could not create new current node tags");
+
+#else
+
+  std::vector<osm_nwr_id_t> ids;
+
+  auto stream = m.to_stream("current_node_tags", "node_id, k, v");
+
+  for (const auto &node : nodes) {
+    for (const auto &tag : node.tags) {
+      stream.write_values(node.id, tag.first, tag.second);
+      ids.emplace_back(node.id);
+    }
+  }
+
+  stream.complete();
+
+#endif
 
   // prepare list of node ids with tags
   std::sort(ids.begin(), ids.end());

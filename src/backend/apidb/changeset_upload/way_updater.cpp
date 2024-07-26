@@ -693,8 +693,10 @@ void ApiDB_Way_Updater::update_current_ways(const std::vector<way_t> &ways,
 std::vector<osm_nwr_id_t> ApiDB_Way_Updater::insert_new_current_way_tags(
     const std::vector<way_t> &ways) {
 
-  if (ways.empty())
-    return {};
+ if (ways.empty())
+   return {};
+
+#if PQXX_VERSION_MAJOR < 7
 
   m.prepare("insert_new_current_way_tags",
 
@@ -733,6 +735,23 @@ std::vector<osm_nwr_id_t> ApiDB_Way_Updater::insert_new_current_way_tags(
   if (r.affected_rows() != total_tags)
     throw http::server_error("Could not create new current way tags");
 
+#else
+
+  std::vector<osm_nwr_id_t> ids;
+
+  auto stream = m.to_stream("current_way_tags", "way_id, k, v");
+
+  for (const auto &way : ways) {
+    for (const auto &tag : way.tags) {
+      stream.write_values(way.id, tag.first, tag.second);
+      ids.emplace_back(way.id);
+    }
+  }
+
+  stream.complete();
+
+#endif
+
   // prepare list of way ids with tags
   std::sort(ids.begin(), ids.end());
   ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
@@ -744,6 +763,8 @@ void ApiDB_Way_Updater::insert_new_current_way_nodes(
 
   if (ways.empty())
     return;
+
+#if PQXX_VERSION_MAJOR < 7
 
   m.prepare("insert_new_current_way_nodes",
 
@@ -772,6 +793,19 @@ void ApiDB_Way_Updater::insert_new_current_way_nodes(
 
   pqxx::result r =
       m.exec_prepared("insert_new_current_way_nodes", ids, nodeids, sequenceids);
+#else
+
+  auto stream = m.to_stream("current_way_nodes", "way_id, node_id, sequence_id");
+
+  for (const auto &way : ways) {
+    for (const auto &wn : way.way_nodes) {
+      stream.write_values(way.id, wn.node_id, wn.sequence_id);
+    }
+  }
+
+  stream.complete();
+
+#endif
 }
 
 void ApiDB_Way_Updater::save_current_ways_to_history(

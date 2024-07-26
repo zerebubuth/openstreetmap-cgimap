@@ -1296,6 +1296,8 @@ std::vector<osm_nwr_id_t>  ApiDB_Relation_Updater::insert_new_current_relation_t
   if (relations.empty())
     return {};
 
+#if PQXX_VERSION_MAJOR < 7
+
   m.prepare("insert_new_current_relation_tags",
 
             R"(
@@ -1333,10 +1335,29 @@ std::vector<osm_nwr_id_t>  ApiDB_Relation_Updater::insert_new_current_relation_t
   if (r.affected_rows() != total_tags)
     throw http::server_error("Could not create new current relation tags");
 
+
+#else
+
+  std::vector<osm_nwr_id_t> ids;
+
+  auto stream = m.to_stream("current_relation_tags", "relation_id, k, v");
+
+  for (const auto &relation : relations) {
+    for (const auto &tag : relation.tags) {
+      stream.write_values(relation.id, tag.first, tag.second);
+      ids.emplace_back(relation.id);
+    }
+  }
+
+  stream.complete();
+
+#endif
+
   // prepare list of relation ids with tags
   std::sort(ids.begin(), ids.end());
   ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
   return ids;
+
 }
 
 void ApiDB_Relation_Updater::insert_new_current_relation_members(
@@ -1344,6 +1365,8 @@ void ApiDB_Relation_Updater::insert_new_current_relation_members(
 
   if (relations.empty())
     return;
+
+#if PQXX_VERSION_MAJOR < 7
 
   m.prepare("insert_new_current_relation_members",
 
@@ -1378,6 +1401,19 @@ void ApiDB_Relation_Updater::insert_new_current_relation_members(
 
   pqxx::result r = m.exec_prepared("insert_new_current_relation_members",
 				   ids, membertypes, memberids, memberroles, sequenceids);
+#else
+
+  auto stream = m.to_stream("current_relation_members", "relation_id, member_type, member_id, member_role, sequence_id");
+
+  for (const auto &relation : relations) {
+    for (const auto &member : relation.members) {
+      stream.write_values(relation.id, member.member_type, member.member_id, member.member_role, member.sequence_id);
+    }
+  }
+
+  stream.complete();
+
+#endif
 }
 
 void ApiDB_Relation_Updater::save_current_relations_to_history(
