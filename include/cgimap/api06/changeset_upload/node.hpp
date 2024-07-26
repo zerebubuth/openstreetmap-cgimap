@@ -12,9 +12,8 @@
 
 #include "cgimap/api06/changeset_upload/osmobject.hpp"
 
-#include <iostream>
+#include <charconv>
 #include <optional>
-#include <cmath>
 
 namespace api06 {
 
@@ -31,32 +30,30 @@ public:
 
   void set_lat(const std::string &lat) {
 
-    double _lat = -200.0;
+    double _lat;
 
-    try {
-      _lat = std::stod(lat);
-    } catch (std::invalid_argument &e) {
+    auto [_, ec] = std::from_chars(lat.data(), lat.data() + lat.size(), _lat);
+
+    if (ec == std::errc())
+      set_lat(_lat);
+    else if (ec == std::errc::invalid_argument)
       throw xml_error("Latitude is not numeric");
-    } catch (std::out_of_range &e) {
+    else if (ec == std::errc::result_out_of_range)
       throw xml_error("Latitude value is too large");
-    }
-
-    set_lat(_lat);
   }
 
   void set_lon(const std::string &lon) {
 
-    double _lon = -200.0;
+    double _lon;
 
-    try {
-      _lon = std::stod(lon);
-    } catch (std::invalid_argument &e) {
+    auto [_, ec] = std::from_chars(lon.data(), lon.data() + lon.size(), _lon);
+
+    if (ec == std::errc())
+      set_lon(_lon);
+    else if (ec == std::errc::invalid_argument)
       throw xml_error("Longitude is not numeric");
-    } catch (std::out_of_range &e) {
+    else if (ec == std::errc::result_out_of_range)
       throw xml_error("Longitude value is too large");
-    }
-
-    set_lon(_lon);
   }
 
   void set_lat(double lat) {

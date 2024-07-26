@@ -53,24 +53,28 @@ public:
     m_role = role;
   }
 
+  void set_ref(osm_nwr_signed_id_t ref) {
+
+    if (ref == 0) {
+      throw xml_error("Relation member 'ref' attribute may not be 0");
+    }
+
+    m_ref = ref;
+  }
+
   void set_ref(const std::string &ref) {
 
     osm_nwr_signed_id_t _ref = 0;
 
-    try {
-      _ref = std::stol(ref);
-    } catch (std::invalid_argument &e) {
+    auto [_, ec] = std::from_chars(ref.data(), ref.data() + ref.size(), _ref);
+
+    if (ec == std::errc()) {
+      set_ref(_ref);
+    }
+    else if (ec == std::errc::invalid_argument)
       throw xml_error("Relation member 'ref' attribute is not numeric");
-    } catch (std::out_of_range &e) {
-      throw xml_error(
-          "Relation member 'ref' attribute value is too large");
-    }
-
-    if (_ref == 0) {
-      throw xml_error("Relation member 'ref' attribute may not be 0");
-    }
-
-    m_ref = _ref;
+    else if (ec == std::errc::result_out_of_range)
+      throw xml_error("Relation member 'ref' attribute value is too large");
   }
 
   bool is_valid() const {
