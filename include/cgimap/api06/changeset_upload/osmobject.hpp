@@ -78,6 +78,8 @@ namespace api06 {
         throw xml_error("Changeset is not numeric");
       else if (ec == std::errc::result_out_of_range)
         throw xml_error("Changeset number is too large");
+      else
+        throw xml_error("Unexpected parsing error");
     }
 
     void set_version(const std::string &version) {
@@ -92,6 +94,8 @@ namespace api06 {
         throw xml_error("Version is not numeric");
       else if (ec == std::errc::result_out_of_range)
         throw xml_error("Version value is too large");
+      else
+        throw xml_error("Unexpected parsing error");
     }
 
     void set_id(const std::string &id) {
@@ -106,6 +110,8 @@ namespace api06 {
         throw xml_error("Id is not numeric");
       else if (ec == std::errc::result_out_of_range)
         throw xml_error("Id number is too large");
+      else
+        throw xml_error("Unexpected parsing error");
     }
 
     osm_changeset_id_t changeset() const { return *m_changeset; }
