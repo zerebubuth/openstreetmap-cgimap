@@ -40,6 +40,8 @@ public:
       throw xml_error("Latitude is not numeric");
     else if (ec == std::errc::result_out_of_range)
       throw xml_error("Latitude value is too large");
+    else
+      throw xml_error("Unexpected parsing error");
   }
 
   void set_lon(const std::string &lon) {
@@ -54,6 +56,8 @@ public:
       throw xml_error("Longitude is not numeric");
     else if (ec == std::errc::result_out_of_range)
       throw xml_error("Longitude value is too large");
+    else
+      throw xml_error("Unexpected parsing error");
   }
 
   void set_lat(double lat) {

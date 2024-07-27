@@ -47,6 +47,8 @@ public:
       throw xml_error("Way node is not numeric");
     else if (ec == std::errc::result_out_of_range)
       throw xml_error("Way node value is too large");
+    else
+      throw xml_error("Unexpected parsing error");
   }
 
   const std::vector<osm_nwr_signed_id_t> &nodes() const { return m_way_nodes; }

@@ -75,6 +75,8 @@ public:
       throw xml_error("Relation member 'ref' attribute is not numeric");
     else if (ec == std::errc::result_out_of_range)
       throw xml_error("Relation member 'ref' attribute value is too large");
+    else
+      throw xml_error("Unexpected parsing error");
   }
 
   bool is_valid() const {
