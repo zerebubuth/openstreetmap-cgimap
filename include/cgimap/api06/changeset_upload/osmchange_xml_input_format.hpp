@@ -7,8 +7,8 @@
  * For a full list of authors see the git log.
  */
 
-#ifndef OSMCHANGE_INPUT_FORMAT_HPP
-#define OSMCHANGE_INPUT_FORMAT_HPP
+#ifndef OSMCHANGE_XML_INPUT_FORMAT_HPP
+#define OSMCHANGE_XML_INPUT_FORMAT_HPP
 
 #include "cgimap/api06/changeset_upload/node.hpp"
 #include "cgimap/api06/changeset_upload/osmobject.hpp"
@@ -67,7 +67,7 @@ protected:
       if (element == "osmChange") {
         m_callback.start_document();
       } else {
-        throw xml_error{
+        throw payload_error{
           fmt::format("Unknown top-level element {}, expecting osmChange",
            element)
         };
@@ -94,7 +94,7 @@ protected:
         m_context.push_back(context::in_delete);
         m_operation = operation::op_delete;
       } else {
-        throw xml_error{
+        throw payload_error{
            fmt::format(
                "Unknown action {}, choices are create, modify, delete",
            element)
@@ -120,7 +120,7 @@ protected:
         init_object(*m_relation, attrs);
         m_context.push_back(context::relation);
       } else {
-        throw xml_error{
+        throw payload_error{
           fmt::format(
                "Unknown element {}, expecting node, way or relation",
            element)
@@ -145,7 +145,7 @@ protected:
           }
         });
         if (!ref_found)
-          throw xml_error{fmt::format(
+          throw payload_error{fmt::format(
                                 "Missing mandatory ref field on way node {}",
                             m_way->to_string()) };
       } else if (element == "tag") {
@@ -166,7 +166,7 @@ protected:
           }
         });
         if (!member.is_valid()) {
-          throw xml_error{ fmt::format(
+          throw payload_error{ fmt::format(
                                 "Missing mandatory field on relation member in {}",
                             m_relation->to_string()) };
         }
@@ -176,7 +176,7 @@ protected:
       }
       break;
     case context::in_object:
-      throw xml_error{ "xml file nested too deep" };
+      throw payload_error{ "xml file nested too deep" };
       break;
     }
   }
@@ -216,7 +216,7 @@ protected:
     case context::node:
       assert(element == "node");
       if (!m_node->is_valid(m_operation)) {
-        throw xml_error{
+        throw payload_error{
           fmt::format("{} does not include all mandatory fields",
            m_node->to_string())
         };
@@ -228,7 +228,7 @@ protected:
     case context::way:
       assert(element == "way");
       if (!m_way->is_valid(m_operation)) {
-        throw xml_error{
+        throw payload_error{
           fmt::format("{} does not include all mandatory fields",
            m_way->to_string())
         };
@@ -241,7 +241,7 @@ protected:
     case context::relation:
       assert(element == "relation");
       if (!m_relation->is_valid(m_operation)) {
-        throw xml_error{
+        throw payload_error{
           fmt::format("{} does not include all mandatory fields",
            m_relation->to_string())
         };
@@ -260,7 +260,7 @@ protected:
 
     try {
         throw;
-    } catch (const xml_error& e) {
+    } catch (const payload_error& e) {
       throw_with_context(e, location);
     }
   }
@@ -304,11 +304,11 @@ private:
     });
 
     if (!object.has_id()) {
-	throw xml_error{ "Mandatory field id missing in object" };
+	throw payload_error{ "Mandatory field id missing in object" };
     }
 
     if (!object.has_changeset()) {
-      throw xml_error{ fmt::format("Changeset id is missing for {}",
+      throw payload_error{ fmt::format("Changeset id is missing for {}",
                         object.to_string()) };
     }
 
@@ -320,12 +320,12 @@ private:
                m_operation == operation::op_modify) {
       // objects for other operations must have a positive version number
       if (!object.has_version()) {
-        throw xml_error{ fmt::format(
+        throw payload_error{ fmt::format(
                               "Version is required when updating {}",
                           object.to_string()) };
       }
       if (object.version() < 1) {
-        throw xml_error{ fmt::format("Invalid version number {} in {}",
+        throw payload_error{ fmt::format("Invalid version number {} in {}",
                           object.version(), object.to_string()) };
       }
     }
@@ -357,13 +357,13 @@ private:
     });
 
     if (!k)
-      throw xml_error{
+      throw payload_error{
         fmt::format("Mandatory field k missing in tag element for {}",
          o.to_string())
       };
 
     if (!v)
-      throw xml_error{
+      throw payload_error{
         fmt::format("Mandatory field v missing in tag element for {}",
          o.to_string())
       };
@@ -400,4 +400,4 @@ private:
 
 } // namespace api06
 
-#endif // OSMCHANGE_INPUT_FORMAT_HPP
+#endif // OSMCHANGE_INPUT_XML_FORMAT_HPP

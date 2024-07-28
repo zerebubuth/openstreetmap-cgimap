@@ -14,6 +14,7 @@
 #include <iostream>
 #include <optional>
 #include <stdexcept>
+#include <sstream>
 #include <memory>
 #include <thread>
 #include <fmt/core.h>
@@ -21,6 +22,10 @@
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
 #include <boost/program_options.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 #include <sys/time.h>
 
@@ -34,7 +39,7 @@
 #include "cgimap/request_context.hpp"
 
 #include "cgimap/api06/changeset_upload/osmchange_handler.hpp"
-#include "cgimap/api06/changeset_upload/osmchange_input_format.hpp"
+#include "cgimap/api06/changeset_upload/osmchange_xml_input_format.hpp"
 
 #include "test_formatter.hpp"
 #include "test_database.hpp"
@@ -46,6 +51,9 @@
 using Catch::Matchers::StartsWith;
 using Catch::Matchers::EndsWith;
 using Catch::Matchers::Equals;
+
+namespace al = boost::algorithm;
+namespace pt = boost::property_tree;
 
 class global_settings_enable_upload_rate_limiter_test_class : public global_settings_default {
 
@@ -1926,7 +1934,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_message", "[changeset][u
            <modify />
            <delete if-unused="true" />
         </osmChange>
-  
+
       )"), http::bad_request, Catch::Message("Placeholder relation not found for reference -4 in relation -3"));
   }
 
@@ -1952,7 +1960,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_message", "[changeset][u
                    <member type="node" role="" ref="-6" />
                    <tag k="type" v="route" />
                    <tag k="name" v="BtoA" />
-                </relation>    
+                </relation>
                 <relation id="-4" version="0" changeset="1">
                    <member type="relation" role="" ref="-2" />
                    <member type="relation" role="" ref="-3" />
@@ -1963,7 +1971,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_message", "[changeset][u
              <modify />
              <delete if-unused="true" />
           </osmChange>
-    
+
         )"));
 
     REQUIRE(diffresult.size() == 5);
@@ -2014,7 +2022,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
          VALUES
            (1, 'demo@example.com', 'x', '', '2013-11-14T02:10:00Z', 'demo', true, 'confirmed'),
            (2, 'user_2@example.com', 'x', '', '2013-11-14T02:10:00Z', 'user_2', false, 'active');
-  
+
         INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes)
         VALUES
           (1, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 0),
@@ -2023,15 +2031,15 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
                  now() at time zone 'utc' - '11 hour' ::interval, 10000),
           (4, 2, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 0),
           (5, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 0);
-  
+
         INSERT INTO user_blocks (user_id, creator_id, reason, ends_at, needs_view)
         VALUES (1,  2, '', now() at time zone 'utc' - ('1 hour' ::interval), false);
 
-        INSERT INTO oauth_applications (id, owner_type, owner_id, name, uid, secret, redirect_uri, scopes, confidential, created_at, updated_at) 
-         VALUES (3, 'User', 1, 'App 1', 'dHKmvGkmuoMjqhCNmTJkf-EcnA61Up34O1vOHwTSvU8', '965136b8fb8d00e2faa2faaaed99c0ec10225518d0c8d9fb1d2af701e87eb68c', 
+        INSERT INTO oauth_applications (id, owner_type, owner_id, name, uid, secret, redirect_uri, scopes, confidential, created_at, updated_at)
+         VALUES (3, 'User', 1, 'App 1', 'dHKmvGkmuoMjqhCNmTJkf-EcnA61Up34O1vOHwTSvU8', '965136b8fb8d00e2faa2faaaed99c0ec10225518d0c8d9fb1d2af701e87eb68c',
                 'http://demo.localhost:3000', 'write_api read_gpx', false, '2021-04-12 17:53:30', '2021-04-12 17:53:30');
-  
-        INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token) 
+
+        INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
          VALUES (67, 1, 3, '4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8', NULL, NULL, NULL, '2021-04-14 19:38:21', 'write_api', '');
         )"
     );
@@ -2471,7 +2479,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
              VALUES
                (1, 'demo@example.com', 'xx', '', '2013-11-14T02:10:00Z', 'demo', true, 'confirmed'),
                (2, 'user_2@example.com', '', '', '2013-11-14T02:10:00Z', 'user_2', false, 'active');
-  
+
             INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes)
             VALUES
               (1, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 0),
@@ -2479,19 +2487,19 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
                      now() at time zone 'utc' - '11 hour' ::interval, 10000),
               (4, 2, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval, 10000),
               (5, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 10000);
-  
+
             INSERT INTO user_blocks (user_id, creator_id, reason, ends_at, needs_view)
             VALUES (1,  2, '', now() at time zone 'utc' - ('1 hour' ::interval), false);
 
             SELECT setval('current_nodes_id_seq', 14000000000, false);
 
-            INSERT INTO oauth_applications (id, owner_type, owner_id, name, uid, secret, redirect_uri, scopes, confidential, created_at, updated_at) 
-             VALUES (3, 'User', 1, 'App 1', 'dHKmvGkmuoMjqhCNmTJkf-EcnA61Up34O1vOHwTSvU8', '965136b8fb8d00e2faa2faaaed99c0ec10225518d0c8d9fb1d2af701e87eb68c', 
+            INSERT INTO oauth_applications (id, owner_type, owner_id, name, uid, secret, redirect_uri, scopes, confidential, created_at, updated_at)
+             VALUES (3, 'User', 1, 'App 1', 'dHKmvGkmuoMjqhCNmTJkf-EcnA61Up34O1vOHwTSvU8', '965136b8fb8d00e2faa2faaaed99c0ec10225518d0c8d9fb1d2af701e87eb68c',
                 'http://demo.localhost:3000', 'write_api read_gpx', false, '2021-04-12 17:53:30', '2021-04-12 17:53:30');
 
-            INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token) 
+            INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
               VALUES (67, 1, 3, '4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8', NULL, NULL, NULL, '2021-04-14 19:38:21', 'write_api', '');
-  
+
             )"
     );
 
@@ -2501,7 +2509,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
     // Real database function is managed outside of CGImap
 
     tdb.run_sql(R"(
-  
+
           CREATE OR REPLACE FUNCTION api_rate_limit(user_id bigint)
             RETURNS integer
             AS $$
@@ -2516,12 +2524,12 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
               SELECT COALESCE(SUM(changesets.num_changes), 0) INTO STRICT recent_changes FROM changesets
                  WHERE changesets.user_id = api_rate_limit.user_id
                    AND changesets.created_at >= CURRENT_TIMESTAMP AT TIME ZONE 'UTC' - '1 hour'::interval;
-  
+
               RETURN max_changes - recent_changes;
             END IF;
           END;
           $$ LANGUAGE plpgsql STABLE;
-  
+
         )");
   }
 
