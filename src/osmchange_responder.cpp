@@ -172,6 +172,16 @@ struct sorting_formatter : public output_formatter {
     throw std::runtime_error("Unexpected call to end_action.");
   }
 
+  void start_diffresult() override {
+    // this shouldn't be called here
+    throw std::runtime_error("Unexpected call to start_diffresult.");
+  }
+
+  void end_diffresult() override {
+    // this shouldn't be called here
+    throw std::runtime_error("Unexpected call to end_diffresult.");
+  }
+
   void write(output_formatter &fmt) {
     std::sort(m_elements.begin(), m_elements.end());
     for (const auto &e : m_elements) {
