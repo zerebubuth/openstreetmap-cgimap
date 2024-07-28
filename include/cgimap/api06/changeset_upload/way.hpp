@@ -27,9 +27,14 @@ public:
 
   ~Way() override = default;
 
+  void add_way_nodes(const std::vector<osm_nwr_signed_id_t>& way_nodes) {
+    for (auto const wn : way_nodes)
+      m_way_nodes.emplace_back(wn);
+  }
+
   void add_way_node(osm_nwr_signed_id_t waynode) {
     if (waynode == 0) {
-      throw xml_error("Way node value may not be 0");
+      throw payload_error("Way node value may not be 0");
     }
 
     m_way_nodes.emplace_back(waynode);
@@ -44,11 +49,11 @@ public:
     if (ec == std::errc())
       add_way_node(_waynode);
     else if (ec == std::errc::invalid_argument)
-      throw xml_error("Way node is not numeric");
+      throw payload_error("Way node is not numeric");
     else if (ec == std::errc::result_out_of_range)
-      throw xml_error("Way node value is too large");
+      throw payload_error("Way node value is too large");
     else
-      throw xml_error("Unexpected parsing error");
+      throw payload_error("Unexpected parsing error");
   }
 
   const std::vector<osm_nwr_signed_id_t> &nodes() const { return m_way_nodes; }
@@ -78,7 +83,12 @@ public:
     }
   }
 
-  std::string get_type_name() override { return "Way"; }
+  std::string get_type_name() const override { return "Way"; }
+
+  bool operator==(const Way &o) const {
+    return (OSMObject::operator==(o) &&
+            o.m_way_nodes == m_way_nodes);
+  }
 
 private:
   std::vector<osm_nwr_signed_id_t> m_way_nodes;

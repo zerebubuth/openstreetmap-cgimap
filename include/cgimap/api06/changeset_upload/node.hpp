@@ -37,11 +37,11 @@ public:
     if (ec == std::errc())
       set_lat(_lat);
     else if (ec == std::errc::invalid_argument)
-      throw xml_error("Latitude is not numeric");
+      throw payload_error("Latitude is not numeric");
     else if (ec == std::errc::result_out_of_range)
-      throw xml_error("Latitude value is too large");
+      throw payload_error("Latitude value is too large");
     else
-      throw xml_error("Unexpected parsing error");
+      throw payload_error("Unexpected parsing error");
   }
 
   void set_lon(const std::string &lon) {
@@ -53,26 +53,26 @@ public:
     if (ec == std::errc())
       set_lon(_lon);
     else if (ec == std::errc::invalid_argument)
-      throw xml_error("Longitude is not numeric");
+      throw payload_error("Longitude is not numeric");
     else if (ec == std::errc::result_out_of_range)
-      throw xml_error("Longitude value is too large");
+      throw payload_error("Longitude value is too large");
     else
-      throw xml_error("Unexpected parsing error");
+      throw payload_error("Unexpected parsing error");
   }
 
   void set_lat(double lat) {
     if (lat < -90 || lat > 90)
-      throw xml_error("Latitude outside of valid range");
+      throw payload_error("Latitude outside of valid range");
     else if (!std::isfinite(lat))
-      throw xml_error("Latitude not a valid finite number");
+      throw payload_error("Latitude not a valid finite number");
     m_lat = lat;
   }
 
   void set_lon(double lon) {
     if (lon < -180 || lon > 180)
-      throw xml_error("Longitude outside of valid range");
+      throw payload_error("Longitude outside of valid range");
     else if (!std::isfinite(lon))
-      throw xml_error("Longitude not a valid finite number");
+      throw payload_error("Longitude not a valid finite number");
     m_lon = lon;
   }
 
@@ -87,7 +87,13 @@ public:
     }
   }
 
-  std::string get_type_name() override { return "Node"; }
+  std::string get_type_name() const override { return "Node"; }
+
+  bool operator==(const Node &o) const {
+    return (OSMObject::operator==(o) &&
+            o.m_lat == m_lat &&
+            o.m_lon == m_lon);
+  }
 
 private:
   std::optional<double> m_lat;

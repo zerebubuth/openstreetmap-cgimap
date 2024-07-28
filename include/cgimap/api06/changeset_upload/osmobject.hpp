@@ -21,12 +21,12 @@
 
 namespace api06 {
 
-  struct xml_error : public http::bad_request {
+  struct payload_error : public http::bad_request {
 
     std::string error_code;
     std::string error_string;
 
-    explicit xml_error(const std::string &message)
+    explicit payload_error(const std::string &message)
       : http::bad_request(message), error_string(message) {}
   };
 
@@ -40,7 +40,7 @@ namespace api06 {
     void set_changeset(osm_changeset_id_t changeset) {
 
       if (changeset <= 0) {
-          throw xml_error("Changeset must be a positive number");
+          throw payload_error("Changeset must be a positive number");
       }
 
       m_changeset = changeset;
@@ -49,7 +49,7 @@ namespace api06 {
     void set_version(osm_version_t version) {
 
       if (version < 0) {
-          throw xml_error("Version may not be negative");
+          throw payload_error("Version may not be negative");
       }
 
       m_version = version;
@@ -58,7 +58,7 @@ namespace api06 {
     void set_id(osm_nwr_signed_id_t id) {
 
       if (id == 0) {
-          throw xml_error("Id must be different from 0");
+          throw payload_error("Id must be different from 0");
       }
 
       m_id = id;
@@ -75,11 +75,11 @@ namespace api06 {
       if (ec == std::errc())
         set_changeset(_changeset);
       else if (ec == std::errc::invalid_argument)
-        throw xml_error("Changeset is not numeric");
+        throw payload_error("Changeset is not numeric");
       else if (ec == std::errc::result_out_of_range)
-        throw xml_error("Changeset number is too large");
+        throw payload_error("Changeset number is too large");
       else
-        throw xml_error("Unexpected parsing error");
+        throw payload_error("Unexpected parsing error");
     }
 
     void set_version(const std::string &version) {
@@ -91,11 +91,11 @@ namespace api06 {
       if (ec == std::errc())
         set_version(_version);
       else if (ec == std::errc::invalid_argument)
-        throw xml_error("Version is not numeric");
+        throw payload_error("Version is not numeric");
       else if (ec == std::errc::result_out_of_range)
-        throw xml_error("Version value is too large");
+        throw payload_error("Version value is too large");
       else
-        throw xml_error("Unexpected parsing error");
+        throw payload_error("Unexpected parsing error");
     }
 
     void set_id(const std::string &id) {
@@ -107,11 +107,11 @@ namespace api06 {
       if (ec == std::errc())
         set_id(_id);
       else if (ec == std::errc::invalid_argument)
-        throw xml_error("Id is not numeric");
+        throw payload_error("Id is not numeric");
       else if (ec == std::errc::result_out_of_range)
-        throw xml_error("Id number is too large");
+        throw payload_error("Id number is too large");
       else
-        throw xml_error("Unexpected parsing error");
+        throw payload_error("Unexpected parsing error");
     }
 
     osm_changeset_id_t changeset() const { return *m_changeset; }
@@ -124,28 +124,33 @@ namespace api06 {
     constexpr bool has_id() const { return m_id.has_value(); };
     constexpr bool has_version() const { return m_version.has_value(); }
 
-
     std::map<std::string, std::string> tags() const { return m_tags; }
+
+    void add_tags(const std::map<std::string, std::string>& tags) {
+      for (const auto& [key, value] : tags) {
+        add_tag(key, value);
+      }
+    }
 
     void add_tag(const std::string& key, const std::string& value) {
 
       if (key.empty()) {
-	  throw xml_error(fmt::format("Key may not be empty in {}", to_string()));
+	  throw payload_error(fmt::format("Key may not be empty in {}", to_string()));
       }
 
       if (unicode_strlen(key) > 255) {
-	  throw xml_error(
+	  throw payload_error(
 	      fmt::format("Key has more than 255 unicode characters in {}",  to_string()));
       }
 
       if (unicode_strlen(value) > 255) {
-	  throw xml_error(
+	  throw payload_error(
 	      fmt::format("Value has more than 255 unicode characters in {}", to_string()));
       }
 
       if (!(m_tags.insert({key, value}))
 	  .second) {
-	  throw xml_error(
+	  throw payload_error(
 	       fmt::format("{} has duplicate tags with key {}", to_string(), key));
       }
     }
@@ -153,12 +158,12 @@ namespace api06 {
     virtual bool is_valid() const {
       // check if all mandatory fields have been set
       if (!m_changeset)
-	throw xml_error(
+	throw payload_error(
 	    "You need to supply a changeset to be able to make a change");
 
       if ((global_settings::get_element_max_tags()) &&
 	  m_tags.size() > *global_settings::get_element_max_tags()) {
-	  throw xml_error(
+	  throw payload_error(
 	      fmt::format("OSM element exceeds limit of {} tags",
                  *global_settings::get_element_max_tags()));
       }
@@ -166,11 +171,18 @@ namespace api06 {
       return (m_changeset && m_id && m_version);
     }
 
-    virtual std::string get_type_name() = 0;
+    virtual std::string get_type_name() const = 0;
 
-    virtual std::string to_string() {
+    virtual std::string to_string() const {
 
       return fmt::format("{} {:d}", get_type_name(), m_id.value_or(0));
+    }
+
+    bool operator==(const OSMObject &o) const {
+     return (o.m_changeset == m_changeset &&
+            o.m_id == m_id &&
+            o.m_version == m_version &&
+            o.m_tags == m_tags);
     }
 
   private:
