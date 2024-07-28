@@ -60,7 +60,8 @@ include(BuildLint)
 add_library(cgimap_common_compiler_options INTERFACE)
 
 target_compile_features(cgimap_common_compiler_options INTERFACE cxx_std_17)
-target_compile_definitions(cgimap_common_compiler_options INTERFACE CMAKE=1)
+target_compile_definitions(cgimap_common_compiler_options INTERFACE CMAKE=1
+                           BOOST_BIND_GLOBAL_PLACEHOLDERS)
 target_add_autotools_compatibility_definitions(cgimap_common_compiler_options)
 
 if(ENABLE_COVERAGE)
