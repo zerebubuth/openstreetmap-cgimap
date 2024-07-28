@@ -13,7 +13,7 @@
 #include "cgimap/request_context.hpp"
 
 #include "cgimap/api06/changeset_upload/osmchange_handler.hpp"
-#include "cgimap/api06/changeset_upload/osmchange_input_format.hpp"
+#include "cgimap/api06/changeset_upload/osmchange_xml_input_format.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 #include "cgimap/api06/changeset_upload_handler.hpp"
 #include "cgimap/backend/apidb/changeset_upload/changeset_updater.hpp"
@@ -31,9 +31,9 @@
 
 namespace api06 {
 
-changeset_upload_responder::changeset_upload_responder(mime::type mt, 
-                                                       data_update& upd, 
-                                                       osm_changeset_id_t changeset, 
+changeset_upload_responder::changeset_upload_responder(mime::type mt,
+                                                       data_update& upd,
+                                                       osm_changeset_id_t changeset,
                                                        const std::string &payload,
                                                        const RequestContext& req_ctx)
     : osm_diffresult_responder(mt) {
@@ -54,9 +54,10 @@ changeset_upload_responder::changeset_upload_responder(mime::type mt,
 
   OSMChange_Handler handler(*node_updater, *way_updater, *relation_updater, changeset);
 
-  OSMChangeXMLParser parser(handler);
-
-  parser.process_message(payload);
+  // TODO: check HTTP Accept header
+  if (mt != mime::type::application_json) {
+    OSMChangeXMLParser(handler).process_message(payload);
+  }
 
   // store diffresult for output handling in class osm_diffresult_responder
   m_diffresult = change_tracking.assemble_diffresult();

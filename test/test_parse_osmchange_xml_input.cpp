@@ -9,7 +9,7 @@
 
 
 #include "cgimap/options.hpp"
-#include "cgimap/api06/changeset_upload/osmchange_input_format.hpp"
+#include "cgimap/api06/changeset_upload/osmchange_xml_input_format.hpp"
 #include "cgimap/api06/changeset_upload/parser_callback.hpp"
 #include "cgimap/util.hpp"
 #include "cgimap/http.hpp"
@@ -92,7 +92,7 @@ TEST_CASE("Misspelled osmchange xml", "[osmchange][xml]") {
 }
 
 TEST_CASE("osmchange: Unknown action", "[osmchange][xml]") {
-  REQUIRE_THROWS_MATCHES(process_testmsg(R"(<osmChange><dummy/></osmChange>)"), http::bad_request, 
+  REQUIRE_THROWS_MATCHES(process_testmsg(R"(<osmChange><dummy/></osmChange>)"), http::bad_request,
     Catch::Message("Unknown action dummy, choices are create, modify, delete at line 1, column 18"));
 }
 
@@ -109,7 +109,7 @@ TEST_CASE("osmchange: Empty delete action", "[osmchange][xml]") {
 }
 
 TEST_CASE("osmchange: create invalid object", "[osmchange][xml]") {
-  REQUIRE_THROWS_MATCHES(process_testmsg(R"(<osmChange><create><bla/></create></osmChange>)"), http::bad_request, 
+  REQUIRE_THROWS_MATCHES(process_testmsg(R"(<osmChange><create><bla/></create></osmChange>)"), http::bad_request,
     Catch::Message("Unknown element bla, expecting node, way or relation at line 1, column 24"));
 }
 
@@ -168,7 +168,7 @@ TEST_CASE("Create node, lon non-finite float", "[osmchange][node][xml]") {
 }
 
 TEST_CASE("Create node, changeset missing", "[osmchange][node][xml]") {
-  REQUIRE_THROWS_MATCHES(process_testmsg(R"(<osmChange><create><node id="-1" lat="-90.00" lon="-180.00"/></create></osmChange>)"), http::bad_request, 
+  REQUIRE_THROWS_MATCHES(process_testmsg(R"(<osmChange><create><node id="-1" lat="-90.00" lon="-180.00"/></create></osmChange>)"), http::bad_request,
     Catch::Message("Changeset id is missing for Node -1 at line 1, column 60"));
 }
 
@@ -177,7 +177,7 @@ TEST_CASE("Create node, redefined lat attribute", "[osmchange][node][xml]") {
 }
 
 TEST_CASE("Create valid node", "[osmchange][node][xml]") {
-  auto i = GENERATE(R"(<osmChange><create><node changeset="858" id="-1" lat="90.00" lon="180.00"/></create></osmChange>)", 
+  auto i = GENERATE(R"(<osmChange><create><node changeset="858" id="-1" lat="90.00" lon="180.00"/></create></osmChange>)",
                     R"(<osmChange><create><node changeset="858" id="-1" lat="-90.00" lon="-180.00"/></create></osmChange>)");
   REQUIRE_NOTHROW(process_testmsg(i));
 }
@@ -235,7 +235,7 @@ TEST_CASE("Create node, duplicate key dup1", "[osmchange][node][xml]") {
                        <tag k="dup1" v="value2"/>
                        <tag k="dup1" v="value3"/>
                        <tag k="key3" v="value4"/>
-                       </node></create></osmChange>)"), 
+                       </node></create></osmChange>)"),
     http::bad_request, Catch::Message("Node -1 has duplicate tags with key dup1 at line 4, column 48"));
 }
 
@@ -263,7 +263,7 @@ TEST_CASE("Create node, tag value with <= 255 unicode characters", "[osmchange][
 TEST_CASE("Create node, tag value with > 255 unicode characters", "[osmchange][node][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
     fmt::format(R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">
-                           <tag k="key" v="{}"/></node></create></osmChange>)", repeat("😎", 256))), 
+                           <tag k="key" v="{}"/></node></create></osmChange>)", repeat("😎", 256))),
     http::bad_request, Catch::Message("Value has more than 255 unicode characters in Node -1 at line 2, column 301"));
 }
 
@@ -279,7 +279,7 @@ TEST_CASE("Create node, tag key with <= 255 unicode characters", "[osmchange][no
 TEST_CASE("Create node, tag key with > 255 unicode characters", "[osmchange][node][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
     fmt::format(R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">
-                           <tag k="{}" v="value"/></node></create></osmChange>)", repeat("😎", 256))), 
+                           <tag k="{}" v="value"/></node></create></osmChange>)", repeat("😎", 256))),
     http::bad_request, Catch::Message("Key has more than 255 unicode characters in Node -1 at line 2, column 303"));
 }
 
@@ -378,13 +378,13 @@ TEST_CASE("Create way, only changeset", "[osmchange][way][xml]") {
 
 TEST_CASE("Create way, missing changeset", "[osmchange][way][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
-    R"(<osmChange><create><way id="-1"/></create></osmChange>)"), 
+    R"(<osmChange><create><way id="-1"/></create></osmChange>)"),
     http::bad_request, Catch::Message("Changeset id is missing for Way -1 at line 1, column 32"));
 }
 
 TEST_CASE("Create way, missing node ref", "[osmchange][way][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
-    R"(<osmChange><create><way changeset="858" id="-1"/></create></osmChange>)"), 
+    R"(<osmChange><create><way changeset="858" id="-1"/></create></osmChange>)"),
     http::precondition_failed, Catch::Message("Precondition failed: Way -1 must have at least one node"));
 }
 
@@ -519,7 +519,7 @@ TEST_CASE("Create relation, role with > 255 unicode characters", "[osmchange][re
                R"(<osmChange><create><relation changeset="858" id="-1">
                            <member type="node" role="{}" ref="123"/>
                   </relation></create></osmChange>)",
-           repeat("😎", 256))), 
+           repeat("😎", 256))),
     http::bad_request, Catch::Message("Relation Role has more than 255 unicode characters at line 2, column 321"));
 }
 
@@ -531,7 +531,7 @@ TEST_CASE("Delete relation, no version", "[osmchange][relation][xml]") {
 
 TEST_CASE("Delete relation, no id", "[osmchange][relation][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
-    R"(<osmChange><delete><relation changeset="972" version="1"/></delete></osmChange>)"), 
+    R"(<osmChange><delete><relation changeset="972" version="1"/></delete></osmChange>)"),
     http::bad_request, Catch::Message(fmt::format("Mandatory field id missing in object at line 1, column 57")));
 }
 
