@@ -16,6 +16,7 @@
 #include <charconv>
 #include <map>
 #include <optional>
+#include <string_view>
 
 #include <fmt/core.h>
 
@@ -46,7 +47,7 @@ namespace api06 {
       m_changeset = changeset;
     }
 
-    void set_version(osm_version_t version) {
+    void set_version(int64_t version) {
 
       if (version < 0) {
           throw payload_error("Version may not be negative");
@@ -66,7 +67,7 @@ namespace api06 {
 
     // Setters with string conversions
 
-    void set_changeset(const std::string &changeset) {
+    void set_changeset(std::string_view changeset) {
 
       osm_changeset_id_t _changeset = 0;
 
@@ -82,7 +83,7 @@ namespace api06 {
         throw payload_error("Unexpected parsing error");
     }
 
-    void set_version(const std::string &version) {
+    void set_version(std::string_view version) {
 
       int64_t _version = 0;
 
@@ -98,7 +99,7 @@ namespace api06 {
         throw payload_error("Unexpected parsing error");
     }
 
-    void set_id(const std::string &id) {
+    void set_id(std::string_view id) {
 
       osm_nwr_signed_id_t _id = 0;
 

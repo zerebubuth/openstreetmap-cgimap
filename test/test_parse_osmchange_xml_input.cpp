@@ -190,6 +190,12 @@ TEST_CASE("Modify node, invalid version", "[osmchange][node][xml]") {
   REQUIRE_THROWS_AS(process_testmsg(R"(<osmChange><modify><node changeset="858" version="0" id="123"/></modify></osmChange>)"), http::bad_request);
 }
 
+TEST_CASE("Modify node, invalid, negative version", "[osmchange][node][xml]") {
+  REQUIRE_THROWS_MATCHES(process_testmsg(R"(<osmChange><modify><node changeset="858" version="-1" id="123"/></modify></osmChange>)"), http::bad_request,
+    Catch::Message("Version may not be negative at line 1, column 63"));
+}
+
+
 TEST_CASE("Delete node", "[osmchange][node][xml]") {
   REQUIRE_NOTHROW(process_testmsg(R"(<osmChange><delete><node changeset="858" version="1" id="123"/></delete></osmChange>)"));
 }
