@@ -51,7 +51,7 @@ private:
 void add_common_headers(test_request& req)
 {
   req.set_header("HTTP_HOST", "www.openstreetmap.org");
-  req.set_header("HTTP_ACCEPT_ENCODING", "gzip;q=1.0,deflate;q=0.6,identity;q=0.3");
+  req.set_header("HTTP_ACCEPT_ENCODING", "gzip;q=1.0, deflate;q=0.6, identity;q=0.3");
   req.set_header("HTTP_ACCEPT", "*/*");
   req.set_header("HTTP_USER_AGENT", "OAuth gem v0.4.7");
   req.set_header("HTTP_X_REQUEST_ID", "V-eaKX8AAQEAAF4UzHwAAAHt");
