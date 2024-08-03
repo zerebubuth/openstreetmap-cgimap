@@ -8,10 +8,9 @@
  */
 
 #include "cgimap/backend/apidb/quad_tile.hpp"
-#include <cmath>
-#include <set>
+#include <algorithm>
+#include <vector>
 
-using std::set;
 
 /* following functions liberally nicked from TomH's quad_tile
  * library.
@@ -24,13 +23,18 @@ std::vector<tile_id_t> tiles_for_area(double minlat, double minlon, double maxla
   const unsigned int maxx = lon2x(maxlon);
   const unsigned int miny = lat2y(minlat);
   const unsigned int maxy = lat2y(maxlat);
-  set<tile_id_t> tiles;
+
+  std::vector<tile_id_t> tiles;
+  tiles.reserve((1ULL + maxx - minx) * (1ULL + maxy - miny));
 
   for (tile_id_t x = minx; x <= maxx; x++) {
     for (tile_id_t y = miny; y <= maxy; y++) {
-      tiles.insert(xy2tile(x, y));
+      tiles.emplace_back(xy2tile(x, y));
     }
   }
 
-  return {tiles.begin(), tiles.end()};
+  std::sort(tiles.begin(), tiles.end());
+  tiles.erase(std::unique(tiles.begin(), tiles.end()), tiles.end());
+
+  return tiles;
 }
