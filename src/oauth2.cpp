@@ -33,31 +33,60 @@ inline std::string sha256_hash(const std::string& s) {
 
 namespace oauth2 {
 
+  bool is_valid_bearer_token_char(unsigned char c) {
+      // according to RFC 6750, section 2.1
+
+      switch (c) {
+          case 'a' ... 'z':
+              return true;
+          case 'A' ... 'Z':
+              return true;
+          case '0' ... '9':
+              return true;
+          case '-':
+              return true;
+          case '.':
+              return true;
+          case '_':
+              return true;
+          case '~':
+              return true;
+          case '+':
+              return true;
+          case '/':
+              return true;
+          case '=':
+              return true;  // we ignore that this char should only occur at end
+      }
+
+      return false;
+  }
+
+  bool has_forbidden_char(std::string_view str) {
+      return std::find_if(str.begin(), str.end(), [](unsigned char ch) {
+                 return !is_valid_bearer_token_char(ch);
+             }) != str.end();
+  }
+
   [[nodiscard]] std::optional<osm_user_id_t> validate_bearer_token(const request &req, data_selection& selection, bool& allow_api_write)
   {
-
-    static const std::regex r(R"(Bearer ([A-Za-z0-9~_\-\.\+\/]+=*))");   // according to RFC 6750, section 2.1
-
     const char * auth_hdr = req.get_param ("HTTP_AUTHORIZATION");
     if (auth_hdr == nullptr)
       return std::nullopt;
 
     const auto auth_header = std::string(auth_hdr);
 
-    std::smatch sm;
-
-    try {
-	if (!std::regex_match(auth_header, sm, r))
-	  return std::nullopt;
-
-	if (sm.size() != 2)
-	  return std::nullopt;
-
-    } catch (std::regex_error&) {
+    // Auth header starts with Bearer?
+    if (auth_header.rfind("Bearer ", 0) == std::string::npos)
       return std::nullopt;
-    }
 
-    const auto& bearer_token = sm[1];
+    const auto bearer_token = auth_header.substr(7);
+
+    if (bearer_token.empty())
+      return std::nullopt;
+
+    if (has_forbidden_char(bearer_token))
+      return std::nullopt;
 
     bool expired;
     bool revoked;
