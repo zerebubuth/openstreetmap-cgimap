@@ -225,57 +225,58 @@ vector<pair<string, string> > parse_params(const string &p) {
   return queryKVPairs;
 }
 
-std::unique_ptr<encoding> choose_encoding(const string &accept_encoding) {
-  vector<string> encodings;
+std::unique_ptr<encoding> choose_encoding(const std::string &accept_encoding) {
 
-  static const std::regex regex1("\\s*([^()<>@,;:\\\\\"/[\\]\\\\?={} "
-      "\\t]+)\\s*;\\s*q\\s*=(\\d+(\\.\\d+)?)\\s*");
+  std::vector<std::string> encodings;
 
-  static const std::regex regex2( R"(\s*([^()<>@,;:\\"/[\]\\?={} \t]+)\s*)");
+  al::iter_split(encodings, accept_encoding, al::first_finder(", "));
 
-  al::split(encodings, accept_encoding, al::is_any_of(","));
-
-  float identity_quality = 0.001;
+  float identity_quality = 0.000;
   float deflate_quality = 0.000;
   float gzip_quality = 0.000;
   float brotli_quality = 0.000;
 
-  for (const string &encoding : encodings) {
-    std::smatch what;
-    string name;
-    float quality;
+  // set default if header empty
+  if (encodings.empty())
+    encodings.push_back("*");
 
-    if (std::regex_match(
-            encoding, what,
-            regex1)) {
-      name = what[1];
-      quality = std::atof(string(what[2]).c_str());
-    } else if (std::regex_match(
-                   encoding, what,
-                   regex2)) {
-      name = what[1];
+  for (const auto &encoding : encodings) {
+
+    std::string name;
+    float quality = 0.0;
+
+    std::vector<std::string> what;
+
+    al::iter_split(what, encoding, al::first_finder(";q="));
+
+    if (what.size() == 2) {
+      float q = std::stof(what[1]);
+      if (q >= 0 && q <= 1) {
+        name = what[0];
+        quality = q;
+      }
+    }
+    else if (what.size() == 1) {
+      name = what[0];
       quality = 1.0;
-    } else {
-      name = "";
-      quality = 0.0;
     }
 
-    if (al::iequals(name, "identity")) {
+    if (name == "identity") {
       identity_quality = quality;
-    } else if (al::iequals(name, "deflate")) {
+    } else if (name == "deflate") {
       deflate_quality = quality;
-    } else if (al::iequals(name, "gzip")) {
+    } else if (name == "gzip") {
       gzip_quality = quality;
-    } else if (al::iequals(name, "br")) {
+    } else if (name == "br") {
       brotli_quality = quality;
-    } else if (al::iequals(name, "*")) {
+    } else if (name == "*") {
       if (identity_quality == 0.000)
         identity_quality = quality;
       if (deflate_quality == 0.000)
         deflate_quality = quality;
-      if (gzip_quality == 0.001)
+      if (gzip_quality == 0.000)
         gzip_quality = quality;
-      if (brotli_quality == 0.001)
+      if (brotli_quality == 0.000)
         brotli_quality = quality;
     }
   }
@@ -288,13 +289,10 @@ std::unique_ptr<encoding> choose_encoding(const string &accept_encoding) {
   }
 #endif
 #ifdef HAVE_LIBZ
-#ifdef ENABLE_DEFLATE
   if (deflate_quality > 0.0 && deflate_quality >= gzip_quality &&
       deflate_quality >= identity_quality) {
-    return std:make_unique<deflate>();
-  } else
-#endif /* ENABLE_DEFLATE */
-      if (gzip_quality > 0.0 && gzip_quality >= identity_quality) {
+    return std::make_unique<deflate>();
+  } else if (gzip_quality > 0.0 && gzip_quality >= identity_quality) {
     return std::make_unique<gzip>();
   }
 #endif /* HAVE_LIBZ */

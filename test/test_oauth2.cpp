@@ -136,14 +136,37 @@ TEST_CASE("test_validate_bearer_token", "[oauth2]") {
     CHECK(allow_api_write);
   }
 
-  SECTION("Test bearer token invalid format") {
+  SECTION("Test bearer token invalid format (invalid chars)") {
     req.set_header("HTTP_AUTHORIZATION","Bearer 6!#c23.-;<<>>");
     auto res = oauth2::validate_bearer_token(req, *sel, allow_api_write);
     CHECK(res == std::optional<osm_user_id_t>{});
   }
 
-  SECTION("Test invalid bearer token") {
+  SECTION("Test bearer token invalid format (extra space after bearer)") {
+    req.set_header("HTTP_AUTHORIZATION","Bearer  abc");
+    auto res = oauth2::validate_bearer_token(req, *sel, allow_api_write);
+    CHECK(res == std::optional<osm_user_id_t>{});
+  }
 
+  SECTION("Test bearer token invalid format (lowercase Bearer)") {
+    req.set_header("HTTP_AUTHORIZATION","bearer abc");
+    auto res = oauth2::validate_bearer_token(req, *sel, allow_api_write);
+    CHECK(res == std::optional<osm_user_id_t>{});
+  }
+
+  SECTION("Test bearer token invalid format (trailing space after token)") {
+    req.set_header("HTTP_AUTHORIZATION","Bearer abcdefghijklm ");
+    auto res = oauth2::validate_bearer_token(req, *sel, allow_api_write);
+    CHECK(res == std::optional<osm_user_id_t>{});
+  }
+
+  SECTION("Test bearer token invalid format (missing tokan)") {
+    req.set_header("HTTP_AUTHORIZATION","Bearer ");
+    auto res = oauth2::validate_bearer_token(req, *sel, allow_api_write);
+    CHECK(res == std::optional<osm_user_id_t>{});
+  }
+
+  SECTION("Test invalid bearer token") {
     req.set_header("HTTP_AUTHORIZATION","Bearer nFRBLFyNXPKY1fiTHAIfVsjQYkCD2KoRuH66upvueaQ");
     REQUIRE_THROWS_MATCHES(static_cast<void>(oauth2::validate_bearer_token(req, *sel, allow_api_write)), http::unauthorized,
         Catch::Message("invalid_token"));
