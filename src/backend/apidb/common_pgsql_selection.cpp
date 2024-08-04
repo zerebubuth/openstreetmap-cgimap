@@ -484,13 +484,13 @@ std::vector<std::string> psql_array_to_vector(std::string_view str) {
   for (unsigned int i = 1; i < str_size; i++) {
     if (str[i] == ',') {
       if (quotedValue) {
-        value += ",";
+        value += ',';
       } else {
         write = true;
       }
-    } else if (str[i] == '\"') {
+    } else if (str[i] == '"') {
       if (escaped) {
-        value += "\"";
+        value += '"';
         escaped = false;
       } else if (quotedValue) {
         quotedValue = false;
@@ -499,14 +499,14 @@ std::vector<std::string> psql_array_to_vector(std::string_view str) {
       }
     } else if (str[i] == '\\') {
       if (escaped) {
-        value += "\\";
+        value += '\\';
         escaped = false;
       } else {
         escaped = true;
       }
     } else if (str[i] == '}') {
       if (quotedValue) {
-        value += "}";
+        value += '}';
       } else {
         write = true;
       }
