@@ -44,27 +44,36 @@ inline size_t unicode_strlen(const std::string & s)
 }
 
 
-// TODO: Proper escaping function
-inline std::string escape(std::string_view input)
-{
+inline std::string escape(std::string_view input) {
 
-	std::string result = "\"";
+  int n = 0;
 
-	for (char i : input)
-	{
-		if (i == '\"')
-			result += "\\";
-		else if (i == '\\')
-			result += "\\";
+  // count chars to be escaped
+  for (char c : input) {
+    if (c == '"' || c == '\\')
+      ++n;
+  }
 
-		result += i;
-	}
+  std::string result;
+  result.reserve(input.size() + n + 2);   // input size + # of escaped chars + 2 enclosing quotes
 
-	result += "\"";
+  result += '"';
 
-	return result;
+  if (n == 0) {
+    result += input;
+  } else {
+    for (char c : input) {
+      if (c == '"' || c == '\\')
+        result += '\\';
+
+      result += c;
+    }
+  }
+
+  result += '"';
+
+  return result;
 }
-
 
 // array_agg returns some curly brackets in the response. remove them for output
 // TODO: find a better way to do this.
