@@ -31,11 +31,19 @@ void text_formatter::write_bounds(const bbox &bounds) {
   // nothing needed here
 }
 
-void text_formatter::start_element_type(element_type) {
+void text_formatter::start_element() {
   // nothing needed here
 }
 
-void text_formatter::end_element_type(element_type) {
+void text_formatter::end_element() {
+  // nothing needed here
+}
+
+void text_formatter::start_changeset(bool) {
+  // nothing needed here
+}
+
+void text_formatter::end_changeset(bool) {
   // nothing needed here
 }
 

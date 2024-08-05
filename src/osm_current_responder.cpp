@@ -34,25 +34,11 @@ void osm_current_responder::write(output_formatter& fmt,
       fmt.write_bounds(*bounds);
     }
 
-    // write all selected changesets
-    fmt.start_element_type(element_type::changeset);
-    sel.write_changesets(fmt, now);
-    fmt.end_element_type(element_type::changeset);
-
-    // write all selected nodes
-    fmt.start_element_type(element_type::node);
-    sel.write_nodes(fmt);
-    fmt.end_element_type(element_type::node);
-
-    // all selected ways
-    fmt.start_element_type(element_type::way);
-    sel.write_ways(fmt);
-    fmt.end_element_type(element_type::way);
-
-    // all selected relations
-    fmt.start_element_type(element_type::relation);
-    sel.write_relations(fmt);
-    fmt.end_element_type(element_type::relation);
+    fmt.start_element();
+    sel.write_nodes(fmt);      // write all selected nodes
+    sel.write_ways(fmt);       // all selected ways
+    sel.write_relations(fmt);  // all selected relations
+    fmt.end_element();
 
   } catch (const std::exception &e) {
     logger::message(fmt::format("Caught error in osm_current_responder: {}",

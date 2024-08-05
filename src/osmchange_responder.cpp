@@ -88,12 +88,20 @@ struct sorting_formatter : public output_formatter {
     throw std::runtime_error("sorting_formatter::write_bounds unimplemented");
   }
 
-  void start_element_type(element_type) override {
-    throw std::runtime_error("sorting_formatter::start_element_type unimplemented");
+  void start_element() {
+    throw std::runtime_error("sorting_formatter::start_element unimplemented");
   }
 
-  void end_element_type(element_type) override {
-    throw std::runtime_error("sorting_formatter::end_element_type unimplemented");
+  void end_element() {
+    throw std::runtime_error("sorting_formatter::end_element unimplemented");
+  }
+
+  void start_changeset(bool) {
+    throw std::runtime_error("sorting_formatter::start_changeset unimplemented");
+  }
+
+  void end_changeset(bool) {
+    throw std::runtime_error("sorting_formatter::end_changeset unimplemented");
   }
 
   void write_node(

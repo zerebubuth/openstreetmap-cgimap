@@ -43,13 +43,21 @@ void xml_formatter::write_bounds(const bbox &bounds) {
   writer->end();
 }
 
-void xml_formatter::start_element_type(element_type) {
-  // xml documents surround each element with its type, so there's no
-  // need to output any information here.
+//
+void xml_formatter::start_element() {
+  // nothing to do for xml
 }
 
-void xml_formatter::end_element_type(element_type) {
-  // ditto - nothing needed here for XML.
+void xml_formatter::end_element() {
+  // nothing to do for xml
+}
+
+void xml_formatter::start_changeset(bool) {
+  // nothing to do for xml
+}
+
+void xml_formatter::end_changeset(bool) {
+  // nothing to do for xml
 }
 
 void xml_formatter::start_action(action_type type) {

@@ -21,7 +21,7 @@ changeset_responder::changeset_responder(mime::type mt,
                                          osm_changeset_id_t id,
                                          bool include_discussion,
                                          data_selection &w)
-  : osm_current_responder(mt, w) {
+  : osm_changeset_responder(mt, w, false) {
 
   if (sel.select_changesets({id}) == 0) {
     throw http::not_found(fmt::format("Changeset {:d} was not found.", id));

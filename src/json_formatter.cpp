@@ -52,24 +52,42 @@ void json_formatter::write_bounds(const bbox &bounds) {
   writer->end_object();
 }
 
-void json_formatter::end_document() {
-
-  writer->end_array();            // end of elements array
-  is_in_elements_array = false;
-  writer->end_object();
-}
-
-void json_formatter::start_element_type(element_type type) {
-
-  if (is_in_elements_array)
-    return;
+void json_formatter::start_element() {
 
   writer->object_key("elements");
   writer->start_array();
-  is_in_elements_array = true;
 }
 
-void json_formatter::end_element_type(element_type type) {}
+//
+void json_formatter::end_element() {
+
+  writer->end_array();            // end of elements array
+  writer->end_object();
+}
+
+void json_formatter::start_changeset(bool multi_selection) {
+
+  if (multi_selection) {
+    writer->object_key("changesets");
+    writer->start_array();
+  }
+  else
+  {
+    writer->object_key("changeset");
+  }
+}
+
+void json_formatter::end_changeset(bool multi_selection) {
+
+  if (multi_selection) {
+    writer->end_array();
+  }
+}
+
+
+void json_formatter::end_document() {
+  writer->end_object();
+}
 
 void json_formatter::start_action(action_type type) {
 }
@@ -170,58 +188,59 @@ void json_formatter::write_relation(const element_info &elem,
   writer->end_object();
 }
 
-void json_formatter::write_changeset(const changeset_info &elem,
+void json_formatter::write_changeset(const changeset_info &cs,
                                      const tags_t &tags,
                                      bool include_comments,
                                      const comments_t &comments,
                                      const std::chrono::system_clock::time_point &now) {
 
   writer->start_object();
-  writer->property("type", "changeset");
-  writer->property("id", elem.id);
-  writer->property("created_at", elem.created_at);
+  writer->property("id", cs.id);
+  writer->property("created_at", cs.created_at);
 
-  const bool is_open = elem.is_open_at(now);
-  if (!is_open) {
-      writer->property("closed_at", elem.closed_at);
-  }
+  const bool is_open = cs.is_open_at(now);
 
   writer->property("open", is_open);
 
-  if (elem.display_name && bool(elem.uid)) {
-    writer->property("user", *elem.display_name);
-    writer->property("uid", *elem.uid);
+  writer->property("comments_count", cs.comments_count);
+  writer->property("changes_count", cs.num_changes);
+
+  if (!is_open) {
+      writer->property("closed_at", cs.closed_at);
   }
 
-  if (elem.bounding_box) {
-      writer->property("minlat", elem.bounding_box->minlat);
-      writer->property("minlon", elem.bounding_box->minlon);
-      writer->property("maxlat", elem.bounding_box->maxlat);
-      writer->property("maxlon", elem.bounding_box->maxlon);
+  if (cs.bounding_box) {
+      writer->property("min_lat", cs.bounding_box->minlat);
+      writer->property("min_lon", cs.bounding_box->minlon);
+      writer->property("max_lat", cs.bounding_box->maxlat);
+      writer->property("max_lon", cs.bounding_box->maxlon);
   }
 
-  writer->property("comments_count", elem.comments_count);
-  writer->property("changes_count", elem.num_changes);
+  if (cs.display_name && bool(cs.uid)) {
+    writer->property("uid", *cs.uid);
+    writer->property("user", *cs.display_name);
+  }
 
   write_tags(tags);
 
   if (include_comments && !comments.empty()) {
-      writer->object_key("discussion");
+      writer->object_key("comments");
       writer->start_array();
       for (const auto & comment : comments) {
 	  writer->start_object();
-	  writer->property("id",   comment.id);
+	  writer->property("id", comment.id);
+	  writer->property("visible", true);
 	  writer->property("date", comment.created_at);
-	  writer->property("uid",  comment.author_id);
+	  writer->property("uid", comment.author_id);
 	  writer->property("user", comment.author_display_name);
 	  writer->property("text", comment.body);
 	  writer->end_object();
       }
       writer->end_array();
   }
-
   writer->end_object();
 }
+
 
 void json_formatter::write_diffresult_create_modify(const element_type elem,
                                             const osm_nwr_signed_id_t old_id,

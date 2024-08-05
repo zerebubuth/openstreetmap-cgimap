@@ -155,10 +155,16 @@ void test_formatter::end_document() {
 void test_formatter::write_bounds(const bbox &bounds) {
 }
 
-void test_formatter::start_element_type(element_type type) {
+void test_formatter::start_element() {
 }
 
-void test_formatter::end_element_type(element_type type) {
+void test_formatter::end_element() {
+}
+
+void test_formatter::start_changeset(bool) {
+}
+
+void test_formatter::end_changeset(bool) {
 }
 
 void test_formatter::start_action(action_type type) {
