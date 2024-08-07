@@ -206,13 +206,15 @@ struct output_formatter {
   // to record the box used by a map call.
   virtual void write_bounds(const bbox &bounds) = 0;
 
-  // start a type of element. this is called once for nodes, ways or
-  // relations. between the start and end called for a particular element
-  // type only write_* functions for that type will be called.
-  virtual void start_element_type(element_type type) = 0;
+  //
+  virtual void start_element() = 0;
 
-  // end a type of element. this is called once for nodes, ways or relations
-  virtual void end_element_type(element_type type) = 0;
+  //
+  virtual void end_element() = 0;
+
+  virtual void start_changeset(bool) = 0;
+
+  virtual void end_changeset(bool) = 0;
 
   // TODO: document me.
   virtual void start_action(action_type type) = 0;

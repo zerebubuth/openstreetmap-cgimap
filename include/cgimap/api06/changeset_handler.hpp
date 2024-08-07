@@ -11,13 +11,13 @@
 #define API06_CHANGESET_HANDLER_HPP
 
 #include "cgimap/handler.hpp"
-#include "cgimap/osm_current_responder.hpp"
+#include "cgimap/osm_changeset_responder.hpp"
 #include "cgimap/request.hpp"
 #include <string>
 
 namespace api06 {
 
-class changeset_responder : public osm_current_responder {
+class changeset_responder : public osm_changeset_responder {
 public:
   changeset_responder(mime::type, osm_changeset_id_t, bool, data_selection &);
 };

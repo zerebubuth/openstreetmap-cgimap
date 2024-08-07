@@ -19,6 +19,7 @@ target_sources(cgimap_core PRIVATE
     oauth2.cpp
     options.cpp
     osm_responder.cpp
+    osm_changeset_responder.cpp
     osm_current_responder.cpp
     osm_diffresult_responder.cpp
     osmchange_responder.cpp

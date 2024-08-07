@@ -32,8 +32,12 @@ public:
   void start_document(const std::string &generator, const std::string &root_name) override;
   void end_document() override;
   void write_bounds(const bbox &bounds) override;
-  void start_element_type(element_type type) override;
-  void end_element_type(element_type type) override;
+
+  void start_element() override;
+  void end_element() override;
+  void start_changeset(bool) override;
+  void end_changeset(bool) override;
+
   void start_action(action_type type) override;
   void end_action(action_type type) override;
   void error(const std::exception &e) override;
