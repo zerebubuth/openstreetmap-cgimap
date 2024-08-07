@@ -20,6 +20,25 @@ if(BUILD_TESTING)
         cgimap_core)
 
     ###########
+    # test_utils
+    ###########
+    add_library(test_utils)
+
+    target_sources(test_utils PRIVATE
+        test_database.cpp
+        test_request.cpp)
+
+    target_include_directories(test_utils PUBLIC
+        .)
+
+    target_link_libraries(test_utils PUBLIC
+        cgimap_common_compiler_options
+        cgimap_core
+        cgimap_apidb
+        Boost::program_options
+        PQXX::PQXX)
+
+    ###########
     # test_core
     ###########
     add_executable(test_core
