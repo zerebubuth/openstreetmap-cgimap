@@ -69,6 +69,8 @@ std::string escape(std::string_view input) {
 
   result[offset++] = '"';
 
+  assert(result.size() == offset);
+
   return result;
 }
 
