@@ -896,7 +896,7 @@ ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t> &ways) {
   m.prepare("way_still_referenced_by_relation",
             R"(   
       SELECT current_relation_members.member_id,
-             array_agg(distinct current_relation_members.relation_id) AS relation_ids
+             array_to_string(array_agg(distinct current_relation_members.relation_id),',') AS relation_ids
          FROM current_relation_members
          WHERE current_relation_members.member_type = 'Way'
            AND current_relation_members.member_id = ANY($1)
@@ -917,7 +917,7 @@ ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t> &ways) {
       throw http::precondition_failed(
           fmt::format("Way {:d} is still used by relations {}.",
            row["member_id"].as<osm_nwr_id_t>(),
-           friendly_name(row["relation_ids"].c_str())));
+           row["relation_ids"].c_str()));
     }
 
     if (ids_if_unused.find(way_id) != ids_if_unused.end()) {

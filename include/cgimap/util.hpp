@@ -75,15 +75,6 @@ inline std::string escape(std::string_view input) {
   return result;
 }
 
-// array_agg returns some curly brackets in the response. remove them for output
-// TODO: find a better way to do this.
-
-inline std::string friendly_name(const std::string & input)
-{
-  return input.substr(1, input.size() - 2);
-}
-
-
 template <typename T>
 inline std::string to_string(const std::set<T> &ids) {
   return fmt::format("{}", fmt::join(ids, ","));

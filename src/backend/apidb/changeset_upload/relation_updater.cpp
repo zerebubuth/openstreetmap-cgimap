@@ -1667,7 +1667,7 @@ ApiDB_Relation_Updater::is_relation_still_referenced(
                   UNNEST( CAST($1 AS bigint[]) )
            )
            SELECT current_relation_members.member_id, 
-                  array_agg(current_relations.id) AS relation_ids 
+                  array_to_string(array_agg(current_relations.id),',') AS relation_ids
            FROM current_relations 
              INNER JOIN current_relation_members
                     ON current_relation_members.relation_id = current_relations.id
@@ -1696,7 +1696,7 @@ ApiDB_Relation_Updater::is_relation_still_referenced(
       throw http::precondition_failed(
           fmt::format("The relation {:d} is used in relations {}.",
            row["member_id"].as<osm_nwr_id_t>(),
-           friendly_name(row["relation_ids"].c_str())));
+           row["relation_ids"].c_str()));
     }
 
     if (ids_if_unused.find(rel_id) != ids_if_unused.end()) {
