@@ -43,7 +43,6 @@ inline size_t unicode_strlen(const std::string & s)
    return len;
 }
 
-
 inline std::string escape(std::string_view input) {
 
   int n = 0;
@@ -54,23 +53,20 @@ inline std::string escape(std::string_view input) {
       ++n;
   }
 
-  std::string result;
-  result.reserve(input.size() + n + 2);   // input size + # of escaped chars + 2 enclosing quotes
+  std::string result(input.size() + n + 2, ' ');   // input size + # of escaped chars + 2 enclosing quotes
 
-  result += '"';
+  int offset = 0;
 
-  if (n == 0) {
-    result += input;
-  } else {
-    for (char c : input) {
-      if (c == '"' || c == '\\')
-        result += '\\';
+  result[offset++] = '"';
 
-      result += c;
-    }
+  for (char c : input) {
+    if (c == '"' || c == '\\')
+      result[offset++] = '\\';
+
+    result[offset++] = c;
   }
 
-  result += '"';
+  result[offset++] = '"';
 
   return result;
 }
