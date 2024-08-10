@@ -809,7 +809,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
     m.prepare("node_still_referenced_by_way",
               R"(   
             SELECT current_way_nodes.node_id,
-                   array_agg(distinct current_way_nodes.way_id) AS way_ids
+                   array_to_string(array_agg(distinct current_way_nodes.way_id),',') AS way_ids
                    FROM current_way_nodes
                    WHERE current_way_nodes.node_id = ANY($1)
                    GROUP BY current_way_nodes.node_id
@@ -829,7 +829,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
         throw http::precondition_failed(
             fmt::format("Node {:d} is still used by ways {}.",
              row["node_id"].as<osm_nwr_id_t>(),
-             friendly_name(row["way_ids"].c_str())));
+             row["way_ids"].c_str()));
       }
 
       if (ids_if_unused.find(node_id) != ids_if_unused.end()) {
@@ -850,7 +850,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
     m.prepare("node_still_referenced_by_relation",
               R"(   
              SELECT current_relation_members.member_id,
-                    array_agg(distinct current_relation_members.relation_id) AS relation_ids
+                    array_to_string(array_agg(distinct current_relation_members.relation_id),',') AS relation_ids
                     FROM current_relation_members
                     WHERE current_relation_members.member_type = 'Node'
                       AND current_relation_members.member_id = ANY($1)
@@ -872,7 +872,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
         throw http::precondition_failed(
             fmt::format("Node {:d} is still used by relations {}.",
                 row["member_id"].as<osm_nwr_id_t>(),
-                friendly_name(row["relation_ids"].c_str())));
+                row["relation_ids"].c_str()));
       }
 
       if (ids_if_unused.find(node_id) != ids_if_unused.end())

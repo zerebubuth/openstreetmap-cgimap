@@ -28,8 +28,9 @@
 #include <fmt/core.h>
 #include <fmt/format.h>
 
+namespace {
 
-inline size_t unicode_strlen(const std::string & s)
+size_t unicode_strlen(const std::string & s)
 {
    const char* mbstr = s.c_str();
 
@@ -43,8 +44,7 @@ inline size_t unicode_strlen(const std::string & s)
    return len;
 }
 
-
-inline std::string escape(std::string_view input) {
+std::string escape(std::string_view input) {
 
   int n = 0;
 
@@ -54,42 +54,32 @@ inline std::string escape(std::string_view input) {
       ++n;
   }
 
-  std::string result;
-  result.reserve(input.size() + n + 2);   // input size + # of escaped chars + 2 enclosing quotes
+  std::string result(input.size() + n + 2, ' ');   // input size + # of escaped chars + 2 enclosing quotes
 
-  result += '"';
+  int offset = 0;
 
-  if (n == 0) {
-    result += input;
-  } else {
-    for (char c : input) {
-      if (c == '"' || c == '\\')
-        result += '\\';
+  result[offset++] = '"';
 
-      result += c;
-    }
+  for (char c : input) {
+    if (c == '"' || c == '\\')
+      result[offset++] = '\\';
+
+    result[offset++] = c;
   }
 
-  result += '"';
+  result[offset++] = '"';
+
+  assert(result.size() == offset);
 
   return result;
 }
 
-// array_agg returns some curly brackets in the response. remove them for output
-// TODO: find a better way to do this.
-
-inline std::string friendly_name(const std::string & input)
-{
-  return input.substr(1, input.size() - 2);
-}
-
-
 template <typename T>
-inline std::string to_string(const std::set<T> &ids) {
+std::string to_string(const std::set<T> &ids) {
   return fmt::format("{}", fmt::join(ids, ","));
 }
 
-
+}
 
 // Bounding box
 class bbox_t {
