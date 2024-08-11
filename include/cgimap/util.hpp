@@ -28,9 +28,8 @@
 #include <fmt/core.h>
 #include <fmt/format.h>
 
-namespace {
 
-size_t unicode_strlen(const std::string & s)
+inline size_t unicode_strlen(const std::string & s)
 {
    const char* mbstr = s.c_str();
 
@@ -44,7 +43,7 @@ size_t unicode_strlen(const std::string & s)
    return len;
 }
 
-std::string escape(std::string_view input) {
+inline std::string escape(std::string_view input) {
 
   int n = 0;
 
@@ -75,11 +74,10 @@ std::string escape(std::string_view input) {
 }
 
 template <typename T>
-std::string to_string(const std::set<T> &ids) {
+inline std::string to_string(const std::set<T> &ids) {
   return fmt::format("{}", fmt::join(ids, ","));
 }
 
-}
 
 // Bounding box
 class bbox_t {
