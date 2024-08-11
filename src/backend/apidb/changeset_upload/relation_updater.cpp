@@ -336,8 +336,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
   // Prepare mapping tables
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_relations;
   for (auto &i : created_relation_id_mapping) {
-    auto res = map_relations.insert(
-        std::pair<osm_nwr_signed_id_t, osm_nwr_id_t>(i.old_id, i.new_id));
+    auto res = map_relations.insert({ i.old_id, i.new_id });
     if (!res.second)
       throw http::bad_request(
           fmt::format("Duplicate relation placeholder id {:d}.", i.old_id));
@@ -345,8 +344,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
 
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_ways;
   for (auto &i : created_way_id_mapping) {
-    auto res = map_ways.insert(
-        std::pair<osm_nwr_signed_id_t, osm_nwr_id_t>(i.old_id, i.new_id));
+    auto res = map_ways.insert({ i.old_id, i.new_id });
     if (!res.second)
       throw http::bad_request(
           fmt::format("Duplicate way placeholder id {:d}.", i.old_id));
@@ -354,8 +352,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
 
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_nodes;
   for (auto &i : created_node_id_mapping) {
-    auto res = map_nodes.insert(
-        std::pair<osm_nwr_signed_id_t, osm_nwr_id_t>(i.old_id, i.new_id));
+    auto res = map_nodes.insert({ i.old_id, i.new_id });
     if (!res.second)
       throw http::bad_request(
           fmt::format("Duplicate node placeholder id {:d}.", i.old_id));
