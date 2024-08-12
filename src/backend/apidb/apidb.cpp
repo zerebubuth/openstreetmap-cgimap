@@ -30,7 +30,6 @@ struct apidb_backend : public backend {
       ("password", po::value<string>(), "database password")
       ("charset", po::value<string>()->default_value("utf8"),
        "database character set")
-      ("readonly", "(obsolete parameter, read only backend is always assumed)")
       ("disable-api-write", "disable API write operations")
       ("dbport", po::value<string>(),
        "database port number or UNIX socket file name")
