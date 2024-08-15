@@ -8,7 +8,7 @@ RUN apt-get update -qq && \
        libfcgi-dev libxml2-dev libmemcached-dev libbrotli-dev \
        libboost-program-options-dev libcrypto++-dev libyajl-dev \
        libpqxx-dev zlib1g-dev libfmt-dev \
-       postgresql-15 postgresql-server-dev-all \
+       postgresql-15 postgresql-server-dev-all dpkg-dev file \
        --no-install-recommends && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -20,23 +20,19 @@ COPY . ./
 
 # Compile, install and remove source
 RUN mkdir build && cd build && \
-     CXXFLAGS="-Wall -Wextra -Wpedantic -Wno-unused-parameter" cmake .. -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release && \
+     CXXFLAGS="-flto=auto -ffat-lto-objects -flto=auto -ffat-lto-objects -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2" cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release && \
      make -j${nproc} && \
      ctest --output-on-failure && \
-     strip openstreetmap-cgimap && \
-     cp openstreetmap-cgimap ../
+     cmake --build . -t package
 
 FROM debian:bookworm-slim
 
+COPY --from=builder /app/build/*.deb /app_deb/
+
 RUN apt-get update -qq && \
-    apt-get install -y \
-       libfcgi-bin libmemcached11 libboost-program-options1.74.0 \
-       libxml2 libcrypto++8 libyajl2 libpqxx-6.4 zlib1g libbrotli1 libfmt9 \
-       --no-install-recommends && \
+    apt install --no-install-recommends -y /app_deb/*.deb && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
-COPY --from=builder /app/openstreetmap-cgimap /usr/local/bin
 
 RUN groupadd -g 61000 cgimap && \
     useradd -g 61000 -l -M -s /bin/false -u 61000 cgimap
@@ -57,5 +53,5 @@ ENV CGIMAP_INSTANCES=10
 
 EXPOSE 8000
 
-ENTRYPOINT /usr/local/bin/openstreetmap-cgimap --pidfile /tmp/cgimap.pid --logfile=/proc/1/fd/1 --daemon && \
+ENTRYPOINT /usr/bin/openstreetmap-cgimap --pidfile /tmp/cgimap.pid --logfile=/proc/1/fd/1 --daemon && \
            tail --pid=$(cat /tmp/cgimap.pid) -f /dev/null

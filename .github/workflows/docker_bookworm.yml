@@ -24,4 +24,10 @@ jobs:
 
       - name: Running Docker image
         run: |
-           docker run --entrypoint /bin/bash cgimap:bookworm -c "/usr/local/bin/openstreetmap-cgimap --help"
+           docker run --name cgimap --entrypoint /bin/bash cgimap:bookworm -c "/usr/bin/openstreetmap-cgimap --help"
+           docker cp cgimap:/app_deb ${{ github.workspace }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openstreetmap_cgimap_debian_12.zip
+          path: ${{ github.workspace }}/app_deb/*.deb
+          if-no-files-found: error

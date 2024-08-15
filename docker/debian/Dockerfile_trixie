@@ -8,7 +8,7 @@ RUN apt-get update -qq && \
        libfcgi-dev libxml2-dev libmemcached-dev libbrotli-dev \
        libboost-program-options-dev libcrypto++-dev libyajl-dev \
        libpqxx-dev zlib1g-dev libfmt-dev \
-       postgresql-16 postgresql-server-dev-all \
+       postgresql-16 postgresql-server-dev-all dpkg-dev file \
        --no-install-recommends && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -23,20 +23,16 @@ RUN mkdir build && cd build && \
      CXXFLAGS="-Wall -Wextra -Wpedantic -Wno-unused-parameter" cmake .. -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release && \
      make -j${nproc} && \
      ctest --output-on-failure && \
-     strip openstreetmap-cgimap && \
-     cp openstreetmap-cgimap ../
+     cmake --build . -t package
 
 FROM debian:trixie-slim
 
+COPY --from=builder /app/build/*.deb /app_deb/
+
 RUN apt-get update -qq && \
-    apt-get install -y \
-       libfcgi-bin libmemcached11 libboost-program-options1.83.0 \
-       libxml2 libcrypto++8 libyajl2 libpqxx-7.9 zlib1g libbrotli1 libfmt9 \
-       --no-install-recommends && \
+    apt install --no-install-recommends -y /app_deb/*.deb && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
-COPY --from=builder /app/openstreetmap-cgimap /usr/local/bin
 
 RUN groupadd -g 61000 cgimap && \
     useradd -g 61000 -l -M -s /bin/false -u 61000 cgimap
