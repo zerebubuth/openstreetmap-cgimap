@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(libxml++
+project(cgimap_libxml++
     LANGUAGES CXX
     DESCRIPTION "This library provides a C++ interface to XML files. It uses libxml2 to access the XML files."
     HOMEPAGE_URL "https://libxmlplusplus.github.io/libxmlplusplus/")
 
-add_library(libxml++)
+add_library(cgimap_libxml++)
 
-target_sources(libxml++
+target_sources(cgimap_libxml++
     PRIVATE
         parsers/exception.cpp
         parsers/internal_error.cpp
@@ -17,29 +17,20 @@ target_sources(libxml++
         parsers/wrapped_exception.cpp)
 
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.23.0)
-    target_sources(libxml++
-        PRIVATE
-            FILE_SET libxmlpp_private_headers
-            TYPE HEADERS
-            BASE_DIRS ./
+    target_sources(cgimap_libxml++
+        PUBLIC
+            FILE_SET HEADERS
             FILES
                 parsers/exception.hpp
                 parsers/internal_error.hpp
                 parsers/parse_error.hpp
                 parsers/parser.hpp
+                parsers/saxparser.hpp
                 parsers/wrapped_exception.hpp)
-
-    target_sources(libxml++
-        PUBLIC
-            FILE_SET libxmlpp_public_headers
-            TYPE HEADERS
-            BASE_DIRS ./
-            FILES
-                parsers/saxparser.hpp)
 else()
-    target_include_directories(libxml++ PUBLIC
+    target_include_directories(cgimap_libxml++ PUBLIC
         ./)
 endif()
 
-target_link_libraries(libxml++ PUBLIC
+target_link_libraries(cgimap_libxml++ PUBLIC
     LibXml2::LibXml2)

@@ -7,14 +7,15 @@ set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
 ################
-# CGImap project
+# openstreetmap-cgimap project
 ################
 string(TIMESTAMP CURRENT_TIMESTAMP %y%m%d%H%M UTC)
 
-project(CGImap LANGUAGES CXX
-               VERSION "0.10.0.${CURRENT_TIMESTAMP}"
-               DESCRIPTION "CGImap is a C++ implementation of some parts of the OpenStreetMap API as a FastCGI process."
-               HOMEPAGE_URL "https://github.com/zerebubuth/openstreetmap-cgimap")
+project(openstreetmap-cgimap
+        LANGUAGES CXX
+        VERSION "0.10.0.${CURRENT_TIMESTAMP}"
+        DESCRIPTION "CGImap is a C++ implementation of some parts of the OpenStreetMap API as a FastCGI process."
+        HOMEPAGE_URL "https://github.com/zerebubuth/openstreetmap-cgimap")
 set(CMAKE_PROJECT_BUGREPORT_URL "https://github.com/zerebubuth/openstreetmap-cgimap/issues")
 
 
@@ -167,20 +168,48 @@ endif()
 # Install
 #############################################################
 
-if (ENABLE_INSTALL)
-  install(TARGETS openstreetmap_cgimap
-          PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-          DESTINATION "bin")
+if(ENABLE_INSTALL)
+    include(GNUInstallDirs)
 
-  install(FILES openstreetmap-cgimap.1 DESTINATION share/man/man1)
+    set(CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
+        OWNER_READ OWNER_WRITE OWNER_EXECUTE
+        GROUP_READ GROUP_EXECUTE
+        WORLD_READ WORLD_EXECUTE)
 
-  install(FILES README DESTINATION share/doc/openstreetmap-cgimap)
+    set(CGIMAP_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
 
-  if (BUILD_SHARED_LIBS)
-    install(TARGETS cgimap_core DESTINATION lib)
-    install(TARGETS cgimap_fcgi DESTINATION lib)
-    install(TARGETS cgimap_apidb DESTINATION lib)
-  endif()
+    if(BUILD_SHARED_LIBS)
+        set(CGIMAP_LIBS cgimap_core cgimap_fcgi cgimap_apidb cgimap_libxml++)
+    endif()
+
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.23.0)
+        set(CGIMAP_HEADER_FILE_SET_INSTALL_ARTIFACTS
+            FILE_SET HEADERS
+                COMPONENT Development
+                DESTINATION ${CGIMAP_INSTALL_INCLUDEDIR}
+                EXCLUDE_FROM_ALL)
+    endif()
+
+    install(TARGETS openstreetmap_cgimap ${CGIMAP_LIBS}
+        RUNTIME
+            COMPONENT Runtime
+        LIBRARY
+            COMPONENT Libraries
+        PUBLIC_HEADER
+            COMPONENT Development
+            DESTINATION ${CGIMAP_INSTALL_INCLUDEDIR}
+            EXCLUDE_FROM_ALL
+        PRIVATE_HEADER
+            COMPONENT Development
+            DESTINATION ${CGIMAP_INSTALL_INCLUDEDIR}
+            EXCLUDE_FROM_ALL
+        ${CGIMAP_HEADER_FILE_SET_INSTALL_ARTIFACTS})
+
+    install(FILES openstreetmap-cgimap.1 TYPE MAN
+        COMPONENT Runtime)
+
+    install(FILES README TYPE DOC
+        COMPONENT Runtime)
 endif()
 
 
@@ -192,19 +221,41 @@ set(CPACK_GENERATOR "DEB")
 set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
-set(CPACK_DEBIAN_PACKAGE_NAME "openstreetmap-cgimap")
 set(CPACK_PACKAGE_CONTACT "mmd.osm@gmail.com")
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "mmd")
-set(CPACK_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
-    OWNER_READ OWNER_WRITE OWNER_EXECUTE
-    GROUP_READ GROUP_EXECUTE
-    WORLD_READ WORLD_EXECUTE
-)
 set(CPACK_PACKAGE_DESCRIPTION "A comprehensive list of supported endpoints can be found at https://github.com/zerebubuth/openstreetmap-cgimap")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "OpenStreetMap CGImap - Performance optimized implementation of selected parts of the OSM API")
-set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS YES)
-set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/zerebubuth/openstreetmap-cgimap")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/COPYING")
+set(CPACK_PACKAGING_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 set(CPACK_STRIP_FILES "TRUE")
-INCLUDE(CPack)
+set(CPACK_VERBATIM_VARIABLES YES)
 
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "mmd <${CPACK_PACKAGE_CONTACT}>")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS YES)
+set(CPACK_DEBIAN_ENABLE_COMPONENT_DEPENDS YES)
+set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION TRUE)
+set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+# Set to YES to create individual packages for components instead of everything in one package
+set(CPACK_DEB_COMPONENT_INSTALL NO)
+
+set(CPACK_DEBIAN_RUNTIME_PACKAGE_NAME "${PROJECT_NAME}")
+set(CPACK_DEBIAN_LIBRARIES_PACKAGE_NAME "${PROJECT_NAME}-libs")
+set(CPACK_DEBIAN_DEVELOPMENT_PACKAGE_NAME "${PROJECT_NAME}-dev")
+
+include(CPack)
+
+cpack_add_component(Libraries
+                    DISPLAY_NAME "openstreetmap-cgimap libraries"
+                    DESCRIPTION "Libraries required to run openstreetmap-cgimap")
+
+if(BUILD_SHARED_LIBS)
+    set(CGIMAP_RUNTIME_COMPONENT_DEPENDENCIES Libraries)
+endif()
+cpack_add_component(Runtime
+                    DISPLAY_NAME "openstreetmap-cgimap runtime binary"
+                    DEPENDS ${CGIMAP_RUNTIME_COMPONENT_DEPENDENCIES})
+
+cpack_add_component(Development
+                    DISPLAY_NAME "openstreetmap-cgimap development headers"
+                    DESCRIPTION "Header files required for development using openstreetmap-cgimap libraries"
+                    DEPENDS Libraries)
