@@ -10,12 +10,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build Docker images
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
            file: docker/ubuntu/Dockerfile2204
            load: true
+           cache-from: type=gha,scope=cgimap:2204
+           cache-to: type=gha,mode=max,scope=cgimap:2204
            tags: cgimap:2204
+
       - name: Running Docker image
         run: |
            docker run --entrypoint /bin/bash cgimap:2204 -c "/usr/local/bin/openstreetmap-cgimap --help"
