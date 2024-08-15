@@ -185,7 +185,8 @@ if(ENABLE_INSTALL)
         set(CGIMAP_HEADER_FILE_SET_INSTALL_ARTIFACTS
             FILE_SET HEADERS
                 COMPONENT Development
-                DESTINATION ${CGIMAP_INSTALL_INCLUDEDIR})
+                DESTINATION ${CGIMAP_INSTALL_INCLUDEDIR}
+                EXCLUDE_FROM_ALL)
     endif()
 
     install(TARGETS openstreetmap_cgimap ${CGIMAP_LIBS}
@@ -196,9 +197,11 @@ if(ENABLE_INSTALL)
         PUBLIC_HEADER
             COMPONENT Development
             DESTINATION ${CGIMAP_INSTALL_INCLUDEDIR}
+            EXCLUDE_FROM_ALL
         PRIVATE_HEADER
             COMPONENT Development
             DESTINATION ${CGIMAP_INSTALL_INCLUDEDIR}
+            EXCLUDE_FROM_ALL
         ${CGIMAP_HEADER_FILE_SET_INSTALL_ARTIFACTS})
 
     install(FILES openstreetmap-cgimap.1 TYPE MAN
