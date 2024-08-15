@@ -1,0 +1,53 @@
+name: Build deb package
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: ${{ matrix.os }} ${{ matrix.version }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: debian
+            version: bookworm
+          - os: ubuntu
+            version: jammy
+          - os: ubuntu
+            version: noble
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Commit Hash
+        id: commit
+        uses: prompt/actions-commit-hash@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - uses: jtdor/build-deb-action@v1
+        with:
+          docker-image: ${{ matrix.os == 'ubuntu' && format('ubuntu:{0}', matrix.version) || format('debian:{0}-slim', matrix.version) }}
+          buildpackage-opts: --build=binary --no-sign
+          before-build-hook: debchange --controlmaint --local "+${{ steps.commit.outputs.short }}~${{ matrix.version }}" -b --distribution ${{ matrix.version }} "CI build"
+          extra-build-deps: devscripts git
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: openstreetmap-cgimap_${{ matrix.version }}
+          path: debian/artifacts/openstreetmap-cgimap-bin_*.deb
+
+      - name: Upload debugging symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: openstreetmap-cgimap-dbgsym_${{ matrix.version }}
+          path: debian/artifacts/openstreetmap-cgimap-bin-dbgsym_*.deb

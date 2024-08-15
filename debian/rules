@@ -1,0 +1,13 @@
+#!/usr/bin/make -f
+# See debhelper(7) (uncomment to enable)
+# output every command that modifies files on the build system.
+#export DH_VERBOSE = 1
+
+%:
+	dh $@ --parallel --builddirectory=build --buildsystem=cmake
+
+override_dh_auto_test:
+	dh_auto_test --no-parallel
+
+override_dh_auto_configure:
+	dh_auto_configure -- -DCMAKE_LIBRARY_PATH=$(DEB_HOST_MULTIARCH) -DBUILD_TESTING=ON -DBUILD_SHARED_LIBS=OFF

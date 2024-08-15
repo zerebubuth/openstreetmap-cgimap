@@ -1,0 +1,373 @@
+openstreetmap-cgimap (0.9.3-1~jammy1) jammy; urgency=medium
+
+  * Add the ability to limit changeset size (#413)
+
+ -- mmd osm <mmd.osm@gmail.com>  Fri, 21 Jun 2024 16:30:00 +0000
+
+openstreetmap-cgimap (0.9.2-1~jammy1) jammy; urgency=medium
+
+  * Revert "Skip changeset discussions unless requested" (#402)
+
+ -- mmd osm <mmd.osm@gmail.com>  Thu, 25 Apr 2024 16:10:00 +0000
+
+openstreetmap-cgimap (0.9.1-1~jammy1) jammy; urgency=medium
+
+  * Added support for brotli response body compression (#375)
+  * Drop support for staticxml backend in production code (#376)
+  * Require YAJL v2 in CMakeLists (#373)
+  * yajl: output json in larger chunks (#380)
+  * json writer: fmt for formatting integer values (#390)
+  * Reuse available string length (#385)
+  * Skip db query if no changesets were requested (#379)
+  * libpqxx: cache column names (#383)
+  * Skip changeset discussions unless requested (#388)
+  * Small performance improvements (#378)
+  * Use emplace_back instead of push_back, remove unnecessary temp objects by @Woazboat (#389)
+  * Move modified libxml++ lib to contrib directory(#367)
+  * Create separate cmake files for contrib libs by @Woazboat (#369)
+  * Remove duplicated cmake test definition by @Woazboat (#370)
+  * Remove unused catch2 automake reporter header file by @Woazboat (#371)
+  * Integrate clang-tidy in cmake build by @Woazboat (#382)
+  * A bit of refactoring in XML / JSON writer (#366)
+  * Change some enums to enum class (#372)
+  * Minor router cleanups (#377)
+  * Some cleanups from @Woazboat psql-array-iterator branch (#384)
+  * Use raw string literal for bearer token regex by @Woazboat (#387)
+  * Use std::forward for forwarding references instead of std::move by @Woazboat (#386)
+  * pqxx::field wrapper for psql_array_to_vector (#391)
+
+ -- mmd osm <mmd.osm@gmail.com>  Sun, 14 Apr 2024 17:19:00 +0000
+
+openstreetmap-cgimap (0.9.0-1~jammy1) jammy; urgency=medium
+
+  * Replace autotools by cmake by @Woazboat in #317 and @mmd-osm in #358
+  * Fix json output incorrectly truncating coordinates by @Woazboat in #364
+  * Fix test_parse_id_list unit test failure on ARM64 in #347
+  * Adjustments for changes in underlying libpqxx 7.x.x library version in #301
+  * Fix program option --instances in #339
+  * Daemon mode improvements (multiple PRs)
+  * Check node lat lon not NaN or infinite by @Woazboat in (7d058d5)
+  * Use std::string / std::string_view for psql_array_to_vector by @Woazboat in #344
+  * Reduce temporary allocations for xml serialization by @Woazboat in #342
+  * Migrate unit tests to Catch2 framework, increased unit test coverage (multiple PRs)
+  * Code cleanups (multiple PRs)
+
+ -- mmd osm <mmd.osm@gmail.com>  Mon, 11 Mar 2024 19:47:12 +0000
+
+openstreetmap-cgimap (0.8.10-1~jammy1) jammy; urgency=medium
+
+  * Added changeset upload rate limiting (#296) (#297)
+  * process_post_put_request: small cleanups (#298)
+
+ -- mmd osm <mmd.osm@gmail.com>  Sun, 5 Nov 2023 10:36:00 +0000
+
+openstreetmap-cgimap (0.8.9-1~jammy1) jammy; urgency=medium
+
+  * Add moderators specific rate limiting settings (#294)
+  * Add Retry-After http header in 509 response (#295)
+  * Add ids to changeset comments output (#289)
+  * Fix vector reserve in pqsql select for historic n/w/r (#282)
+  * Replace deprecated std::iterator with direct member type declarations (#279)
+  * Check user state, only allow db changes for confirmed and active users (#284)
+  * Fix commented out Dockerfile config in lighttpd.conf (#287)
+  * Add more test files to gitignore (#288)
+
+ -- mmd osm <mmd.osm@gmail.com>  Sun, 29 Oct 2023 19:30:00 +0000
+
+openstreetmap-cgimap (0.8.8-1~jammy1) jammy; urgency=medium
+
+  * Undo "Replace custom array parser by pqxx::array_parser" (#277)
+
+ -- mmd osm <mmd.osm@gmail.com>  Wed, 27 Jul 2022 18:19:04 +0000
+
+openstreetmap-cgimap (0.8.7-1~jammy1) jammy; urgency=medium
+
+  * Released version 0.8.7
+  * Switch to Ubuntu 20.04
+  * Refactoring
+
+ -- mmd osm <mmd.osm@gmail.com>  Sat, 16 Jul 2022 11:38:00 +0000
+
+openstreetmap-cgimap (0.8.6-1~focal1) focal; urgency=medium
+
+  * Released version 0.8.6
+  * Add support for Argon2 password hashing (#251)
+  * Simplify xml parser context handling (#249)
+
+ -- mmd osm <mmd.osm@gmail.com>  Sun, 14 Nov 2021 19:42:01 +0000
+
+openstreetmap-cgimap (0.8.5-1~focal1) focal; urgency=medium
+
+  * Released version 0.8.5
+  * OAuth2: plain token support (#248)
+
+ -- mmd osm <mmd.osm@gmail.com>  Fri, 25 Jun 2021 18:30:57 +0000
+
+openstreetmap-cgimap (0.8.4-1~focal1) focal; urgency=medium
+
+  * Released version 0.8.4
+  * Adding OAuth2 support (#246)
+
+ -- mmd osm <mmd.osm@gmail.com>  Wed, 23 Jun 2021 20:13:04 +0000
+
+openstreetmap-cgimap (0.8.3-1~focal1) focal; urgency=medium
+
+  * Released version 0.8.3
+  * Updated Dockerfile and lighttpd.conf (#213)
+  * Make compile time constants configurable via program options (#232)
+  * Program options can be set via new command line parameter --configfile (#232)
+  * Provide option to enforce limits for tags and relation members (#174)
+  * Use pg_virtualenv for unit tests
+  * Ubuntu 20.04 (Focal) adjustments for libpqxx deprecation warnings (#229)
+  * Fix closed_at timestamp when changeset is open >23h (#236)
+
+ -- mmd osm <mmd.osm@gmail.com>  Mon, 13 Jul 2020 19:36:57 +0000
+
+openstreetmap-cgimap (0.8.2-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.8.2
+  * Fix relations referencing deleted elements (#226)
+  * Fix: revert deleted master/child relations (#225)
+
+ -- mmd osm <mmd.osm@gmail.com>  Wed, 22 Apr 2020 19:51:11 +0000
+
+openstreetmap-cgimap (0.8.1-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.8.1
+  * Use MIME type application/xml for better Rails compatibility (#221)
+
+ -- mmd osm <mmd.osm@gmail.com>  Mon, 02 Mar 2020 17:12:55 +0000
+
+openstreetmap-cgimap (0.8.0-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.8.0
+  * Re-enable JSON output
+  * Added new API endpoints for Changeset create/update/close (#206)
+  * New handler for /*/relations and node/*/ways (#166)
+  * Fix compilation issues for libpqxx 6.x (#200)
+  * Use boost::spirit::standard instead of boost::spirit::ascii to
+    avoid assertions failures in param list parsing
+  * Prepend HTTP 412 error text w/ Precondition failed: for Rails port compatibility (#211)
+  * JSON format fixes (#218, #219)
+  * Vagrant: dist update fix (#216), use Bionic (#217)
+  * Improved XML parsing, using parts of libxml++ (#209)
+  * Replace boost regex by c++11 std (#205)
+  * Refactoring transaction handling (#204)
+  * Simplify changeset cache sql (#202)
+  * Application router HTTP method handling
+  * Remove write api backend (#198)
+  * Remove pgsnapshot backend and all related special case logic (#196)
+
+ -- mmd osm <mmd.osm@gmail.com>  Sat, 15 Feb 2020 12:10:22 +0000
+
+openstreetmap-cgimap (0.7.5-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.7.5
+  * Fix 412 Precondition Failed when trying to upload old version of a way/relation (#195)
+
+ -- mmd osm <mmd.osm@gmail.com>  Sat, 01 Jun 2019 18:32:42 +0000
+
+openstreetmap-cgimap (0.7.4-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.7.4
+  * Fix Basic Auth realm to be in sync with Rails (#192)
+  * Remove OAuth WWW-Authenticate header for better rails compatibility (#193)
+
+ -- mmd osm <mmd.osm@gmail.com>  Fri, 31 May 2019 06:43:02 +0000
+
+openstreetmap-cgimap (0.7.3-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.7.3
+  * Basic auth should also consider user email and lower case variants (#190)
+  * Reorder WWW-Authenticate headers to work around non-compliant clients (#191)
+
+ -- mmd osm <mmd.osm@gmail.com>  Thu, 30 May 2019 20:14:57 +0000
+
+openstreetmap-cgimap (0.7.2-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.7.2
+  * Fix history api returns wrong/duplicate tag data for ways (#183)
+  * Sort History api call result by object and version (#184)
+  * Introduce --disable-api-write command line param to disable API writes (#185)
+  * Added exception logging in osm_responder subclasses (#187)
+
+ -- mmd osm <mmd.osm@gmail.com>  Mon, 27 May 2019 19:15:12 +0000
+
+openstreetmap-cgimap (0.7.1-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.7.1
+  * Specify columns explictly when inserting into API tables (#179)
+  * Use cryptopp path for crypto++ includes (#178)
+  * Refactoring: improve OSMChange_Tracking diffresult isolation (#177)
+
+ -- mmd osm <mmd.osm@gmail.com>  Sat, 25 May 2019 19:11:57 +0000
+
+openstreetmap-cgimap (0.7.0-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.7.0
+
+ -- mmd osm <mmd.osm@gmail.com>  Sun, 24 Mar 2019 11:24:53 +0000
+
+openstreetmap-cgimap (0.7.0-rc1~bionic1) bionic; urgency=medium
+
+  * 0.7.0 RC-1
+  * Changeset upload (#140)
+  * Disabled JSON output due to missing Rails support
+
+ -- mmd osm <mmd.osm@gmail.com>  Fri, 18 Jan 2019 19:30:12 +0000
+
+openstreetmap-cgimap (0.6.2-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.6.2
+  * JSON output (#153, #155)
+  * Include num_changes in changeset xml & json response (#156)
+
+ -- mmd osm <mmd.osm@gmail.com>  Sat, 08 Sep 2018 15:48:55 +0000
+
+openstreetmap-cgimap (0.6.1-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.6.1
+  * Performance: Prefetch cache details (#142)
+  * Error handling OAuth parsing failure (#147)
+
+ -- mmd osm <mmd.osm@gmail.com>  Fri, 20 Jul 2018 20:37:12 +0000
+
+openstreetmap-cgimap (0.6.0-1~bionic1) bionic; urgency=medium
+
+  * Released version 0.6.0
+
+ -- Matt Amos <zerebubuth@gmail.com>  Thu, 28 Jun 2018 11:07:38 +0100
+
+openstreetmap-cgimap (0.6.0-1~xenial1) xenial; urgency=medium
+
+  * Released version 0.6.0
+
+ -- Matt Amos <zerebubuth@gmail.com>  Mon, 10 Apr 2017 13:19:38 +0100
+
+openstreetmap-cgimap (0.5.8-0ubuntu0ppa0~xenial1) xenial; urgency=medium
+
+  * Attempting to coax a package out of Launchpad.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Thu, 03 Nov 2016 12:30:38 +0000
+
+openstreetmap-cgimap (0.5.8-0ubuntu0ppa0~xenial0) xenial; urgency=medium
+
+  * Reject OAuth nonces more than 24h old, allowing them to be expired.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Thu, 03 Nov 2016 12:22:14 +0000
+
+openstreetmap-cgimap (0.5.7-0ubuntu0ppa0~xenial0) xenial; urgency=medium
+
+  * Add more information for OAuth unauthorized rejections.
+  * Fix status message when code is 401.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Mon, 24 Oct 2016 11:44:01 +0100
+
+openstreetmap-cgimap (0.5.6-0ubuntu2ppa1~xenial1) xenial; urgency=medium
+
+  * Fix but where changeset comments count was always zero.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Thu, 20 Oct 2016 17:32:39 +0100
+
+openstreetmap-cgimap (0.5.5-0ubuntu2ppa1~xenial1) xenial; urgency=medium
+
+  * Implement missing apidb OAuth methods.
+  * Fix return type of `oauth_status_code` functor.
+  * Add end-to-end OAuth test.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Sat, 8 Oct 2016 17:19:53 +0100
+
+openstreetmap-cgimap (0.5.4-0ubuntu2ppa1~xenial1) xenial; urgency=medium
+
+  * Fix bug with OAuth return checking logic.
+  * Fix bug with OAuth path normalisation.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Thu, 6 Oct 2016 14:04:40 +0100
+
+openstreetmap-cgimap (0.5.3-0ubuntu2ppa1~xenial1) xenial; urgency=medium
+
+  * Fix bug with rate limiting.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Tue, 4 Oct 2016 12:19:06 +0100
+
+openstreetmap-cgimap (0.5.2-0ubuntu2ppa1~xenial1) xenial; urgency=medium
+
+  * Fix bug with OAuth database connection parameters.
+  * Fix environment variable parsing.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Mon, 3 Oct 2016 23:55:03 +0100
+
+openstreetmap-cgimap (0.5.1-0ubuntu2ppa1~xenial1) xenial; urgency=medium
+
+  * Fix integer types so that 32-bit builds work.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Mon, 3 Oct 2016 14:13:36 +0100
+
+openstreetmap-cgimap (0.5.0-0ubuntu2ppa1~xenial6) xenial; urgency=medium
+
+  * Fix date formatting of changelog lines.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Mon, 3 Oct 2016 13:30:41 +0100
+
+openstreetmap-cgimap (0.5.0-0ubuntu2ppa1~xenial5) xenial; urgency=medium
+
+  * Bump version to get launchpad to build it.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Mon, 3 Oct 2016 11:30:02 +0100
+
+openstreetmap-cgimap (0.5.0-0ubuntu2ppa1~xenial4) xenial; urgency=medium
+
+  * Bump version to get launchpad to build it.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Mon, 3 Oct 2016 10:56:02 +0100
+
+openstreetmap-cgimap (0.5.0-0ubuntu2ppa1~xenial3) xenial; urgency=medium
+
+  * Bump version to get launchpad to build it.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Mon, 3 Oct 2016 10:37:45 +0100
+
+openstreetmap-cgimap (0.5.0-0ubuntu2ppa1~xenial2) xenial; urgency=medium
+
+  * Bump version to get launchpad to build it.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Sun, 25 Sep 2016 11:43:44 +0100
+
+openstreetmap-cgimap (0.5.0-0ubuntu2ppa1~xenial1) xenial; urgency=medium
+
+  * Add support for changeset metadata and discussions.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Mon, 19 Sep 2016 21:07:06 +0100
+
+openstreetmap-cgimap (0.4.3-0ubuntu2ppa1~xenial2) xenial; urgency=medium
+
+  * Add postinst call to ldconfig.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Mon, 13 Jun 2016 13:13:06 +0100
+
+openstreetmap-cgimap (0.4.3-0ubuntu2ppa1~xenial1) xenial; urgency=medium
+
+  * Update changelog. Add signature location for upstream verification.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Mon, 13 Jun 2016 11:51:19 +0100
+
+openstreetmap-cgimap (0.4.3-0ubuntu2~4.gbp0bf067) wily; urgency=medium
+
+  ** SNAPSHOT build @0bf0674b2ed4060d0c80cc14648a390a07c96f88 **
+
+  * UNRELEASED
+  * Fixing Lintian errors.
+  * Proper email address.
+  * Add version to watch file.
+  * Where should the so.0.0.0 and the symlink go?
+  * Update changelog with DCH.
+  * Shuffling package contents around at random attempting to satisfy Lintian.
+  * Update changelog again.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Mon, 16 May 2016 19:04:15 +0100
+
+openstreetmap-cgimap (0.4.2-0ubuntu1) wily; urgency=medium
+
+  * Initial release.
+
+ -- Matt Amos <zerebubuth@gmail.com>  Sat, 07 May 2016 00:01:07 +0100

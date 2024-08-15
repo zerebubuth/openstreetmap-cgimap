@@ -1,0 +1,8 @@
+version=3
+opts=filenamemangle=s/.+\/v?(\d\S*)\.tar\.gz/openstreetmap-cgimap-$1\.tar\.gz/ \
+  https://github.com/zerebubuth/openstreetmap-cgimap/tags .*/v?(\d\S*)\.tar\.gz
+pgpsigurlmangle=s/github.com/raw.githubusercontent.com/;\
+s/archive\/master/signatures/;\
+s/([^\/]+)\.tar\.gz/openstreetmap-cgimap-$1\.tar\.gz/;\
+s/$/.asc/ \
+  https://github.com/zerebubuth/openstreetmap-cgimap/tags .+master/(\d[\d\.]*)\.tar\.gz
