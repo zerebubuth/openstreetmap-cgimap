@@ -86,7 +86,7 @@ struct test_formatter : public output_formatter {
   std::vector<relation_t> m_relations;
 
   ~test_formatter() override = default;
-  mime::type mime_type() const override;
+  [[nodiscard]] mime::type mime_type() const override;
   void start_document(const std::string &generator, const std::string &root_name) override;
   void end_document() override;
   void write_bounds(const bbox &bounds) override;

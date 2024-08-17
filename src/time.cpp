@@ -12,7 +12,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <cctype>
-#include <time.h>
+#include <ctime>
 #include <fmt/core.h>
 
 

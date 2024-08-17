@@ -42,6 +42,12 @@ public:
     int close() override { return out.close(); }
     void flush() override { out.flush(); }
 
+    identity_output_buffer(const identity_output_buffer&) = delete;
+    identity_output_buffer& operator=(const identity_output_buffer&) = delete;
+
+    identity_output_buffer(identity_output_buffer&&) = delete;
+    identity_output_buffer& operator=(identity_output_buffer&&) = delete;
+
 private:
     output_buffer& out;
 };

@@ -33,7 +33,7 @@ struct test_database {
   // allow the test to be skipped, as people might not have or want an
   // apidb database set up on their local machines.
   struct setup_error : public std::exception {
-    explicit setup_error(const std::string &fmt);
+    explicit setup_error(std::string fmt);
     ~setup_error() noexcept override = default;
     const char *what() const noexcept override;
 
@@ -59,27 +59,27 @@ struct test_database {
   // writeable and readonly data selection available from the
   // test_database's get_data_selection() call. the func should
   // do its own testing - the run method here is just plumbing.
-  void run(std::function<void(test_database&)> func);
+  void run(const std::function<void(test_database&)> &func);
 
   // run a database update test in write mode. test will be
   // executed exactly once only.
-  void run_update(std::function<void(test_database&)> func);
+  void run_update(const std::function<void(test_database&)> &func);
 
   // return a data selection factory pointing at the current database
-  std::shared_ptr<data_selection::factory> get_data_selection_factory() const;
+  [[nodiscard]] std::shared_ptr<data_selection::factory> get_data_selection_factory() const;
 
   // return a data update factory pointing at the current database
-  std::shared_ptr<data_update::factory> get_data_update_factory() const;
+  [[nodiscard]] std::shared_ptr<data_update::factory> get_data_update_factory() const;
 
   // return a new data update factory pointing at the current database,
   // with a fresh database connection
-  std::unique_ptr<data_update::factory> get_new_data_update_factory();
+  [[nodiscard]] std::unique_ptr<data_update::factory> get_new_data_update_factory();
 
   // return a data selection pointing at the current database
-  std::unique_ptr<data_selection> get_data_selection();
+  [[nodiscard]] std::unique_ptr<data_selection> get_data_selection();
 
   // return a data updater pointing at the current database
-  std::unique_ptr<data_update> get_data_update();
+  [[nodiscard]] std::unique_ptr<data_update> get_data_update();
 
   // run a (possible set of) SQL strings against the database.
   // intended for setting up data that the test needs.

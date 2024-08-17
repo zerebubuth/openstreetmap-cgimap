@@ -11,7 +11,7 @@
 #include "test_database.hpp"
 
 #include <fstream>
-#include <time.h>
+#include <ctime>
 #include <sys/time.h>
 
 #include <filesystem>
@@ -27,7 +27,7 @@ std::string random_db_name() {
   // try to make something that has a reasonable chance of being
   // unique on this machine, in case we clash with anything else.
   auto hash = (unsigned int)getpid();
-  struct timeval tv;
+  struct timeval tv{};
   gettimeofday(&tv, nullptr);
   hash ^= (unsigned int)((tv.tv_usec & 0xffffu) << 16);
 
@@ -158,7 +158,7 @@ void test_database::testcase_ended() {
 }
 
 void test_database::run(
-    std::function<void(test_database&)> func) {
+    const std::function<void(test_database&)> &func) {
 
   try {
     // clear out database before using it!
@@ -173,7 +173,7 @@ void test_database::run(
 }
 
 void test_database::run_update(
-    std::function<void(test_database&)> func) {
+    const std::function<void(test_database&)> &func) {
 
   try {
     // clear out database before using it!
@@ -186,7 +186,7 @@ void test_database::run_update(
   testcase_ended();
 }
 
-test_database::setup_error::setup_error(const std::string &str)
+test_database::setup_error::setup_error(std::string str)
   : m_str(str) {
 }
 

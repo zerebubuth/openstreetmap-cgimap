@@ -54,12 +54,6 @@ void osm_diffresult_responder::write(output_formatter& fmt,
 
       switch (item.op) {
       case operation::op_create:
-        fmt.write_diffresult_create_modify(
-            as_elem_type(item.obj_type), item.old_id,
-            item.new_id, item.new_version);
-
-        break;
-
       case operation::op_modify:
         fmt.write_diffresult_create_modify(
             as_elem_type(item.obj_type), item.old_id,

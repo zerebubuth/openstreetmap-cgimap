@@ -130,7 +130,7 @@ private:
 
   void delete_current_way_tags(const std::vector<osm_nwr_id_t> &ids);
 
-  void delete_current_way_nodes(std::vector<osm_nwr_id_t> ids);
+  void delete_current_way_nodes(const std::vector<osm_nwr_id_t> &ids);
 
   Transaction_Manager &m;
   const RequestContext& req_ctx;

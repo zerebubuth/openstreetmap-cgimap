@@ -16,7 +16,7 @@
 
 
 brotli_output_buffer::brotli_output_buffer(output_buffer& o)
-    : out(o), bytes_in(0) {
+    : out(o) {
 
   state_ = BrotliEncoderCreateInstance(nullptr, nullptr, nullptr);
 

@@ -49,8 +49,8 @@ struct apidb_backend : public backend {
   }
   ~apidb_backend() override = default;
 
-  const string &name() const override { return m_name; }
-  const po::options_description &options() const override { return m_options; }
+  [[nodiscard]] const string &name() const override { return m_name; }
+  [[nodiscard]] const po::options_description &options() const override { return m_options; }
 
   std::unique_ptr<data_selection::factory> create(const po::variables_map &opts) override {
     return std::make_unique<readonly_pgsql_selection::factory>(opts);

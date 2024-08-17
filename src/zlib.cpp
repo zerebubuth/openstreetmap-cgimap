@@ -53,7 +53,7 @@ int zlib_output_buffer::write(const char *buffer, int len) {
   assert(stream.avail_in == 0);
 
   if (len > 0) {
-    int status;
+    int status = 0;
 
     stream.next_in = (Bytef *)buffer;
     stream.avail_in = len;
@@ -79,7 +79,7 @@ int zlib_output_buffer::write(const char *buffer, int len) {
 }
 
 int zlib_output_buffer::close() {
-  int status;
+  int status = 0;
 
   assert(stream.avail_in == 0);
 
@@ -117,13 +117,13 @@ void zlib_output_buffer::flush() { flush_output(); }
 // parts adopted from https://github.com/rudi-cilibrasi/zlibcomplete
 
 ZLibBaseDecompressor::ZLibBaseDecompressor(int windowBits) {
-  int retval;
+
   stream.zalloc = Z_NULL;
   stream.zfree = Z_NULL;
   stream.opaque = Z_NULL;
   stream.avail_in = 0;
   stream.next_in = Z_NULL;
-  retval = inflateInit2(&stream, windowBits);
+  int retval = inflateInit2(&stream, windowBits);
   if (retval != Z_OK) {
     throw std::bad_alloc();
   }
@@ -137,7 +137,6 @@ ZLibBaseDecompressor::~ZLibBaseDecompressor() {
 
 std::string ZLibBaseDecompressor::decompress(const std::string& input) {
 
-  int ret;
   std::string result;
 
   if (!use_decompression)
@@ -158,10 +157,9 @@ std::string ZLibBaseDecompressor::decompress(const std::string& input) {
     }
 
     do {
-      unsigned int have;
       stream.avail_out = ZLIB_COMPLETE_CHUNK;
       stream.next_out = (Bytef *) outbuf;
-      ret = inflate(&stream, Z_NO_FLUSH);
+      int ret = inflate(&stream, Z_NO_FLUSH);
       assert(ret != Z_STREAM_ERROR);  /* state not clobbered */
       switch (ret) {
       case Z_NEED_DICT:
@@ -174,7 +172,7 @@ std::string ZLibBaseDecompressor::decompress(const std::string& input) {
           throw std::runtime_error("Zlib decompression failed");
       }
 
-      have = ZLIB_COMPLETE_CHUNK - stream.avail_out;
+      unsigned int have = ZLIB_COMPLETE_CHUNK - stream.avail_out;
       result += std::string(outbuf, have);
     } while (stream.avail_out == 0);
   }

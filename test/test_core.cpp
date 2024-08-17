@@ -495,7 +495,7 @@ void run_test(fs::path test_case, rate_limiter &limiter,
       check_response(in, req.buffer());
 
     } catch (const std::exception &e) {
-      if (getenv("VERBOSE") != NULL) {
+      if (getenv("VERBOSE") != nullptr) {
         std::cout << "ERROR: " << e.what() << "\n\n"
                   << "Response was:\n----------------------\n"
                   << req.buffer().str() << "\n";
@@ -504,7 +504,7 @@ void run_test(fs::path test_case, rate_limiter &limiter,
     }
 
     // output test case name if verbose output is requested
-    if (getenv("VERBOSE") != NULL) {
+    if (getenv("VERBOSE") != nullptr) {
       std::cout << "PASS: " << test_case << "\n";
     }
 
@@ -584,13 +584,13 @@ oauth2_tokens parse_oauth2_tokens(const pt::ptree &config)
   {
     for (const auto &entry : *tokens)
     {
-      oauth2_token_detail_t detail;
+      oauth2_token_detail_t detail{};
       auto token = entry.first;
       detail.api_write = entry.second.get<bool>("api_write", false);
       detail.expired = entry.second.get<bool>("expired", true);
       detail.revoked = entry.second.get<bool>("revoked", true);
       detail.user_id = entry.second.get<osm_user_id_t>("user_id", {});
-      oauth2_tokens[token] = std::move(detail);
+      oauth2_tokens[token] = detail;
     }
   }
   return oauth2_tokens;

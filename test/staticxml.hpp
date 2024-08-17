@@ -27,6 +27,6 @@ using oauth2_tokens = std::map<std::string, oauth2_token_detail_t>;
 
 using user_roles_t = std::map<osm_user_id_t, std::set<osm_user_role_t> >;
 
-std::unique_ptr<backend> make_staticxml_backend(user_roles_t = {}, oauth2_tokens = {});
+std::unique_ptr<backend> make_staticxml_backend(const user_roles_t& = {}, const oauth2_tokens& = {});
 
 #endif /* STATICXML_BACKEND_HPP */

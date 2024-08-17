@@ -178,6 +178,8 @@ void ApiDB_Way_Updater::process_modify_ways() {
   for (const auto &modify_ways_package : packages) {
     std::vector<osm_nwr_id_t> ids_package;
 
+    ids_package.reserve(modify_ways_package.size());
+
     for (const auto &id : modify_ways_package)
       ids_package.push_back(id.id);
 
@@ -249,6 +251,8 @@ void ApiDB_Way_Updater::process_delete_ways() {
   m_bbox.expand(calc_way_bbox(ids));
 
   update_current_ways(delete_ways_visible_unreferenced, false);
+
+  ids_visible_unreferenced.reserve(delete_ways_visible_unreferenced.size());
 
   for (const auto &way : delete_ways_visible_unreferenced)
     ids_visible_unreferenced.push_back(way.id);
@@ -549,7 +553,7 @@ std::set<osm_nwr_id_t> ApiDB_Way_Updater::determine_already_deleted_ways(
 
   for (const auto &row : r) {
 
-    osm_nwr_id_t id = row["id"].as<osm_nwr_id_t>();
+    auto id = row["id"].as<osm_nwr_id_t>();
 
     // OsmChange documents wants to delete a way that is already deleted,
     // and the if-unused flag hasn't been set!
@@ -991,7 +995,7 @@ void ApiDB_Way_Updater::delete_current_way_tags(
 }
 
 void ApiDB_Way_Updater::delete_current_way_nodes(
-    std::vector<osm_nwr_id_t> ids) {
+    const std::vector<osm_nwr_id_t> &ids) {
 
   if (ids.empty())
     return;

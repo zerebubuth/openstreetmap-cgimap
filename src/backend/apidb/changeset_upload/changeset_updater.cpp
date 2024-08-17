@@ -37,7 +37,7 @@ void ApiDB_Changeset_Updater::lock_current_changeset(bool check_max_elements_lim
   // check_max_elements_limit: raise a conflict exception, if the changeset contains the maximum
   // number of elements already, i.e. no further objects can be added to the changeset.
 
-  bool is_closed;
+  bool is_closed = false;
   std::string closed_at;
   std::string current_time;
 
