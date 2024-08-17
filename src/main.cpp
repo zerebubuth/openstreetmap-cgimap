@@ -238,7 +238,7 @@ void process_requests(int socket, const po::variables_map &options) {
 }
 
 void install_signal_handlers() {
-  struct sigaction sa;
+  struct sigaction sa{};
 
   // install a SIGTERM handler
   sa.sa_handler = terminate;
@@ -261,7 +261,7 @@ void install_signal_handlers() {
  * make the process into a daemon by detaching from the console.
  */
 void daemonise() {
-  pid_t pid;
+  pid_t pid = 0;
 
   // fork to make sure we aren't a session leader
   if ((pid = fork()) < 0) {
@@ -312,7 +312,7 @@ void daemon_mode(const po::variables_map &options, int socket)
 
   // loop until we have been asked to stop and have no more children
   while (!terminate_requested || !children.empty()) {
-    pid_t pid;
+    pid_t pid{};
 
     // start more children if we don't have enough
     while (!terminate_requested && (children.size() < instances)) {

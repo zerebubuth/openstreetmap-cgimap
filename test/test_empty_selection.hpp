@@ -50,7 +50,7 @@ public:
   void drop_ways() override {}
   void drop_relations() override {}
 
-  bool supports_user_details() const override { return false; }
+  [[nodiscard]] bool supports_user_details() const override { return false; }
   bool is_user_blocked(const osm_user_id_t) override { return true; }
   std::set<osm_user_role_t> get_roles_for_user(osm_user_id_t id) override { return {}; }
   std::optional< osm_user_id_t > get_user_id_for_oauth2_token(

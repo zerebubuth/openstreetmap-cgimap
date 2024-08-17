@@ -611,7 +611,7 @@ private:
   const std::map<id_version, T> &map_of() const;
 
   template <typename T>
-  std::optional<std::reference_wrapper<const T> > find_current(osm_nwr_id_t id) const {
+  [[nodiscard]] std::optional<std::reference_wrapper<const T> > find_current(osm_nwr_id_t id) const {
     using element_map_t = std::map<id_version, T>;
     id_version idv(id);
     const element_map_t &m = map_of<T>();
@@ -820,8 +820,8 @@ struct staticxml_backend : public backend {
 
   ~staticxml_backend() override = default;
 
-  const std::string &name() const override { return m_name; }
-  const po::options_description &options() const override { return m_options; }
+  [[nodiscard]] const std::string &name() const override { return m_name; }
+  [[nodiscard]] const po::options_description &options() const override { return m_options; }
 
   std::unique_ptr<data_selection::factory> create(const po::variables_map &opts) override {
     std::string file = opts["file"].as<std::string>();
@@ -842,6 +842,6 @@ private:
 } // anonymous namespace
 
 
-std::unique_ptr<backend> make_staticxml_backend(user_roles_t user_roles, oauth2_tokens oauth2_tokens) {
+std::unique_ptr<backend> make_staticxml_backend(const user_roles_t &user_roles, const oauth2_tokens &oauth2_tokens) {
   return std::make_unique<staticxml_backend>(user_roles, oauth2_tokens);
 }

@@ -54,13 +54,13 @@ string get_query_string(const request &req) {
     // of the query string.
     auto *question_mark = std::find(request_uri, request_uri_end, '?');
     if (question_mark == request_uri_end) {
-      return string();
+      return {};
     } else {
-      return string(question_mark + 1);
+      return {question_mark + 1};
     }
 
   } else {
-    return string(query_string);
+    return {query_string};
   }
 }
 
@@ -82,9 +82,9 @@ std::string get_request_path(const request &req) {
   // of the query string.
   auto *question_mark = std::find(request_uri, request_uri_end, '?');
   if (question_mark == request_uri_end) {
-    return string(request_uri);
+    return {request_uri};
   } else {
-    return string(request_uri, question_mark);
+    return {request_uri, question_mark};
   }
 }
 
@@ -120,7 +120,7 @@ public:
     return 0;
   }
 
-  int written() const override { return w; }
+  [[nodiscard]] int written() const override { return w; }
 
   void flush() override {
     // there's a note that says this causes too many writes and decreases
@@ -131,6 +131,11 @@ public:
   ~fcgi_output_buffer() override = default;
 
   explicit fcgi_output_buffer(request &req) : r(req) {}
+
+  fcgi_output_buffer(const fcgi_output_buffer&) = delete;
+  fcgi_output_buffer& operator=(const fcgi_output_buffer&) = delete;
+  fcgi_output_buffer(fcgi_output_buffer&&) = delete;
+  fcgi_output_buffer& operator=(fcgi_output_buffer&&) = delete;
 
 private:
   request &r;

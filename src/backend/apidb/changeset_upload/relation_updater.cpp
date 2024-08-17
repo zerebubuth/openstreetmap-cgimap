@@ -182,6 +182,8 @@ void ApiDB_Relation_Updater::process_modify_relations() {
   for (const auto &modify_relations_package : packages) {
     std::vector<osm_nwr_id_t> ids_package;
 
+    ids_package.reserve(modify_relations_package.size());
+
     for (const auto &id : modify_relations_package)
       ids_package.push_back(id.id);
 
@@ -303,6 +305,8 @@ void ApiDB_Relation_Updater::process_delete_relations() {
   m_bbox.expand(calc_relation_bbox(ids));
 
   update_current_relations(delete_relations_visible_unreferenced, false);
+
+  ids_visible_unreferenced.reserve(delete_relations_visible_unreferenced.size());
 
   for (const auto &node : delete_relations_visible_unreferenced)
     ids_visible_unreferenced.push_back(node.id);

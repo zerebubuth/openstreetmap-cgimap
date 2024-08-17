@@ -130,7 +130,7 @@ int test_request::response_status() const {
 }
 
 output_buffer& test_request::get_buffer_internal() {
-  test_ob_buffer.reset(new test_output_buffer(m_output, m_body));
+  test_ob_buffer = std::make_unique<test_output_buffer>(m_output, m_body);
   return *test_ob_buffer;
 }
 

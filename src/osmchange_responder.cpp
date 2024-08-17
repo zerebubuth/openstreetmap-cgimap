@@ -65,7 +65,7 @@ struct sorting_formatter : public output_formatter {
 
   ~sorting_formatter() override = default;
 
-  mime::type mime_type() const override {
+  [[nodiscard]] mime::type mime_type() const override {
     throw std::runtime_error("sorting_formatter::mime_type unimplemented");
   }
 
@@ -88,19 +88,19 @@ struct sorting_formatter : public output_formatter {
     throw std::runtime_error("sorting_formatter::write_bounds unimplemented");
   }
 
-  void start_element() {
+  void start_element() override {
     throw std::runtime_error("sorting_formatter::start_element unimplemented");
   }
 
-  void end_element() {
+  void end_element() override {
     throw std::runtime_error("sorting_formatter::end_element unimplemented");
   }
 
-  void start_changeset(bool) {
+  void start_changeset(bool) override {
     throw std::runtime_error("sorting_formatter::start_changeset unimplemented");
   }
 
-  void end_changeset(bool) {
+  void end_changeset(bool) override {
     throw std::runtime_error("sorting_formatter::end_changeset unimplemented");
   }
 

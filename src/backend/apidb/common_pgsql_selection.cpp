@@ -223,7 +223,7 @@ std::optional<T> extract_optional(const pqxx_field &f) {
   nodes.reserve(ids.size());
 
   for (const auto & id : ids) {
-    osm_nwr_id_t node;
+    osm_nwr_id_t node{};
 
     auto [_, ec] = std::from_chars(id.data(), id.data() + id.size(), node);
 
@@ -238,7 +238,7 @@ std::optional<T> extract_optional(const pqxx_field &f) {
 }
 
 element_type type_from_name(const char *name) {
-  element_type type;
+  element_type type{};
 
   switch (name[0]) {
   case 'N':

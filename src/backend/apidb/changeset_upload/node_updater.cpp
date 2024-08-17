@@ -155,6 +155,7 @@ void ApiDB_Node_Updater::process_modify_nodes() {
 
   for (const auto &modify_nodes_package : packages) {
     std::vector<osm_nwr_id_t> ids_package;
+    ids_package.reserve(modify_nodes_package.size());
 
     for (const auto &id : modify_nodes_package)
       ids_package.push_back(id.id);
@@ -220,6 +221,8 @@ void ApiDB_Node_Updater::process_delete_nodes() {
   m_bbox.expand(calc_node_bbox(ids));
 
   delete_current_nodes(delete_nodes_visible_unreferenced);
+
+  ids_visible_unreferenced.reserve(delete_nodes_visible_unreferenced.size());
 
   for (const auto &node : delete_nodes_visible_unreferenced)
     ids_visible_unreferenced.push_back(node.id);
@@ -480,7 +483,7 @@ std::set<osm_nwr_id_t> ApiDB_Node_Updater::determine_already_deleted_nodes(
 
   for (const auto &row : r) {
 
-    osm_nwr_id_t id = row["id"].as<osm_nwr_id_t>();
+    auto id = row["id"].as<osm_nwr_id_t>();
 
     // OsmChange documents wants to delete a node that is already deleted,
     // and the if-unused flag hasn't been set!

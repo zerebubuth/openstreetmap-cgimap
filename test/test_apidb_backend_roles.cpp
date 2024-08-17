@@ -16,7 +16,6 @@
 #include <cstdio>
 #include <memory>
 
-#include "cgimap/config.hpp"
 #include "cgimap/time.hpp"
 #include "cgimap/options.hpp"
 #include "cgimap/rate_limiter.hpp"

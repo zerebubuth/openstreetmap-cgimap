@@ -86,7 +86,7 @@ template <>
 osm_edition_t id_of<osm_edition_t>(const pqxx_tuple &row, pqxx::row_size_type col) {
   auto id = row[col].as<osm_nwr_id_t>();
   auto ver = row["version"].as<osm_version_t>();
-  return osm_edition_t(id, ver);
+  return {id, ver};
 }
 
 template <typename T>
@@ -894,7 +894,7 @@ void readonly_pgsql_selection::fetch_changesets(const std::set< osm_changeset_id
 
   for (const auto & r : res) {
 
-    osm_changeset_id_t cs = r[0].as<int64_t>();
+    auto cs = r[0].as<int64_t>();
 
     // Multiple results for one changeset?
     if (cc.find(cs) != cc.end()) {
@@ -904,7 +904,7 @@ void readonly_pgsql_selection::fetch_changesets(const std::set< osm_changeset_id
           fmt::format("Possible database inconsistency with changeset {:d}.", cs));
     }
 
-    int64_t user_id = r[3].as<int64_t>();
+    auto user_id = r[3].as<int64_t>();
     // apidb instances external to OSM don't have access to anonymous
     // user information and so use an ID which isn't in use for any
     // other user to indicate this - generally 0 or negative.

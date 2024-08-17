@@ -146,7 +146,7 @@ void global_settings_via_options::set_ratelimiter_ratelimit(const po::variables_
     auto parsed_bytes_per_sec = options["ratelimit"].as<long>();
     if (parsed_bytes_per_sec <= 0)
       throw std::invalid_argument("ratelimit must be greater than zero");
-    if (parsed_bytes_per_sec > 1024 * 1024 * 1024)
+    if (parsed_bytes_per_sec > 1024L * 1024L * 1024L)
       throw std::invalid_argument("ratelimit must be 1GB or less");
     m_ratelimiter_ratelimit = parsed_bytes_per_sec;
   }
@@ -155,7 +155,7 @@ void global_settings_via_options::set_ratelimiter_ratelimit(const po::variables_
     auto parsed_bytes_per_sec = options["moderator-ratelimit"].as<long>();
     if (parsed_bytes_per_sec <= 0)
       throw std::invalid_argument("moderator-ratelimit must be greater than zero");
-    if (parsed_bytes_per_sec > 1024 * 1024 * 1024)
+    if (parsed_bytes_per_sec > 1024L * 1024L * 1024L)
       throw std::invalid_argument("moderator-ratelimit must be 1GB or less");
     m_moderator_ratelimiter_ratelimit = parsed_bytes_per_sec;
   }

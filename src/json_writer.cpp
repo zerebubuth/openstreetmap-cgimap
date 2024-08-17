@@ -121,8 +121,8 @@ void json_writer::error(const std::string &s) {
 
 void json_writer::output_yajl_buffer(bool ignore_buffer_size)
 {
-  const unsigned char *yajl_buf;
-  size_t yajl_buf_len;
+  const unsigned char *yajl_buf = nullptr;
+  size_t yajl_buf_len = 0;
 
   if (yajl_gen_get_buf(gen, &yajl_buf, &yajl_buf_len) != yajl_gen_status_ok)
     throw output_writer::write_error("Expected yajl_gen_status_ok");

@@ -112,7 +112,7 @@ vector<id_version> parse_id_list_params(const request &req, std::string_view par
     if (ok && (first == last)) {
       myids.swap(parse_ids);
     } else {
-       myids.push_back(id_version());
+       myids.emplace_back(id_version());
     }
   } catch (...) {   // input could not be parsed, ignore
       return {};

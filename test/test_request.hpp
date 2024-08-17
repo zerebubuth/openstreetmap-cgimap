@@ -25,8 +25,15 @@
 struct test_output_buffer : public output_buffer {
   explicit test_output_buffer(std::ostream &out, std::ostream &body);
   ~test_output_buffer() override = default;
+
+  test_output_buffer(const test_output_buffer&) = delete;
+  test_output_buffer& operator=(const test_output_buffer&) = delete;
+
+  test_output_buffer(test_output_buffer&&) = delete;
+  test_output_buffer& operator=(test_output_buffer&&) = delete;
+
   int write(const char *buffer, int len) override;
-  int written() const override;
+  [[nodiscard]] int written() const override;
   int close() override;
   void flush() override;
 

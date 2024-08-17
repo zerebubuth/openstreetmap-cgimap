@@ -31,9 +31,8 @@ namespace {
  * GPL.
  */
 char hexToChar(char first, char second) {
-  int digit;
 
-  digit = (first >= 'A' ? ((first & 0xDF) - 'A') + 10 : (first - '0'));
+  int digit = (first >= 'A' ? ((first & 0xDF) - 'A') + 10 : (first - '0'));
   digit *= 16;
   digit += (second >= 'A' ? ((second & 0xDF) - 'A') + 10 : (second - '0'));
   return static_cast<char>(digit);
@@ -42,7 +41,6 @@ char hexToChar(char first, char second) {
 std::string form_urldecode(const std::string &src) {
   std::string result;
   std::string::const_iterator iter;
-  char c;
 
   for (iter = src.begin(); iter != src.end(); ++iter) {
     switch (*iter) {
@@ -53,7 +51,7 @@ std::string form_urldecode(const std::string &src) {
       // Don't assume well-formed input
       if (std::distance(iter, src.end()) >= 2 && std::isxdigit(*(iter + 1)) &&
           std::isxdigit(*(iter + 2))) {
-        c = *++iter;
+        char c = *++iter;
         result.append(1, hexToChar(c, *++iter));
       }
       // Just pass the % through untouched
@@ -238,7 +236,7 @@ std::unique_ptr<encoding> choose_encoding(const std::string &accept_encoding) {
 
   // set default if header empty
   if (encodings.empty())
-    encodings.push_back("*");
+    encodings.emplace_back("*");
 
   for (const auto &encoding : encodings) {
 
@@ -368,7 +366,7 @@ std::ostream &operator<<(std::ostream &out, method m) {
 
 unsigned long parse_content_length(const std::string &content_length_str) {
 
-  char *end;
+  char *end = nullptr;
 
   const long length = strtol(content_length_str.c_str(), &end, 10);
 

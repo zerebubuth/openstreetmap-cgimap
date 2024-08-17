@@ -29,6 +29,12 @@ using std::runtime_error;
 namespace {
 struct fcgi_buffer : public output_buffer {
 
+  fcgi_buffer() = delete;
+  fcgi_buffer(const fcgi_buffer&) = delete;
+  fcgi_buffer& operator=(const fcgi_buffer&) = delete;
+  fcgi_buffer(fcgi_buffer&&) = delete;
+  fcgi_buffer& operator=(fcgi_buffer&&) = delete;
+
   explicit fcgi_buffer(FCGX_Request req) : m_req(req) {}
 
   ~fcgi_buffer() override = default;
@@ -41,7 +47,7 @@ struct fcgi_buffer : public output_buffer {
     return bytes;
   }
 
-  int written() const override { return m_written; }
+  [[nodiscard]] int written() const override { return m_written; }
 
   int close() override { return FCGX_FClose(m_req.out); }
 
@@ -152,7 +158,7 @@ int fcgi_request::accept_r() {
       } else {
         char err_buf[1024];
         out << "error accepting request: ";
-        if (strerror_r(errno, err_buf, sizeof err_buf) == 0) {
+        if (strerror_r(errno, err_buf, sizeof err_buf) == nullptr) {
           out << err_buf;
         } else {
           out << "error encountered while getting error message";
