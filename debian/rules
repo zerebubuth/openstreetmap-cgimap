@@ -4,7 +4,7 @@
 #export DH_VERBOSE = 1
 
 %:
-	dh $@ --parallel --builddirectory=build --buildsystem=cmake
+	dh $@ --parallel --builddirectory=build --buildsystem=cmake+ninja
 
 override_dh_auto_test:
 	dh_auto_test --no-parallel

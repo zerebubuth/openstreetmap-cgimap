@@ -1,3 +1,18 @@
+openstreetmap-cgimap (2.0.0) UNRELEASED; urgency=medium
+
+  * OAuth 1.0a removal (#354)
+  * Basic auth removal (#362)
+  * Remove obsolete --readonly command line parameter (#443)
+  * Rework changeset json output according to Rails implementation (#439)
+  * tiles_for_area: vector instead of set (#437)
+  * [perf] Only copy tags to old tables for ids that are known to have tags (#425)
+  * Enable libpqxx stream_to for selected tables (#427)
+  * std::from_chars for number parsing (#431)
+  * Set locale only once per request (#430)
+  * Simplify std::regex (#436)
+
+ -- mmd osm <mmd.osm@gmail.com>  Sun, 15 Aug 2024 10:00:00 +0000
+
 openstreetmap-cgimap (0.9.3-1~jammy1) jammy; urgency=medium
 
   * Add the ability to limit changeset size (#413)

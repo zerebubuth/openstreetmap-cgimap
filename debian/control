@@ -1,20 +1,33 @@
 Source: openstreetmap-cgimap
-Section: libs
+Section: utils
 Priority: optional
-Maintainer: Matt Amos <zerebubuth@gmail.com>
-Build-Depends: debhelper (>=10), pkg-config, zlib1g-dev, libbrotli-dev, libxml2-dev, libpqxx-dev, libfcgi-dev, libboost-program-options-dev, libfmt-dev, libmemcached-dev, libcrypto++-dev, libargon2-dev, libyajl-dev, postgresql-all, postgresql-common (>= 148~), postgresql-server-dev-all, cmake
+Maintainer: mmd osm <mmd.osm@gmail.com>
+Build-Depends: cmake (>= 3.15),
+               dh-cmake,
+               dh-cmake-compat (= 1),
+               dh-sequence-cmake,
+               debhelper (>= 11),
+               zlib1g-dev,
+               libbrotli-dev,
+               libxml2-dev,
+               libpqxx-dev,
+               libfcgi-dev,
+               libboost-program-options-dev,
+               libfmt-dev,
+               libmemcached-dev,
+               libcrypto++-dev,
+               libyajl-dev,
+               postgresql-all,
+               postgresql-common (>= 148~),
+               postgresql-server-dev-all
 Homepage: https://github.com/zerebubuth/openstreetmap-cgimap
-Standards-Version: 3.9.7
+Standards-Version: 4.3.0
 
-Package: openstreetmap-cgimap-bin
-Section: contrib/net
+Package: openstreetmap-cgimap
+Section: utils
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: CGImap is a C++ implementation of the OpenStreetMap API map call
- CGImap is a C++ implementation of some parts of the OpenStreetMap API as an
- FCGI process. The rails implementation of the "map" call had a few problems
- with memory - it uses a lot of it and there is a leak which makes it annoying
- to use in long-running environments, like the main OSM server.
- .
- CGImap attempts to address these memory problems and makes it easier to
- optimise the queries, something which is also a bit of a pain to do in Rails.
+Description: OpenStreetMap CGImap (OSM API accelerator)
+ Performance optimized implementation of selected parts of the
+ OSM API. A comprehensive list of supported endpoints can be
+ found at https://github.com/zerebubuth/openstreetmap-cgimap 
