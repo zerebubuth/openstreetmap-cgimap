@@ -205,7 +205,8 @@ if(ENABLE_INSTALL)
             EXCLUDE_FROM_ALL
         ${CGIMAP_HEADER_FILE_SET_INSTALL_ARTIFACTS})
 
-    install(FILES openstreetmap-cgimap.1 TYPE MAN
+    install(DIRECTORY doc/man1
+        TYPE MAN
         COMPONENT Runtime)
 
     install(FILES README TYPE DOC
