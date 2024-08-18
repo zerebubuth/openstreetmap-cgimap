@@ -20,6 +20,7 @@
 
 #include <functional>
 #include <sstream>
+#include <string>
 
 
 namespace po = boost::program_options;
@@ -27,6 +28,21 @@ namespace po = boost::program_options;
 struct RequestContext;
 
 namespace {
+
+void connopt(std::ostringstream &ostr, const po::variables_map &options,
+    const std::string &param, const std::string &pg_param)
+{
+  if (options.count("update-" + param))
+  {
+    ostr << " " << pg_param << "="
+        << options["update-" + param].as< std::string >();
+  }
+  else if (options.count(param))
+  {
+    ostr << " " << pg_param << "=" << options[param].as< std::string >();
+  }
+}
+
 std::string connect_db_str(const po::variables_map &options) {
   // build the connection string.
   std::ostringstream ostr;
@@ -38,20 +54,12 @@ std::string connect_db_str(const po::variables_map &options) {
                              "name for update (API write) connections.");
   }
 
-#define CONNOPT(a,b)                                                    \
-  if (options.count("update-" a)) {                                     \
-    ostr << " " << (b "=") << options["update-" a].as<std::string>();   \
-  } else if (options.count(a)) {                                        \
-    ostr << " " << (b "=") << options[a].as<std::string>();             \
-  }
+  connopt(ostr, options, "dbname", "dbname");
+  connopt(ostr, options, "host", "host");
+  connopt(ostr, options, "username", "user");
+  connopt(ostr, options, "password", "password");
+  connopt(ostr, options, "dbport", "port");
 
-  CONNOPT("dbname", "dbname")
-  CONNOPT("host", "host")
-  CONNOPT("username", "user")
-  CONNOPT("password", "password")
-  CONNOPT("dbport", "port")
-
-#undef CONNOPT
   return ostr.str();
 }
 
