@@ -1,0 +1,33 @@
+Source: openstreetmap-cgimap
+Section: utils
+Priority: optional
+Maintainer: mmd osm <mmd.osm@gmail.com>
+Build-Depends: cmake (>= 3.15),
+               dh-cmake,
+               dh-cmake-compat (= 1),
+               dh-sequence-cmake,
+               debhelper (>= 11),
+               zlib1g-dev,
+               libbrotli-dev,
+               libxml2-dev,
+               libpqxx-dev,
+               libfcgi-dev,
+               libboost-program-options-dev,
+               libfmt-dev,
+               libmemcached-dev,
+               libcrypto++-dev,
+               libyajl-dev,
+               postgresql-all,
+               postgresql-common (>= 148~),
+               postgresql-server-dev-all
+Homepage: https://github.com/zerebubuth/openstreetmap-cgimap
+Standards-Version: 4.3.0
+
+Package: openstreetmap-cgimap
+Section: utils
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: OpenStreetMap CGImap (OSM API accelerator)
+ Performance optimized implementation of selected parts of the
+ OSM API. A comprehensive list of supported endpoints can be
+ found at https://github.com/zerebubuth/openstreetmap-cgimap 
