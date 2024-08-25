@@ -27,6 +27,8 @@ Package: openstreetmap-cgimap
 Section: utils
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Conflicts: openstreetmap-cgimap-bin
+Replaces: openstreetmap-cgimap-bin
 Description: OpenStreetMap CGImap (OSM API accelerator)
  Performance optimized implementation of selected parts of the
  OSM API. A comprehensive list of supported endpoints can be
