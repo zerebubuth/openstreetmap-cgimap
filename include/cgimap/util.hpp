@@ -27,6 +27,7 @@
 
 #include <fmt/core.h>
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 
 
 inline size_t unicode_strlen(const std::string & s)
