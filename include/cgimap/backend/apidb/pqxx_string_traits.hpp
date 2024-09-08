@@ -116,7 +116,7 @@ public:
   template<>                                                            \
   struct string_traits<type> : cgimap::array_string_traits<type> {};    \
                                                                         \
-  template<> std::string const type_name<type>{#type};                  \
+  template<> inline std::string const type_name<type>{#type};           \
 
 
 #endif
