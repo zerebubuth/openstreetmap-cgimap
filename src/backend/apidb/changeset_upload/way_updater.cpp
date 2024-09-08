@@ -642,17 +642,16 @@ void ApiDB_Way_Updater::update_current_ways(const std::vector<way_t> &ways,
     return;
 
   m.prepare("update_current_ways", R"(
-      WITH u(id, changeset_id, visible, version) AS (
+      WITH u(id, changeset_id, version) AS (
          SELECT * FROM
          UNNEST( CAST($1 AS bigint[]),
                  CAST($2 AS bigint[]),
-                 CAST($3 AS boolean[]),
-                 CAST($4 AS bigint[])
+                 CAST($3 AS bigint[])
               )
       )
       UPDATE current_ways AS w
       SET changeset_id = u.changeset_id,
-         visible = u.visible,
+         visible = CAST($4 as boolean),
          timestamp = (now() at time zone 'utc'),
          version = u.version + 1
          FROM u
@@ -663,20 +662,18 @@ void ApiDB_Way_Updater::update_current_ways(const std::vector<way_t> &ways,
 
   std::vector<osm_nwr_signed_id_t> ids;
   std::vector<osm_changeset_id_t> cs;
-  std::vector<bool> visibles;
   std::vector<osm_version_t> versions;
   std::map<osm_nwr_id_t, osm_nwr_signed_id_t> id_to_old_id;
 
   for (const auto &way : ways) {
     ids.emplace_back(way.id);
     cs.emplace_back(way.changeset_id);
-    visibles.push_back(visible);
     versions.emplace_back(way.version);
     id_to_old_id[way.id] = way.old_id;
   }
 
   pqxx::result r =
-      m.exec_prepared("update_current_ways", ids, cs, visibles, versions);
+      m.exec_prepared("update_current_ways", ids, cs, versions, visible);
 
   if (r.affected_rows() != ways.size())
     throw http::server_error("Could not update all current ways");
