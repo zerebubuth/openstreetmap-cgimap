@@ -1,0 +1,25 @@
+name: Build on macOS 14
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          brew install boost cryptopp fmt fcgi yajl libmemcached libpqxx postgresql
+
+      - name: build
+        run: |
+            mkdir build && cd build && \
+            CXXFLAGS="-Wall -Wextra -Wpedantic -Wno-unused-parameter" cmake .. -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release && \
+            make -j${nproc}
+
+      - name: Running openstreetmap-cgimap
+        run: |
+           ./build/openstreetmap-cgimap --help"
