@@ -116,7 +116,7 @@ public:
   template<>                                                            \
   struct string_traits<type> : cgimap::array_string_traits<type> {};    \
                                                                         \
-  template<> std::string const type_name<type>{#type};                  \
+  template<> inline std::string const type_name<type>{#type};           \
 
 
 #endif
@@ -127,7 +127,6 @@ PQXX_ARRAY_STRING_TRAITS(std::vector<tile_id_t>);
 PQXX_ARRAY_STRING_TRAITS(std::vector<osm_changeset_id_t>);
 PQXX_ARRAY_STRING_TRAITS(std::set<osm_changeset_id_t>);
 PQXX_ARRAY_STRING_TRAITS(std::vector<std::string>);
-PQXX_ARRAY_STRING_TRAITS(std::vector<bool>);
 
 } // namespace pqxx
 

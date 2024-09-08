@@ -1239,17 +1239,16 @@ void ApiDB_Relation_Updater::update_current_relations(
 
   m.prepare("update_current_relations",
             R"(   
-        WITH u(id, changeset_id, visible, version) AS (
+        WITH u(id, changeset_id, version) AS (
                 SELECT * FROM
                 UNNEST( CAST($1 AS bigint[]),
                         CAST($2 AS bigint[]),
-                        CAST($3 AS boolean[]),
-                        CAST($4 AS bigint[])
+                        CAST($3 AS bigint[])
                       )
         )
         UPDATE current_relations AS r
         SET changeset_id = u.changeset_id,
-            visible = u.visible,
+            visible = CAST($4 as boolean),
             timestamp = (now() at time zone 'utc'),
             version = u.version + 1
         FROM u
@@ -1260,20 +1259,18 @@ void ApiDB_Relation_Updater::update_current_relations(
 
   std::vector<osm_nwr_signed_id_t> ids;
   std::vector<osm_changeset_id_t> cs;
-  std::vector<bool> visibles;
   std::vector<osm_version_t> versions;
   std::map<osm_nwr_id_t, osm_nwr_signed_id_t> id_to_old_id;
 
   for (const auto &relation : relations) {
     ids.emplace_back(relation.id);
     cs.emplace_back(relation.changeset_id);
-    visibles.push_back(visible);
     versions.emplace_back(relation.version);
     id_to_old_id[relation.id] = relation.old_id;
   }
 
   pqxx::result r =
-      m.exec_prepared("update_current_relations", ids, cs, visibles, versions);
+      m.exec_prepared("update_current_relations", ids, cs, versions, visible);
 
   if (r.affected_rows() != relations.size())
     throw http::server_error("Could not update all current relations");
