@@ -43,6 +43,7 @@ option(ENABLE_COVERAGE "Compile with coverage info collection" OFF)
 option(ENABLE_PROFILING "Compile with profiling" OFF)
 option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
 option(ENABLE_INSTALL "Enable installation" ON)
+option(BUILD_BENCHMARK "Compile benchmarks" OFF)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     option(BUILD_TESTING "Compile test suite" ON)
 else()
@@ -125,6 +126,9 @@ add_subdirectory(contrib)
 add_subdirectory(src)
 add_subdirectory(test)
 
+if(BUILD_BENCHMARK)
+    add_subdirectory(benchmark)
+endif()
 
 #################################
 # openstreetmap-cgimap executable
