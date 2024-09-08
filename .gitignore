@@ -76,3 +76,12 @@ compile_commands.json
 *.gcno
 heaptrack.*.zst
 gmon.out
+
+# Debian package build
+*.deb
+/debian/.debhelper
+/debian/openstreetmap-cgimap
+/debian/openstreetmap-cgimap.debhelper.log
+/debian/debhelper-build-stamp
+/debian/openstreetmap-cgimap.substvars
+/debian/files
