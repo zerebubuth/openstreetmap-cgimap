@@ -77,6 +77,12 @@ void reload(int) {
   reload_requested = true;
 }
 
+#if __APPLE__
+  #ifndef HOST_NAME_MAX
+    #define HOST_NAME_MAX 255
+  #endif
+#endif
+
 /**
  * make a string to be used as the generator header
  * attribute of output files. includes some instance
