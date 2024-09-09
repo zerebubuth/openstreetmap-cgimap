@@ -1,7 +1,4 @@
-find_library(YAJL_LIB yajl)
-if(NOT YAJL_LIB)
-  message(FATAL_ERROR "Can't find yajl library")
-endif()
+find_package(YAJL 2 REQUIRED)
 
 add_library(sjparser STATIC
   sjparser/parsing_error.cpp
@@ -42,7 +39,7 @@ set_target_properties(sjparser PROPERTIES OUTPUT_NAME sjparser_static)
 
 setup_compilation_options(sjparser)
 
-target_link_libraries(sjparser PUBLIC ${YAJL_LIB})
+target_link_libraries(sjparser PUBLIC YAJL::YAJL)
 
 target_include_directories(sjparser PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -60,7 +57,7 @@ if(SJPARSER_BUILD_SHARED_LIBRARY)
 
   setup_compilation_options(sjparser_shared)
 
-  target_link_libraries(sjparser_shared PUBLIC ${YAJL_LIB})
+  target_link_libraries(sjparser_shared PUBLIC YAJL::YAJL)
 
   target_include_directories(sjparser_shared PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
