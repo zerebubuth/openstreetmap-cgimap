@@ -18,8 +18,9 @@ jobs:
         run: |
             mkdir build && cd build && \
             CXXFLAGS="-Wall -Wextra -Wpedantic -Wno-unused-parameter" cmake .. -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release && \
-            make -j${nproc}
+            make -j${nproc} && \
+            ctest --output-on-failure -E "db"
 
       - name: Running openstreetmap-cgimap
         run: |
-           ./build/openstreetmap-cgimap --help"
+           ./build/openstreetmap-cgimap --help
