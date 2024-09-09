@@ -32,6 +32,7 @@ public:
 
     double _lat;
 
+#if !defined(__APPLE__)
     auto [_, ec] = std::from_chars(lat.data(), lat.data() + lat.size(), _lat);
 
     if (ec == std::errc())
@@ -42,12 +43,26 @@ public:
       throw payload_error("Latitude value is too large");
     else
       throw payload_error("Unexpected parsing error");
+
+#else
+
+    try {
+      _lat = std::stod(lat);
+    } catch (std::invalid_argument &e) {
+      throw payload_error("Latitude is not numeric");
+    } catch (std::out_of_range &e) {
+      throw payload_error("Latitude value is too large");
+    }
+    set_lat(_lat);
+
+#endif
   }
 
   void set_lon(const std::string &lon) {
 
     double _lon;
 
+#if !defined(__APPLE__)
     auto [_, ec] = std::from_chars(lon.data(), lon.data() + lon.size(), _lon);
 
     if (ec == std::errc())
@@ -58,6 +73,20 @@ public:
       throw payload_error("Longitude value is too large");
     else
       throw payload_error("Unexpected parsing error");
+
+#else
+
+    try {
+      _lon = std::stod(lon);
+    } catch (std::invalid_argument &e) {
+      throw payload_error("Longitude is not numeric");
+    } catch (std::out_of_range &e) {
+      throw payload_error("Longitude value is too large");
+    }
+
+    set_lon(_lon);
+
+#endif
   }
 
   void set_lat(double lat) {
