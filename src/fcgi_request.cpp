@@ -158,7 +158,7 @@ int fcgi_request::accept_r() {
       } else {
         char err_buf[1024];
         out << "error accepting request: ";
-        if (strerror_r(errno, err_buf, sizeof err_buf) == nullptr) {
+        if (strerror_r(errno, err_buf, sizeof err_buf) == 0) {   // NOLINT(modernize-use-nullptr)
           out << err_buf;
         } else {
           out << "error encountered while getting error message";

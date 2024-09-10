@@ -27,7 +27,32 @@
 
 #include <fmt/core.h>
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 
+
+#if __APPLE__
+// NOTE: <codecvt> is deprecated in C++17 and removed in C++26 (see P2871R3).
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated"
+
+#include <codecvt>
+#include <iomanip>
+#include <stdexcept>
+
+inline std::size_t unicode_strlen(const std::string& utf8)
+{
+
+  try {
+    return std::wstring_convert< std::codecvt_utf8<char32_t>, char32_t >{}.from_bytes(utf8).size();
+  } catch(std::range_error) {
+    throw http::bad_request("Invalid UTF-8 string encountered");
+  }
+}
+
+#pragma clang diagnostic pop
+
+#else
 
 inline size_t unicode_strlen(const std::string & s)
 {
@@ -42,6 +67,8 @@ inline size_t unicode_strlen(const std::string & s)
 
    return len;
 }
+
+#endif
 
 inline std::string escape(std::string_view input) {
 
