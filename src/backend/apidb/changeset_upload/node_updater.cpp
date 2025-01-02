@@ -120,7 +120,7 @@ void ApiDB_Node_Updater::process_new_nodes() {
   std::sort(ids.begin(), ids.end());
   ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
 
-  lock_current_nodes(ids);
+  // lock_current_nodes(ids);    // INSERT already set RowExclusiveLock earlier on
 
   const auto ids_with_tags = insert_new_current_node_tags(create_nodes);
   save_current_nodes_to_history(ids);

@@ -137,7 +137,7 @@ void ApiDB_Way_Updater::process_new_ways() {
   std::sort(ids.begin(), ids.end());
   ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
 
-  lock_current_ways(ids);
+  // lock_current_ways(ids);  // INSERT already set RowExclusiveLock earlier on
   lock_future_nodes(create_ways);
 
   const auto ids_with_tags = insert_new_current_way_tags(create_ways);

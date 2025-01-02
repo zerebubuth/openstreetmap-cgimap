@@ -141,7 +141,7 @@ void ApiDB_Relation_Updater::process_new_relations() {
   std::sort(ids.begin(), ids.end());
   ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
 
-  lock_current_relations(ids);
+  // lock_current_relations(ids);     // INSERT already set RowExclusiveLock earlier on
   lock_future_members(create_relations, ids);
 
   const auto ids_with_tags = insert_new_current_relation_tags(create_relations);
