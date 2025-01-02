@@ -91,19 +91,18 @@ osm_edition_t id_of<osm_edition_t>(const pqxx_tuple &row, pqxx::row_size_type co
 
 template <typename T>
 inline int insert_results(const pqxx::result &res, set<T> &elems) {
-  int num_inserted = 0;
 
   auto const id_col = res.column_number("id");
 
+  const auto old_size = elems.size();
+
+  auto it = elems.begin();
   for (const auto & row : res) {
     const T id = id_of<T>(row, id_col);
-
-    // note: only count the *new* rows inserted.
-    if (elems.insert(id).second) {
-      ++num_inserted;
-    }
+    it = elems.emplace_hint(it, id);
   }
-  return num_inserted;
+
+  return elems.size() - old_size; // number of inserted elements
 }
 
 } // anonymous namespace
@@ -461,7 +460,7 @@ void readonly_pgsql_selection::select_nodes_from_relations() {
        "SELECT DISTINCT rm.member_id AS id "
 	 "FROM current_relation_members rm "
 	 "WHERE rm.member_type = 'Node' "
-	   "AND rm.relation_id = ANY($1)");
+	   "AND rm.relation_id = ANY($1) ORDER by id");
 
     insert_results(m.exec_prepared("nodes_from_relations", sel_relations),
                    sel_nodes);
@@ -475,7 +474,7 @@ void readonly_pgsql_selection::select_ways_from_nodes() {
     m.prepare("ways_from_nodes",
        "SELECT DISTINCT wn.way_id AS id "
 	 "FROM current_way_nodes wn "
-	 "WHERE wn.node_id = ANY($1)");
+	 "WHERE wn.node_id = ANY($1) ORDER by id");
 
     insert_results(m.exec_prepared("ways_from_nodes", sel_nodes), sel_ways);
   }
@@ -489,7 +488,7 @@ void readonly_pgsql_selection::select_ways_from_relations() {
        "SELECT DISTINCT rm.member_id AS id "
 	 "FROM current_relation_members rm "
 	 "WHERE rm.member_type = 'Way' "
-	   "AND rm.relation_id = ANY($1)");
+	   "AND rm.relation_id = ANY($1) ORDER by id");
 
     insert_results(m.exec_prepared("ways_from_relations", sel_relations),
                    sel_ways);
@@ -504,7 +503,7 @@ void readonly_pgsql_selection::select_relations_from_ways() {
        "SELECT DISTINCT rm.relation_id AS id "
 	 "FROM current_relation_members rm "
 	 "WHERE rm.member_type = 'Way' "
-	   "AND rm.member_id = ANY($1)");
+	   "AND rm.member_id = ANY($1) ORDER by id");
 
     insert_results(m.exec_prepared("relation_parents_of_ways", sel_ways),
                    sel_relations);
@@ -516,7 +515,7 @@ void readonly_pgsql_selection::select_nodes_from_way_nodes() {
     m.prepare("nodes_from_ways",
        "SELECT DISTINCT wn.node_id AS id "
 	 "FROM current_way_nodes wn "
-	 "WHERE wn.way_id = ANY($1)");
+	 "WHERE wn.way_id = ANY($1) ORDER by id");
 
     insert_results(m.exec_prepared("nodes_from_ways", sel_ways), sel_nodes);
   }
@@ -528,7 +527,7 @@ void readonly_pgsql_selection::select_relations_from_nodes() {
        "SELECT DISTINCT rm.relation_id AS id "
 	 "FROM current_relation_members rm "
 	 "WHERE rm.member_type = 'Node' "
-	   "AND rm.member_id = ANY($1)");
+	   "AND rm.member_id = ANY($1) ORDER by id");
 
     insert_results(m.exec_prepared("relation_parents_of_nodes", sel_nodes),
                    sel_relations);
@@ -548,7 +547,7 @@ void readonly_pgsql_selection::select_relations_from_relations(bool drop_relatio
        "SELECT DISTINCT rm.relation_id AS id "
          "FROM current_relation_members rm "
          "WHERE rm.member_type = 'Relation' "
-           "AND rm.member_id = ANY($1)");
+           "AND rm.member_id = ANY($1) ORDER by id");
 
     insert_results(
         m.exec_prepared("relation_parents_of_relations", sel),
@@ -562,7 +561,7 @@ void readonly_pgsql_selection::select_relations_members_of_relations() {
        "SELECT DISTINCT rm.member_id AS id "
 	 "FROM current_relation_members rm "
 	 "WHERE rm.member_type = 'Relation' "
-	   "AND rm.relation_id = ANY($1)");
+	   "AND rm.relation_id = ANY($1) ORDER by id");
 
     insert_results(
         m.exec_prepared("relation_members_of_relations", sel_relations),
