@@ -786,8 +786,8 @@ bool readonly_pgsql_selection::supports_user_details() const {
 bool readonly_pgsql_selection::is_user_blocked(const osm_user_id_t id) {
 
   m.prepare("check_user_blocked",
-    R"(SELECT id FROM "user_blocks" 
-          WHERE "user_blocks"."user_id" = $1 
+    R"(SELECT id FROM "user_blocks"
+          WHERE "user_blocks"."user_id" = $1
             AND (needs_view or ends_at > (now() at time zone 'utc')) LIMIT 1 )");
 
   auto res = m.exec_prepared("check_user_blocked", id);
@@ -826,7 +826,7 @@ std::optional< osm_user_id_t > readonly_pgsql_selection::get_user_id_for_oauth2_
   m.prepare("oauth2_access_token",
     R"(SELECT resource_owner_id as user_id,
          CASE WHEN expires_in IS NULL THEN false
-              ELSE (created_at + expires_in * interval '1' second)  < now() at time zone 'utc'
+              ELSE (created_at + expires_in * interval '1' second) < now() at time zone 'utc'
          END as expired,
          COALESCE(revoked_at < now() at time zone 'utc', false) as revoked,
          'write_api' = any(string_to_array(scopes, ' ')) as allow_api_write

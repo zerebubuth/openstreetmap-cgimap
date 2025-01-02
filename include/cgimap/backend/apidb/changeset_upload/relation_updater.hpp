@@ -188,7 +188,7 @@ private:
   std::vector<relation_t> modify_relations;
   std::vector<relation_t> delete_relations;
 
-  std::set<osm_nwr_signed_id_t> create_placedholder_ids;
+  std::set<osm_nwr_signed_id_t> create_placeholder_ids;
 };
 
 #endif

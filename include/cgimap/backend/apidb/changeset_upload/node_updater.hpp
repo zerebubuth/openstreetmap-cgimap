@@ -112,7 +112,7 @@ private:
   std::vector<node_t> modify_nodes;
   std::vector<node_t> delete_nodes;
 
-  std::set<osm_nwr_signed_id_t> create_placedholder_ids;
+  std::set<osm_nwr_signed_id_t> create_placeholder_ids;
 };
 
 #endif /* APIDB_NODE_UPDATER */

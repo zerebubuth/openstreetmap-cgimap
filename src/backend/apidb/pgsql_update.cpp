@@ -66,7 +66,7 @@ std::string connect_db_str(const po::variables_map &options) {
 } // anonymous namespace
 
 pgsql_update::pgsql_update(Transaction_Owner_Base& to, bool readonly)
-    : m{ to }, 
+    : m{ to },
       m_readonly{ readonly } {
 
 }
@@ -141,7 +141,7 @@ uint64_t pgsql_update::get_bbox_size_limit(osm_user_id_t uid)
 
 
 pgsql_update::factory::factory(const po::variables_map &opts)
-  : m_connection(connect_db_str(opts)), 
+  : m_connection(connect_db_str(opts)),
     m_api_write_disabled(false),
     m_errorhandler(m_connection) {
 
