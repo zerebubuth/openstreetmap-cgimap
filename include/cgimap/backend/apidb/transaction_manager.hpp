@@ -134,7 +134,16 @@ public:
 
   pqxx::result exec(const std::string &query,
                     const std::string &description = std::string());
-  void commit();
+
+  void commit() {
+    const auto start = std::chrono::steady_clock::now();
+    m_txn.commit();
+    const auto end = std::chrono::steady_clock::now();
+
+    const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+    logger::message(fmt::format("COMMIT transaction in {:d} ms", elapsed.count()));
+  }
 
   template<typename... Args>
   [[nodiscard]] pqxx::result exec_prepared(const std::string &statement, Args&&... args) {
