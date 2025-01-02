@@ -419,27 +419,29 @@ void ApiDB_Way_Updater::lock_current_ways(
   if (ids.empty())
     return;
 
-  m.prepare("lock_current_ways",
-            "SELECT id FROM current_ways WHERE id = ANY($1) FOR UPDATE");
+  m.prepare("lock_current_ways", R"(
+      WITH locked AS (
+        SELECT id FROM current_ways WHERE id = ANY($1) FOR UPDATE
+      )
+      SELECT t.id FROM UNNEST($1) AS t(id)
+      EXCEPT
+      SELECT id FROM locked
+      ORDER BY id
+     )");
 
-  pqxx::result r = m.exec_prepared("lock_current_ways", ids);
+  auto r = m.exec_prepared("lock_current_ways", ids);
 
-  std::vector<osm_nwr_id_t> locked_ids;
+  if (!r.empty()) {
+    std::vector<osm_nwr_id_t> missing_ids;
+    missing_ids.reserve(ids.size());
 
-  for (const auto &row : r)
-    locked_ids.push_back(row["id"].as<osm_nwr_id_t>());
+    const auto id_col(r.column_number("id"));
 
-  if (ids.size() != locked_ids.size()) {
-    std::set<osm_nwr_id_t> not_locked_ids;
-
-    std::sort(locked_ids.begin(), locked_ids.end());
-
-    std::set_difference(ids.begin(), ids.end(), locked_ids.begin(),
-                        locked_ids.end(),
-                        std::inserter(not_locked_ids, not_locked_ids.begin()));
+    for (const auto &row : r)
+      missing_ids.push_back(row[id_col].as<osm_nwr_id_t>());
 
     throw http::not_found(
-        fmt::format("The following way ids are unknown: {}", to_string(not_locked_ids)));
+        fmt::format("The following way ids are unknown: {}", to_string(missing_ids)));
   }
 }
 
@@ -606,26 +608,34 @@ void ApiDB_Way_Updater::lock_future_nodes(const std::vector<way_t> &ways) {
   node_ids.erase(std::unique(node_ids.begin(), node_ids.end()), node_ids.end());
 
   m.prepare("lock_future_nodes_in_ways",
-            R"( 
-      SELECT id
-         FROM current_nodes
-         WHERE visible = true 
-         AND id = ANY($1) FOR SHARE 
+            R"(
+        WITH locked AS (
+           SELECT id
+           FROM current_nodes
+           WHERE visible = true
+           AND id = ANY($1) FOR SHARE
+        )
+        SELECT t.id FROM UNNEST($1) AS t(id)
+        EXCEPT
+        SELECT id FROM locked
+        ORDER BY id
       )");
 
   auto r = m.exec_prepared("lock_future_nodes_in_ways", node_ids);
 
-  if (r.size() != node_ids.size()) {
-    std::set<osm_nwr_id_t> locked_nodes;
+  if (!r.empty()) {
+    std::set<osm_nwr_id_t> missing_nodes;
+
+    const auto id_col(r.column_number("id"));
 
     for (const auto &row : r)
-      locked_nodes.insert(row["id"].as<osm_nwr_id_t>());
+      missing_nodes.insert(row[id_col].as<osm_nwr_id_t>());
 
     std::map<osm_nwr_signed_id_t, std::set<osm_nwr_id_t>> absent_way_node_ids;
 
     for (const auto &w : ways)
       for (const auto &wn : w.way_nodes)
-        if (locked_nodes.find(wn.node_id) == locked_nodes.end())
+        if (missing_nodes.find(wn.node_id) != missing_nodes.end())
           absent_way_node_ids[w.old_id].insert(
               wn.node_id); // return node id in osmChange for error msg
 

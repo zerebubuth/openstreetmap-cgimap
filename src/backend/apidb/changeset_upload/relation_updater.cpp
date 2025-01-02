@@ -515,28 +515,29 @@ void ApiDB_Relation_Updater::lock_current_relations(
   if (ids.empty())
     return;
 
-  m.prepare("lock_current_relations",
-            "SELECT id FROM current_relations WHERE id = ANY($1) FOR UPDATE");
+  m.prepare("lock_current_relations", R"(
+      WITH locked AS (
+        SELECT id FROM current_relations WHERE id = ANY($1) FOR UPDATE
+      )
+      SELECT t.id FROM UNNEST($1) AS t(id)
+      EXCEPT
+      SELECT id FROM locked
+      ORDER BY id
+     )");
 
-  pqxx::result r = m.exec_prepared("lock_current_relations", ids);
+  auto r = m.exec_prepared("lock_current_relations", ids);
 
-  std::set<osm_nwr_id_t> locked_ids;
+  if (!r.empty()) {
+    std::vector<osm_nwr_id_t> missing_ids;
+    missing_ids.reserve(ids.size());
 
-  for (const auto &row : r)
-    locked_ids.insert(row["id"].as<osm_nwr_id_t>());
+    const auto id_col(r.column_number("id"));
 
-  std::set<osm_nwr_id_t> idset(ids.begin(), ids.end());
-
-  if (idset.size() != locked_ids.size()) {
-    std::set<osm_nwr_id_t> not_locked_ids;
-
-    std::set_difference(idset.begin(), idset.end(), locked_ids.begin(),
-                        locked_ids.end(),
-                        std::inserter(not_locked_ids, not_locked_ids.begin()));
+    for (const auto &row : r)
+      missing_ids.push_back(row[id_col].as<osm_nwr_id_t>());
 
     throw http::not_found(
-        fmt::format("The following relation ids are unknown: {}",
-         to_string(not_locked_ids)));
+        fmt::format("The following relation ids are unknown: {}", to_string(missing_ids)));
   }
 }
 
@@ -689,28 +690,33 @@ void ApiDB_Relation_Updater::lock_future_members_nodes(
   node_ids.erase(std::unique(node_ids.begin(), node_ids.end()), node_ids.end());
 
   m.prepare("lock_future_nodes_in_relations",
-            R"( 
+            R"(
+              WITH locked AS (
                 SELECT id
                 FROM current_nodes
-                WHERE visible = true 
-                AND id = ANY($1) FOR SHARE 
+                WHERE visible = true
+                AND id = ANY($1) FOR SHARE
+              )
+              SELECT t.id FROM UNNEST($1) AS t(id)
+              EXCEPT
+              SELECT id FROM locked
+              ORDER BY id
             )");
 
-  pqxx::result r =
-      m.exec_prepared("lock_future_nodes_in_relations", node_ids);
+  auto r = m.exec_prepared("lock_future_nodes_in_relations", node_ids);
 
-  if (r.size() != node_ids.size()) {
-    std::set<osm_nwr_id_t> locked_nodes;
+  if (!r.empty()) {
+    std::set<osm_nwr_id_t> missing_nodes;
 
     for (const auto &row : r)
-      locked_nodes.insert(row["id"].as<osm_nwr_id_t>());
+      missing_nodes.insert(row["id"].as<osm_nwr_id_t>());
 
     std::map<osm_nwr_signed_id_t, std::set<osm_nwr_id_t>> absent_rel_node_ids;
 
     for (const auto &rel : relations)
       for (const auto &rm : rel.members)
         if (rm.member_type == "Node" &&
-            locked_nodes.find(rm.member_id) == locked_nodes.end())
+            missing_nodes.find(rm.member_id) != missing_nodes.end())
           absent_rel_node_ids[rel.old_id].insert(
               rm.member_id); // return rel id in osmChange for error msg
 
@@ -734,28 +740,35 @@ void ApiDB_Relation_Updater::lock_future_members_ways(
   way_ids.erase(std::unique(way_ids.begin(), way_ids.end()), way_ids.end());
 
   m.prepare("lock_future_ways_in_relations",
-            R"( 
-              SELECT id
-              FROM current_ways
-              WHERE visible = true 
-              AND id = ANY($1) FOR SHARE 
+            R"(
+              WITH locked AS (
+                SELECT id
+                FROM current_ways
+                WHERE visible = true
+                AND id = ANY($1) FOR SHARE
+              )
+              SELECT t.id FROM UNNEST($1) AS t(id)
+              EXCEPT
+              SELECT id FROM locked
+              ORDER BY id
            )");
 
-  pqxx::result r =
-      m.exec_prepared("lock_future_ways_in_relations", way_ids);
+  auto r = m.exec_prepared("lock_future_ways_in_relations", way_ids);
 
-  if (r.size() != way_ids.size()) {
-    std::set<osm_nwr_id_t> locked_ways;
+  if (!r.empty()) {
+    std::set<osm_nwr_id_t> missing_nodes;
+
+    const auto id_col(r.column_number("id"));
 
     for (const auto &row : r)
-      locked_ways.insert(row["id"].as<osm_nwr_id_t>());
+      missing_nodes.insert(row[id_col].as<osm_nwr_id_t>());
 
     std::map<osm_nwr_signed_id_t, std::set<osm_nwr_id_t>> absent_rel_way_ids;
 
     for (const auto &rel : relations)
       for (const auto &rm : rel.members)
         if (rm.member_type == "Way" &&
-            locked_ways.find(rm.member_id) == locked_ways.end())
+            missing_nodes.find(rm.member_id) != missing_nodes.end())
           absent_rel_way_ids[rel.old_id].insert(
               rm.member_id); // return rel id in osmChange for error msg
 
@@ -781,27 +794,35 @@ void ApiDB_Relation_Updater::lock_future_members_relations(
                      relation_ids.end());
 
   m.prepare("lock_future_relations_in_relations",
-            R"( 
-              SELECT id
-              FROM current_relations
-              WHERE visible = true 
-              AND id = ANY($1) FOR SHARE )");
+            R"(
+              WITH locked AS (
+                SELECT id
+                FROM current_relations
+                WHERE visible = true
+                AND id = ANY($1) FOR SHARE
+              )
+              SELECT t.id FROM UNNEST($1) AS t(id)
+              EXCEPT
+              SELECT id FROM locked
+              ORDER BY id
+            )");
 
-  pqxx::result r =
-      m.exec_prepared("lock_future_relations_in_relations", relation_ids);
+  auto r = m.exec_prepared("lock_future_relations_in_relations", relation_ids);
 
-  if (r.size() != relation_ids.size()) {
-    std::set<osm_nwr_id_t> locked_relations;
+  if (!r.empty()) {
+    std::set<osm_nwr_id_t> missing_nodes;
+
+    const auto id_col(r.column_number("id"));
 
     for (const auto &row : r)
-      locked_relations.insert(row["id"].as<osm_nwr_id_t>());
+      missing_nodes.insert(row[id_col].as<osm_nwr_id_t>());
 
     std::map<osm_nwr_signed_id_t, std::set<osm_nwr_id_t>> absent_rel_rel_ids;
 
     for (const auto &rel : relations)
       for (const auto &rm : rel.members)
         if (rm.member_type == "Relation" &&
-            locked_relations.find(rm.member_id) == locked_relations.end())
+            missing_nodes.find(rm.member_id) != missing_nodes.end())
           absent_rel_rel_ids[rel.old_id].insert(
               rm.member_id); // return rel id in osmChange for error msg
 

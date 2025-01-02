@@ -355,27 +355,30 @@ void ApiDB_Node_Updater::lock_current_nodes(
   if (ids.empty())
     return;
 
-  m.prepare("lock_current_nodes",
-            "SELECT id FROM current_nodes WHERE id = ANY($1) FOR UPDATE");
+  m.prepare("lock_current_nodes", R"(
+      WITH locked AS (
+        SELECT id FROM current_nodes WHERE id = ANY($1) FOR UPDATE
+      )
+      SELECT t.id FROM UNNEST($1) AS t(id)
+      EXCEPT
+      SELECT id FROM locked
+      ORDER BY id
+     )");
 
-  pqxx::result r = m.exec_prepared("lock_current_nodes", ids);
+  // Query returns only node ids, which could not be locked
+  auto r = m.exec_prepared("lock_current_nodes", ids);
 
-  std::vector<osm_nwr_id_t> locked_ids;
+  if (!r.empty()) {
+    std::vector<osm_nwr_id_t> missing_ids;
+    missing_ids.reserve(ids.size());
 
-  for (const auto &row : r)
-    locked_ids.push_back(row["id"].as<osm_nwr_id_t>());
+    const auto id_col(r.column_number("id"));
 
-  if (ids.size() != locked_ids.size()) {
-    std::set<osm_nwr_id_t> not_locked_ids;
-
-    std::sort(locked_ids.begin(), locked_ids.end());
-
-    std::set_difference(ids.begin(), ids.end(), locked_ids.begin(),
-                        locked_ids.end(),
-                        std::inserter(not_locked_ids, not_locked_ids.begin()));
+    for (const auto &row : r)
+      missing_ids.push_back(row[id_col].as<osm_nwr_id_t>());
 
     throw http::not_found(
-        fmt::format("The following node ids are not known on the database: {}", to_string(not_locked_ids)));
+        fmt::format("The following node ids are not known on the database: {}", to_string(missing_ids)));
   }
 }
 
