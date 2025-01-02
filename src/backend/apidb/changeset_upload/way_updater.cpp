@@ -554,9 +554,12 @@ std::set<osm_nwr_id_t> ApiDB_Way_Updater::determine_already_deleted_ways(
 
   auto r = m.exec_prepared("already_deleted_ways", ids_to_be_deleted);
 
+  const auto id_col(r.column_number("id"));
+  const auto version_col(r.column_number("version"));
+
   for (const auto &row : r) {
 
-    auto id = row["id"].as<osm_nwr_id_t>();
+    auto id = row[id_col].as<osm_nwr_id_t>();
 
     // OsmChange documents wants to delete a way that is already deleted,
     // and the if-unused flag hasn't been set!
@@ -574,9 +577,9 @@ std::set<osm_nwr_id_t> ApiDB_Way_Updater::determine_already_deleted_ways(
     if (ids_if_unused.find(id) != ids_if_unused.end()) {
 
       ct.skip_deleted_way_ids.push_back(
-          { id_to_old_id[row["id"].as<osm_nwr_id_t>()],
-	    row["id"].as<osm_nwr_id_t>(),
-            row["version"].as<osm_version_t>() });
+          { id_to_old_id[row[id_col].as<osm_nwr_id_t>()],
+	    row[id_col].as<osm_nwr_id_t>(),
+            row[version_col].as<osm_version_t>() });
     }
   }
 
@@ -692,14 +695,17 @@ void ApiDB_Way_Updater::update_current_ways(const std::vector<way_t> &ways,
   if (r.affected_rows() != ways.size())
     throw http::server_error("Could not update all current ways");
 
+  const auto id_col(r.column_number("id"));
+  const auto version_col(r.column_number("version"));
+
   // update modified ways table
   for (const auto &row : r) {
     if (visible)
-      ct.modified_way_ids.push_back({ id_to_old_id[row["id"].as<osm_nwr_id_t>()],
-                                       row["id"].as<osm_nwr_id_t>(),
-                                       row["version"].as<osm_version_t>() });
+      ct.modified_way_ids.push_back({ id_to_old_id[row[id_col].as<osm_nwr_id_t>()],
+                                       row[id_col].as<osm_nwr_id_t>(),
+                                       row[version_col].as<osm_version_t>() });
     else
-      ct.deleted_way_ids.push_back({ id_to_old_id[row["id"].as<osm_nwr_id_t>()] });
+      ct.deleted_way_ids.push_back({ id_to_old_id[row[id_col].as<osm_nwr_id_t>()] });
   }
 }
 
@@ -973,8 +979,11 @@ ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t> &ways) {
 
     std::set<osm_nwr_id_t> result;
 
+    const auto id_col(r.column_number("id"));
+    const auto version_col(r.column_number("version"));
+
     for (const auto &row : r) {
-      result.insert(row["id"].as<osm_nwr_id_t>());
+      result.insert(row[id_col].as<osm_nwr_id_t>());
 
       // We have identified a node that is still used in a way or relation.
       // However, the caller has indicated via if-unused flag that deletion
@@ -982,9 +991,9 @@ ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t> &ways) {
       // new_id and the current version to the caller
 
       ct.skip_deleted_way_ids.push_back(
-          { id_to_old_id[row["id"].as<osm_nwr_id_t>()],
-	    row["id"].as<osm_nwr_id_t>(),
-            row["version"].as<osm_version_t>() });
+          { id_to_old_id[row[id_col].as<osm_nwr_id_t>()],
+	    row[id_col].as<osm_nwr_id_t>(),
+            row[version_col].as<osm_version_t>() });
     }
   }
 

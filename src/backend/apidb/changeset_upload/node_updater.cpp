@@ -494,9 +494,11 @@ std::set<osm_nwr_id_t> ApiDB_Node_Updater::determine_already_deleted_nodes(
 
   auto r = m.exec_prepared("already_deleted_nodes", ids_to_be_deleted);
 
+  const auto id_col(r.column_number("id"));
+
   for (const auto &row : r) {
 
-    auto id = row["id"].as<osm_nwr_id_t>();
+    auto id = row[id_col].as<osm_nwr_id_t>();
 
     // OsmChange documents wants to delete a node that is already deleted,
     // and the if-unused flag hasn't been set!
@@ -636,11 +638,14 @@ void ApiDB_Node_Updater::update_current_nodes(
          (*unknown_node).version));
   }
 
+  const auto id_col(r.column_number("id"));
+  const auto version_col(r.column_number("version"));
+
   // update modified nodes table
   for (const auto &row : r)
-    ct.modified_node_ids.push_back({ id_to_old_id[row["id"].as<osm_nwr_id_t>()],
-                                      row["id"].as<osm_nwr_id_t>(),
-                                      row["version"].as<osm_version_t>() });
+    ct.modified_node_ids.push_back({ id_to_old_id[row[id_col].as<osm_nwr_id_t>()],
+                                      row[id_col].as<osm_nwr_id_t>(),
+                                      row[version_col].as<osm_version_t>() });
 }
 
 void ApiDB_Node_Updater::delete_current_nodes(
@@ -690,9 +695,12 @@ void ApiDB_Node_Updater::delete_current_nodes(
   if (r.affected_rows() != nodes.size())
     throw http::server_error("Could not delete all current nodes");
 
+
+  const auto id_col(r.column_number("id"));
+
   // update deleted nodes table
   for (const auto &row : r)
-    ct.deleted_node_ids.push_back({ id_to_old_id[row["id"].as<osm_nwr_id_t>()] });
+    ct.deleted_node_ids.push_back({ id_to_old_id[row[id_col].as<osm_nwr_id_t>()] });
 }
 
 std::vector<osm_nwr_id_t> ApiDB_Node_Updater::insert_new_current_node_tags(
