@@ -75,8 +75,6 @@ private:
     bool if_unused;
   };
 
-  void truncate_temporary_tables();
-
   /*
    * Set id field based on old_id -> id mapping
    *
@@ -91,11 +89,7 @@ private:
 
   void check_unique_placeholder_ids(const std::vector<way_t> &create_ways);
 
-  void insert_new_ways_to_tmp_table(const std::vector<way_t> &create_ways);
-
-  void copy_tmp_create_ways_to_current_ways();
-
-  void delete_tmp_create_ways();
+  void insert_new_ways_to_current_table(const std::vector<way_t> &create_ways);
 
   bbox_t calc_way_bbox(const std::vector<osm_nwr_id_t> &ids);
 

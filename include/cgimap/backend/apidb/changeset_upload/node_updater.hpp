@@ -66,8 +66,6 @@ private:
     bool if_unused;
   };
 
-  void truncate_temporary_tables();
-
   void replace_old_ids_in_nodes(
       std::vector<node_t> &create_nodes,
       const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
@@ -75,11 +73,7 @@ private:
 
   void check_unique_placeholder_ids(const std::vector<node_t> &create_nodes);
 
-  void insert_new_nodes_to_tmp_table(const std::vector<node_t> &create_nodes);
-
-  void copy_tmp_create_nodes_to_current_nodes();
-
-  void delete_tmp_create_nodes();
+  void insert_new_nodes_to_current_table(const std::vector<node_t> &create_nodes);
 
   void lock_current_nodes(const std::vector<osm_nwr_id_t> &ids);
 
