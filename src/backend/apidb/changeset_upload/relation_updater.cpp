@@ -591,16 +591,15 @@ void ApiDB_Relation_Updater::check_current_relation_versions(
             R"(   WITH tmp_relation_versions(id, version) AS (
                   SELECT * FROM
                        UNNEST( CAST($1 as bigint[]),
-                               CAST($2 as bigint[])
-                             )
+                               CAST($2 as bigint[]))
                   )
-                  SELECT t.id, 
-                         t.version                 AS expected_version, 
-                         current_relations.version AS actual_version
+                  SELECT t.id,
+                         t.version  AS expected_version,
+                         cr.version AS actual_version
                   FROM tmp_relation_versions t
-                  INNER JOIN current_relations
-                     ON t.id = current_relations.id
-                  WHERE t.version <> current_relations.version
+                  INNER JOIN current_relations cr
+                     ON t.id = cr.id
+                  WHERE t.version <> cr.version
                   LIMIT 1
        )");
 
@@ -1205,14 +1204,14 @@ bbox_t ApiDB_Relation_Updater::calc_relation_bbox(
                        MIN(longitude) AS minlon,
                        MAX(latitude)  AS maxlat,
                        MAX(longitude) AS maxlon
-                FROM current_nodes
-                INNER JOIN current_relation_members
-                        ON current_relation_members.member_id = current_nodes.id
-                 WHERE current_relation_members.member_type = 'Node'
-                   AND current_relation_members.relation_id = ANY($1)
+                FROM current_nodes cn
+                INNER JOIN current_relation_members crm
+                        ON crm.member_id = cn.id
+                 WHERE crm.member_type = 'Node'
+                   AND crm.relation_id = ANY($1)
             )");
 
-  pqxx::result rn = m.exec_prepared("calc_relation_bbox_nodes", ids);
+  auto rn = m.exec_prepared("calc_relation_bbox_nodes", ids);
 
   if (!(rn.empty() || rn[0]["minlat"].is_null())) {
     bbox.minlat = rn[0]["minlat"].as<int64_t>();
@@ -1232,10 +1231,10 @@ bbox_t ApiDB_Relation_Updater::calc_relation_bbox(
                   ON cn.id = wn.node_id
                 INNER JOIN current_ways w
                   ON wn.way_id = w.id
-                INNER JOIN current_relation_members
-                        ON current_relation_members.member_id = w.id
-                 WHERE current_relation_members.member_type = 'Way'
-                   AND current_relation_members.relation_id = ANY($1)
+                INNER JOIN current_relation_members crm
+                        ON crm.member_id = w.id
+                 WHERE crm.member_type = 'Way'
+                   AND crm.relation_id = ANY($1)
               )");
 
   auto rw = m.exec_prepared("calc_relation_bbox_ways", ids);
@@ -1558,13 +1557,13 @@ ApiDB_Relation_Updater::collect_recursive_relation_rel_member_ids (
               SELECT * FROM
                 UNNEST( CAST($1 AS bigint[]) )
            )
-           SELECT DISTINCT current_relation_members.member_id
-           FROM current_relations
+           SELECT DISTINCT crm.member_id
+           FROM current_relations cr
              INNER JOIN relations_to_check c
-                     ON current_relations.id = c.id
-             INNER JOIN current_relation_members
-                     ON current_relation_members.relation_id = current_relations.id
-                    AND current_relation_members.member_type = 'Relation'
+                     ON cr.id = c.id
+             INNER JOIN current_relation_members crm
+                     ON crm.relation_id = cr.id
+                    AND crm.member_type = 'Relation'
        )");
 
   // Recursively iterate over list of relation ids and extract relation member ids
@@ -1688,9 +1687,9 @@ ApiDB_Relation_Updater::is_relation_still_referenced(
                SELECT * FROM
                   UNNEST( CAST($1 AS bigint[]) )
            )
-           SELECT current_relation_members.member_id, 
-                  array_to_string(array_agg(current_relations.id),',') AS relation_ids
-           FROM current_relations 
+           SELECT current_relation_members.member_id,
+                  string_agg(current_relations.id::text,',') AS relation_ids
+           FROM current_relations
              INNER JOIN current_relation_members
                     ON current_relation_members.relation_id = current_relations.id
              INNER JOIN relations_to_check c

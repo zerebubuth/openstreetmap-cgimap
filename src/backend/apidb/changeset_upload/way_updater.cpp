@@ -498,13 +498,13 @@ void ApiDB_Way_Updater::check_current_way_versions(
                      CAST($2 as bigint[])
            )
         )
-        SELECT t.id, 
-              t.version                 AS expected_version, 
-              current_ways.version      AS actual_version
+        SELECT t.id,
+              t.version   AS expected_version,
+              cw.version  AS actual_version
         FROM tmp_way_versions t
-        INNER JOIN current_ways
-           ON t.id = current_ways.id
-        WHERE t.version <> current_ways.version
+        INNER JOIN current_ways cw
+           ON t.id = cw.id
+        WHERE t.version <> cw.version
         LIMIT 1
       )");
 
@@ -874,12 +874,12 @@ void ApiDB_Way_Updater::save_current_way_tags_to_history(
     return;
 
   m.prepare("current_way_tags_to_history",
-            R"(   
+            R"(
          INSERT INTO way_tags (way_id, k, v, version)
-             SELECT way_id, k, v, version 
+             SELECT way_id, k, v, version
              FROM current_way_tags wt
-             INNER JOIN current_ways w 
-                ON wt.way_id = w.id 
+             INNER JOIN current_ways w
+                ON wt.way_id = w.id
              WHERE id = ANY($1)
      )");
 
@@ -912,13 +912,13 @@ ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t> &ways) {
   std::set<osm_nwr_id_t> ways_to_exclude_from_deletion;
 
   m.prepare("way_still_referenced_by_relation",
-            R"(   
-      SELECT current_relation_members.member_id,
-             array_to_string(array_agg(distinct current_relation_members.relation_id),',') AS relation_ids
+            R"(
+      SELECT member_id,
+             string_agg(distinct relation_id::text,',') AS relation_ids
          FROM current_relation_members
-         WHERE current_relation_members.member_type = 'Way'
-           AND current_relation_members.member_id = ANY($1)
-         GROUP BY current_relation_members.member_id
+         WHERE member_type = 'Way'
+           AND member_id = ANY($1)
+         GROUP BY member_id
       )");
 
   auto r = m.exec_prepared("way_still_referenced_by_relation", ids);

@@ -439,13 +439,13 @@ void ApiDB_Node_Updater::check_current_node_versions(
                     CAST($2 as bigint[])
            )
         )
-        SELECT t.id, 
-              t.version                  AS expected_version, 
-              current_nodes.version      AS actual_version
+        SELECT t.id,
+              t.version AS expected_version,
+              cn.version AS actual_version
         FROM tmp_node_versions t
-        INNER JOIN current_nodes
-           ON t.id = current_nodes.id
-        WHERE t.version <> current_nodes.version
+        INNER JOIN current_nodes cn
+           ON t.id = cn.id
+        WHERE t.version <> cn.version
         LIMIT 1
           )");
 
@@ -843,12 +843,12 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
 
   {
     m.prepare("node_still_referenced_by_way",
-              R"(   
-            SELECT current_way_nodes.node_id,
-                   array_to_string(array_agg(distinct current_way_nodes.way_id),',') AS way_ids
+              R"(
+            SELECT node_id,
+                   string_agg(distinct way_id::text,',') AS way_ids
                    FROM current_way_nodes
-                   WHERE current_way_nodes.node_id = ANY($1)
-                   GROUP BY current_way_nodes.node_id
+                   WHERE node_id = ANY($1)
+                   GROUP BY node_id
             )");
 
     auto r = m.exec_prepared("node_still_referenced_by_way", ids);
@@ -884,13 +884,13 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
 
   {
     m.prepare("node_still_referenced_by_relation",
-              R"(   
-             SELECT current_relation_members.member_id,
-                    array_to_string(array_agg(distinct current_relation_members.relation_id),',') AS relation_ids
+              R"(
+             SELECT member_id,
+                    string_agg(distinct relation_id::text,',') AS relation_ids
                     FROM current_relation_members
-                    WHERE current_relation_members.member_type = 'Node'
-                      AND current_relation_members.member_id = ANY($1)
-                    GROUP BY current_relation_members.member_id
+                    WHERE member_type = 'Node'
+                      AND member_id = ANY($1)
+                    GROUP BY member_id
              )");
 
     auto r = m.exec_prepared("node_still_referenced_by_relation", ids);
