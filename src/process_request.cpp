@@ -472,10 +472,14 @@ void process_request(request &req, rate_limiter &limiter,
     const auto is_moderator = req_ctx.is_moderator();
 
     // check whether the client is being rate limited
-    if (auto [exceeded_limit, retry_seconds] = limiter.check(client_key, is_moderator);
-        exceeded_limit) {
-      logger::message(fmt::format("Rate limiter rejected request from {}", client_key));
-      throw http::bandwidth_limit_exceeded(retry_seconds);
+    // skip check in case of HTTP OPTIONS since it interferes with CORS preflight requests
+    // see https://github.com/facebook/Rapid/issues/1424 for context
+    if (method != http::method::OPTIONS) {
+      if (auto [exceeded_limit, retry_seconds] = limiter.check(client_key, is_moderator);
+          exceeded_limit) {
+        logger::message(fmt::format("Rate limiter rejected request from {}", client_key));
+        throw http::bandwidth_limit_exceeded(retry_seconds);
+      }
     }
 
     const auto start_time = std::chrono::high_resolution_clock::now();
