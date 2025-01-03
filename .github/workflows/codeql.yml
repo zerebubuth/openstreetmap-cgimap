@@ -38,7 +38,7 @@ jobs:
       run: |
          sudo apt-get update -qq
          sudo apt-get install -y gcc g++ make autoconf automake libtool \
-                                 libfcgi-dev libxml2-dev libmemcached-dev \
+                                 libfcgi-dev libxml2-dev libmemcached-dev libbrotli-dev \
                                  libboost-program-options-dev libcrypto++-dev libyajl-dev \
                                  libpqxx-dev zlib1g-dev libfmt-dev
 
