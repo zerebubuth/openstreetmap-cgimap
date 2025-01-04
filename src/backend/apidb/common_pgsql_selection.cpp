@@ -12,8 +12,6 @@
 #include "cgimap/backend/apidb/utils.hpp"
 
 #include <chrono>
-#include <charconv>
-
 
 namespace {
 
@@ -209,32 +207,14 @@ std::optional<T> extract_optional(const pqxx_field &f) {
   tags.reserve(keys.size());
 
   for (std::size_t i = 0; i < keys.size(); i++)
-    tags.emplace_back(keys[i], values[i]);
+    tags.emplace_back(std::move(keys[i]), std::move(values[i]));
 
   return tags;
 }
 
-[[nodiscard]] nodes_t extract_nodes(const pqxx_tuple &row, const way_extra_columns& col) {
+[[nodiscard]] nodes_t extract_way_nodes(const pqxx_tuple &row, const way_extra_columns& col) {
 
-  nodes_t nodes;
-
-  auto ids = psql_array_to_vector(row[col.node_ids_col]);
-
-  nodes.reserve(ids.size());
-
-  for (const auto & id : ids) {
-    osm_nwr_id_t node{};
-
-    auto [_, ec] = std::from_chars(id.data(), id.data() + id.size(), node);
-
-    if (ec != std::errc()) {
-     throw std::runtime_error("Node id conversion to integer failed");
-    }
-
-    nodes.push_back(node);
-  }
-
-  return nodes;
+  return psql_array_ids_to_vector<osm_nwr_id_t>(row[col.node_ids_col]);
 }
 
 element_type type_from_name(const char *name) {
@@ -269,9 +249,9 @@ element_type type_from_name(const char *name) {
 
   members_t members;
 
-  auto types = psql_array_to_vector(row[col.member_types_col]);
-  auto ids   = psql_array_to_vector(row[col.member_ids_col]);
-  auto roles = psql_array_to_vector(row[col.member_roles_col]);
+  auto ids   = psql_array_ids_to_vector<osm_nwr_id_t>(row[col.member_ids_col]);
+  auto types = psql_array_to_vector(row[col.member_types_col], ids.size());
+  auto roles = psql_array_to_vector(row[col.member_roles_col], ids.size());
 
   if (types.size() != ids.size() ||
       ids.size() != roles.size()) {
@@ -281,19 +261,8 @@ element_type type_from_name(const char *name) {
   members.reserve(ids.size());
 
   for (std::size_t i=0; i<ids.size(); i++) {
-    member_info member;
-    member.type = type_from_name(types[i].c_str());
-
-    {
-      auto [_, ec] = std::from_chars(ids[i].data(), ids[i].data() + ids[i].size(), member.ref);
-
-      if (ec != std::errc()) {
-       throw std::runtime_error("Member ref conversion to integer failed");
-      }
-    }
-
-    member.role = roles[i];
-    members.push_back(member);
+    element_type member_type = type_from_name(types[i].c_str());
+    members.emplace_back(member_type, ids[i], std::move(roles[i]));
   }
 
   return members;
@@ -303,11 +272,11 @@ element_type type_from_name(const char *name) {
 
   comments_t comments;
 
-  auto id           = psql_array_to_vector(row[col.comment_id_col]);
-  auto author_id    = psql_array_to_vector(row[col.comment_author_id_col]);
-  auto display_name = psql_array_to_vector(row[col.comment_display_name_col]);
-  auto body         = psql_array_to_vector(row[col.comment_body_col]);
-  auto created_at   = psql_array_to_vector(row[col.comment_created_at_col]);
+  auto id           = psql_array_ids_to_vector<osm_changeset_comment_id_t>(row[col.comment_id_col]);
+  auto author_id    = psql_array_ids_to_vector<osm_user_id_t>(row[col.comment_author_id_col]);
+  auto display_name = psql_array_to_vector(row[col.comment_display_name_col], id.size());
+  auto body         = psql_array_to_vector(row[col.comment_body_col], id.size());
+  auto created_at   = psql_array_to_vector(row[col.comment_created_at_col], id.size());
 
   if (id.size() != author_id.size() ||
       author_id.size() != display_name.size() ||
@@ -319,29 +288,11 @@ element_type type_from_name(const char *name) {
   comments.reserve(id.size());
 
   for (std::size_t i=0; i<id.size(); i++) {
-
-    changeset_comment_info comment;
-
-    {
-      auto [_, ec] = std::from_chars(id[i].data(), id[i].data() + id[i].size(), comment.id);
-
-      if (ec != std::errc()) {
-       throw std::runtime_error("Comment id conversion to integer failed");
-      }
-    }
-
-    {
-      auto [_, ec] = std::from_chars(author_id[i].data(), author_id[i].data() + author_id[i].size(), comment.author_id);
-
-      if (ec != std::errc()) {
-       throw std::runtime_error("Author id conversion to integer failed");
-      }
-    }
-
-    comment.author_display_name = display_name[i];
-    comment.body = body[i];
-    comment.created_at = created_at[i];
-    comments.push_back(comment);
+    comments.emplace_back(id[i],
+                          author_id[i],
+                          std::move(body[i]),
+                          std::move(created_at[i]),
+                          std::move(display_name[i]));
   }
 
   return comments;
@@ -352,12 +303,11 @@ struct node {
   using extra_columns = node_extra_columns;
 
   struct extra_info {
-    double lon;
-    double lat;
-    inline void extract(const pqxx_tuple &row, const extra_columns& col) {
-      lon = double(row[col.longitude_col].as<int64_t>()) / (global_settings::get_scale());
-      lat = double(row[col.latitude_col].as<int64_t>()) / (global_settings::get_scale());
-    }
+    const double lon;
+    const double lat;
+    extra_info(const pqxx_tuple &row, const extra_columns& col) :
+      lon(double(row[col.longitude_col].as<int64_t>()) / global_settings::get_scale()),
+      lat(double(row[col.latitude_col].as<int64_t>()) / global_settings::get_scale()) {}
   };
   static inline void write(
     output_formatter &formatter, const element_info &elem,
@@ -370,16 +320,15 @@ struct way {
   using extra_columns = way_extra_columns;
 
   struct extra_info {
-    nodes_t nodes;
-    inline void extract(const pqxx_tuple &row, const extra_columns& col) {
-      nodes = extract_nodes(row, col);
-    }
+    const nodes_t way_nodes;
+    extra_info(const pqxx_tuple &row, const extra_columns& col) :
+      way_nodes(extract_way_nodes(row, col)) {}
   };
 
   static inline void write(
     output_formatter &formatter, const element_info &elem,
     const extra_info &extra, const tags_t &tags) {
-    formatter.write_way(elem, extra.nodes, tags);
+    formatter.write_way(elem, extra.way_nodes, tags);
   }
 };
 
@@ -387,10 +336,10 @@ struct relation {
   using extra_columns = relation_extra_columns;
 
   struct extra_info {
-    members_t members;
-    inline void extract(const pqxx_tuple &row, const extra_columns& col) {
-      members = extract_members(row, col);
-    }
+    const members_t members;
+    extra_info(const pqxx_tuple &row, const extra_columns& col) :
+      members(extract_members(row, col)) {}
+
   };
 
   static inline void write(
@@ -411,9 +360,8 @@ void extract(
   const tag_columns tag_cols(rows);
 
   for (const auto &row : rows) {
-    typename T::extra_info extra{};
+    typename T::extra_info extra(row, extra_cols);
     auto elem = extract_elem(row, cc, elem_cols);
-    extra.extract(row, extra_cols);
     auto tags = extract_tags(row, tag_cols);
     if (notify)
       notify(elem);     // let callback function know about a new element we're processing
@@ -466,59 +414,4 @@ void extract_changesets(
   }
 }
 
-std::vector<std::string> psql_array_to_vector(const pqxx::field& field) {
-  return psql_array_to_vector(std::string_view(field.c_str(), field.size()));
-}
 
-std::vector<std::string> psql_array_to_vector(std::string_view str) {
-  std::vector<std::string> strs;
-  std::string value;
-  bool quotedValue = false;
-  bool escaped = false;
-  bool write = false;
-
-  if (str == "{NULL}" || str.empty())
-    return strs;
-
-  const auto str_size = str.size();
-  for (unsigned int i = 1; i < str_size; i++) {
-    if (str[i] == ',') {
-      if (quotedValue) {
-        value += ',';
-      } else {
-        write = true;
-      }
-    } else if (str[i] == '"') {
-      if (escaped) {
-        value += '"';
-        escaped = false;
-      } else if (quotedValue) {
-        quotedValue = false;
-      } else {
-        quotedValue = true;
-      }
-    } else if (str[i] == '\\') {
-      if (escaped) {
-        value += '\\';
-        escaped = false;
-      } else {
-        escaped = true;
-      }
-    } else if (str[i] == '}') {
-      if (quotedValue) {
-        value += '}';
-      } else {
-        write = true;
-      }
-    } else {
-      value += str[i];
-    }
-
-    if (write) {
-      strs.push_back(value);
-      value.clear();
-      write = false;
-    }
-  }
-  return strs;
-}

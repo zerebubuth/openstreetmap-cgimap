@@ -239,6 +239,44 @@ TEST_CASE("test_psql_array_to_vector", "[nodb]") {
   }
 }
 
+TEST_CASE("psql_array_ids_to_vector", "[nodb]") {
+
+  std::string test;
+  std::vector<int64_t> actual_values;
+  std::vector<int64_t> values;
+
+  SECTION("NULL") {
+    test = "{NULL}";
+    values = psql_array_ids_to_vector<int64_t>(test);
+    REQUIRE (values == actual_values);
+  }
+
+  SECTION("Empty string") {
+    test = "";
+    values = psql_array_ids_to_vector<int64_t>(test);
+    REQUIRE (values == actual_values);
+  }
+
+  SECTION("One value") {
+    test = "{1}";
+    values = psql_array_ids_to_vector<int64_t>(test);
+    actual_values = {1};
+    REQUIRE (values == actual_values);
+  }
+
+  SECTION("Two values") {
+    test = "{1,-2}";
+    values = psql_array_ids_to_vector<int64_t>(test);
+    actual_values = {1, -2};
+    REQUIRE (values == actual_values);
+  }
+
+  SECTION("Invalid string") {
+    test = "{1,}";
+    REQUIRE_THROWS_AS(psql_array_ids_to_vector<int64_t>(test), std::runtime_error);
+  }
+}
+
 int main(int argc, char *argv[]) {
   Catch::Session session;
 
