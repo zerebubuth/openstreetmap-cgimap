@@ -27,12 +27,12 @@
 
 
 
-ApiDB_Relation_Updater::ApiDB_Relation_Updater(Transaction_Manager &_m, 
+ApiDB_Relation_Updater::ApiDB_Relation_Updater(Transaction_Manager &_m,
                                                const RequestContext& _req_ctx,
                                                api06::OSMChange_Tracking &ct)
   : m(_m),
     req_ctx(_req_ctx),
-    ct(ct) 
+    ct(ct)
 {}
 
 void ApiDB_Relation_Updater::add_relation(osm_changeset_id_t changeset_id,
@@ -132,14 +132,16 @@ void ApiDB_Relation_Updater::process_new_relations() {
 
   std::vector<osm_nwr_id_t> ids;
 
+  ids.reserve(create_relations.size());
+
   for (const auto &id : create_relations)
-    ids.push_back(id.id);
+    ids.emplace_back(id.id);
 
   // remove duplicates
   std::sort(ids.begin(), ids.end());
   ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
 
-  lock_current_relations(ids);
+  // lock_current_relations(ids);     // INSERT already set RowExclusiveLock earlier on
   lock_future_members(create_relations, ids);
 
   const auto ids_with_tags = insert_new_current_relation_tags(create_relations);
@@ -332,24 +334,24 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
   // Prepare mapping tables
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_relations;
   for (auto &i : created_relation_id_mapping) {
-    auto res = map_relations.insert({ i.old_id, i.new_id });
-    if (!res.second)
+    auto [_, inserted] = map_relations.insert({ i.old_id, i.new_id });
+    if (!inserted)
       throw http::bad_request(
           fmt::format("Duplicate relation placeholder id {:d}.", i.old_id));
   }
 
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_ways;
   for (auto &i : created_way_id_mapping) {
-    auto res = map_ways.insert({ i.old_id, i.new_id });
-    if (!res.second)
+    auto [_, inserted] = map_ways.insert({ i.old_id, i.new_id });
+    if (!inserted)
       throw http::bad_request(
           fmt::format("Duplicate way placeholder id {:d}.", i.old_id));
   }
 
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_nodes;
   for (auto &i : created_node_id_mapping) {
-    auto res = map_nodes.insert({ i.old_id, i.new_id });
-    if (!res.second)
+    auto [_, inserted] = map_nodes.insert({ i.old_id, i.new_id });
+    if (!inserted)
       throw http::bad_request(
           fmt::format("Duplicate node placeholder id {:d}.", i.old_id));
   }
@@ -402,9 +404,9 @@ void ApiDB_Relation_Updater::check_unique_placeholder_ids(
     const std::vector<relation_t> &create_relations) {
 
   for (const auto &create_relation : create_relations) {
-    auto res = create_placedholder_ids.insert(create_relation.old_id);
+    auto [_, inserted] = create_placeholder_ids.insert(create_relation.old_id);
 
-    if (!res.second)
+    if (!inserted)
       throw http::bad_request(
           "Placeholder IDs must be unique for created elements.");
   }
@@ -414,7 +416,7 @@ void ApiDB_Relation_Updater::check_unique_placeholder_ids(
   For compatibility reasons, we don't allow forward references for relation members.
 
   Some clients might implicitly depend on increasing relation id sequence numbers
-  for newly created relations. By forbidding forward references, child relations 
+  for newly created relations. By forbidding forward references, child relations
   always have to be provided before their respective parent relations.
 
   See https://github.com/openstreetmap/iD/issues/3208#issuecomment-281942743
@@ -482,6 +484,9 @@ void ApiDB_Relation_Updater::insert_new_relations_to_current_table(
   std::vector<osm_changeset_id_t> cs;
   std::vector<osm_nwr_signed_id_t> oldids;
 
+  cs.reserve(create_relations.size());
+  oldids.reserve(create_relations.size());
+
   for (const auto &create_relation : create_relations) {
     cs.emplace_back(create_relation.changeset_id);
     oldids.emplace_back(create_relation.old_id);
@@ -510,28 +515,29 @@ void ApiDB_Relation_Updater::lock_current_relations(
   if (ids.empty())
     return;
 
-  m.prepare("lock_current_relations",
-            "SELECT id FROM current_relations WHERE id = ANY($1) FOR UPDATE");
+  m.prepare("lock_current_relations", R"(
+      WITH locked AS (
+        SELECT id FROM current_relations WHERE id = ANY($1) FOR UPDATE
+      )
+      SELECT t.id FROM UNNEST($1) AS t(id)
+      EXCEPT
+      SELECT id FROM locked
+      ORDER BY id
+     )");
 
-  pqxx::result r = m.exec_prepared("lock_current_relations", ids);
+  auto r = m.exec_prepared("lock_current_relations", ids);
 
-  std::set<osm_nwr_id_t> locked_ids;
+  if (!r.empty()) {
+    std::vector<osm_nwr_id_t> missing_ids;
+    missing_ids.reserve(ids.size());
 
-  for (const auto &row : r)
-    locked_ids.insert(row["id"].as<osm_nwr_id_t>());
+    const auto id_col(r.column_number("id"));
 
-  std::set<osm_nwr_id_t> idset(ids.begin(), ids.end());
-
-  if (idset.size() != locked_ids.size()) {
-    std::set<osm_nwr_id_t> not_locked_ids;
-
-    std::set_difference(idset.begin(), idset.end(), locked_ids.begin(),
-                        locked_ids.end(),
-                        std::inserter(not_locked_ids, not_locked_ids.begin()));
+    for (const auto &row : r)
+      missing_ids.push_back(row[id_col].as<osm_nwr_id_t>());
 
     throw http::not_found(
-        fmt::format("The following relation ids are unknown: {}",
-         to_string(not_locked_ids)));
+        fmt::format("The following relation ids are unknown: {}", to_string(missing_ids)));
   }
 }
 
@@ -585,21 +591,19 @@ void ApiDB_Relation_Updater::check_current_relation_versions(
             R"(   WITH tmp_relation_versions(id, version) AS (
                   SELECT * FROM
                        UNNEST( CAST($1 as bigint[]),
-                               CAST($2 as bigint[])
-                             )
+                               CAST($2 as bigint[]))
                   )
-                  SELECT t.id, 
-                         t.version                 AS expected_version, 
-                         current_relations.version AS actual_version
+                  SELECT t.id,
+                         t.version  AS expected_version,
+                         cr.version AS actual_version
                   FROM tmp_relation_versions t
-                  INNER JOIN current_relations
-                     ON t.id = current_relations.id
-                  WHERE t.version <> current_relations.version
+                  INNER JOIN current_relations cr
+                     ON t.id = cr.id
+                  WHERE t.version <> cr.version
                   LIMIT 1
        )");
 
-  pqxx::result r =
-      m.exec_prepared("check_current_relation_versions", ids, versions);
+  auto r = m.exec_prepared("check_current_relation_versions", ids, versions);
 
   if (!r.empty()) {
     throw http::conflict(fmt::format("Version mismatch: Provided {:d}, server had: {:d} of Relation {:d}",
@@ -642,7 +646,7 @@ ApiDB_Relation_Updater::determine_already_deleted_relations(
                                          "current_relations WHERE id = ANY($1) "
                                          "AND visible = false");
 
-  pqxx::result r =
+  auto r =
       m.exec_prepared("already_deleted_relations", ids_to_be_deleted);
 
   for (const auto &row : r) {
@@ -685,28 +689,33 @@ void ApiDB_Relation_Updater::lock_future_members_nodes(
   node_ids.erase(std::unique(node_ids.begin(), node_ids.end()), node_ids.end());
 
   m.prepare("lock_future_nodes_in_relations",
-            R"( 
+            R"(
+              WITH locked AS (
                 SELECT id
                 FROM current_nodes
-                WHERE visible = true 
-                AND id = ANY($1) FOR SHARE 
+                WHERE visible = true
+                AND id = ANY($1) FOR SHARE
+              )
+              SELECT t.id FROM UNNEST($1) AS t(id)
+              EXCEPT
+              SELECT id FROM locked
+              ORDER BY id
             )");
 
-  pqxx::result r =
-      m.exec_prepared("lock_future_nodes_in_relations", node_ids);
+  auto r = m.exec_prepared("lock_future_nodes_in_relations", node_ids);
 
-  if (r.size() != node_ids.size()) {
-    std::set<osm_nwr_id_t> locked_nodes;
+  if (!r.empty()) {
+    std::set<osm_nwr_id_t> missing_nodes;
 
     for (const auto &row : r)
-      locked_nodes.insert(row["id"].as<osm_nwr_id_t>());
+      missing_nodes.insert(row["id"].as<osm_nwr_id_t>());
 
     std::map<osm_nwr_signed_id_t, std::set<osm_nwr_id_t>> absent_rel_node_ids;
 
     for (const auto &rel : relations)
       for (const auto &rm : rel.members)
         if (rm.member_type == "Node" &&
-            locked_nodes.find(rm.member_id) == locked_nodes.end())
+            missing_nodes.find(rm.member_id) != missing_nodes.end())
           absent_rel_node_ids[rel.old_id].insert(
               rm.member_id); // return rel id in osmChange for error msg
 
@@ -730,28 +739,35 @@ void ApiDB_Relation_Updater::lock_future_members_ways(
   way_ids.erase(std::unique(way_ids.begin(), way_ids.end()), way_ids.end());
 
   m.prepare("lock_future_ways_in_relations",
-            R"( 
-              SELECT id
-              FROM current_ways
-              WHERE visible = true 
-              AND id = ANY($1) FOR SHARE 
+            R"(
+              WITH locked AS (
+                SELECT id
+                FROM current_ways
+                WHERE visible = true
+                AND id = ANY($1) FOR SHARE
+              )
+              SELECT t.id FROM UNNEST($1) AS t(id)
+              EXCEPT
+              SELECT id FROM locked
+              ORDER BY id
            )");
 
-  pqxx::result r =
-      m.exec_prepared("lock_future_ways_in_relations", way_ids);
+  auto r = m.exec_prepared("lock_future_ways_in_relations", way_ids);
 
-  if (r.size() != way_ids.size()) {
-    std::set<osm_nwr_id_t> locked_ways;
+  if (!r.empty()) {
+    std::set<osm_nwr_id_t> missing_nodes;
+
+    const auto id_col(r.column_number("id"));
 
     for (const auto &row : r)
-      locked_ways.insert(row["id"].as<osm_nwr_id_t>());
+      missing_nodes.insert(row[id_col].as<osm_nwr_id_t>());
 
     std::map<osm_nwr_signed_id_t, std::set<osm_nwr_id_t>> absent_rel_way_ids;
 
     for (const auto &rel : relations)
       for (const auto &rm : rel.members)
         if (rm.member_type == "Way" &&
-            locked_ways.find(rm.member_id) == locked_ways.end())
+            missing_nodes.find(rm.member_id) != missing_nodes.end())
           absent_rel_way_ids[rel.old_id].insert(
               rm.member_id); // return rel id in osmChange for error msg
 
@@ -777,27 +793,35 @@ void ApiDB_Relation_Updater::lock_future_members_relations(
                      relation_ids.end());
 
   m.prepare("lock_future_relations_in_relations",
-            R"( 
-              SELECT id
-              FROM current_relations
-              WHERE visible = true 
-              AND id = ANY($1) FOR SHARE )");
+            R"(
+              WITH locked AS (
+                SELECT id
+                FROM current_relations
+                WHERE visible = true
+                AND id = ANY($1) FOR SHARE
+              )
+              SELECT t.id FROM UNNEST($1) AS t(id)
+              EXCEPT
+              SELECT id FROM locked
+              ORDER BY id
+            )");
 
-  pqxx::result r =
-      m.exec_prepared("lock_future_relations_in_relations", relation_ids);
+  auto r = m.exec_prepared("lock_future_relations_in_relations", relation_ids);
 
-  if (r.size() != relation_ids.size()) {
-    std::set<osm_nwr_id_t> locked_relations;
+  if (!r.empty()) {
+    std::set<osm_nwr_id_t> missing_nodes;
+
+    const auto id_col(r.column_number("id"));
 
     for (const auto &row : r)
-      locked_relations.insert(row["id"].as<osm_nwr_id_t>());
+      missing_nodes.insert(row[id_col].as<osm_nwr_id_t>());
 
     std::map<osm_nwr_signed_id_t, std::set<osm_nwr_id_t>> absent_rel_rel_ids;
 
     for (const auto &rel : relations)
       for (const auto &rm : rel.members)
         if (rm.member_type == "Relation" &&
-            locked_relations.find(rm.member_id) == locked_relations.end())
+            missing_nodes.find(rm.member_id) != missing_nodes.end())
           absent_rel_rel_ids[rel.old_id].insert(
               rm.member_id); // return rel id in osmChange for error msg
 
@@ -878,7 +902,7 @@ ApiDB_Relation_Updater::relations_with_new_relation_members(
   }
 
   m.prepare("relations_with_new_relation_members",
-            R"(  
+            R"(
           WITH tmp_relation_members(relation_id, member_id) AS
              ( SELECT * FROM
                   UNNEST( CAST($1 as bigint[]),
@@ -895,7 +919,7 @@ ApiDB_Relation_Updater::relations_with_new_relation_members(
           GROUP BY t.relation_id
      )");
 
-  pqxx::result r = m.exec_prepared("relations_with_new_relation_members", relation_ids, member_ids);
+  auto r = m.exec_prepared("relations_with_new_relation_members", relation_ids, member_ids);
 
   for (const auto &row : r) {
     result.insert(row["relation_id"].as<osm_nwr_id_t>());
@@ -931,7 +955,7 @@ ApiDB_Relation_Updater::relations_with_changed_relation_tags(
     }
 
   m.prepare("relations_with_changed_relation_tags",
-            R"(  
+            R"(
             WITH tmp_relation_tags(relation_id, k, v) AS
                  ( SELECT * FROM
                       UNNEST( CAST($1 as bigint[]),
@@ -965,8 +989,7 @@ ApiDB_Relation_Updater::relations_with_changed_relation_tags(
             GROUP BY all_relations.relation_id
          )");
 
-  pqxx::result r =
-      m.exec_prepared("relations_with_changed_relation_tags", ids, ks, vs);
+  auto r = m.exec_prepared("relations_with_changed_relation_tags", ids, ks, vs);
 
   for (const auto &row : r) {
     result.insert(row["relation_id"].as<osm_nwr_id_t>());
@@ -1006,7 +1029,7 @@ ApiDB_Relation_Updater::relations_with_changed_way_node_members(
 
   // new member was added in tmp
   m.prepare("relations_with_added_way_node_members",
-            R"(  
+            R"(
             WITH tmp_member(relation_id, member_type, member_id) AS (
                  SELECT * FROM
                  UNNEST( CAST($1 as bigint[]),
@@ -1025,7 +1048,7 @@ ApiDB_Relation_Updater::relations_with_changed_way_node_members(
                        cm.member_id   IS NULL
          )");
 
-  pqxx::result r_added = m.exec_prepared("relations_with_added_way_node_members", ids, membertypes, memberids);
+  auto r_added = m.exec_prepared("relations_with_added_way_node_members", ids, membertypes, memberids);
 
   for (const auto &row : r_added) {
     rel_member_difference_t diff;
@@ -1037,7 +1060,7 @@ ApiDB_Relation_Updater::relations_with_changed_way_node_members(
 
   // existing member was removed in tmp
   m.prepare("relations_with_removed_way_node_members",
-            R"(  
+            R"(
             WITH tmp_member(relation_id, member_type, member_id) AS (
                  SELECT * FROM
                  UNNEST( CAST($1 as bigint[]),
@@ -1058,7 +1081,7 @@ ApiDB_Relation_Updater::relations_with_changed_way_node_members(
 
          )");
 
-  pqxx::result r_removed = m.exec_prepared("relations_with_removed_way_node_members", ids, membertypes, memberids);
+  auto r_removed = m.exec_prepared("relations_with_removed_way_node_members", ids, membertypes, memberids);
 
   for (const auto &row : r_removed) {
     rel_member_difference_t diff;
@@ -1099,13 +1122,13 @@ bbox_t ApiDB_Relation_Updater::calc_rel_member_difference_bbox(
     m.prepare("calc_node_bbox_rel_member",
               R"(
       SELECT MIN(latitude)  AS minlat,
-             MIN(longitude) AS minlon, 
-             MAX(latitude)  AS maxlat, 
-             MAX(longitude) AS maxlon  
+             MIN(longitude) AS minlon,
+             MAX(latitude)  AS maxlat,
+             MAX(longitude) AS maxlon
       FROM current_nodes WHERE id = ANY($1)
        )");
 
-    pqxx::result r = m.exec_prepared("calc_node_bbox_rel_member", node_ids);
+    auto r = m.exec_prepared("calc_node_bbox_rel_member", node_ids);
 
     if (!(r.empty() || r[0]["minlat"].is_null())) {
       bbox_nodes.minlat = r[0]["minlat"].as<int64_t>();
@@ -1124,9 +1147,9 @@ bbox_t ApiDB_Relation_Updater::calc_rel_member_difference_bbox(
     m.prepare("calc_way_bbox_rel_member",
               R"(
       SELECT MIN(latitude)  AS minlat,
-             MIN(longitude) AS minlon, 
-             MAX(latitude)  AS maxlat, 
-             MAX(longitude) AS maxlon  
+             MIN(longitude) AS minlon,
+             MAX(latitude)  AS maxlat,
+             MAX(longitude) AS maxlon
       FROM current_nodes cn
       INNER JOIN current_way_nodes wn
         ON cn.id = wn.node_id
@@ -1135,7 +1158,7 @@ bbox_t ApiDB_Relation_Updater::calc_rel_member_difference_bbox(
       WHERE w.id = ANY($1)
        )");
 
-    pqxx::result r = m.exec_prepared("calc_way_bbox_rel_member", way_ids);
+    auto r = m.exec_prepared("calc_way_bbox_rel_member", way_ids);
 
     if (!(r.empty() || r[0]["minlat"].is_null())) {
       bbox_ways.minlat = r[0]["minlat"].as<int64_t>();
@@ -1181,14 +1204,14 @@ bbox_t ApiDB_Relation_Updater::calc_relation_bbox(
                        MIN(longitude) AS minlon,
                        MAX(latitude)  AS maxlat,
                        MAX(longitude) AS maxlon
-                FROM current_nodes
-                INNER JOIN current_relation_members
-                        ON current_relation_members.member_id = current_nodes.id
-                 WHERE current_relation_members.member_type = 'Node'
-                   AND current_relation_members.relation_id = ANY($1)
+                FROM current_nodes cn
+                INNER JOIN current_relation_members crm
+                        ON crm.member_id = cn.id
+                 WHERE crm.member_type = 'Node'
+                   AND crm.relation_id = ANY($1)
             )");
 
-  pqxx::result rn = m.exec_prepared("calc_relation_bbox_nodes", ids);
+  auto rn = m.exec_prepared("calc_relation_bbox_nodes", ids);
 
   if (!(rn.empty() || rn[0]["minlat"].is_null())) {
     bbox.minlat = rn[0]["minlat"].as<int64_t>();
@@ -1208,13 +1231,13 @@ bbox_t ApiDB_Relation_Updater::calc_relation_bbox(
                   ON cn.id = wn.node_id
                 INNER JOIN current_ways w
                   ON wn.way_id = w.id
-                INNER JOIN current_relation_members
-                        ON current_relation_members.member_id = w.id
-                 WHERE current_relation_members.member_type = 'Way'
-                   AND current_relation_members.relation_id = ANY($1)
+                INNER JOIN current_relation_members crm
+                        ON crm.member_id = w.id
+                 WHERE crm.member_type = 'Way'
+                   AND crm.relation_id = ANY($1)
               )");
 
-  pqxx::result rw = m.exec_prepared("calc_relation_bbox_ways", ids);
+  auto rw = m.exec_prepared("calc_relation_bbox_ways", ids);
 
   if (!(rw.empty() || rw[0]["minlat"].is_null())) {
     bbox_t bbox_way;
@@ -1235,7 +1258,7 @@ void ApiDB_Relation_Updater::update_current_relations(
     return;
 
   m.prepare("update_current_relations",
-            R"(   
+            R"(
         WITH u(id, changeset_id, version) AS (
                 SELECT * FROM
                 UNNEST( CAST($1 AS bigint[]),
@@ -1251,13 +1274,17 @@ void ApiDB_Relation_Updater::update_current_relations(
         FROM u
         WHERE r.id = u.id
           AND r.version = u.version
-        RETURNING r.id, r.version 
+        RETURNING r.id, r.version
     )");
 
   std::vector<osm_nwr_signed_id_t> ids;
   std::vector<osm_changeset_id_t> cs;
   std::vector<osm_version_t> versions;
   std::map<osm_nwr_id_t, osm_nwr_signed_id_t> id_to_old_id;
+
+  ids.reserve(relations.size());
+  cs.reserve(relations.size());
+  versions.reserve(relations.size());
 
   for (const auto &relation : relations) {
     ids.emplace_back(relation.id);
@@ -1266,8 +1293,7 @@ void ApiDB_Relation_Updater::update_current_relations(
     id_to_old_id[relation.id] = relation.old_id;
   }
 
-  pqxx::result r =
-      m.exec_prepared("update_current_relations", ids, cs, versions, visible);
+  auto r = m.exec_prepared("update_current_relations", ids, cs, versions, visible);
 
   if (r.affected_rows() != relations.size())
     throw http::server_error("Could not update all current relations");
@@ -1394,7 +1420,7 @@ void ApiDB_Relation_Updater::insert_new_current_relation_members(
       sequenceids.emplace_back(member.sequence_id);
     }
 
-  pqxx::result r = m.exec_prepared("insert_new_current_relation_members",
+  auto r = m.exec_prepared("insert_new_current_relation_members",
 				   ids, membertypes, memberids, memberroles, sequenceids);
 #else
 
@@ -1418,14 +1444,14 @@ void ApiDB_Relation_Updater::save_current_relations_to_history(
     return;
 
   m.prepare("current_relations_to_history",
-            R"(   
+            R"(
                 INSERT INTO relations (relation_id, changeset_id, timestamp, version, visible)
                 SELECT id AS relation_id, changeset_id, timestamp, version, visible
                 FROM current_relations
                 WHERE id = ANY($1)
             )");
 
-  pqxx::result r = m.exec_prepared("current_relations_to_history", ids);
+  auto r = m.exec_prepared("current_relations_to_history", ids);
 
   if (r.affected_rows() != ids.size())
     throw http::server_error("Could not save current relations to history");
@@ -1437,15 +1463,15 @@ void ApiDB_Relation_Updater::save_current_relation_tags_to_history(
     return;
 
   m.prepare("current_relation_tags_to_history",
-            R"(   
+            R"(
                 INSERT INTO relation_tags (relation_id, k, v, version)
                  SELECT relation_id, k, v, version FROM current_relation_tags rt
-                 INNER JOIN current_relations r
-                 ON rt.relation_id = r.id 
+                 INNER JOIN current_relations cr
+                 ON rt.relation_id = cr.id
                  WHERE id = ANY($1)
              )");
 
-  pqxx::result r = m.exec_prepared("current_relation_tags_to_history", ids);
+  auto r = m.exec_prepared("current_relation_tags_to_history", ids);
 }
 
 void ApiDB_Relation_Updater::save_current_relation_members_to_history(
@@ -1455,18 +1481,18 @@ void ApiDB_Relation_Updater::save_current_relation_members_to_history(
     return;
 
   m.prepare("current_relation_members_to_history",
-            R"(   
+            R"(
                 INSERT INTO relation_members (relation_id, member_type, member_id, member_role,
                         version, sequence_id)
                  SELECT relation_id, member_type, member_id, member_role,
-                        version, sequence_id 
-                 FROM current_relation_members rm
-                 INNER JOIN current_relations r
-                 ON rm.relation_id = r.id
+                        version, sequence_id
+                 FROM current_relation_members crm
+                 INNER JOIN current_relations cr
+                 ON crm.relation_id = cr.id
                  WHERE id = ANY($1)
                           )");
 
-  pqxx::result r =
+  auto r =
       m.exec_prepared("current_relation_members_to_history", ids);
 }
 
@@ -1531,13 +1557,13 @@ ApiDB_Relation_Updater::collect_recursive_relation_rel_member_ids (
               SELECT * FROM
                 UNNEST( CAST($1 AS bigint[]) )
            )
-           SELECT DISTINCT current_relation_members.member_id
-           FROM current_relations
+           SELECT DISTINCT crm.member_id
+           FROM current_relations cr
              INNER JOIN relations_to_check c
-                     ON current_relations.id = c.id
-             INNER JOIN current_relation_members
-                     ON current_relation_members.relation_id = current_relations.id
-                    AND current_relation_members.member_type = 'Relation'
+                     ON cr.id = c.id
+             INNER JOIN current_relation_members crm
+                     ON crm.relation_id = cr.id
+                    AND crm.member_type = 'Relation'
        )");
 
   // Recursively iterate over list of relation ids and extract relation member ids
@@ -1661,9 +1687,9 @@ ApiDB_Relation_Updater::is_relation_still_referenced(
                SELECT * FROM
                   UNNEST( CAST($1 AS bigint[]) )
            )
-           SELECT current_relation_members.member_id, 
-                  array_to_string(array_agg(current_relations.id),',') AS relation_ids
-           FROM current_relations 
+           SELECT current_relation_members.member_id,
+                  string_agg(current_relations.id::text,',') AS relation_ids
+           FROM current_relations
              INNER JOIN current_relation_members
                     ON current_relation_members.relation_id = current_relations.id
              INNER JOIN relations_to_check c
@@ -1676,8 +1702,7 @@ ApiDB_Relation_Updater::is_relation_still_referenced(
            GROUP BY current_relation_members.member_id
        )");
 
-  pqxx::result r =
-      m.exec_prepared("relation_still_referenced_by_relation", ids);
+  auto r = m.exec_prepared("relation_still_referenced_by_relation", ids);
 
   for (const auto &row : r) {
     auto rel_id = row["member_id"].as<osm_nwr_id_t>();
@@ -1734,7 +1759,7 @@ void ApiDB_Relation_Updater::delete_current_relation_members(
   m.prepare("delete_current_relation_members",
             "DELETE FROM current_relation_members WHERE relation_id = ANY($1)");
 
-  pqxx::result r = m.exec_prepared("delete_current_relation_members", ids);
+  auto r = m.exec_prepared("delete_current_relation_members", ids);
 }
 
 void ApiDB_Relation_Updater::delete_current_relation_tags(
@@ -1745,7 +1770,7 @@ void ApiDB_Relation_Updater::delete_current_relation_tags(
   m.prepare("delete_current_relation_tags",
             "DELETE FROM current_relation_tags WHERE relation_id = ANY($1)");
 
-  pqxx::result r = m.exec_prepared("delete_current_relation_tags", ids);
+  auto r = m.exec_prepared("delete_current_relation_tags", ids);
 }
 
 uint32_t ApiDB_Relation_Updater::get_num_changes() const {

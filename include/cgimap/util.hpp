@@ -101,7 +101,7 @@ inline std::string escape(std::string_view input) {
 }
 
 template <typename T>
-inline std::string to_string(const std::set<T> &ids) {
+inline std::string to_string(const T &ids) {
   return fmt::format("{}", fmt::join(ids, ","));
 }
 

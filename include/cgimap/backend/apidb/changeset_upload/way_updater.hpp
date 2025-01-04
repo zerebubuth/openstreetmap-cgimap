@@ -134,7 +134,7 @@ private:
   std::vector<way_t> modify_ways;
   std::vector<way_t> delete_ways;
 
-  std::set<osm_nwr_signed_id_t> create_placedholder_ids;
+  std::set<osm_nwr_signed_id_t> create_placeholder_ids;
 };
 
 #endif /* APIDB_WAY_UPDATER */
