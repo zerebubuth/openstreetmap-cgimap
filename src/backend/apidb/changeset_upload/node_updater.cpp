@@ -104,13 +104,9 @@ void ApiDB_Node_Updater::process_new_nodes() {
 
   std::vector<osm_nwr_id_t> ids;
 
-  truncate_temporary_tables();
-
   check_unique_placeholder_ids(create_nodes);
 
-  insert_new_nodes_to_tmp_table(create_nodes);
-  copy_tmp_create_nodes_to_current_nodes();
-  delete_tmp_create_nodes();
+  insert_new_nodes_to_current_table(create_nodes);
 
   // Use new_ids as a result of inserting nodes in tmp table
   replace_old_ids_in_nodes(create_nodes, ct.created_node_ids);
@@ -234,10 +230,6 @@ void ApiDB_Node_Updater::process_delete_nodes() {
   delete_nodes.clear();
 }
 
-void ApiDB_Node_Updater::truncate_temporary_tables() {
-  m.exec("TRUNCATE TABLE tmp_create_nodes");
-}
-
 /*
  * Set id field based on old_id -> id mapping
  *
@@ -278,25 +270,46 @@ void ApiDB_Node_Updater::check_unique_placeholder_ids(
   }
 }
 
-void ApiDB_Node_Updater::insert_new_nodes_to_tmp_table(
+void ApiDB_Node_Updater::insert_new_nodes_to_current_table(
     const std::vector<node_t> &create_nodes) {
 
-  m.prepare("insert_tmp_create_nodes",
+  if (create_nodes.empty())
+    return;
 
-            R"(
-      WITH tmp_node(latitude, longitude, changeset_id, tile, old_id) AS (
-         SELECT * FROM
-         UNNEST( CAST($1 as integer[]),
-                 CAST($2 as integer[]),
-                 CAST($3 as bigint[]),
-                 CAST($4 as bigint[]),
-                 CAST($5 as bigint[])
-               )
+  // Note: fetching next sequence values has been moved from CTE tmp_nodes
+  // to a dedicated CTE ids_mapping in order to avoid small gaps in the sequence.
+  // Postgresql appears to have called nextval() once too often otherwise.
+
+  m.prepare("insert_new_nodes_to_current_table", R"(
+
+       WITH ids_mapping AS (
+        SELECT nextval('current_nodes_id_seq'::regclass) AS id,
+               old_id
+        FROM
+           UNNEST($5::bigint[]) AS id(old_id)
+       ),
+       tmp_nodes AS (
+         SELECT
+           UNNEST($1::integer[]) AS latitude,
+           UNNEST($2::integer[]) AS longitude,
+           UNNEST($3::bigint[]) AS changeset_id,
+           true::boolean AS visible,
+           (now() at time zone 'utc')::timestamp without time zone AS "timestamp",
+           UNNEST($4::bigint[]) AS tile,
+           1::bigint AS version,
+           UNNEST($5::bigint[]) AS old_id
+      ),
+      insert_op AS (
+        INSERT INTO current_nodes (id, latitude, longitude, changeset_id,
+                  visible, timestamp, tile, version)
+             SELECT id, latitude, longitude, changeset_id, visible,
+                  timestamp, tile, version FROM tmp_nodes
+             INNER JOIN ids_mapping
+             ON tmp_nodes.old_id = ids_mapping.old_id
       )
-      INSERT INTO tmp_create_nodes (latitude, longitude, changeset_id, tile, old_id)
-      SELECT * FROM tmp_node
-      RETURNING id, old_id
-         )");
+      SELECT id, old_id
+        FROM ids_mapping
+  )");
 
   std::vector<int64_t> lats;
   std::vector<int64_t> lons;
@@ -312,32 +325,20 @@ void ApiDB_Node_Updater::insert_new_nodes_to_tmp_table(
     oldids.emplace_back(create_node.old_id);
   }
 
-  pqxx::result r =
-      m.exec_prepared("insert_tmp_create_nodes", lats, lons, cs, tiles, oldids);
+  auto r = m.exec_prepared("insert_new_nodes_to_current_table", lats, lons, cs, tiles, oldids);
 
   if (r.affected_rows() != create_nodes.size())
     throw http::server_error(
-        "Could not create all new nodes in temporary table");
+        "Could not create all new nodes in current_nodes table");
 
-  for (const auto &row : r)
-    ct.created_node_ids.push_back({ row["old_id"].as<osm_nwr_signed_id_t>(),
-                                     row["id"].as<osm_nwr_id_t>(), 1 });
-}
+  const auto old_id_col(r.column_number("old_id"));
+  const auto id_col(r.column_number("id"));
 
-void ApiDB_Node_Updater::copy_tmp_create_nodes_to_current_nodes() {
+  for (const auto &row : r) {
+    ct.created_node_ids.push_back({ row[old_id_col].as<osm_nwr_signed_id_t>(),
+                                    row[id_col].as<osm_nwr_id_t>(), 1 });
+  }
 
-  auto r = m.exec(
-      R"(
-        INSERT INTO current_nodes (id, latitude, longitude, changeset_id,
-                  visible, timestamp, tile, version)
-             SELECT id, latitude, longitude, changeset_id, visible, 
-                  timestamp, tile, version FROM tmp_create_nodes
-              )");
-}
-
-void ApiDB_Node_Updater::delete_tmp_create_nodes() {
-
-  m.exec("DELETE FROM tmp_create_nodes");
 }
 
 void ApiDB_Node_Updater::lock_current_nodes(

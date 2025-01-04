@@ -69,47 +69,6 @@ pgsql_update::pgsql_update(Transaction_Owner_Base& to, bool readonly)
     : m{ to }, 
       m_readonly{ readonly } {
 
-  if (is_api_write_disabled())
-    return;
-
-  m.exec(R"(CREATE TEMPORARY TABLE tmp_create_nodes 
-      (
-        id bigint NOT NULL DEFAULT nextval('current_nodes_id_seq'::regclass),
-        latitude integer NOT NULL,
-        longitude integer NOT NULL,
-        changeset_id bigint NOT NULL,
-        visible boolean NOT NULL DEFAULT true,
-        "timestamp" timestamp without time zone NOT NULL DEFAULT (now() at time zone 'utc'),
-        tile bigint NOT NULL,
-        version bigint NOT NULL DEFAULT 1,
-        old_id bigint NOT NULL UNIQUE,
-        PRIMARY KEY (id))
-        ON COMMIT DROP
-      )");
-
-  m.exec(R"(CREATE TEMPORARY TABLE tmp_create_ways 
-      (
-        id bigint NOT NULL DEFAULT nextval('current_ways_id_seq'::regclass),
-        changeset_id bigint NOT NULL,
-        visible boolean NOT NULL DEFAULT true,
-        "timestamp" timestamp without time zone NOT NULL DEFAULT (now() at time zone 'utc'),
-        version bigint NOT NULL DEFAULT 1,
-        old_id bigint NOT NULL UNIQUE,
-        PRIMARY KEY (id))
-        ON COMMIT DROP
-     )");
-
-  m.exec(R"(CREATE TEMPORARY TABLE tmp_create_relations 
-     (
-        id bigint NOT NULL DEFAULT nextval('current_relations_id_seq'::regclass),
-        changeset_id bigint NOT NULL,
-        visible boolean NOT NULL DEFAULT true,
-        "timestamp" timestamp without time zone NOT NULL DEFAULT (now() at time zone 'utc'),
-        version bigint NOT NULL DEFAULT 1,
-        old_id bigint NOT NULL UNIQUE,
-        PRIMARY KEY (id))
-        ON COMMIT DROP
-     )");
 }
 
 bool pgsql_update::is_api_write_disabled() const {

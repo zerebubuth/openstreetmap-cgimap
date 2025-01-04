@@ -120,13 +120,9 @@ void ApiDB_Way_Updater::process_new_ways() {
 
   std::vector<osm_nwr_id_t> ids;
 
-  truncate_temporary_tables();
-
   check_unique_placeholder_ids(create_ways);
 
-  insert_new_ways_to_tmp_table(create_ways);
-  copy_tmp_create_ways_to_current_ways();
-  delete_tmp_create_ways();
+  insert_new_ways_to_current_table(create_ways);
 
   // Use new_ids as a result of inserting nodes/ways in tmp table
   replace_old_ids_in_ways(create_ways, ct.created_node_ids,
@@ -266,10 +262,6 @@ void ApiDB_Way_Updater::process_delete_ways() {
   delete_ways.clear();
 }
 
-void ApiDB_Way_Updater::truncate_temporary_tables() {
-  m.exec("TRUNCATE TABLE tmp_create_ways");
-}
-
 /*
  * Set id field based on old_id -> id mapping
  *
@@ -332,21 +324,35 @@ void ApiDB_Way_Updater::check_unique_placeholder_ids(
   }
 }
 
-void ApiDB_Way_Updater::insert_new_ways_to_tmp_table(
+void ApiDB_Way_Updater::insert_new_ways_to_current_table(
     const std::vector<way_t> &create_ways) {
 
-  m.prepare("insert_tmp_create_ways", R"(
+  m.prepare("insert_new_ways_to_current_table", R"(
 
-         WITH tmp_way(changeset_id, old_id) AS (
-         SELECT * FROM
-         UNNEST( CAST($1 AS bigint[]),
-                 CAST($2 AS bigint[])
-             )
-         )
-         INSERT INTO tmp_create_ways (changeset_id, old_id)
-         SELECT * FROM tmp_way
-         RETURNING id, old_id
-      )");
+       WITH ids_mapping AS (
+        SELECT nextval('current_ways_id_seq'::regclass) AS id,
+               old_id
+        FROM
+           UNNEST($2::bigint[]) AS id(old_id)
+       ),
+       tmp_ways AS (
+         SELECT
+           UNNEST($1::bigint[]) AS changeset_id,
+           true::boolean AS visible,
+           (now() at time zone 'utc')::timestamp without time zone AS "timestamp",
+           1::bigint AS version,
+           UNNEST($2::bigint[]) AS old_id
+      ),
+      insert_op AS (
+        INSERT INTO current_ways (id, changeset_id, timestamp, visible, version)
+             SELECT id, changeset_id, timestamp, visible, version
+             FROM tmp_ways
+             INNER JOIN ids_mapping
+             ON tmp_ways.old_id = ids_mapping.old_id
+      )
+      SELECT id, old_id
+        FROM ids_mapping
+  )");
 
   std::vector<osm_changeset_id_t> cs;
   std::vector<osm_nwr_signed_id_t> oldids;
@@ -356,27 +362,17 @@ void ApiDB_Way_Updater::insert_new_ways_to_tmp_table(
     oldids.emplace_back(create_way.old_id);
   }
 
-  pqxx::result r = m.exec_prepared("insert_tmp_create_ways", cs, oldids);
+  auto r = m.exec_prepared("insert_new_ways_to_current_table", cs, oldids);
 
   if (r.affected_rows() != create_ways.size())
-    throw http::server_error("Could not create all new way in temporary table");
+    throw http::server_error("Could not create all new ways in current table");
+
+  const auto old_id_col(r.column_number("old_id"));
+  const auto id_col(r.column_number("id"));
 
   for (const auto &row : r)
-    ct.created_way_ids.push_back({ row["old_id"].as<osm_nwr_signed_id_t>(),
-                                    row["id"].as<osm_nwr_id_t>(), 1 });
-}
-
-void ApiDB_Way_Updater::copy_tmp_create_ways_to_current_ways() {
-
-  m.exec(
-      R"( INSERT INTO current_ways (id, changeset_id, timestamp, visible, version)
-             SELECT id, changeset_id, timestamp, visible, version FROM tmp_create_ways
-           )");
-}
-
-void ApiDB_Way_Updater::delete_tmp_create_ways() {
-
-  m.exec("DELETE FROM tmp_create_ways");
+    ct.created_way_ids.push_back({ row[old_id_col].as<osm_nwr_signed_id_t>(),
+                                    row[id_col].as<osm_nwr_id_t>(), 1 });
 }
 
 bbox_t ApiDB_Way_Updater::calc_way_bbox(const std::vector<osm_nwr_id_t> &ids) {

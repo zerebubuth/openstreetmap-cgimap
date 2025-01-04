@@ -121,14 +121,10 @@ void ApiDB_Relation_Updater::delete_relation(osm_changeset_id_t changeset_id,
 
 void ApiDB_Relation_Updater::process_new_relations() {
 
-  truncate_temporary_tables();
-
   check_unique_placeholder_ids(create_relations);
   check_forward_relation_placeholders(create_relations);
 
-  insert_new_relations_to_tmp_table(create_relations);
-  copy_tmp_create_relations_to_current_relations();
-  delete_tmp_create_relations();
+  insert_new_relations_to_current_table(create_relations);
 
   // Use new_ids as a result of inserting nodes/ways in tmp table
   replace_old_ids_in_relations(create_relations, ct.created_node_ids,
@@ -320,10 +316,6 @@ void ApiDB_Relation_Updater::process_delete_relations() {
   delete_relations.clear();
 }
 
-void ApiDB_Relation_Updater::truncate_temporary_tables() {
-  m.exec("TRUNCATE TABLE tmp_create_relations");
-}
-
 /*
  * Set id field based on old_id -> id mapping
  *
@@ -457,20 +449,34 @@ void ApiDB_Relation_Updater::check_forward_relation_placeholders(
 }
 
 
-void ApiDB_Relation_Updater::insert_new_relations_to_tmp_table(
+void ApiDB_Relation_Updater::insert_new_relations_to_current_table(
     const std::vector<relation_t> &create_relations) {
 
-  m.prepare("insert_tmp_create_relations", R"(
-        
-        WITH tmp_rel (changeset_id, old_id) AS (
-           SELECT * FROM
-           UNNEST( CAST($1 AS bigint[]),
-                   CAST($2 AS bigint[])
-                 )
-        )
-        INSERT INTO tmp_create_relations (changeset_id, old_id)
-        SELECT * FROM tmp_rel
-        RETURNING id, old_id
+  m.prepare("insert_new_relations_to_current_table", R"(
+
+       WITH ids_mapping AS (
+        SELECT nextval('current_relations_id_seq'::regclass) AS id,
+               old_id
+        FROM
+           UNNEST($2::bigint[]) AS id(old_id)
+       ),
+       tmp_relations AS (
+         SELECT
+           UNNEST($1::bigint[]) AS changeset_id,
+           true::boolean AS visible,
+           (now() at time zone 'utc')::timestamp without time zone AS "timestamp",
+           1::bigint AS version,
+           UNNEST($2::bigint[]) AS old_id
+      ),
+      insert_op AS (
+        INSERT INTO current_relations (id, changeset_id, timestamp, visible, version)
+             SELECT id, changeset_id, timestamp, visible, version
+             FROM tmp_relations
+             INNER JOIN ids_mapping
+             ON tmp_relations.old_id = ids_mapping.old_id
+      )
+      SELECT id, old_id
+        FROM ids_mapping
     )");
 
   std::vector<osm_changeset_id_t> cs;
@@ -481,30 +487,21 @@ void ApiDB_Relation_Updater::insert_new_relations_to_tmp_table(
     oldids.emplace_back(create_relation.old_id);
   }
 
-  pqxx::result r = m.exec_prepared("insert_tmp_create_relations", cs, oldids);
+  auto r = m.exec_prepared("insert_new_relations_to_current_table", cs, oldids);
 
   if (r.affected_rows() != create_relations.size())
     throw http::server_error(
-        "Could not create all new relations in temporary table");
+        "Could not create all new relations in current table");
 
-  for (const auto &row : r)
+  const auto old_id_col(r.column_number("old_id"));
+  const auto id_col(r.column_number("id"));
+
+  for (const auto &row : r) {
     ct.created_relation_ids.push_back(
-        { row["old_id"].as<osm_nwr_signed_id_t>(), row["id"].as<osm_nwr_id_t>(),
+        { row[old_id_col].as<osm_nwr_signed_id_t>(),
+          row[id_col].as<osm_nwr_id_t>(),
           1 });
-}
-
-void ApiDB_Relation_Updater::copy_tmp_create_relations_to_current_relations() {
-
-  m.exec(
-      R"(
-        INSERT INTO current_relations (id, changeset_id, timestamp, visible, version)
-               SELECT id, changeset_id, timestamp, visible, version FROM tmp_create_relations
-        )");
-}
-
-void ApiDB_Relation_Updater::delete_tmp_create_relations() {
-
-  m.exec("DELETE FROM tmp_create_relations");
+  }
 }
 
 void ApiDB_Relation_Updater::lock_current_relations(

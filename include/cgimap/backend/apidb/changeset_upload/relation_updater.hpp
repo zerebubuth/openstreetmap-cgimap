@@ -82,8 +82,6 @@ private:
     bool new_member;
   };
 
-  void truncate_temporary_tables();
-
   /*
    * Set id field based on old_id -> id mapping
    *
@@ -101,12 +99,8 @@ private:
 
   void check_forward_relation_placeholders(const std::vector<relation_t> &create_relations);
 
-  void insert_new_relations_to_tmp_table(
+  void insert_new_relations_to_current_table(
       const std::vector<relation_t> &create_relations);
-
-  void copy_tmp_create_relations_to_current_relations();
-
-  void delete_tmp_create_relations();
 
   void lock_current_relations(const std::vector<osm_nwr_id_t> &ids);
 
