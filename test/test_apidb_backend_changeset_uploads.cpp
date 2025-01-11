@@ -1646,6 +1646,126 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     }
   }
 
+  SECTION("Deletion relations, multilevel nested relations with dependency cycles")
+  {
+
+    /*
+       Test case for https://github.com/zerebubuth/openstreetmap-cgimap/issues/223#issuecomment-617381115
+
+       In this test case, we're checking that deleting relations -2, -3 and -4 is not possible, because they
+       are directly (or indirectly) referenced by relation -1 as relation member.
+
+       In addition, relations -2, -3 and -4 have a cyclic dependency. This way, we can test
+       if the recursive relation member resolution in collect_recursive_relation_rel_member_ids
+       works as expected.
+
+          +----+     +----+
+          | -1 | <-- | -2 | <+
+          +----+     +----+  |
+                       |     |
+                       |     |
+                       v     |
+                     +----+  |
+                     | -4 |  |
+                     +----+  |
+                       |     |
+                       |     |
+                       v     |
+                     +----+  |
+                     | -3 | -+
+                     +----+
+
+       "-1  <---- -2" means: relation -2 is a relation member of relation -1
+
+     */
+
+    static api06::OSMChange_Tracking change_tracking_1{};  // for step 1: create relations
+    static api06::OSMChange_Tracking change_tracking_2{};  // for step 2: modify 1 relation
+    static api06::OSMChange_Tracking change_tracking_3{};  // for step 3: delete 3 relations
+
+    SECTION("Create multi-level relations")
+    {
+      auto upd = tdb.get_data_update();
+      auto rel_updater = upd->get_relation_updater(ctx, change_tracking_1);
+
+      // Note: we cannot add Relation -2 as a Relation member of relation -4 during creation,
+      //       because relation -2 is not known at this point yet, and we don't allow forward
+      //       references for Rails compatibility reasons.
+      rel_updater->add_relation(1, -4, { }, {{"key4", "value4"}});
+      rel_updater->add_relation(1, -3, { { "Relation", -4, "role4" }}, {{"key3", "value3"}});
+      rel_updater->add_relation(1, -2, { { "Relation", -3, "role3" }}, {{"key2", "value2"}});
+      rel_updater->add_relation(1, -1, { { "Relation", -2, "role2" }}, {{"key1", "value1"}});
+      REQUIRE_NOTHROW(rel_updater->process_new_relations());
+
+      upd->commit();
+
+      REQUIRE(change_tracking_1.created_relation_ids.size() == 4);
+      for (int i = 0; i < 4; i++) {
+        REQUIRE(change_tracking_1.created_relation_ids[i].new_version == 1);
+        REQUIRE(change_tracking_1.created_relation_ids[i].old_id == -4 + i);
+        REQUIRE(change_tracking_1.created_relation_ids[i].new_id >= 1);
+      }
+    }
+
+    SECTION("Change relation -4 by adding -2 as relation member (adds dependency loop)")
+    {
+      auto upd = tdb.get_data_update();
+      auto rel_updater = upd->get_relation_updater(ctx, change_tracking_2);
+
+      rel_updater->modify_relation(1,
+                                   change_tracking_1.created_relation_ids[0].new_id,
+                                   change_tracking_1.created_relation_ids[0].new_version,
+                                   {
+                                       { "Relation", static_cast<osm_nwr_signed_id_t>(change_tracking_1.created_relation_ids[2].new_id), "role2" }
+                                   },
+                                   {{"key2", "value2"}});
+
+      REQUIRE_NOTHROW(rel_updater->process_modify_relations());
+      REQUIRE_NOTHROW(upd->commit());
+
+      REQUIRE(change_tracking_2.modified_relation_ids.size() == 1);
+      REQUIRE(change_tracking_2.modified_relation_ids[0].new_id == change_tracking_1.created_relation_ids[0].new_id);
+      REQUIRE(change_tracking_2.modified_relation_ids[0].new_version > change_tracking_1.created_relation_ids[0].new_version);
+    }
+
+    SECTION("Try to delete relations -2, -3 and -4, if-unused set")
+    {
+      auto upd = tdb.get_data_update();
+      auto rel_updater = upd->get_relation_updater(ctx, change_tracking_3);
+
+      // Delete relation -4
+      rel_updater->delete_relation(1,
+                                   change_tracking_2.modified_relation_ids[0].new_id,
+                                   change_tracking_2.modified_relation_ids[0].new_version,
+                                   true);
+
+      // Delete relation -3
+      rel_updater->delete_relation(1,
+                                   change_tracking_1.created_relation_ids[1].new_id,
+                                   change_tracking_1.created_relation_ids[1].new_version,
+                                   true);
+
+      // Delete relation -2
+      rel_updater->delete_relation(1,
+                                   change_tracking_1.created_relation_ids[2].new_id,
+                                   change_tracking_1.created_relation_ids[2].new_version,
+                                   true);
+
+      REQUIRE_NOTHROW(rel_updater->process_delete_relations());
+      REQUIRE_NOTHROW(upd->commit());
+
+      REQUIRE(change_tracking_3.deleted_relation_ids.size() == 0);
+      REQUIRE(change_tracking_3.skip_deleted_relation_ids.size() == 3);
+
+      auto sel = tdb.get_data_selection();
+
+      // check that there are no changes on the database, all 4 relations are all still visible
+      for (int i = 0; i < 4; i++) {
+        REQUIRE(sel->check_relation_visibility(static_cast<osm_nwr_signed_id_t>(change_tracking_1.created_relation_ids[i].new_id)) == data_selection::exists);
+      }
+    }
+  }
+
   SECTION("Testing locking of future relation members")
   {
       // this test is checking that locking in ApiDB_Relation_Updater::lock_future_members is working as expected
