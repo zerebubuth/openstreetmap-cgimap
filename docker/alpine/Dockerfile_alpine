@@ -1,0 +1,72 @@
+FROM alpine:latest AS builder
+
+RUN apk update && \
+    apk add g++ cmake make pkgconf libpq-dev ccmake brotli-dev \
+            boost1.84-program_options libmemcached-dev yajl-dev crypto++-dev  \
+            fmt-dev zlib-dev fcgi-dev libxml2-dev boost-dev postgresql16
+
+WORKDIR /app
+
+# Build and install libpqxx 7.9.2
+RUN wget https://github.com/jtv/libpqxx/archive/refs/tags/7.9.2.zip && \
+    unzip 7.9.2.zip && \
+    cd libpqxx-7.9.2 && \
+    mkdir build && \
+    cd build && \
+    cmake -DSKIP_PQXX_STATIC=OFF -DSKIP_PQXX_SHARED=ON .. && \
+    make -j${nproc} && \
+    make install && \
+    cd ../..
+
+# Copy the main application.
+COPY . ./
+
+# Compile, install source
+RUN mkdir build && cd build && \
+     CXXFLAGS="-flto=auto -ffat-lto-objects -flto=auto -ffat-lto-objects -fstack-protector-strong -Wformat -Werror=format-security -Wdate-time -D_FORTIFY_SOURCE=2" cmake .. -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release && \
+     make -j${nproc} && \
+     ctest --output-on-failure -E "db" && \
+     make install
+
+FROM alpine:latest
+
+COPY --from=builder /usr/local/bin/openstreetmap-cgimap /usr/local/bin/openstreetmap-cgimap
+
+RUN apk update && \
+    apk add --no-cache libpq boost1.84-program_options fcgi libxml2 libmemcached brotli-libs yajl crypto++ coreutils
+
+ENV USER=cgimap
+ENV GROUPNAME=$USER
+ENV UID=60000
+ENV GID=60000
+
+RUN addgroup \
+    --gid "$GID" \
+    "$GROUPNAME" \
+&&  adduser \
+    --disabled-password \
+    --gecos "" \
+    --home "$(pwd)" \
+    --ingroup "$GROUPNAME" \
+    --no-create-home \
+    --uid "$UID" \
+    $USER
+
+USER $USER
+
+ENV CGIMAP_HOST=db \
+    CGIMAP_DBNAME=openstreetmap \
+    CGIMAP_USERNAME=openstreetmap \
+    CGIMAP_PASSWORD=openstreetmap \
+    CGIMAP_MEMCACHE=memcached \
+    CGIMAP_RATELIMIT=204800 \
+    CGIMAP_MAXDEBT=250 \
+    CGIMAP_MODERATOR_RATELIMIT=1048576 \
+    CGIMAP_MODERATOR_MAXDEBT=1024 \
+    CGIMAP_PORT=8000 \
+    CGIMAP_INSTANCES=10
+
+EXPOSE 8000
+
+ENTRYPOINT /usr/local/bin/openstreetmap-cgimap --pidfile /tmp/cgimap.pid --logfile=/proc/1/fd/1 --daemon && \
+           tail --pid=$(cat /tmp/cgimap.pid) -f /dev/null
