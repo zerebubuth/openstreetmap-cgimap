@@ -94,11 +94,11 @@ struct router {
       if (begin != parts.end())
         return false; // no match
 
-      // the function to call (used later as constructor factory)
-      boost::factory<Handler *> func{};
-
-      ptr.reset(
-          boost::fusion::invoke(func, boost::fusion::make_cons(std::ref(params), sequence)));
+      ptr.reset(std::apply(
+          [&params](auto &&...args) {
+            return new Handler(params, std::forward<decltype(args)>(args)...);
+          },
+          sequence));
 
       return true;
     }
@@ -117,8 +117,8 @@ struct router {
   // add rule to match HTTP GET method only
   template <typename Handler, typename Rule> router& GET(Rule&& r) {
 
-    static_assert(std::is_base_of<handler, Handler>::value, "GET rule requires handler subclass");
-    static_assert(!std::is_base_of<payload_enabled_handler, Handler>::value, "GET rule cannot use payload enabled handler subclass");
+    static_assert(std::is_base_of_v<handler, Handler>, "GET rule requires handler subclass");
+    static_assert(!std::is_base_of_v<payload_enabled_handler, Handler>, "GET rule cannot use payload enabled handler subclass");
 
     rules_get.push_back(std::make_unique<rule<Handler, Rule> >(std::forward<Rule>(r)));
     return *this;
@@ -127,7 +127,7 @@ struct router {
   // add rule to match HTTP POST method only
   template <typename Handler, typename Rule> router& POST(Rule&& r) {
 
-    static_assert(std::is_base_of<payload_enabled_handler, Handler>::value, "POST rule requires payload enabled handler subclass");
+    static_assert(std::is_base_of_v<payload_enabled_handler, Handler>, "POST rule requires payload enabled handler subclass");
 
     rules_post.push_back(std::make_unique<rule<Handler, Rule> >(std::forward<Rule>(r)));
     return *this;
@@ -136,7 +136,7 @@ struct router {
   // add rule to match HTTP PUT method only
   template <typename Handler, typename Rule> router& PUT(Rule&& r) {
 
-    static_assert(std::is_base_of<payload_enabled_handler, Handler>::value, "PUT rule requires payload enabled handler subclass");
+    static_assert(std::is_base_of_v<payload_enabled_handler, Handler>, "PUT rule requires payload enabled handler subclass");
 
     rules_put.push_back(std::make_unique<rule<Handler, Rule> >(std::forward<Rule>(r)));
     return *this;
@@ -147,7 +147,7 @@ struct router {
    * and the matched params.
    */
 
-  handler_ptr_t match(const std::vector<std::string_view> &p, request &params) {
+  handler_ptr_t match(const std::vector<std::string_view> &p, request &params) const {
 
     handler_ptr_t hptr;
 
@@ -157,8 +157,7 @@ struct router {
     // than a list at this point. also means the semantics for rule matching are
     // pretty clear - the first match wins.
 
-    std::optional<http::method> maybe_method =
-	http::parse_method(fcgi_get_env(params, "REQUEST_METHOD"));
+    auto maybe_method = http::parse_method(fcgi_get_env(params, "REQUEST_METHOD"));
 
     if (!maybe_method)
       return hptr;
@@ -166,38 +165,38 @@ struct router {
     // Process HEAD like GET, as per rfc2616: The HEAD method is identical to
     // GET except that the server MUST NOT return a message-body in the response.
     for (const auto& rptr : rules_get) {
-	if (rptr->invoke_if(p, params, hptr)) {
-	    if (*maybe_method == http::method::GET    ||
-		*maybe_method == http::method::HEAD   ||
-		*maybe_method == http::method::OPTIONS)
-	      return hptr;
-	    allowed_methods |= http::method::GET | http::method::HEAD;
-	}
+      if (rptr->invoke_if(p, params, hptr)) {
+          if (*maybe_method == http::method::GET    ||
+        *maybe_method == http::method::HEAD   ||
+        *maybe_method == http::method::OPTIONS)
+            return hptr;
+          allowed_methods |= http::method::GET | http::method::HEAD;
+      }
     }
 
     for (const auto& rptr : rules_post) {
-	if (rptr->invoke_if(p, params, hptr)) {
-	    if (*maybe_method == http::method::POST||
-		*maybe_method == http::method::OPTIONS)
-	      return hptr;
-	    allowed_methods |= http::method::POST;
-	}
+      if (rptr->invoke_if(p, params, hptr)) {
+          if (*maybe_method == http::method::POST||
+        *maybe_method == http::method::OPTIONS)
+            return hptr;
+          allowed_methods |= http::method::POST;
+      }
     }
 
     for (const auto& rptr : rules_put) {
-	if (rptr->invoke_if(p, params, hptr)) {
-	    if (*maybe_method == http::method::PUT||
-		*maybe_method == http::method::OPTIONS)
-	      return hptr;
-	    allowed_methods |= http::method::PUT;
-	}
+      if (rptr->invoke_if(p, params, hptr)) {
+          if (*maybe_method == http::method::PUT||
+        *maybe_method == http::method::OPTIONS)
+            return hptr;
+          allowed_methods |= http::method::PUT;
+      }
     }
 
     // Did the request URL path match one of the rules, yet the request method didn't match?
     // This assumes that some additional request methods have been added to allowed_methods
     // on top of the initial OPTIONS value.
     if (allowed_methods != http::method::OPTIONS) {
-	// return a 405 HTTP Method not allowed error
+	     // return a 405 HTTP Method not allowed error
        throw http::method_not_allowed(allowed_methods);
     }
 
@@ -316,7 +315,7 @@ std::vector<std::string_view> split(std::string_view str, char delim)
 }
 
 handler_ptr_t route_resource(request &req, const std::string &path,
-                             router* r) {
+                             const router * r) {
 
   // strip off the format-spec, if there is one
   auto [resource, mime_type] = resource_mime_type(path);
@@ -356,9 +355,8 @@ handler_ptr_t routes::operator()(request &req) const {
 
   if (hptr) {
     return hptr;
-
-  } else {
-    // doesn't match prefix...
-    throw http::not_found(fmt::format("Path does not match any known routes: {}", path));
   }
+
+  // doesn't match prefix...
+  throw http::not_found(fmt::format("Path does not match any known routes: {}", path));
 }
