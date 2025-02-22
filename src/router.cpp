@@ -14,8 +14,6 @@
 
 namespace match {
 
-error::error() : std::runtime_error("error!") {}
-
 match_string::match_string(const char *s) : str(std::string_view(s)) {}
 
 std::pair<match_string::match_type, bool> match_string::match(part_iterator &begin,
