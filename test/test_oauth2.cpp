@@ -27,14 +27,15 @@ public:
 
   ~oauth2_test_data_selection() override = default;
 
-  std::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id, 
-                                                            bool& expired, 
-                                                            bool& revoked, 
+  std::optional<osm_user_id_t> get_user_id_for_oauth2_token(const std::string &token_id,
+                                                            bool& expired,
+                                                            bool& revoked,
                                                             bool& allow_api_write) override {
 
     // Note: original token ids have been sha256 hashed, token_id hash values can be generated using
     // echo -n "6GGXRGoDog0i6mRyrBonFmJORQhWZMhZH5WNWLd0qcs" | sha256sum
 
+#if HAVE_CRYPTOPP
     // valid token - api write not allowed
     if (token_id == "deb2029737bcfaaf9e937aea6b5d585a1bf93be9d21672d0f98c479c52592130") { // "6GGXRGoDog0i6mRyrBonFmJORQhWZMhZH5WNWLd0qcs"
       expired = false;
@@ -67,6 +68,41 @@ public:
       allow_api_write = false;
       return osm_user_id_t{4};
     }
+#else
+    // valid token - api write not allowed
+    if (token_id == "6GGXRGoDog0i6mRyrBonFmJORQhWZMhZH5WNWLd0qcs") {
+      expired = false;
+      revoked = false;
+      allow_api_write = false;
+      return osm_user_id_t{1};
+
+    // valid token including all allowed chars & padding chars - api_write allowed
+    } else if (token_id == "H4TeKX-zE_VLH.UT33_n6x__yZ8~BA~aQL+wfxQN/cADu7BMMA=====") {
+      expired = false;
+      revoked = false;
+      allow_api_write = true;
+      return osm_user_id_t{2};
+
+    // invalid token
+    } else if (token_id == "nFRBLFyNXPKY1fiTHAIfVsjQYkCD2KoRuH66upvueaQ") {
+      return {};
+
+    // expired token for user 3
+    } else if (token_id == "pwnMeCjSmIfQ9hXVYfAyFLFnE9VOADNvwGMKv4Ylaf0") {
+      expired = true;
+      revoked = false;
+      allow_api_write = false;
+      return osm_user_id_t{3};
+
+    // revoked token for user 4
+    } else if (token_id == "hCXrz5B5fCBHusp0EuD2IGwYSxS8bkAnVw2_aLEdxig") {
+      expired = false;
+      revoked = true;
+      allow_api_write = false;
+      return osm_user_id_t{4};
+    }
+
+#endif
 
     // valid token (plain) - api write not allowed
     if (token_id == "0LbSEAVj4jQhr-TfNaCUhn4JSAvXmXepNaL9aSAUsVQ") {

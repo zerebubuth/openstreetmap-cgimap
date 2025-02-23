@@ -7,13 +7,14 @@
  * For a full list of authors see the git log.
  */
 
+#include "cgimap/oauth2.hpp"
+#include <sys/types.h>
+
+#if HAVE_CRYPTOPP
 #include <cryptopp/config.h>
 #include <cryptopp/filters.h>
 #include <cryptopp/hex.h>
 #include <cryptopp/sha.h>
-#include <sys/types.h>
-
-#include "cgimap/oauth2.hpp"
 
 inline std::string sha256_hash(const std::string& s) {
 
@@ -26,7 +27,7 @@ inline std::string sha256_hash(const std::string& s) {
       new HashFilter(hash, new HexEncoder(new StringSink(digest), false)));
   return digest;
 }
-
+#endif
 
 namespace oauth2 {
 
@@ -80,11 +81,13 @@ namespace oauth2 {
     // Check token as plain text first
     auto user_id = selection.get_user_id_for_oauth2_token(bearer_token, expired, revoked, allow_api_write);
 
+#if HAVE_CRYPTOPP
     // Fallback to sha256-hashed token
     if (!(user_id)) {
       const auto bearer_token_hashed = sha256_hash(bearer_token);
       user_id = selection.get_user_id_for_oauth2_token(bearer_token_hashed, expired, revoked, allow_api_write);
     }
+#endif
 
     if (!(user_id)) {
       throw http::unauthorized("invalid_token");
