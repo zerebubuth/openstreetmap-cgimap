@@ -74,7 +74,7 @@ target_link_libraries(cgimap_core
     cgimap_common_compiler_options
     cgimap_libxml++
     ZLIB::ZLIB
-    CryptoPP::CryptoPP
+    $<$<BOOL:${ENABLE_CRYPTOPP}>:CryptoPP::CryptoPP>
     Libmemcached::Libmemcached
     sjparser
     $<$<BOOL:${ENABLE_BROTLI}>:Brotli::common>
