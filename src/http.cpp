@@ -9,9 +9,9 @@
 
 #include "cgimap/http.hpp"
 #include "cgimap/options.hpp"
+#include "cgimap/util.hpp"
 #include <vector>
 #include <fmt/core.h>
-#include <boost/algorithm/string.hpp>
 
 #include <iterator> // for distance
 #include <cctype>   // for toupper, isxdigit
@@ -19,7 +19,10 @@
 #include <regex>
 #include <sstream>
 
+#include <boost/algorithm/string.hpp>
+
 namespace al = boost::algorithm;
+
 using std::string;
 using std::vector;
 using std::pair;
@@ -136,7 +139,7 @@ bad_request::bad_request(const string &message)
 forbidden::forbidden(const string &message)
     : exception(403, message) {}
 
-not_found::not_found(const string &uri) 
+not_found::not_found(const string &uri)
     : exception(404, uri) {}
 
 not_acceptable::not_acceptable(const string &message)
@@ -205,18 +208,16 @@ vector<pair<string, string> > parse_params(const string &p) {
   // Split the query string into components
   vector<pair<string, string> > queryKVPairs;
   if (!p.empty()) {
-    vector<string> temp;
-    al::split(temp, p, al::is_any_of("&"));
+    auto temp = split(p, '&');
 
-    for (const string &kvPair : temp) {
-      vector<string> kvTemp;
-      al::split(kvTemp, kvPair, al::is_any_of("="));
+    for (const auto &kvPair : temp) {
+      auto kvTemp = split(kvPair, '=');
 
       if (kvTemp.size() == 2) {
-        queryKVPairs.emplace_back(kvTemp[0], kvTemp[1]);
+        queryKVPairs.emplace_back(std::string{kvTemp[0]}, std::string{kvTemp[1]});
 
       } else if (kvTemp.size() == 1) {
-        queryKVPairs.emplace_back(kvTemp[0], std::string());
+        queryKVPairs.emplace_back(std::string{kvTemp[0]}, std::string());
       }
     }
   }
