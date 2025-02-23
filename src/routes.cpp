@@ -9,6 +9,7 @@
 
 #include "cgimap/routes.hpp"
 #include "cgimap/handler.hpp"
+#include "cgimap/util.hpp"
 
 /*** API 0.6 ***/
 #include "cgimap/api06/map_handler.hpp"
@@ -289,25 +290,6 @@ namespace {
   }
 
   return make_pair(path, mime::type::unspecified_type);
-}
-
-std::vector<std::string_view> split(std::string_view str, char delim)
-{
-  std::vector< std::string_view > result;
-  auto left = str.begin();
-  for (auto it = left; it != str.end(); ++it)
-  {
-    if (*it == delim)
-    {
-      result.emplace_back(left, it - left);
-      left = it + 1;
-      if (left == str.end())
-        result.emplace_back(it, 0);
-    }
-  }
-  if (left != str.end())
-    result.emplace_back(left, str.end() - left);
-  return result;
 }
 
 handler_ptr_t route_resource(request &req, const std::string &path,
