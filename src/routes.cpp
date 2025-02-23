@@ -349,10 +349,10 @@ handler_ptr_t routes::operator()(request &req) const {
 #endif /* ENABLE_API07 */
   }
 
-  if (hptr) {
-    return hptr;
+  if (!hptr) {
+    // doesn't match prefix...
+    throw http::not_found(fmt::format("Path does not match any known routes: {}", path));
   }
 
-  // doesn't match prefix...
-  throw http::not_found(fmt::format("Path does not match any known routes: {}", path));
+  return hptr;
 }
