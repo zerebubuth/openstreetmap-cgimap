@@ -9,6 +9,8 @@
 
 /* -*- coding: utf-8 -*- */
 #include "cgimap/http.hpp"
+#include "cgimap/choose_formatter.hpp"
+
 #include <stdexcept>
 #include <iostream>
 #include <sstream>
@@ -16,6 +18,18 @@
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
 
+struct test_responder : responder {
+
+  test_responder(mime::type t) : responder(t) {}
+
+  std::vector<mime::type> types_available() const override {
+    return {mime::type::application_json, mime::type::application_xml};
+  }
+
+  void write(output_formatter& fmt,
+    const std::string &generator,
+    const std::chrono::system_clock::time_point &now) override {}
+};
 
 TEST_CASE("http_check_urlencoding", "[http]") {
   // RFC 3986 section 2.5
@@ -85,3 +99,31 @@ TEST_CASE("http_check_choose_encoding", "[http]") {
   CHECK(http::choose_encoding("gzip, deflate, br")->name() == "br");
 #endif
 }
+
+TEST_CASE("http_check_accept_header_parsing", "[http]") {
+  SECTION("test: RFC 2616 sample header") {
+    AcceptHeader header("text/*;q=0.3, text/html;q=0.7, text/html;level=1, text/html;level=2;q=0.4, */*;q=0.5");
+    CHECK(header.is_acceptable(mime::type::any_type) == true);
+    CHECK(header.is_acceptable(mime::type::application_json) == true);
+    CHECK(header.is_acceptable(mime::type::application_xml) == true);
+    CHECK(header.is_acceptable(mime::type::text_plain) == true);
+  }
+
+  SECTION("test: not supported mime types") {
+    REQUIRE_THROWS_AS(AcceptHeader{"audio/*; q=0.2, audio/basic"}, http::bad_request);
+    REQUIRE_THROWS_AS(AcceptHeader{"text, text/html"}, http::bad_request);
+  }
+
+  SECTION("test: application/json") {
+    AcceptHeader header("application/json, text/javascript");
+
+    test_responder tr1{mime::type::application_json};
+    CHECK(choose_best_mime_type(header, tr1, "/demo") == mime::type::application_json);
+
+    test_responder tr2{mime::type::unspecified_type};
+    CHECK(choose_best_mime_type(header, tr2, "/demo") == mime::type::application_json);
+  }
+
+}
+
+
