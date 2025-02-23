@@ -1,0 +1,28 @@
+name: Build on alpine
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker images
+        uses: docker/build-push-action@v6
+        with:
+           file: docker/alpine/Dockerfile_alpine
+           load: true
+           cache-from: type=gha,scope=cgimap:alpine
+           cache-to: type=gha,mode=max,scope=cgimap:alpine
+           tags: cgimap:alpine
+
+      - name: Running Docker image
+        run: |
+           docker run --entrypoint /bin/sh cgimap:alpine -c "/usr/local/bin/openstreetmap-cgimap --help"
+
