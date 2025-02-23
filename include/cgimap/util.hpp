@@ -15,6 +15,7 @@
 #include "cgimap/options.hpp"
 
 #include <algorithm>
+#include <charconv>
 #include <clocale>
 #include <cmath>
 #include <cstdlib>
@@ -69,6 +70,59 @@ inline size_t unicode_strlen(const std::string & s)
 }
 
 #endif
+
+inline char tolower_ascii(char c) {
+
+  if (c >= 'A' && c <= 'Z') {
+    return c + ('a' - 'A');
+  }
+  return c;
+}
+
+inline bool ichar_equals(char a, char b) {
+  return a == b ||
+      tolower_ascii(static_cast<unsigned char>(a)) ==
+      tolower_ascii(static_cast<unsigned char>(b));
+}
+
+// Case insensitive string comparison
+inline bool iequals(std::string_view a, std::string_view b) {
+  return a.size() == b.size() &&
+         std::equal(a.begin(), a.end(), b.begin(), b.end(), ichar_equals);
+}
+inline std::vector<std::string_view> split(std::string_view str, char delim)
+{
+  std::vector< std::string_view > result;
+  auto left = str.begin();
+  for(auto it = left; it != str.end(); ++it)
+  {
+    if (*it == delim)
+    {
+      result.emplace_back(left, it - left);
+      left = it + 1;
+      if (left == str.end())
+        result.emplace_back(it, 0);
+    }
+  }
+  if (left != str.end())
+    result.emplace_back(left, str.end() - left);
+  return result;
+}
+
+
+template <typename T> T parse_number(std::string_view str) {
+
+  T id{};
+
+  auto [_, ec] = std::from_chars(str.data(), str.data() + str.size(), id);
+
+  if (ec != std::errc()) {
+    // note that this doesn't really make sense without understanding that
+    // "some_string".to_i = 0 in ruby
+    return {};
+  }
+  return id;
+}
 
 inline std::string escape(std::string_view input) {
 

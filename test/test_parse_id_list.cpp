@@ -23,20 +23,6 @@ std::vector<api06::id_version> parse_query_str(const std::string& query_str) {
   return api06::parse_id_list_params(req, "nodes");
 }
 
-namespace api06 {
-  extern bool valid_string(std::string_view str);
-}
-
-TEST_CASE("Valid string", "[idlist]") {
-  CHECK(api06::valid_string("foobar") == true);
-  CHECK(api06::valid_string("foobar\x7f") == true);
-}
-
-TEST_CASE("Invalid string", "[idlist]") {
-  CHECK(api06::valid_string("foobar\x80") == false);
-  CHECK(api06::valid_string("foobar\xff") == false);
-}
-
 TEST_CASE("Id list returns no duplicates", "[idlist]") {
   // the container returned from parse_id_list_params should not contain any duplicates.
   std::string query_str = "nodes=1,1,1,1";
@@ -63,11 +49,19 @@ TEST_CASE("Id list parse negative nodes", "[idlist]") {
   }
 }
 
+TEST_CASE("Missing id list", "[idlist]") {
+  std::string query_str = "nodes=";
+  std::vector<api06::id_version> ids;
+  REQUIRE_NOTHROW(ids = parse_query_str(query_str));
+  CHECK(ids.empty() == true);
+}
+
 TEST_CASE("Id list with garbage", "[idlist]") {
   std::string query_str = "nodes=\xf5";
-  std::vector<api06::id_version> result;
-  REQUIRE_NOTHROW(result = parse_query_str(query_str));
-  CHECK(result.empty() == true);
+  std::vector<api06::id_version> ids;
+  REQUIRE_NOTHROW(ids = parse_query_str(query_str));
+  CHECK(ids.size() == 1);
+  CHECK(ids[0] == api06::id_version());
 }
 
 TEST_CASE("Id list with history", "[idlist]") {

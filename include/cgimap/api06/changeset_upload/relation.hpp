@@ -15,8 +15,8 @@
 #include "cgimap/util.hpp"
 
 #include <optional>
-#include <boost/algorithm/string/predicate.hpp>
-
+#include <string>
+#include <vector>
 
 namespace api06 {
 
@@ -32,11 +32,11 @@ public:
 
   void set_type(const std::string &type) {
 
-    if (boost::iequals(type, "Node"))
+    if (iequals(type, "Node"))
       m_type = "Node";
-    else if (boost::iequals(type, "Way"))
+    else if (iequals(type, "Way"))
       m_type = "Way";
-    else if (boost::iequals(type, "Relation"))
+    else if (iequals(type, "Relation"))
       m_type = "Relation";
     else
       throw payload_error(
