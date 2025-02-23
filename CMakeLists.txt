@@ -36,7 +36,6 @@ endif()
 ###############
 # build options
 ###############
-option(ENABLE_YAJL "Enable JSON output with the YAJL library" ON)
 option(ENABLE_BROTLI "Enable Brotli library" ON)
 option(ENABLE_FMT_HEADER "Enable FMT header only mode" ON)
 option(ENABLE_COVERAGE "Compile with coverage info collection" OFF)
@@ -97,9 +96,7 @@ find_package(CryptoPP REQUIRED)
 target_compile_definitions(cgimap_common_compiler_options INTERFACE
     HAVE_CRYPTOPP=$<BOOL:${CryptoPP_FOUND}>)
 
-if(ENABLE_YAJL)
-    find_package(YAJL 2 REQUIRED)
-endif()
+find_package(YAJL 2 REQUIRED)
 target_compile_definitions(cgimap_common_compiler_options INTERFACE
     HAVE_YAJL=$<BOOL:${YAJL_FOUND}>)
 

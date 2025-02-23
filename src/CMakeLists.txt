@@ -66,9 +66,8 @@ target_sources(cgimap_core PRIVATE
     api06/way_version_handler.cpp
     api06/changeset_upload/osmchange_handler.cpp
     api06/changeset_upload/osmchange_tracking.cpp
-
-    $<$<BOOL:${ENABLE_YAJL}>:json_formatter.cpp>
-    $<$<BOOL:${ENABLE_YAJL}>:json_writer.cpp>
+    json_formatter.cpp
+    json_writer.cpp
 )
 
 target_link_libraries(cgimap_core
@@ -81,7 +80,7 @@ target_link_libraries(cgimap_core
     $<$<BOOL:${ENABLE_BROTLI}>:Brotli::common>
     $<$<BOOL:${ENABLE_BROTLI}>:Brotli::encoder>
     $<$<BOOL:${ENABLE_BROTLI}>:Brotli::decoder>
-    $<$<BOOL:${ENABLE_YAJL}>:YAJL::YAJL>
+    YAJL::YAJL
     PQXX::PQXX)
 
 #############

@@ -14,10 +14,8 @@
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/xml_writer.hpp"
 #include "cgimap/xml_formatter.hpp"
-#if HAVE_YAJL
 #include "cgimap/json_writer.hpp"
 #include "cgimap/json_formatter.hpp"
-#endif
 #include "cgimap/text_writer.hpp"
 #include "cgimap/text_formatter.hpp"
 #include "cgimap/logger.hpp"
@@ -263,10 +261,9 @@ std::unique_ptr<output_formatter> create_formatter(mime::type best_type, output_
     case mime::type::application_xml:
       return std::make_unique<xml_formatter>(std::make_unique<xml_writer>(out, true));
 
-#if HAVE_YAJL
     case mime::type::application_json:
       return std::make_unique<json_formatter>(std::make_unique<json_writer>(out, false));
-#endif
+
     case mime::type::text_plain:
       return std::make_unique<text_formatter>(std::make_unique<text_writer>(out, true));
 

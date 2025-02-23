@@ -34,8 +34,7 @@ public:
 
   ~osm_responder() override = default;
 
-  // lists the standard types that OSM format can respond in, currently XML and,
-  // if the yajl library is provided, JSON.
+  // lists the standard types that OSM format can respond in, currently XML and JSON
   std::vector<mime::type> types_available() const override;
 
   // quick hack to add headers to the response
