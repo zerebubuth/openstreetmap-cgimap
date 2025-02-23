@@ -109,6 +109,21 @@ inline std::vector<std::string_view> split(std::string_view str, char delim)
   return result;
 }
 
+
+template <typename T> T parse_number(std::string_view str) {
+
+  T id{};
+
+  auto [_, ec] = std::from_chars(str.data(), str.data() + str.size(), id);
+
+  if (ec != std::errc()) {
+    // note that this doesn't really make sense without understanding that
+    // "some_string".to_i = 0 in ruby
+    return {};
+  }
+  return id;
+}
+
 inline std::string escape(std::string_view input) {
 
   int n = 0;
