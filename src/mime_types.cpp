@@ -19,10 +19,8 @@ std::string to_string(type t) {
     return "text/plain";
   } else if (mime::type::application_xml == t) {
     return "application/xml";
-#if HAVE_YAJL
   } else if (mime::type::application_json == t) {
     return "application/json";
-#endif
   } else {
     throw std::runtime_error("No string conversion for unspecified MIME type.");
   }
@@ -42,10 +40,8 @@ type parse_from(std::string_view name) {
     return mime::type::application_xml;
   } else if (name == "application/xml") {
     return mime::type::application_xml;
-#if HAVE_YAJL
   } else if (name == "application/json") {
     return mime::type::application_json;
-#endif
   }
 
   return mime::type::unspecified_type;
