@@ -15,6 +15,7 @@
 #include "cgimap/options.hpp"
 
 #include <algorithm>
+#include <charconv>
 #include <clocale>
 #include <cmath>
 #include <cstdlib>
@@ -69,6 +70,26 @@ inline size_t unicode_strlen(const std::string & s)
 }
 
 #endif
+
+inline char tolower_ascii(char c) {
+
+  if (c >= 'A' && c <= 'Z') {
+    return c + ('a' - 'A');
+  }
+  return c;
+}
+
+inline bool ichar_equals(char a, char b) {
+  return a == b ||
+      tolower_ascii(static_cast<unsigned char>(a)) ==
+      tolower_ascii(static_cast<unsigned char>(b));
+}
+
+// Case insensitive string comparison
+inline bool iequals(std::string_view a, std::string_view b) {
+  return a.size() == b.size() &&
+         std::equal(a.begin(), a.end(), b.begin(), b.end(), ichar_equals);
+}
 
 inline std::string escape(std::string_view input) {
 

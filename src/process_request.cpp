@@ -15,6 +15,7 @@
 #include "cgimap/choose_formatter.hpp"
 #include "cgimap/output_formatter.hpp"
 #include "cgimap/output_writer.hpp"
+#include "cgimap/util.hpp"
 
 #include <chrono>
 #include <memory>
@@ -22,7 +23,6 @@
 #include <tuple>
 #include <variant>
 
-#include <boost/algorithm/string.hpp>
 #include <boost/program_options.hpp>
 #include <fmt/core.h>
 
@@ -122,7 +122,7 @@ void respond_error(const http::exception &e, request &r) {
 
   const char *error_format = r.get_param("HTTP_X_ERROR_FORMAT");
 
-  if (error_format && boost::algorithm::iequals(error_format, "xml")) {
+  if (error_format && iequals(error_format, "xml")) {
     r.status(200)
      .add_header("Content-Type", "application/xml; charset=utf-8");
 
