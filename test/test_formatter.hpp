@@ -129,50 +129,48 @@ std::ostream &operator<<(std::ostream &out, const member_info &m);
 std::ostream &operator<<(std::ostream &out, const test_formatter::relation_t &r);
 
 
-// TODO: replace fmt::formatter
-template <> struct fmt::formatter<test_formatter::node_t> {
-  template <typename FormatContext>
-  auto format(const test_formatter::node_t& n, FormatContext& ctx) -> decltype(ctx.out()) {
+template <> struct std::formatter<test_formatter::node_t> {
+  auto format(const test_formatter::node_t& n, auto& ctx) const -> decltype(ctx.out()) {
     // ctx.out() is an output iterator to write to.
     std::ostringstream ostr;
     ostr << n;
     return format_to(ctx.out(), "{}", ostr.str());
   }
-  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+  constexpr auto parse(auto& ctx) const { return ctx.begin(); }
 };
 
-template <> struct fmt::formatter<test_formatter::way_t> {
-  template <typename FormatContext>
-  auto format(const test_formatter::way_t& w, FormatContext& ctx) -> decltype(ctx.out()) {
+template <> struct std::formatter<test_formatter::way_t> {
+  auto format(const test_formatter::way_t& w, auto& ctx) const -> decltype(ctx.out()) {
     // ctx.out() is an output iterator to write to.
     std::ostringstream ostr;
     ostr << w;
     return format_to(ctx.out(), "{}", ostr.str());
   }
 
-  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+  constexpr auto parse(auto& ctx) const { return ctx.begin(); }
 };
 
-template <> struct fmt::formatter<test_formatter::relation_t> {
-  template <typename FormatContext>
-  auto format(const test_formatter::relation_t& r, FormatContext& ctx) -> decltype(ctx.out()) {
+template <> struct std::formatter<test_formatter::relation_t> {
+  auto format(const test_formatter::relation_t& r, auto& ctx) const -> decltype(ctx.out()) {
     // ctx.out() is an output iterator to write to.
     std::ostringstream ostr;
     ostr << r;
     return format_to(ctx.out(), "{}", ostr.str());
   }
-  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+  constexpr auto parse(auto& ctx) const { return ctx.begin(); }
 };
 
-template <> struct fmt::formatter<test_formatter::changeset_t> {
-  template <typename FormatContext>
-  auto format(const test_formatter::changeset_t& cs, FormatContext& ctx) -> decltype(ctx.out()) {
+template <> struct std::formatter<test_formatter::changeset_t> {
+  auto format(const test_formatter::changeset_t& cs, auto& ctx) const -> decltype(ctx.out()) {
     // ctx.out() is an output iterator to write to.
     std::ostringstream ostr;
     ostr << cs;
     return format_to(ctx.out(), "{}", ostr.str());
   }
-  constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+  constexpr auto parse(auto& ctx) const { return ctx.begin(); }
 };
 
 #endif /* TEST_TEST_FORMATTER */
