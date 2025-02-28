@@ -12,7 +12,7 @@
 
 #include "cgimap/output_formatter.hpp"
 
-#include <fmt/core.h>
+#include <format>
 
 struct test_formatter : public output_formatter {
   struct node_t {
@@ -129,6 +129,7 @@ std::ostream &operator<<(std::ostream &out, const member_info &m);
 std::ostream &operator<<(std::ostream &out, const test_formatter::relation_t &r);
 
 
+// TODO: replace fmt::formatter
 template <> struct fmt::formatter<test_formatter::node_t> {
   template <typename FormatContext>
   auto format(const test_formatter::node_t& n, FormatContext& ctx) -> decltype(ctx.out()) {

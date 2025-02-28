@@ -12,7 +12,7 @@
 #include <memory>
 #include <stdexcept>
 #include <thread>
-#include <fmt/core.h>
+#include <format>
 
 #include <sys/time.h>
 #include <cstdio>

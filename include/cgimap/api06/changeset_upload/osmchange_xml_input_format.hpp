@@ -19,7 +19,7 @@
 #include "parsers/saxparser.hpp"
 
 #include <libxml/parser.h>
-#include <fmt/core.h>
+#include <format>
 
 #include <cassert>
 #include <memory>
@@ -68,8 +68,7 @@ protected:
         m_callback.start_document();
       } else {
         throw payload_error{
-          fmt::format("Unknown top-level element {}, expecting osmChange",
-           element)
+          std::format("Unknown top-level element {}, expecting osmChange", element)
         };
       }
       m_context.push_back(context::top);
@@ -95,9 +94,7 @@ protected:
         m_operation = operation::op_delete;
       } else {
         throw payload_error{
-           fmt::format(
-               "Unknown action {}, choices are create, modify, delete",
-           element)
+          std::format("Unknown action {}, choices are create, modify, delete", element)
         };
       }
       break;
@@ -121,9 +118,7 @@ protected:
         m_context.push_back(context::relation);
       } else {
         throw payload_error{
-          fmt::format(
-               "Unknown element {}, expecting node, way or relation",
-           element)
+          std::format("Unknown element {}, expecting node, way or relation", element)
         };
       }
       break;
@@ -145,9 +140,10 @@ protected:
           }
         });
         if (!ref_found)
-          throw payload_error{fmt::format(
-                                "Missing mandatory ref field on way node {}",
-                            m_way->to_string()) };
+          throw payload_error{
+            std::format("Missing mandatory ref field on way node {}",
+                        m_way->to_string())
+          };
       } else if (element == "tag") {
         add_tag(*m_way, attrs);
       }
@@ -166,9 +162,10 @@ protected:
           }
         });
         if (!member.is_valid()) {
-          throw payload_error{ fmt::format(
-                                "Missing mandatory field on relation member in {}",
-                            m_relation->to_string()) };
+          throw payload_error{
+            std::format("Missing mandatory field on relation member in {}",
+                        m_relation->to_string())
+          };
         }
         m_relation->add_member(member);
       } else if (element == "tag") {
@@ -217,8 +214,8 @@ protected:
       assert(element == "node");
       if (!m_node->is_valid(m_operation)) {
         throw payload_error{
-          fmt::format("{} does not include all mandatory fields",
-           m_node->to_string())
+          std::format("{} does not include all mandatory fields",
+                      m_node->to_string())
         };
       }
       m_callback.process_node(*m_node, m_operation, m_if_unused);
@@ -229,8 +226,8 @@ protected:
       assert(element == "way");
       if (!m_way->is_valid(m_operation)) {
         throw payload_error{
-          fmt::format("{} does not include all mandatory fields",
-           m_way->to_string())
+          std::format("{} does not include all mandatory fields",
+                      m_way->to_string())
         };
       }
 
@@ -242,8 +239,8 @@ protected:
       assert(element == "relation");
       if (!m_relation->is_valid(m_operation)) {
         throw payload_error{
-          fmt::format("{} does not include all mandatory fields",
-           m_relation->to_string())
+          std::format("{} does not include all mandatory fields",
+                      m_relation->to_string())
         };
       }
       m_callback.process_relation(*m_relation, m_operation, m_if_unused);
@@ -308,8 +305,9 @@ private:
     }
 
     if (!object.has_changeset()) {
-      throw payload_error{ fmt::format("Changeset id is missing for {}",
-                        object.to_string()) };
+      throw payload_error{
+        std::format("Changeset id is missing for {}", object.to_string())
+      };
     }
 
     if (m_operation == operation::op_create) {
@@ -320,13 +318,16 @@ private:
                m_operation == operation::op_modify) {
       // objects for other operations must have a positive version number
       if (!object.has_version()) {
-        throw payload_error{ fmt::format(
-                              "Version is required when updating {}",
-                          object.to_string()) };
+        throw payload_error{
+          std::format("Version is required when updating {}",
+                      object.to_string())
+        };
       }
       if (object.version() < 1) {
-        throw payload_error{ fmt::format("Invalid version number {} in {}",
-                          object.version(), object.to_string()) };
+        throw payload_error{
+          std::format("Invalid version number {} in {}",
+                      object.version(), object.to_string())
+        };
       }
     }
   }
@@ -358,14 +359,14 @@ private:
 
     if (!k)
       throw payload_error{
-        fmt::format("Mandatory field k missing in tag element for {}",
-         o.to_string())
+        std::format("Mandatory field k missing in tag element for {}",
+                    o.to_string())
       };
 
     if (!v)
       throw payload_error{
-        fmt::format("Mandatory field v missing in tag element for {}",
-         o.to_string())
+        std::format("Mandatory field v missing in tag element for {}",
+                    o.to_string())
       };
 
     o.add_tag(*k, *v);
@@ -379,10 +380,11 @@ private:
     if (location == nullptr)
       throw e;
 
-    throw TEx{ fmt::format("{} at line {:d}, column {:d}",
-  	e.what(),
-  	location->line,
-  	location->col ) };
+    throw TEx{ std::format("{} at line {:d}, column {:d}",
+                           e.what(),
+                           location->line,
+                           location->col)
+    };
   }
 
   operation m_operation = operation::op_undefined;

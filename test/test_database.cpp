@@ -29,7 +29,7 @@ std::string random_db_name() {
   gettimeofday(&tv, nullptr);
   hash ^= (unsigned int)((tv.tv_usec & 0xffffu) << 16);
 
-  return fmt::format("osm_test_{:08x}", hash);
+  return std::format("osm_test_{:08x}", hash);
 }
 
 // reads a file of SQL statements, splits on ';' and tries to
@@ -72,12 +72,12 @@ test_database::test_database() {
     pqxx::connection conn("dbname=postgres");
     pqxx::nontransaction w(conn);
 
-    w.exec(fmt::format("CREATE DATABASE {} ENCODING 'UTF8' TEMPLATE template0", db_name));
+    w.exec(std::format("CREATE DATABASE {} ENCODING 'UTF8' TEMPLATE template0", db_name));
     w.commit();
     m_db_name = db_name;
 
   } catch (const std::exception &e) {
-    throw setup_error(fmt::format("Unable to set up test database: {}", e.what()));
+    throw setup_error(std::format("Unable to set up test database: {}", e.what()));
 
   } catch (...) {
     throw setup_error("Unable to set up test database due to unknown error.");
@@ -90,7 +90,7 @@ test_database::test_database() {
  * and cause a rollback / table drop.
  */
 void test_database::setup(const std::filesystem::path& sql_file) {
-  pqxx::connection conn(fmt::format("dbname={}", m_db_name));
+  pqxx::connection conn(std::format("dbname={}", m_db_name));
   setup_schema(conn, sql_file);
 
   std::shared_ptr<backend> apidb = make_apidb_backend();
@@ -126,7 +126,7 @@ test_database::~test_database() {
       pqxx::connection conn("dbname=postgres");
       pqxx::nontransaction w(conn);
 
-      w.exec(fmt::format("DROP DATABASE {}", m_db_name));
+      w.exec(std::format("DROP DATABASE {}", m_db_name));
       w.commit();
       m_db_name.clear();
 
@@ -145,7 +145,7 @@ test_database::~test_database() {
 
 void test_database::testcase_starting() {
 
-  pqxx::connection conn(fmt::format("dbname={}", m_db_name));
+  pqxx::connection conn(std::format("dbname={}", m_db_name));
   truncate_all_tables(conn);
 }
 
@@ -165,7 +165,7 @@ void test_database::run(
     func(*this);
 
   } catch (const std::exception &e) {
-    throw std::runtime_error(fmt::format("{}", e.what()));
+    throw std::runtime_error(std::format("{}", e.what()));
   }
   testcase_ended();
 }
@@ -179,7 +179,7 @@ void test_database::run_update(
 
     func(*this);
   } catch (const std::exception &e) {
-    throw std::runtime_error(fmt::format("{}, in update", e.what()));
+    throw std::runtime_error(std::format("{}, in update", e.what()));
   }
   testcase_ended();
 }
@@ -219,7 +219,7 @@ std::unique_ptr<data_update> test_database::get_data_update() {
 }
 
 int test_database::run_sql(const std::string &sql) {
-  pqxx::connection conn(fmt::format("dbname={}", m_db_name));
+  pqxx::connection conn(std::format("dbname={}", m_db_name));
   return exec_sql_string(conn, sql);
 }
 

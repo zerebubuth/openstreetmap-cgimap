@@ -104,13 +104,13 @@ TEST_CASE("Tag: Key with max 255 unicode characters, <= 255", "[changeset]") {
   for (int i = 1; i <= 255; i++) {
     auto v = repeat("😎", i);
     REQUIRE_NOTHROW(process_testmsg(
-        fmt::format( R"(<osm><changeset><tag k="{}" v="value"/></changeset></osm>)", v)));
+      std::format( R"(<osm><changeset><tag k="{}" v="value"/></changeset></osm>)", v)));
   }
 }
 
 TEST_CASE("Tag: Key with max 255 unicode characters, > 255", "[changeset]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
-      fmt::format( R"(<osm><changeset><tag k="{}" v="value"/></changeset></osm>)", repeat("😎", 256))),
+    std::format( R"(<osm><changeset><tag k="{}" v="value"/></changeset></osm>)", repeat("😎", 256))),
     http::bad_request, Catch::Message("Key has more than 255 unicode characters at line 1, column 292"));
 }
 
@@ -119,13 +119,13 @@ TEST_CASE("Tag: Value with max 255 unicode characters, <= 255", "[changeset]") {
   for (int i = 1; i <= 255; i++) {
     auto v = repeat("😎", i);
     REQUIRE_NOTHROW(process_testmsg(
-        fmt::format( R"(<osm><changeset><tag k="key" v="{}"/></changeset></osm>)", v)));
+      std::format( R"(<osm><changeset><tag k="key" v="{}"/></changeset></osm>)", v)));
   }
 }
 
 TEST_CASE("Tag: Value with max 255 unicode characters, > 255", "[changeset]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
-      fmt::format( R"(<osm><changeset><tag k="key" v="{}"/></changeset></osm>)", repeat("😎", 256))),
+    std::format( R"(<osm><changeset><tag k="key" v="{}"/></changeset></osm>)", repeat("😎", 256))),
     http::bad_request, Catch::Message("Value has more than 255 unicode characters at line 1, column 290"));
 }
 

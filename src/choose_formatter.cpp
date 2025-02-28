@@ -36,7 +36,7 @@
 #include <boost/spirit/include/phoenix_operator.hpp>
 #include <boost/spirit/include/qi.hpp>
 
-#include <fmt/core.h>
+#include <format>
 
 using std::list;
 using std::map;
@@ -159,8 +159,8 @@ acceptable_types::acceptable_types(const std::string &accept_header) {
     }
 
   } else {
-    logger::message(fmt::format("Failed to parse accept header '{}'",
-                    accept_header));
+    logger::message(std::format("Failed to parse accept header '{}'",
+                      accept_header));
     throw http::bad_request("Accept header could not be parsed.");
   }
 }
@@ -231,18 +231,18 @@ mime::type choose_best_mime_type(const request &req, const responder& hptr) {
   if (best_type != mime::type::unspecified_type) {
     // check that this doesn't conflict with anything in the Accept header.
     if (!hptr.is_available(best_type))
-      throw http::not_acceptable(fmt::format("Acceptable formats for {} are: {}",
-                                 get_request_path(req),
-                                 mime_types_to_string(types_available)));
+      throw http::not_acceptable(std::format("Acceptable formats for {} are: {}",
+                                  get_request_path(req),
+                                  mime_types_to_string(types_available)));
     else if (!types.is_acceptable(best_type))
-      throw http::not_acceptable(fmt::format("Acceptable formats for {} are: {}",
-                                 get_request_path(req),
-                                 mime_types_to_string({best_type})));
+      throw http::not_acceptable(std::format("Acceptable formats for {} are: {}",
+                                  get_request_path(req),
+                                  mime_types_to_string({best_type})));
   } else {
     best_type = types.most_acceptable_of(types_available);
     // if none were acceptable then...
     if (best_type == mime::type::unspecified_type) {
-	      throw http::not_acceptable(fmt::format("Acceptable formats for {} are: {}",
+	      throw http::not_acceptable(std::format("Acceptable formats for {} are: {}",
 	                                get_request_path(req),
 					mime_types_to_string(types_available)));
     } else if (best_type == mime::type::any_type) {
@@ -268,7 +268,7 @@ std::unique_ptr<output_formatter> create_formatter(mime::type best_type, output_
       return std::make_unique<text_formatter>(std::make_unique<text_writer>(out, true));
 
     default:
-      throw std::runtime_error(fmt::format("Could not create formatter for MIME type `{}'.", mime::to_string(best_type)));
+      throw std::runtime_error(std::format("Could not create formatter for MIME type `{}'.", mime::to_string(best_type)));
   }
 }
 

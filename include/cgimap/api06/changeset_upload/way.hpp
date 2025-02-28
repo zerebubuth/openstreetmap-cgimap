@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include <fmt/core.h>
+#include <format>
 
 namespace api06 {
 
@@ -65,16 +65,16 @@ public:
 
     if (m_way_nodes.empty()) {
       throw http::precondition_failed(
-          fmt::format("Way {:d} must have at least one node",id(0)));
+        std::format("Way {:d} must have at least one node", id(0)));
     }
 
     auto way_max_nodes = global_settings::get_way_max_nodes();
 
     if (m_way_nodes.size() > way_max_nodes) {
       throw http::bad_request(
-            fmt::format(
-                "You tried to add {:d} nodes to way {:d}, however only {:d} are allowed",
-            m_way_nodes.size(), id(0), way_max_nodes));
+            std::format(
+              "You tried to add {:d} nodes to way {:d}, however only {:d} are allowed",
+              m_way_nodes.size(), id(0), way_max_nodes));
     }
 
     return (is_valid());

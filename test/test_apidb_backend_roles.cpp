@@ -9,7 +9,7 @@
 
 #include <iostream>
 #include <stdexcept>
-#include <fmt/core.h>
+#include <format>
 
 #include <sys/time.h>
 #include <cstdio>
@@ -133,5 +133,3 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_get_roles_for_user", "[roles][db]" 
   // user 1 is an administrator and a moderator
   REQUIRE(roles_t({osm_user_role_t::moderator, osm_user_role_t::administrator}) == sel->get_roles_for_user(1));
 }
-
-

@@ -11,7 +11,7 @@
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/http.hpp"
 
-#include <fmt/core.h>
+#include <format>
 
 namespace api06 {
 
@@ -21,7 +21,7 @@ changeset_download_responder::changeset_download_responder(mime::type mt,
   : osmchange_responder(mt, w) {
 
   if (sel.select_changesets({id}) == 0) {
-    throw http::not_found(fmt::format("Changeset {:d} was not found.", id));
+    throw http::not_found(std::format("Changeset {:d} was not found.", id));
   }
   sel.select_historical_by_changesets({id});
 }

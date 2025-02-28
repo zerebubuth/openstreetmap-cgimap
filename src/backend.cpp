@@ -9,7 +9,7 @@
 
 #include "cgimap/backend.hpp"
 
-#include <fmt/core.h>
+#include <format>
 #include <memory>
 
 namespace po = boost::program_options;

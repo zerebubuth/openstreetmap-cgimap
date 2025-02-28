@@ -18,6 +18,7 @@
 #include <memory>
 #include <sstream>
 #include <stdexcept>
+#include <format>
 
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
@@ -139,32 +140,32 @@ TEST_CASE("Create node, lon missing", "[osmchange][node][xml]") {
 
 TEST_CASE("Create node, lat outside range", "[osmchange][node][xml]") {
   auto i = GENERATE(R"(90.01)", R"(-90.01)");
-  REQUIRE_THROWS_AS(process_testmsg(fmt::format(R"(<osmChange><create><node changeset="858" id="-1" lat="{}" lon="2"/></create></osmChange>)", i)), http::bad_request);
+  REQUIRE_THROWS_AS(process_testmsg(std::format(R"(<osmChange><create><node changeset="858" id="-1" lat="{}" lon="2"/></create></osmChange>)", i)), http::bad_request);
 }
 
 TEST_CASE("Create node, lon outside range", "[osmchange][node][xml]") {
   auto i = GENERATE(R"(180.01)", R"(-180.01)");
-  REQUIRE_THROWS_AS(process_testmsg(fmt::format(R"(<osmChange><create><node changeset="858" id="-1" lat="90.00" lon="{}"/></create></osmChange>)", i)), http::bad_request);
+  REQUIRE_THROWS_AS(process_testmsg(std::format(R"(<osmChange><create><node changeset="858" id="-1" lat="90.00" lon="{}"/></create></osmChange>)", i)), http::bad_request);
 }
 
 TEST_CASE("Create node, lat float overflow", "[osmchange][node][xml]") {
   auto i = GENERATE(R"(9999999999999999999999999999999999999999999999.01)", R"(-9999999999999999999999999999999999999999999999.01)");
-  REQUIRE_THROWS_AS(process_testmsg(fmt::format(R"(<osmChange><create><node changeset="858" id="-1" lat="{}" lon="2"/></create></osmChange>)", i)), http::bad_request);
+  REQUIRE_THROWS_AS(process_testmsg(std::format(R"(<osmChange><create><node changeset="858" id="-1" lat="{}" lon="2"/></create></osmChange>)", i)), http::bad_request);
 }
 
 TEST_CASE("Create node, lon float overflow", "[osmchange][node][xml]") {
   auto i = GENERATE(R"(9999999999999999999999999999999999999999999999.01)", R"(-9999999999999999999999999999999999999999999999.01)");
-  REQUIRE_THROWS_AS(process_testmsg(fmt::format(R"(<osmChange><create><node changeset="858" id="-1" lat="90.00" lon="{}"/></create></osmChange>)", i)), http::bad_request);
+  REQUIRE_THROWS_AS(process_testmsg(std::format(R"(<osmChange><create><node changeset="858" id="-1" lat="90.00" lon="{}"/></create></osmChange>)", i)), http::bad_request);
 }
 
 TEST_CASE("Create node, lat non-finite float", "[osmchange][node][xml]") {
   auto i = GENERATE(R"(nan)", R"(-nan)", R"(Inf), R"(-Inf)");
-  REQUIRE_THROWS_AS(process_testmsg(fmt::format(R"(<osmChange><create><node changeset="858" id="-1" lat="{}" lon="2"/></create></osmChange>)", i)), http::bad_request);
+  REQUIRE_THROWS_AS(process_testmsg(std::format(R"(<osmChange><create><node changeset="858" id="-1" lat="{}" lon="2"/></create></osmChange>)", i)), http::bad_request);
 }
 
 TEST_CASE("Create node, lon non-finite float", "[osmchange][node][xml]") {
   auto i = GENERATE(R"(nan)", R"(-nan)", R"(Inf), R"(-Inf)");
-  REQUIRE_THROWS_AS(process_testmsg(fmt::format(R"(<osmChange><create><node changeset="858" id="-1" lat="90.00" lon="{}"/></create></osmChange>)", i)), http::bad_request);
+  REQUIRE_THROWS_AS(process_testmsg(std::format(R"(<osmChange><create><node changeset="858" id="-1" lat="90.00" lon="{}"/></create></osmChange>)", i)), http::bad_request);
 }
 
 TEST_CASE("Create node, changeset missing", "[osmchange][node][xml]") {
@@ -261,14 +262,14 @@ TEST_CASE("Create node, tag value with <= 255 unicode characters", "[osmchange][
   for (int i = 0; i <= 255; i++) {
     auto v = repeat("😎", i);
     REQUIRE_NOTHROW(process_testmsg(
-      fmt::format(R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">
+      std::format(R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">
                             <tag k="key" v="{}"/></node></create></osmChange>)", v)));
   }
 }
 
 TEST_CASE("Create node, tag value with > 255 unicode characters", "[osmchange][node][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
-    fmt::format(R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">
+    std::format(R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">
                            <tag k="key" v="{}"/></node></create></osmChange>)", repeat("😎", 256))),
     http::bad_request, Catch::Message("Value has more than 255 unicode characters in Node -1 at line 2, column 301"));
 }
@@ -277,14 +278,14 @@ TEST_CASE("Create node, tag key with <= 255 unicode characters", "[osmchange][no
   for (int i = 1; i <= 255; i++) {
     auto v = repeat("😎", i);
     REQUIRE_NOTHROW(process_testmsg(
-      fmt::format(R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">
+      std::format(R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">
                            <tag k="{}" v="value"/></node></create></osmChange>)", v)));
   }
 }
 
 TEST_CASE("Create node, tag key with > 255 unicode characters", "[osmchange][node][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
-    fmt::format(R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">
+    std::format(R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">
                            <tag k="{}" v="value"/></node></create></osmChange>)", repeat("😎", 256))),
     http::bad_request, Catch::Message("Key has more than 255 unicode characters in Node -1 at line 2, column 303"));
 }
@@ -397,21 +398,21 @@ TEST_CASE("Create way, missing node ref", "[osmchange][way][xml]") {
 TEST_CASE("Create way, node refs < max way nodes", "[osmchange][way][xml]") {
   std::string node_refs{};
   for (uint32_t i = 1; i <= global_settings::get_way_max_nodes(); i++) {
-    node_refs += fmt::format(R"(<nd ref="-{}"/>)",  i);
+    node_refs += std::format(R"(<nd ref="-{}"/>)",  i);
     REQUIRE_NOTHROW(process_testmsg(
-      fmt::format(R"(<osmChange><create><way changeset="858" id="-1">{}</way></create></osmChange>)", node_refs)));
+      std::format(R"(<osmChange><create><way changeset="858" id="-1">{}</way></create></osmChange>)", node_refs)));
   }
 }
 
 TEST_CASE("Create way, node refs >= max way nodes", "[osmchange][way][xml]") {
   std::string node_refs{};
   for (uint32_t i = 1; i <= global_settings::get_way_max_nodes(); i++)
-    node_refs += fmt::format(R"(<nd ref="-{}"/>)", i);
+    node_refs += std::format(R"(<nd ref="-{}"/>)", i);
   for (uint32_t j = global_settings::get_way_max_nodes()+1; j < global_settings::get_way_max_nodes() + 10; ++j) {
-    node_refs += fmt::format(R"(<nd ref="-{}"/>)", j);
+    node_refs += std::format(R"(<nd ref="-{}"/>)", j);
     REQUIRE_THROWS_MATCHES(process_testmsg(
-      fmt::format(R"(<osmChange><create><way changeset="858" id="-1">{}</way></create></osmChange>)", node_refs)),
-      http::bad_request, Catch::Message(fmt::format("You tried to add {} nodes to way -1, however only {} are allowed", j, global_settings::get_way_max_nodes())));
+      std::format(R"(<osmChange><create><way changeset="858" id="-1">{}</way></create></osmChange>)", node_refs)),
+      http::bad_request, Catch::Message(std::format("You tried to add {} nodes to way -1, however only {} are allowed", j, global_settings::get_way_max_nodes())));
   }
 }
 
@@ -449,13 +450,13 @@ TEST_CASE("Delete way, no version", "[osmchange][way][xml]") {
 TEST_CASE("Delete way, no id", "[osmchange][way][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
     R"(<osmChange><delete><way changeset="858" version="1"/></delete></osmChange>)"),
-    http::bad_request, Catch::Message(fmt::format("Mandatory field id missing in object at line 1, column 52")));
+    http::bad_request, Catch::Message(std::format("Mandatory field id missing in object at line 1, column 52")));
 }
 
 TEST_CASE("Delete way, no changeset", "[osmchange][way][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
     R"(<osmChange><delete><way id="-1" version="1"/></delete></osmChange>)"),
-    http::bad_request, Catch::Message(fmt::format("Changeset id is missing for Way -1 at line 1, column 44")));
+    http::bad_request, Catch::Message(std::format("Changeset id is missing for Way -1 at line 1, column 44")));
 }
 
 TEST_CASE("Delete way", "[osmchange][way][xml]") {
@@ -511,7 +512,7 @@ TEST_CASE("Create relation, role with <= 255 unicode characters", "[osmchange][r
   for (int i = 1; i <= 255; i++) {
     auto v = repeat("😎", i);
     REQUIRE_NOTHROW(process_testmsg(
-      fmt::format(
+      std::format(
                R"(<osmChange><create><relation changeset="858" id="-1">
                            <member type="node" role="{}" ref="123"/>
                   </relation></create></osmChange>)",
@@ -521,7 +522,7 @@ TEST_CASE("Create relation, role with <= 255 unicode characters", "[osmchange][r
 
 TEST_CASE("Create relation, role with > 255 unicode characters", "[osmchange][relation][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
-    fmt::format(
+    std::format(
                R"(<osmChange><create><relation changeset="858" id="-1">
                            <member type="node" role="{}" ref="123"/>
                   </relation></create></osmChange>)",
@@ -532,13 +533,13 @@ TEST_CASE("Create relation, role with > 255 unicode characters", "[osmchange][re
 TEST_CASE("Delete relation, no version", "[osmchange][relation][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
     R"(<osmChange><delete><relation changeset="972" id="-1"/></delete></osmChange>)"),
-    http::bad_request, Catch::Message(fmt::format("Version is required when updating Relation -1 at line 1, column 53")));
+    http::bad_request, Catch::Message(std::format("Version is required when updating Relation -1 at line 1, column 53")));
 }
 
 TEST_CASE("Delete relation, no id", "[osmchange][relation][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
     R"(<osmChange><delete><relation changeset="972" version="1"/></delete></osmChange>)"),
-    http::bad_request, Catch::Message(fmt::format("Mandatory field id missing in object at line 1, column 57")));
+    http::bad_request, Catch::Message(std::format("Mandatory field id missing in object at line 1, column 57")));
 }
 
 TEST_CASE("Delete relation", "[osmchange][relation][xml]") {
@@ -601,9 +602,9 @@ TEST_CASE("Create node, tags < max tags", "[osmchange][node][xml]") {
 
   std::string tags{};
   for (uint32_t i = 1; i <= global_settings::get_element_max_tags(); i++) {
-    tags += fmt::format("<tag k='amenity_{}' v='cafe' />",  i);
+    tags += std::format("<tag k='amenity_{}' v='cafe' />",  i);
     REQUIRE_NOTHROW(process_testmsg(
-      fmt::format(R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">{}</node></create></osmChange>)", tags)));
+      std::format(R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">{}</node></create></osmChange>)", tags)));
   }
 }
 
@@ -616,11 +617,11 @@ TEST_CASE("Create node, tags >= max tags", "[osmchange][node][xml]") {
 
   std::string tags{};
   for (uint32_t i = 1; i <= *global_settings::get_element_max_tags(); i++)
-    tags += fmt::format("<tag k='amenity_{}' v='cafe' />",  i);
+    tags += std::format("<tag k='amenity_{}' v='cafe' />",  i);
   for (uint32_t j = *global_settings::get_element_max_tags()+1; j < *global_settings::get_element_max_tags() + 10; ++j) {
-    tags += fmt::format("<tag k='amenity_{}' v='cafe' />",  j);
+    tags += std::format("<tag k='amenity_{}' v='cafe' />",  j);
     REQUIRE_THROWS_AS(process_testmsg(
-      fmt::format(R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">{}</node></create></osmChange>)", tags)),
+      std::format(R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">{}</node></create></osmChange>)", tags)),
       http::bad_request);
   }
 }
@@ -634,7 +635,7 @@ TEST_CASE("Create relation, members < max members", "[osmchange][relation][xml]"
 
   std::string members = repeat(R"(<member type="node" role="demo" ref="123"/>)", *global_settings::get_relation_max_members());
   REQUIRE_NOTHROW(process_testmsg(
-    fmt::format(R"(<osmChange><create><relation changeset="858" id="-1">{}"</relation></create></osmChange>)", members)));
+    std::format(R"(<osmChange><create><relation changeset="858" id="-1">{}"</relation></create></osmChange>)", members)));
 }
 
 TEST_CASE("Create relation, members >= max members", "[osmchange][relation][xml]") {
@@ -648,7 +649,7 @@ TEST_CASE("Create relation, members >= max members", "[osmchange][relation][xml]
   for (uint32_t j = *global_settings::get_relation_max_members()+1; j < *global_settings::get_relation_max_members() + 3; ++j) {
     members += R"(<member type="node" role="demo" ref="123"/>)";
     REQUIRE_THROWS_AS(process_testmsg(
-      fmt::format(R"(<osmChange><create><relation changeset="858" id="-1">{}"</relation></create></osmChange>)", members)),
+      std::format(R"(<osmChange><create><relation changeset="858" id="-1">{}"</relation></create></osmChange>)", members)),
       http::bad_request);
   }
 }

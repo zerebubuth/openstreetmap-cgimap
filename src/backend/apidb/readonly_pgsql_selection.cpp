@@ -894,9 +894,9 @@ void readonly_pgsql_selection::fetch_changesets(const std::set< osm_changeset_id
     // Multiple results for one changeset?
     if (cc.contains(cs)) {
       logger::message(
-          fmt::format("ERROR: Request for user data associated with changeset {:d} failed: returned multiple rows.", cs));
+        std::format("ERROR: Request for user data associated with changeset {:d} failed: returned multiple rows.", cs));
       throw http::server_error(
-          fmt::format("Possible database inconsistency with changeset {:d}.", cs));
+        std::format("Possible database inconsistency with changeset {:d}.", cs));
     }
 
     auto user_id = r[3].as<int64_t>();
@@ -919,9 +919,9 @@ void readonly_pgsql_selection::fetch_changesets(const std::set< osm_changeset_id
   for (const auto & id : ids) {
     if (!cc.contains(id)) {
       logger::message(
-          fmt::format("ERROR: Request for user data associated with changeset {:d} failed: returned 0 rows.", id));
+        std::format("ERROR: Request for user data associated with changeset {:d} failed: returned 0 rows.", id));
       throw http::server_error(
-          fmt::format("Possible database inconsistency with changeset {:d}.", id));
+        std::format("Possible database inconsistency with changeset {:d}.", id));
     }
   }
 }

@@ -10,7 +10,7 @@
 #include "cgimap/api06/relation_full_handler.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
-#include <fmt/core.h>
+#include <format>
 
 using std::vector;
 
@@ -21,7 +21,7 @@ relation_full_responder::relation_full_responder(mime::type mt_, osm_nwr_id_t id
     : osm_current_responder(mt_, w) {
 
   if (sel.select_relations({id}) == 0) {
-    throw http::not_found(fmt::format("Relation {:d} was not found.", id));
+    throw http::not_found(std::format("Relation {:d} was not found.", id));
   }
 
   check_visibility(id);
@@ -36,7 +36,7 @@ void relation_full_responder::check_visibility(osm_nwr_id_t id) {
   switch (sel.check_relation_visibility(id)) {
 
   case data_selection::non_exist:
-    throw http::not_found(fmt::format("Relation {:d} was not found.", id));
+    throw http::not_found(std::format("Relation {:d} was not found.", id));
 
   case data_selection::deleted:
     // TODO: fix error message / throw structure to emit better error message
@@ -50,7 +50,7 @@ void relation_full_responder::check_visibility(osm_nwr_id_t id) {
 relation_full_handler::relation_full_handler(const request &, osm_nwr_id_t id)
     : id(id) {
   logger::message(
-      fmt::format("starting relation/full handler with id = {:d}", id));
+    std::format("starting relation/full handler with id = {:d}", id));
 }
 
 std::string relation_full_handler::log_name() const { return "relation/full"; }

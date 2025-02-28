@@ -12,7 +12,7 @@
 #include "cgimap/http.hpp"
 
 #include <ranges>
-#include <fmt/core.h>
+#include <format>
 
 using std::vector;
 
@@ -25,7 +25,7 @@ changeset_responder::changeset_responder(mime::type mt,
   : osm_changeset_responder(mt, w, false) {
 
   if (sel.select_changesets({id}) == 0) {
-    throw http::not_found(fmt::format("Changeset {:d} was not found.", id));
+    throw http::not_found(std::format("Changeset {:d} was not found.", id));
   }
 
   if (include_discussion) {

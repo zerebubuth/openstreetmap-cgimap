@@ -20,7 +20,7 @@
 #include "cgimap/util.hpp"
 
 
-#include <fmt/core.h>
+#include <format>
 
 
 namespace api06 {
@@ -59,7 +59,7 @@ changeset_update_handler::changeset_update_handler(const request &, osm_changese
       id(id) {}
 
 std::string changeset_update_handler::log_name() const {
-  return (fmt::format("changeset/update {:d}", id));
+  return (std::format("changeset/update {:d}", id));
 }
 
 responder_ptr_t

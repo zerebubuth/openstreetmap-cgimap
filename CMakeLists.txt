@@ -39,7 +39,6 @@ endif()
 ###############
 option(ENABLE_CRYPTOPP "Enable Crypto++ library" ON)
 option(ENABLE_BROTLI "Enable Brotli library" ON)
-option(ENABLE_FMT_HEADER "Enable FMT header only mode" ON)
 option(ENABLE_COVERAGE "Compile with coverage info collection" OFF)
 option(ENABLE_PROFILING "Compile with profiling" OFF)
 option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
@@ -114,9 +113,6 @@ find_package(Fcgi REQUIRED)
 target_compile_definitions(cgimap_common_compiler_options INTERFACE
     HAVE_FCGI=$<BOOL:${Fcgi_FOUND}>)
 
-find_package(fmt 6.0 REQUIRED)
-target_link_libraries(cgimap_common_compiler_options INTERFACE
-    $<IF:$<BOOL:${ENABLE_FMT_HEADER}>,fmt::fmt-header-only,fmt::fmt>)
 
 
 ###########################

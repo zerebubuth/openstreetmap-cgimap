@@ -14,7 +14,7 @@
 #include <cassert>
 #include <cstring>
 
-#include <fmt/core.h>
+#include <format>
 
 using std::string;
 
@@ -28,7 +28,7 @@ string fcgi_get_env(const request &req, const char *name, const char *default_va
     if (default_value) {
       v = default_value;
     } else {
-      throw http::server_error(fmt::format("request didn't set the ${} environment variable.", name));
+      throw http::server_error(std::format("request didn't set the ${} environment variable.", name));
     }
   }
 

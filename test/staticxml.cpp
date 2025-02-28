@@ -17,7 +17,7 @@
 #include <string_view>
 #include <unordered_set>
 
-#include <fmt/core.h>
+#include <format>
 #include <libxml/parser.h>
 
 namespace po = boost::program_options;
@@ -95,7 +95,7 @@ T get_attribute(std::string_view name, const xmlChar **attributes) {
   if (res)
     return *res;
 
-  throw std::runtime_error(fmt::format("Unable to find attribute {}.", name));
+  throw std::runtime_error(std::format("Unable to find attribute {}.", name));
 }
 
 
@@ -210,7 +210,7 @@ struct xml_parser {
         } else if (member_type == "relation") {
           m.type = element_type::relation;
         } else {
-          throw std::runtime_error(fmt::format("Unknown member type `{}'.", member_type));
+          throw std::runtime_error(std::format("Unknown member type `{}'.", member_type));
         }
         m.ref = get_attribute<osm_nwr_id_t>("ref", attributes);
         m.role = get_attribute<std::string>("role", attributes);
@@ -259,7 +259,7 @@ struct xml_parser {
     va_start(arg_ptr, fmt);
     vsnprintf(buffer, sizeof(buffer) - 1, fmt, arg_ptr);
     va_end(arg_ptr);
-    throw std::runtime_error(fmt::format("XML ERROR: {}", buffer));
+    throw std::runtime_error(std::format("XML ERROR: {}", buffer));
   }
 
   database *m_db = nullptr;
@@ -286,7 +286,7 @@ std::unique_ptr<database> parse_xml(const char *filename) {
   if (status != 0) {
     const auto err = xmlGetLastError();
     throw std::runtime_error(
-        fmt::format("XML ERROR: {}.", err->message));
+      std::format("XML ERROR: {}.", err->message));
   }
 
   xmlCleanupParser();

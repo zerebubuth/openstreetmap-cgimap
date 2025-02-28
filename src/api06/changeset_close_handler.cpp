@@ -17,7 +17,7 @@
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
 
-#include <fmt/core.h>
+#include <format>
 
 #include <string>
 #include <memory>
@@ -46,7 +46,7 @@ changeset_close_handler::changeset_close_handler(const request &,
 
 
 std::string changeset_close_handler::log_name() const {
-  return (fmt::format("changeset/close {:d}", id));
+  return (std::format("changeset/close {:d}", id));
 }
 
 responder_ptr_t changeset_close_handler::responder(data_selection &) const {

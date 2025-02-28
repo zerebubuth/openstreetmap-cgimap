@@ -12,7 +12,7 @@
 #include "cgimap/request_helpers.hpp"
 
 #include <cassert>
-#include <fmt/core.h>
+#include <format>
 
 test_output_buffer::test_output_buffer(std::ostream &out, std::ostream &body)
   : m_out(out), m_body(body) {
@@ -78,7 +78,7 @@ std::string test_request::get_payload() {
   }
 
   if (result.length() > global_settings::get_payload_max_size())
-     throw http::payload_too_large(fmt::format("Payload exceeds limit of {:d} bytes", global_settings::get_payload_max_size()));
+     throw http::payload_too_large(std::format("Payload exceeds limit of {:d} bytes", global_settings::get_payload_max_size()));
 
   if (content_length > 0 && result_length != content_length)
     throw http::server_error("HTTP Header field 'Content-Length' differs from actual payload length");

@@ -11,7 +11,7 @@
 
 #include "cgimap/http.hpp"
 
-#include <fmt/core.h>
+#include <format>
 
 namespace api06 {
 
@@ -34,9 +34,8 @@ void OSMChange_Handler::check_osm_object(const OSMObject &o) const {
 
   if (o.changeset() != changeset)
     throw http::conflict(
-        fmt::format(
-             "Changeset mismatch: Provided {:d} but only {:d} is allowed",
-         o.changeset(), changeset));
+      std::format("Changeset mismatch: Provided {:d} but only {:d} is allowed",
+                  o.changeset(), changeset));
 }
 
 void OSMChange_Handler::process_node(const Node &node, 

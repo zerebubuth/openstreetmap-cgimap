@@ -28,9 +28,7 @@
 #include <string_view>
 #include <ranges>
 
-#include <fmt/core.h>
-#include <fmt/format.h>
-#include <fmt/ranges.h>
+#include <format>
 
 
 #if __APPLE__
@@ -173,7 +171,8 @@ inline std::string escape(std::string_view input) {
 
 template <typename T>
 inline std::string to_string(const T &ids) {
-  return fmt::format("{}", fmt::join(ids, ","));
+  // TODO: replace fmt::join
+  return std::format("{}", fmt::join(ids, ","));
 }
 
 

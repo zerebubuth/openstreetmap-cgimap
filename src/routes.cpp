@@ -60,7 +60,7 @@
 #include <vector>
 #include <utility>
 
-#include <fmt/core.h>
+#include <format>
 
 
 /**
@@ -330,7 +330,7 @@ handler_ptr_t routes::operator()(request &req) const {
 
   if (!hptr) {
     // doesn't match prefix...
-    throw http::not_found(fmt::format("Path does not match any known routes: {}", path));
+    throw http::not_found(std::format("Path does not match any known routes: {}", path));
   }
 
   return hptr;

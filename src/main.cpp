@@ -12,7 +12,7 @@
 #include <sstream>
 
 #include <boost/program_options.hpp>
-#include <fmt/core.h>
+#include <format>
 
 #include <algorithm>
 #include <cerrno>
@@ -94,7 +94,7 @@ std::string get_generator_string() {
     throw std::runtime_error("gethostname returned error.");
   }
 
-  return (fmt::format(PACKAGE_STRING " ({:d} {})", getpid(), hostname));
+  return (std::format(PACKAGE_STRING " ({:d} {})", getpid(), hostname));
 }
 
 /**
@@ -404,7 +404,7 @@ int init_socket(const po::variables_map &options)
     }
     // fall back to the old --port option if socket isn't available.
   } else if (options.count("port")) {
-    auto sock_str = fmt::format(":{:d}", options["port"].as<int>());
+    auto sock_str = std::format(":{:d}", options["port"].as<int>());
     if ((socket = fcgi_request::open_socket(sock_str, 5)) < 0) {
       throw std::runtime_error("Couldn't open FCGX socket (from port).");
     }

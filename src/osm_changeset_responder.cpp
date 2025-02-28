@@ -10,7 +10,7 @@
 #include "cgimap/logger.hpp"
 #include "cgimap/osm_changeset_responder.hpp"
 
-#include <fmt/core.h>
+#include <format>
 
 #include <optional>
 
@@ -39,7 +39,7 @@ void osm_changeset_responder::write(output_formatter& fmt,
     fmt.end_changeset(multi_selection);
 
   } catch (const std::exception &e) {
-    logger::message(fmt::format("Caught error in osm_changeset_responder: {}",
+    logger::message(std::format("Caught error in osm_changeset_responder: {}",
                       e.what()));
     fmt.error(e);
   }

@@ -15,8 +15,7 @@
 #include <sstream>
 #include <vector>
 
-#include <fmt/core.h>
-#include <fmt/format.h>
+#include <format>
 
 #include <pqxx/pqxx>
 
@@ -35,6 +34,7 @@ namespace pqxx {
  * implementation has to be available when used in the prepared statement
  * code.
  */
+// TODO: replace fmt::join
 #define PQXX_ARRAY_STRING_TRAITS(type)                                  \
   template <> struct string_traits<type> {                              \
     static const char *name() { return #type; }                         \
@@ -46,7 +46,7 @@ namespace pqxx {
     }                                                                   \
     static void from_string(const char[], type &) {}                    \
     static std::string to_string(const type &ids) {                     \
-      return fmt::format("{{{}}}", fmt::join(ids, ","));                \
+      return std::format("{{{}}}", fmt::join(ids, ","));                \
     }                                                                   \
   }
 

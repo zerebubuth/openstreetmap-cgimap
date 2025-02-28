@@ -13,8 +13,7 @@
 #include <cstring>
 #include <utility>
 #include <array>
-#include <fmt/core.h>
-#include <fmt/compile.h>
+#include <format>
 
 #include "cgimap/json_writer.hpp"
 
@@ -80,20 +79,14 @@ void json_writer::entry(double d) {
   const char* str = nullptr;
   size_t len = 0;
 
-#if FMT_VERSION >= 90000
   std::array<char, 384> buf;
   constexpr size_t max_chars = buf.size() - 1;
-  auto [end, n_written] = fmt::format_to_n(buf.begin(), max_chars, FMT_COMPILE("{:.7f}"), d);
+  auto [end, n_written] = std::format_to_n(buf.begin(), max_chars, "{:.7f}", d);
   if (n_written > max_chars)
     throw write_error("cannot convert double-precision attribute to string.");
   *end = '\0'; // Null terminate string
   str = buf.data();
   len = n_written;
-#else
-  auto s = fmt::format("{:.7f}", d);
-  str = s.c_str();
-  len = s.length();
-#endif
 
   yajl_gen_number(gen, str, len);
 }

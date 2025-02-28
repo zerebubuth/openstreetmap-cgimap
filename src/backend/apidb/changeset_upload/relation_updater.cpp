@@ -23,7 +23,7 @@
 #include <utility>
 #include <vector>
 
-#include <fmt/core.h>
+#include <format>
 
 
 
@@ -343,7 +343,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
     auto [_, inserted] = map_relations.insert({ i.old_id, i.new_id });
     if (!inserted)
       throw http::bad_request(
-          fmt::format("Duplicate relation placeholder id {:d}.", i.old_id));
+        std::format("Duplicate relation placeholder id {:d}.", i.old_id));
   }
 
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_ways;
@@ -351,7 +351,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
     auto [_, inserted] = map_ways.insert({ i.old_id, i.new_id });
     if (!inserted)
       throw http::bad_request(
-          fmt::format("Duplicate way placeholder id {:d}.", i.old_id));
+        std::format("Duplicate way placeholder id {:d}.", i.old_id));
   }
 
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_nodes;
@@ -359,7 +359,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
     auto [_, inserted] = map_nodes.insert({ i.old_id, i.new_id });
     if (!inserted)
       throw http::bad_request(
-          fmt::format("Duplicate node placeholder id {:d}.", i.old_id));
+        std::format("Duplicate node placeholder id {:d}.", i.old_id));
   }
 
   // replace temporary ids
@@ -369,9 +369,8 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
       auto entry = map_relations.find(cr.old_id);
       if (entry == map_relations.end())
         throw http::bad_request(
-            fmt::format(
-                 "Placeholder id not found for relation reference {:d}",
-             cr.old_id));
+          std::format("Placeholder id not found for relation reference {:d}",
+            cr.old_id));
 
       cr.id = entry->second;
     }
@@ -382,23 +381,23 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
           auto entry = map_nodes.find(mbr.old_member_id);
           if (entry == map_nodes.end())
             throw http::bad_request(
-                fmt::format("Placeholder node not found for reference {:d} in relation {:d}",
-                 mbr.old_member_id, cr.old_id));
+              std::format("Placeholder node not found for reference {:d} in relation {:d}",
+                mbr.old_member_id, cr.old_id));
           mbr.member_id = entry->second;
         } else if (mbr.member_type == "Way") {
           auto entry = map_ways.find(mbr.old_member_id);
           if (entry == map_ways.end())
             throw http::bad_request(
-                fmt::format("Placeholder way not found for reference {:d} in relation {:d}",
-                 mbr.old_member_id, cr.old_id));
+              std::format("Placeholder way not found for reference {:d} in relation {:d}",
+                mbr.old_member_id, cr.old_id));
           mbr.member_id = entry->second;
 
         } else if (mbr.member_type == "Relation") {
           auto entry = map_relations.find(mbr.old_member_id);
           if (entry == map_relations.end())
             throw http::bad_request(
-                fmt::format("Placeholder relation not found for reference {:d} in relation {:d}",
-                 mbr.old_member_id, cr.old_id));
+              std::format("Placeholder relation not found for reference {:d} in relation {:d}",
+                mbr.old_member_id, cr.old_id));
           mbr.member_id = entry->second;
         }
       }
@@ -445,9 +444,9 @@ void ApiDB_Relation_Updater::check_forward_relation_placeholders(
           auto entry = placeholder_ids.find(mbr.old_member_id);
           if (entry == placeholder_ids.end())
             throw http::bad_request(
-                fmt::format("Placeholder relation not found for reference "
-                               "{:d} in relation {:d}",
-                 mbr.old_member_id, cr.old_id));
+              std::format("Placeholder relation not found for reference "
+                          "{:d} in relation {:d}",
+                          mbr.old_member_id, cr.old_id));
       }
     }
     if (cr.old_id < 0) {
@@ -543,7 +542,7 @@ void ApiDB_Relation_Updater::lock_current_relations(
       missing_ids.push_back(row[id_col].as<osm_nwr_id_t>());
 
     throw http::not_found(
-        fmt::format("The following relation ids are unknown: {}", to_string(missing_ids)));
+      std::format("The following relation ids are unknown: {}", to_string(missing_ids)));
   }
 }
 
@@ -612,7 +611,7 @@ void ApiDB_Relation_Updater::check_current_relation_versions(
   auto r = m.exec_prepared("check_current_relation_versions", ids, versions);
 
   if (!r.empty()) {
-    throw http::conflict(fmt::format("Version mismatch: Provided {:d}, server had: {:d} of Relation {:d}",
+    throw http::conflict(std::format("Version mismatch: Provided {:d}, server had: {:d} of Relation {:d}",
                           r[0]["expected_version"].as<osm_version_t>(),
                           r[0]["actual_version"].as<osm_version_t>(),
                           r[0]["id"].as<osm_nwr_id_t>()));
@@ -662,7 +661,7 @@ ApiDB_Relation_Updater::determine_already_deleted_relations(
     // and the if-unused flag hasn't been set!
     if (ids_without_if_unused.contains(id)) {
       throw http::gone(
-          fmt::format("The relation with the id {:d} has already been deleted", id));
+        std::format("The relation with the id {:d} has already been deleted", id));
     }
 
     result.insert(id);
@@ -729,7 +728,7 @@ void ApiDB_Relation_Updater::lock_future_members_nodes(
     auto it = absent_rel_node_ids.begin();
 
     throw http::precondition_failed(
-        fmt::format("Relation {:d} requires the nodes with id in {}, "
+      std::format("Relation {:d} requires the nodes with id in {}, "
                        "which either do not exist, or are not visible.",
          it->first, to_string(it->second)));
   }
@@ -782,7 +781,7 @@ void ApiDB_Relation_Updater::lock_future_members_ways(
     auto it = absent_rel_way_ids.begin();
 
     throw http::precondition_failed(
-        fmt::format("Relation {:d} requires the ways with id in {}, which "
+      std::format("Relation {:d} requires the ways with id in {}, which "
                        "either do not exist, or are not visible.",
          it->first, to_string(it->second)));
   }
@@ -836,7 +835,7 @@ void ApiDB_Relation_Updater::lock_future_members_relations(
     auto it = absent_rel_rel_ids.begin();
 
     throw http::precondition_failed(
-        fmt::format("Relation {:d} requires the relations with id in {}, "
+      std::format("Relation {:d} requires the relations with id in {}, "
                        "which either do not exist, or are not visible.",
          it->first, to_string(it->second)));
   }
@@ -1720,7 +1719,7 @@ ApiDB_Relation_Updater::is_relation_still_referenced(
       // Without the if-unused, such a situation would lead to an error, and the
       // whole diff upload would fail.
       throw http::precondition_failed(
-          fmt::format("The relation {:d} is used in relations {}.",
+        std::format("The relation {:d} is used in relations {}.",
            row["member_id"].as<osm_nwr_id_t>(),
            row["relation_ids"].c_str()));
     }

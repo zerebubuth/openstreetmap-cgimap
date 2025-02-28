@@ -11,7 +11,7 @@
 #include "cgimap/logger.hpp"
 
 #include <chrono>
-#include <fmt/core.h>
+#include <format>
 
 using std::list;
 
@@ -78,7 +78,7 @@ void osm_diffresult_responder::write(output_formatter& fmt,
     }
 
   } catch (const std::exception &e) {
-    logger::message(fmt::format("Caught error in osm_diffresult_responder: {}",
+    logger::message(std::format("Caught error in osm_diffresult_responder: {}",
                         e.what()));
     fmt.error(e);
   }
