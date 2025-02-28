@@ -109,9 +109,66 @@ TEST_CASE("http_check_accept_header_parsing", "[http]") {
     CHECK(header.is_acceptable(mime::type::text_plain) == true);
   }
 
+  SECTION("test: wildcard header") {
+    AcceptHeader header{"*/*"};
+    CHECK(header.is_acceptable(mime::type::any_type) == true);
+    CHECK(header.is_acceptable(mime::type::application_json) == true);
+    CHECK(header.is_acceptable(mime::type::application_xml) == true);
+    CHECK(header.is_acceptable(mime::type::text_plain) == true);
+  }
+
+  SECTION("test: bug-compatible wildcard header ") {
+    AcceptHeader header{"*"};
+    CHECK(header.is_acceptable(mime::type::any_type) == true);
+    CHECK(header.is_acceptable(mime::type::application_json) == true);
+    CHECK(header.is_acceptable(mime::type::application_xml) == true);
+    CHECK(header.is_acceptable(mime::type::text_plain) == true);
+  }
+
   SECTION("test: not supported mime types") {
-    REQUIRE_THROWS_AS(AcceptHeader{"audio/*; q=0.2, audio/basic"}, http::bad_request);
-    REQUIRE_THROWS_AS(AcceptHeader{"text, text/html"}, http::bad_request);
+    CHECK_NOTHROW(AcceptHeader{"audio/*; q=0.2, audio/basic"});
+    CHECK_NOTHROW(AcceptHeader{"text/html"});
+  }
+
+  SECTION("test: invalid accept header format") {
+    CHECK_THROWS_AS(AcceptHeader{""}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"/"}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"*/"}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"foo/"}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"/*"}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"/foo"}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"*/foo"}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"text"}, http::bad_request);
+  }
+
+  SECTION("test: accept header params") {
+    CHECK_NOTHROW(AcceptHeader{"application/xml;q=0.5"});
+    CHECK_NOTHROW(AcceptHeader{"application/xml;baz=abc;bat=123"});
+    CHECK_NOTHROW(AcceptHeader{"application/xml;baz=abc;bat=123, application/json; param1=1; param2=2"});
+    CHECK_NOTHROW(AcceptHeader{"foo/bar;q=0.5; accept-extension-param1=abcd123; exptaram=%653"});
+    CHECK_NOTHROW(AcceptHeader{"text/html, application/xhtml+xml, application/xml;q=0.9, image/webp, */*;q=0.8"});
+    CHECK_NOTHROW(AcceptHeader{"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"});
+    CHECK_NOTHROW(AcceptHeader{"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/png,image/svg+xml,*/*;q=0.8"});
+  }
+
+  SECTION("test: invalid accept header q value") {
+    CHECK_THROWS_AS(AcceptHeader{"application/xml;q=foobar"}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"application/xml;q="}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"application/xml;q=123456"}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"application/xml;q=-123456"}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"application/xml;q=1.1"}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"application/xml;q=-0.1"}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"application/xml;q=NAN"}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"application/xml;q=-NAN"}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"application/xml;q=INF"}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"application/xml;q=INFINITY"}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"application/xml;q=-INF"}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"application/xml;q=-INFINITY"}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"application/xml;q=0x1"}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"application/xml;q=0x0"}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"application/xml;q=0b1"}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"application/xml;q=0.5abc"}, http::bad_request);
+    CHECK_THROWS_AS(AcceptHeader{"application/xml;q=abc0.5"}, http::bad_request);
   }
 
   SECTION("test: application/json") {

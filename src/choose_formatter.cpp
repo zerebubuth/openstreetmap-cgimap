@@ -30,6 +30,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <charconv>
 
 #include <fmt/core.h>
 
@@ -45,10 +46,6 @@ AcceptHeader::AcceptHeader(const std::string &header) {
 
   for (const auto &acceptedType : acceptedTypes)
     mapping[acceptedType.mimeType] = acceptedType.q;
-
-  if (mapping.empty()) {
-    throw http::bad_request("Accept header could not be parsed.");
-  }
 }
 
 [[nodiscard]] bool AcceptHeader::is_acceptable(mime::type mt) const {
@@ -91,13 +88,16 @@ std::vector<AcceptHeader::AcceptElement> AcceptHeader::parse(const std::string &
   // Split by comma to get individual media types
   auto items = split_trim(data, ',');
 
+  if (items.empty())
+    throw http::bad_request("Invalid empty accept header");
+
   for (const auto &item : items) {
     // Split each item by semicolon to separate media type from
     // parameters
     auto elems = split_trim(item, ';');
 
     if (elems.empty()) {
-      continue;
+      throw http::bad_request("Malformed accept header");
     }
 
     // Treat Accept: * as Accept: */*
@@ -106,8 +106,13 @@ std::vector<AcceptHeader::AcceptElement> AcceptHeader::parse(const std::string &
 
     // Split the media type into type and subtype
     auto mime_parts = split_trim(elems[0], '/');
-    if (mime_parts.size() != 2 || mime_parts[1].empty()) {
-      continue;
+    if (mime_parts.size() != 2 || mime_parts[0].empty() || mime_parts[1].empty()) {
+      throw http::bad_request("Invalid accept header media type");
+    }
+
+    // */subtype is not allowed
+    if (mime_parts[0] == "*" && mime_parts[1] != "*") {
+      throw http::bad_request("Invalid wildcard in accept header media type");
     }
 
     // figure out the mime::type from the string
@@ -125,14 +130,21 @@ std::vector<AcceptHeader::AcceptElement> AcceptHeader::parse(const std::string &
     // Parse parameters
     for (size_t i = 1; i < elems.size(); ++i) {
       auto param_parts = split_trim(elems[i], '=');
-      if (param_parts.size() != 2)
-        continue;
+      if (param_parts.size() != 2) {
+        throw http::bad_request("Malformed parameter in accept header");
+      }
 
       if (param_parts[0] == "q") {
-        try {
-          acceptElement.q = std::stod(std::string{param_parts[1]});
-        } catch (const std::exception &) {
-          acceptElement.q = 0.0;
+        auto [ptr, ec] = std::from_chars(param_parts[1].begin(), 
+                                         param_parts[1].end(), 
+                                         acceptElement.q, 
+                                         std::chars_format::fixed);
+        if (ec != std::errc() || 
+            ptr != param_parts[1].end() ||
+            !std::isfinite(acceptElement.q) || 
+            acceptElement.q < 0 || 
+            acceptElement.q > 1) {
+          throw http::bad_request("Invalid q parameter value in accept header");
         }
       } else {
         acceptElement.params[std::string{param_parts[0]}] = std::string{param_parts[1]};
