@@ -117,7 +117,7 @@ void ApiDB_Node_Updater::process_new_nodes() {
     ids.emplace_back(id.id);
 
   // remove duplicates
-  std::sort(ids.begin(), ids.end());
+  std::ranges::sort(ids);
   ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
 
   // lock_current_nodes(ids);    // INSERT already set RowExclusiveLock earlier on
@@ -142,7 +142,7 @@ void ApiDB_Node_Updater::process_modify_nodes() {
     ids.push_back(id.id);
 
   // remove duplicates
-  std::sort(ids.begin(), ids.end());
+  std::ranges::sort(ids);
   ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
 
   lock_current_nodes(ids);
@@ -159,7 +159,7 @@ void ApiDB_Node_Updater::process_modify_nodes() {
       ids_package.push_back(id.id);
 
     // remove duplicates
-    std::sort(ids_package.begin(), ids_package.end());
+    std::ranges::sort(ids_package);
     ids_package.erase(std::unique(ids_package.begin(), ids_package.end()),
                       ids_package.end());
 
@@ -195,7 +195,7 @@ void ApiDB_Node_Updater::process_delete_nodes() {
     ids.push_back(node.id);
 
   // remove duplicates
-  std::sort(ids.begin(), ids.end());
+  std::ranges::sort(ids);
   ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
 
   lock_current_nodes(ids);
@@ -206,7 +206,7 @@ void ApiDB_Node_Updater::process_delete_nodes() {
   auto already_deleted_nodes = determine_already_deleted_nodes(delete_nodes);
 
   for (const auto &node : delete_nodes)
-    if (already_deleted_nodes.find(node.id) == already_deleted_nodes.end()) {
+    if (!already_deleted_nodes.contains(node.id)) {
       delete_nodes_visible.push_back(node);
       ids_visible.push_back(node.id);
     }
@@ -343,8 +343,8 @@ void ApiDB_Node_Updater::insert_new_nodes_to_current_table(
   const auto id_col(r.column_number("id"));
 
   for (const auto &row : r) {
-    ct.created_node_ids.push_back({ row[old_id_col].as<osm_nwr_signed_id_t>(),
-                                    row[id_col].as<osm_nwr_id_t>(), 1 });
+    ct.created_node_ids.push_back({row[old_id_col].as<osm_nwr_signed_id_t>(),
+                                  row[id_col].as<osm_nwr_id_t>(), 1});
   }
 
 }
@@ -397,7 +397,7 @@ ApiDB_Node_Updater::build_packages(const std::vector<node_t> &nodes) {
   std::map<osm_nwr_id_t, unsigned int> id_to_package;
 
   for (const auto &node : nodes) {
-    if (id_to_package.find(node.id) == id_to_package.end())
+    if (!id_to_package.contains(node.id))
       id_to_package[node.id] = 0;
     else
       ++id_to_package[node.id];
@@ -502,7 +502,7 @@ std::set<osm_nwr_id_t> ApiDB_Node_Updater::determine_already_deleted_nodes(
 
     // OsmChange documents wants to delete a node that is already deleted,
     // and the if-unused flag hasn't been set!
-    if (ids_without_if_unused.find(id) != ids_without_if_unused.end()) {
+    if (ids_without_if_unused.contains(id)) {
 
       throw http::gone(
           fmt::format("The node with the id {:d} has already been deleted", id));
@@ -515,12 +515,12 @@ std::set<osm_nwr_id_t> ApiDB_Node_Updater::determine_already_deleted_nodes(
     // thing left to do in this scenario is to return old_id, new_id and the
     // current version to the caller
 
-    if (ids_if_unused.find(id) != ids_if_unused.end()) {
+    if (ids_if_unused.contains(id)) {
 
-      ct.skip_deleted_node_ids.push_back(
-          { id_to_old_id[ row["id"].as<osm_nwr_id_t>() ],
-	    row["id"].as<osm_nwr_id_t>(),
-            row["version"].as<osm_version_t>() });
+      ct.skip_deleted_node_ids.push_back({
+            id_to_old_id[ row["id"].as<osm_nwr_id_t>() ],
+	          row["id"].as<osm_nwr_id_t>(),
+            row["version"].as<osm_version_t>()});
     }
   }
 
@@ -623,13 +623,11 @@ void ApiDB_Node_Updater::update_current_nodes(
 
     std::set<osm_nwr_id_t> diff;
 
-    std::set_difference(ids_set.begin(), ids_set.end(), processed_ids.begin(),
-                        processed_ids.end(), std::inserter(diff, diff.end()));
+    std::ranges::set_difference(ids_set, processed_ids, std::inserter(diff, diff.end()));
 
     auto unknown_id = (*diff.begin()); // Just take first element
     auto unknown_node =
-        std::find_if(nodes.begin(), nodes.end(),
-                     [&](const node_t &n) { return n.id == unknown_id; });
+        std::ranges::find_if(nodes, [&](const node_t &n) { return n.id == unknown_id; });
 
     throw http::server_error(
         fmt::format(
@@ -643,9 +641,9 @@ void ApiDB_Node_Updater::update_current_nodes(
 
   // update modified nodes table
   for (const auto &row : r)
-    ct.modified_node_ids.push_back({ id_to_old_id[row[id_col].as<osm_nwr_id_t>()],
-                                      row[id_col].as<osm_nwr_id_t>(),
-                                      row[version_col].as<osm_version_t>() });
+    ct.modified_node_ids.push_back({id_to_old_id[row[id_col].as<osm_nwr_id_t>()],
+                                   row[id_col].as<osm_nwr_id_t>(),
+                                   row[version_col].as<osm_version_t>()});
 }
 
 void ApiDB_Node_Updater::delete_current_nodes(
@@ -734,10 +732,10 @@ std::vector<osm_nwr_id_t> ApiDB_Node_Updater::insert_new_current_node_tags(
   unsigned total_tags = 0;
 
   for (const auto &node : nodes) {
-    for (const auto &tag : node.tags) {
+    for (const auto &[key, value] : node.tags) {
       ids.emplace_back(node.id);
-      ks.emplace_back(escape(tag.first));
-      vs.emplace_back(escape(tag.second));
+      ks.emplace_back(escape(key));
+      vs.emplace_back(escape(value));
       ++total_tags;
     }
   }
@@ -768,7 +766,7 @@ std::vector<osm_nwr_id_t> ApiDB_Node_Updater::insert_new_current_node_tags(
 #endif
 
   // prepare list of node ids with tags
-  std::sort(ids.begin(), ids.end());
+  std::ranges::sort(ids);
   ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
   return ids;
 }
@@ -858,7 +856,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
 
       // OsmChange documents wants to delete a node that is still referenced,
       // and the if-unused flag hasn't been set!
-      if (ids_without_if_unused.find(node_id) != ids_without_if_unused.end()) {
+      if (ids_without_if_unused.contains(node_id)) {
 
         // Without the if-unused, such a situation would lead to an error, and
         // the whole diff upload would fail.
@@ -868,7 +866,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
              row["way_ids"].c_str()));
       }
 
-      if (ids_if_unused.find(node_id) != ids_if_unused.end()) {
+      if (ids_if_unused.contains(node_id)) {
         /* a <delete> block in the OsmChange document may have an if-unused
          * attribute
          * If this attribute is present, then the delete operation(s) in this
@@ -900,7 +898,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
 
       // OsmChange documents wants to delete a node that is still referenced,
       // and the if-unused flag hasn't been set!
-      if (ids_without_if_unused.find(node_id) != ids_without_if_unused.end()) {
+      if (ids_without_if_unused.contains(node_id)) {
 
         // Without the if-unused, such a situation would lead to an error, and
         // the whole diff upload would fail.
@@ -910,7 +908,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
                 row["relation_ids"].c_str()));
       }
 
-      if (ids_if_unused.find(node_id) != ids_if_unused.end())
+      if (ids_if_unused.contains(node_id))
         nodes_to_exclude_from_deletion.insert(
             row["member_id"].as<osm_nwr_id_t>());
     }
@@ -921,13 +919,9 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
   // We will simply skip those nodes from now on
 
   if (!nodes_to_exclude_from_deletion.empty()) {
-    updated_nodes.erase(
-        std::remove_if(updated_nodes.begin(), updated_nodes.end(),
-                       [&](const node_t &a) {
-                         return nodes_to_exclude_from_deletion.find(a.id) !=
-                                nodes_to_exclude_from_deletion.end();
-                       }),
-        updated_nodes.end());
+    std::erase_if(updated_nodes, [&](const node_t &a) {
+                         return nodes_to_exclude_from_deletion.contains(a.id);
+                       });
 
     // Return old_id, new_id and current version to the caller in case of
     // if-unused, so it's clear that the delete operation was *not* executed,
@@ -954,7 +948,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
 
       ct.skip_deleted_node_ids.push_back(
           { id_to_old_id[row["id"].as<osm_nwr_id_t>()],
-	    row["id"].as<osm_nwr_id_t>(),
+	          row["id"].as<osm_nwr_id_t>(),
             row["version"].as<osm_version_t>() });
     }
   }
