@@ -14,7 +14,7 @@ string(TIMESTAMP CURRENT_TIMESTAMP %y%m%d%H%M UTC)
 
 project(openstreetmap-cgimap
         LANGUAGES CXX
-        VERSION "2.0.1"
+        VERSION "2.0.1.${CURRENT_TIMESTAMP}"
         DESCRIPTION "CGImap is a C++ implementation of some parts of the OpenStreetMap API as a FastCGI process."
         HOMEPAGE_URL "https://github.com/zerebubuth/openstreetmap-cgimap")
 set(CMAKE_PROJECT_BUGREPORT_URL "https://github.com/zerebubuth/openstreetmap-cgimap/issues")
