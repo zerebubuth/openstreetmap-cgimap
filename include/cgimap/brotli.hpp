@@ -13,6 +13,7 @@
 
 #if HAVE_BROTLI
 
+#include <array>
 #include <functional>
 #include <memory>
 

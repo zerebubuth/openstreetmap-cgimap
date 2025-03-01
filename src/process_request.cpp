@@ -248,7 +248,7 @@ process_get_request(request& req, const handler& handler,
  * process a POST/PUT request.
  */
 std::tuple<std::string, size_t>
-process_post_put_request(RequestContext& req_ctx, 
+process_post_put_request(RequestContext& req_ctx,
                          const handler& handler,
                          const data_selection::factory& factory,
                          data_update::factory& update_factory,

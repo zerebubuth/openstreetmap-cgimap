@@ -11,6 +11,7 @@
 #define FCGI_REQUEST_HPP
 
 #include "cgimap/request.hpp"
+#include <array>
 #include <chrono>
 #include <memory>
 

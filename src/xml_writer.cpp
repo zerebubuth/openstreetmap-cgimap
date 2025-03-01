@@ -7,7 +7,7 @@
  * For a full list of authors see the git log.
  */
 
-
+#include <array>
 #include <memory>
 #include <stdexcept>
 #include <iostream>
