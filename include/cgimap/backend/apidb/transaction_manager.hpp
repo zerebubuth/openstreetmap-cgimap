@@ -124,6 +124,11 @@ public:
 };
 
 
+#define PQXX_LIBRARY_VERSION_COMPARE(major1, minor1, patch1, major2, minor2, patch2)   \
+    ((major1) < (major2)) ||                                              \
+    ((major1) == (major2) && (minor1) < (minor2)) ||                      \
+    ((major1) == (major2) && (minor1) == (minor2) && (patch1) < (patch2))
+
 
 class Transaction_Manager {
 
@@ -149,7 +154,12 @@ public:
   [[nodiscard]] pqxx::result exec_prepared(const std::string &statement, Args&&... args) {
 
     const auto start = std::chrono::steady_clock::now();
+
+#if PQXX_LIBRARY_VERSION_COMPARE(PQXX_VERSION_MAJOR, PQXX_VERSION_MINOR, PQXX_VERSION_PATCH, 7, 9, 3)
     auto res(m_txn.exec_prepared(statement, std::forward<Args>(args)...));
+#else
+    auto res(m_txn.exec(pqxx::prepped{statement}, pqxx::params{std::forward<Args>(args)...}));
+#endif
     const auto end = std::chrono::steady_clock::now();
 
     const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
@@ -173,5 +183,6 @@ private:
   std::set<std::string>& m_prep_stmt;
 };
 
+#undef PQXX_LIBRARY_VERSION_COMPARE
 
 #endif
