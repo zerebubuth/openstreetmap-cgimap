@@ -67,8 +67,8 @@ changeset_update_handler::responder(data_selection &sel) const {
   return std::make_unique<changeset_update_sel_responder>(mime_type, sel, id);
 }
 
-responder_ptr_t changeset_update_handler::responder(data_update & upd, 
-                                                    const std::string &payload, 
+responder_ptr_t changeset_update_handler::responder(data_update & upd,
+                                                    const std::string &payload,
                                                     const RequestContext& req_ctx) const {
   return std::make_unique<changeset_update_responder>(mime_type, upd, id, payload, req_ctx);
 }

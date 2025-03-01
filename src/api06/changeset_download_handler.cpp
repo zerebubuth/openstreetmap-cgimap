@@ -15,8 +15,8 @@
 
 namespace api06 {
 
-changeset_download_responder::changeset_download_responder(mime::type mt, 
-                                                           osm_changeset_id_t id, 
+changeset_download_responder::changeset_download_responder(mime::type mt,
+                                                           osm_changeset_id_t id,
                                                            data_selection &w)
   : osmchange_responder(mt, w) {
 
