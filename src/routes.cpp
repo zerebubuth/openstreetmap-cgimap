@@ -277,16 +277,12 @@ namespace {
  */
   std::pair<std::string, mime::type> resource_mime_type(const std::string &path) {
 
-  std::size_t json_found = path.rfind(".json");
-
-  if (json_found != std::string::npos && json_found == path.length() - 5) {
-      return {path.substr(0, json_found), mime::type::application_json};
+  if (path.ends_with(".json")) {
+      return {path.substr(0, path.length() - 5), mime::type::application_json};
   }
 
-  std::size_t xml_found = path.rfind(".xml");
-
-  if (xml_found != std::string::npos && xml_found == path.length() - 4) {
-      return {path.substr(0, xml_found), mime::type::application_xml};
+  if (path.ends_with(".xml")) {
+      return {path.substr(0, path.length() - 4), mime::type::application_xml};
   }
 
   return make_pair(path, mime::type::unspecified_type);
@@ -320,12 +316,11 @@ handler_ptr_t routes::operator()(request &req) const {
   auto path = get_request_path(req);
   handler_ptr_t hptr;
   // check the prefix
-  if (path.compare(0, common_prefix.size(), common_prefix) == 0) {
+  if (path.starts_with(common_prefix)) {
     hptr = route_resource(req, std::string(path, common_prefix.size()), r.get());
 
 #ifdef ENABLE_API07
-  } else if (path.compare(0, experimental_prefix.size(), experimental_prefix) ==
-             0) {
+  } else if (path.starts_with(experimental_prefix)) {
     hptr = route_resource(req, std::string(path, experimental_prefix.size()),
                           r_experimental.get());
 #endif /* ENABLE_API07 */
