@@ -16,12 +16,11 @@
 #include <iterator> // for distance
 #include <cctype>   // for toupper, isxdigit
 #include <cstdlib>
+#include <ranges>
 #include <regex>
 #include <sstream>
+#include <string_view>
 
-#include <boost/algorithm/string.hpp>
-
-namespace al = boost::algorithm;
 
 using std::string;
 using std::vector;
@@ -226,9 +225,13 @@ vector<pair<string, string> > parse_params(const string &p) {
 
 std::unique_ptr<encoding> choose_encoding(const std::string &accept_encoding) {
 
-  std::vector<std::string> encodings;
+  using namespace std::literals;
 
-  al::iter_split(encodings, accept_encoding, al::first_finder(", "));
+  std::vector<std::string_view> encodings;
+
+  for (auto parts = std::ranges::views::split(accept_encoding, ", "sv); auto&& part : parts) {
+    encodings.emplace_back(&*part.begin(), std::ranges::distance(part));
+  }
 
   float identity_quality = 0.000;
   float deflate_quality = 0.000;
@@ -239,14 +242,16 @@ std::unique_ptr<encoding> choose_encoding(const std::string &accept_encoding) {
   if (encodings.empty())
     encodings.emplace_back("*");
 
-  for (const auto &encoding : encodings) {
+  for (auto encoding : encodings) {
 
     std::string name;
     float quality = 0.0;
 
     std::vector<std::string> what;
 
-    al::iter_split(what, encoding, al::first_finder(";q="));
+    for (auto parts = std::ranges::views::split(encoding, ";q="sv); auto&& part : parts) {
+      what.emplace_back(std::string(&*part.begin(), std::ranges::distance(part)));
+    }
 
     if (what.size() == 2) {
       float q = std::stof(what[1]);
