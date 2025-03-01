@@ -33,7 +33,7 @@ std::vector<tile_id_t> tiles_for_area(double minlat, double minlon, double maxla
     }
   }
 
-  std::sort(tiles.begin(), tiles.end());
+  std::ranges::sort(tiles);
   tiles.erase(std::unique(tiles.begin(), tiles.end()), tiles.end());
 
   return tiles;

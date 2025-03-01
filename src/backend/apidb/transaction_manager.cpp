@@ -53,7 +53,7 @@ Transaction_Manager::Transaction_Manager(Transaction_Owner_Base &to) :
 
 void Transaction_Manager::prepare(const std::string &name,
                                   const std::string &definition) {
-  if (m_prep_stmt.find(name) == m_prep_stmt.end())
+  if (!m_prep_stmt.contains(name))
   {
     m_txn.conn().prepare(name, definition);
     m_prep_stmt.insert(name);

@@ -59,21 +59,21 @@ private:
   bbox_t m_bbox{};
 
   struct member_t {
-    std::string member_type;
-    osm_nwr_id_t member_id;
-    std::string member_role;
-    osm_sequence_id_t sequence_id;
-    osm_nwr_signed_id_t old_member_id;
+    std::string member_type{};
+    osm_nwr_id_t member_id{};
+    std::string member_role{};
+    osm_sequence_id_t sequence_id{};
+    osm_nwr_signed_id_t old_member_id{};
   };
 
   struct relation_t {
-    osm_nwr_id_t id;
-    osm_version_t version;
-    osm_changeset_id_t changeset_id;
-    osm_nwr_signed_id_t old_id;
-    std::vector<std::pair<std::string, std::string>> tags;
-    std::vector<member_t> members;
-    bool if_unused;
+    osm_nwr_id_t id{};
+    osm_version_t version{};
+    osm_changeset_id_t changeset_id{};
+    osm_nwr_signed_id_t old_id{};
+    std::vector<std::pair<std::string, std::string>> tags{};
+    std::vector<member_t> members{};
+    bool if_unused{};
   };
 
   struct rel_member_difference_t {

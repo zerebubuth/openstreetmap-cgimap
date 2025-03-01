@@ -8,6 +8,7 @@
  */
 
 #include "cgimap/oauth2.hpp"
+#include <ranges>
 #include <sys/types.h>
 
 #if HAVE_CRYPTOPP
@@ -52,7 +53,7 @@ namespace oauth2 {
   }
 
   [[nodiscard]] bool has_forbidden_char(std::string_view str) {
-    return !std::all_of(str.begin(), str.end(), is_valid_bearer_token_char);
+    return !std::ranges::all_of(str, is_valid_bearer_token_char);
   }
 
   [[nodiscard]] std::optional<osm_user_id_t> validate_bearer_token(const request &req, data_selection& selection, bool& allow_api_write)
@@ -64,7 +65,7 @@ namespace oauth2 {
     const auto auth_header = std::string(auth_hdr);
 
     // Auth header starts with Bearer?
-    if (auth_header.rfind("Bearer ", 0) == std::string::npos)
+    if (!auth_header.starts_with("Bearer "))
       return std::nullopt;
 
     const auto bearer_token = auth_header.substr(7);

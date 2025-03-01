@@ -4,16 +4,27 @@ FROM ubuntu:24.04 AS builder
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -qq && \
-    apt-get install -y gcc g++ make cmake \
+    apt-get install -y gcc g++ make cmake wget ca-certificates unzip pkg-config \
        libfcgi-dev libxml2-dev libmemcached-dev libbrotli-dev \
        libboost-program-options-dev libcrypto++-dev libyajl-dev \
-       libpqxx-dev zlib1g-dev libfmt-dev \
+       libpq-dev zlib1g-dev libfmt-dev \
        postgresql-16 postgresql-server-dev-all dpkg-dev file \
        --no-install-recommends && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+
+# Build and install libpqxx 7.10.0
+RUN wget https://github.com/jtv/libpqxx/archive/refs/tags/7.10.0.zip && \
+    unzip 7.10.0.zip && \
+    cd libpqxx-7.10.0 && \
+    mkdir build && \
+    cd build && \
+    cmake -DSKIP_PQXX_STATIC=OFF -DSKIP_PQXX_SHARED=ON .. && \
+    make -j${nproc} && \
+    make install && \
+    cd ../..
 
 # Copy the main application.
 COPY . ./

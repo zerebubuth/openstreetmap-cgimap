@@ -55,15 +55,15 @@ private:
   bbox_t m_bbox{};
 
   struct node_t {
-    osm_nwr_id_t id;
-    osm_version_t version;
-    int64_t lat;
-    int64_t lon;
-    uint64_t tile;
-    osm_changeset_id_t changeset_id;
-    osm_nwr_signed_id_t old_id;
-    std::vector<std::pair<std::string, std::string> > tags;
-    bool if_unused;
+    osm_nwr_id_t id{};
+    osm_version_t version{};
+    int64_t lat{};
+    int64_t lon{};
+    uint64_t tile{};
+    osm_changeset_id_t changeset_id{};
+    osm_nwr_signed_id_t old_id{};
+    std::vector<std::pair<std::string, std::string> > tags{};
+    bool if_unused{};
   };
 
   void replace_old_ids_in_nodes(

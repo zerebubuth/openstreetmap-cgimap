@@ -32,13 +32,13 @@ id_version parse_single_id(std::string_view str) {
 
   case 1:
     // Just ID without version
-    result.id = parse_number<osm_nwr_id_t>(id_version[0]);
+    result.id = parse_ruby_number<osm_nwr_id_t>(id_version[0]);
     result.version = std::nullopt;
     break;
   case 2:
     // ID with version
-    result.id = parse_number<osm_nwr_id_t>(id_version[0]);
-    result.version = parse_number<uint32_t>(id_version[1]);
+    result.id = parse_ruby_number<osm_nwr_id_t>(id_version[0]);
+    result.version = parse_ruby_number<uint32_t>(id_version[1]);
     break;
   }
 
@@ -76,7 +76,7 @@ std::vector<id_version> parse_id_list_params(const request &req,
   }
 
   // ensure list of IDs is unique
-  std::sort(myids.begin(), myids.end());
+  std::ranges::sort(myids);
   auto new_end = std::unique(myids.begin(), myids.end());
   myids.erase(new_end, myids.end());
 

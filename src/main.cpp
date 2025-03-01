@@ -160,7 +160,7 @@ void get_options(int argc, char **argv, po::variables_map &options) {
     [&desc](const std::string &name) {
           std::string option;
           // convert an environment variable name to an option name
-          if (name.substr(0, 7) == "CGIMAP_") {
+          if (name.starts_with("CGIMAP_")) {
             std::transform(name.begin() + 7, name.end(),
                            std::back_inserter(option),
                            [](unsigned char c) {

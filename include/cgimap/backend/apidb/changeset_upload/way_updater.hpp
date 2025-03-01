@@ -66,13 +66,13 @@ private:
   };
 
   struct way_t {
-    osm_nwr_id_t id;
-    osm_version_t version;
-    osm_changeset_id_t changeset_id;
-    osm_nwr_signed_id_t old_id;
-    std::vector<std::pair<std::string, std::string> > tags;
-    std::vector<way_node_t> way_nodes;
-    bool if_unused;
+    osm_nwr_id_t id{};
+    osm_version_t version{};
+    osm_changeset_id_t changeset_id{};
+    osm_nwr_signed_id_t old_id{};
+    std::vector<std::pair<std::string, std::string> > tags{};
+    std::vector<way_node_t> way_nodes{};
+    bool if_unused{};
   };
 
   /*

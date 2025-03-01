@@ -29,36 +29,22 @@ struct element {
   members_t m_members;
 };
 
-bool operator<(const element &a, const element &b) {
-  // length of YYYY-MM-DDTHH:MM:SSZ is 20, and strings should always be that
-  // long.
-  assert(a.m_info.timestamp.size() == 20);
-  assert(b.m_info.timestamp.size() == 20);
 
-  auto cmp = strncmp(
-    a.m_info.timestamp.c_str(), b.m_info.timestamp.c_str(), 20);
+std::strong_ordering operator<=>(const element &a, const element &b) {
 
-  if (cmp < 0) {
-    return true;
-
-  } else if (cmp > 0) {
-    return false;
-
-  } else if (a.m_info.version < b.m_info.version) {
-    return true;
-
-  } else if (a.m_info.version > b.m_info.version) {
-    return false;
-
-  } else if (a.m_type < b.m_type) {
-    return true;
-
-  } else if (a.m_type > b.m_type) {
-    return false;
-
-  } else {
-    return a.m_info.id < b.m_info.id;
+  if (auto result = a.m_info.timestamp <=> b.m_info.timestamp; result != 0) {
+    return result;
   }
+
+  if (auto result = a.m_info.version <=> b.m_info.version; result != 0) {
+    return result;
+  }
+
+  if (auto result = a.m_type <=> b.m_type; result != 0) {
+    return result;
+  }
+
+  return a.m_info.id <=> b.m_info.id;
 }
 
 struct sorting_formatter : public output_formatter {

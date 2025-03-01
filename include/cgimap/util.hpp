@@ -25,6 +25,8 @@
 #include <sstream>
 #include <string>
 #include <type_traits>
+#include <string_view>
+#include <ranges>
 
 #include <fmt/core.h>
 #include <fmt/format.h>
@@ -88,29 +90,44 @@ inline bool ichar_equals(char a, char b) {
 // Case insensitive string comparison
 inline bool iequals(std::string_view a, std::string_view b) {
   return a.size() == b.size() &&
-         std::equal(a.begin(), a.end(), b.begin(), b.end(), ichar_equals);
+         std::ranges::equal(a, b, ichar_equals);
 }
-inline std::vector<std::string_view> split(std::string_view str, char delim)
-{
-  std::vector< std::string_view > result;
-  auto left = str.begin();
-  for(auto it = left; it != str.end(); ++it)
-  {
-    if (*it == delim)
-    {
-      result.emplace_back(left, it - left);
-      left = it + 1;
-      if (left == str.end())
-        result.emplace_back(it, 0);
-    }
+
+inline std::string_view trim(std::string_view str) {
+  auto start = str.find_first_not_of(" \t\n\r");
+  if (start == std::string::npos)
+      return {};
+  auto end = str.find_last_not_of(" \t\n\r");
+  return str.substr(start, end - start + 1);
+}
+
+inline std::vector<std::string_view> split_trim(std::string_view str, char delim) {
+
+  auto split_view = str | std::views::split(delim);
+
+  std::vector<std::string_view> result;
+  for (auto&& part : split_view) {
+      auto trimmed = trim(std::string_view(&*part.begin(), std::ranges::distance(part)));
+      if (!trimmed.empty()) {
+          result.push_back(trimmed);
+      }
   }
-  if (left != str.end())
-    result.emplace_back(left, str.end() - left);
+
   return result;
 }
 
+inline std::vector<std::string_view> split(std::string_view str, char delim) {
+    auto split_result = str | std::ranges::views::split(delim);
 
-template <typename T> T parse_number(std::string_view str) {
+    std::vector<std::string_view> result;
+    for (auto&& part : split_result) {
+        result.push_back(std::string_view(&*part.begin(), std::ranges::distance(part)));
+    }
+
+    return result;
+}
+
+template <typename T> T parse_ruby_number(std::string_view str) {
 
   T id{};
 
@@ -188,13 +205,7 @@ public:
 		maxlon = std::max(maxlon, bbox.maxlon);
 	}
 
-	bool operator==(const bbox_t& bbox) const
-	{
-	  return( minlat == bbox.minlat &&
-			  minlon == bbox.minlon &&
-			  maxlat == bbox.maxlat &&
-			  maxlon == bbox.maxlon);
-	}
+	bool operator==(const bbox_t& bbox) const = default;
 
 	friend std::ostream& operator<< (std::ostream& os, const bbox_t& bbox) {
 	    os << "[" << bbox.minlat << "," << bbox.minlon << "," << bbox.maxlat << "," << bbox.maxlon << "]";

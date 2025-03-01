@@ -7,10 +7,10 @@ RUN apk update && \
 
 WORKDIR /app
 
-# Build and install libpqxx 7.9.2
-RUN wget https://github.com/jtv/libpqxx/archive/refs/tags/7.9.2.zip && \
-    unzip 7.9.2.zip && \
-    cd libpqxx-7.9.2 && \
+# Build and install libpqxx 7.10.0
+RUN wget https://github.com/jtv/libpqxx/archive/refs/tags/7.10.0.zip && \
+    unzip 7.10.0.zip && \
+    cd libpqxx-7.10.0 && \
     mkdir build && \
     cd build && \
     cmake -DSKIP_PQXX_STATIC=OFF -DSKIP_PQXX_SHARED=ON .. && \

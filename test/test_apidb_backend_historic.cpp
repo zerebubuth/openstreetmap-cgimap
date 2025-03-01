@@ -10,7 +10,6 @@
 #include <iostream>
 #include <stdexcept>
 #include <fmt/core.h>
-#include <boost/program_options.hpp>
 
 #include <sys/time.h>
 #include <cstdio>
@@ -69,7 +68,7 @@ void init_user_changeset(test_database &tdb) {
 
     INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public)
     VALUES (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', TRUE);
-    
+
     INSERT INTO changesets (id, user_id, created_at, closed_at)
     VALUES (2, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'),
            (3, 1, '2017-02-17T15:34:00Z', '2017-02-17T15:34:00Z');
@@ -87,10 +86,10 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_historic_elements", "[historic][db]
 
     init_user_changeset(tdb);
     tdb.run_sql(R"(
-    
+
       INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
       VALUES (3, 0, 0, 2, FALSE, '2015-03-02T18:27:00Z', 3221225472, 2);
-      
+
       INSERT INTO nodes (node_id, latitude, longitude, changeset_id, visible, "timestamp", tile, version, redaction_id)
       VALUES (3, 0, 0, 2,  TRUE, '2015-03-02T18:27:00Z', 3221225472, 1, NULL),
              (3, 0, 0, 2, FALSE, '2015-03-02T18:27:00Z', 3221225472, 2, NULL);
@@ -148,20 +147,20 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_historic_dup_way", "[historic][db]"
 
     init_user_changeset(tdb);
     tdb.run_sql(R"(
-    
+
       INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
       VALUES (3, 0, 0, 3, FALSE, '2015-03-02T18:27:00Z', 3221225472, 2);
-      
+
       INSERT INTO current_ways (id, changeset_id, "timestamp", visible, version)
       VALUES (1, 3, '2016-09-06T19:55:00Z', TRUE, 2);
-      
+
       INSERT INTO current_way_nodes (way_id, node_id, sequence_id)
       VALUES (1, 3, 1);
-      
+
       INSERT INTO ways (way_id, changeset_id, "timestamp", visible, version, redaction_id)
       VALUES (1, 3, '2016-09-06T19:55:00Z', TRUE, 2, NULL),
              (1, 3, '2016-09-06T19:54:00Z', TRUE, 1, NULL);
-      
+
       INSERT INTO way_nodes (way_id, version, node_id, sequence_id)
       VALUES (1, 2, 3, 1),
              (1, 1, 3, 1),
@@ -201,17 +200,17 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_historic_dup_relation", "[historic]
 
       INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
       VALUES (3, 0, 0, 3, FALSE, '2015-03-02T18:27:00Z', 3221225472, 2);
-      
+
       INSERT INTO current_relations (id, changeset_id, "timestamp", visible, version)
       VALUES (1, 3, '2016-09-19T18:49:00Z', TRUE, 2);
-      
+
       INSERT INTO current_relation_members (relation_id, member_type, member_id, member_role, sequence_id)
       VALUES (1, 'Node', 3, 'foo', 1);
-      
+
       INSERT INTO relations (relation_id, changeset_id, "timestamp", visible, version, redaction_id)
       VALUES (1, 3, '2016-09-19T18:49:00Z', TRUE, 2, NULL),
              (1, 3, '2016-09-19T18:48:00Z', TRUE, 1, NULL);
-      
+
       INSERT INTO relation_members (relation_id, member_type, member_id, member_role, sequence_id, version)
       VALUES (1, 'Node', 3, 'foo', 1, 2),
              (1, 'Node', 3, 'bar', 1, 1);
@@ -248,14 +247,14 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_node_history", "[historic][db]" ) {
 
     init_user_changeset(tdb);
     tdb.run_sql(R"(
-      
+
       INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
       VALUES (3, 0, 0, 2, FALSE, '2015-03-02T18:27:00Z', 3221225472, 2);
-      
+
       INSERT INTO nodes (node_id, latitude, longitude, changeset_id, visible, "timestamp", tile, version, redaction_id)
       VALUES (3, 0, 0, 2, TRUE, '2015-03-02T18:27:00Z', 3221225472, 1, NULL),
              (3, 0, 0, 2, FALSE, '2015-03-02T18:27:00Z', 3221225472, 2, NULL);
-      
+
       INSERT INTO node_tags(node_id, version, k, v)
       VALUES (3, 1, 'key1_1', 'value1'),
              (3, 1, 'key1_2', 'value2'),
@@ -300,25 +299,25 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_way_history", "[historic][db]" ) {
 
     init_user_changeset(tdb);
     tdb.run_sql(R"(
-      
+
       INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
       VALUES (3, 0, 0, 3, FALSE, '2015-03-02T18:27:00Z', 3221225472, 2);
-      
+
       INSERT INTO current_ways (id, changeset_id, "timestamp", visible, version)
       VALUES (1, 3, '2016-09-06T19:55:00Z', TRUE, 2);
-      
+
       INSERT INTO current_way_nodes (way_id, node_id, sequence_id)
       VALUES (1, 3, 1);
-      
+
       INSERT INTO ways (way_id, changeset_id, "timestamp", visible, version, redaction_id)
       VALUES (1, 3, '2016-09-06T19:55:00Z', TRUE, 2, NULL),
              (1, 3, '2016-09-06T19:54:00Z', TRUE, 1, NULL);
-      
+
       INSERT INTO way_nodes (way_id, version, node_id, sequence_id)
       VALUES (1, 2, 3, 1),
              (1, 1, 3, 1),
              (1, 1, 2, 2);
-      
+
       INSERT INTO way_tags(way_id, version, k, v)
       VALUES (1, 1, 'key1_1', 'value1'),
              (1, 1, 'key1_2', 'value2'),
@@ -368,21 +367,21 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_relation_history", "[historic][db]"
 
       INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
       VALUES (3, 0, 0, 3, FALSE, '2015-03-02T18:27:00Z', 3221225472, 2);
-      
+
       INSERT INTO current_relations (id, changeset_id, "timestamp", visible, version)
       VALUES (1, 3, '2016-09-19T18:49:00Z', TRUE, 2);
-      
+
       INSERT INTO current_relation_members (relation_id, member_type, member_id, member_role, sequence_id)
       VALUES (1, 'Node', 3, 'foo', 1);
-      
+
       INSERT INTO relations (relation_id, changeset_id, "timestamp", visible, version, redaction_id)
       VALUES (1, 3, '2016-09-19T18:49:00Z', TRUE, 2, NULL),
              (1, 3, '2016-09-19T18:48:00Z', TRUE, 1, NULL);
-      
+
       INSERT INTO relation_members (relation_id, member_type, member_id, member_role, sequence_id, version)
       VALUES (1, 'Node', 3, 'foo', 1, 2),
              (1, 'Node', 3, 'bar', 1, 1);
-      
+
       INSERT INTO relation_tags(relation_id, version, k, v)
       VALUES (1, 1, 'key1_1', 'value1'),
              (1, 1, 'key1_2', 'value2'),
@@ -493,13 +492,13 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_historical_nodes_redacted", "[histo
 
     init_user_changeset(tdb);
     tdb.run_sql(R"(
-    
+
       INSERT INTO redactions (id, title, description, created_at, updated_at, user_id)
       VALUES (1, 'test redaction', 'test redaction description', '2017-02-04T16:56:00Z', '2017-02-04T16:56:00Z', 1);
-      
+
       INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
       VALUES (3, 0, 0, 2, TRUE, '2017-02-04T16:57:00Z', 3221225472, 2);
-      
+
       INSERT INTO nodes (node_id, latitude, longitude, changeset_id, visible, "timestamp", tile, version, redaction_id)
       VALUES (3, 0, 0, 2, TRUE, '2017-02-04T16:56:00Z', 3221225472, 1, 1),
              (3, 0, 0, 2, TRUE, '2017-02-04T16:57:00Z', 3221225472, 2, NULL);
@@ -546,23 +545,23 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_way_with_history_redacted", "[histo
 
     init_user_changeset(tdb);
     tdb.run_sql(R"(
-     
+
       INSERT INTO redactions (id, title, description, created_at, updated_at, user_id)
       VALUES (1, 'test redaction', 'test redaction description', '2017-02-17T16:56:00Z', '2017-02-17T16:56:00Z', 1);
-      
+
       INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
       VALUES (3, 0, 0, 3, FALSE, '2017-02-17T18:27:00Z', 3221225472, 2);
-      
+
       INSERT INTO current_ways (id, changeset_id, "timestamp", visible, version)
       VALUES (1, 3, '2017-02-17T19:55:00Z', TRUE, 2);
-      
+
       INSERT INTO current_way_nodes (way_id, node_id, sequence_id)
       VALUES (1, 3, 1);
-      
+
       INSERT INTO ways (way_id, changeset_id, "timestamp", visible, version, redaction_id)
       VALUES (1, 3, '2017-02-17T19:55:00Z', TRUE, 2, NULL),
              (1, 3, '2017-02-17T19:54:00Z', TRUE, 1, 1);
-      
+
       INSERT INTO way_nodes (way_id, version, node_id, sequence_id)
       VALUES (1, 2, 3, 1),
              (1, 1, 3, 1),
@@ -616,23 +615,23 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_historical_ways_redacted", "[histor
 
     init_user_changeset(tdb);
     tdb.run_sql(R"(
-      
+
       INSERT INTO redactions (id, title, description, created_at, updated_at, user_id)
       VALUES (1, 'test redaction', 'test redaction description', '2017-02-17T16:56:00Z', '2017-02-17T16:56:00Z', 1);
-      
+
       INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
       VALUES (3, 0, 0, 3, FALSE, '2017-02-17T18:27:00Z', 3221225472, 2);
-      
+
       INSERT INTO current_ways (id, changeset_id, "timestamp", visible, version)
       VALUES (1, 3, '2017-02-17T19:55:00Z', TRUE, 2);
-      
+
       INSERT INTO current_way_nodes (way_id, node_id, sequence_id)
       VALUES (1, 3, 1);
-      
+
       INSERT INTO ways (way_id, changeset_id, "timestamp", visible, version, redaction_id)
       VALUES (1, 3, '2017-02-17T19:55:00Z', TRUE, 2, NULL),
              (1, 3, '2017-02-17T19:54:00Z', TRUE, 1, 1);
-      
+
       INSERT INTO way_nodes (way_id, version, node_id, sequence_id)
       VALUES (1, 2, 3, 1),
              (1, 1, 3, 1),
@@ -675,23 +674,23 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_relation_with_history_redacted", "[
 
     init_user_changeset(tdb);
     tdb.run_sql(R"(
-      
+
       INSERT INTO redactions (id, title, description, created_at, updated_at, user_id)
       VALUES (1, 'test redaction', 'test redaction description', '2017-02-17T16:56:00Z', '2017-02-17T16:56:00Z', 1);
-      
+
       INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
       VALUES (3, 0, 0, 3, FALSE, '2017-02-17T15:34:00Z', 3221225472, 2);
-      
+
       INSERT INTO current_relations (id, changeset_id, "timestamp", visible, version)
       VALUES (1, 3, '2017-02-17T15:34:00Z', TRUE, 2);
-      
+
       INSERT INTO current_relation_members (relation_id, member_type, member_id, member_role, sequence_id)
       VALUES (1, 'Node', 3, 'foo', 1);
-      
+
       INSERT INTO relations (relation_id, changeset_id, "timestamp", visible, version, redaction_id)
       VALUES (1, 3, '2017-02-17T15:34:00Z', TRUE, 2, NULL),
              (1, 3, '2017-02-17T15:34:00Z', TRUE, 1, 1);
-      
+
       INSERT INTO relation_members (relation_id, member_type, member_id, member_role, sequence_id, version)
       VALUES (1, 'Node', 3, 'foo', 1, 2),
              (1, 'Node', 3, 'bar', 1, 1);

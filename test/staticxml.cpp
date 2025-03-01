@@ -416,7 +416,7 @@ struct static_data_selection : public data_selection {
       const way &w = itr->second;
       if (next == end || next->second.m_info.id != w.m_info.id) {
         for (osm_nwr_id_t node_id : w.m_nodes) {
-          if (m_nodes.count(node_id) > 0) {
+          if (m_nodes.contains(node_id)) {
             m_ways.insert(w.m_info.id);
             break;
           }
@@ -447,7 +447,7 @@ struct static_data_selection : public data_selection {
       const relation &r = itr->second;
       if (next == end || next->second.m_info.id != r.m_info.id) {
         for (const member_info &m : r.m_members) {
-          if ((m.type == element_type::way) && (m_ways.count(m.ref) > 0)) {
+          if (m.type == element_type::way && m_ways.contains(m.ref)) {
             m_relations.insert(r.m_info.id);
             break;
           }
@@ -468,7 +468,7 @@ struct static_data_selection : public data_selection {
   void select_relations_from_nodes() override {
     for (auto const & [_, r] : m_db.m_relations) {
       for (const member_info &m : r.m_members) {
-        if ((m.type == element_type::node) && (m_nodes.count(m.ref) > 0)) {
+        if (m.type == element_type::node && m_nodes.contains(m.ref)) {
           m_relations.insert(r.m_info.id);
           break;
         }
@@ -480,8 +480,8 @@ struct static_data_selection : public data_selection {
     std::set<osm_nwr_id_t> tmp_relations;
     for (auto const & [_, r] : m_db.m_relations) {
       for (const member_info &m : r.m_members) {
-        if ((m.type == element_type::relation) &&
-            (m_relations.count(m.ref) > 0)) {
+        if (m.type == element_type::relation &&
+            m_relations.contains(m.ref)) {
           tmp_relations.insert(r.m_info.id);
           break;
         }
@@ -561,8 +561,7 @@ struct static_data_selection : public data_selection {
   int select_changesets(const std::vector<osm_changeset_id_t> &ids) override {
     int selected = 0;
     for (osm_changeset_id_t id : ids) {
-      auto itr = m_db.m_changesets.find(id);
-      if (itr != m_db.m_changesets.end()) {
+      if (m_db.m_changesets.contains(id)) {
         m_changesets.insert(id);
         ++selected;
       }

@@ -15,14 +15,12 @@
 bbox::bbox(double minlat_, double minlon_, double maxlat_, double maxlon_)
     : minlat(minlat_), minlon(minlon_), maxlat(maxlat_), maxlon(maxlon_) {}
 
-bool bbox::operator==(const bbox &other) const {
-  return ((minlat == other.minlat) &&
-          (minlon == other.minlon) &&
-          (maxlat == other.maxlat) &&
-          (maxlon == other.maxlon));
-}
+bool bbox::operator==(const bbox &other) const = default;
 
 bool bbox::parse(const std::string &s) {
+  if (s.empty()) {
+    return false;
+  }
   const auto strs = split(s, ',');
 
   if (strs.size() != 4)
@@ -35,9 +33,7 @@ bool bbox::parse(const std::string &s) {
     // update the current object.
     *this = b;
 
-  } catch(const std::invalid_argument&) {
-    return false;
-  } catch(const std::out_of_range &) {
+  } catch(const std::exception&) {
     return false;
   }
 
@@ -52,14 +48,11 @@ void bbox::clip_to_world() {
 }
 
 bool bbox::valid() const {
-  bool is_valid = true;
-  is_valid &= (minlon >= -180.0) && (minlon <= 180.0);
-  is_valid &= (maxlon >= -180.0) && (maxlon <= 180.0);
-  is_valid &= (minlat >= -90.0) && (minlat <= 90.0);
-  is_valid &= (maxlat >= -90.0) && (maxlat <= 90.0);
-  is_valid &= minlon <= maxlon;
-  is_valid &= minlat <= maxlat;
-  return is_valid;
+  return (minlon >= -180.0) && (minlon <= 180.0) &&
+         (maxlon >= -180.0) && (maxlon <= 180.0) &&
+         (minlat >= -90.0) && (minlat <= 90.0) &&
+         (maxlat >= -90.0) && (maxlat <= 90.0) &&
+         (minlon <= maxlon) && (minlat <= maxlat);
 }
 
 double bbox::area() const { return (maxlon - minlon) * (maxlat - minlat); }

@@ -53,7 +53,7 @@ changeset_update_sel_responder::changeset_update_sel_responder(
 }
 
 
-changeset_update_handler::changeset_update_handler(const request &req, osm_changeset_id_t id)
+changeset_update_handler::changeset_update_handler(const request &, osm_changeset_id_t id)
     : payload_enabled_handler(mime::type::application_xml,
                               http::method::PUT | http::method::OPTIONS),
       id(id) {}
@@ -67,8 +67,8 @@ changeset_update_handler::responder(data_selection &sel) const {
   return std::make_unique<changeset_update_sel_responder>(mime_type, sel, id);
 }
 
-responder_ptr_t changeset_update_handler::responder(data_update & upd, 
-                                                    const std::string &payload, 
+responder_ptr_t changeset_update_handler::responder(data_update & upd,
+                                                    const std::string &payload,
                                                     const RequestContext& req_ctx) const {
   return std::make_unique<changeset_update_responder>(mime_type, upd, id, payload, req_ctx);
 }

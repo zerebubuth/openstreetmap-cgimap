@@ -17,8 +17,6 @@
 #include <filesystem>
 
 namespace fs = std::filesystem;
-namespace po = boost::program_options;
-
 
 namespace {
 
