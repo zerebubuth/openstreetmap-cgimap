@@ -854,7 +854,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "parallel test_changeset_update", "[chan
 
       // Try to update changeset in parallel thread while the main thread
       // is holding an exclusive lock on changeset 51
-      auto future_cs = std::async(std::launch::async, [&req,ctx] {
+      auto future_cs = std::async(std::launch::async, [&ctx] {
          auto factory = tdb.get_new_data_update_factory();
          auto txn = factory->get_default_transaction();
          auto upd = factory->make_data_update(*txn);
