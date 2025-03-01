@@ -462,10 +462,9 @@ void process_request(request &req, rate_limiter &limiter,
     if (user_id) {
         client_key = (fmt::format("{}{}", user_prefix, (*user_id)));
 
-        // C++20: switch to designated initializer for readability
-        req_ctx.user = UserInfo{ *user_id, 
-                                 selection->get_roles_for_user(*user_id), 
-                                 allow_api_write };
+        req_ctx.user = UserInfo{ .id = *user_id,
+                                 .user_roles = selection->get_roles_for_user(*user_id),
+                                 .allow_api_write = allow_api_write };
     }
 
     const auto is_moderator = req_ctx.is_moderator();

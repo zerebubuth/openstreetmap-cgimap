@@ -43,10 +43,11 @@ void ApiDB_Way_Updater::add_way(osm_changeset_id_t changeset_id,
                                 const api06::WayNodeList &nodes,
                                 const api06::TagList &tags) {
 
-  way_t new_way{};
-  new_way.version = 1;
-  new_way.changeset_id = changeset_id;
-  new_way.old_id = old_id;
+  way_t new_way{
+    .version = 1,
+    .changeset_id = changeset_id,
+    .old_id = old_id
+  };
 
   for (const auto &[key, value] : tags)
     new_way.tags.emplace_back(key, value);
@@ -73,11 +74,12 @@ void ApiDB_Way_Updater::modify_way(osm_changeset_id_t changeset_id,
                                    const api06::WayNodeList &nodes,
                                    const api06::TagList &tags) {
 
-  way_t modify_way{};
-  modify_way.id = id;
-  modify_way.old_id = id;
-  modify_way.version = version;
-  modify_way.changeset_id = changeset_id;
+  way_t modify_way{
+    .id = id,
+    .version = version,
+    .changeset_id = changeset_id,
+    .old_id = static_cast<osm_nwr_signed_id_t>(id)
+  };
 
   for (const auto &[key, value] : tags)
     modify_way.tags.emplace_back(key, value);
@@ -103,12 +105,14 @@ void ApiDB_Way_Updater::delete_way(osm_changeset_id_t changeset_id,
                                    osm_nwr_id_t id, osm_version_t version,
                                    bool if_unused) {
 
-  way_t delete_way{};
-  delete_way.id = id;
-  delete_way.old_id = id;
-  delete_way.version = version;
-  delete_way.changeset_id = changeset_id;
-  delete_way.if_unused = if_unused;
+  way_t delete_way{
+    .id = id,
+    .version = version,
+    .changeset_id = changeset_id,
+    .old_id = static_cast<osm_nwr_signed_id_t>(id),
+    .if_unused = if_unused
+  };
+
   delete_ways.push_back(delete_way);
 
   ct.osmchange_orig_sequence.push_back({ operation::op_delete,

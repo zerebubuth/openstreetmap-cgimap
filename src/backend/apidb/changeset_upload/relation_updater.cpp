@@ -40,23 +40,24 @@ void ApiDB_Relation_Updater::add_relation(osm_changeset_id_t changeset_id,
                                           const RelationMemberList &members,
                                           const TagList &tags) {
 
-  relation_t new_relation{};
-
-  new_relation.version = 1;
-  new_relation.changeset_id = changeset_id;
-  new_relation.old_id = old_id;
+  relation_t new_relation{
+    .version = 1,
+    .changeset_id = changeset_id,
+    .old_id = old_id
+  };
 
   for (const auto &[key, value] : tags)
     new_relation.tags.emplace_back(key, value);
 
   osm_sequence_id_t member_seq = 0;
   for (const auto &member : members) {
-    member_t new_member{};
-    new_member.member_type = member.type();
-    new_member.member_role = member.role();
-    new_member.member_id = (member.ref() < 0 ? 0 : member.ref());
-    new_member.old_member_id = member.ref();
-    new_member.sequence_id = member_seq++;
+    member_t new_member{
+      .member_type = member.type(),
+      .member_id = static_cast<osm_nwr_id_t>(member.ref() < 0 ? 0 : member.ref()),
+      .member_role = member.role(),
+      .sequence_id = member_seq++,
+      .old_member_id = member.ref()
+    };
     new_relation.members.push_back(new_member);
   }
 
@@ -73,24 +74,25 @@ void ApiDB_Relation_Updater::modify_relation(osm_changeset_id_t changeset_id,
                                              const RelationMemberList &members,
                                              const TagList &tags) {
 
-  relation_t modify_relation{};
-
-  modify_relation.old_id = id;
-  modify_relation.id = id;
-  modify_relation.version = version;
-  modify_relation.changeset_id = changeset_id;
+  relation_t modify_relation{
+    .id = id,
+    .version = version,
+    .changeset_id = changeset_id,
+    .old_id = static_cast<osm_nwr_signed_id_t>(id)
+  };
 
   for (const auto &[key, value] : tags)
     modify_relation.tags.emplace_back(key, value);
 
   osm_sequence_id_t member_seq = 0;
   for (const auto &member : members) {
-    member_t modify_member{};
-    modify_member.member_type = member.type();
-    modify_member.member_role = member.role();
-    modify_member.member_id = (member.ref() < 0 ? 0 : member.ref());
-    modify_member.old_member_id = member.ref();
-    modify_member.sequence_id = member_seq++;
+    member_t modify_member{
+      .member_type = member.type(),
+      .member_id = static_cast<osm_nwr_id_t>(member.ref() < 0 ? 0 : member.ref()),
+      .member_role = member.role(),
+      .sequence_id = member_seq++,
+      .old_member_id = member.ref()
+    };
     modify_relation.members.push_back(modify_member);
   }
 
@@ -106,12 +108,14 @@ void ApiDB_Relation_Updater::delete_relation(osm_changeset_id_t changeset_id,
                                              osm_version_t version,
                                              bool if_unused) {
 
-  relation_t delete_relation{};
-  delete_relation.old_id = id;
-  delete_relation.id = id;
-  delete_relation.version = version;
-  delete_relation.changeset_id = changeset_id;
-  delete_relation.if_unused = if_unused;
+  relation_t delete_relation{
+    .id = id,
+    .version = version,
+    .changeset_id = changeset_id,
+    .old_id = static_cast<osm_nwr_signed_id_t>(id),
+    .if_unused = if_unused
+  };
+
   delete_relations.push_back(delete_relation);
 
   ct.osmchange_orig_sequence.push_back(

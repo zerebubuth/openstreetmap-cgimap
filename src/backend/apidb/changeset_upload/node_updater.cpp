@@ -45,13 +45,13 @@ void ApiDB_Node_Updater::add_node(double lat, double lon,
                                   osm_nwr_signed_id_t old_id,
                                   const api06::TagList &tags) {
 
-  node_t new_node{};
-  new_node.version = 1;
-  new_node.lat = round(lat * global_settings::get_scale());
-  new_node.lon = round(lon * global_settings::get_scale());
-  new_node.tile = xy2tile(lon2x(lon), lat2y(lat));
-  new_node.changeset_id = changeset_id;
-  new_node.old_id = old_id;
+  node_t new_node{ .version = 1,
+                   .lat = static_cast<int64_t>(round(lat * global_settings::get_scale())),
+                   .lon = static_cast<int64_t>(round(lon * global_settings::get_scale())),
+                   .tile = xy2tile(lon2x(lon), lat2y(lat)),
+                   .changeset_id = changeset_id,
+                   .old_id = old_id};
+
   for (const auto &[key, value] : tags)
     new_node.tags.emplace_back(key, value);
   create_nodes.push_back(new_node);
@@ -66,14 +66,14 @@ void ApiDB_Node_Updater::modify_node(double lat, double lon,
                                      osm_nwr_id_t id, osm_version_t version,
                                      const api06::TagList &tags) {
 
-  node_t modify_node{};
-  modify_node.id = id;
-  modify_node.old_id = id;
-  modify_node.version = version;
-  modify_node.lat = round(lat * global_settings::get_scale());
-  modify_node.lon = round(lon * global_settings::get_scale());
-  modify_node.tile = xy2tile(lon2x(lon), lat2y(lat));
-  modify_node.changeset_id = changeset_id;
+  node_t modify_node{ .id = id,
+                      .version = version,
+                      .lat = static_cast<int64_t>(round(lat * global_settings::get_scale())),
+                      .lon = static_cast<int64_t>(round(lon * global_settings::get_scale())),
+                      .tile = xy2tile(lon2x(lon), lat2y(lat)),
+                      .changeset_id = changeset_id,
+                      .old_id = static_cast<osm_nwr_signed_id_t>(id)};
+
   for (const auto &[key, value] : tags)
     modify_node.tags.emplace_back(key, value);
   modify_nodes.push_back(modify_node);
@@ -87,12 +87,12 @@ void ApiDB_Node_Updater::delete_node(osm_changeset_id_t changeset_id,
                                      osm_nwr_id_t id, osm_version_t version,
                                      bool if_unused) {
 
-  node_t delete_node{};
-  delete_node.id = id;
-  delete_node.old_id = id;
-  delete_node.version = version;
-  delete_node.changeset_id = changeset_id;
-  delete_node.if_unused = if_unused;
+  node_t delete_node{ .id = id,
+                      .version = version,
+                      .changeset_id = changeset_id,
+                      .old_id = static_cast<osm_nwr_signed_id_t>(id),
+                      .if_unused = if_unused};
+
   delete_nodes.push_back(delete_node);
 
   ct.osmchange_orig_sequence.push_back({ operation::op_delete,

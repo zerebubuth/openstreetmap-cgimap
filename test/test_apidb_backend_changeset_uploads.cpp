@@ -1909,12 +1909,9 @@ std::vector<api06::diffresult_t> process_payload(test_database &tdb, osm_changes
   auto sel = tdb.get_data_selection();
   auto upd = tdb.get_data_update();
 
-  // C++20: switch to designated initializer for readability
   test_request req{};
-  UserInfo user{};
-  user.id = uid;
-  RequestContext ctx{req};
-  ctx.user = user;
+  UserInfo user{ .id = uid };
+  RequestContext ctx{ .req = req, .user = user};
   api06::OSMChange_Tracking change_tracking{};
 
   auto changeset_updater = upd->get_changeset_updater(ctx, changeset);
