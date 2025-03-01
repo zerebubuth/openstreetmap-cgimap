@@ -13,10 +13,13 @@ jobs:
         include:
           - os: debian
             version: bookworm
+          - os: debian
+            version: trixie
           - os: ubuntu
             version: jammy
-          - os: ubuntu
-            version: noble
+# Ubuntu 24.04 is currently disabled to due issues with c++20 and libpqxx
+#          - os: ubuntu
+#            version: noble
     permissions:
       contents: write
     steps:
