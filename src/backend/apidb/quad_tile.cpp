@@ -34,7 +34,8 @@ std::vector<tile_id_t> tiles_for_area(double minlat, double minlon, double maxla
   }
 
   std::ranges::sort(tiles);
-  tiles.erase(std::unique(tiles.begin(), tiles.end()), tiles.end());
+  auto new_end = std::ranges::unique(tiles);
+  tiles.erase(new_end.begin(), new_end.end());
 
   return tiles;
 }

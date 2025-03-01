@@ -118,7 +118,8 @@ void ApiDB_Node_Updater::process_new_nodes() {
 
   // remove duplicates
   std::ranges::sort(ids);
-  ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
+  auto new_end = std::ranges::unique(ids);
+  ids.erase(new_end.begin(), new_end.end());
 
   // lock_current_nodes(ids);    // INSERT already set RowExclusiveLock earlier on
 
@@ -143,7 +144,8 @@ void ApiDB_Node_Updater::process_modify_nodes() {
 
   // remove duplicates
   std::ranges::sort(ids);
-  ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
+  auto new_end = std::ranges::unique(ids);
+  ids.erase(new_end.begin(), new_end.end());
 
   lock_current_nodes(ids);
 
@@ -160,8 +162,8 @@ void ApiDB_Node_Updater::process_modify_nodes() {
 
     // remove duplicates
     std::ranges::sort(ids_package);
-    ids_package.erase(std::unique(ids_package.begin(), ids_package.end()),
-                      ids_package.end());
+    auto new_end = std::ranges::unique(ids_package);
+    ids_package.erase(new_end.begin(), new_end.end());
 
     check_current_node_versions(modify_nodes_package);
 
@@ -196,7 +198,8 @@ void ApiDB_Node_Updater::process_delete_nodes() {
 
   // remove duplicates
   std::ranges::sort(ids);
-  ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
+  auto new_end = std::ranges::unique(ids);
+  ids.erase(new_end.begin(), new_end.end());
 
   lock_current_nodes(ids);
 
@@ -767,7 +770,8 @@ std::vector<osm_nwr_id_t> ApiDB_Node_Updater::insert_new_current_node_tags(
 
   // prepare list of node ids with tags
   std::ranges::sort(ids);
-  ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
+  auto new_end = std::ranges::unique(ids);
+  ids.erase(new_end.begin(), new_end.end());
   return ids;
 }
 

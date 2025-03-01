@@ -15,12 +15,7 @@
 
 #include <fmt/core.h>
 #include <map>
-
-
-using std::string;
-using std::map;
-using std::pair;
-using std::vector;
+#include <ranges>
 
 
 namespace api06 {
@@ -66,7 +61,7 @@ map_handler::map_handler(request &req) : bounds(validate_request(req)) {
   req.add_success_header("Content-Disposition", "attachment; filename=\"map.osm\"");
 }
 
-string map_handler::log_name() const {
+std::string map_handler::log_name() const {
   return (fmt::format("map({:.7f},{:.7f},{:.7f},{:.7f})", bounds.minlon,
           bounds.minlat, bounds.maxlon, bounds.maxlat));
 }
@@ -81,11 +76,11 @@ responder_ptr_t map_handler::responder(data_selection &x) const {
  * throwing an error if there was no valid bounding box.
  */
 bbox map_handler::validate_request(const request &req) {
-  string decoded = http::urldecode(get_query_string(req));
+  std::string decoded = http::urldecode(get_query_string(req));
   const auto params = http::parse_params(decoded);
   auto itr =
-    std::find_if(params.begin(), params.end(),
-        [](const pair<string, string> &p) { return p.first == "bbox"; });
+    std::ranges::find_if(params,
+        [](const auto &p) { return p.first == "bbox"; });
 
   bbox bounds;
   if ((itr == params.end()) || !bounds.parse(itr->second)) {

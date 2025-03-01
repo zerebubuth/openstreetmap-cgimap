@@ -14,12 +14,9 @@
 #include "cgimap/options.hpp"
 
 #include <fmt/core.h>
-
 #include <map>
+#include <ranges>
 
-
-using std::string;
-using std::map;
 
 namespace api07 {
 
@@ -66,8 +63,8 @@ bbox map_handler::validate_request(request &req) {
   string decoded = http::urldecode(get_query_string(req));
   const auto params = http::parse_params(decoded);
   auto itr =
-    std::find_if(params.begin(), params.end(),
-        [](const pair<string, string> &p) { return p.first == "bbox"; });
+    std::ranges::find_if(params,
+        [](const auto &p) { return p.first == "bbox"; });
 
   bbox bounds;
   if ((itr == params.end()) || !bounds.parse(itr->second)) {

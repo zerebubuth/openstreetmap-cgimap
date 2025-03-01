@@ -11,13 +11,14 @@
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/http.hpp"
 
+#include <ranges>
 #include <fmt/core.h>
 
 using std::vector;
 
 namespace api06 {
 
-changeset_responder::changeset_responder(mime::type mt, 
+changeset_responder::changeset_responder(mime::type mt,
                                          osm_changeset_id_t id,
                                          bool include_discussion,
                                          data_selection &w)
@@ -39,8 +40,8 @@ changeset_handler::changeset_handler(const request &req, osm_changeset_id_t id)
   std::string decoded = http::urldecode(get_query_string(req));
   const auto params = http::parse_params(decoded);
   auto itr =
-    std::find_if(params.begin(), params.end(),
-         [](const std::pair<std::string, std::string> &header) {
+    std::ranges::find_if(params,
+         [](const auto &header) {
                return (header.first == "include_discussion");
   });
 
