@@ -36,14 +36,18 @@ using the following command:
     sudo apt-get install libxml2-dev libpqxx-dev libfcgi-dev zlib1g-dev libbrotli-dev \
       libboost-program-options-dev libfmt-dev libmemcached-dev libcrypto++-dev libyajl-dev
 
-Note that C++17 is _required_ to build CGImap.
+Note that C++20 is _required_ to build CGImap.
 
 The build system used is cmake.
 
 Note that the full set of packages needed from a fresh install (tested
-with Ubuntu 20.04 and 22.04) - you may already have many or all of these - is:
+with Ubuntu 22.04, Debian 12 and 13) - you may already have many or all of these - is:
 
     sudo apt-get install git build-essential cmake make
+
+Note: On Ubuntu 24.04, the distribution-provided libpqxx-dev package has some issues
+with C++20. Users should build and install their own 7.10.0 version of the library
+for the time being. Refer to `docker/ubuntu/Dockerfile2404` for more details.
 
 To build the system from scratch, first check out the source code (skip
 this step if you've already got the source):
@@ -65,7 +69,7 @@ directory. For system-wide installation you still need to run:
 
 For historic reasons, CGImap provides a number of shared libraries which were
 originally intended for reuse by other applications. As there are no real world
-consumers of these libraries, a static build is used by default. If you want 
+consumers of these libraries, a static build is used by default. If you want
 to build with dynamic libraries instead, you can use the following cmake parameters:
 
     cmake .. -DBUILD_SHARED_LIBS=ON
