@@ -874,7 +874,7 @@ void readonly_pgsql_selection::fetch_changesets(const std::set< osm_changeset_id
 
   // check if changeset is already contained in map
   for (auto id: all_ids) {
-    if (cc.find(id) == cc.end()) {
+    if (!cc.contains(id)) {
       ids.insert(id);
     }
   }
@@ -893,7 +893,7 @@ void readonly_pgsql_selection::fetch_changesets(const std::set< osm_changeset_id
     auto cs = r[0].as<int64_t>();
 
     // Multiple results for one changeset?
-    if (cc.find(cs) != cc.end()) {
+    if (cc.contains(cs)) {
       logger::message(
           fmt::format("ERROR: Request for user data associated with changeset {:d} failed: returned multiple rows.", cs));
       throw http::server_error(
@@ -918,7 +918,7 @@ void readonly_pgsql_selection::fetch_changesets(const std::set< osm_changeset_id
 
   // Missing changeset in query result?
   for (const auto & id : ids) {
-    if (cc.find(id) == cc.end()) {
+    if (!cc.contains(id)) {
       logger::message(
           fmt::format("ERROR: Request for user data associated with changeset {:d} failed: returned 0 rows.", id));
       throw http::server_error(

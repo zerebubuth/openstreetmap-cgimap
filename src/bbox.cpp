@@ -15,12 +15,7 @@
 bbox::bbox(double minlat_, double minlon_, double maxlat_, double maxlon_)
     : minlat(minlat_), minlon(minlon_), maxlat(maxlat_), maxlon(maxlon_) {}
 
-bool bbox::operator==(const bbox &other) const {
-  return ((minlat == other.minlat) &&
-          (minlon == other.minlon) &&
-          (maxlat == other.maxlat) &&
-          (maxlon == other.maxlon));
-}
+bool bbox::operator==(const bbox &other) const = default;
 
 bool bbox::parse(const std::string &s) {
   if (s.empty()) {
