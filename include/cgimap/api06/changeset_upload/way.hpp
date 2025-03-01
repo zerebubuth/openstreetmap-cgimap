@@ -60,27 +60,24 @@ public:
 
   bool is_valid(operation op) const {
 
-    switch (op) {
-
-    case operation::op_delete:
+    if (op == operation::op_delete)
       return (is_valid());
 
-    default:
-      if (m_way_nodes.empty()) {
-        throw http::precondition_failed(
-            fmt::format("Way {:d} must have at least one node",
-             (has_id() ? id() : 0)));
-      }
-
-      if (m_way_nodes.size() > global_settings::get_way_max_nodes()) {
-        throw http::bad_request(
-             fmt::format(
-                 "You tried to add {:d} nodes to way {:d}, however only {:d} are allowed",
-             m_way_nodes.size(), (has_id() ? id() : 0), global_settings::get_way_max_nodes()));
-      }
-
-      return (is_valid());
+    if (m_way_nodes.empty()) {
+      throw http::precondition_failed(
+          fmt::format("Way {:d} must have at least one node",id(0)));
     }
+
+    auto way_max_nodes = global_settings::get_way_max_nodes();
+
+    if (m_way_nodes.size() > way_max_nodes) {
+      throw http::bad_request(
+            fmt::format(
+                "You tried to add {:d} nodes to way {:d}, however only {:d} are allowed",
+            m_way_nodes.size(), id(0), way_max_nodes));
+    }
+
+    return (is_valid());
   }
 
   std::string get_type_name() const override { return "Way"; }

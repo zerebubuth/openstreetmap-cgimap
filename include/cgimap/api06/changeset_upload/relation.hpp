@@ -96,11 +96,7 @@ public:
 
   osm_nwr_signed_id_t ref() const { return *m_ref; }
 
-  bool operator==(const RelationMember &o) const {
-    return (o.m_role == m_role &&
-            o.m_ref == m_ref &&
-            o.m_type == m_type);
-  }
+  bool operator==(const RelationMember &o) const = default;
 
 private:
   std::string m_role;
@@ -134,23 +130,20 @@ public:
 
   bool is_valid(operation op) const {
 
-    switch (op) {
-
-    case operation::op_delete:
+    if (op == operation::op_delete)
       return (is_valid());
 
-    default:
-      if ((global_settings::get_relation_max_members()) &&
-	  m_relation_member.size() > *global_settings::get_relation_max_members()) {
-        throw http::bad_request(
-             fmt::format("You tried to add {:d} members to relation {:d}, however only {:d} are allowed",
-        	m_relation_member.size(),
-        	(has_id() ? id() : 0),
-        	*global_settings::get_relation_max_members()));
-      }
+    auto max_members = global_settings::get_relation_max_members();
 
-      return (is_valid());
+    if (max_members && m_relation_member.size() > *max_members) {
+      throw http::bad_request(
+          fmt::format("You tried to add {:d} members to relation {:d}, however "
+                      "only {:d} are allowed",
+                      m_relation_member.size(), id(0),
+                      *max_members));
     }
+
+    return (is_valid());
   }
 
   bool operator==(const Relation &o) const {

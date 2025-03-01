@@ -120,6 +120,7 @@ namespace api06 {
     osm_version_t version() const { return *m_version; }
 
     osm_nwr_signed_id_t id() const { return *m_id; }
+    osm_nwr_signed_id_t id(osm_nwr_signed_id_t d) const { return m_id.value_or(d); }
 
     constexpr bool has_changeset() const {  return m_changeset.has_value(); }
     constexpr bool has_id() const { return m_id.has_value(); };
@@ -162,11 +163,10 @@ namespace api06 {
 	throw payload_error(
 	    "You need to supply a changeset to be able to make a change");
 
-      if ((global_settings::get_element_max_tags()) &&
-	  m_tags.size() > *global_settings::get_element_max_tags()) {
-	  throw payload_error(
-	      fmt::format("OSM element exceeds limit of {} tags",
-                 *global_settings::get_element_max_tags()));
+      auto max_tags = global_settings::get_element_max_tags();
+
+      if (max_tags && m_tags.size() > *max_tags) {
+	     throw payload_error(fmt::format("OSM element exceeds limit of {} tags", *max_tags));
       }
 
       return (m_changeset && m_id && m_version);
@@ -179,12 +179,7 @@ namespace api06 {
       return fmt::format("{} {:d}", get_type_name(), m_id.value_or(0));
     }
 
-    bool operator==(const OSMObject &o) const {
-     return (o.m_changeset == m_changeset &&
-            o.m_id == m_id &&
-            o.m_version == m_version &&
-            o.m_tags == m_tags);
-    }
+    bool operator==(const OSMObject &o) const = default;
 
   private:
     std::optional<osm_changeset_id_t> m_changeset;

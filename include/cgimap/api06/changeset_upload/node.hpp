@@ -90,7 +90,7 @@ public:
   }
 
   void set_lat(double lat) {
-    if (lat < -90 || lat > 90)
+    if (lat < -90.0 || lat > 90.0)
       throw payload_error("Latitude outside of valid range");
     else if (!std::isfinite(lat))
       throw payload_error("Latitude not a valid finite number");
@@ -98,7 +98,7 @@ public:
   }
 
   void set_lon(double lon) {
-    if (lon < -180 || lon > 180)
+    if (lon < -180.0 || lon > 180.0)
       throw payload_error("Longitude outside of valid range");
     else if (!std::isfinite(lon))
       throw payload_error("Longitude not a valid finite number");
@@ -107,13 +107,10 @@ public:
 
   bool is_valid(operation op) const {
 
-    switch (op) {
-
-    case operation::op_delete:
+    if (op == operation::op_delete)
       return (is_valid());
-    default:
-      return (is_valid() && m_lat && m_lon);
-    }
+
+    return (is_valid() && m_lat && m_lon);
   }
 
   std::string get_type_name() const override { return "Node"; }
