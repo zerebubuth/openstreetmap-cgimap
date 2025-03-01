@@ -13,7 +13,6 @@
 #include <stdexcept>
 #include <thread>
 #include <fmt/core.h>
-#include <boost/program_options.hpp>
 
 #include <sys/time.h>
 #include <cstdio>

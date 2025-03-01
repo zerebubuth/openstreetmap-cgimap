@@ -22,9 +22,6 @@
 #include <list>
 #include <vector>
 
-#include <boost/algorithm/string/trim.hpp>
-
-
 namespace po = boost::program_options;
 using std::set;
 using std::stringstream;

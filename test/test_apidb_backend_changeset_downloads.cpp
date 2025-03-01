@@ -11,8 +11,6 @@
 #include <stdexcept>
 #include <fmt/core.h>
 
-#include <boost/program_options.hpp>
-
 #include <sys/time.h>
 #include <cstdio>
 

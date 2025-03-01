@@ -21,11 +21,6 @@
 #include <libxml/tree.h>
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
-#include <boost/program_options.hpp>
-#include <boost/algorithm/string.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/property_tree/json_parser.hpp>
 
 #include <sys/time.h>
 
@@ -51,9 +46,6 @@
 using Catch::Matchers::StartsWith;
 using Catch::Matchers::EndsWith;
 using Catch::Matchers::Equals;
-
-namespace al = boost::algorithm;
-namespace pt = boost::property_tree;
 
 class global_settings_enable_upload_rate_limiter_test_class : public global_settings_default {
 
