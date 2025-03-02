@@ -277,15 +277,17 @@ namespace {
  */
   std::pair<std::string, mime::type> resource_mime_type(const std::string &path) {
 
+  using enum mime::type;
+
   if (path.ends_with(".json")) {
-      return {path.substr(0, path.length() - 5), mime::type::application_json};
+      return {path.substr(0, path.length() - 5), application_json};
   }
 
   if (path.ends_with(".xml")) {
-      return {path.substr(0, path.length() - 4), mime::type::application_xml};
+      return {path.substr(0, path.length() - 4), application_xml};
   }
 
-  return make_pair(path, mime::type::unspecified_type);
+  return make_pair(path, unspecified_type);
 }
 
 handler_ptr_t route_resource(request &req, const std::string &path,

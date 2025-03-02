@@ -25,7 +25,7 @@
 class Test_Parser_Callback : public api06::Parser_Callback {
 
 public:
-  Test_Parser_Callback() : start_executed(false), end_executed(false) {}
+  Test_Parser_Callback() {}
 
   void start_document() override { start_executed = true; }
 
@@ -37,8 +37,8 @@ public:
 
   void process_relation(const api06::Relation &, operation op, bool if_unused) override {}
 
-  bool start_executed;
-  bool end_executed;
+  bool start_executed{false};
+  bool end_executed{false};
 };
 
 class global_settings_test_class : public global_settings_default {

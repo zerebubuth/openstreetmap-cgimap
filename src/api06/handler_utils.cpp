@@ -51,7 +51,7 @@ std::vector<id_version> parse_id_list_params(const request &req,
   std::string decoded = http::urldecode(get_query_string(req));
   const auto params = http::parse_params(decoded);
 
-  auto itr = std::find_if(params.begin(), params.end(), [&param_name](auto &x) {
+  auto itr = std::ranges::find_if(params, [&param_name](auto &x) {
     return x.first == param_name;
   });
 
@@ -77,8 +77,8 @@ std::vector<id_version> parse_id_list_params(const request &req,
 
   // ensure list of IDs is unique
   std::ranges::sort(myids);
-  auto new_end = std::unique(myids.begin(), myids.end());
-  myids.erase(new_end, myids.end());
+  auto new_end = std::ranges::unique(myids);
+  myids.erase(new_end.begin(), new_end.end());
 
   return myids;
 }

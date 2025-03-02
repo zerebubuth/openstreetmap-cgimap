@@ -139,7 +139,8 @@ void ApiDB_Way_Updater::process_new_ways() {
 
   // remove duplicates
   std::ranges::sort(ids);
-  ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
+  auto new_end = std::ranges::unique(ids);
+  ids.erase(new_end.begin(), new_end.end());
 
   // lock_current_ways(ids);  // INSERT already set RowExclusiveLock earlier on
   lock_future_nodes(create_ways);
@@ -169,7 +170,8 @@ void ApiDB_Way_Updater::process_modify_ways() {
 
   // remove duplicates
   std::ranges::sort(ids);
-  ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
+  auto new_end = std::ranges::unique(ids);
+  ids.erase(new_end.begin(), new_end.end());
 
   lock_current_ways(ids);
 
@@ -187,8 +189,8 @@ void ApiDB_Way_Updater::process_modify_ways() {
 
     // remove duplicates
     std::ranges::sort(ids_package);
-    ids_package.erase(std::unique(ids_package.begin(), ids_package.end()),
-                      ids_package.end());
+    auto new_end = std::ranges::unique(ids_package);
+    ids_package.erase(new_end.begin(), new_end.end());
 
     check_current_way_versions(modify_ways_package);
 
@@ -230,7 +232,8 @@ void ApiDB_Way_Updater::process_delete_ways() {
 
   // remove duplicates
   std::ranges::sort(ids);
-  ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
+  auto new_end = std::ranges::unique(ids);
+  ids.erase(new_end.begin(), new_end.end());
 
   lock_current_ways(ids);
 
@@ -612,7 +615,8 @@ void ApiDB_Way_Updater::lock_future_nodes(const std::vector<way_t> &ways) {
 
   // remove duplicates
   std::ranges::sort(node_ids);
-  node_ids.erase(std::unique(node_ids.begin(), node_ids.end()), node_ids.end());
+  auto new_end = std::ranges::unique(node_ids);
+  node_ids.erase(new_end.begin(), new_end.end());
 
   m.prepare("lock_future_nodes_in_ways",
             R"(
@@ -777,7 +781,8 @@ std::vector<osm_nwr_id_t> ApiDB_Way_Updater::insert_new_current_way_tags(
 
   // prepare list of way ids with tags
   std::ranges::sort(ids);
-  ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
+  auto new_end = std::ranges::unique(ids);
+  ids.erase(new_end.begin(), new_end.end());
   return ids;
 }
 

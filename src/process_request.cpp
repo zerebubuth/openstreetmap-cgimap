@@ -390,8 +390,7 @@ const std::string user_prefix("user:");
 bool show_redactions_requested(const request &req) {
   std::string decoded = http::urldecode(get_query_string(req));
   const auto params = http::parse_params(decoded);
-  auto itr = std::find_if(
-    params.begin(), params.end(),
+  auto itr = std::ranges::find_if(params,
     [](const auto &param) -> bool {
       return param.first == "show_redactions" && param.second == "true";
     });
