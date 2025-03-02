@@ -7,7 +7,7 @@ RUN apt-get update -qq && \
     apt-get install -y gcc g++ make cmake \
        libfcgi-dev libxml2-dev libmemcached-dev libbrotli-dev \
        libboost-program-options-dev libcrypto++-dev libyajl-dev \
-       libpqxx-dev zlib1g-dev libfmt-dev \
+       libpqxx-dev zlib1g-dev \
        postgresql-17 postgresql-server-dev-all dpkg-dev file \
        --no-install-recommends && \
     apt-get clean && \
