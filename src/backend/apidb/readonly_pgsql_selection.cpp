@@ -784,7 +784,7 @@ bool readonly_pgsql_selection::is_user_blocked(const osm_user_id_t id) {
   m.prepare("check_user_blocked",
     R"(SELECT id FROM "user_blocks"
           WHERE "user_blocks"."user_id" = $1
-            AND (needs_view or ends_at > (now() at time zone 'utc')) LIMIT 1 )");
+            AND (needs_view or ends_at > (now() at time zone 'utc')) LIMIT 1 )"_M);
 
   auto res = m.exec_prepared("check_user_blocked", id);
   return !res.empty();
@@ -827,7 +827,7 @@ std::optional< osm_user_id_t > readonly_pgsql_selection::get_user_id_for_oauth2_
          COALESCE(revoked_at < now() at time zone 'utc', false) as revoked,
          'write_api' = any(string_to_array(scopes, ' ')) as allow_api_write
        FROM oauth_access_tokens
-       WHERE token = $1)");
+       WHERE token = $1)"_M);
 
   auto res = m.exec_prepared("oauth2_access_token", token_id);
 
@@ -851,7 +851,7 @@ bool readonly_pgsql_selection::is_user_active(const osm_user_id_t id)
   m.prepare("is_user_active",
          R"(SELECT id FROM users
             WHERE id = $1
-            AND (status = 'active' or status = 'confirmed'))");
+            AND (status = 'active' or status = 'confirmed'))"_M);
 
   auto res = m.exec_prepared("is_user_active", id);
   return (!res.empty());

@@ -9,6 +9,7 @@
 
 #include "cgimap/backend/apidb/changeset_upload/changeset_updater.hpp"
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
+#include "cgimap/backend/apidb/utils.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
 #include "cgimap/options.hpp"
@@ -20,7 +21,7 @@
 
 
 ApiDB_Changeset_Updater::ApiDB_Changeset_Updater(Transaction_Manager &_m,
-                                                 const RequestContext& _req_ctx, 
+                                                 const RequestContext& _req_ctx,
                                                  osm_changeset_id_t _changeset)
   : m(_m),
     req_ctx(_req_ctx),
@@ -88,24 +89,24 @@ void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
    */
 
   m.prepare("changeset_update_w_bbox",
-	    R"( 
-       UPDATE changesets 
+	    R"(
+       UPDATE changesets
        SET num_changes = ($1 :: integer),
            min_lat = $2,
            min_lon = $3,
            max_lat = $4,
            max_lon = $5,
-           closed_at = 
+           closed_at =
              CASE
-                WHEN (closed_at - created_at) > 
+                WHEN (closed_at - created_at) >
                      (($6 ::interval) - ($7 ::interval)) THEN
                   created_at + ($6 ::interval)
-                ELSE 
+                ELSE
                   now() at time zone 'utc' + ($7 ::interval)
              END
        WHERE id = $8
 
-       )");
+       )"_M);
 
   m.prepare("changeset_update",
 	    R"(
@@ -121,7 +122,7 @@ void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
              END
        WHERE id = $4
 
-       )");
+       )"_M);
 
   if (valid_bbox) {
       auto r = m.exec_prepared("changeset_update_w_bbox", cs_num_changes, cs_bbox.minlat, cs_bbox.minlon,
@@ -148,7 +149,7 @@ void ApiDB_Changeset_Updater::changeset_update_users_cs_count()
         UPDATE users
              SET "changesets_count" = COALESCE("changesets_count", 0) + 1
              WHERE "id" = $1
-   )");
+   )"_M);
 
   auto r = m.exec_prepared ("update_users", req_ctx.user->id);
 
@@ -181,10 +182,10 @@ void ApiDB_Changeset_Updater::api_close_changeset()
 
   // Set closed_at timestamp to now() to indicate that the changeset is closed
   m.prepare("changeset_close",
-	    R"( 
-       UPDATE changesets 
+	    R"(
+       UPDATE changesets
        SET closed_at = now() at time zone 'utc'
-           WHERE id = $1 AND user_id = $2 )");
+           WHERE id = $1 AND user_id = $2 )"_M);
 
   auto r = m.exec_prepared("changeset_close", changeset, req_ctx.user->id);
 
@@ -208,9 +209,9 @@ void ApiDB_Changeset_Updater::lock_cs(bool& is_closed, std::string& closed_at, s
 		 to_char(closed_at,'YYYY-MM-DD HH24:MI:SS "UTC"') as closed_at,
 		 ((now() at time zone 'utc') > closed_at) as is_closed,
 		 to_char((now() at time zone 'utc'),'YYYY-MM-DD HH24:MI:SS "UTC"') as current_time
-	  FROM changesets WHERE id = $1 AND user_id = $2 
+	  FROM changesets WHERE id = $1 AND user_id = $2
 	  FOR UPDATE NOWAIT
-     )");
+     )"_M);
 
   auto r = [&] {
     try {
@@ -245,7 +246,7 @@ void ApiDB_Changeset_Updater::check_user_owns_changeset()
   m.prepare("changeset_exists",
 	    R"( SELECT id, user_id
 		FROM changesets
-		WHERE id = $1)");
+		WHERE id = $1)"_M);
 
   auto r = m.exec_prepared ("changeset_exists", changeset);
 
@@ -285,7 +286,7 @@ void ApiDB_Changeset_Updater::changeset_insert_tags(
           )
           INSERT INTO changeset_tags (changeset_id, k, v)
           SELECT * FROM tmp_tag
-      )");
+      )"_M);
 
   std::vector<osm_changeset_id_t> cs;
   std::vector<std::string> ks;
@@ -324,7 +325,7 @@ void ApiDB_Changeset_Updater::changeset_insert_cs()
                     (now() at time zone 'utc'),
                     (now() at time zone 'utc') + ($2 ::interval))
             RETURNING id
-   )");
+   )"_M);
 
   auto r = m.exec_prepared ("create_changeset", req_ctx.user->id, global_settings::get_changeset_timeout_idle());
 
