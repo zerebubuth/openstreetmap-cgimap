@@ -314,7 +314,7 @@ void ApiDB_Node_Updater::insert_new_nodes_to_current_table(
       )
       SELECT id, old_id
         FROM ids_mapping
-  )");
+  )"_M);
 
   std::vector<int64_t> lats;
   std::vector<int64_t> lons;
@@ -366,7 +366,7 @@ void ApiDB_Node_Updater::lock_current_nodes(
       EXCEPT
       SELECT id FROM locked
       ORDER BY id
-     )");
+     )"_M);
 
   // Query returns only node ids, which could not be locked
   auto r = m.exec_prepared("lock_current_nodes", ids);
@@ -450,7 +450,7 @@ void ApiDB_Node_Updater::check_current_node_versions(
            ON t.id = cn.id
         WHERE t.version <> cn.version
         LIMIT 1
-          )");
+          )"_M);
 
   auto r = m.exec_prepared("check_current_node_versions", ids, versions);
 
@@ -545,7 +545,7 @@ ApiDB_Node_Updater::calc_node_bbox(const std::vector<osm_nwr_id_t> &ids) {
              MAX(latitude)  AS maxlat,
              MAX(longitude) AS maxlon
       FROM current_nodes WHERE id = ANY($1)
-       )");
+       )"_M);
 
   auto r = m.exec_prepared("calc_node_bbox", ids);
 
@@ -588,7 +588,7 @@ void ApiDB_Node_Updater::update_current_nodes(
         WHERE n.id = u.id
         AND   n.version = u.version
         RETURNING n.id, n.version
-       )");
+       )"_M);
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<int64_t> lats;
@@ -673,7 +673,7 @@ void ApiDB_Node_Updater::delete_current_nodes(
          WHERE n.id = u.id
          AND   n.version = u.version
          RETURNING n.id, n.version
-   )");
+   )"_M);
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<osm_changeset_id_t> cs;
@@ -724,7 +724,7 @@ std::vector<osm_nwr_id_t> ApiDB_Node_Updater::insert_new_current_node_tags(
       )
       INSERT INTO current_node_tags(node_id, k, v)
       SELECT * FROM tmp_tag
-         )");
+         )"_M);
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<std::string> ks;
@@ -790,7 +790,7 @@ void ApiDB_Node_Updater::save_current_nodes_to_history(
                    changeset_id, visible, timestamp, tile, version
               FROM current_nodes
               WHERE id = ANY($1)
-       )");
+       )"_M);
 
   auto r = m.exec_prepared("current_nodes_to_history", ids);
 
@@ -813,7 +813,7 @@ void ApiDB_Node_Updater::save_current_node_tags_to_history(
                   INNER JOIN current_nodes n
                      ON t.node_id = n.id
                 WHERE id = ANY($1)
-           )");
+           )"_M);
 
   auto r = m.exec_prepared("current_node_tags_to_history", ids);
 }
@@ -851,7 +851,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
                    FROM current_way_nodes
                    WHERE node_id = ANY($1)
                    GROUP BY node_id
-            )");
+            )"_M);
 
     auto r = m.exec_prepared("node_still_referenced_by_way", ids);
 
@@ -893,7 +893,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
                     WHERE member_type = 'Node'
                       AND member_id = ANY($1)
                     GROUP BY member_id
-             )");
+             )"_M);
 
     auto r = m.exec_prepared("node_still_referenced_by_relation", ids);
 

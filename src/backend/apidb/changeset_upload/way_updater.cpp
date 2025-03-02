@@ -361,7 +361,7 @@ void ApiDB_Way_Updater::insert_new_ways_to_current_table(
       )
       SELECT id, old_id
         FROM ids_mapping
-  )");
+  )"_M);
 
   std::vector<osm_changeset_id_t> cs;
   std::vector<osm_nwr_signed_id_t> oldids;
@@ -406,7 +406,7 @@ bbox_t ApiDB_Way_Updater::calc_way_bbox(const std::vector<osm_nwr_id_t> &ids) {
       INNER JOIN current_ways w
         ON wn.way_id = w.id
       WHERE w.id = ANY($1)
-       )");
+       )"_M);
 
   auto r = m.exec_prepared("calc_way_bbox", ids);
 
@@ -434,7 +434,7 @@ void ApiDB_Way_Updater::lock_current_ways(
       EXCEPT
       SELECT id FROM locked
       ORDER BY id
-     )");
+     )"_M);
 
   auto r = m.exec_prepared("lock_current_ways", ids);
 
@@ -513,7 +513,7 @@ void ApiDB_Way_Updater::check_current_way_versions(
            ON t.id = cw.id
         WHERE t.version <> cw.version
         LIMIT 1
-      )");
+      )"_M);
 
   auto r =
       m.exec_prepared("check_current_way_versions", ids, versions);
@@ -630,7 +630,7 @@ void ApiDB_Way_Updater::lock_future_nodes(const std::vector<way_t> &ways) {
         EXCEPT
         SELECT id FROM locked
         ORDER BY id
-      )");
+      )"_M);
 
   auto r = m.exec_prepared("lock_future_nodes_in_ways", node_ids);
 
@@ -680,7 +680,7 @@ void ApiDB_Way_Updater::update_current_ways(const std::vector<way_t> &ways,
       WHERE w.id = u.id
       AND   w.version = u.version
       RETURNING w.id, w.version
-     )");
+     )"_M);
 
   std::vector<osm_nwr_signed_id_t> ids;
   std::vector<osm_changeset_id_t> cs;
@@ -737,7 +737,7 @@ std::vector<osm_nwr_id_t> ApiDB_Way_Updater::insert_new_current_way_tags(
       )
       INSERT INTO current_way_tags(way_id, k, v)
       SELECT * FROM tmp_tag
-     )");
+     )"_M);
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<std::string> ks;
@@ -806,7 +806,7 @@ void ApiDB_Way_Updater::insert_new_current_way_nodes(
       )
       INSERT INTO current_way_nodes (way_id, node_id, sequence_id)
       SELECT * FROM new_way_nodes
-       )");
+       )"_M);
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<osm_nwr_id_t> nodeids;
@@ -848,7 +848,7 @@ void ApiDB_Way_Updater::save_current_ways_to_history(
         SELECT id, changeset_id, timestamp, version, visible
         FROM current_ways
         WHERE id = ANY($1)
-    )");
+    )"_M);
 
   auto r = m.exec_prepared("current_ways_to_history", ids);
 
@@ -870,7 +870,7 @@ void ApiDB_Way_Updater::save_current_way_nodes_to_history(
        FROM current_way_nodes wn
        INNER JOIN current_ways w
        ON wn.way_id = w.id
-       WHERE id = ANY($1) )");
+       WHERE id = ANY($1) )"_M);
 
   auto r = m.exec_prepared("current_way_nodes_to_history", ids);
 }
@@ -890,7 +890,7 @@ void ApiDB_Way_Updater::save_current_way_tags_to_history(
              INNER JOIN current_ways w
                 ON wt.way_id = w.id
              WHERE id = ANY($1)
-     )");
+     )"_M);
 
   auto r = m.exec_prepared("current_way_tags_to_history", ids);
 }
@@ -928,7 +928,7 @@ ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t> &ways) {
          WHERE member_type = 'Way'
            AND member_id = ANY($1)
          GROUP BY member_id
-      )");
+      )"_M);
 
   auto r = m.exec_prepared("way_still_referenced_by_relation", ids);
 

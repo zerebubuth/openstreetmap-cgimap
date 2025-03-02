@@ -485,7 +485,7 @@ void ApiDB_Relation_Updater::insert_new_relations_to_current_table(
       )
       SELECT id, old_id
         FROM ids_mapping
-    )");
+    )"_M);
 
   std::vector<osm_changeset_id_t> cs;
   std::vector<osm_nwr_signed_id_t> oldids;
@@ -529,7 +529,7 @@ void ApiDB_Relation_Updater::lock_current_relations(
       EXCEPT
       SELECT id FROM locked
       ORDER BY id
-     )");
+     )"_M);
 
   auto r = m.exec_prepared("lock_current_relations", ids);
 
@@ -607,7 +607,7 @@ void ApiDB_Relation_Updater::check_current_relation_versions(
                      ON t.id = cr.id
                   WHERE t.version <> cr.version
                   LIMIT 1
-       )");
+       )"_M);
 
   auto r = m.exec_prepared("check_current_relation_versions", ids, versions);
 
@@ -707,7 +707,7 @@ void ApiDB_Relation_Updater::lock_future_members_nodes(
               EXCEPT
               SELECT id FROM locked
               ORDER BY id
-            )");
+            )"_M);
 
   auto r = m.exec_prepared("lock_future_nodes_in_relations", node_ids);
 
@@ -758,7 +758,7 @@ void ApiDB_Relation_Updater::lock_future_members_ways(
               EXCEPT
               SELECT id FROM locked
               ORDER BY id
-           )");
+           )"_M);
 
   auto r = m.exec_prepared("lock_future_ways_in_relations", way_ids);
 
@@ -812,7 +812,7 @@ void ApiDB_Relation_Updater::lock_future_members_relations(
               EXCEPT
               SELECT id FROM locked
               ORDER BY id
-            )");
+            )"_M);
 
   auto r = m.exec_prepared("lock_future_relations_in_relations", relation_ids);
 
@@ -925,7 +925,7 @@ ApiDB_Relation_Updater::relations_with_new_relation_members(
            AND m.member_type = 'Relation'
           WHERE m.member_id IS NULL
           GROUP BY t.relation_id
-     )");
+     )"_M);
 
   auto r = m.exec_prepared("relations_with_new_relation_members", relation_ids, member_ids);
 
@@ -995,7 +995,7 @@ ApiDB_Relation_Updater::relations_with_changed_relation_tags(
                   AND t.v IS NULL
             ) AS all_relations
             GROUP BY all_relations.relation_id
-         )");
+         )"_M);
 
   auto r = m.exec_prepared("relations_with_changed_relation_tags", ids, ks, vs);
 
@@ -1054,7 +1054,7 @@ ApiDB_Relation_Updater::relations_with_changed_way_node_members(
                  WHERE cm.relation_id IS NULL AND
                        cm.member_type IS NULL AND
                        cm.member_id   IS NULL
-         )");
+         )"_M);
 
   auto r_added = m.exec_prepared("relations_with_added_way_node_members", ids, membertypes, memberids);
 
@@ -1087,7 +1087,7 @@ ApiDB_Relation_Updater::relations_with_changed_way_node_members(
                   tm.member_type IS NULL AND
                   tm.member_id   IS NULL
 
-         )");
+         )"_M);
 
   auto r_removed = m.exec_prepared("relations_with_removed_way_node_members", ids, membertypes, memberids);
 
@@ -1134,7 +1134,7 @@ bbox_t ApiDB_Relation_Updater::calc_rel_member_difference_bbox(
              MAX(latitude)  AS maxlat,
              MAX(longitude) AS maxlon
       FROM current_nodes WHERE id = ANY($1)
-       )");
+       )"_M);
 
     auto r = m.exec_prepared("calc_node_bbox_rel_member", node_ids);
 
@@ -1164,7 +1164,7 @@ bbox_t ApiDB_Relation_Updater::calc_rel_member_difference_bbox(
       INNER JOIN current_ways w
         ON wn.way_id = w.id
       WHERE w.id = ANY($1)
-       )");
+       )"_M);
 
     auto r = m.exec_prepared("calc_way_bbox_rel_member", way_ids);
 
@@ -1217,7 +1217,7 @@ bbox_t ApiDB_Relation_Updater::calc_relation_bbox(
                         ON crm.member_id = cn.id
                  WHERE crm.member_type = 'Node'
                    AND crm.relation_id = ANY($1)
-            )");
+            )"_M);
 
   auto rn = m.exec_prepared("calc_relation_bbox_nodes", ids);
 
@@ -1243,7 +1243,7 @@ bbox_t ApiDB_Relation_Updater::calc_relation_bbox(
                         ON crm.member_id = w.id
                  WHERE crm.member_type = 'Way'
                    AND crm.relation_id = ANY($1)
-              )");
+              )"_M);
 
   auto rw = m.exec_prepared("calc_relation_bbox_ways", ids);
 
@@ -1283,7 +1283,7 @@ void ApiDB_Relation_Updater::update_current_relations(
         WHERE r.id = u.id
           AND r.version = u.version
         RETURNING r.id, r.version
-    )");
+    )"_M);
 
   std::vector<osm_nwr_signed_id_t> ids;
   std::vector<osm_changeset_id_t> cs;
@@ -1339,7 +1339,7 @@ std::vector<osm_nwr_id_t>  ApiDB_Relation_Updater::insert_new_current_relation_t
                 )
                 INSERT INTO current_relation_tags(relation_id, k, v)
                 SELECT * FROM tmp_tag
-            )");
+            )"_M);
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<std::string> ks;
@@ -1412,7 +1412,7 @@ void ApiDB_Relation_Updater::insert_new_current_relation_members(
          )
          INSERT INTO current_relation_members(relation_id, member_type, member_id, member_role, sequence_id)
          SELECT * FROM tmp_member
-      )");
+      )"_M);
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<std::string> membertypes;
@@ -1458,7 +1458,7 @@ void ApiDB_Relation_Updater::save_current_relations_to_history(
                 SELECT id AS relation_id, changeset_id, timestamp, version, visible
                 FROM current_relations
                 WHERE id = ANY($1)
-            )");
+            )"_M);
 
   auto r = m.exec_prepared("current_relations_to_history", ids);
 
@@ -1478,7 +1478,7 @@ void ApiDB_Relation_Updater::save_current_relation_tags_to_history(
                  INNER JOIN current_relations cr
                  ON rt.relation_id = cr.id
                  WHERE id = ANY($1)
-             )");
+             )"_M);
 
   auto r = m.exec_prepared("current_relation_tags_to_history", ids);
 }
@@ -1499,7 +1499,7 @@ void ApiDB_Relation_Updater::save_current_relation_members_to_history(
                  INNER JOIN current_relations cr
                  ON crm.relation_id = cr.id
                  WHERE id = ANY($1)
-                          )");
+                          )"_M);
 
   auto r =
       m.exec_prepared("current_relation_members_to_history", ids);
@@ -1570,7 +1570,7 @@ ApiDB_Relation_Updater::collect_recursive_relation_rel_member_ids (
              INNER JOIN current_relation_members crm
                      ON crm.relation_id = cr.id
                     AND crm.member_type = 'Relation'
-       )");
+       )"_M);
 
   // Recursively iterate over list of relation ids and extract relation member ids
   do {
@@ -1706,7 +1706,7 @@ ApiDB_Relation_Updater::is_relation_still_referenced(
              AND current_relation_members.member_type = 'Relation'
              AND relations_to_check.id IS NULL
            GROUP BY current_relation_members.member_id
-       )");
+       )"_M);
 
   auto r = m.exec_prepared("relation_still_referenced_by_relation", ids);
 
