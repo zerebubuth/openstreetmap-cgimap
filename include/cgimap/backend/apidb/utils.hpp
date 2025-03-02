@@ -19,8 +19,9 @@
 
 /* Unindent SQL statements in raw strings */
 
-#if __GNUC__ < 12
+#if !defined(__cpp_lib_constexpr_vector)
 // fallback implementation for older compilers
+// code requires constexpr for std::vector (p1004r2)
 consteval const char* operator"" _M(const char* str, size_t len) {
     return str;
 }
