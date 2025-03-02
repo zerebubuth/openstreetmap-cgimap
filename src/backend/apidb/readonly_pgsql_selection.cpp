@@ -114,13 +114,13 @@ void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
   // we don't need to do anything else.
 
   m.prepare("extract_nodes",
-     "SELECT n.id, n.latitude, n.longitude, n.visible, "
-         "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
-         "n.changeset_id, n.version, array_agg(t.k) as tag_k, array_agg(t.v) as tag_v "
-       "FROM current_nodes n "
-         "LEFT JOIN current_node_tags t ON n.id=t.node_id "
-       "WHERE n.id = ANY($1) "
-       "GROUP BY n.id ORDER BY n.id");
+     R"(SELECT n.id, n.latitude, n.longitude, n.visible,
+         to_char(n.timestamp,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS timestamp,
+         n.changeset_id, n.version, array_agg(t.k) as tag_k, array_agg(t.v) as tag_v
+       FROM current_nodes n
+         LEFT JOIN current_node_tags t ON n.id=t.node_id
+       WHERE n.id = ANY($1)
+       GROUP BY n.id ORDER BY n.id)"_M);
 
   logger::message("Fetching nodes");
   if (!sel_nodes.empty()) {
@@ -140,16 +140,16 @@ void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
   }
 
   m.prepare("extract_historic_nodes",
-     "WITH wanted(id, version) AS ("
-       "SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))"
-     ")"
-     "SELECT n.node_id AS id, n.latitude, n.longitude, n.visible, "
-         "to_char(n.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
-         "n.changeset_id, n.version, array_agg(t.k) as tag_k, array_agg(t.v) as tag_v "
-       "FROM nodes n "
-         "INNER JOIN wanted x ON n.node_id = x.id AND n.version = x.version "
-         "LEFT JOIN node_tags t ON n.node_id = t.node_id AND n.version = t.version "
-       "GROUP BY n.node_id, n.version ORDER BY n.node_id, n.version");
+     R"(WITH wanted(id, version) AS (
+       SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))
+     )
+     SELECT n.node_id AS id, n.latitude, n.longitude, n.visible,
+         to_char(n.timestamp,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS timestamp,
+         n.changeset_id, n.version, array_agg(t.k) as tag_k, array_agg(t.v) as tag_v
+       FROM nodes n
+         INNER JOIN wanted x ON n.node_id = x.id AND n.version = x.version
+         LEFT JOIN node_tags t ON n.node_id = t.node_id AND n.version = t.version
+       GROUP BY n.node_id, n.version ORDER BY n.node_id, n.version)"_M);
 
   if (!sel_historic_nodes.empty()) {
     std::vector<osm_nwr_id_t> ids;
@@ -175,21 +175,21 @@ void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
   // entire result set can be streamed from a single query.
 
   m.prepare("extract_ways",
-     "SELECT w.id, w.visible, "
-         "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
-         "w.changeset_id, w.version, t.keys as tag_k, t.values as tag_v, "
-         "wn.node_ids as node_ids "
-       "FROM current_ways w "
-         "LEFT JOIN LATERAL "
-           "(SELECT array_agg(k) as keys, array_agg(v) as values "
-            "FROM current_way_tags WHERE w.id=way_id) t ON true "
-         "LEFT JOIN LATERAL "
-           "(SELECT array_agg(node_id) as node_ids "
-            "FROM "
-              "(SELECT node_id FROM current_way_nodes WHERE w.id=way_id "
-               "ORDER BY sequence_id) x) wn ON true "
-       "WHERE w.id = ANY($1) "
-       "ORDER BY w.id");
+     R"(SELECT w.id, w.visible,
+         to_char(w.timestamp,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS timestamp,
+         w.changeset_id, w.version, t.keys as tag_k, t.values as tag_v,
+         wn.node_ids as node_ids
+       FROM current_ways w
+         LEFT JOIN LATERAL
+           (SELECT array_agg(k) as keys, array_agg(v) as values
+            FROM current_way_tags WHERE w.id=way_id) t ON true
+         LEFT JOIN LATERAL
+           (SELECT array_agg(node_id) as node_ids
+            FROM
+              (SELECT node_id FROM current_way_nodes WHERE w.id=way_id
+               ORDER BY sequence_id) x) wn ON true
+       WHERE w.id = ANY($1)
+       ORDER BY w.id)"_M);
 
   logger::message("Fetching ways");
   if (!sel_ways.empty()) {
@@ -209,25 +209,25 @@ void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
   }
 
   m.prepare("extract_historic_ways",
-     "WITH wanted(id, version) AS ("
-       "SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))"
-     ")"
-     "SELECT w.way_id AS id, w.visible, "
-         "to_char(w.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
-         "w.changeset_id, w.version, t.keys as tag_k, t.values as tag_v, "
-         "wn.node_ids as node_ids "
-       "FROM ways w "
-         "INNER JOIN wanted x ON w.way_id = x.id AND w.version = x.version "
-         "LEFT JOIN LATERAL "
-           "(SELECT array_agg(k) as keys, array_agg(v) as values "
-            "FROM way_tags WHERE w.way_id=way_id AND w.version=version) t ON true "
-         "LEFT JOIN LATERAL "
-           "(SELECT array_agg(node_id) as node_ids "
-            "FROM "
-              "(SELECT node_id FROM way_nodes "
-               "WHERE w.way_id=way_id AND w.version=version "
-               "ORDER BY sequence_id) x) wn ON true "
-       "ORDER BY w.way_id, w.version");
+     R"(WITH wanted(id, version) AS (
+       SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))
+     )
+     SELECT w.way_id AS id, w.visible,
+         to_char(w.timestamp,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS timestamp,
+         w.changeset_id, w.version, t.keys as tag_k, t.values as tag_v,
+         wn.node_ids as node_ids
+       FROM ways w
+         INNER JOIN wanted x ON w.way_id = x.id AND w.version = x.version
+         LEFT JOIN LATERAL
+           (SELECT array_agg(k) as keys, array_agg(v) as values
+            FROM way_tags WHERE w.way_id=way_id AND w.version=version) t ON true
+         LEFT JOIN LATERAL
+           (SELECT array_agg(node_id) as node_ids
+            FROM
+              (SELECT node_id FROM way_nodes
+               WHERE w.way_id=way_id AND w.version=version
+               ORDER BY sequence_id) x) wn ON true
+       ORDER BY w.way_id, w.version)"_M);
 
   if (!sel_historic_ways.empty()) {
     std::vector<osm_nwr_id_t> ids;
@@ -253,23 +253,22 @@ void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
   logger::message("Fetching relations");
 
   m.prepare("extract_relations",
-     "SELECT r.id, r.visible, "
-         "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
-         "r.changeset_id, r.version, t.keys as tag_k, t.values as tag_v, "
-         "rm.types as member_types, rm.ids as member_ids, rm.roles as member_roles "
-       "FROM current_relations r "
-         "LEFT JOIN LATERAL "
-           "(SELECT array_agg(k) as keys, array_agg(v) as values "
-            "FROM current_relation_tags WHERE r.id=relation_id) t ON true "
-         "LEFT JOIN LATERAL "
-           "(SELECT array_agg(member_type) as types, "
-            "array_agg(member_role) as roles, array_agg(member_id) as ids "
-            "FROM "
-              "(SELECT * FROM current_relation_members WHERE r.id=relation_id "
-               "ORDER BY sequence_id) x) rm ON true "
-       "WHERE r.id = ANY($1) "
-       "ORDER BY r.id");
-
+     R"(SELECT r.id, r.visible,
+         to_char(r.timestamp,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS timestamp,
+         r.changeset_id, r.version, t.keys as tag_k, t.values as tag_v,
+         rm.types as member_types, rm.ids as member_ids, rm.roles as member_roles
+       FROM current_relations r
+         LEFT JOIN LATERAL
+           (SELECT array_agg(k) as keys, array_agg(v) as values
+            FROM current_relation_tags WHERE r.id=relation_id) t ON true
+         LEFT JOIN LATERAL
+           (SELECT array_agg(member_type) as types,
+            array_agg(member_role) as roles, array_agg(member_id) as ids
+            FROM
+              (SELECT * FROM current_relation_members WHERE r.id=relation_id
+               ORDER BY sequence_id) x) rm ON true
+       WHERE r.id = ANY($1)
+       ORDER BY r.id)"_M);
 
   if (!sel_relations.empty()) {
     auto result = m.exec_prepared("extract_relations", sel_relations);
@@ -287,25 +286,25 @@ void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
   }
 
   m.prepare("extract_historic_relations",
-     "WITH wanted(id, version) AS ("
-       "SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))"
-     ")"
-     "SELECT r.relation_id AS id, r.visible, "
-         "to_char(r.timestamp,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS timestamp, "
-         "r.changeset_id, r.version, t.keys as tag_k, t.values as tag_v, "
-         "rm.types as member_types, rm.ids as member_ids, rm.roles as member_roles "
-       "FROM relations r "
-         "INNER JOIN wanted x ON r.relation_id = x.id AND r.version = x.version "
-         "LEFT JOIN LATERAL "
-           "(SELECT array_agg(k) as keys, array_agg(v) as values "
-            "FROM relation_tags WHERE r.relation_id=relation_id AND r.version=version) t ON true "
-         "LEFT JOIN LATERAL "
-           "(SELECT array_agg(member_type) as types, "
-            "array_agg(member_role) as roles, array_agg(member_id) as ids "
-            "FROM "
-              "(SELECT * FROM relation_members WHERE r.relation_id=relation_id AND r.version=version "
-               "ORDER BY sequence_id) x) rm ON true "
-       "ORDER BY r.relation_id, r.version");
+     R"(WITH wanted(id, version) AS (
+       SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))
+     )
+     SELECT r.relation_id AS id, r.visible,
+         to_char(r.timestamp,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS timestamp,
+         r.changeset_id, r.version, t.keys as tag_k, t.values as tag_v,
+         rm.types as member_types, rm.ids as member_ids, rm.roles as member_roles
+       FROM relations r
+         INNER JOIN wanted x ON r.relation_id = x.id AND r.version = x.version
+         LEFT JOIN LATERAL
+           (SELECT array_agg(k) as keys, array_agg(v) as values
+            FROM relation_tags WHERE r.relation_id=relation_id AND r.version=version) t ON true
+         LEFT JOIN LATERAL
+           (SELECT array_agg(member_type) as types,
+            array_agg(member_role) as roles, array_agg(member_id) as ids
+            FROM
+              (SELECT * FROM relation_members WHERE r.relation_id=relation_id AND r.version=version
+               ORDER BY sequence_id) x) rm ON true
+       ORDER BY r.relation_id, r.version)"_M);
 
   if (!sel_historic_relations.empty()) {
     std::vector<osm_nwr_id_t> ids;
@@ -333,33 +332,33 @@ void readonly_pgsql_selection::write_changesets(output_formatter &formatter,
     return;
 
   m.prepare("extract_changesets",
-      "SELECT c.id, "
-        "to_char(c.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at, "
-        "to_char(c.closed_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS closed_at, "
-        "c.min_lat, c.max_lat, c.min_lon, c.max_lon, "
-        "c.num_changes, "
-        "t.keys as tag_k, t.values as tag_v, "
-        "cc.id as comment_id, "
-        "cc.author_id as comment_author_id, "
-        "cc.display_name as comment_display_name, "
-        "cc.body as comment_body, "
-        "cc.created_at as comment_created_at "
-      "FROM changesets c "
-       "LEFT JOIN LATERAL "
-           "(SELECT array_agg(k) AS keys, array_agg(v) AS values "
-           "FROM changeset_tags WHERE c.id=changeset_id ) t ON true "
-       "LEFT JOIN LATERAL "
-         "(SELECT array_agg(id) as id, "
-         "array_agg(author_id) as author_id, "
-         "array_agg(display_name) as display_name, "
-         "array_agg(body) as body, "
-         "array_agg(created_at) as created_at FROM "
-           "(SELECT cc.id, cc.author_id, u.display_name, cc.body, "
-           "to_char(cc.created_at,'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS created_at "
-           "FROM changeset_comments cc JOIN users u ON cc.author_id = u.id "
-           "where cc.changeset_id=c.id AND cc.visible ORDER BY cc.created_at) x "
-         ")cc ON true "
-      "WHERE c.id = ANY($1)");
+      R"(SELECT c.id,
+        to_char(c.created_at,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS created_at,
+        to_char(c.closed_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS closed_at,
+        c.min_lat, c.max_lat, c.min_lon, c.max_lon,
+        c.num_changes,
+        t.keys as tag_k, t.values as tag_v,
+        cc.id as comment_id,
+        cc.author_id as comment_author_id,
+        cc.display_name as comment_display_name,
+        cc.body as comment_body,
+        cc.created_at as comment_created_at
+      FROM changesets c
+       LEFT JOIN LATERAL
+           (SELECT array_agg(k) AS keys, array_agg(v) AS values
+           FROM changeset_tags WHERE c.id=changeset_id ) t ON true
+       LEFT JOIN LATERAL
+         (SELECT array_agg(id) as id,
+         array_agg(author_id) as author_id,
+         array_agg(display_name) as display_name,
+         array_agg(body) as body,
+         array_agg(created_at) as created_at FROM
+           (SELECT cc.id, cc.author_id, u.display_name, cc.body,
+           to_char(cc.created_at,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS created_at
+           FROM changeset_comments cc JOIN users u ON cc.author_id = u.id
+           where cc.changeset_id=c.id AND cc.visible ORDER BY cc.created_at) x
+         )cc ON true
+      WHERE c.id = ANY($1))"_M);
 
   pqxx::result changesets = m.exec_prepared("extract_changesets", sel_changesets);
 
@@ -371,21 +370,21 @@ void readonly_pgsql_selection::write_changesets(output_formatter &formatter,
 data_selection::visibility_t
 readonly_pgsql_selection::check_node_visibility(osm_nwr_id_t id) {
   m.prepare("visible_node",
-     "SELECT visible FROM current_nodes WHERE id = $1");
+     R"(SELECT visible FROM current_nodes WHERE id = $1)");
   return check_table_visibility(m, id, "visible_node");
 }
 
 data_selection::visibility_t
 readonly_pgsql_selection::check_way_visibility(osm_nwr_id_t id) {
   m.prepare("visible_way",
-     "SELECT visible FROM current_ways WHERE id = $1");
+     R"(SELECT visible FROM current_ways WHERE id = $1)");
   return check_table_visibility(m, id, "visible_way");
 }
 
 data_selection::visibility_t
 readonly_pgsql_selection::check_relation_visibility(osm_nwr_id_t id) {
 
-  m.prepare("visible_relation", "SELECT visible FROM current_relations WHERE id = $1");
+  m.prepare("visible_relation", R"(SELECT visible FROM current_relations WHERE id = $1)");
 
   return check_table_visibility(m, id, "visible_relation");
 }
@@ -394,7 +393,7 @@ int readonly_pgsql_selection::select_nodes(const std::vector<osm_nwr_id_t> &ids)
   if (ids.empty())
     return 0;
 
-  m.prepare("select_nodes", "SELECT id FROM current_nodes WHERE id = ANY($1)");
+  m.prepare("select_nodes", R"(SELECT id FROM current_nodes WHERE id = ANY($1))");
 
   return insert_results(m.exec_prepared("select_nodes", ids), sel_nodes);
 }
@@ -403,7 +402,7 @@ int readonly_pgsql_selection::select_ways(const std::vector<osm_nwr_id_t> &ids) 
   if (ids.empty())
     return 0;
 
-  m.prepare("select_ways", "SELECT id FROM current_ways WHERE id = ANY($1)");
+  m.prepare("select_ways", R"(SELECT id FROM current_ways WHERE id = ANY($1))");
 
   return insert_results(m.exec_prepared("select_ways", ids), sel_ways);
 }
@@ -412,7 +411,7 @@ int readonly_pgsql_selection::select_relations(const std::vector<osm_nwr_id_t> &
   if (ids.empty())
     return 0;
 
-  m.prepare("select_relations", "SELECT id FROM current_relations WHERE id = ANY($1)");
+  m.prepare("select_relations", R"(SELECT id FROM current_relations WHERE id = ANY($1))");
 
   return insert_results(m.exec_prepared("select_relations", ids),
                         sel_relations);
@@ -425,13 +424,13 @@ int readonly_pgsql_selection::select_nodes_from_bbox(const bbox &bounds,
 
   // select nodes with bbox
  m.prepare("visible_node_in_bbox",
-    "SELECT id "
-      "FROM current_nodes "
-      "WHERE tile = ANY($1) "
-        "AND latitude BETWEEN $2 AND $3 "
-        "AND longitude BETWEEN $4 AND $5 "
-        "AND visible = true "
-      "LIMIT $6");
+    R"(SELECT id
+      FROM current_nodes
+      WHERE tile = ANY($1)
+        AND latitude BETWEEN $2 AND $3
+        AND longitude BETWEEN $4 AND $5
+        AND visible = true
+      LIMIT $6)"_M);
 
   // hack around problem with postgres' statistics, which was
   // making it do seq scans all the time on smaug...
@@ -454,10 +453,10 @@ void readonly_pgsql_selection::select_nodes_from_relations() {
   if (!sel_relations.empty()) {
 
     m.prepare("nodes_from_relations",
-       "SELECT DISTINCT rm.member_id AS id "
-	 "FROM current_relation_members rm "
-	 "WHERE rm.member_type = 'Node' "
-	   "AND rm.relation_id = ANY($1) ORDER by id");
+       R"(SELECT DISTINCT rm.member_id AS id
+	 FROM current_relation_members rm
+	 WHERE rm.member_type = 'Node'
+	   AND rm.relation_id = ANY($1) ORDER by id)"_M);
 
     insert_results(m.exec_prepared("nodes_from_relations", sel_relations),
                    sel_nodes);
@@ -469,9 +468,9 @@ void readonly_pgsql_selection::select_ways_from_nodes() {
 
   if (!sel_nodes.empty()) {
     m.prepare("ways_from_nodes",
-       "SELECT DISTINCT wn.way_id AS id "
-	 "FROM current_way_nodes wn "
-	 "WHERE wn.node_id = ANY($1) ORDER by id");
+       R"(SELECT DISTINCT wn.way_id AS id
+	 FROM current_way_nodes wn
+	 WHERE wn.node_id = ANY($1) ORDER by id)"_M);
 
     insert_results(m.exec_prepared("ways_from_nodes", sel_nodes), sel_ways);
   }
@@ -482,10 +481,10 @@ void readonly_pgsql_selection::select_ways_from_relations() {
 
   if (!sel_relations.empty()) {
     m.prepare("ways_from_relations",
-       "SELECT DISTINCT rm.member_id AS id "
-	 "FROM current_relation_members rm "
-	 "WHERE rm.member_type = 'Way' "
-	   "AND rm.relation_id = ANY($1) ORDER by id");
+       R"(SELECT DISTINCT rm.member_id AS id
+	 FROM current_relation_members rm
+	 WHERE rm.member_type = 'Way'
+	   AND rm.relation_id = ANY($1) ORDER by id)"_M);
 
     insert_results(m.exec_prepared("ways_from_relations", sel_relations),
                    sel_ways);
@@ -497,10 +496,10 @@ void readonly_pgsql_selection::select_relations_from_ways() {
 
   if (!sel_ways.empty()) {
     m.prepare("relation_parents_of_ways",
-       "SELECT DISTINCT rm.relation_id AS id "
-	 "FROM current_relation_members rm "
-	 "WHERE rm.member_type = 'Way' "
-	   "AND rm.member_id = ANY($1) ORDER by id");
+       R"(SELECT DISTINCT rm.relation_id AS id
+	 FROM current_relation_members rm
+	 WHERE rm.member_type = 'Way'
+	   AND rm.member_id = ANY($1) ORDER by id)"_M);
 
     insert_results(m.exec_prepared("relation_parents_of_ways", sel_ways),
                    sel_relations);
@@ -510,9 +509,9 @@ void readonly_pgsql_selection::select_relations_from_ways() {
 void readonly_pgsql_selection::select_nodes_from_way_nodes() {
   if (!sel_ways.empty()) {
     m.prepare("nodes_from_ways",
-       "SELECT DISTINCT wn.node_id AS id "
-	 "FROM current_way_nodes wn "
-	 "WHERE wn.way_id = ANY($1) ORDER by id");
+       R"(SELECT DISTINCT wn.node_id AS id
+	 FROM current_way_nodes wn
+	 WHERE wn.way_id = ANY($1) ORDER by id)"_M);
 
     insert_results(m.exec_prepared("nodes_from_ways", sel_ways), sel_nodes);
   }
@@ -521,10 +520,10 @@ void readonly_pgsql_selection::select_nodes_from_way_nodes() {
 void readonly_pgsql_selection::select_relations_from_nodes() {
   if (!sel_nodes.empty()) {
     m.prepare("relation_parents_of_nodes",
-       "SELECT DISTINCT rm.relation_id AS id "
-	 "FROM current_relation_members rm "
-	 "WHERE rm.member_type = 'Node' "
-	   "AND rm.member_id = ANY($1) ORDER by id");
+       R"(SELECT DISTINCT rm.relation_id AS id
+	 FROM current_relation_members rm
+	 WHERE rm.member_type = 'Node'
+	   AND rm.member_id = ANY($1) ORDER by id)"_M);
 
     insert_results(m.exec_prepared("relation_parents_of_nodes", sel_nodes),
                    sel_relations);
@@ -541,10 +540,10 @@ void readonly_pgsql_selection::select_relations_from_relations(bool drop_relatio
       sel = sel_relations;
 
     m.prepare("relation_parents_of_relations",
-       "SELECT DISTINCT rm.relation_id AS id "
-         "FROM current_relation_members rm "
-         "WHERE rm.member_type = 'Relation' "
-           "AND rm.member_id = ANY($1) ORDER by id");
+       R"(SELECT DISTINCT rm.relation_id AS id
+         FROM current_relation_members rm
+         WHERE rm.member_type = 'Relation'
+           AND rm.member_id = ANY($1) ORDER by id)"_M);
 
     insert_results(
         m.exec_prepared("relation_parents_of_relations", sel),
@@ -555,10 +554,10 @@ void readonly_pgsql_selection::select_relations_from_relations(bool drop_relatio
 void readonly_pgsql_selection::select_relations_members_of_relations() {
   if (!sel_relations.empty()) {
     m.prepare("relation_members_of_relations",
-       "SELECT DISTINCT rm.member_id AS id "
-	 "FROM current_relation_members rm "
-	 "WHERE rm.member_type = 'Relation' "
-	   "AND rm.relation_id = ANY($1) ORDER by id");
+       R"(SELECT DISTINCT rm.member_id AS id
+	 FROM current_relation_members rm
+	 WHERE rm.member_type = 'Relation'
+	   AND rm.relation_id = ANY($1) ORDER by id)"_M);
 
     insert_results(
         m.exec_prepared("relation_members_of_relations", sel_relations),
@@ -573,13 +572,13 @@ int readonly_pgsql_selection::select_historical_nodes(
     return 0;
 
   m.prepare("select_historical_nodes",
-     "WITH wanted(id, version) AS ("
-       "SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))"
-     ")"
-     "SELECT n.node_id AS id, n.version "
-       "FROM nodes n "
-       "INNER JOIN wanted w ON n.node_id = w.id AND n.version = w.version "
-       "WHERE (n.redaction_id IS NULL OR $3 = TRUE)");
+     R"(WITH wanted(id, version) AS (
+       SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))
+     )
+     SELECT n.node_id AS id, n.version
+       FROM nodes n
+       INNER JOIN wanted w ON n.node_id = w.id AND n.version = w.version
+       WHERE (n.redaction_id IS NULL OR $3 = TRUE))"_M);
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<osm_version_t> vers;
@@ -603,13 +602,13 @@ int readonly_pgsql_selection::select_historical_ways(
     return 0;
 
   m.prepare("select_historical_ways",
-     "WITH wanted(id, version) AS ("
-       "SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))"
-     ")"
-     "SELECT w.way_id AS id, w.version "
-       "FROM ways w "
-       "INNER JOIN wanted x ON w.way_id = x.id AND w.version = x.version "
-       "WHERE (w.redaction_id IS NULL OR $3 = TRUE)");
+     R"(WITH wanted(id, version) AS (
+       SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))
+     )
+     SELECT w.way_id AS id, w.version
+       FROM ways w
+       INNER JOIN wanted x ON w.way_id = x.id AND w.version = x.version
+       WHERE (w.redaction_id IS NULL OR $3 = TRUE))"_M);
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<osm_version_t> vers;
@@ -633,13 +632,13 @@ int readonly_pgsql_selection::select_historical_relations(
     return 0;
 
   m.prepare("select_historical_relations",
-     "WITH wanted(id, version) AS ("
-       "SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))"
-     ")"
-     "SELECT r.relation_id AS id, r.version "
-       "FROM relations r "
-       "INNER JOIN wanted x ON r.relation_id = x.id AND r.version = x.version "
-       "WHERE (r.redaction_id IS NULL OR $3 = TRUE)");
+     R"(WITH wanted(id, version) AS (
+       SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))
+     )
+     SELECT r.relation_id AS id, r.version
+       FROM relations r
+       INNER JOIN wanted x ON r.relation_id = x.id AND r.version = x.version
+       WHERE (r.redaction_id IS NULL OR $3 = TRUE))"_M);
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<osm_version_t> vers;
@@ -663,10 +662,10 @@ int readonly_pgsql_selection::select_nodes_with_history(
     return 0;
 
   m.prepare("select_nodes_history",
-     "SELECT node_id AS id, version "
-       "FROM nodes "
-       "WHERE node_id = ANY($1) AND "
-             "(redaction_id IS NULL OR $2 = TRUE)");
+     R"(SELECT node_id AS id, version
+       FROM nodes
+       WHERE node_id = ANY($1) AND
+             (redaction_id IS NULL OR $2 = TRUE))"_M);
 
   return insert_results(
     m.exec_prepared("select_nodes_history", ids, m_redactions_visible),
@@ -680,10 +679,10 @@ int readonly_pgsql_selection::select_ways_with_history(
     return 0;
 
   m.prepare("select_ways_history",
-     "SELECT way_id AS id, version "
-       "FROM ways "
-       "WHERE way_id = ANY($1) AND "
-             "(redaction_id IS NULL OR $2 = TRUE)");
+     R"(SELECT way_id AS id, version
+       FROM ways
+       WHERE way_id = ANY($1) AND
+             (redaction_id IS NULL OR $2 = TRUE))"_M);
 
   return insert_results(
     m.exec_prepared("select_ways_history", ids, m_redactions_visible),
@@ -697,10 +696,10 @@ int readonly_pgsql_selection::select_relations_with_history(
     return 0;
 
   m.prepare("select_relations_history",
-     "SELECT relation_id AS id, version "
-       "FROM relations "
-       "WHERE relation_id = ANY($1) AND "
-             "(redaction_id IS NULL OR $2 = TRUE)");
+     R"(SELECT relation_id AS id, version
+       FROM relations
+       WHERE relation_id = ANY($1) AND
+             (redaction_id IS NULL OR $2 = TRUE))"_M);
 
   return insert_results(m.exec_prepared("select_relations_history", ids, m_redactions_visible),
     sel_historic_relations);
@@ -717,22 +716,22 @@ int readonly_pgsql_selection::select_historical_by_changesets(
     return 0;
 
   m.prepare("select_nodes_by_changesets",
-       "SELECT n.node_id AS id, n.version "
-       "FROM nodes n "
-       "WHERE n.changeset_id = ANY($1) "
-         "AND (n.redaction_id IS NULL OR $2 = TRUE)");
+       R"(SELECT n.node_id AS id, n.version
+       FROM nodes n
+       WHERE n.changeset_id = ANY($1)
+         AND (n.redaction_id IS NULL OR $2 = TRUE))"_M);
 
   m.prepare("select_ways_by_changesets",
-      "SELECT w.way_id AS id, w.version "
-      "FROM ways w "
-      "WHERE w.changeset_id = ANY($1) "
-        "AND (w.redaction_id IS NULL OR $2 = TRUE)");
+      R"(SELECT w.way_id AS id, w.version
+      FROM ways w
+      WHERE w.changeset_id = ANY($1)
+        AND (w.redaction_id IS NULL OR $2 = TRUE))"_M);
 
   m.prepare("select_relations_by_changesets",
-      "SELECT r.relation_id AS id, r.version "
-      "FROM relations r "
-      "WHERE r.changeset_id = ANY($1) "
-        "AND (r.redaction_id IS NULL OR $2 = TRUE)");
+      R"(SELECT r.relation_id AS id, r.version
+      FROM relations r
+      WHERE r.changeset_id = ANY($1)
+        AND (r.redaction_id IS NULL OR $2 = TRUE))"_M);
 
 
   int selected = insert_results(m.exec_prepared("select_nodes_by_changesets", ids, m_redactions_visible),
@@ -764,9 +763,9 @@ int readonly_pgsql_selection::select_changesets(const std::vector<osm_changeset_
     return 0;
 
   m.prepare("select_changesets",
-     "SELECT id "
-       "FROM changesets "
-       "WHERE id = ANY($1)");
+     R"(SELECT id
+       FROM changesets
+       WHERE id = ANY($1))"_M);
 
   return insert_results(m.exec_prepared("select_changesets", ids), sel_changesets);
 }
@@ -796,7 +795,7 @@ std::set< osm_user_role_t > readonly_pgsql_selection::get_roles_for_user(osm_use
 
   // return all the roles to which the user belongs.
   m.prepare("roles_for_user",
-    "SELECT role FROM user_roles WHERE user_id = $1");
+    R"(SELECT role FROM user_roles WHERE user_id = $1)");
 
   auto res = m.exec_prepared("roles_for_user", id);
 
@@ -883,8 +882,8 @@ void readonly_pgsql_selection::fetch_changesets(const std::set< osm_changeset_id
     return;
 
   m.prepare("extract_changeset_userdetails",
-      "SELECT c.id, u.data_public, u.display_name, u.id from users u "
-                   "join changesets c on u.id=c.user_id where c.id = ANY($1)");
+      R"(SELECT c.id, u.data_public, u.display_name, u.id from users u
+                   join changesets c on u.id=c.user_id where c.id = ANY($1))"_M);
 
   pqxx::result res = m.exec_prepared("extract_changeset_userdetails", ids);
 
@@ -955,5 +954,3 @@ readonly_pgsql_selection::factory::get_default_transaction()
 {
   return std::make_unique<Transaction_Owner_ReadOnly>(std::ref(m_connection), m_prep_stmt);
 }
-
-
