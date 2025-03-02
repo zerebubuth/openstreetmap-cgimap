@@ -29,6 +29,7 @@
 #include <ranges>
 
 #include <format>
+#include <ranges>
 
 
 #if __APPLE__
@@ -169,10 +170,21 @@ inline std::string escape(std::string_view input) {
   return result;
 }
 
-template <typename T>
-inline std::string to_string(const T &ids) {
-  // TODO: replace fmt::join
-  return std::format("{}", fmt::join(ids, ","));
+// Replace with std::ranges::join_with_view / range formatting in C++23
+inline std::string to_comma_separated_string(const std::ranges::range auto &ids) {
+  std::string s{};
+
+  auto begin = ids.begin();
+  auto end = ids.end();
+
+  if (begin != end) {
+    s += std::format("{}", *begin);
+    for (const auto& id : std::ranges::subrange(std::next(begin), end)) {
+      s += std::format(",{}", id);
+    }
+  }
+
+  return s;
 }
 
 

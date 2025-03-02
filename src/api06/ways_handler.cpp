@@ -44,8 +44,7 @@ ways_responder::ways_responder(mime::type mt, const std::vector<id_version>& ids
 ways_handler::ways_handler(const request &req) : ids(validate_request(req)) {}
 
 std::string ways_handler::log_name() const {
-  // TODO: replace fmt::join
-  return std::format("ways?ways={}",fmt::join(ids,","));
+  return std::format("ways?ways={}", to_comma_separated_string(ids));
 }
 
 responder_ptr_t ways_handler::responder(data_selection &x) const {

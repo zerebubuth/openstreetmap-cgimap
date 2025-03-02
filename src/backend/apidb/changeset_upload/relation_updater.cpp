@@ -542,7 +542,7 @@ void ApiDB_Relation_Updater::lock_current_relations(
       missing_ids.push_back(row[id_col].as<osm_nwr_id_t>());
 
     throw http::not_found(
-      std::format("The following relation ids are unknown: {}", to_string(missing_ids)));
+      std::format("The following relation ids are unknown: {}", to_comma_separated_string(missing_ids)));
   }
 }
 
@@ -730,7 +730,7 @@ void ApiDB_Relation_Updater::lock_future_members_nodes(
     throw http::precondition_failed(
       std::format("Relation {:d} requires the nodes with id in {}, "
                        "which either do not exist, or are not visible.",
-         it->first, to_string(it->second)));
+         it->first, to_comma_separated_string(it->second)));
   }
 }
 
@@ -783,7 +783,7 @@ void ApiDB_Relation_Updater::lock_future_members_ways(
     throw http::precondition_failed(
       std::format("Relation {:d} requires the ways with id in {}, which "
                        "either do not exist, or are not visible.",
-         it->first, to_string(it->second)));
+         it->first, to_comma_separated_string(it->second)));
   }
 }
 
@@ -837,7 +837,7 @@ void ApiDB_Relation_Updater::lock_future_members_relations(
     throw http::precondition_failed(
       std::format("Relation {:d} requires the relations with id in {}, "
                        "which either do not exist, or are not visible.",
-         it->first, to_string(it->second)));
+         it->first, to_comma_separated_string(it->second)));
   }
 }
 

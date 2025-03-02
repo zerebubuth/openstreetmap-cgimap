@@ -381,7 +381,7 @@ void ApiDB_Node_Updater::lock_current_nodes(
       missing_ids.push_back(row[id_col].as<osm_nwr_id_t>());
 
     throw http::not_found(
-      std::format("The following node ids are not known on the database: {}", to_string(missing_ids)));
+      std::format("The following node ids are not known on the database: {}", to_comma_separated_string(missing_ids)));
   }
 }
 

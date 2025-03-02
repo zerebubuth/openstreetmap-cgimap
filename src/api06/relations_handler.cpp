@@ -52,8 +52,7 @@ relations_handler::relations_handler(const request &req)
     : ids(validate_request(req)) {}
 
 std::string relations_handler::log_name() const {
-  // TODO: replace fmt::join
-  return std::format("relations?relations={}",fmt::join(ids,","));
+  return std::format("relations?relations={}", to_comma_separated_string(ids));
 }
 
 responder_ptr_t relations_handler::responder(data_selection &x) const {

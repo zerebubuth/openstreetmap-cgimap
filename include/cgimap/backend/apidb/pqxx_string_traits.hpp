@@ -34,7 +34,6 @@ namespace pqxx {
  * implementation has to be available when used in the prepared statement
  * code.
  */
-// TODO: replace fmt::join
 #define PQXX_ARRAY_STRING_TRAITS(type)                                  \
   template <> struct string_traits<type> {                              \
     static const char *name() { return #type; }                         \
@@ -46,7 +45,7 @@ namespace pqxx {
     }                                                                   \
     static void from_string(const char[], type &) {}                    \
     static std::string to_string(const type &ids) {                     \
-      return std::format("{{{}}}", fmt::join(ids, ","));                \
+      return std::format("{{{}}}", to_comma_separated_string(ids));     \
     }                                                                   \
   }
 
