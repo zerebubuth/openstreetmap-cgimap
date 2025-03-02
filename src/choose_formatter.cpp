@@ -27,6 +27,7 @@
 #include <limits>
 #include <optional>
 #include <iostream>
+#include <ranges>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -34,11 +35,37 @@
 
 #include <fmt/core.h>
 
+namespace {
+
+bool parseQValue(std::string_view param, double &qValue) {
+#if !defined(__APPLE__)
+  auto [ptr, ec] = std::from_chars(param.begin(), param.end(), qValue,
+                                   std::chars_format::fixed);
+  return (ec == std::errc() && ptr == param.end());
+#else
+  std::string p(param);
+  for (char ch : p) {
+    if (!(std::isdigit(ch) || ch == '.')) {
+      return false;  // Invalid character found
+    }
+  }
+  size_t pos;
+  try {
+    qValue = std::stod(p, &pos);
+    return (pos == p.size()); // Check if the entire string was consumed
+  } catch (const std::exception &) {
+    return false; // Invalid value
+  }
+#endif
+}
+
+} // namespace
+
 AcceptHeader::AcceptHeader(const std::string &header) {
 
   acceptedTypes = parse(header);
 
-  std::sort(acceptedTypes.begin(), acceptedTypes.end(),
+  std::ranges::sort(acceptedTypes,
             [](const AcceptElement &a, const AcceptElement &b) {
               return std::tie(a.q, a.type, a.subtype) >
                      std::tie(b.q, b.type, b.subtype);
@@ -49,8 +76,7 @@ AcceptHeader::AcceptHeader(const std::string &header) {
 }
 
 [[nodiscard]] bool AcceptHeader::is_acceptable(mime::type mt) const {
-  return mapping.find(mt) != mapping.end() ||
-         mapping.find(mime::type::any_type) != mapping.end();
+  return mapping.contains(mt) || mapping.contains(mime::type::any_type);
 }
 
 [[nodiscard]] mime::type AcceptHeader::most_acceptable_of(
@@ -135,17 +161,15 @@ std::vector<AcceptHeader::AcceptElement> AcceptHeader::parse(const std::string &
       }
 
       if (param_parts[0] == "q") {
-        auto [ptr, ec] = std::from_chars(param_parts[1].begin(), 
-                                         param_parts[1].end(), 
-                                         acceptElement.q, 
-                                         std::chars_format::fixed);
-        if (ec != std::errc() || 
-            ptr != param_parts[1].end() ||
-            !std::isfinite(acceptElement.q) || 
-            acceptElement.q < 0 || 
-            acceptElement.q > 1) {
+        if (!parseQValue(param_parts[1], acceptElement.q)) {
           throw http::bad_request("Invalid q parameter value in accept header");
         }
+
+        // Check if q is within the valid range [0, 1]
+        if (!std::isfinite(acceptElement.q) || acceptElement.q < 0.0 || acceptElement.q > 1.0) {
+            throw http::bad_request("Invalid q parameter value in accept header");
+        }
+
       } else {
         acceptElement.params[std::string{param_parts[0]}] = std::string{param_parts[1]};
       }
