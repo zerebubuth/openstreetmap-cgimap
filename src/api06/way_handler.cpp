@@ -13,7 +13,7 @@
 #include <string>
 #include <memory>
 
-#include <fmt/core.h>
+#include <format>
 
 namespace api06 {
 
@@ -21,7 +21,7 @@ way_responder::way_responder(mime::type mt, osm_nwr_id_t id, data_selection &w)
     : osm_current_responder(mt, w) {
 
   if (sel.select_ways({id}) == 0) {
-    throw http::not_found(fmt::format("Way {:d} was not found.", id));
+    throw http::not_found(std::format("Way {:d} was not found.", id));
   }
   check_visibility(id);
 }

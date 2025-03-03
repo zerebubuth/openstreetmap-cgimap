@@ -10,7 +10,7 @@
 #include "cgimap/api06/relation_handler.hpp"
 #include "cgimap/http.hpp"
 
-#include <fmt/core.h>
+#include <format>
 
 namespace api06 {
 
@@ -19,7 +19,7 @@ relation_responder::relation_responder(mime::type mt, osm_nwr_id_t id,
     : osm_current_responder(mt, w) {
 
   if (sel.select_relations({id}) == 0) {
-    throw http::not_found(fmt::format("Relation {:d} was not found.", id));
+    throw http::not_found(std::format("Relation {:d} was not found.", id));
   }
   check_visibility(id);
 }

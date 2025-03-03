@@ -14,7 +14,7 @@
 #include "staticxml.hpp"
 
 #include <boost/program_options.hpp>
-#include <fmt/core.h>
+#include <format>
 #include <boost/algorithm/string.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
@@ -142,15 +142,15 @@ void check_xmlattr(const pt::ptree &expected, const pt::ptree &actual) {
         std::string act_val = act_child->data();
         if ((exp_val != act_val) && (exp_val != "***")) {
           throw std::runtime_error(
-            fmt::format(
+            std::format(
               "Attribute `{}' expected value `{}', but got `{}'",
              k, exp_val,  act_val));
         }
       } else {
-        throw std::runtime_error(fmt::format("Expected to find attribute `{}', but it was missing.", k));
+        throw std::runtime_error(std::format("Expected to find attribute `{}', but it was missing.", k));
       }
     } else if (act_child) {
-      throw std::runtime_error(fmt::format("Found attribute `{}', but it was not expected to exist.", k));
+      throw std::runtime_error(std::format("Found attribute `{}', but it was not expected to exist.", k));
     }
   }
 }
@@ -199,7 +199,7 @@ void check_recursive_tree(const pt::ptree &expected, const pt::ptree &actual) {
       throw std::runtime_error(out.str());
     }
     if (exp_itr->first != act_itr->first) {
-      throw std::runtime_error(fmt::format("Expected {}, but got {}",
+      throw std::runtime_error(std::format("Expected {}, but got {}",
                                 exp_itr->first, act_itr->first));
     }
     try {
@@ -209,7 +209,7 @@ void check_recursive_tree(const pt::ptree &expected, const pt::ptree &actual) {
         check_recursive_tree(exp_itr->second, act_itr->second);
       }
     } catch (const std::exception &ex) {
-      throw std::runtime_error(fmt::format("{}, in <{}> element",
+      throw std::runtime_error(std::format("{}, in <{}> element",
                                 ex.what(), exp_itr->first));
     }
     ++exp_itr;
@@ -228,14 +228,14 @@ void check_content_body_xml(std::istream &expected, std::istream &actual) {
     pt::read_xml(expected, exp_tree);
   } catch (const std::exception &ex) {
     throw std::runtime_error(
-        fmt::format("{}, while reading expected XML.", ex.what()));
+        std::format("{}, while reading expected XML.", ex.what()));
   }
 
   try {
     pt::read_xml(actual, act_tree);
   } catch (const std::exception &ex) {
     throw std::runtime_error(
-        fmt::format("{}, while reading actual XML.", ex.what()));
+      std::format("{}, while reading actual XML.", ex.what()));
   }
 
   // and check the results for equality
@@ -261,7 +261,7 @@ void check_recursive_tree_json(const pt::ptree &expected,
 
   // check the actual data value
   if (expected.data() != actual.data()) {
-    throw std::runtime_error(fmt::format("Expected '{}', but got '{}'",
+    throw std::runtime_error(std::format("Expected '{}', but got '{}'",
                               expected.data(), actual.data()));
   }
   std::cout << "attr match: " << expected.data() << "\n";
@@ -295,14 +295,14 @@ void check_recursive_tree_json(const pt::ptree &expected,
       throw std::runtime_error(out.str());
     }
     if (exp_itr->first != act_itr->first) {
-      throw std::runtime_error(fmt::format("Expected {}, but got {}",
+      throw std::runtime_error(std::format("Expected {}, but got {}",
                                 exp_itr->first, act_itr->first));
     }
     try {
       std::cout << "recursing on item " << exp_itr->first << "\n";
       check_recursive_tree_json(exp_itr->second, act_itr->second);
     } catch (const std::exception &ex) {
-      throw std::runtime_error(fmt::format("{}, in \"{}\" object",
+      throw std::runtime_error(std::format("{}, in \"{}\" object",
                                 ex.what(), exp_itr->first));
     }
     ++exp_itr;
@@ -322,14 +322,14 @@ void check_content_body_json(std::istream &expected, std::istream &actual) {
     pt::read_json(expected, exp_tree);
   } catch (const std::exception &ex) {
     throw std::runtime_error(
-        fmt::format("{}, while reading expected JSON.", ex.what()));
+      std::format("{}, while reading expected JSON.", ex.what()));
   }
 
   try {
     pt::read_json(actual, act_tree);
   } catch (const std::exception &ex) {
     throw std::runtime_error(
-        fmt::format("{}, while reading actual JSON.", ex.what()));
+      std::format("{}, while reading actual JSON.", ex.what()));
   }
 
   expected.seekg(0);
@@ -367,13 +367,13 @@ void check_content_body_plain(std::istream &expected, std::istream &actual) {
 
     if (exp_num != act_num) {
       throw std::runtime_error(
-        fmt::format("Expected to read {} bytes, but read {} in actual "
+        std::format("Expected to read {} bytes, but read {} in actual "
                        "plain - responses are different sizes.\nexpected \"{}\", actual \"{}\"", exp_num, act_num, exp, act));
     }
 
     if (!std::equal(exp_buf, exp_buf + exp_num, act_buf)) {
       throw std::runtime_error(
-        fmt::format("Returned content differs: expected \"{}\", actual "
+        std::format("Returned content differs: expected \"{}\", actual "
                        "\"{}\" - responses are different.", exp, act));
     }
 
@@ -399,7 +399,7 @@ void check_headers(const dict &expected_headers,
       auto itr = actual_headers.find(val.first.substr(1));
       if (itr != actual_headers.end()) {
         throw std::runtime_error(
-          fmt::format(
+          std::format(
             "Expected not to find header `{}', but it is present.",
            itr->first));
       }
@@ -407,14 +407,14 @@ void check_headers(const dict &expected_headers,
       auto itr = actual_headers.find(val.first);
       if (itr == actual_headers.end()) {
         throw std::runtime_error(
-          fmt::format("Expected header `{}: {}', but didn't find it in "
+          std::format("Expected header `{}: {}', but didn't find it in "
                          "actual response.",
            val.first, val.second));
       }
       if (!val.second.empty()) {
         if (val.second != itr->second) {
           throw std::runtime_error(
-            fmt::format(
+            std::format(
               "Header key `{}'; expected `{}' but got `{}'.",
              val.first, val.second, itr->second));
         }
@@ -464,7 +464,7 @@ void check_response(std::istream &expected, std::istream &actual) {
 
     } else {
       throw std::runtime_error(
-          fmt::format("Cannot yet handle tests with Content-Type: {}.",
+        std::format("Cannot yet handle tests with Content-Type: {}.",
            content_type));
     }
   }
@@ -510,7 +510,7 @@ void run_test(fs::path test_case, rate_limiter &limiter,
 
   } catch (const std::exception &ex) {
     throw std::runtime_error(
-        fmt::format("{}, in {} test.", ex.what(), test_case.string()));
+      std::format("{}, in {} test.", ex.what(), test_case.string()));
   }
 }
 
@@ -569,7 +569,7 @@ user_roles_t get_user_roles(const fs::path &roles_file)
     catch (const std::exception &ex)
     {
       throw std::runtime_error(
-          fmt::format("{}, while reading expected JSON.", ex.what()));
+        std::format("{}, while reading expected JSON.", ex.what()));
     }
   }
   return {};
@@ -609,7 +609,7 @@ oauth2_tokens get_oauth2_tokens(const fs::path &oauth2_file)
     catch (const std::exception &ex)
     {
       throw std::runtime_error(
-          fmt::format("{}, while reading expected JSON.", ex.what()));
+        std::format("{}, while reading expected JSON.", ex.what()));
     }
   }
   return {};
@@ -674,7 +674,7 @@ int main(int argc, char *argv[]) {
     routes route;
 
     for (fs::path test_case : test_cases) {
-      std::string generator = fmt::format(PACKAGE_STRING " (test {})", test_case.string());
+      std::string generator = std::format(PACKAGE_STRING " (test {})", test_case.string());
       run_test(test_case, limiter, generator, route, *factory);
     }
 

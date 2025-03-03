@@ -10,7 +10,7 @@
 #include "cgimap/logger.hpp"
 #include "cgimap/osm_current_responder.hpp"
 
-#include <fmt/core.h>
+#include <format>
 
 #include <optional>
 
@@ -41,7 +41,7 @@ void osm_current_responder::write(output_formatter& fmt,
     fmt.end_element();
 
   } catch (const std::exception &e) {
-    logger::message(fmt::format("Caught error in osm_current_responder: {}",
+    logger::message(std::format("Caught error in osm_current_responder: {}",
                       e.what()));
     fmt.error(e);
   }

@@ -18,7 +18,7 @@
 #include <optional>
 #include <string_view>
 
-#include <fmt/core.h>
+#include <format>
 
 namespace api06 {
 
@@ -137,36 +137,34 @@ namespace api06 {
     void add_tag(const std::string& key, const std::string& value) {
 
       if (key.empty()) {
-	  throw payload_error(fmt::format("Key may not be empty in {}", to_string()));
+        throw payload_error(std::format("Key may not be empty in {}", to_string()));
       }
 
       if (unicode_strlen(key) > 255) {
-	  throw payload_error(
-	      fmt::format("Key has more than 255 unicode characters in {}",  to_string()));
+        throw payload_error(
+          std::format("Key has more than 255 unicode characters in {}",  to_string()));
       }
 
       if (unicode_strlen(value) > 255) {
-	  throw payload_error(
-	      fmt::format("Value has more than 255 unicode characters in {}", to_string()));
+        throw payload_error(
+          std::format("Value has more than 255 unicode characters in {}", to_string()));
       }
 
-      if (!(m_tags.insert({key, value}))
-	  .second) {
-	  throw payload_error(
-	       fmt::format("{} has duplicate tags with key {}", to_string(), key));
+      if (!(m_tags.insert({key, value})).second) {
+        throw payload_error(
+          std::format("{} has duplicate tags with key {}", to_string(), key));
       }
     }
 
     virtual bool is_valid() const {
       // check if all mandatory fields have been set
       if (!m_changeset)
-	throw payload_error(
-	    "You need to supply a changeset to be able to make a change");
+        throw payload_error("You need to supply a changeset to be able to make a change");
 
       auto max_tags = global_settings::get_element_max_tags();
 
       if (max_tags && m_tags.size() > *max_tags) {
-	     throw payload_error(fmt::format("OSM element exceeds limit of {} tags", *max_tags));
+        throw payload_error(std::format("OSM element exceeds limit of {} tags", *max_tags));
       }
 
       return (m_changeset && m_id && m_version);
@@ -176,7 +174,7 @@ namespace api06 {
 
     virtual std::string to_string() const {
 
-      return fmt::format("{} {:d}", get_type_name(), m_id.value_or(0));
+      return std::format("{} {:d}", get_type_name(), m_id.value_or(0));
     }
 
     bool operator==(const OSMObject &o) const = default;

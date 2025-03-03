@@ -12,8 +12,7 @@
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
 
-#include <fmt/core.h>
-#include <fmt/format.h>
+#include <format>
 
 using std::vector;
 using std::string;
@@ -48,7 +47,7 @@ nodes_responder::nodes_responder(mime::type mt, const vector<id_version> &ids,
 nodes_handler::nodes_handler(const request &req) : ids(validate_request(req)) {}
 
 std::string nodes_handler::log_name() const {
-  return fmt::format("nodes?nodes={}",fmt::join(ids,","));
+  return std::format("nodes?nodes={}", to_comma_separated_string(ids));
 }
 
 responder_ptr_t nodes_handler::responder(data_selection &x) const {

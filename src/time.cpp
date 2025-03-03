@@ -13,7 +13,7 @@
 #include <sstream>
 #include <cctype>
 #include <ctime>
-#include <fmt/core.h>
+#include <format>
 
 
 
@@ -27,5 +27,5 @@ std::chrono::system_clock::time_point parse_time(const std::string &s) {
     return tp;
   }
 
-  throw std::runtime_error(fmt::format("Unable to parse string '{}' as an ISO 8601 format date time.", s));
+  throw std::runtime_error(std::format("Unable to parse string '{}' as an ISO 8601 format date time.", s));
 }

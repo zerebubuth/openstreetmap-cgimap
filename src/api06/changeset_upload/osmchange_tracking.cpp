@@ -10,7 +10,7 @@
 
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 
-#include <fmt/core.h>
+#include <format>
 
 #include <set>
 

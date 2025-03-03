@@ -15,7 +15,7 @@
 #include <stdexcept>
 #include <string>
 
-#include <fmt/core.h>
+#include <format>
 #include <pqxx/pqxx>
 
 #include "cgimap/data_selection.hpp"

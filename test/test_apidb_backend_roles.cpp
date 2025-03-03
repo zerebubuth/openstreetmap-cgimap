@@ -9,7 +9,7 @@
 
 #include <iostream>
 #include <stdexcept>
-#include <fmt/core.h>
+#include <format>
 
 #include <sys/time.h>
 #include <cstdio>
@@ -80,15 +80,15 @@ std::ostream &operator<<(
   return out;
 }
 
-template <> struct fmt::formatter<roles_t> {
-  template <typename FormatContext>
-  auto format(const roles_t& r, FormatContext& ctx) -> decltype(ctx.out()) {
+template <> struct std::formatter<roles_t> {
+  auto format(const roles_t& r, auto& ctx) const -> decltype(ctx.out()) {
     // ctx.out() is an output iterator to write to.
     std::ostringstream ostr;
     ostr << r;
     return format_to(ctx.out(), "{}", ostr.str());
   }
-  constexpr auto parse(const format_parse_context& ctx) const { return ctx.begin(); }
+
+  constexpr auto parse(auto& ctx) const { return ctx.begin(); }
 };
 
 
@@ -133,5 +133,3 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_get_roles_for_user", "[roles][db]" 
   // user 1 is an administrator and a moderator
   REQUIRE(roles_t({osm_user_role_t::moderator, osm_user_role_t::administrator}) == sel->get_roles_for_user(1));
 }
-
-

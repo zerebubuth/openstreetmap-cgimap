@@ -11,7 +11,7 @@
 #include "cgimap/options.hpp"
 #include "cgimap/util.hpp"
 #include <vector>
-#include <fmt/core.h>
+#include <format>
 
 #include <iterator> // for distance
 #include <cctype>   // for toupper, isxdigit
@@ -112,9 +112,9 @@ const char *status_message(int code) {
 
 std::string format_header(int status, const headers_t &headers) {
   std::string hdr{};
-  hdr += fmt::format("Status: {} {}\r\n", status, status_message(status));
+  hdr += std::format("Status: {} {}\r\n", status, status_message(status));
   for (const auto& [name, value] : headers) {
-    hdr += fmt::format("{}: {}\r\n", name, value);
+    hdr += std::format("{}: {}\r\n", name, value);
   }
   hdr += "\r\n";
   return hdr;
@@ -160,7 +160,7 @@ too_many_requests::too_many_requests(const string &message)
     : exception(429, message) {}
 
 bandwidth_limit_exceeded::bandwidth_limit_exceeded(int retry_seconds)
-    : exception(509, fmt::format("You have downloaded too much data. Please try again in {} seconds.", retry_seconds)), retry_seconds(retry_seconds) {}
+    : exception(509, std::format("You have downloaded too much data. Please try again in {} seconds.", retry_seconds)), retry_seconds(retry_seconds) {}
 
 gone::gone(const string &message)
     : exception(410, message) {}
@@ -383,7 +383,7 @@ unsigned long parse_content_length(const std::string &content_length_str) {
   } else if (length < 0) {
     throw http::bad_request("CONTENT_LENGTH: invalid value");
   } else if (length > global_settings::get_payload_max_size())
-    throw http::payload_too_large(fmt::format("CONTENT_LENGTH exceeds limit of {:d} bytes", global_settings::get_payload_max_size()));
+    throw http::payload_too_large(std::format("CONTENT_LENGTH exceeds limit of {:d} bytes", global_settings::get_payload_max_size()));
 
   return length;
 }

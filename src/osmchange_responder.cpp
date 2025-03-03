@@ -11,7 +11,7 @@
 #include "cgimap/osmchange_responder.hpp"
 
 #include <chrono>
-#include <fmt/core.h>
+#include <format>
 
 
 namespace {
@@ -240,7 +240,7 @@ void osmchange_responder::write(output_formatter& fmt,
     sorter.write(fmt);
 
   } catch (const std::exception &e) {
-    logger::message(fmt::format("Caught error in osmchange_responder: {}",
+    logger::message(std::format("Caught error in osmchange_responder: {}",
                           e.what()));
     fmt.error(e);
   }

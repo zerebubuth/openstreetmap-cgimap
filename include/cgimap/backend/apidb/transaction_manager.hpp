@@ -14,7 +14,7 @@
 
 #include <chrono>
 #include <set>
-#include <fmt/core.h>
+#include <format>
 #include <pqxx/pqxx>
 
 #include <iostream>
@@ -59,7 +59,7 @@ private:
     const auto end = std::chrono::steady_clock::now();
     const auto elapsed = std::chrono::duration_cast < std::chrono::milliseconds > (end - m_start);
 
-    logger::message(fmt::format(
+    logger::message(std::format(
             "Executed COPY statement for table {} in {:d} ms, inserted {:d} rows",
             m_table, elapsed.count(), row_count));
   }
@@ -147,7 +147,7 @@ public:
 
     const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
-    logger::message(fmt::format("COMMIT transaction in {:d} ms", elapsed.count()));
+    logger::message(std::format("COMMIT transaction in {:d} ms", elapsed.count()));
   }
 
   template<typename... Args>
@@ -164,11 +164,12 @@ public:
 
     const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
-    logger::message(fmt::format("Executed prepared statement {} in {:d} ms, returning {:d} rows, {:d} affected rows",
-                               statement,
-                               elapsed.count(),
-			       res.size(),
-			       res.affected_rows()));
+    logger::message(
+      std::format("Executed prepared statement {} in {:d} ms, returning {:d} rows, {:d} affected rows",
+                  statement,
+                  elapsed.count(),
+                  res.size(),
+                  res.affected_rows()));
     return res;
   }
 

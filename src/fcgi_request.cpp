@@ -14,7 +14,7 @@
 #include "cgimap/output_buffer.hpp"
 #include "cgimap/request_helpers.hpp"
 
-#include <fmt/core.h>
+#include <format>
 
 #include <array>
 #include <iostream>
@@ -116,7 +116,7 @@ std::string fcgi_request::get_payload() {
       }
 
       if (result.length() > global_settings::get_payload_max_size())
-         throw http::payload_too_large(fmt::format("Payload exceeds limit of {:d} bytes", global_settings::get_payload_max_size()));
+         throw http::payload_too_large(std::format("Payload exceeds limit of {:d} bytes", global_settings::get_payload_max_size()));
   }
 
   if (content_length > 0 && result_length != content_length)

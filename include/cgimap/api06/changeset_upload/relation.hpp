@@ -40,14 +40,14 @@ public:
       m_type = "Relation";
     else
       throw payload_error(
-          fmt::format("Invalid type {} in member relation", type));
+        std::format("Invalid type {} in member relation", type));
   }
 
   void set_role(const std::string &role) {
 
     if (unicode_strlen(role) > 255) {
       throw payload_error(
-          "Relation Role has more than 255 unicode characters");
+        "Relation Role has more than 255 unicode characters");
     }
 
     m_role = role;
@@ -118,7 +118,7 @@ public:
   void add_member(RelationMember &member) {
     if (!member.is_valid())
       throw payload_error(
-          "Relation member does not include all mandatory fields");
+        "Relation member does not include all mandatory fields");
     m_relation_member.emplace_back(member);
   }
 
@@ -137,7 +137,7 @@ public:
 
     if (max_members && m_relation_member.size() > *max_members) {
       throw http::bad_request(
-          fmt::format("You tried to add {:d} members to relation {:d}, however "
+          std::format("You tried to add {:d} members to relation {:d}, however "
                       "only {:d} are allowed",
                       m_relation_member.size(), id(0),
                       *max_members));

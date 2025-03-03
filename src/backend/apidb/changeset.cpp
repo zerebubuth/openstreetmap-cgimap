@@ -12,7 +12,7 @@
 #include "cgimap/logger.hpp"
 #include "cgimap/http.hpp"
 #include <map>
-#include <fmt/core.h>
+#include <format>
 
 using std::string;
 

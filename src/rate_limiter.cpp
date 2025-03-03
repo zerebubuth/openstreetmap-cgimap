@@ -8,7 +8,7 @@
  */
 
 #include <vector>
-#include <fmt/core.h>
+#include <format>
 #include <libmemcached/memcached.h>
 
 #include "cgimap/logger.hpp"
@@ -46,7 +46,7 @@ memcached_rate_limiter::memcached_rate_limiter(
     memcached_server_push(ptr, server_list);
     memcached_server_list_free(server_list);
 
-    logger::message(fmt::format("memcached rate limiting enabled ({})", server));
+    logger::message(std::format("memcached rate limiting enabled ({})", server));
   }
 }
 

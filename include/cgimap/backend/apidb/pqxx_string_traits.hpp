@@ -15,8 +15,7 @@
 #include <sstream>
 #include <vector>
 
-#include <fmt/core.h>
-#include <fmt/format.h>
+#include <format>
 
 #include <pqxx/pqxx>
 
@@ -46,7 +45,7 @@ namespace pqxx {
     }                                                                   \
     static void from_string(const char[], type &) {}                    \
     static std::string to_string(const type &ids) {                     \
-      return fmt::format("{{{}}}", fmt::join(ids, ","));                \
+      return std::format("{{{}}}", to_comma_separated_string(ids));     \
     }                                                                   \
   }
 

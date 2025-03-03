@@ -15,7 +15,7 @@
 #include "cgimap/options.hpp"
 #include "cgimap/request_context.hpp"
 
-#include <fmt/core.h>
+#include <format>
 #include <pqxx/pqxx>
 #include <stdexcept>
 
@@ -47,13 +47,13 @@ void ApiDB_Changeset_Updater::lock_current_changeset(bool check_max_elements_lim
   lock_cs(is_closed, closed_at, current_time);
 
   if (is_closed)
-    throw http::conflict(fmt::format("The changeset {:d} was closed at {}", changeset, closed_at));
+    throw http::conflict(std::format("The changeset {:d} was closed at {}", changeset, closed_at));
 
   // Some clients try to send further changes, although the changeset already
   // holds the maximum number of elements. As this is futile, we raise an error
   // as early as possible.
   if (check_max_elements_limit && cs_num_changes >= global_settings::get_changeset_max_elements())
-    throw http::conflict(fmt::format("The changeset {:d} was closed at {}",  changeset, current_time));
+    throw http::conflict(std::format("The changeset {:d} was closed at {}", changeset, current_time));
 
 }
 
@@ -66,7 +66,8 @@ void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
       auto r = m.exec(
 	  R"(SELECT to_char((now() at time zone 'utc'),'YYYY-MM-DD HH24:MI:SS "UTC"') as current_time)");
 
-      throw http::conflict(fmt::format("The changeset {:d} was closed at {}", changeset, r[0]["current_time"].as<std::string>()));
+      throw http::conflict(std::format("The changeset {:d} was closed at {}",
+                              changeset, r[0]["current_time"].as<std::string>()));
   }
 
   cs_num_changes += num_new_changes;
@@ -218,7 +219,7 @@ void ApiDB_Changeset_Updater::lock_cs(bool& is_closed, std::string& closed_at, s
       return m.exec_prepared("changeset_current_lock", changeset, req_ctx.user->id);
     } catch (const pqxx::sql_error &e) {
       if (e.sqlstate() == "55P03") // lock not available
-        throw http::conflict(fmt::format("Changeset {:d} is currently locked by another process.", changeset));
+        throw http::conflict(std::format("Changeset {:d} is currently locked by another process.", changeset));
       // rethrow all other sql errors
       throw;
     }

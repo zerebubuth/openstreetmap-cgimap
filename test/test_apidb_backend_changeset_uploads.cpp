@@ -17,7 +17,7 @@
 #include <sstream>
 #include <memory>
 #include <thread>
-#include <fmt/core.h>
+#include <format>
 #include <libxml/tree.h>
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
@@ -608,7 +608,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     upd->commit();
 
     REQUIRE_THROWS_MATCHES(future.get(), http::precondition_failed,
-           Catch::Message(fmt::format("Precondition failed: Node {} is still used by ways 1.",node_new_ids[2])));
+           Catch::Message(std::format("Precondition failed: Node {} is still used by ways 1.",node_new_ids[2])));
 
     REQUIRE(change_tracking.modified_way_ids.size() == 1);
     REQUIRE(change_tracking.modified_way_ids[0].new_version == 2);
@@ -726,7 +726,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
 
     node_updater->delete_node(1, node_new_ids[2], 1, false);
     REQUIRE_THROWS_MATCHES(node_updater->process_delete_nodes(), http::precondition_failed,
-        Catch::Message(fmt::format("Precondition failed: Node {} is still used by ways 1.",node_new_ids[2])));
+        Catch::Message(std::format("Precondition failed: Node {} is still used by ways 1.",node_new_ids[2])));
   }
 
   SECTION("Try to delete node which still belongs to way, if-unused set")
@@ -1383,7 +1383,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
 
     node_updater->delete_node(1, node_new_ids[2], 1, false);
     REQUIRE_THROWS_MATCHES(node_updater->process_delete_nodes(), http::precondition_failed,
-        Catch::Message(fmt::format("Precondition failed: Node {} is still used by relations 7.",node_new_ids[2])));
+        Catch::Message(std::format("Precondition failed: Node {} is still used by relations 7.",node_new_ids[2])));
   }
 
   SECTION("Try to delete node which still belongs to relation, if-unused set")
@@ -1889,14 +1889,14 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
         // Parallel attempts to delete future relation members must fail
 
         REQUIRE_THROWS_MATCHES(future_node.get(), http::precondition_failed,
-               Catch::Message(fmt::format("Precondition failed: Node {} is still used by relations {}.",node_new_ids[2], new_rel_id)));
+               Catch::Message(std::format("Precondition failed: Node {} is still used by relations {}.",node_new_ids[2], new_rel_id)));
 
         REQUIRE_THROWS_MATCHES(future_way.get(), http::precondition_failed,
-               Catch::Message(fmt::format("Precondition failed: Way {} is still used by relations {}.",way_new_id, new_rel_id)));
+               Catch::Message(std::format("Precondition failed: Way {} is still used by relations {}.",way_new_id, new_rel_id)));
 
 
         REQUIRE_THROWS_MATCHES(future_rel.get(), http::precondition_failed,
-               Catch::Message(fmt::format("Precondition failed: The relation {} is used in relations {}.",relation_id, new_rel_id)));
+               Catch::Message(std::format("Precondition failed: The relation {} is used in relations {}.",relation_id, new_rel_id)));
 
 
       }
@@ -2688,10 +2688,10 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
       std::string nodes;
 
       for (int i=1; i <= nds; i++) {
-        nodes += fmt::format(R"( <node id="{}" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1"/> )", -i);
+        nodes += std::format(R"( <node id="{}" lon="11.625506992810122" lat="46.866699181636555" version="0" changeset="1"/> )", -i);
       }
 
-      req.set_payload(fmt::format(R"(<?xml version="1.0" encoding="UTF-8"?>
+      req.set_payload(std::format(R"(<?xml version="1.0" encoding="UTF-8"?>
                  <osmChange version="0.6" generator="iD">
                  <create>{}</create>
                  </osmChange>)" , nodes));
@@ -2711,9 +2711,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_rate_limiter", "[changes
 
         auto doc = getDocument(req.body().str());
         for (int i = 1; i <= nds; i++) {
-          REQUIRE(getXPath(doc.get(), fmt::format("/diffResult/node[{}]/@old_id", i)) == std::to_string(-i));
-          REQUIRE(getXPath(doc.get(), fmt::format("/diffResult/node[{}]/@new_id", i)) == std::to_string(14000000199 + i));
-          REQUIRE(getXPath(doc.get(), fmt::format("/diffResult/node[{}]/@new_version", i)) == "1");
+          REQUIRE(getXPath(doc.get(), std::format("/diffResult/node[{}]/@old_id", i)) == std::to_string(-i));
+          REQUIRE(getXPath(doc.get(), std::format("/diffResult/node[{}]/@new_id", i)) == std::to_string(14000000199 + i));
+          REQUIRE(getXPath(doc.get(), std::format("/diffResult/node[{}]/@new_version", i)) == "1");
         }
       }
 

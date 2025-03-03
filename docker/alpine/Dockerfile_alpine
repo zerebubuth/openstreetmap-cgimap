@@ -3,7 +3,7 @@ FROM alpine:latest AS builder
 RUN apk update && \
     apk add g++ cmake make pkgconf libpq-dev ccmake brotli-dev \
             boost1.84-program_options libmemcached-dev yajl-dev crypto++-dev  \
-            fmt-dev zlib-dev fcgi-dev libxml2-dev boost-dev postgresql16
+            zlib-dev fcgi-dev libxml2-dev boost-dev postgresql16
 
 WORKDIR /app
 

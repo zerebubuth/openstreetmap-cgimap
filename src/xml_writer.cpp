@@ -13,8 +13,7 @@
 #include <iostream>
 #include <utility>
 #include "cgimap/xml_writer.hpp"
-#include <fmt/core.h>
-#include <fmt/compile.h>
+#include <format>
 
 
 static int wrap_write(void *context, const char *buffer, int len) {
@@ -104,18 +103,13 @@ void xml_writer::attribute(const char *name, const char *value) {
 void xml_writer::attribute(const char *name, double value) {
   const char* str = nullptr;
 
-#if FMT_VERSION >= 90000
   std::array<char, 384> buf;
   constexpr size_t max_chars = buf.size() - 1;
-  auto [end, n_written] = fmt::format_to_n(buf.begin(), max_chars, FMT_COMPILE("{:.7f}"), value);
+  auto [end, n_written] = std::format_to_n(buf.begin(), max_chars, "{:.7f}", value);
   if (n_written > max_chars)
     throw write_error("cannot convert double-precision attribute to string.");
   *end = '\0'; // Null terminate string
   str = buf.data();
-#else
-  auto s = fmt::format("{:.7f}", value);
-  str = s.c_str();
-#endif
 
   int rc = writeAttribute(name, str);
   if (rc < 0) {

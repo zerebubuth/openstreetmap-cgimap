@@ -13,7 +13,7 @@
 #include "cgimap/logger.hpp"
 #include "cgimap/options.hpp"
 
-#include <fmt/core.h>
+#include <format>
 #include <map>
 #include <ranges>
 
@@ -28,8 +28,8 @@ map_responder::map_responder(mime::type mt, bbox b, data_selection &x)
 
   if (num_nodes > global_settings::get_map_max_nodes()) {
     throw http::bad_request(
-        fmt::format("You requested too many nodes (limit is {:d}). "
-                "Either request a smaller area, or use planet.osm"),
+      std::format("You requested too many nodes (limit is {:d}). "
+                  "Either request a smaller area, or use planet.osm"),
             global_settings::get_map_max_nodes());
   }
   // Short-circuit empty areas
@@ -47,8 +47,8 @@ map_handler::map_handler(request &req) : bounds(validate_request(req)) {}
 map_handler::map_handler(request &req, int) {}
 
 string map_handler::log_name() const {
-  return (fmt::format("map({:.7f},{:.7f},{:.7f},{:.7f})", bounds.minlon,
-          bounds.minlat, bounds.maxlon, bounds.maxlat));
+  return std::format("map({:.7f},{:.7f},{:.7f},{:.7f})",
+            bounds.minlon, bounds.minlat, bounds.maxlon, bounds.maxlat);
 }
 
 responder_ptr_t map_handler::responder(data_selection &x) const {
@@ -85,9 +85,9 @@ bbox map_handler::validate_request(request &req) {
 
   if (bounds.area() > global_settings::get_map_area_max()) {
     throw http::bad_request(
-         fmt::format("The maximum bbox size is {:d}, and your request "
-                       "was too large. Either request a smaller area, or use "
-                       "planet.osm", global_settings::get_map_area_max()));
+      std::format("The maximum bbox size is {:d}, and your request "
+                  "was too large. Either request a smaller area, or use "
+                  "planet.osm", global_settings::get_map_area_max()));
   }
 
   return bounds;

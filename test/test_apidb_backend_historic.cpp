@@ -9,7 +9,7 @@
 
 #include <iostream>
 #include <stdexcept>
-#include <fmt/core.h>
+#include <format>
 
 #include <sys/time.h>
 #include <cstdio>
