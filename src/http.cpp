@@ -17,7 +17,6 @@
 #include <cctype>   // for toupper, isxdigit
 #include <cstdlib>
 #include <ranges>
-#include <regex>
 #include <sstream>
 #include <string_view>
 
