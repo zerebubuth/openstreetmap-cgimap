@@ -9,7 +9,6 @@
 
 #include "parsers/saxparser.hpp"
 
-#include <fmt/core.h>
 #include <libxml/parser.h>
 #include <libxml/parserInternals.h> // for xmlCreateFileParserCtxt
 
