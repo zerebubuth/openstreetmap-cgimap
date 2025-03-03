@@ -12,7 +12,6 @@
 
 #include <memory>
 #include <optional>
-#include <regex>
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;

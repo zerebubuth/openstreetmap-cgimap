@@ -10,6 +10,8 @@
 #include "cgimap/options.hpp"
 #include "cgimap/logger.hpp"
 
+#include <string_view>
+#include <ranges>
 
 global_settings_base::~global_settings_base() = default;
 
@@ -193,13 +195,24 @@ void global_settings_via_options::set_bbox_size_limiter_upload(const po::variabl
   }
 }
 
-bool global_settings_via_options::validate_timeout(const std::string &timeout) const {
-  std::smatch sm;
-  try {
-    std::regex r("[0-9]+ (day|hour|minute|second)s?");
-    if (std::regex_match(timeout, sm, r)) {
-      return true;
-    }
-  } catch (std::regex_error &) {}
-  return false;
+/// @brief Simplified parser for Postgresql interval format
+/// @param timeout The format is a number followed by a space and a unit
+///               (day, days, hour, hours, minute, minutes, second, seconds).
+/// @return true, if the timeout value is valid, false otherwise
+bool global_settings_via_options::validate_timeout( const std::string &timeout) const {
+
+  constexpr std::array valid_units = {
+    "day", "days", "hour", "hours", "minute", "minutes", "second", "seconds"
+  };
+
+  std::vector<std::string_view> v;
+  // Split input string into a number and time unit
+  for (auto parts = std::ranges::views::split(timeout, ' ');
+       auto &&part : parts) {
+    v.emplace_back(&*part.begin(), std::ranges::distance(part));
+  }
+
+  return (v.size() == 2 &&
+          std::ranges::all_of(v[0], ::isdigit) && // check if first part is a number
+          std::ranges::find(valid_units, v[1]) != valid_units.end());  // check if second part is a valid unit
 }
