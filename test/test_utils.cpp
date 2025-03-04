@@ -20,11 +20,10 @@ TEST_CASE("util_escape", "[util]") {
 }
 
 TEST_CASE("util_join_comma_separated", "[util]") {
-  CHECK(to_comma_separated_string<std::vector<int>>({}) == "");
-  CHECK(to_comma_separated_string<std::vector<int>>({1}) == "1");
-  CHECK(to_comma_separated_string<std::vector<int>>({1, 2, 3, 4}) == "1,2,3,4");
+  CHECK(to_string<std::vector<int>>({}) == "");
+  CHECK(to_string<std::vector<int>>({1}) == "1");
+  CHECK(to_string<std::vector<int>>({1, 2, 3, 4}) == "1,2,3,4");
 }
-
 
 TEST_CASE("util_parse_ruby_number", "[util]") {
   SECTION("Valid number") {
