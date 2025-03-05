@@ -92,6 +92,22 @@ if(BUILD_TESTING)
         COMMAND test_http)
 
 
+    ###########
+    # test_utils
+    ###########
+    add_executable(test_utils
+        test_utils.cpp)
+
+    target_link_libraries(test_utils
+        cgimap_common_compiler_options
+        cgimap_core
+        Boost::program_options
+        catch2)
+
+    add_test(NAME test_utils
+        COMMAND test_utils)
+
+
     #################
     # test_parse_time
     #################
