@@ -11,6 +11,7 @@
 #include "cgimap/output_buffer.hpp"
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/time.hpp"
+#include "cgimap/util.hpp"
 #include "staticxml.hpp"
 
 #include <boost/program_options.hpp>
@@ -23,6 +24,7 @@
 #include <filesystem>
 #include <fstream>
 #include <vector>
+#include <ranges>
 #include <sstream>
 
 #include "test_request.hpp"
@@ -43,11 +45,12 @@ std::map<std::string, std::string> read_headers(std::istream &in,
     // allow comments in lines which begin immediately with #. this shouldn't
     // conflict with any headers, as although http headers technically can start
     // with #, i'm pretty sure we're not using any which do.
-    if ((line.size() > 0) && (line[0] == '#')) {
+    if (line.starts_with('#')) {
       continue;
     }
 
-    al::erase_all(line, "\r");
+    std::erase(line, '\r');
+
     if (!in.good()) {
       throw std::runtime_error("Test file ends before separator.");
     }
@@ -55,20 +58,19 @@ std::map<std::string, std::string> read_headers(std::istream &in,
       break;
     }
 
-    boost::iterator_range<std::string::iterator> result =
-        al::find_first(line, ":");
-    if (!result) {
-      throw std::runtime_error(
-          "Test file header doesn't match expected format.");
+    // Split HTTP header "Request-Method: GET" into "Request-Method" and value "GET"
+    std::string_view line_view(line);
+
+    auto pos = line_view.find(':');
+
+    if (pos != std::string_view::npos) {
+        auto key = std::string(trim(line_view.substr(0, pos)));
+        auto value = std::string(trim(line_view.substr(pos + 1)));
+        headers.try_emplace(key, value);
     }
-
-    std::string key(line.begin(), result.begin());
-    std::string val(result.end(), line.end());
-
-    al::trim(key);
-    al::trim(val);
-
-    headers.insert(std::make_pair(key, val));
+    else {
+       throw std::runtime_error("Test file header doesn't match expected format.");
+    }
   }
 
   return headers;
@@ -78,20 +80,18 @@ std::map<std::string, std::string> read_headers(std::istream &in,
  * take the test file and use it to set up the request headers.
  */
 void setup_request_headers(test_request &req, std::istream &in) {
-  using dict = std::map<std::string, std::string>;
-  dict headers = read_headers(in, "---");
+  auto headers = read_headers(in, "---");
 
-  for (const dict::value_type &val : headers) {
-    std::string key(val.first);
-
-    al::to_upper(key);
-    al::replace_all(key, "-", "_");
+  for (auto const & [k, v] : headers) {
+    auto key = k;
+    std::ranges::transform(key, key.begin(), [](unsigned char c) {
+      return (c == '-' ? '_' : std::toupper(c));
+    });
 
     if (key == "DATE") {
-      req.set_current_time(parse_time(val.second));
-
+      req.set_current_time(parse_time(v));
     } else {
-      req.set_header(key, val.second);
+      req.set_header(key, v);
     }
   }
 
@@ -395,7 +395,7 @@ std::ostream &operator<<(std::ostream &out, const dict &d) {
 void check_headers(const dict &expected_headers,
                    const dict &actual_headers) {
   for (const dict::value_type &val : expected_headers) {
-    if ((val.first.size() > 0) && (val.first[0] == '!')) {
+    if (val.first.starts_with('!')) {
       auto itr = actual_headers.find(val.first.substr(1));
       if (itr != actual_headers.end()) {
         throw std::runtime_error(
@@ -448,18 +448,18 @@ void check_response(std::istream &expected, std::istream &actual) {
 
   // now check the body, if there is one. we judge this by whether we expect a
   // Content-Type header.
-  if (expected_headers.count("Content-Type") > 0) {
+  if (expected_headers.contains("Content-Type")) {
     const std::string content_type =
         expected_headers.find("Content-Type")->second;
-    if (content_type.substr(0, 8) == "text/xml" ||
-	content_type.substr(0, 15) == "application/xml" ||
-        content_type.substr(0, 9) == "text/html") {
+    if (content_type.starts_with("text/xml") ||
+	      content_type.starts_with("application/xml") ||
+        content_type.starts_with("text/html")) {
       check_content_body_xml(expected, actual);
 
-    } else if (content_type.substr(0, 16) == "application/json") {
+    } else if (content_type.starts_with("application/json")) {
       check_content_body_json(expected, actual);
 
-    } else if (content_type.substr(0, 10) == "text/plain") {
+    } else if (content_type.starts_with("text/plain")) {
       check_content_body_plain(expected, actual);
 
     } else {

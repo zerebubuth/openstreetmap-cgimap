@@ -59,11 +59,13 @@ struct test_database {
   // writeable and readonly data selection available from the
   // test_database's get_data_selection() call. the func should
   // do its own testing - the run method here is just plumbing.
-  void run(const std::function<void(test_database&)> &func);
+  template <typename Func>
+  void run(Func func);
 
   // run a database update test in write mode. test will be
   // executed exactly once only.
-  void run_update(const std::function<void(test_database&)> &func);
+  template <typename Func>
+  void run_update(Func func);
 
   // return a data selection factory pointing at the current database
   [[nodiscard]] std::shared_ptr<data_selection::factory> get_data_selection_factory() const;
