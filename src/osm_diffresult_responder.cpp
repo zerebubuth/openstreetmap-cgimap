@@ -13,7 +13,6 @@
 #include <chrono>
 #include <fmt/core.h>
 
-using std::list;
 
 namespace {
 

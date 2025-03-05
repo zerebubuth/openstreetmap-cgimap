@@ -23,10 +23,6 @@
 #include <vector>
 
 namespace po = boost::program_options;
-using std::set;
-using std::stringstream;
-using std::list;
-using std::vector;
 
 
 namespace {
@@ -87,7 +83,7 @@ osm_edition_t id_of<osm_edition_t>(const pqxx_tuple &row, pqxx::row_size_type co
 }
 
 template <typename T>
-inline int insert_results(const pqxx::result &res, set<T> &elems) {
+inline int insert_results(const pqxx::result &res, std::set<T> &elems) {
 
   auto const id_col = res.column_number("id");
 

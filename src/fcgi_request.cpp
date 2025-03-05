@@ -24,7 +24,6 @@
 #include <cerrno>
 #include <cstring>
 
-using std::runtime_error;
 
 namespace {
 struct fcgi_buffer : public output_buffer {
@@ -67,10 +66,10 @@ struct fcgi_request::pimpl {
 fcgi_request::fcgi_request(int socket, const std::chrono::system_clock::time_point &now) : m_impl(std::make_unique<pimpl>()) {
   // initialise FCGI
   if (FCGX_Init() != 0) {
-    throw runtime_error("Couldn't initialise FCGX library.");
+    throw std::runtime_error("Couldn't initialise FCGX library.");
   }
   if (FCGX_InitRequest(&m_impl->req, socket, FCGI_FAIL_ACCEPT_ON_INTR) != 0) {
-    throw runtime_error("Couldn't initialise FCGX request structure.");
+    throw std::runtime_error("Couldn't initialise FCGX request structure.");
   }
   m_impl->now = now;
   m_buffer = std::make_unique<fcgi_buffer>(m_impl->req);
@@ -165,7 +164,7 @@ int fcgi_request::accept_r() {
         }
       }
 
-      throw runtime_error(out.str());
+      throw std::runtime_error(out.str());
     }
   }
 

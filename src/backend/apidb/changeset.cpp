@@ -11,13 +11,11 @@
 #include "cgimap/backend/apidb/changeset.hpp"
 #include "cgimap/logger.hpp"
 #include "cgimap/http.hpp"
-#include <map>
+
 #include <fmt/core.h>
 
-using std::string;
 
-
-changeset::changeset(bool dp, const string &dn, osm_user_id_t id)
+changeset::changeset(bool dp, const std::string &dn, osm_user_id_t id)
     : data_public(dp), display_name(dn), user_id(id) {}
 
 

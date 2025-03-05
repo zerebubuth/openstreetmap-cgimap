@@ -103,23 +103,21 @@ std::string get_generator_string() {
 void get_options(int argc, char **argv, po::variables_map &options) {
   po::options_description desc(PACKAGE_STRING ": Allowed options");
 
-  using std::string;
-
   // clang-format off
   desc.add_options()
     ("help", "display this help and exit")
     ("daemon", "run as a daemon")
     ("instances", po::value<int>()->default_value(5), "number of daemon instances to run")
-    ("pidfile", po::value<string>(), "file to write pid to")
-    ("logfile", po::value<string>(), "file to write log messages to")
-    ("memcache", po::value<string>(), "memcache server specification")
+    ("pidfile", po::value<std::string>(), "file to write pid to")
+    ("logfile", po::value<std::string>(), "file to write log messages to")
+    ("memcache", po::value<std::string>(), "memcache server specification")
     ("ratelimit", po::value<long>(), "average number of bytes/s to allow each client")
     ("moderator-ratelimit", po::value<long>(), "average number of bytes/s to allow each moderator")
     ("maxdebt", po::value<long>(), "maximum debt (in Mb) to allow each client before rate limiting")
     ("moderator-maxdebt", po::value<long>(), "maximum debt (in Mb) to allow each moderator before rate limiting")
     ("port", po::value<int>(), "FCGI port number (e.g. 8000) to listen on. This option is for backwards compatibility, please use --socket for new configurations.")
-    ("socket", po::value<string>(), "FCGI port number (e.g. :8000, or 127.0.0.1:8000) or UNIX domain socket to listen on")
-    ("configfile", po::value<string>(), "Config file")
+    ("socket", po::value<std::string>(), "FCGI port number (e.g. :8000, or 127.0.0.1:8000) or UNIX domain socket to listen on")
+    ("configfile", po::value<std::string>(), "Config file")
     ;
   // clang-format on
 
@@ -133,8 +131,8 @@ void get_options(int argc, char **argv, po::variables_map &options) {
     ("max-payload", po::value<long>(), "max size of HTTP payload allowed for uploads, after decompression (in bytes)")
     ("map-nodes", po::value<int>(), "max number of nodes allowed for /map endpoint")
     ("map-area", po::value<double>(), "max area size allowed for /map endpoint")
-    ("changeset-timeout-open", po::value<string>(), "max open time period for a changeset")
-    ("changeset-timeout-idle", po::value<string>(), "time period a changeset will remain open after last edit")
+    ("changeset-timeout-open", po::value<std::string>(), "max open time period for a changeset")
+    ("changeset-timeout-idle", po::value<std::string>(), "time period a changeset will remain open after last edit")
     ("max-changeset-elements", po::value<int>(), "max number of elements allowed in one changeset")
     ("max-way-nodes", po::value<int>(), "max number of nodes allowed in one way")
     ("scale", po::value<long>(), "conversion factor from double lat/lon to internal int format")

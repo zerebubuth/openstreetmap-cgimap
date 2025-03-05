@@ -16,9 +16,8 @@
 
 #include <fmt/core.h>
 
-using std::string;
 
-string fcgi_get_env(const request &req, const char *name, const char *default_value) {
+std::string fcgi_get_env(const request &req, const char *name, const char *default_value) {
   assert(name);
   const char *v = req.get_param(name);
 
@@ -32,10 +31,10 @@ string fcgi_get_env(const request &req, const char *name, const char *default_va
     }
   }
 
-  return string(v);
+  return std::string(v);
 }
 
-string get_query_string(const request &req) {
+std::string get_query_string(const request &req) {
   // try the query string that's supposed to be present first
   auto *query_string = req.get_param("QUERY_STRING");
 
@@ -95,7 +94,7 @@ std::unique_ptr<http::encoding> get_encoding(const request &req) {
   const char *accept_encoding = req.get_param("HTTP_ACCEPT_ENCODING");
 
   if (accept_encoding) {
-    return http::choose_encoding(string(accept_encoding));
+    return http::choose_encoding(std::string(accept_encoding));
   } else {
     return std::make_unique<http::identity>();
   }
