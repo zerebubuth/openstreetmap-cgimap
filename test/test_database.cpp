@@ -155,8 +155,8 @@ void test_database::testcase_ended() {
   txn_owner_readwrite.reset();
 }
 
-void test_database::run(
-    const std::function<void(test_database&)> &func) {
+template <typename Func>
+void test_database::run(Func func) {
 
   try {
     // clear out database before using it!
@@ -170,8 +170,8 @@ void test_database::run(
   testcase_ended();
 }
 
-void test_database::run_update(
-    const std::function<void(test_database&)> &func) {
+template <typename Func>
+void test_database::run_update(Func func) {
 
   try {
     // clear out database before using it!
@@ -185,7 +185,7 @@ void test_database::run_update(
 }
 
 test_database::setup_error::setup_error(std::string str)
-  : m_str(str) {
+  : m_str(std::move(str)) {
 }
 
 const char *test_database::setup_error::what() const noexcept {

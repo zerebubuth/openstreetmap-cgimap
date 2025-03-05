@@ -14,40 +14,18 @@
 #include <ctime>
 #include <fstream>
 #include <iomanip>
+#include <ranges>
 
 
 namespace {
 
 bool equal_tags(const tags_t &a, const tags_t &b) {
-  using vec_tags_t = std::vector<std::pair<std::string, std::string> >;
   if (a.size() != b.size()) { return false; }
-  vec_tags_t sorted_a(a.begin(), a.end());
-  vec_tags_t sorted_b(b.begin(), b.end());
-  std::sort(sorted_a.begin(), sorted_a.end());
-  std::sort(sorted_b.begin(), sorted_b.end());
-  return std::equal(sorted_a.begin(), sorted_a.end(), sorted_b.begin());
-}
-
-bool equal_nodes(const nodes_t &a, const nodes_t &b) {
-  if (a.size() != b.size()) { return false; }
-  std::vector<osm_nwr_id_t> a_vec(a.begin(), a.end());
-  std::vector<osm_nwr_id_t> b_vec(b.begin(), b.end());
-  return std::equal(a_vec.begin(), a_vec.end(), b_vec.begin());
-}
-
-bool equal_members(const members_t &a, const members_t &b) {
-  if (a.size() != b.size()) { return false; }
-  std::vector<member_info> a_vec(a.begin(), a.end());
-  std::vector<member_info> b_vec(b.begin(), b.end());
-  const size_t n = a_vec.size();
-  for (size_t i = 0; i < n; ++i) {
-    if ((a_vec[i].type != b_vec[i].type)
-      || (a_vec[i].ref != b_vec[i].ref)
-      || (a_vec[i].role != b_vec[i].role)) {
-      return false;
-    }
-  }
-  return true;
+  auto sorted_a = a;
+  auto sorted_b = b;
+  std::ranges::sort(sorted_a);
+  std::ranges::sort(sorted_b);
+  return (sorted_a == sorted_b);
 }
 
 } // anonymous namespace
@@ -57,18 +35,10 @@ test_formatter::node_t::node_t(const element_info &elem_, double lon_, double la
   : elem(elem_), lon(lon_), lat(lat_), tags(tags_) {}
 
 bool test_formatter::node_t::operator==(const node_t &other) const {
-#define CMP(sym) { if ((sym) != other. sym) { return false; } }
-  CMP(elem.id)
-  CMP(elem.version)
-  CMP(elem.changeset)
-  CMP(elem.timestamp)
-  CMP(elem.uid)
-  CMP(elem.display_name)
-  CMP(elem.visible)
-  CMP(lon)
-  CMP(lat)
-#undef CMP
-  return equal_tags(tags, other.tags);
+  return elem == other.elem &&
+         lon == other.lon &&
+         lat == other.lat &&
+         equal_tags(tags, other.tags);
 }
 
 test_formatter::way_t::way_t(const element_info &elem_, const nodes_t &nodes_,
@@ -76,16 +46,9 @@ test_formatter::way_t::way_t(const element_info &elem_, const nodes_t &nodes_,
   : elem(elem_), nodes(nodes_), tags(tags_) {}
 
 bool test_formatter::way_t::operator==(const way_t &other) const {
-#define CMP(sym) { if ((sym) != other. sym) { return false; } }
-  CMP(elem.id)
-  CMP(elem.version)
-  CMP(elem.changeset)
-  CMP(elem.timestamp)
-  CMP(elem.uid)
-  CMP(elem.display_name)
-  CMP(elem.visible)
-#undef CMP
-  return equal_tags(tags, other.tags) && equal_nodes(nodes, other.nodes);
+  return elem == other.elem &&
+         nodes == other.nodes &&
+         equal_tags(tags, other.tags);
 }
 
 test_formatter::relation_t::relation_t(const element_info &elem_,
@@ -94,16 +57,9 @@ test_formatter::relation_t::relation_t(const element_info &elem_,
   : elem(elem_), members(members_), tags(tags_) {}
 
 bool test_formatter::relation_t::operator==(const relation_t &other) const {
-#define CMP(sym) { if ((sym) != other. sym) { return false; } }
-  CMP(elem.id)
-  CMP(elem.version)
-  CMP(elem.changeset)
-  CMP(elem.timestamp)
-  CMP(elem.uid)
-  CMP(elem.display_name)
-  CMP(elem.visible)
-#undef CMP
-  return equal_tags(tags, other.tags) && equal_members(members, other.members);
+  return elem == other.elem &&
+         members == other.members &&
+         equal_tags(tags, other.tags);
 }
 
 test_formatter::changeset_t::changeset_t(const changeset_info &info,
@@ -119,26 +75,11 @@ test_formatter::changeset_t::changeset_t(const changeset_info &info,
 }
 
 bool test_formatter::changeset_t::operator==(const changeset_t &other) const {
-#define CMP(sym) { if (!(sym == other.sym)) { return false; } }
-  CMP(m_info.id)
-  CMP(m_info.created_at)
-  CMP(m_info.closed_at)
-  CMP(m_info.uid)
-  CMP(m_info.display_name)
-  CMP(m_info.bounding_box)
-  CMP(m_info.num_changes)
-  CMP(m_info.comments_count)
-  CMP(m_tags.size())
-  CMP(m_include_comments)
-  if (m_include_comments) {
-    CMP(m_comments.size())
-    if (!std::equal(m_comments.begin(), m_comments.end(), other.m_comments.begin())) {
-      return false;
-    }
-  }
-  CMP(m_time)
-#undef CMP
-  return std::equal(m_tags.begin(), m_tags.end(), other.m_tags.begin());
+  return equal_tags(other.m_tags, m_tags) &&
+         m_include_comments == other.m_include_comments &&
+         m_info == other.m_info &&
+         m_time == other.m_time &&
+         (!m_include_comments || m_comments == other.m_comments);
 }
 
 mime::type test_formatter::mime_type() const {
