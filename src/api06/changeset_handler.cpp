@@ -14,7 +14,6 @@
 #include <ranges>
 #include <fmt/core.h>
 
-using std::vector;
 
 namespace api06 {
 

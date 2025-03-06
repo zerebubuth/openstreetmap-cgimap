@@ -15,17 +15,15 @@
 #include <fmt/core.h>
 #include <fmt/format.h>
 
-using std::vector;
-using std::string;
 
 namespace api06 {
 
-nodes_responder::nodes_responder(mime::type mt, const vector<id_version> &ids,
+nodes_responder::nodes_responder(mime::type mt, const std::vector<id_version> &ids,
                                  data_selection &w)
     : osm_current_responder(mt, w) {
 
-  vector<osm_nwr_id_t> current_ids;
-  vector<osm_edition_t> historic_ids;
+  std::vector<osm_nwr_id_t> current_ids;
+  std::vector<osm_edition_t> historic_ids;
 
   for (const auto &idv : ids) {
     if (idv.version) {
@@ -59,8 +57,8 @@ responder_ptr_t nodes_handler::responder(data_selection &x) const {
  * Validates an FCGI request, returning the valid list of ids or
  * throwing an error if there was no valid list of node ids.
  */
-vector<id_version> nodes_handler::validate_request(const request &req) {
-  vector<id_version> ids = parse_id_list_params(req, "nodes");
+std::vector<id_version> nodes_handler::validate_request(const request &req) {
+  std::vector<id_version> ids = parse_id_list_params(req, "nodes");
 
   if (ids.empty()) {
     throw http::bad_request(

@@ -14,7 +14,6 @@
 
 #include <optional>
 
-using std::list;
 
 osm_current_responder::osm_current_responder(mime::type mt, 
                                              data_selection &s,

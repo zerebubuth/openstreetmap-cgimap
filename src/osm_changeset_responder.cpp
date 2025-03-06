@@ -12,9 +12,6 @@
 
 #include <fmt/core.h>
 
-#include <optional>
-
-using std::list;
 
 osm_changeset_responder::osm_changeset_responder(mime::type mt,
                                                  data_selection &s,

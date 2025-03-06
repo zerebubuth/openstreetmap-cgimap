@@ -21,10 +21,6 @@
 #include <string_view>
 
 
-using std::string;
-using std::vector;
-using std::pair;
-
 namespace {
 /**
  * Functions hexToChar and form_urldecode were taken from GNU CGICC by
@@ -119,7 +115,7 @@ std::string format_header(int status, const headers_t &headers) {
   return hdr;
 }
 
-exception::exception(int c, string m)
+exception::exception(int c, std::string m)
     : code_(c), message_(std::move(m)) {}
 
 int exception::code() const { return code_; }
@@ -128,43 +124,43 @@ const char *exception::header() const { return status_message(code()); }
 
 const char *exception::what() const noexcept { return message_.c_str(); }
 
-server_error::server_error(const string &message)
+server_error::server_error(const std::string &message)
     : exception(500, message) {}
 
-bad_request::bad_request(const string &message)
+bad_request::bad_request(const std::string &message)
     : exception(400, message) {}
 
-forbidden::forbidden(const string &message)
+forbidden::forbidden(const std::string &message)
     : exception(403, message) {}
 
-not_found::not_found(const string &uri)
+not_found::not_found(const std::string &uri)
     : exception(404, uri) {}
 
-not_acceptable::not_acceptable(const string &message)
+not_acceptable::not_acceptable(const std::string &message)
     : exception(406, message) {}
 
-conflict::conflict(const string &message)
+conflict::conflict(const std::string &message)
     : exception(409, message) {}
 
-precondition_failed::precondition_failed(const string &message)
+precondition_failed::precondition_failed(const std::string &message)
     : exception(412, message),
       fullstring("Precondition failed: " + message) {}
 
 const char *precondition_failed::what() const noexcept { return fullstring.c_str(); }
 
-payload_too_large::payload_too_large(const string &message)
+payload_too_large::payload_too_large(const std::string &message)
     : exception(413, message) {}
 
-too_many_requests::too_many_requests(const string &message)
+too_many_requests::too_many_requests(const std::string &message)
     : exception(429, message) {}
 
 bandwidth_limit_exceeded::bandwidth_limit_exceeded(int retry_seconds)
     : exception(509, fmt::format("You have downloaded too much data. Please try again in {} seconds.", retry_seconds)), retry_seconds(retry_seconds) {}
 
-gone::gone(const string &message)
+gone::gone(const std::string &message)
     : exception(410, message) {}
 
-unsupported_media_type::unsupported_media_type(const string &message)
+unsupported_media_type::unsupported_media_type(const std::string &message)
     : exception(415, message) {}
 
 unauthorized::unauthorized(const std::string &message)
@@ -175,9 +171,9 @@ method_not_allowed::method_not_allowed(http::method method)
       allowed_methods(method) {}
 
 
-string urldecode(const string &s) { return form_urldecode(s); }
+std::string urldecode(const std::string &s) { return form_urldecode(s); }
 
-string urlencode(const string &s) {
+std::string urlencode(const std::string &s) {
   static const char hex[] = { '0', '1', '2', '3', '4', '5', '6', '7',
                               '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
   std::ostringstream ostr;
@@ -202,9 +198,9 @@ string urlencode(const string &s) {
   return rv;
 }
 
-vector<pair<string, string> > parse_params(const string &p) {
+std::vector<std::pair<std::string, std::string>> parse_params(const std::string &p) {
   // Split the query string into components
-  vector<pair<string, string> > queryKVPairs;
+  std::vector<std::pair<std::string, std::string>> queryKVPairs;
   if (!p.empty()) {
     auto temp = split(p, '&');
 

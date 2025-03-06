@@ -16,7 +16,6 @@
 #include <memory>
 
 namespace po = boost::program_options;
-using std::string;
 
 
 namespace {
@@ -24,32 +23,32 @@ struct apidb_backend : public backend {
   apidb_backend() {
     // clang-format off
     m_options.add_options()
-      ("dbname", po::value<string>()->required(), "database name")
-      ("host", po::value<string>(), "database server host")
-      ("username", po::value<string>(), "database user name")
-      ("password", po::value<string>(), "database password")
-      ("charset", po::value<string>()->default_value("utf8"),
+      ("dbname", po::value<std::string>()->required(), "database name")
+      ("host", po::value<std::string>(), "database server host")
+      ("username", po::value<std::string>(), "database user name")
+      ("password", po::value<std::string>(), "database password")
+      ("charset", po::value<std::string>()->default_value("utf8"),
        "database character set")
       ("disable-api-write", "disable API write operations")
-      ("dbport", po::value<string>(),
+      ("dbport", po::value<std::string>(),
        "database port number or UNIX socket file name")
-      ("update-dbname", po::value<string>(),
+      ("update-dbname", po::value<std::string>(),
        "database name to use for API write operations, if different from --dbname")
-      ("update-host", po::value<string>(),
+      ("update-host", po::value<std::string>(),
        "database server host for API write operations, if different from --host")
-      ("update-username", po::value<string>(),
+      ("update-username", po::value<std::string>(),
        "database user name for API write operations, if different from --username")
-      ("update-password", po::value<string>(),
+      ("update-password", po::value<std::string>(),
        "database password for API write operations, if different from --password")
-      ("update-charset", po::value<string>(),
+      ("update-charset", po::value<std::string>(),
        "database character set for API write operations, if different from --charset")
-      ("update-dbport", po::value<string>(),
+      ("update-dbport", po::value<std::string>(),
        "database port for API write operations, if different from --dbport");
     // clang-format on
   }
   ~apidb_backend() override = default;
 
-  [[nodiscard]] const string &name() const override { return m_name; }
+  [[nodiscard]] const std::string &name() const override { return m_name; }
   [[nodiscard]] const po::options_description &options() const override { return m_options; }
 
   std::unique_ptr<data_selection::factory> create(const po::variables_map &opts) override {
@@ -61,7 +60,7 @@ struct apidb_backend : public backend {
   }
 
 private:
-  string m_name{"apidb"};
+  std::string m_name{"apidb"};
   po::options_description m_options{"ApiDB backend options"};
 };
 }

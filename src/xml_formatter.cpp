@@ -11,9 +11,6 @@
 #include <string>
 #include <stdexcept>
 
-using std::string;
-using std::transform;
-
 
 xml_formatter::xml_formatter(std::unique_ptr<xml_writer> w) : writer(std::move(w)) {}
 

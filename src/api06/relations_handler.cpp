@@ -19,17 +19,15 @@
 #include <string>
 #include <vector>
 
-using std::vector;
-using std::string;
 
 namespace api06 {
 
-relations_responder::relations_responder(mime::type mt, const vector<id_version> &ids,
+relations_responder::relations_responder(mime::type mt, const std::vector<id_version> &ids,
                                          data_selection &s)
     : osm_current_responder(mt, s) {
 
-  vector<osm_nwr_id_t> current_ids;
-  vector<osm_edition_t> historic_ids;
+  std::vector<osm_nwr_id_t> current_ids;
+  std::vector<osm_edition_t> historic_ids;
 
   for (id_version idv : ids) {
     if (idv.version) {
@@ -64,8 +62,8 @@ responder_ptr_t relations_handler::responder(data_selection &x) const {
  * Validates an FCGI request, returning the valid list of ids or
  * throwing an error if there was no valid list of node ids.
  */
-vector<id_version> relations_handler::validate_request(const request &req) {
-  vector<id_version> myids = parse_id_list_params(req, "relations");
+std::vector<id_version> relations_handler::validate_request(const request &req) {
+  std::vector<id_version> myids = parse_id_list_params(req, "relations");
 
   if (myids.empty()) {
     throw http::bad_request("The parameter relations is required, and must be "

@@ -12,7 +12,6 @@
 #include "cgimap/logger.hpp"
 #include <fmt/core.h>
 
-using std::vector;
 
 namespace api06 {
 
