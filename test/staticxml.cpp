@@ -372,11 +372,9 @@ struct static_data_selection : public data_selection {
   }
 
   int select_nodes_from_bbox(const bbox &bounds, int max_nodes) override {
-    using node_map_t = std::map<id_version, node>;
     int selected = 0;
-    const node_map_t::const_iterator end = m_db.m_nodes.end();
-    for (node_map_t::const_iterator itr = m_db.m_nodes.begin();
-         itr != end; ++itr) {
+    const auto end = m_db.m_nodes.cend();
+    for (auto itr = m_db.m_nodes.cbegin(); itr != end; ++itr) {
       auto next = itr; ++next;
       const node &n = itr->second;
       if ((next == end || next->second.m_info.id != n.m_info.id) &&
@@ -408,10 +406,8 @@ struct static_data_selection : public data_selection {
   }
 
   void select_ways_from_nodes() override {
-    using way_map_t = std::map<id_version, way>;
-    const way_map_t::const_iterator end = m_db.m_ways.end();
-    for (way_map_t::const_iterator itr = m_db.m_ways.begin();
-         itr != end; ++itr) {
+    const auto end = m_db.m_ways.cend();
+    for (auto itr = m_db.m_ways.cbegin(); itr != end; ++itr) {
       auto next = itr; ++next;
       const way &w = itr->second;
       if (next == end || next->second.m_info.id != w.m_info.id) {
@@ -439,10 +435,8 @@ struct static_data_selection : public data_selection {
   }
 
   void select_relations_from_ways() override {
-    using relation_map_t = std::map<id_version, relation>;
-    const relation_map_t::const_iterator end = m_db.m_relations.end();
-    for (relation_map_t::const_iterator itr = m_db.m_relations.begin();
-         itr != end; ++itr) {
+    const auto end = m_db.m_relations.cend();
+    for (auto itr = m_db.m_relations.cbegin(); itr != end; ++itr) {
       auto next = itr; ++next;
       const relation &r = itr->second;
       if (next == end || next->second.m_info.id != r.m_info.id) {

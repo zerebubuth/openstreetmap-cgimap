@@ -15,7 +15,7 @@ responder::responder(mime::type mt) : mime_type(mt) {}
 
 bool responder::is_available(mime::type mt) const {
   std::vector<mime::type> types = types_available();
-  return std::find(types.begin(), types.end(), mt) != types.end(); // Replace with std::ranges::contains in C++23
+  return std::ranges::find(types, mt) != types.end(); // Replace with std::ranges::contains in C++23
 }
 
 mime::type responder::resource_type() const { return mime_type; }
