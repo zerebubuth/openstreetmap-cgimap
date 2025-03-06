@@ -78,7 +78,7 @@ struct request {
   // convenience functions to write body data. see `get_buffer()` for more
   // information on the constraints of calling this.
   int put(const char *, int);
-  int put(const std::string &);
+  int put(std::string_view str);
 
   // call this to flush output to the client.
   void flush();

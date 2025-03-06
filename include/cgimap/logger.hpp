@@ -11,6 +11,7 @@
 #define LOGGER_HPP
 
 #include <string>
+#include <string_view>
 
 /**
  * Contains support for logging.
@@ -25,7 +26,7 @@ void initialise(const std::string &filename);
 /**
  * Log a message.
  */
-void message(const std::string &m);
+void message(std::string_view m);
 }
 
 #endif /* LOGGER_HPP */
