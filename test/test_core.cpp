@@ -16,7 +16,6 @@
 
 #include <boost/program_options.hpp>
 #include <fmt/core.h>
-#include <boost/algorithm/string.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -31,11 +30,10 @@
 
 namespace fs = std::filesystem;
 namespace po = boost::program_options;
-namespace al = boost::algorithm;
 namespace pt = boost::property_tree;
 
 std::map<std::string, std::string> read_headers(std::istream &in,
-                                                const std::string &separator) {
+                                                std::string_view separator) {
   std::map<std::string, std::string> headers;
 
   while (true) {
@@ -59,18 +57,15 @@ std::map<std::string, std::string> read_headers(std::istream &in,
     }
 
     // Split HTTP header "Request-Method: GET" into "Request-Method" and value "GET"
-    std::string_view line_view(line);
+    const auto pos = line.find(':');
 
-    auto pos = line_view.find(':');
-
-    if (pos != std::string_view::npos) {
-        auto key = std::string(trim(line_view.substr(0, pos)));
-        auto value = std::string(trim(line_view.substr(pos + 1)));
-        headers.try_emplace(key, value);
-    }
-    else {
+    if (pos == std::string::npos) {
        throw std::runtime_error("Test file header doesn't match expected format.");
     }
+
+    auto key = trim(line.substr(0, pos));
+    auto value = trim(line.substr(pos + 1));
+    headers.try_emplace(key, value);
   }
 
   return headers;
@@ -105,41 +100,42 @@ void setup_request_headers(test_request &req, std::istream &in) {
  * attributes, whereas the main method for XML elements does.
  */
 void check_xmlattr(const pt::ptree &expected, const pt::ptree &actual) {
-  std::set<std::string> exp_keys, act_keys;
+  std::set<std::string> exp_keys;
+  std::set<std::string> act_keys;
 
-  for (const pt::ptree::value_type &val : expected) {
+  for (const auto &val : expected) {
     exp_keys.insert(val.first);
   }
-  for (const pt::ptree::value_type &val : actual) {
+  for (const auto &val : actual) {
     act_keys.insert(val.first);
   }
 
   if (exp_keys.size() > act_keys.size()) {
-    for (const std::string &ak : act_keys) { exp_keys.erase(ak); }
+    for (const auto &ak : act_keys) { exp_keys.erase(ak); }
     std::ostringstream out;
     out << "Missing attributes [";
-    for (const std::string &ek : exp_keys) { out << ek << " "; }
+    for (const auto &ek : exp_keys) { out << ek << " "; }
     out << "]";
     throw std::runtime_error(out.str());
   }
 
   if (act_keys.size() > exp_keys.size()) {
-    for (const std::string &ek : exp_keys) { act_keys.erase(ek); }
+    for (const auto &ek : exp_keys) { act_keys.erase(ek); }
     std::ostringstream out;
     out << "Extra attributes [";
-    for (const std::string &ak : act_keys) { out << ak << " "; }
+    for (const auto &ak : act_keys) { out << ak << " "; }
     out << "]";
     throw std::runtime_error(out.str());
   }
 
   for (const std::string &k : exp_keys) {
-    boost::optional<const pt::ptree &> exp_child = expected.get_child_optional(k);
-    boost::optional<const pt::ptree &> act_child = actual.get_child_optional(k);
+    auto exp_child = expected.get_child_optional(k);
+    auto act_child = actual.get_child_optional(k);
 
     if (exp_child) {
       if (act_child) {
-        std::string exp_val = exp_child->data();
-        std::string act_val = act_child->data();
+        auto exp_val = exp_child->data();
+        auto act_val = act_child->data();
         if ((exp_val != act_val) && (exp_val != "***")) {
           throw std::runtime_error(
             fmt::format(
@@ -162,11 +158,11 @@ void check_xmlattr(const pt::ptree &expected, const pt::ptree &actual) {
  * '***', which causes it to skip that subtree entirely.
  */
 void check_recursive_tree(const pt::ptree &expected, const pt::ptree &actual) {
-  pt::ptree::const_iterator exp_itr = expected.begin();
-  pt::ptree::const_iterator act_itr = actual.begin();
+  auto exp_itr = expected.begin();
+  auto act_itr = actual.begin();
 
   // skip comparison of trees for this wildcard.
-  if (al::trim_copy(expected.data()) == "***") {
+  if (trim(expected.data()) == "***") {
     return;
   }
 
@@ -222,7 +218,8 @@ void check_recursive_tree(const pt::ptree &expected, const pt::ptree &actual) {
  * actual, from the response, is the same.
  */
 void check_content_body_xml(std::istream &expected, std::istream &actual) {
-  pt::ptree exp_tree, act_tree;
+  pt::ptree exp_tree;
+  pt::ptree act_tree;
 
   try {
     pt::read_xml(expected, exp_tree);
@@ -250,11 +247,11 @@ void check_content_body_xml(std::istream &expected, std::istream &actual) {
  */
 void check_recursive_tree_json(const pt::ptree &expected,
                                const pt::ptree &actual) {
-  pt::ptree::const_iterator exp_itr = expected.begin();
-  pt::ptree::const_iterator act_itr = actual.begin();
+  auto exp_itr = expected.begin();
+  auto act_itr = actual.begin();
 
   // skip comparison of trees for this wildcard.
-  if (al::trim_copy(expected.data()) == "***") {
+  if (trim(expected.data()) == "***") {
     std::cout << "wildcard\n";
     return;
   }
@@ -316,7 +313,8 @@ void check_recursive_tree_json(const pt::ptree &expected,
  * actual, from the response, is the same.
  */
 void check_content_body_json(std::istream &expected, std::istream &actual) {
-  pt::ptree exp_tree, act_tree;
+  pt::ptree exp_tree;
+  pt::ptree act_tree;
 
   try {
     pt::read_json(expected, exp_tree);
@@ -353,7 +351,8 @@ void check_content_body_json(std::istream &expected, std::istream &actual) {
 
 void check_content_body_plain(std::istream &expected, std::istream &actual) {
   const size_t buf_size = 1024;
-  char exp_buf[buf_size], act_buf[buf_size];
+  char exp_buf[buf_size];
+  char act_buf[buf_size];
 
   while (true) {
     expected.read(exp_buf, buf_size);
@@ -386,37 +385,36 @@ void check_content_body_plain(std::istream &expected, std::istream &actual) {
 using dict = std::map<std::string, std::string>;
 
 std::ostream &operator<<(std::ostream &out, const dict &d) {
-  for (const dict::value_type &val : d) {
-    out << val.first << ": " << val.second << "\n";
+  for (const auto & [key, value] : d) {
+    out << key << ": " << value << "\n";
   }
   return out;
 }
 
 void check_headers(const dict &expected_headers,
                    const dict &actual_headers) {
-  for (const dict::value_type &val : expected_headers) {
-    if (val.first.starts_with('!')) {
-      auto itr = actual_headers.find(val.first.substr(1));
-      if (itr != actual_headers.end()) {
+  for (const auto & [key, value] : expected_headers) {
+    if (key.starts_with('!')) {
+      if (actual_headers.contains(key.substr(1))) {
         throw std::runtime_error(
           fmt::format(
             "Expected not to find header `{}', but it is present.",
-           itr->first));
+            key.substr(1)));
       }
     } else {
-      auto itr = actual_headers.find(val.first);
-      if (itr == actual_headers.end()) {
+      if (!actual_headers.contains(key)) {
         throw std::runtime_error(
           fmt::format("Expected header `{}: {}', but didn't find it in "
                          "actual response.",
-           val.first, val.second));
+           key, value));
       }
-      if (!val.second.empty()) {
-        if (val.second != itr->second) {
+      if (!value.empty()) {
+        const auto & actual_value = actual_headers.at(key);
+        if (value != actual_value) {
           throw std::runtime_error(
             fmt::format(
               "Header key `{}'; expected `{}' but got `{}'.",
-             val.first, val.second, itr->second));
+             key, value, actual_value));
         }
       }
     }
@@ -430,8 +428,8 @@ void check_headers(const dict &expected_headers,
 void check_response(std::istream &expected, std::istream &actual) {
   // check that, for some headers that we get, they are the same
   // as we expect.
-  const dict expected_headers = read_headers(expected, "---");
-  const dict actual_headers = read_headers(actual, "");
+  const auto expected_headers = read_headers(expected, "---");
+  const auto actual_headers = read_headers(actual, "");
 
   try {
     check_headers(expected_headers, actual_headers);
@@ -449,8 +447,7 @@ void check_response(std::istream &expected, std::istream &actual) {
   // now check the body, if there is one. we judge this by whether we expect a
   // Content-Type header.
   if (expected_headers.contains("Content-Type")) {
-    const std::string content_type =
-        expected_headers.find("Content-Type")->second;
+    const auto content_type = expected_headers.at("Content-Type");
     if (content_type.starts_with("text/xml") ||
 	      content_type.starts_with("application/xml") ||
         content_type.starts_with("text/html")) {
@@ -514,32 +511,28 @@ void run_test(fs::path test_case, rate_limiter &limiter,
   }
 }
 
-osm_user_role_t parse_role(const std::string &str) {
+osm_user_role_t parse_role(std::string_view str) {
+  using enum osm_user_role_t;
   if (str == "administrator") {
-    return osm_user_role_t::administrator;
-
+    return administrator;
   } else if (str == "moderator") {
-    return osm_user_role_t::moderator;
-
+    return moderator;
   } else if (str == "importer") {
-    return osm_user_role_t::importer;
-
-  } else {
-    throw std::runtime_error("Unable to parse role in config file.");
+    return importer;
   }
+  throw std::runtime_error("Unable to parse role in config file.");
 }
 
-user_roles_t parse_user_roles(const pt::ptree &config)
-{
+user_roles_t parse_user_roles(const pt::ptree &config) {
+
   user_roles_t user_roles;
-  boost::optional< const pt::ptree& > users = config.get_child_optional("users");
+  auto users = config.get_child_optional("users");
   if (users)
   {
     for (const auto &entry : *users)
     {
       auto id = boost::lexical_cast< osm_user_id_t >(entry.first);
-      boost::optional< const pt::ptree& > roles =
-          entry.second.get_child_optional("roles");
+      auto roles = entry.second.get_child_optional("roles");
 
       std::set< osm_user_role_t > r;
       if (roles)
@@ -556,63 +549,58 @@ user_roles_t parse_user_roles(const pt::ptree &config)
   return user_roles;
 }
 
-user_roles_t get_user_roles(const fs::path &roles_file)
-{
-  if (fs::is_regular_file(roles_file))
+user_roles_t get_user_roles(const fs::path &roles_file) {
+
+  if (!fs::is_regular_file(roles_file))
+    return {};
+
+  try
   {
-    try
-    {
-      pt::ptree config;
-      pt::read_json(roles_file.string(), config);
-      return parse_user_roles(config);
-    }
-    catch (const std::exception &ex)
-    {
-      throw std::runtime_error(
-          fmt::format("{}, while reading expected JSON.", ex.what()));
-    }
+    pt::ptree config;
+    pt::read_json(roles_file.string(), config);
+    return parse_user_roles(config);
   }
-  return {};
+  catch (const std::exception &ex)
+  {
+    throw std::runtime_error(
+        fmt::format("{}, while reading expected JSON.", ex.what()));
+  }
 }
 
 
-oauth2_tokens parse_oauth2_tokens(const pt::ptree &config)
-{
+oauth2_tokens parse_oauth2_tokens(const pt::ptree &config) {
+
   oauth2_tokens oauth2_tokens;
-  boost::optional< const pt::ptree& > tokens = config.get_child_optional("tokens");
+  auto tokens = config.get_child_optional("tokens");
   if (tokens)
   {
-    for (const auto &entry : *tokens)
+    for (const auto &[token, attrs] : *tokens)
     {
-      oauth2_token_detail_t detail{};
-      auto token = entry.first;
-      detail.api_write = entry.second.get<bool>("api_write", false);
-      detail.expired = entry.second.get<bool>("expired", true);
-      detail.revoked = entry.second.get<bool>("revoked", true);
-      detail.user_id = entry.second.get<osm_user_id_t>("user_id", {});
+      oauth2_token_detail_t detail{ .expired = attrs.get<bool>("expired", true),
+                                    .revoked = attrs.get<bool>("revoked", true),
+                                    .api_write = attrs.get<bool>("api_write", false),
+                                    .user_id = attrs.get<osm_user_id_t>("user_id", {}) };
       oauth2_tokens[token] = detail;
     }
   }
   return oauth2_tokens;
 }
 
-oauth2_tokens get_oauth2_tokens(const fs::path &oauth2_file)
-{
-  if (fs::is_regular_file(oauth2_file))
+oauth2_tokens get_oauth2_tokens(const fs::path &oauth2_file) {
+
+  if (!fs::is_regular_file(oauth2_file))
+    return {};
+
+  try
   {
-    try
-    {
-      pt::ptree config;
-      pt::read_json(oauth2_file.string(), config);
-      return parse_oauth2_tokens(config);
-    }
-    catch (const std::exception &ex)
-    {
-      throw std::runtime_error(
-          fmt::format("{}, while reading expected JSON.", ex.what()));
-    }
+    pt::ptree config;
+    pt::read_json(oauth2_file.string(), config);
+    return parse_oauth2_tokens(config);
   }
-  return {};
+  catch (const std::exception &ex)
+  {
+    throw std::runtime_error(fmt::format("{}, while reading expected JSON.", ex.what()));
+  }
 }
 
 
@@ -632,12 +620,12 @@ int main(int argc, char *argv[]) {
   oauth2_tokens oauth2_tokens;
 
   try {
-    if (fs::is_directory(test_directory) == false) {
+    if (!fs::is_directory(test_directory)) {
       std::cerr << "Test directory " << test_directory
                 << " should be a directory, but isn't.";
       return 99;
     }
-    if (fs::is_regular_file(data_file) == false) {
+    if (!fs::is_regular_file(data_file)) {
       std::cerr << "Test directory should contain data file at " << data_file
                 << ", but does not.";
       return 99;
@@ -665,8 +653,7 @@ int main(int argc, char *argv[]) {
 
   try {
     po::variables_map vm;
-    vm.insert(std::make_pair(std::string("file"),
-                             po::variable_value(data_file.native(), false)));
+    vm.try_emplace("file", po::variable_value(data_file.native(), false));
 
     auto data_backend = make_staticxml_backend(user_roles, oauth2_tokens);
     auto factory = data_backend->create(vm);

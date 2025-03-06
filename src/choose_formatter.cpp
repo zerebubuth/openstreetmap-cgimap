@@ -61,7 +61,7 @@ bool parseQValue(std::string_view param, double &qValue) {
 
 } // namespace
 
-AcceptHeader::AcceptHeader(const std::string &header) {
+AcceptHeader::AcceptHeader(std::string_view header) {
 
   acceptedTypes = parse(header);
 
@@ -107,7 +107,7 @@ AcceptHeader::AcceptHeader(const std::string &header) {
 
 // Parse the accept header and return a vector containing all the
 // information about the Accepted types
-std::vector<AcceptHeader::AcceptElement> AcceptHeader::parse(const std::string &data) const {
+std::vector<AcceptHeader::AcceptElement> AcceptHeader::parse(std::string_view data) const {
 
   std::vector<AcceptHeader::AcceptElement> acceptElements;
 
