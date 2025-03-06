@@ -70,6 +70,8 @@ struct element_info {
                bool visible_,
                std::optional<osm_redaction_id_t> redaction_ = {});
 
+  bool operator==(const element_info &other) const = default;
+
   // Standard meanings
   osm_nwr_id_t id = 0;
   osm_nwr_id_t version = 0;
@@ -98,6 +100,8 @@ struct changeset_info {
                  size_t num_changes_,
                  size_t comments_count_);
 
+  bool operator==(const changeset_info &other) const = default;
+
   // returns true if the changeset is "open" at a particular
   // point in time.
   //
@@ -111,7 +115,8 @@ struct changeset_info {
   // closed explicitly with a closing time, or close implicitly
   // an hour after the last update to the changeset. closed_at
   // should have an ISO 8601 format: YYYY-MM-DDTHH:MM:SSZ
-  std::string created_at, closed_at;
+  std::string created_at;
+  std::string closed_at;
   // anonymous objects don't have UIDs or display names
   std::optional<osm_user_id_t> uid;
   std::optional<std::string> display_name;
@@ -141,13 +146,7 @@ struct changeset_comment_info {
                          std::string created_at,
                          std::string author_display_name);
 
-  constexpr bool operator==(const changeset_comment_info &other) const {
-    return ((id == other.id) &&
-            (author_id == other.author_id) &&
-            (body == other.body) &&
-            (created_at == other.created_at) &&
-            (author_display_name == other.author_display_name));
-  }
+  bool operator==(const changeset_comment_info &other) const = default;
 };
 
 struct member_info {
@@ -158,11 +157,7 @@ struct member_info {
   member_info() = default;
   member_info(element_type type_, osm_nwr_id_t ref_, std::string role_);
 
-  constexpr bool operator==(const member_info &other) const {
-    return ((type == other.type) &&
-            (ref == other.ref) &&
-            (role == other.role));
-  }
+  bool operator==(const member_info &other) const = default;
 };
 
 using nodes_t = std::vector<osm_nwr_id_t>;
