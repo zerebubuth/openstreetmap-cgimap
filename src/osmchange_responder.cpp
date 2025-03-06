@@ -12,6 +12,7 @@
 
 #include <chrono>
 #include <fmt/core.h>
+#include <algorithm>
 
 
 namespace {
@@ -220,9 +221,7 @@ osmchange_responder::osmchange_responder(mime::type mt, data_selection &s)
 }
 
 std::vector<mime::type> osmchange_responder::types_available() const {
-  std::vector<mime::type> types; // TODO: don't reconstruct on every call
-  types.push_back(mime::type::application_xml);
-  return types;
+  return {mime::type::application_xml};
 }
 
 void osmchange_responder::write(output_formatter& fmt,

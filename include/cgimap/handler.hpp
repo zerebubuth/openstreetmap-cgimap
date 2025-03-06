@@ -38,7 +38,7 @@ public:
 
   mime::type resource_type() const;
 
-  virtual std::vector<mime::type> types_available() const = 0;
+  virtual std::vector<mime::type> types_available() const = 0; // TODO: don't reconstruct on every call
 
   bool is_available(mime::type) const;
 

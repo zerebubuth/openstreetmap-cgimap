@@ -82,7 +82,7 @@ void request::check_workflow(workflow_status this_stage) {
       // some HTTP headers are only returned in case the request was successful
       auto headers = m_headers;
       if (m_status == 200)
-	headers.insert(headers.end(), m_success_headers.begin(), m_success_headers.end());
+        headers.insert(headers.end(), m_success_headers.begin(), m_success_headers.end());
 
       write_header_info(m_status, headers);
     }

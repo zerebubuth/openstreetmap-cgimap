@@ -13,10 +13,7 @@ osm_responder::osm_responder(mime::type mt, std::optional<bbox> b)
     : responder(mt), bounds(b) {}
 
 std::vector<mime::type> osm_responder::types_available() const {
-  std::vector<mime::type> types;
-  types.push_back(mime::type::application_xml);
-  types.push_back(mime::type::application_json);
-  return types;
+  return {mime::type::application_xml, mime::type::application_json};
 }
 
 void osm_responder::add_response_header(const std::string &line) {
