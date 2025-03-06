@@ -78,7 +78,7 @@ struct router {
   // concrete rule match / constructor class
   template <typename Handler, typename Rule>
   struct rule : public rule_base {
-    explicit rule(Rule&& r) : r(std::move(r)) {}
+    explicit constexpr rule(Rule&& r) : r(std::forward<Rule>(r)) {}
 
     // try to match the expression. if it succeeds, call the provided function
     // with the provided params and the matched DSL arguments.
@@ -116,7 +116,8 @@ struct router {
    */
 
   // add rule to match HTTP GET method only
-  template <typename Handler, typename Rule> router& GET(Rule&& r) {
+  template <typename Handler, typename Rule> 
+  router& GET(Rule&& r) {
 
     static_assert(std::is_base_of_v<handler, Handler>, "GET rule requires handler subclass");
     static_assert(!std::is_base_of_v<payload_enabled_handler, Handler>, "GET rule cannot use payload enabled handler subclass");
@@ -126,7 +127,8 @@ struct router {
   }
 
   // add rule to match HTTP POST method only
-  template <typename Handler, typename Rule> router& POST(Rule&& r) {
+  template <typename Handler, typename Rule> 
+  router& POST(Rule&& r) {
 
     static_assert(std::is_base_of_v<payload_enabled_handler, Handler>, "POST rule requires payload enabled handler subclass");
 
@@ -135,7 +137,8 @@ struct router {
   }
 
   // add rule to match HTTP PUT method only
-  template <typename Handler, typename Rule> router& PUT(Rule&& r) {
+  template <typename Handler, typename Rule> 
+  router& PUT(Rule&& r) {
 
     static_assert(std::is_base_of_v<payload_enabled_handler, Handler>, "PUT rule requires payload enabled handler subclass");
 
@@ -287,7 +290,7 @@ namespace {
       return {path.substr(0, path.length() - 4), application_xml};
   }
 
-  return make_pair(path, unspecified_type);
+  return {path, unspecified_type};
 }
 
 handler_ptr_t route_resource(request &req, const std::string &path,
