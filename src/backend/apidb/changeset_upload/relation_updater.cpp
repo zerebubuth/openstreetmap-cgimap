@@ -866,9 +866,8 @@ void ApiDB_Relation_Updater::lock_future_members(
          *  be set to visible by update_current_relations before committing.
          */
 
-        if (std::find(already_locked_relations.begin(),
-                      already_locked_relations.end(),
-                      rm.member_id) == already_locked_relations.end()) {
+        if (std::ranges::find(already_locked_relations, 
+                              rm.member_id) == already_locked_relations.end()) {
           relation_ids.push_back(rm.member_id);
         }
       }

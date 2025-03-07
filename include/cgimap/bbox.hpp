@@ -22,7 +22,7 @@ struct bbox {
 
   constexpr bbox() = default;
 
-  bool operator==(const bbox &) const;
+  bool operator==(const bbox &) const = default;
 
   /**
    * Attempt to parse a bounding box from a comma-separated string

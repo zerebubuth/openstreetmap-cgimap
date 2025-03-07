@@ -13,9 +13,7 @@ text_responder::text_responder(mime::type mt)
     : responder(mt) {}
 
 std::vector<mime::type> text_responder::types_available() const {
-  std::vector<mime::type> types;
-  types.push_back(mime::type::text_plain);
-  return types;
+  return {mime::type::text_plain};
 }
 
 void text_responder::add_response_header(const std::string &line) {

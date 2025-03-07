@@ -55,8 +55,8 @@ int request::put(const char *ptr, int len) {
   return get_buffer().write(ptr, len);
 }
 
-int request::put(const std::string &str) {
-  return get_buffer().write(str.c_str(), str.size());
+int request::put(std::string_view str) {
+  return get_buffer().write(str);
 }
 
 void request::flush() { get_buffer().flush(); }
@@ -82,7 +82,7 @@ void request::check_workflow(workflow_status this_stage) {
       // some HTTP headers are only returned in case the request was successful
       auto headers = m_headers;
       if (m_status == 200)
-	headers.insert(headers.end(), m_success_headers.begin(), m_success_headers.end());
+        headers.insert(headers.end(), m_success_headers.begin(), m_success_headers.end());
 
       write_header_info(m_status, headers);
     }
