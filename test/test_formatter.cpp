@@ -12,9 +12,8 @@
 
 #include <chrono>
 #include <ctime>
-#include <fstream>
 #include <iomanip>
-#include <ranges>
+#include <algorithm>
 
 
 namespace {

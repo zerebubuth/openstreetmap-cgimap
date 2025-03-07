@@ -9,6 +9,7 @@
 
 #include "cgimap/bbox.hpp"
 #include "cgimap/util.hpp"
+
 #include <cmath>
 #include <vector>
 

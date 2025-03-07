@@ -15,12 +15,12 @@
 
 #include "cgimap/api06/changeset_upload/node_updater.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
-#include "cgimap/backend/apidb/transaction_manager.hpp"
 
-#include <memory>
 #include <set>
+#include <vector>
 
 struct RequestContext;
+class Transaction_Manager;
 
 
 class ApiDB_Node_Updater : public api06::Node_Updater {

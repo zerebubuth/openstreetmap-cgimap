@@ -15,10 +15,9 @@
 
 #include <chrono>
 #include <functional>
+#include <map>
+
 #include <pqxx/pqxx>
-#include <string_view>
-#include <string>
-#include <vector>
 
 /* these functions take the results of "rolled-up" queries where tags, way
  * nodes and relation members are aggregated per-row.

@@ -13,7 +13,6 @@
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
 
-#include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 #include "cgimap/api06/changeset_upload/relation.hpp"
 
 #include <map>

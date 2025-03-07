@@ -10,7 +10,6 @@
 #ifndef API06_HANDLER_UTILS_HPP
 #define API06_HANDLER_UTILS_HPP
 
-#include "cgimap/types.hpp"
 #include "cgimap/request.hpp"
 #include "cgimap/api06/id_version.hpp"
 

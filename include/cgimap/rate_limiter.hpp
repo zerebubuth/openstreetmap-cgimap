@@ -11,6 +11,7 @@
 #define RATE_LIMITER_HPP
 
 #include <string>
+
 #include <libmemcached/memcached.h>
 #include <boost/program_options.hpp>
 

@@ -14,6 +14,7 @@
 #include <catch2/catch.hpp>
 
 #include <string_view>
+#include <string>
 
 std::vector<api06::id_version> parse_query_str(const std::string& query_str) {
   test_request req;

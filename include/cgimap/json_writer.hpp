@@ -11,10 +11,8 @@
 #define JSON_WRITER_HPP
 
 #include <array>
-#include <memory>
 #include <string>
 #include <string_view>
-#include <stdexcept>
 
 #include <fmt/core.h>
 #include <fmt/compile.h>

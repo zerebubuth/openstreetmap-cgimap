@@ -13,6 +13,7 @@
 #include "cgimap/handler.hpp"
 #include "cgimap/osm_current_responder.hpp"
 #include "cgimap/request.hpp"
+
 #include <string>
 
 namespace api06 {

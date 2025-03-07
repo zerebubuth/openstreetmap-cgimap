@@ -8,7 +8,6 @@
  */
 
 #include "cgimap/choose_formatter.hpp"
-#include "cgimap/output_writer.hpp"
 #include "cgimap/mime_types.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/request_helpers.hpp"
@@ -18,16 +17,10 @@
 #include "cgimap/json_formatter.hpp"
 #include "cgimap/text_writer.hpp"
 #include "cgimap/text_formatter.hpp"
-#include "cgimap/logger.hpp"
 #include "cgimap/util.hpp"
 
 #include <stdexcept>
-#include <list>
 #include <map>
-#include <limits>
-#include <optional>
-#include <iostream>
-#include <ranges>
 #include <string>
 #include <vector>
 #include <algorithm>

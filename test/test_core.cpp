@@ -8,8 +8,6 @@
  */
 
 #include "cgimap/process_request.hpp"
-#include "cgimap/output_buffer.hpp"
-#include "cgimap/request_helpers.hpp"
 #include "cgimap/time.hpp"
 #include "cgimap/util.hpp"
 #include "staticxml.hpp"
@@ -23,8 +21,8 @@
 #include <filesystem>
 #include <fstream>
 #include <vector>
-#include <ranges>
 #include <sstream>
+#include <iostream>
 
 #include "test_request.hpp"
 

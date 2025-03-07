@@ -12,6 +12,9 @@
 
 #include <memory>
 #include <optional>
+#include <string>
+#include <cstdint>
+
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;

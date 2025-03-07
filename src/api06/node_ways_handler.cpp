@@ -8,7 +8,6 @@
  */
 
 #include "cgimap/api06/node_ways_handler.hpp"
-#include "cgimap/http.hpp"
 
 namespace api06 {
 

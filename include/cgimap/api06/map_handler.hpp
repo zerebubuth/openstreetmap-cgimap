@@ -11,10 +11,10 @@
 #define API06_MAP_HANDLER_HPP
 
 #include "cgimap/bbox.hpp"
-#include "cgimap/output_formatter.hpp"
 #include "cgimap/handler.hpp"
 #include "cgimap/osm_current_responder.hpp"
 #include "cgimap/request.hpp"
+
 #include <string>
 
 namespace api06 {

@@ -11,7 +11,6 @@
 #define UTIL_HPP
 
 #include "cgimap/http.hpp"
-#include "cgimap/logger.hpp"
 #include "cgimap/options.hpp"
 
 #include <algorithm>
@@ -20,11 +19,8 @@
 #include <cmath>
 #include <cstdlib>
 #include <cwchar>
-#include <iostream>
-#include <set>
-#include <sstream>
+#include <ostream>
 #include <string>
-#include <type_traits>
 #include <string_view>
 #include <ranges>
 

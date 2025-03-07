@@ -14,6 +14,7 @@
 
 #include <charconv>
 #include <optional>
+#include <string>
 
 namespace api06 {
 

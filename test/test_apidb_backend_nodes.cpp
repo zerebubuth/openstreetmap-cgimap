@@ -7,23 +7,16 @@
  * For a full list of authors see the git log.
  */
 
-#include <iostream>
 #include <stdexcept>
 #include <fmt/core.h>
 
 #include <sys/time.h>
 #include <cstdio>
 
-#include "cgimap/time.hpp"
-#include "cgimap/rate_limiter.hpp"
-#include "cgimap/routes.hpp"
-#include "cgimap/process_request.hpp"
 #include "cgimap/backend/apidb/utils.hpp"
-#include "cgimap/backend/apidb/common_pgsql_selection.hpp"
 
 #include "test_formatter.hpp"
 #include "test_database.hpp"
-#include "test_request.hpp"
 
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>

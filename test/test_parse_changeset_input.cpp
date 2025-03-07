@@ -7,12 +7,9 @@
  * For a full list of authors see the git log.
  */
 
-#include "cgimap/api06/changeset_upload/osmobject.hpp"
 #include "cgimap/api06/changeset_upload/changeset_input_format.hpp"
 
-#include <iostream>
 #include <sstream>
-#include <stdexcept>
 
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>

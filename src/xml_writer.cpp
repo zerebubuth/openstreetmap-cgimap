@@ -7,12 +7,11 @@
  * For a full list of authors see the git log.
  */
 
-#include <array>
-#include <memory>
-#include <stdexcept>
-#include <iostream>
-#include <utility>
 #include "cgimap/xml_writer.hpp"
+
+#include <array>
+#include <stdexcept>
+
 #include <fmt/core.h>
 #include <fmt/compile.h>
 

@@ -12,12 +12,12 @@
 
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
-
 #include "cgimap/api06/changeset_upload/changeset_updater.hpp"
-#include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
-#include "cgimap/backend/apidb/transaction_manager.hpp"
+
+#include <cstdint>
 
 struct RequestContext;
+class Transaction_Manager;
 
 class ApiDB_Changeset_Updater : public api06::Changeset_Updater {
 

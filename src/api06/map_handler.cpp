@@ -10,12 +10,11 @@
 #include "cgimap/api06/map_handler.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/request_helpers.hpp"
-#include "cgimap/logger.hpp"
 #include "cgimap/options.hpp"
 
 #include <fmt/core.h>
-#include <map>
-#include <ranges>
+
+#include <algorithm>
 
 
 namespace api06 {

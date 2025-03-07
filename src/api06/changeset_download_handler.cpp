@@ -8,7 +8,6 @@
  */
 
 #include "cgimap/api06/changeset_download_handler.hpp"
-#include "cgimap/request_helpers.hpp"
 #include "cgimap/http.hpp"
 
 #include <fmt/core.h>

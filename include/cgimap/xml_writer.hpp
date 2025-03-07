@@ -12,15 +12,11 @@
 
 #include "cgimap/output_buffer.hpp"
 #include "cgimap/output_writer.hpp"
-#include "cgimap/util.hpp"
 
 #include <libxml/encoding.h>
 #include <libxml/xmlwriter.h>
 
-#include <memory>
 #include <string>
-#include <stdexcept>
-#include <cinttypes>
 #include <charconv>
 #include <array>
 

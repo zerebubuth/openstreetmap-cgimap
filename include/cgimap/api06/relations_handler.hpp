@@ -12,7 +12,6 @@
 
 #include "cgimap/handler.hpp"
 #include "cgimap/osm_current_responder.hpp"
-#include "cgimap/request_helpers.hpp"
 #include "cgimap/data_selection.hpp"
 #include "cgimap/request.hpp"
 #include "cgimap/api06/id_version.hpp"

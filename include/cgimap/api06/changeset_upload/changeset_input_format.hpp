@@ -10,8 +10,8 @@
 #ifndef CHANGESET_INPUT_FORMAT_HPP
 #define CHANGESET_INPUT_FORMAT_HPP
 
-#include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
+#include "cgimap/api06/changeset_upload/osmobject.hpp"
 
 #include <libxml/parser.h>
 #include <fmt/core.h>

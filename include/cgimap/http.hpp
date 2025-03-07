@@ -13,8 +13,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <bitset>
-#include <stdexcept>
+#include <exception>
 #include <optional>
 #include <ostream>
 

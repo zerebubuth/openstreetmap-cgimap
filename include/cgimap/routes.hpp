@@ -11,10 +11,10 @@
 #define ROUTES_HPP
 
 #include "cgimap/handler.hpp"
-#include "cgimap/request.hpp"
 
 // internal implementation of the routes
 struct router;
+struct request;
 
 /**
  * encapsulates routing (URL to handler mapping) information, similar in

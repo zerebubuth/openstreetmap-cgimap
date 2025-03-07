@@ -12,6 +12,8 @@
 
 #include "cgimap/osm_responder.hpp"
 
+class data_selection;
+
 /**
  * utility class - inherit from this when implementing something that responds
  * with an osmChange (a.k.a "diff") document.

@@ -8,7 +8,6 @@
  */
 
 #include "cgimap/api06/way_relations_handler.hpp"
-#include "cgimap/http.hpp"
 
 #include <string>
 #include <memory>

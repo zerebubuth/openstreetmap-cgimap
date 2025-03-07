@@ -15,6 +15,7 @@
 #include <sys/time.h>
 
 #include <filesystem>
+#include <iostream>
 
 namespace fs = std::filesystem;
 

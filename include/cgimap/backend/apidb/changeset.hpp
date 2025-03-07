@@ -11,8 +11,9 @@
 #define CHANGESET_HPP
 
 #include "cgimap/types.hpp"
-#include <set>
+
 #include <string>
+
 #include <pqxx/pqxx>
 
 /**

@@ -14,6 +14,9 @@
 
 #include <fmt/core.h>
 
+#include <ostream>
+#include <sstream>
+
 struct test_formatter : public output_formatter {
   struct node_t {
     node_t(const element_info &elem_, double lon_, double lat_,

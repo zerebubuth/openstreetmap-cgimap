@@ -10,9 +10,11 @@
 #ifndef QUAD_TILE_HPP
 #define QUAD_TILE_HPP
 
+#include "cgimap/types.hpp"
+
 #include <cmath>
 #include <vector>
-#include "cgimap/types.hpp"
+
 
 std::vector<tile_id_t> tiles_for_area(double minlat, double minlon, double maxlat,
                                       double maxlon);

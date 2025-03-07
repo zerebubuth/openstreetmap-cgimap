@@ -13,6 +13,8 @@
 #include "cgimap/output_formatter.hpp"
 #include "cgimap/text_writer.hpp"
 
+#include <memory>
+
 /**
  * Outputs an text formatted document
  */

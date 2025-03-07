@@ -16,12 +16,11 @@
 #include "cgimap/output_formatter.hpp"
 #include "cgimap/output_writer.hpp"
 #include "cgimap/util.hpp"
+#include "cgimap/oauth2.hpp"
 
 #include <chrono>
 #include <memory>
-#include <sstream>
 #include <tuple>
-#include <variant>
 
 #include <fmt/core.h>
 

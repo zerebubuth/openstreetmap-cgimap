@@ -11,9 +11,11 @@
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/http.hpp"
 
-#include <ranges>
 #include <fmt/core.h>
 
+#include <memory>
+#include <string>
+#include <algorithm>
 
 namespace api06 {
 

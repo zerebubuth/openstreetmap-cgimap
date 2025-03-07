@@ -8,7 +8,6 @@
  */
 
 #include "cgimap/options.hpp"
-#include "cgimap/logger.hpp"
 
 #include <string_view>
 #include <ranges>

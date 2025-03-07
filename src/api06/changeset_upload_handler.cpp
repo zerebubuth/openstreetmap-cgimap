@@ -7,9 +7,10 @@
  * For a full list of authors see the git log.
  */
 
+#include "cgimap/types.hpp"
+#include "cgimap/util.hpp"
 #include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
-#include "cgimap/request_helpers.hpp"
 #include "cgimap/request_context.hpp"
 
 #include "cgimap/api06/changeset_upload/osmchange_handler.hpp"
@@ -20,10 +21,6 @@
 #include "cgimap/backend/apidb/changeset_upload/node_updater.hpp"
 #include "cgimap/backend/apidb/changeset_upload/relation_updater.hpp"
 #include "cgimap/backend/apidb/changeset_upload/way_updater.hpp"
-#include "cgimap/backend/apidb/transaction_manager.hpp"
-
-#include "cgimap/types.hpp"
-#include "cgimap/util.hpp"
 
 #include <fmt/core.h>
 

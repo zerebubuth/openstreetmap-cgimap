@@ -8,20 +8,15 @@
  */
 
 #include "cgimap/http.hpp"
-#include "cgimap/logger.hpp"
-#include "cgimap/request_helpers.hpp"
 
 #include "cgimap/api06/changeset_close_handler.hpp"
 #include "cgimap/backend/apidb/changeset_upload/changeset_updater.hpp"
-#include "cgimap/backend/apidb/transaction_manager.hpp"
 #include "cgimap/types.hpp"
-#include "cgimap/util.hpp"
 
 #include <fmt/core.h>
 
 #include <string>
 #include <memory>
-#include <optional>
 
 namespace api06 {
 

@@ -11,7 +11,6 @@
 #define TYPES_HPP
 
 #include <cstdint>
-#include <cassert>
 #include <utility>
 
 using osm_user_id_t = uint64_t ;

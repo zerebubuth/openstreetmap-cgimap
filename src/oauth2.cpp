@@ -8,7 +8,6 @@
  */
 
 #include "cgimap/oauth2.hpp"
-#include <ranges>
 #include <sys/types.h>
 
 #if HAVE_CRYPTOPP

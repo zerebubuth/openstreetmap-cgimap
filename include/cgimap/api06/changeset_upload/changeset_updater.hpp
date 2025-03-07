@@ -14,6 +14,8 @@
 #include "cgimap/util.hpp"
 
 #include <map>
+#include <string>
+#include <cstdint>
 
 namespace api06 {
 

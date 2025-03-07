@@ -9,7 +9,6 @@
 
 #include <pqxx/pqxx>
 #include <iostream>
-#include <sstream>
 
 #include <boost/program_options.hpp>
 #include <fmt/core.h>
@@ -24,24 +23,15 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
-#include <sstream>
 #include <thread>
-#include <vector>
 #include <sys/wait.h>
 #include <atomic>
 
 using namespace std::chrono_literals;
 
-#include "cgimap/bbox.hpp"
-#include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
-#include "cgimap/output_formatter.hpp"
-#include "cgimap/output_writer.hpp"
-#include "cgimap/handler.hpp"
 #include "cgimap/routes.hpp"
-#include "cgimap/request_helpers.hpp"
 #include "cgimap/rate_limiter.hpp"
-#include "cgimap/choose_formatter.hpp"
 #include "cgimap/backend.hpp"
 #include "cgimap/fcgi_request.hpp"
 #include "cgimap/options.hpp"

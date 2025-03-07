@@ -10,14 +10,13 @@
 #include "cgimap/backend/apidb/changeset_upload/changeset_updater.hpp"
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
 #include "cgimap/backend/apidb/utils.hpp"
+#include "cgimap/backend/apidb/transaction_manager.hpp"
 #include "cgimap/http.hpp"
-#include "cgimap/logger.hpp"
 #include "cgimap/options.hpp"
 #include "cgimap/request_context.hpp"
 
 #include <fmt/core.h>
 #include <pqxx/pqxx>
-#include <stdexcept>
 
 
 ApiDB_Changeset_Updater::ApiDB_Changeset_Updater(Transaction_Manager &_m,

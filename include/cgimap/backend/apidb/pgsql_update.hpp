@@ -11,8 +11,8 @@
 #define PGSQL_UPDATE_HPP
 
 #include "cgimap/data_update.hpp"
-#include "cgimap/backend/apidb/changeset.hpp"
 #include "cgimap/backend/apidb/transaction_manager.hpp"
+#include "cgimap/api06/changeset_upload/changeset_updater.hpp"
 
 #include <memory>
 #include <pqxx/pqxx>

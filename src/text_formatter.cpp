@@ -8,8 +8,8 @@
  */
 
 #include "cgimap/text_formatter.hpp"
+
 #include <string>
-#include <stdexcept>
 
 
 text_formatter::text_formatter(std::unique_ptr<text_writer> w) : writer(std::move(w)) {}

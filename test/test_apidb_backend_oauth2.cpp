@@ -7,18 +7,14 @@
  * For a full list of authors see the git log.
  */
 
-#include <iostream>
-#include <stdexcept>
 
 #include <sys/time.h>
 #include <cstdio>
 
-#include "cgimap/time.hpp"
 #include "cgimap/rate_limiter.hpp"
 #include "cgimap/routes.hpp"
 #include "cgimap/process_request.hpp"
 
-#include "test_formatter.hpp"
 #include "test_database.hpp"
 #include "test_request.hpp"
 

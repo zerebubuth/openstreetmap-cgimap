@@ -10,7 +10,6 @@
 #ifndef HANDLER_HPP
 #define HANDLER_HPP
 
-#include "cgimap/types.hpp"
 #include "cgimap/output_formatter.hpp"
 #include "cgimap/mime_types.hpp"
 #include "cgimap/data_update.hpp"
@@ -19,10 +18,8 @@
 
 #include <chrono>
 #include <vector>
-#include <set>
 #include <string>
 #include <memory>
-#include <optional>
 
 
 /**

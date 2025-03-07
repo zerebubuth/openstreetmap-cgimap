@@ -14,14 +14,14 @@
 
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 #include "cgimap/api06/changeset_upload/way_updater.hpp"
-#include "cgimap/backend/apidb/transaction_manager.hpp"
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
 
-#include <memory>
 #include <set>
+#include <vector>
 
 struct RequestContext;
+class Transaction_Manager;
 
 /*  Way operations
  *

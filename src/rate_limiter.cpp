@@ -7,7 +7,6 @@
  * For a full list of authors see the git log.
  */
 
-#include <vector>
 #include <fmt/core.h>
 #include <libmemcached/memcached.h>
 
