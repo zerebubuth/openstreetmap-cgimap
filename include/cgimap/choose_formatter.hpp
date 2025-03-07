@@ -42,7 +42,7 @@ public:
    * @param header The Accept header string to parse
    * @throws http::bad_request if the header cannot be parsed
    */
-  explicit AcceptHeader(const std::string &header);
+  explicit AcceptHeader(std::string_view header);
 
   /**
    * Checks if a given MIME type is acceptable according to the Accept header.
@@ -62,7 +62,7 @@ private:
    * @param header The header string to parse
    * @return Vector of parsed AcceptElements
    */
-  std::vector<AcceptHeader::AcceptElement> parse(const std::string &header) const;
+  std::vector<AcceptHeader::AcceptElement> parse(std::string_view header) const;
 };
 
 /**

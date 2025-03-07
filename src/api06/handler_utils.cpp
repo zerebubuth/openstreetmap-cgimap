@@ -58,7 +58,7 @@ std::vector<id_version> parse_id_list_params(const request &req,
   if (itr == params.end())
     return {};
 
-  const std::string &str = itr->second;
+  std::string_view str = itr->second;
 
   if (str.empty())
     return {};

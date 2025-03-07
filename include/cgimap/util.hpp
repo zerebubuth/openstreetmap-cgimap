@@ -93,35 +93,41 @@ inline bool iequals(std::string_view a, std::string_view b) {
          std::ranges::equal(a, b, ichar_equals);
 }
 
-inline std::string_view trim(std::string_view str) {
+template <typename T>
+concept StringLike = std::is_same_v<std::remove_cvref_t<T>, std::string> ||
+                     std::is_same_v<std::remove_cvref_t<T>, std::string_view>;
+
+template <StringLike T>
+inline T trim(T str) {
   auto start = str.find_first_not_of(" \t\n\r");
-  if (start == std::string::npos)
+  if (start == T::npos)
       return {};
   auto end = str.find_last_not_of(" \t\n\r");
   return str.substr(start, end - start + 1);
 }
 
-inline std::vector<std::string_view> split_trim(std::string_view str, char delim) {
+template <StringLike T>
+inline std::vector<T> split_trim(T str, char delim) {
 
   auto split_view = str | std::views::split(delim);
 
-  std::vector<std::string_view> result;
+  std::vector<T> result;
   for (auto&& part : split_view) {
-      auto trimmed = trim(std::string_view(&*part.begin(), std::ranges::distance(part)));
+      auto trimmed = trim(T(&*part.begin(), std::ranges::distance(part)));
       if (!trimmed.empty()) {
           result.push_back(trimmed);
       }
   }
-
   return result;
 }
 
-inline std::vector<std::string_view> split(std::string_view str, char delim) {
+template <StringLike T>
+inline std::vector<T> split(T str, char delim) {
     auto split_result = str | std::ranges::views::split(delim);
 
-    std::vector<std::string_view> result;
+    std::vector<T> result;
     for (auto&& part : split_result) {
-        result.push_back(std::string_view(&*part.begin(), std::ranges::distance(part)));
+        result.push_back(T(&*part.begin(), std::ranges::distance(part)));
     }
 
     return result;

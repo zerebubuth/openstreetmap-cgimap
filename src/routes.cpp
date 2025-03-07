@@ -300,7 +300,7 @@ handler_ptr_t route_resource(request &req, const std::string &path,
   auto [resource, mime_type] = resource_mime_type(path);
 
   // split the URL into bits to be matched.
-  auto path_components = split(resource, '/');
+  auto path_components = split<std::string_view>(resource, '/');
 
   auto hptr(r->match(path_components, req));
 
