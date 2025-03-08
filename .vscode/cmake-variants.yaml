@@ -1,0 +1,38 @@
+buildType:
+  default: debug
+  choices:
+    debug:
+      short: Debug
+      long: Emit debug information
+      buildType: Debug
+    release:
+      short: Release
+      long: Optimize generated code
+      buildType: Release
+      settings:
+        CMAKE_CXX_FLAGS: "-fwhole-program -flto=auto"
+        CMAKE_C_FLAGS: "-fwhole-program -flto=auto"
+        CMAKE_EXE_LINKER_FLAGS: "-flto=auto"
+    releaseDebug:
+      short: ReleaseDebug
+      long: Release with debug information
+      buildType: RelWithDebInfo
+
+coverage:
+  default: no_coverage
+  choices:
+    # enable coverage by additional compiler flags
+    coverage:
+      short: cov
+      long: build with coverage instrumentation
+      settings:
+        CMAKE_CXX_FLAGS: "-fprofile-arcs -ftest-coverage "
+        CMAKE_C_FLAGS: "-fprofile-arcs -ftest-coverage"
+        CMAKE_EXE_LINKER_FLAGS: "--coverage"
+    no_coverage:
+      short: no_coverage
+      long: build without coverage
+      settings:
+        CMAKE_CXX_FLAGS: ""
+        CMAKE_C_FLAGS: ""
+        CMAKE_EXE_LINKER_FLAGS: ""
