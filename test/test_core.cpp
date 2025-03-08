@@ -77,6 +77,7 @@ void setup_request_headers(test_request &req, std::istream &in) {
 
   for (auto const & [k, v] : headers) {
     auto key = k;
+    // replace hyphens with underscores and uppercase the key
     std::ranges::transform(key, key.begin(), [](unsigned char c) {
       return (c == '-' ? '_' : std::toupper(c));
     });
@@ -108,22 +109,12 @@ void check_xmlattr(const pt::ptree &expected, const pt::ptree &actual) {
     act_keys.insert(val.first);
   }
 
-  if (exp_keys.size() > act_keys.size()) {
-    for (const auto &ak : act_keys) { exp_keys.erase(ak); }
-    std::ostringstream out;
-    out << "Missing attributes [";
-    for (const auto &ek : exp_keys) { out << ek << " "; }
-    out << "]";
-    throw std::runtime_error(out.str());
-  }
-
-  if (act_keys.size() > exp_keys.size()) {
-    for (const auto &ek : exp_keys) { act_keys.erase(ek); }
-    std::ostringstream out;
-    out << "Extra attributes [";
-    for (const auto &ak : act_keys) { out << ak << " "; }
-    out << "]";
-    throw std::runtime_error(out.str());
+  // Check if expected and actual keys are different
+  std::vector<std::string> out{};
+  std::ranges::set_symmetric_difference(exp_keys, act_keys, std::back_inserter(out));
+  if (!out.empty()) {
+    throw std::runtime_error(
+      fmt::format("Attributes differ: [{}]", fmt::join(out, " ")));
   }
 
   for (const std::string &k : exp_keys) {
@@ -149,13 +140,45 @@ void check_xmlattr(const pt::ptree &expected, const pt::ptree &actual) {
   }
 }
 
+void check_extra_entries(pt::ptree::const_iterator &exp_itr, const pt::ptree &expected,
+                             pt::ptree::const_iterator &act_itr, const pt::ptree &actual) {
+
+  if (exp_itr == expected.end()) {
+    std::ostringstream out;
+    out << "Actual result has more entries than expected: [" << act_itr->first;
+    ++act_itr;
+    while (act_itr != actual.end()) {
+      out << ", " << act_itr->first;
+      ++act_itr;
+    }
+    out << "] are extra";
+    throw std::runtime_error(out.str());
+  }
+}
+
+void check_missing_entries(pt::ptree::const_iterator &act_itr, const pt::ptree &actual,
+                           pt::ptree::const_iterator &exp_itr, const pt::ptree &expected) {
+
+  if (act_itr == actual.end()) {
+    std::ostringstream out;
+    out << "Actual result has fewer entries than expected: [" << exp_itr->first;
+    ++exp_itr;
+    while (exp_itr != expected.end()) {
+      out << ", " << exp_itr->first;
+      ++exp_itr;
+    }
+    out << "] are absent";
+    throw std::runtime_error(out.str());
+  }
+}
+
 /**
- * recursively check an XML tree for a match. this is a very basic way of
+ * recursively check an XML/JSON tree for a match. this is a very basic way of
  * doing it, but seems effective so far. the trees are walked depth-first
  * and values are compared exactly - except for when the expected value is
  * '***', which causes it to skip that subtree entirely.
  */
-void check_recursive_tree(const pt::ptree &expected, const pt::ptree &actual) {
+void check_recursive_tree(const pt::ptree &expected, const pt::ptree &actual, bool is_json = false) {
   auto exp_itr = expected.begin();
   auto act_itr = actual.begin();
 
@@ -164,46 +187,33 @@ void check_recursive_tree(const pt::ptree &expected, const pt::ptree &actual) {
     return;
   }
 
+  if (is_json) {
+    if (expected.data() != actual.data()) {
+      throw std::runtime_error(fmt::format("Expected '{}', but got '{}'",
+                                expected.data(), actual.data()));
+    }
+  }
+
   while (true) {
     if ((exp_itr == expected.end()) && (act_itr == actual.end())) {
       break;
     }
-    if (exp_itr == expected.end()) {
-      std::ostringstream out;
-      out << "Actual result has more entries than expected: ["
-          << act_itr->first;
-      ++act_itr;
-      while (act_itr != actual.end()) {
-        out << ", " << act_itr->first;
-        ++act_itr;
-      }
-      out << "] are extra";
-      throw std::runtime_error(out.str());
-    }
-    if (act_itr == actual.end()) {
-      std::ostringstream out;
-      out << "Actual result has fewer entries than expected: ["
-          << exp_itr->first;
-      ++exp_itr;
-      while (exp_itr != expected.end()) {
-        out << ", " << exp_itr->first;
-        ++exp_itr;
-      }
-      out << "] are absent";
-      throw std::runtime_error(out.str());
-    }
+    check_extra_entries(exp_itr, expected, act_itr, actual);
+    check_missing_entries(act_itr, actual, exp_itr, expected);
+
     if (exp_itr->first != act_itr->first) {
       throw std::runtime_error(fmt::format("Expected {}, but got {}",
                                 exp_itr->first, act_itr->first));
     }
     try {
-      if (exp_itr->first == "<xmlattr>") {
+      if (is_json || (!(exp_itr->first == "<xmlattr>"))) {
+        check_recursive_tree(exp_itr->second, act_itr->second, is_json);
+      }
+      else {
         check_xmlattr(exp_itr->second, act_itr->second);
-      } else {
-        check_recursive_tree(exp_itr->second, act_itr->second);
       }
     } catch (const std::exception &ex) {
-      throw std::runtime_error(fmt::format("{}, in <{}> element",
+      throw std::runtime_error(fmt::format("{}, in \"{}\" element",
                                 ex.what(), exp_itr->first));
     }
     ++exp_itr;
@@ -234,77 +244,9 @@ void check_content_body_xml(std::istream &expected, std::istream &actual) {
   }
 
   // and check the results for equality
-  check_recursive_tree(exp_tree, act_tree);
+  check_recursive_tree(exp_tree, act_tree, false);
 }
 
-/**
- * recursively check a JSON tree for a match. this is a very basic way of
- * doing it, but seems effective so far. the trees are walked depth-first
- * and values are compared exactly - except for when the expected value is
- * '***', which causes it to skip that subtree entirely.
- */
-void check_recursive_tree_json(const pt::ptree &expected,
-                               const pt::ptree &actual) {
-  auto exp_itr = expected.begin();
-  auto act_itr = actual.begin();
-
-  // skip comparison of trees for this wildcard.
-  if (trim(expected.data()) == "***") {
-    std::cout << "wildcard\n";
-    return;
-  }
-
-  // check the actual data value
-  if (expected.data() != actual.data()) {
-    throw std::runtime_error(fmt::format("Expected '{}', but got '{}'",
-                              expected.data(), actual.data()));
-  }
-  std::cout << "attr match: " << expected.data() << "\n";
-
-  while (true) {
-    if ((exp_itr == expected.end()) && (act_itr == actual.end())) {
-      break;
-    }
-    if (exp_itr == expected.end()) {
-      std::ostringstream out;
-      out << "Actual result has more entries than expected: ["
-          << act_itr->first;
-      ++act_itr;
-      while (act_itr != actual.end()) {
-        out << ", " << act_itr->first;
-        ++act_itr;
-      }
-      out << "] are extra";
-      throw std::runtime_error(out.str());
-    }
-    if (act_itr == actual.end()) {
-      std::ostringstream out;
-      out << "Actual result has fewer entries than expected: ["
-          << exp_itr->first;
-      ++exp_itr;
-      while (exp_itr != expected.end()) {
-        out << ", " << exp_itr->first;
-        ++exp_itr;
-      }
-      out << "] are absent";
-      throw std::runtime_error(out.str());
-    }
-    if (exp_itr->first != act_itr->first) {
-      throw std::runtime_error(fmt::format("Expected {}, but got {}",
-                                exp_itr->first, act_itr->first));
-    }
-    try {
-      std::cout << "recursing on item " << exp_itr->first << "\n";
-      check_recursive_tree_json(exp_itr->second, act_itr->second);
-    } catch (const std::exception &ex) {
-      throw std::runtime_error(fmt::format("{}, in \"{}\" object",
-                                ex.what(), exp_itr->first));
-    }
-    ++exp_itr;
-    ++act_itr;
-  }
-  std::cout << "return\n";
-}
 
 /**
  * check that the content body of the expected, from the test case, and
@@ -328,6 +270,8 @@ void check_content_body_json(std::istream &expected, std::istream &actual) {
         fmt::format("{}, while reading actual JSON.", ex.what()));
   }
 
+  /* (debug code only)
+
   expected.seekg(0);
   std::cout << "=== expected ===\n";
   do {
@@ -342,9 +286,10 @@ void check_content_body_json(std::istream &expected, std::istream &actual) {
     std::getline(actual, line);
     std::cout << line << "\n";
   } while (actual.good());
+  */
 
   // and check the results for equality
-  check_recursive_tree_json(exp_tree, act_tree);
+  check_recursive_tree(exp_tree, act_tree, true);
 }
 
 void check_content_body_plain(std::istream &expected, std::istream &actual) {
@@ -365,7 +310,8 @@ void check_content_body_plain(std::istream &expected, std::istream &actual) {
     if (exp_num != act_num) {
       throw std::runtime_error(
         fmt::format("Expected to read {} bytes, but read {} in actual "
-                       "plain - responses are different sizes.\nexpected \"{}\", actual \"{}\"", exp_num, act_num, exp, act));
+                       "plain - responses are different sizes.\nexpected \"{}\", actual \"{}\"",
+                        exp_num, act_num, exp, act));
     }
 
     if (!std::equal(exp_buf, exp_buf + exp_num, act_buf)) {
@@ -382,13 +328,12 @@ void check_content_body_plain(std::istream &expected, std::istream &actual) {
 
 using dict = std::map<std::string, std::string>;
 
-std::ostream &operator<<(std::ostream &out, const dict &d) {
-  for (const auto & [key, value] : d) {
-    out << key << ": " << value << "\n";
-  }
-  return out;
-}
-
+/**
+ * Check that the http headers in the response match the expected headers.
+ * Keys with "!" prefix are expected to be absent in the actual headers.
+ * The response may include additional headers, which were not mentioned
+ * in the expected headers.
+ */
 void check_headers(const dict &expected_headers,
                    const dict &actual_headers) {
   for (const auto & [key, value] : expected_headers) {
@@ -433,13 +378,11 @@ void check_response(std::istream &expected, std::istream &actual) {
     check_headers(expected_headers, actual_headers);
 
   } catch (const std::runtime_error &e) {
-    std::ostringstream out;
-    out << "While comparing expected headers:\n"
-        << expected_headers << "\n"
-        << "with actual headers:\n"
-        << actual_headers << "\n"
-        << "ERROR: " << e.what();
-    throw std::runtime_error(out.str());
+    std::string message = fmt::format(
+      "While comparing expected headers:\n{}\nwith actual headers:\n{}\nERROR: {}",
+      expected_headers, actual_headers, e.what());
+
+    throw std::runtime_error(message);
   }
 
   // now check the body, if there is one. we judge this by whether we expect a
@@ -523,27 +466,25 @@ osm_user_role_t parse_role(std::string_view str) {
 
 user_roles_t parse_user_roles(const pt::ptree &config) {
 
-  user_roles_t user_roles;
   auto users = config.get_child_optional("users");
-  if (users)
-  {
-    for (const auto &entry : *users)
-    {
-      auto id = boost::lexical_cast< osm_user_id_t >(entry.first);
-      auto roles = entry.second.get_child_optional("roles");
+  if (!users)
+    return {};
 
-      std::set< osm_user_role_t > r;
-      if (roles)
-      {
-        for (const auto &role : *roles)
-        {
-          r.insert(parse_role(role.second.get_value< std::string >()));
-        }
+  user_roles_t user_roles;
+
+  for (const auto &[id_, roles_] : *users) {
+    auto id = parse_ruby_number< osm_user_id_t >(id_);
+    auto roles = roles_.get_child_optional("roles");
+
+    std::set< osm_user_role_t > r;
+    if (roles) {
+      for (const auto &[_, role] : *roles) {
+        r.insert(parse_role(role.get_value< std::string >()));
       }
-
-      user_roles.emplace(id, std::move(r));
     }
+    user_roles.emplace(id, std::move(r));
   }
+
   return user_roles;
 }
 
@@ -552,14 +493,12 @@ user_roles_t get_user_roles(const fs::path &roles_file) {
   if (!fs::is_regular_file(roles_file))
     return {};
 
-  try
-  {
+  try {
     pt::ptree config;
     pt::read_json(roles_file.string(), config);
     return parse_user_roles(config);
   }
-  catch (const std::exception &ex)
-  {
+  catch (const std::exception &ex) {
     throw std::runtime_error(
         fmt::format("{}, while reading expected JSON.", ex.what()));
   }
@@ -570,17 +509,17 @@ oauth2_tokens parse_oauth2_tokens(const pt::ptree &config) {
 
   oauth2_tokens oauth2_tokens;
   auto tokens = config.get_child_optional("tokens");
-  if (tokens)
-  {
-    for (const auto &[token, attrs] : *tokens)
-    {
-      oauth2_token_detail_t detail{ .expired = attrs.get<bool>("expired", true),
-                                    .revoked = attrs.get<bool>("revoked", true),
-                                    .api_write = attrs.get<bool>("api_write", false),
-                                    .user_id = attrs.get<osm_user_id_t>("user_id", {}) };
-      oauth2_tokens[token] = detail;
-    }
+  if (!tokens)
+    return {};
+
+  for (const auto &[token, attrs] : *tokens) {
+    oauth2_token_detail_t detail{ .expired = attrs.get<bool>("expired", true),
+                                  .revoked = attrs.get<bool>("revoked", true),
+                                  .api_write = attrs.get<bool>("api_write", false),
+                                  .user_id = attrs.get<osm_user_id_t>("user_id", {}) };
+    oauth2_tokens[token] = detail;
   }
+
   return oauth2_tokens;
 }
 
@@ -628,9 +567,8 @@ int main(int argc, char *argv[]) {
                 << ", but does not.";
       return 99;
     }
-    const fs::directory_iterator end;
-    for (fs::directory_iterator itr(test_directory); itr != end; ++itr) {
-      fs::path filename = itr->path();
+    for (const auto& entry : fs::directory_iterator(test_directory)) {
+      fs::path filename = entry.path();
       std::string ext = filename.extension();
       if (ext == ".case") {
         test_cases.push_back(filename);
