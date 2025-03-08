@@ -11,12 +11,12 @@
 #define TEXT_RESPONDER_HPP
 
 #include "cgimap/handler.hpp"
-#include "cgimap/bbox.hpp"
-#include "cgimap/data_selection.hpp"
+#include "cgimap/mime_types.hpp"
 
 #include <string>
 #include <chrono>
 #include <vector>
+#include <sstream>
 
 /**
  * utility class - use this as a base class when the derived class is going to

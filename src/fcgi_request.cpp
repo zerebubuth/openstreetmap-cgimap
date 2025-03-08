@@ -9,15 +9,12 @@
 
 #include "cgimap/fcgi_request.hpp"
 #include "cgimap/http.hpp"
-#include "cgimap/logger.hpp"
 #include "cgimap/options.hpp"
 #include "cgimap/output_buffer.hpp"
-#include "cgimap/request_helpers.hpp"
 
 #include <fmt/core.h>
 
 #include <array>
-#include <iostream>
 #include <stdexcept>
 #include <sstream>
 #include <fcgiapp.h>

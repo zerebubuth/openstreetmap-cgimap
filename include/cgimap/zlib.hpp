@@ -16,7 +16,6 @@
 
 const unsigned int ZLIB_COMPLETE_CHUNK = 16384;
 
-#include <memory>
 #include <zlib.h>
 #include "cgimap/output_buffer.hpp"
 

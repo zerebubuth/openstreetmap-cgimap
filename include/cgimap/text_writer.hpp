@@ -10,12 +10,10 @@
 #ifndef TEXT_WRITER_HPP
 #define TEXT_WRITER_HPP
 
-#include <memory>
 #include <string>
-#include <stdexcept>
+
 #include "cgimap/output_buffer.hpp"
 #include "cgimap/output_writer.hpp"
-#include <cinttypes>
 
 /**
  * Writes UTF-8 output to a file or stdout.

@@ -8,11 +8,14 @@
  */
 
 
+#include "cgimap/types.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 
 #include <fmt/core.h>
 
 #include <set>
+#include <map>
+#include <utility>
 
 namespace api06 {
 

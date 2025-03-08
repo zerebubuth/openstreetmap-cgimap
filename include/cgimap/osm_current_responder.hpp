@@ -14,6 +14,8 @@
 
 #include <chrono>
 
+class data_selection;
+
 /**
  * utility class - inherit from this when implementing something
  * responding with OSM data from the current tables.

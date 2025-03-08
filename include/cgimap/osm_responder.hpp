@@ -12,7 +12,6 @@
 
 #include "cgimap/handler.hpp"
 #include "cgimap/bbox.hpp"
-#include "cgimap/data_selection.hpp"
 
 #include <optional>
 #include <sstream>

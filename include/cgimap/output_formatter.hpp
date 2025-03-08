@@ -14,13 +14,9 @@
 #include "cgimap/types.hpp"
 #include "cgimap/mime_types.hpp"
 
-#include <algorithm>
 #include <chrono>
-#include <list>
 #include <optional>
-#include <sstream>
 #include <vector>
-#include <stdexcept>
 
 /**
  * What type of element the formatter is starting to write.

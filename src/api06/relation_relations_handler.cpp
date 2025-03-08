@@ -8,7 +8,6 @@
  */
 
 #include "cgimap/api06/relation_relations_handler.hpp"
-#include "cgimap/http.hpp"
 
 namespace api06 {
 

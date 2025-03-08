@@ -10,7 +10,6 @@
 #include "cgimap/api06/nodes_handler.hpp"
 #include "cgimap/api06/handler_utils.hpp"
 #include "cgimap/http.hpp"
-#include "cgimap/logger.hpp"
 
 #include <fmt/core.h>
 #include <fmt/format.h>

@@ -11,7 +11,6 @@
 #include "cgimap/backend/apidb/readonly_pgsql_selection.hpp"
 #include "cgimap/backend/apidb/pgsql_update.hpp"
 #include "cgimap/backend.hpp"
-#include "cgimap/options.hpp"
 
 #include <memory>
 

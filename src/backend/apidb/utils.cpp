@@ -8,11 +8,11 @@
  */
 
 #include <charconv>
-#include <functional>
-#include <pqxx/pqxx>
 #include <string_view>
 #include <string>
 #include <vector>
+
+#include <pqxx/pqxx>
 
 #include "cgimap/backend/apidb/utils.hpp"
 

@@ -12,18 +12,15 @@
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
 #include "cgimap/backend/apidb/quad_tile.hpp"
 #include "cgimap/backend/apidb/utils.hpp"
+#include "cgimap/backend/apidb/transaction_manager.hpp"
 #include "cgimap/http.hpp"
-#include "cgimap/logger.hpp"
 #include "cgimap/options.hpp"
 #include "cgimap/util.hpp"
-#include "cgimap/request_helpers.hpp"
-
 
 #include <algorithm>
 #include <cmath>
 #include <iterator>
 #include <map>
-#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>

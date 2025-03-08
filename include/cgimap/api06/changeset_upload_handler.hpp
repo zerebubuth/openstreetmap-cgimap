@@ -11,7 +11,7 @@
 #define API06_CHANGESET_UPLOAD_HANDLER_HPP
 
 #include <string>
-#include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
+
 #include "cgimap/handler.hpp"
 #include "cgimap/osm_diffresult_responder.hpp"
 #include "cgimap/request.hpp"

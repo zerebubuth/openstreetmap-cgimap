@@ -10,9 +10,7 @@
 #ifndef DATA_UPDATE_HPP
 #define DATA_UPDATE_HPP
 
-#include "cgimap/output_formatter.hpp"
 #include "cgimap/types.hpp"
-#include "cgimap/util.hpp"
 
 #include "cgimap/api06/changeset_upload/changeset_updater.hpp"
 #include "cgimap/api06/changeset_upload/node_updater.hpp"
@@ -22,9 +20,12 @@
 #include "cgimap/backend/apidb/transaction_manager.hpp"
 
 #include <memory>
-#include <vector>
 
 struct RequestContext;
+namespace api06 {
+  class OSMChange_Tracking;
+}
+
 
 class data_update {
 public:

@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <charconv>
+#include <cctype>
 
 namespace match {
 
@@ -33,7 +34,7 @@ std::pair<match_osm_id::match_type, bool> match_osm_id::match(part_iterator &beg
 
     auto& bit = *begin;
 
-    if (bit.end() != std::ranges::find_if(bit, [](unsigned char c) { return !isdigit(c); })) {
+    if (bit.end() != std::ranges::find_if(bit, [](unsigned char c) { return !std::isdigit(c); })) {
       return {match_type(), true};
     }
 

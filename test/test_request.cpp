@@ -9,7 +9,6 @@
 
 #include "test_request.hpp"
 #include "cgimap/options.hpp"
-#include "cgimap/request_helpers.hpp"
 
 #include <cassert>
 #include <fmt/core.h>

@@ -7,21 +7,13 @@
  * For a full list of authors see the git log.
  */
 
+#include "cgimap/types.hpp"
 #include "cgimap/http.hpp"
-#include "cgimap/logger.hpp"
-#include "cgimap/request_helpers.hpp"
-
 #include "cgimap/api06/changeset_create_handler.hpp"
 #include "cgimap/api06/changeset_upload/changeset_input_format.hpp"
 #include "cgimap/backend/apidb/changeset_upload/changeset_updater.hpp"
-#include "cgimap/backend/apidb/transaction_manager.hpp"
-
-
-#include "cgimap/types.hpp"
-#include "cgimap/util.hpp"
 
 #include <string>
-#include <optional>
 
 namespace api06 {
 

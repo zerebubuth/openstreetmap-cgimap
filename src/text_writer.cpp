@@ -8,10 +8,6 @@
  */
 
 
-#include <memory>
-#include <stdexcept>
-#include <iostream>
-#include <utility>
 #include "cgimap/text_writer.hpp"
 
 

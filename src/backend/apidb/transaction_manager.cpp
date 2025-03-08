@@ -8,8 +8,6 @@
  */
 
 #include "cgimap/backend/apidb/transaction_manager.hpp"
-#include "cgimap/http.hpp"
-#include "cgimap/logger.hpp"
 
 #include <pqxx/pqxx>
 

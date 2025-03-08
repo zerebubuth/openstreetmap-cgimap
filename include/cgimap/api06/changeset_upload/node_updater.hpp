@@ -13,10 +13,9 @@
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
 
-#include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
-
 #include <map>
 #include <string>
+#include <cstdint>
 
 
 namespace api06 {

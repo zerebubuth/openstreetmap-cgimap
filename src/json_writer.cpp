@@ -8,10 +8,8 @@
  */
 
 
-#include <memory>
 #include <cstdio>
 #include <cstring>
-#include <utility>
 #include <array>
 #include <fmt/core.h>
 #include <fmt/compile.h>

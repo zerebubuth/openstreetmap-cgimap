@@ -14,8 +14,7 @@
 #if HAVE_BROTLI
 
 #include <array>
-#include <functional>
-#include <memory>
+#include <cstdint>
 
 #include <brotli/decode.h>
 #include <brotli/encode.h>

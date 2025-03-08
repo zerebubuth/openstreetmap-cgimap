@@ -11,7 +11,6 @@
 #define API06_CHANGESET_UPLOAD_PARSER_CALLBACK_HPP
 
 #include "node.hpp"
-#include "osmobject.hpp"
 #include "relation.hpp"
 #include "cgimap/types.hpp"
 #include "way.hpp"

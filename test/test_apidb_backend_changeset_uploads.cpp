@@ -11,7 +11,6 @@
 #include <chrono>
 #include <cstdio>
 #include <future>
-#include <iostream>
 #include <optional>
 #include <stdexcept>
 #include <sstream>
@@ -24,17 +23,15 @@
 
 #include <sys/time.h>
 
-#include "cgimap/time.hpp"
 #include "cgimap/options.hpp"
 #include "cgimap/rate_limiter.hpp"
 #include "cgimap/routes.hpp"
 #include "cgimap/process_request.hpp"
-#include "cgimap/output_buffer.hpp"
 #include "cgimap/zlib.hpp"
 #include "cgimap/request_context.hpp"
-
 #include "cgimap/api06/changeset_upload/osmchange_handler.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_xml_input_format.hpp"
+#include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 
 #include "test_formatter.hpp"
 #include "test_database.hpp"

@@ -8,8 +8,9 @@
  */
 
 #include "cgimap/xml_formatter.hpp"
+
 #include <string>
-#include <stdexcept>
+#include <utility>
 
 
 xml_formatter::xml_formatter(std::unique_ptr<xml_writer> w) : writer(std::move(w)) {}

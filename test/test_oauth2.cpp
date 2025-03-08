@@ -7,7 +7,6 @@
  * For a full list of authors see the git log.
  */
 
-#include <stdexcept>
 #include <optional>
 #include <string>
 

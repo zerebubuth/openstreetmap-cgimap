@@ -9,9 +9,9 @@
 
 #include "cgimap/backend/apidb/readonly_pgsql_selection.hpp"
 #include "cgimap/backend/apidb/common_pgsql_selection.hpp"
-#include "cgimap/backend/apidb/apidb.hpp"
 #include "cgimap/backend/apidb/pqxx_string_traits.hpp"
 #include "cgimap/backend/apidb/utils.hpp"
+#include "cgimap/http.hpp"
 #include "cgimap/logger.hpp"
 #include "cgimap/options.hpp"
 #include "cgimap/backend/apidb/quad_tile.hpp"
@@ -19,7 +19,6 @@
 #include <functional>
 #include <set>
 #include <sstream>
-#include <list>
 #include <vector>
 
 namespace po = boost::program_options;

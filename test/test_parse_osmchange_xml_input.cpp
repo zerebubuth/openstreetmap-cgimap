@@ -11,13 +11,11 @@
 #include "cgimap/options.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_xml_input_format.hpp"
 #include "cgimap/api06/changeset_upload/parser_callback.hpp"
-#include "cgimap/util.hpp"
 #include "cgimap/http.hpp"
 
 #include <iostream>
 #include <memory>
 #include <sstream>
-#include <stdexcept>
 
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>

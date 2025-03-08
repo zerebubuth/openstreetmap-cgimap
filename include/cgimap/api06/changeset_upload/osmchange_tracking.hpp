@@ -10,8 +10,6 @@
 #ifndef OSMCHANGE_TRACKING_HPP
 #define OSMCHANGE_TRACKING_HPP
 
-#include <map>
-#include <string>
 #include <vector>
 
 #include "cgimap/types.hpp"

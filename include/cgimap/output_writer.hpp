@@ -10,7 +10,6 @@
 #ifndef OUTPUT_WRITER_HPP
 #define OUTPUT_WRITER_HPP
 
-#include <memory>
 #include <string>
 #include <stdexcept>
 

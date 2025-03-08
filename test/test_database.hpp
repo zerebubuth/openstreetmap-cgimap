@@ -12,7 +12,7 @@
 
 
 #include <filesystem>
-#include <stdexcept>
+#include <exception>
 #include <string>
 
 #include <fmt/core.h>

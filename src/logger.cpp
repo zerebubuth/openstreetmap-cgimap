@@ -7,7 +7,6 @@
  * For a full list of authors see the git log.
  */
 
-#include <chrono>
 #include <ctime>
 #include <fstream>
 #include <iomanip>

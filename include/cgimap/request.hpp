@@ -12,10 +12,9 @@
 
 #include "cgimap/http.hpp"
 
-#include <algorithm>
 #include <chrono>
 #include <string>
-#include <vector>
+#include <string_view>
 
 
 // forward declaration of output_buffer, which is only needed here by

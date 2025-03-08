@@ -13,9 +13,12 @@
 #include "cgimap/api06/id_version.hpp"
 
 #include <map>
-#include <sstream>
+#include <istream>
+#include <ostream>
+#include <ios>
 #include <string_view>
 #include <unordered_set>
+#include <optional>
 
 #include <fmt/core.h>
 #include <libxml/parser.h>

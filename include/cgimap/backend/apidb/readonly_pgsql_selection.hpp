@@ -14,11 +14,12 @@
 #include "cgimap/backend/apidb/changeset.hpp"
 #include "cgimap/backend/apidb/transaction_manager.hpp"
 
-#include <pqxx/pqxx>
-#include <boost/program_options.hpp>
 #include <chrono>
 #include <memory>
 #include <set>
+
+#include <pqxx/pqxx>
+#include <boost/program_options.hpp>
 
 /**
  * a selection which operates against a readonly (e.g: replicating

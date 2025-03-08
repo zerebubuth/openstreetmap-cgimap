@@ -14,6 +14,7 @@
 
 #include <chrono>
 
+class data_selection;
 
 class osm_changeset_responder : public osm_responder {
 public:

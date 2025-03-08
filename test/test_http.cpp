@@ -11,9 +11,6 @@
 #include "cgimap/http.hpp"
 #include "cgimap/choose_formatter.hpp"
 
-#include <stdexcept>
-#include <iostream>
-#include <sstream>
 
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
