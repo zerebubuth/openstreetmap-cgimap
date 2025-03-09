@@ -29,24 +29,6 @@ using api06::id_version;
 
 namespace {
 
-// needed to get boost::lexical_cast<bool>(string) to work.
-// see:
-// http://stackoverflow.com/questions/4452136/how-do-i-use-boostlexical-cast-and-stdboolalpha-i-e-boostlexical-cast-b
-struct bool_alpha {
-  bool data;
-  bool_alpha() = default;
-  explicit bool_alpha(bool data) : data(data) {}
-  operator bool() const { return data; }
-  friend std::ostream &operator<<(std::ostream &out, bool_alpha b) {
-    out << std::boolalpha << b.data;
-    return out;
-  }
-  friend std::istream &operator>>(std::istream &in, bool_alpha &b) {
-    in >> std::boolalpha >> b.data;
-    return in;
-  }
-};
-
 struct node {
   element_info m_info;
   double m_lon;
@@ -82,10 +64,17 @@ struct database {
 template <typename T>
 std::optional<T> opt_attribute(std::string_view name, const xmlChar **attributes) {
   while (*attributes != nullptr) {
-    auto* name_attr = (const char *)(*attributes++);
-    std::string_view attr(name_attr);
-    if (attr == name) {
-      return boost::lexical_cast<T>((const char *)(*attributes));
+    if (std::string_view(reinterpret_cast<const char*>(*attributes++)) == name) {
+      std::string_view val(reinterpret_cast<const char*>(*attributes));
+      if constexpr (std::is_same_v<T, bool>) {
+        return {val == "true"};
+      } else if constexpr (std::is_integral_v<T>) {
+        return {std::stol(reinterpret_cast<const char*>(*attributes))};
+      } else if constexpr (std::is_floating_point_v<T>) {
+        return {std::stod(reinterpret_cast<const char*>(*attributes))};
+      } else {
+        return {std::string(val)};
+      }
     }
     ++attributes;
   }
@@ -109,7 +98,7 @@ void parse_info(element_info &info, const xmlChar **attributes) {
   info.timestamp = get_attribute<std::string>("timestamp", attributes);
   info.uid = opt_attribute<osm_user_id_t>("uid", attributes);
   info.display_name = opt_attribute<std::string>("user", attributes);
-  info.visible = get_attribute<bool_alpha>("visible", attributes);
+  info.visible = get_attribute<bool>("visible", attributes);
   info.redaction = opt_attribute<osm_redaction_id_t>("redaction", attributes);
 }
 
