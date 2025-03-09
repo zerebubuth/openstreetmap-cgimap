@@ -4,6 +4,10 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -qq && \
     apt-get install -y gcc g++ make cmake cmake-curses-gui gdb less ssh \
+       gnupg2 ca-certificates software-properties-common \
+       build-essential wget git nano jq valgrind linux-perf \
+       gcovr lcov strace ltrace rsync zip sudo \
+       tar curl unzip pkg-config bash-completion aria2 \
        libfcgi-dev libxml2-dev libmemcached-dev libbrotli-dev \
        libboost-program-options-dev libcrypto++-dev libyajl-dev \
        libpqxx-dev zlib1g-dev libfmt-dev \
