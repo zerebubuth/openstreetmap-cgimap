@@ -12,6 +12,7 @@ if(BUILD_TESTING)
         .)
 
     target_sources(cgimap_staticxml PRIVATE
+        xmlparser.cpp
         staticxml.cpp)
 
     target_link_libraries(cgimap_staticxml
