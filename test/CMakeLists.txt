@@ -111,6 +111,22 @@ if(BUILD_TESTING)
         COMMAND test_utils)
 
 
+    ####################
+    # test_parse_options
+    ####################
+    add_executable(test_parse_options
+        test_parse_options.cpp)
+
+    target_link_libraries(test_parse_options
+        cgimap_common_compiler_options
+        cgimap_core
+        Boost::program_options
+        PQXX::PQXX
+        catch2)
+
+    add_test(NAME test_parse_options
+        COMMAND test_parse_options)
+
     #################
     # test_parse_time
     #################
