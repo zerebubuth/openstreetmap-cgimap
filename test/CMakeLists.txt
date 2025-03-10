@@ -223,6 +223,27 @@ if(BUILD_TESTING)
             COMMAND pg_virtualenv "$<TARGET_FILE:test_apidb_backend_historic>" --db-schema "${CMAKE_CURRENT_SOURCE_DIR}/structure.sql")
 
 
+        ##########################
+        # test_apidb_backend_roles
+        ##########################
+        add_executable(test_apidb_backend_roles
+            test_apidb_backend_roles.cpp
+            test_formatter.cpp
+            test_database.cpp
+            test_request.cpp)
+
+        target_link_libraries(test_apidb_backend_roles
+            cgimap_common_compiler_options
+            cgimap_core
+            cgimap_apidb
+            cgimap_staticxml
+            Boost::program_options
+            catch2)
+
+        add_test(NAME test_apidb_backend_roles
+            COMMAND pg_virtualenv "$<TARGET_FILE:test_apidb_backend_roles>" --db-schema "${CMAKE_CURRENT_SOURCE_DIR}/structure.sql")
+
+
         ###############################
         # test_apidb_backend_changesets
         ###############################
@@ -301,6 +322,7 @@ if(BUILD_TESTING)
                              test_apidb_backend_historic
                              test_apidb_backend_changesets
                              test_apidb_backend_changeset_downloads
-                             test_apidb_backend_changeset_uploads)
+                             test_apidb_backend_changeset_uploads
+                             test_apidb_backend_roles)
 
 endif()
