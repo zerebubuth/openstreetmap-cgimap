@@ -224,14 +224,14 @@ struct xml_parser {
 };
 
 xmlSAXHandler create_xml_sax_handler() {
-  return xmlSAXHandler{
-    .startElement = &xml_parser::start_element,
-    .endElement = &xml_parser::end_element,
-    .characters = &xml_parser::characters,
-    .warning = &xml_parser::warning,
-    .error = &xml_parser::error,
-    .initialized = XML_SAX2_MAGIC
-  };
+  xmlSAXHandler handler = {};
+  handler.startElement = &xml_parser::start_element;
+  handler.endElement = &xml_parser::end_element;
+  handler.characters = &xml_parser::characters;
+  handler.warning = &xml_parser::warning;
+  handler.error = &xml_parser::error;
+  handler.initialized = XML_SAX2_MAGIC;
+  return handler;
 }
 
 std::unique_ptr<database> parse_xml(const char *filename) {
