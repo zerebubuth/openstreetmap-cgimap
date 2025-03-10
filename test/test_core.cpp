@@ -24,120 +24,103 @@
 #include "test_core_helper.hpp"
 #include "test_request.hpp"
 
+#define CATCH_CONFIG_RUNNER
+#include <catch2/catch.hpp>
+
 namespace fs = std::filesystem;
 
-/**
- * Main test body:
- *  - reads the test case,
- *  - constructs a matching mock request,
- *  - executes it through the standard process_request() chain,
- *  - compares the result to what's expected in the test case.
- */
-void run_test(fs::path test_case, rate_limiter &limiter,
-              const std::string &generator, const routes &route,
-              data_selection::factory& factory) {
-  try {
-    test_request req;
+fs::path test_directory{};
 
-    // set up request headers from test case
-    std::ifstream in(test_case, std::ios::binary);
-    setup_request_headers(req, in);
+std::vector<fs::path> get_test_cases() {
+  std::vector<fs::path> test_cases;
 
-    // execute the request
-    process_request(req, limiter, generator, route, factory, nullptr);
-
-    // compare the result to what we're expecting
-    try {
-      check_response(in, req.buffer());
-
-    } catch (const std::exception &e) {
-      if (getenv("VERBOSE") != nullptr) {
-        std::cout << "ERROR: " << e.what() << "\n\n"
-                  << "Response was:\n----------------------\n"
-                  << req.buffer().str() << "\n";
-      }
-      throw;
+  for (const auto& entry : fs::directory_iterator(test_directory)) {
+    fs::path filename = entry.path();
+    if (filename.extension() == ".case") {
+      test_cases.push_back(filename);
     }
-
-    // output test case name if verbose output is requested
-    if (getenv("VERBOSE") != nullptr) {
-      std::cout << "PASS: " << test_case << "\n";
-    }
-
-  } catch (const std::exception &ex) {
-    throw std::runtime_error(
-        fmt::format("{}, in {} test.", ex.what(), test_case.string()));
   }
+  return test_cases;
 }
 
-int main(int argc, char *argv[]) {
-  if (argc != 2) {
-    std::cerr << "Usage: " << argv[0] << " <test-directory>." << std::endl;
-    return 99;
-  }
-
-  fs::path test_directory = argv[1];
-  fs::path data_file = test_directory / "data.osm";
-  fs::path oauth2_file = test_directory / "oauth2.json";
-  fs::path roles_file = test_directory / "roles.json";
-  std::vector<fs::path> test_cases;
+TEST_CASE("Execute core test cases using external test data") {
 
   user_roles_t user_roles;
   oauth2_tokens oauth2_tokens;
+  null_rate_limiter limiter;
+  routes route;
+  po::variables_map vm;
 
-  try {
+  SECTION("Execute test cases") {
+    // Note: Current Catch2 version does not support test cases with dynamic names
+
+    if (test_directory.empty()) {
+      FAIL("No test directory specified. Missing --test-directory command line option.");
+    }
+
+    fs::path data_file = test_directory / "data.osm";
+    fs::path oauth2_file = test_directory / "oauth2.json";
+    fs::path roles_file = test_directory / "roles.json";
+
     if (!fs::is_directory(test_directory)) {
-      std::cerr << "Test directory " << test_directory
-                << " should be a directory, but isn't.";
-      return 99;
+      FAIL("Test directory does not exist.");
     }
+
     if (!fs::is_regular_file(data_file)) {
-      std::cerr << "Test directory should contain data file at " << data_file
-                << ", but does not.";
-      return 99;
-    }
-    for (const auto& entry : fs::directory_iterator(test_directory)) {
-      fs::path filename = entry.path();
-      std::string ext = filename.extension();
-      if (ext == ".case") {
-        test_cases.push_back(filename);
-      }
+      FAIL("data.osm file does not exist in given test directory.");
     }
 
-    user_roles = get_user_roles(roles_file);
-    oauth2_tokens = get_oauth2_tokens(oauth2_file);
+    REQUIRE_NOTHROW(user_roles = get_user_roles(roles_file));
+    REQUIRE_NOTHROW(oauth2_tokens = get_oauth2_tokens(oauth2_file));
 
-  } catch (const std::exception &e) {
-    std::cerr << "EXCEPTION: " << e.what() << std::endl;
-    return 99;
+    auto test_cases = get_test_cases();
+    if(test_cases.empty()) {
+      FAIL("No test cases found in the test directory.");
+    }
 
-  } catch (...) {
-    std::cerr << "UNKNOWN EXCEPTION" << std::endl;
-    return 99;
-  }
-
-  try {
-    po::variables_map vm;
+    // Prepare the backend with the test data
     vm.try_emplace("file", po::variable_value(data_file.native(), false));
 
     auto data_backend = make_staticxml_backend(user_roles, oauth2_tokens);
     auto factory = data_backend->create(vm);
-    null_rate_limiter limiter;
-    routes route;
 
+    // Execute actual test cases
     for (fs::path test_case : test_cases) {
       std::string generator = fmt::format(PACKAGE_STRING " (test {})", test_case.string());
-      run_test(test_case, limiter, generator, route, *factory);
+      INFO(fmt::format("Running test case {}", test_case.c_str()));
+
+      test_request req;
+
+      // set up request headers from test case
+      std::ifstream in(test_case, std::ios::binary);
+      setup_request_headers(req, in);
+
+      // execute the request
+      REQUIRE_NOTHROW(process_request(req, limiter, generator, route, *factory, nullptr));
+
+      CAPTURE(req.body().str());
+      REQUIRE_NOTHROW(check_response(in, req.buffer()));
     }
-
-  } catch (const std::exception &e) {
-    std::cerr << "EXCEPTION: " << e.what() << std::endl;
-    return 1;
-
-  } catch (...) {
-    std::cerr << "UNKNOWN EXCEPTION" << std::endl;
-    return 1;
   }
+}
 
-  return 0;
+
+int main(int argc, char *argv[]) {
+  Catch::Session session;
+
+  using namespace Catch::clara;
+  auto cli =
+      session.cli()
+      | Opt(test_directory,
+            "test-directory")
+            ["--test-directory"]
+      ("test case directory");
+
+  session.cli(cli);
+
+  int returnCode = session.applyCommandLine(argc, argv);
+  if (returnCode != 0)
+    return returnCode;
+
+  return session.run();
 }

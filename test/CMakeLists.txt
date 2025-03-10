@@ -32,6 +32,7 @@ if(BUILD_TESTING)
         cgimap_common_compiler_options
         cgimap_core
         cgimap_staticxml
+        catch2
         Boost::program_options
         PQXX::PQXX)
 
@@ -39,7 +40,7 @@ if(BUILD_TESTING)
     file(GLOB test_core_test_dirs LIST_DIRECTORIES true "${CMAKE_CURRENT_SOURCE_DIR}/*.testcore")
     foreach (test ${test_core_test_dirs})
     get_filename_component (TName "${test}" NAME_WE)
-    add_test(NAME "${TName}.testcore" COMMAND test_core "${test}")
+    add_test(NAME "${TName}.testcore" COMMAND test_core --test-directory "${test}")
     endforeach ()
 
 
