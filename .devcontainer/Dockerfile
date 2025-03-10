@@ -23,6 +23,8 @@ ARG REMOTE_GID
 RUN <<EOF
    addgroup --gid ${REMOTE_GID} ${REMOTE_USER}
    adduser --disabled-password --uid ${REMOTE_UID} --gid ${REMOTE_GID} ${REMOTE_USER}
+   echo ${REMOTE_USER} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${REMOTE_USER}
+   chmod 0440 /etc/sudoers.d/${REMOTE_USER}
 EOF
 
 ENV HOME /home/${REMOTE_USER}

@@ -11,21 +11,10 @@
 #define STATICXML_BACKEND_HPP
 
 #include "cgimap/backend.hpp"
+#include "test_types.hpp"
 
 #include <map>
 #include <memory>
-
-struct oauth2_token_detail_t
-{
-  bool expired;
-  bool revoked;
-  bool api_write;
-  osm_user_id_t user_id;
-};
-
-using oauth2_tokens = std::map<std::string, oauth2_token_detail_t>;
-
-using user_roles_t = std::map<osm_user_id_t, std::set<osm_user_role_t> >;
 
 std::unique_ptr<backend> make_staticxml_backend(const user_roles_t& = {}, const oauth2_tokens& = {});
 

@@ -12,6 +12,7 @@ if(BUILD_TESTING)
         .)
 
     target_sources(cgimap_staticxml PRIVATE
+        xmlparser.cpp
         staticxml.cpp)
 
     target_link_libraries(cgimap_staticxml
@@ -24,12 +25,14 @@ if(BUILD_TESTING)
     ###########
     add_executable(test_core
         test_core.cpp
+        test_core_helper.cpp
         test_request.cpp)
 
     target_link_libraries(test_core
         cgimap_common_compiler_options
         cgimap_core
         cgimap_staticxml
+        catch2
         Boost::program_options
         PQXX::PQXX)
 
@@ -37,7 +40,7 @@ if(BUILD_TESTING)
     file(GLOB test_core_test_dirs LIST_DIRECTORIES true "${CMAKE_CURRENT_SOURCE_DIR}/*.testcore")
     foreach (test ${test_core_test_dirs})
     get_filename_component (TName "${test}" NAME_WE)
-    add_test(NAME "${TName}.testcore" COMMAND test_core "${test}")
+    add_test(NAME "${TName}.testcore" COMMAND test_core --test-directory "${test}")
     endforeach ()
 
 
