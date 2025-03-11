@@ -4,7 +4,7 @@ Request-URI: /api/0.6/node/4.json
 HTTP-Accept: */*
 ---
 Content-Type: application/json; charset=utf-8
-!Content-Disposition: 
+!Content-Disposition:
 Status: 200 OK
 ---
 { "version": "0.6",
@@ -20,8 +20,8 @@ Status: 200 OK
 	"timestamp": "2013-10-20T00:00:00Z",
 	"version": 1,
 	"changeset": 4,
-	"user": "foo",
-	"uid": 1
+	"user": "user_4",
+	"uid": 4
       }
   ]
 }
