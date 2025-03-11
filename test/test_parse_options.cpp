@@ -36,6 +36,100 @@ TEST_CASE("Invalid max-payload", "[options]") {
     REQUIRE_THROWS_AS(check_options(vm), std::invalid_argument);
 }
 
+TEST_CASE("Invalid changeset-timeout-idle", "[options]") {
+  po::variables_map vm;
+  vm.emplace("changeset-timeout-idle",  po::variable_value(std::string("10 years"), false));
+  REQUIRE_THROWS_AS(check_options(vm), std::invalid_argument);
+}
+
+TEST_CASE("Invalid map-nodes", "[options]") {
+  po::variables_map vm;
+  vm.emplace("map-nodes", po::variable_value(-1000, false));
+  REQUIRE_THROWS_AS(check_options(vm), std::invalid_argument);
+}
+
+TEST_CASE("Invalid map-area", "[options]") {
+  po::variables_map vm;
+  vm.emplace("map-area", po::variable_value(-0.5, false));
+  REQUIRE_THROWS_AS(check_options(vm), std::invalid_argument);
+}
+
+TEST_CASE("Invalid changeset-timeout-open", "[options]") {
+  po::variables_map vm;
+  vm.emplace("changeset-timeout-open", po::variable_value(std::string("invalid"), false));
+  REQUIRE_THROWS_AS(check_options(vm), std::invalid_argument);
+}
+
+TEST_CASE("Invalid max-way-nodes", "[options]") {
+  po::variables_map vm;
+  vm.emplace("max-way-nodes", po::variable_value(-200, false));
+  REQUIRE_THROWS_AS(check_options(vm), std::invalid_argument);
+}
+
+TEST_CASE("Invalid max-changeset-elements", "[options]") {
+  po::variables_map vm;
+  vm.emplace("max-changeset-elements", po::variable_value(-1000, false));
+  REQUIRE_THROWS_AS(check_options(vm), std::invalid_argument);
+}
+
+TEST_CASE("Invalid scale", "[options]") {
+  po::variables_map vm;
+  vm.emplace("scale", po::variable_value(0L, false));
+  REQUIRE_THROWS_AS(check_options(vm), std::invalid_argument);
+}
+
+TEST_CASE("Invalid ratelimit", "[options]") {
+  po::variables_map vm;
+  vm.emplace("ratelimit", po::variable_value(0L, false));
+  REQUIRE_THROWS_AS(check_options(vm), std::invalid_argument);
+
+  vm.clear();
+  vm.emplace("ratelimit", po::variable_value(2000000000L, false));
+  REQUIRE_THROWS_AS(check_options(vm), std::invalid_argument);
+}
+
+TEST_CASE("Invalid moderator-ratelimit", "[options]") {
+  po::variables_map vm;
+  vm.emplace("moderator-ratelimit", po::variable_value(0L, false));
+  REQUIRE_THROWS_AS(check_options(vm), std::invalid_argument);
+
+  vm.clear();
+  vm.emplace("moderator-ratelimit", po::variable_value(2000000000L, false));
+  REQUIRE_THROWS_AS(check_options(vm), std::invalid_argument);
+}
+
+TEST_CASE("Invalid max-relation-members", "[options]") {
+  po::variables_map vm;
+  vm.emplace("max-relation-members", po::variable_value(-50, false));
+  REQUIRE_THROWS_AS(check_options(vm), std::invalid_argument);
+}
+
+TEST_CASE("Invalid max-element-tags", "[options]") {
+  po::variables_map vm;
+  vm.emplace("max-element-tags", po::variable_value(-10, false));
+  REQUIRE_THROWS_AS(check_options(vm), std::invalid_argument);
+}
+
+TEST_CASE("Invalid maxdebt", "[options]") {
+  po::variables_map vm;
+  vm.emplace("maxdebt", po::variable_value(-500L, false));
+  REQUIRE_THROWS_AS(check_options(vm), std::invalid_argument);
+
+  vm.clear();
+  vm.emplace("maxdebt", po::variable_value(2000000000L, false));
+  REQUIRE_THROWS_AS(check_options(vm), std::invalid_argument);
+}
+
+TEST_CASE("Invalid moderator-maxdebt", "[options]") {
+  po::variables_map vm;
+  vm.emplace("moderator-maxdebt", po::variable_value(-1000L, false));
+  REQUIRE_THROWS_AS(check_options(vm), std::invalid_argument);
+
+  vm.clear();
+  vm.emplace("moderator-maxdebt", po::variable_value(2000000000L, false));
+  REQUIRE_THROWS_AS(check_options(vm), std::invalid_argument);
+}
+
 TEST_CASE("Set all supported options" "[options]") {
   po::variables_map vm;
   vm.emplace("max-payload", po::variable_value(40000L, false));
@@ -72,5 +166,5 @@ TEST_CASE("Set all supported options" "[options]") {
   REQUIRE( global_settings::get_ratelimiter_ratelimit(true) == 10000000 );
   REQUIRE( global_settings::get_ratelimiter_maxdebt(true) == 1000l * 1024 * 1024 );
   REQUIRE( global_settings::get_ratelimiter_upload() == true );
-  REQUIRE( global_settings::get_bbox_size_limiter_upload() == false );
+  REQUIRE( global_settings::get_bbox_size_limiter_upload() == true );
 }

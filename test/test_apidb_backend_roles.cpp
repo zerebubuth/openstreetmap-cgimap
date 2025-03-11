@@ -16,7 +16,7 @@
 
 #include "test_database.hpp"
 
-#define CATCH_CONFIG_MAIN
+#define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
 
 using roles_t = std::set<osm_user_role_t>;
@@ -24,8 +24,14 @@ using roles_t = std::set<osm_user_role_t>;
 
 class DatabaseTestsFixture
 {
+public:
+  static void setTestDatabaseSchema(const std::filesystem::path& db_sql) {
+    test_db_sql = db_sql;
+  }
+
 protected:
   DatabaseTestsFixture() = default;
+  inline static std::filesystem::path test_db_sql{"test/structure.sql"};
   static test_database tdb;
 };
 
@@ -37,7 +43,7 @@ struct CGImapListener : Catch::TestEventListenerBase, DatabaseTestsFixture {
 
     void testRunStarting( Catch::TestRunInfo const& testRunInfo ) override {
       // load database schema when starting up tests
-      tdb.setup();
+      tdb.setup(test_db_sql);
     }
 
     void testCaseStarting( Catch::TestCaseInfo const& testInfo ) override {
@@ -50,45 +56,6 @@ struct CGImapListener : Catch::TestEventListenerBase, DatabaseTestsFixture {
 };
 
 CATCH_REGISTER_LISTENER( CGImapListener )
-
-std::ostream &operator<<(
-  std::ostream &out, const std::set<osm_user_role_t> &roles) {
-
-  out << "{";
-  bool first = true;
-  for (osm_user_role_t r : roles) {
-    if (first) { first = false; } else { out << ", "; }
-    if (r == osm_user_role_t::moderator) {
-      out << "moderator";
-    } else if (r == osm_user_role_t::administrator) {
-      out << "administrator";
-    } else if (r == osm_user_role_t::importer) {
-      out << "importer";
-    }
-  }
-  out << "}";
-  return out;
-}
-
-template <> struct fmt::formatter<roles_t> {
-  template <typename FormatContext>
-  auto format(const roles_t& r, FormatContext& ctx) -> decltype(ctx.out()) {
-    // ctx.out() is an output iterator to write to.
-    std::ostringstream ostr;
-    ostr << r;
-    return format_to(ctx.out(), "{}", ostr.str());
-  }
-  constexpr auto parse(const format_parse_context& ctx) const { return ctx.begin(); }
-};
-
-
-
-
-template<typename T>
-std::ostream& operator<<(std::ostream& os, std::optional<T> const& opt)
-{
-  return opt ? os << opt.value() : os;
-}
 
 
 TEST_CASE_METHOD(DatabaseTestsFixture, "test_get_roles_for_user", "[roles][db]" ) {
@@ -109,19 +76,44 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_get_roles_for_user", "[roles][db]" 
       "VALUES "
       "  (1, 1, 'administrator', 1), "
       "  (2, 1, 'moderator', 1), "
-      "  (3, 2, 'moderator', 1);"
-      "");
+      "  (3, 2, 'moderator', 1), "
+      "  (4, 2, 'importer', 1); ");
 
   }
+
+  using enum osm_user_role_t;
 
   // user 3 has no roles -> should return empty set
   REQUIRE(roles_t() == sel->get_roles_for_user(3));
 
-  // user 2 is a moderator
-  REQUIRE(roles_t({osm_user_role_t::moderator}) == sel->get_roles_for_user(2));
+  // user 2 is a moderator and importer
+  REQUIRE(roles_t({moderator, importer}) == sel->get_roles_for_user(2));
 
   // user 1 is an administrator and a moderator
-  REQUIRE(roles_t({osm_user_role_t::moderator, osm_user_role_t::administrator}) == sel->get_roles_for_user(1));
+  REQUIRE(roles_t({moderator, administrator}) == sel->get_roles_for_user(1));
 }
 
+int main(int argc, char *argv[]) {
+  Catch::Session session;
 
+  std::filesystem::path test_db_sql{ "test/structure.sql" };
+
+  using namespace Catch::clara;
+  auto cli =
+      session.cli()
+      | Opt(test_db_sql,
+            "db-schema")    // bind variable to a new option, with a hint string
+            ["--db-schema"] // the option names it will respond to
+      ("test database schema file"); // description string for the help output
+
+  session.cli(cli);
+
+  int returnCode = session.applyCommandLine(argc, argv);
+  if (returnCode != 0)
+    return returnCode;
+
+  if (!test_db_sql.empty())
+    DatabaseTestsFixture::setTestDatabaseSchema(test_db_sql);
+
+  return session.run();
+}

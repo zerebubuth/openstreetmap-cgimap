@@ -12,6 +12,7 @@ if(BUILD_TESTING)
         .)
 
     target_sources(cgimap_staticxml PRIVATE
+        xmlparser.cpp
         staticxml.cpp)
 
     target_link_libraries(cgimap_staticxml
@@ -24,12 +25,14 @@ if(BUILD_TESTING)
     ###########
     add_executable(test_core
         test_core.cpp
+        test_core_helper.cpp
         test_request.cpp)
 
     target_link_libraries(test_core
         cgimap_common_compiler_options
         cgimap_core
         cgimap_staticxml
+        catch2
         Boost::program_options
         PQXX::PQXX)
 
@@ -37,7 +40,7 @@ if(BUILD_TESTING)
     file(GLOB test_core_test_dirs LIST_DIRECTORIES true "${CMAKE_CURRENT_SOURCE_DIR}/*.testcore")
     foreach (test ${test_core_test_dirs})
     get_filename_component (TName "${test}" NAME_WE)
-    add_test(NAME "${TName}.testcore" COMMAND test_core "${test}")
+    add_test(NAME "${TName}.testcore" COMMAND test_core --test-directory "${test}")
     endforeach ()
 
 
@@ -107,6 +110,22 @@ if(BUILD_TESTING)
     add_test(NAME test_utils
         COMMAND test_utils)
 
+
+    ####################
+    # test_parse_options
+    ####################
+    add_executable(test_parse_options
+        test_parse_options.cpp)
+
+    target_link_libraries(test_parse_options
+        cgimap_common_compiler_options
+        cgimap_core
+        Boost::program_options
+        PQXX::PQXX
+        catch2)
+
+    add_test(NAME test_parse_options
+        COMMAND test_parse_options)
 
     #################
     # test_parse_time
@@ -220,6 +239,27 @@ if(BUILD_TESTING)
             COMMAND pg_virtualenv "$<TARGET_FILE:test_apidb_backend_historic>" --db-schema "${CMAKE_CURRENT_SOURCE_DIR}/structure.sql")
 
 
+        ##########################
+        # test_apidb_backend_roles
+        ##########################
+        add_executable(test_apidb_backend_roles
+            test_apidb_backend_roles.cpp
+            test_formatter.cpp
+            test_database.cpp
+            test_request.cpp)
+
+        target_link_libraries(test_apidb_backend_roles
+            cgimap_common_compiler_options
+            cgimap_core
+            cgimap_apidb
+            cgimap_staticxml
+            Boost::program_options
+            catch2)
+
+        add_test(NAME test_apidb_backend_roles
+            COMMAND pg_virtualenv "$<TARGET_FILE:test_apidb_backend_roles>" --db-schema "${CMAKE_CURRENT_SOURCE_DIR}/structure.sql")
+
+
         ###############################
         # test_apidb_backend_changesets
         ###############################
@@ -298,6 +338,7 @@ if(BUILD_TESTING)
                              test_apidb_backend_historic
                              test_apidb_backend_changesets
                              test_apidb_backend_changeset_downloads
-                             test_apidb_backend_changeset_uploads)
+                             test_apidb_backend_changeset_uploads
+                             test_apidb_backend_roles)
 
 endif()
