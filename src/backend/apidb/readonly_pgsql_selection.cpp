@@ -111,7 +111,9 @@ void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
   m.prepare("extract_nodes",
      R"(SELECT n.id, n.latitude, n.longitude, n.visible,
          to_char(n.timestamp,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS timestamp,
-         n.changeset_id, n.version, array_agg(t.k) as tag_k, array_agg(t.v) as tag_v
+         n.changeset_id, n.version,
+         array_agg(t.k ORDER BY k) as tag_k,
+         array_agg(t.v ORDER BY k) as tag_v
        FROM current_nodes n
          LEFT JOIN current_node_tags t ON n.id=t.node_id
        WHERE n.id = ANY($1)
@@ -140,7 +142,9 @@ void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
      )
      SELECT n.node_id AS id, n.latitude, n.longitude, n.visible,
          to_char(n.timestamp,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS timestamp,
-         n.changeset_id, n.version, array_agg(t.k) as tag_k, array_agg(t.v) as tag_v
+         n.changeset_id, n.version,
+         array_agg(t.k ORDER BY k) as tag_k,
+         array_agg(t.v ORDER BY k) as tag_v
        FROM nodes n
          INNER JOIN wanted x ON n.node_id = x.id AND n.version = x.version
          LEFT JOIN node_tags t ON n.node_id = t.node_id AND n.version = t.version
@@ -176,8 +180,10 @@ void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
          wn.node_ids as node_ids
        FROM current_ways w
          LEFT JOIN LATERAL
-           (SELECT array_agg(k) as keys, array_agg(v) as values
-            FROM current_way_tags WHERE w.id=way_id) t ON true
+           (SELECT array_agg(k ORDER BY k) as keys,
+                   array_agg(v ORDER BY k) as values
+            FROM current_way_tags
+            WHERE w.id=way_id) t ON true
          LEFT JOIN LATERAL
            (SELECT array_agg(node_id) as node_ids
             FROM
@@ -214,8 +220,10 @@ void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
        FROM ways w
          INNER JOIN wanted x ON w.way_id = x.id AND w.version = x.version
          LEFT JOIN LATERAL
-           (SELECT array_agg(k) as keys, array_agg(v) as values
-            FROM way_tags WHERE w.way_id=way_id AND w.version=version) t ON true
+           (SELECT array_agg(k ORDER BY k) as keys,
+                   array_agg(v ORDER BY k) as values
+            FROM way_tags
+            WHERE w.way_id=way_id AND w.version=version) t ON true
          LEFT JOIN LATERAL
            (SELECT array_agg(node_id) as node_ids
             FROM
@@ -254,8 +262,10 @@ void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
          rm.types as member_types, rm.ids as member_ids, rm.roles as member_roles
        FROM current_relations r
          LEFT JOIN LATERAL
-           (SELECT array_agg(k) as keys, array_agg(v) as values
-            FROM current_relation_tags WHERE r.id=relation_id) t ON true
+           (SELECT array_agg(k ORDER BY k) as keys,
+                   array_agg(v ORDER BY k) as values
+            FROM current_relation_tags
+            WHERE r.id=relation_id) t ON true
          LEFT JOIN LATERAL
            (SELECT array_agg(member_type) as types,
             array_agg(member_role) as roles, array_agg(member_id) as ids
@@ -291,8 +301,10 @@ void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
        FROM relations r
          INNER JOIN wanted x ON r.relation_id = x.id AND r.version = x.version
          LEFT JOIN LATERAL
-           (SELECT array_agg(k) as keys, array_agg(v) as values
-            FROM relation_tags WHERE r.relation_id=relation_id AND r.version=version) t ON true
+           (SELECT array_agg(k ORDER BY k) as keys,
+                   array_agg(v ORDER BY k) as values
+            FROM relation_tags
+            WHERE r.relation_id=relation_id AND r.version=version) t ON true
          LEFT JOIN LATERAL
            (SELECT array_agg(member_type) as types,
             array_agg(member_role) as roles, array_agg(member_id) as ids
@@ -340,8 +352,10 @@ void readonly_pgsql_selection::write_changesets(output_formatter &formatter,
         cc.created_at as comment_created_at
       FROM changesets c
        LEFT JOIN LATERAL
-           (SELECT array_agg(k) AS keys, array_agg(v) AS values
-           FROM changeset_tags WHERE c.id=changeset_id ) t ON true
+           (SELECT array_agg(k ORDER BY k) AS keys,
+                   array_agg(v ORDER BY k) AS values
+           FROM changeset_tags
+           WHERE c.id=changeset_id ) t ON true
        LEFT JOIN LATERAL
          (SELECT array_agg(id) as id,
          array_agg(author_id) as author_id,
