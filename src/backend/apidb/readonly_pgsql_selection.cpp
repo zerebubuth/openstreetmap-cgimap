@@ -105,52 +105,63 @@ readonly_pgsql_selection::readonly_pgsql_selection(
 
 void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
 
-  // get all nodes - they already contain their own tags, so
-  // we don't need to do anything else.
+  if (!sel_nodes.empty() && !sel_historic_nodes.empty()) {
+    // both current nodes and historic nodes were selected,
+    // lookup object versions, and handle request via historic nodes
 
-  m.prepare("extract_nodes",
-     R"(SELECT n.id, n.latitude, n.longitude, n.visible,
-         to_char(n.timestamp,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS timestamp,
-         n.changeset_id, n.version,
-         array_agg(t.k ORDER BY k) as tag_k,
-         array_agg(t.v ORDER BY k) as tag_v
-       FROM current_nodes n
-         LEFT JOIN current_node_tags t ON n.id=t.node_id
-       WHERE n.id = ANY($1)
-       GROUP BY n.id ORDER BY n.id)"_M);
+    logger::message("Fetching current_node versions");
 
-  logger::message("Fetching nodes");
-  if (!sel_nodes.empty()) {
-      // lambda function gets notified about each single element, allowing us to
-      // remove all object versions from historic nodes, that are already
-      // contained in current nodes
+    m.prepare("lookup_node_versions",
+        R"(SELECT n.id, n.version
+           FROM current_nodes n
+           WHERE n.id = ANY($1)
+        )"_M);
 
-    auto result = m.exec_prepared("extract_nodes", sel_nodes);
+    auto res = m.exec_prepared("lookup_node_versions", sel_nodes);
 
-    fetch_changesets(extract_changeset_ids(result), cc);
-
-    extract_nodes(result,
-		  formatter,
-		  [&](const element_info& elem)
-                    { sel_historic_nodes.erase(osm_edition_t(elem.id, elem.version)); },
-		  cc);
+    for (const auto & row : res) {
+      sel_historic_nodes.insert({row[0].as<osm_nwr_id_t>(), row[1].as<osm_version_t>()});
+    }
+    sel_nodes.clear();
   }
 
-  m.prepare("extract_historic_nodes",
-     R"(WITH wanted(id, version) AS (
-       SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))
-     )
-     SELECT n.node_id AS id, n.latitude, n.longitude, n.visible,
-         to_char(n.timestamp,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS timestamp,
-         n.changeset_id, n.version,
-         array_agg(t.k ORDER BY k) as tag_k,
-         array_agg(t.v ORDER BY k) as tag_v
-       FROM nodes n
-         INNER JOIN wanted x ON n.node_id = x.id AND n.version = x.version
-         LEFT JOIN node_tags t ON n.node_id = t.node_id AND n.version = t.version
-       GROUP BY n.node_id, n.version ORDER BY n.node_id, n.version)"_M);
+  logger::message("Fetching nodes");
 
-  if (!sel_historic_nodes.empty()) {
+  // get all nodes - they already contain their own tags, so
+  // we don't need to do anything else.
+  if (!sel_nodes.empty()) {
+
+    m.prepare("extract_nodes",
+      R"(SELECT n.id, n.latitude, n.longitude, n.visible,
+          to_char(n.timestamp,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS timestamp,
+          n.changeset_id, n.version,
+          array_agg(t.k ORDER BY k) as tag_k,
+          array_agg(t.v ORDER BY k) as tag_v
+        FROM current_nodes n
+          LEFT JOIN current_node_tags t ON n.id=t.node_id
+        WHERE n.id = ANY($1)
+        GROUP BY n.id ORDER BY n.id)"_M);
+
+    auto result = m.exec_prepared("extract_nodes", sel_nodes);
+    fetch_changesets(extract_changeset_ids(result), cc);
+    extract_nodes(result, formatter, cc);
+  }
+  else if (!sel_historic_nodes.empty()) {
+
+    m.prepare("extract_historic_nodes",
+      R"(WITH wanted(id, version) AS (
+        SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))
+      )
+      SELECT n.node_id AS id, n.latitude, n.longitude, n.visible,
+          to_char(n.timestamp,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS timestamp,
+          n.changeset_id, n.version,
+          array_agg(t.k ORDER BY k) as tag_k,
+          array_agg(t.v ORDER BY k) as tag_v
+        FROM nodes n
+          INNER JOIN wanted x ON n.node_id = x.id AND n.version = x.version
+          LEFT JOIN node_tags t ON n.node_id = t.node_id AND n.version = t.version
+        GROUP BY n.node_id, n.version ORDER BY n.node_id, n.version)"_M);
+
     std::vector<osm_nwr_id_t> ids;
     std::vector<osm_nwr_id_t> versions;
 
@@ -160,79 +171,89 @@ void readonly_pgsql_selection::write_nodes(output_formatter &formatter) {
     }
 
     auto result = m.exec_prepared("extract_historic_nodes", ids, versions);
-
     fetch_changesets(extract_changeset_ids(result), cc);
-
-    extract_nodes(result, formatter, {}, cc);
+    extract_nodes(result, formatter, cc);
   }
 }
 
 void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
 
+  if (!sel_ways.empty() && !sel_historic_ways.empty()) {
+    // both current ways and historic ways were selected,
+    // lookup object versions, and handle request via historic ways
+
+    logger::message("Fetching current_way versions");
+
+    m.prepare("lookup_way_versions",
+        R"(SELECT w.id, w.version
+           FROM current_ways w
+           WHERE w.id = ANY($1)
+        )"_M);
+
+    auto res = m.exec_prepared("lookup_way_versions", sel_ways);
+
+    for (const auto & row : res) {
+      sel_historic_ways.insert({row[0].as<osm_nwr_id_t>(), row[1].as<osm_version_t>()});
+    }
+    sel_ways.clear();
+  }
+
   // grab the ways, way nodes and tags
   // way nodes and tags are on a separate connections so that the
   // entire result set can be streamed from a single query.
 
-  m.prepare("extract_ways",
-     R"(SELECT w.id, w.visible,
-         to_char(w.timestamp,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS timestamp,
-         w.changeset_id, w.version, t.keys as tag_k, t.values as tag_v,
-         wn.node_ids as node_ids
-       FROM current_ways w
-         LEFT JOIN LATERAL
-           (SELECT array_agg(k ORDER BY k) as keys,
-                   array_agg(v ORDER BY k) as values
-            FROM current_way_tags
-            WHERE w.id=way_id) t ON true
-         LEFT JOIN LATERAL
-           (SELECT array_agg(node_id) as node_ids
-            FROM
-              (SELECT node_id FROM current_way_nodes WHERE w.id=way_id
-               ORDER BY sequence_id) x) wn ON true
-       WHERE w.id = ANY($1)
-       ORDER BY w.id)"_M);
-
   logger::message("Fetching ways");
+
   if (!sel_ways.empty()) {
-      // lambda function gets notified about each single element, allowing us to
-    // remove all object versions from historic ways, that are already
-    // contained in current ways
+
+    m.prepare("extract_ways",
+      R"(SELECT w.id, w.visible,
+          to_char(w.timestamp,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS timestamp,
+          w.changeset_id, w.version, t.keys as tag_k, t.values as tag_v,
+          wn.node_ids as node_ids
+        FROM current_ways w
+          LEFT JOIN LATERAL
+            (SELECT array_agg(k ORDER BY k) as keys,
+                    array_agg(v ORDER BY k) as values
+              FROM current_way_tags
+              WHERE w.id=way_id) t ON true
+          LEFT JOIN LATERAL
+            (SELECT array_agg(node_id) as node_ids
+              FROM
+                (SELECT node_id FROM current_way_nodes WHERE w.id=way_id
+                ORDER BY sequence_id) x) wn ON true
+        WHERE w.id = ANY($1)
+        ORDER BY w.id)"_M);
 
     auto result = m.exec_prepared("extract_ways", sel_ways);
-
     fetch_changesets(extract_changeset_ids(result), cc);
-
-    extract_ways(result,
-		 formatter,
-		 [&](const element_info& elem)
-		    { sel_historic_ways.erase(osm_edition_t(elem.id, elem.version)); },
-		 cc);
+    extract_ways(result, formatter, cc);
   }
+  else if (!sel_historic_ways.empty()) {
 
-  m.prepare("extract_historic_ways",
-     R"(WITH wanted(id, version) AS (
-       SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))
-     )
-     SELECT w.way_id AS id, w.visible,
-         to_char(w.timestamp,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS timestamp,
-         w.changeset_id, w.version, t.keys as tag_k, t.values as tag_v,
-         wn.node_ids as node_ids
-       FROM ways w
-         INNER JOIN wanted x ON w.way_id = x.id AND w.version = x.version
-         LEFT JOIN LATERAL
-           (SELECT array_agg(k ORDER BY k) as keys,
-                   array_agg(v ORDER BY k) as values
-            FROM way_tags
-            WHERE w.way_id=way_id AND w.version=version) t ON true
-         LEFT JOIN LATERAL
-           (SELECT array_agg(node_id) as node_ids
-            FROM
-              (SELECT node_id FROM way_nodes
-               WHERE w.way_id=way_id AND w.version=version
-               ORDER BY sequence_id) x) wn ON true
-       ORDER BY w.way_id, w.version)"_M);
+    m.prepare("extract_historic_ways",
+      R"(WITH wanted(id, version) AS (
+        SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))
+      )
+      SELECT w.way_id AS id, w.visible,
+          to_char(w.timestamp,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS timestamp,
+          w.changeset_id, w.version, t.keys as tag_k, t.values as tag_v,
+          wn.node_ids as node_ids
+        FROM ways w
+          INNER JOIN wanted x ON w.way_id = x.id AND w.version = x.version
+          LEFT JOIN LATERAL
+            (SELECT array_agg(k ORDER BY k) as keys,
+                    array_agg(v ORDER BY k) as values
+              FROM way_tags
+              WHERE w.way_id=way_id AND w.version=version) t ON true
+          LEFT JOIN LATERAL
+            (SELECT array_agg(node_id) as node_ids
+              FROM
+                (SELECT node_id FROM way_nodes
+                WHERE w.way_id=way_id AND w.version=version
+                ORDER BY sequence_id) x) wn ON true
+        ORDER BY w.way_id, w.version)"_M);
 
-  if (!sel_historic_ways.empty()) {
     std::vector<osm_nwr_id_t> ids;
     std::vector<osm_nwr_id_t> versions;
     ids.reserve(sel_historic_ways.size());
@@ -244,76 +265,87 @@ void readonly_pgsql_selection::write_ways(output_formatter &formatter) {
     }
 
     auto result = m.exec_prepared("extract_historic_ways", ids, versions);
-
     fetch_changesets(extract_changeset_ids(result), cc);
-
-    extract_ways(result, formatter, {}, cc);
+    extract_ways(result, formatter, cc);
   }
 }
 
 void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
 
+  if (!sel_relations.empty() && !sel_historic_relations.empty()) {
+    // both current relation and historic relation were selected,
+    // lookup object versions, and handle request via historic relations
+
+    logger::message("Fetching current_relation versions");
+
+    m.prepare("lookup_relation_versions",
+        R"(SELECT r.id, r.version
+           FROM current_relations r
+           WHERE r.id = ANY($1)
+        )"_M);
+
+    auto res = m.exec_prepared("lookup_relation_versions", sel_relations);
+
+    for (const auto & row : res) {
+      sel_historic_relations.insert({row[0].as<osm_nwr_id_t>(), row[1].as<osm_version_t>()});
+    }
+    sel_relations.clear();
+  }
+
   logger::message("Fetching relations");
 
-  m.prepare("extract_relations",
-     R"(SELECT r.id, r.visible,
-         to_char(r.timestamp,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS timestamp,
-         r.changeset_id, r.version, t.keys as tag_k, t.values as tag_v,
-         rm.types as member_types, rm.ids as member_ids, rm.roles as member_roles
-       FROM current_relations r
-         LEFT JOIN LATERAL
-           (SELECT array_agg(k ORDER BY k) as keys,
-                   array_agg(v ORDER BY k) as values
-            FROM current_relation_tags
-            WHERE r.id=relation_id) t ON true
-         LEFT JOIN LATERAL
-           (SELECT array_agg(member_type) as types,
-            array_agg(member_role) as roles, array_agg(member_id) as ids
-            FROM
-              (SELECT * FROM current_relation_members WHERE r.id=relation_id
-               ORDER BY sequence_id) x) rm ON true
-       WHERE r.id = ANY($1)
-       ORDER BY r.id)"_M);
-
   if (!sel_relations.empty()) {
+
+    m.prepare("extract_relations",
+      R"(SELECT r.id, r.visible,
+          to_char(r.timestamp,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS timestamp,
+          r.changeset_id, r.version, t.keys as tag_k, t.values as tag_v,
+          rm.types as member_types, rm.ids as member_ids, rm.roles as member_roles
+        FROM current_relations r
+          LEFT JOIN LATERAL
+            (SELECT array_agg(k ORDER BY k) as keys,
+                    array_agg(v ORDER BY k) as values
+              FROM current_relation_tags
+              WHERE r.id=relation_id) t ON true
+          LEFT JOIN LATERAL
+            (SELECT array_agg(member_type) as types,
+              array_agg(member_role) as roles, array_agg(member_id) as ids
+              FROM
+                (SELECT * FROM current_relation_members WHERE r.id=relation_id
+                ORDER BY sequence_id) x) rm ON true
+        WHERE r.id = ANY($1)
+        ORDER BY r.id)"_M);
+
     auto result = m.exec_prepared("extract_relations", sel_relations);
 
     fetch_changesets(extract_changeset_ids(result), cc);
-
-    // lambda function gets notified about each single element, allowing us to
-    // remove all object versions from historic relations, that are already
-    // contained in current relations
-    extract_relations(result,
-		      formatter,
-	              [&](const element_info& elem)
-		        { sel_historic_relations.erase(osm_edition_t(elem.id, elem.version)); },
-		      cc);
+    extract_relations(result, formatter, cc);
   }
+  else if (!sel_historic_relations.empty()) {
 
-  m.prepare("extract_historic_relations",
-     R"(WITH wanted(id, version) AS (
-       SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))
-     )
-     SELECT r.relation_id AS id, r.visible,
-         to_char(r.timestamp,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS timestamp,
-         r.changeset_id, r.version, t.keys as tag_k, t.values as tag_v,
-         rm.types as member_types, rm.ids as member_ids, rm.roles as member_roles
-       FROM relations r
-         INNER JOIN wanted x ON r.relation_id = x.id AND r.version = x.version
-         LEFT JOIN LATERAL
-           (SELECT array_agg(k ORDER BY k) as keys,
-                   array_agg(v ORDER BY k) as values
-            FROM relation_tags
-            WHERE r.relation_id=relation_id AND r.version=version) t ON true
-         LEFT JOIN LATERAL
-           (SELECT array_agg(member_type) as types,
-            array_agg(member_role) as roles, array_agg(member_id) as ids
-            FROM
-              (SELECT * FROM relation_members WHERE r.relation_id=relation_id AND r.version=version
-               ORDER BY sequence_id) x) rm ON true
-       ORDER BY r.relation_id, r.version)"_M);
+    m.prepare("extract_historic_relations",
+      R"(WITH wanted(id, version) AS (
+        SELECT * FROM unnest(CAST($1 AS bigint[]), CAST($2 AS bigint[]))
+      )
+      SELECT r.relation_id AS id, r.visible,
+          to_char(r.timestamp,'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS timestamp,
+          r.changeset_id, r.version, t.keys as tag_k, t.values as tag_v,
+          rm.types as member_types, rm.ids as member_ids, rm.roles as member_roles
+        FROM relations r
+          INNER JOIN wanted x ON r.relation_id = x.id AND r.version = x.version
+          LEFT JOIN LATERAL
+            (SELECT array_agg(k ORDER BY k) as keys,
+                    array_agg(v ORDER BY k) as values
+              FROM relation_tags
+              WHERE r.relation_id=relation_id AND r.version=version) t ON true
+          LEFT JOIN LATERAL
+            (SELECT array_agg(member_type) as types,
+              array_agg(member_role) as roles, array_agg(member_id) as ids
+              FROM
+                (SELECT * FROM relation_members WHERE r.relation_id=relation_id AND r.version=version
+                ORDER BY sequence_id) x) rm ON true
+        ORDER BY r.relation_id, r.version)"_M);
 
-  if (!sel_historic_relations.empty()) {
     std::vector<osm_nwr_id_t> ids;
     std::vector<osm_nwr_id_t> versions;
     ids.reserve(sel_historic_relations.size());
@@ -325,10 +357,8 @@ void readonly_pgsql_selection::write_relations(output_formatter &formatter) {
     }
 
     auto result = m.exec_prepared("extract_historic_relations", ids, versions);
-
     fetch_changesets(extract_changeset_ids(result), cc);
-
-    extract_relations(result, formatter, {}, cc);
+    extract_relations(result, formatter, cc);
   }
 }
 
