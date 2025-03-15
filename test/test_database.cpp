@@ -156,35 +156,6 @@ void test_database::testcase_ended() {
   txn_owner_readwrite.reset();
 }
 
-template <typename Func>
-void test_database::run(Func func) {
-
-  try {
-    // clear out database before using it!
-    testcase_starting();
-
-    func(*this);
-
-  } catch (const std::exception &e) {
-    throw std::runtime_error(fmt::format("{}", e.what()));
-  }
-  testcase_ended();
-}
-
-template <typename Func>
-void test_database::run_update(Func func) {
-
-  try {
-    // clear out database before using it!
-    testcase_starting();
-
-    func(*this);
-  } catch (const std::exception &e) {
-    throw std::runtime_error(fmt::format("{}, in update", e.what()));
-  }
-  testcase_ended();
-}
-
 test_database::setup_error::setup_error(std::string str)
   : m_str(std::move(str)) {
 }

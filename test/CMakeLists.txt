@@ -322,6 +322,35 @@ if(BUILD_TESTING)
         add_test(NAME test_apidb_backend_changeset_uploads
             COMMAND pg_virtualenv "$<TARGET_FILE:test_apidb_backend_changeset_uploads>" --db-schema "${CMAKE_CURRENT_SOURCE_DIR}/structure.sql")
 
+
+    #########################
+    # test_apidb_backend_core
+    #########################
+    add_executable(test_apidb_backend_core
+        test_apidb_backend_core.cpp
+        test_apidb_importer.cpp
+        test_core_helper.cpp
+        test_formatter.cpp
+        test_database.cpp
+        test_request.cpp
+        xmlparser.cpp)
+
+    target_link_libraries(test_apidb_backend_core
+        cgimap_common_compiler_options
+        cgimap_core
+        cgimap_apidb
+        catch2
+        Boost::program_options
+        PQXX::PQXX)
+
+
+    file(GLOB test_apidb_backend_core_dirs LIST_DIRECTORIES true "${CMAKE_CURRENT_SOURCE_DIR}/*.testcore")
+    foreach (test ${test_apidb_backend_core_dirs})
+    get_filename_component (TName "${test}" NAME_WE)
+    add_test(NAME "${TName}.db.testcore" COMMAND pg_virtualenv "$<TARGET_FILE:test_apidb_backend_core>" --test-directory "${test}" --db-schema "${CMAKE_CURRENT_SOURCE_DIR}/structure.sql")
+    endforeach ()
+
+
     # define check alias target for autotools compatibility
     add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
 
@@ -330,6 +359,7 @@ if(BUILD_TESTING)
                            test_oauth2
                            test_http
                            test_parse_time
+                           test_parse_options
                            test_parse_osmchange_xml_input
                            test_parse_changeset_input)
 
@@ -339,6 +369,7 @@ if(BUILD_TESTING)
                              test_apidb_backend_changesets
                              test_apidb_backend_changeset_downloads
                              test_apidb_backend_changeset_uploads
-                             test_apidb_backend_roles)
+                             test_apidb_backend_roles
+                             test_apidb_backend_core)
 
 endif()

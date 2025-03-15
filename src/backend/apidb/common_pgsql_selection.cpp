@@ -352,7 +352,6 @@ struct relation {
 template <typename T>
 void extract(
   const pqxx::result &rows, output_formatter &formatter,
-  std::function<void(const element_info&)> notify,
   std::map<osm_changeset_id_t, changeset> &cc) {
 
   const typename T::extra_columns extra_cols(rows);
@@ -363,8 +362,6 @@ void extract(
     typename T::extra_info extra(row, extra_cols);
     auto elem = extract_elem(row, cc, elem_cols);
     auto tags = extract_tags(row, tag_cols);
-    if (notify)
-      notify(elem);     // let callback function know about a new element we're processing
     T::write(formatter, elem, extra, tags);
   }
 }
@@ -373,25 +370,22 @@ void extract(
 
 void extract_nodes(
   const pqxx::result &rows, output_formatter &formatter,
-  std::function<void(const element_info&)> notify,
   std::map<osm_changeset_id_t, changeset> &cc) {
-  extract<node>(rows, formatter, std::move(notify), cc);
+  extract<node>(rows, formatter, cc);
 }
 
 void extract_ways(
   const pqxx::result &rows, output_formatter &formatter,
-  std::function<void(const element_info&)> notify,
   std::map<osm_changeset_id_t, changeset> &cc) {
-  extract<way>(rows, formatter, std::move(notify), cc);
+  extract<way>(rows, formatter, cc);
 }
 
 // extract relations from the results of the query and write them to the
 // formatter. the changeset cache is used to look up user display names.
 void extract_relations(
   const pqxx::result &rows, output_formatter &formatter,
-  std::function<void(const element_info&)> notify,
   std::map<osm_changeset_id_t, changeset> &cc) {
-  extract<relation>(rows, formatter, std::move(notify), cc);
+  extract<relation>(rows, formatter, cc);
 }
 
 void extract_changesets(
