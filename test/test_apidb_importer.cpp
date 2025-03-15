@@ -285,7 +285,7 @@ void create_oauth2_tokens(Transaction_Manager &m, const oauth2_tokens &oauth2_to
 
   for (const auto &[token, detail] : oauth2_tokens) {
     ids.emplace_back(counter++);
-    resource_owner_ids.emplace_back(1);
+    resource_owner_ids.emplace_back(detail.user_id);
     application_ids.emplace_back(3);
     tokens.emplace_back(token);
     refresh_tokens.emplace_back("");
@@ -716,6 +716,158 @@ void node_tags_insert(Transaction_Manager &m,
   auto r = m.exec_prepared("node_tags_insert", ns, versions, ks, vs);
 }
 
+template <typename T>
+void create_redactions(Transaction_Manager &m, osm_user_id_t uid, const T &objs) {
+
+  if (objs.empty())
+    return;
+
+  m.prepare("redactions_upsert",
+            R"(
+        WITH tmp_redaction(id, title, description, created_at, updated_at, user_id) AS (
+     SELECT * FROM
+     UNNEST( CAST($1 AS integer[]),
+       CAST($2 AS character varying[]),
+       CAST($3 AS text[]),
+       CAST($4 AS timestamp without time zone[]),
+       CAST($5 AS timestamp without time zone[]),
+       CAST($6 AS bigint[])
+     )
+        )
+        INSERT INTO redactions (id, title, description, created_at, updated_at, user_id)
+        SELECT * FROM tmp_redaction
+        ON CONFLICT (id) DO UPDATE SET
+          title = EXCLUDED.title,
+          description = EXCLUDED.description,
+          created_at = EXCLUDED.created_at,
+          updated_at = EXCLUDED.updated_at,
+          user_id = EXCLUDED.user_id
+    )"_M);
+
+  std::vector<int64_t> ids;
+  std::vector<std::string> titles;
+  std::vector<std::string> descriptions;
+  std::vector<std::string> created_ats;
+  std::vector<std::string> updated_ats;
+  std::vector<int64_t> user_ids;
+
+  for (const auto &[id_version, elem] : objs) {
+    if (elem.m_info.redaction) {
+      ids.emplace_back(*elem.m_info.redaction);
+      titles.emplace_back("Fake Title");
+      descriptions.emplace_back("Fake Description");
+      created_ats.emplace_back("2025-01-01T00:00:00Z");
+      updated_ats.emplace_back("2025-01-01T00:00:00Z");
+      user_ids.emplace_back(uid);
+    }
+  }
+
+  auto r = m.exec_prepared("redactions_upsert", ids, titles, descriptions, created_ats, updated_ats, user_ids);
+
+}
+
+void node_redactions(Transaction_Manager &m, const decltype(database::m_nodes) &nodes) {
+
+  m.prepare("node_redactions_update",
+            R"(
+        WITH tmp_node_redaction(node_id, version, redaction_id) AS (
+     SELECT * FROM
+     UNNEST( CAST($1 AS bigint[]),
+       CAST($2 AS bigint[]),
+       CAST($3 AS bigint[])
+     )
+        )
+        UPDATE nodes
+        SET redaction_id = tmp_node_redaction.redaction_id
+        FROM tmp_node_redaction
+        WHERE nodes.node_id = tmp_node_redaction.node_id
+        AND nodes.version = tmp_node_redaction.version
+    )"_M);
+
+  std::vector<osm_nwr_id_t> node_ids;
+  std::vector<osm_version_t> versions;
+  std::vector<osm_redaction_id_t> redaction_ids;
+
+  for (const auto &[id_version, node] : nodes) {
+    if (node.m_info.redaction && node.m_info.version) {
+      node_ids.emplace_back(id_version.id);
+      versions.emplace_back(*id_version.version);
+      redaction_ids.emplace_back(*node.m_info.redaction);
+    }
+  }
+
+  auto r = m.exec_prepared("node_redactions_update", node_ids, versions, redaction_ids);
+
+}
+
+void way_redactions(Transaction_Manager &m, const decltype(database::m_ways) &ways) {
+
+  m.prepare("way_redactions_update",
+            R"(
+        WITH tmp_way_redaction(way_id, version, redaction_id) AS (
+     SELECT * FROM
+     UNNEST( CAST($1 AS bigint[]),
+       CAST($2 AS bigint[]),
+       CAST($3 AS bigint[])
+     )
+        )
+        UPDATE ways
+        SET redaction_id = tmp_way_redaction.redaction_id
+        FROM tmp_way_redaction
+        WHERE ways.way_id = tmp_way_redaction.way_id
+        AND ways.version = tmp_way_redaction.version
+    )"_M);
+
+  std::vector<osm_nwr_id_t> way_ids;
+  std::vector<osm_version_t> versions;
+  std::vector<osm_redaction_id_t> redaction_ids;
+
+  for (const auto &[id_version, way] : ways) {
+    if (way.m_info.redaction && id_version.version) {
+      way_ids.emplace_back(id_version.id);
+      versions.emplace_back(*id_version.version);
+      redaction_ids.emplace_back(*way.m_info.redaction);
+    }
+  }
+
+  auto r = m.exec_prepared("way_redactions_update", way_ids, versions, redaction_ids);
+
+}
+
+void relation_redactions(Transaction_Manager &m, const decltype(database::m_relations) &relations) {
+
+  m.prepare("relation_redactions_update",
+            R"(
+        WITH tmp_relation_redaction(relation_id, version, redaction_id) AS (
+     SELECT * FROM
+     UNNEST( CAST($1 AS bigint[]),
+       CAST($2 AS bigint[]),
+       CAST($3 AS bigint[])
+     )
+        )
+        UPDATE relations
+        SET redaction_id = tmp_relation_redaction.redaction_id
+        FROM tmp_relation_redaction
+        WHERE relations.relation_id = tmp_relation_redaction.relation_id
+        AND relations.version = tmp_relation_redaction.version
+    )"_M);
+
+  std::vector<osm_nwr_id_t> relation_ids;
+  std::vector<osm_version_t> versions;
+  std::vector<osm_redaction_id_t> redaction_ids;
+
+  for (const auto &[id_version, relation] : relations) {
+    if (relation.m_info.redaction && id_version.version) {
+      relation_ids.emplace_back(id_version.id);
+      versions.emplace_back(*id_version.version);
+      redaction_ids.emplace_back(*relation.m_info.redaction);
+    }
+  }
+
+  auto r = m.exec_prepared("relation_redactions_update", relation_ids, versions, redaction_ids);
+
+}
+
 void way_tags_insert(Transaction_Manager &m,
                              const decltype(database::m_ways) &ways) {
 
@@ -895,10 +1047,13 @@ void populate_database(Transaction_Manager &m, const database &db,
 
   // Create users
   create_users(m, user_display_names);
-
   create_user_roles(m, user_roles);
-
   create_oauth2_tokens(m, oauth2_tokens);
+
+  // Update redactions table
+  create_redactions(m, user_display_names.begin()->first, db.m_nodes);
+  create_redactions(m, user_display_names.begin()->first, db.m_ways);
+  create_redactions(m, user_display_names.begin()->first, db.m_relations);
 
   // Create changesets
   auto changesets = db.m_changesets;
@@ -921,16 +1076,19 @@ void populate_database(Transaction_Manager &m, const database &db,
   // Insert nodes
   nodes_insert(m, db.m_nodes);
   node_tags_insert(m, db.m_nodes);
+  node_redactions(m, db.m_nodes);
 
   // Insert ways
   ways_insert(m, db.m_ways);
   way_tags_insert(m, db.m_ways);
   way_nodes_insert(m, db.m_ways);
+  way_redactions(m, db.m_ways);
 
   // Insert relations
   relations_insert(m, db.m_relations);
   relation_tags_insert(m, db.m_relations);
   relation_members_insert(m, db.m_relations);
+  relation_redactions(m, db.m_relations);
 
   // Copy latest object version to current table
   copy_nodes_to_current_nodes(m);
@@ -941,30 +1099,3 @@ void populate_database(Transaction_Manager &m, const database &db,
   update_users(m);
   update_changesets(m);
 }
-
-/*
-tdb.run_sql(R"(
-
- INSERT INTO oauth_applications (id, owner_type, owner_id, name, uid, secret,
-redirect_uri, scopes, confidential, created_at, updated_at) VALUES (3, 'User',
-1, 'App 1', 'dHKmvGkmuoMjqhCNmTJkf-EcnA61Up34O1vOHwTSvU8',
-'965136b8fb8d00e2faa2faaaed99c0ec10225518d0c8d9fb1d2af701e87eb68c',
-            'http://demo.localhost:3000', 'write_api read_gpx', false,
-'2021-04-12 17:53:30', '2021-04-12 17:53:30');
-
- INSERT INTO oauth_applications (id, owner_type, owner_id, name, uid, secret,
-redirect_uri, scopes, confidential, created_at, updated_at) VALUES (4, 'User',
-2, 'App 2', 'WNr9KjjzA9uNCXXBHG1AReR2jdottwlKYOz7CLgjUAk',
-'cdd6f17bc32eb96b33839db59ae5873777e95864cd936ae445f2dedec8787212',
-            'http://localhost:3000/demo', 'write_prefs write_diary', true,
-'2021-04-13 18:59:11', '2021-04-13 18:59:11');
-
- INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id,
-token, refresh_token, expires_in, revoked_at, created_at, scopes,
-previous_refresh_token) VALUES (67, 1, 3,
-'4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8', NULL, NULL,
-NULL, '2021-04-14 19:38:21', 'write_api', '');
-
-
-)");
-*/

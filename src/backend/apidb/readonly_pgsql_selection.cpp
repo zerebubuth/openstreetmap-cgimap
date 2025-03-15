@@ -833,7 +833,7 @@ std::optional< osm_user_id_t > readonly_pgsql_selection::get_user_id_for_oauth2_
               ELSE (created_at + expires_in * interval '1' second) < now() at time zone 'utc'
          END as expired,
          COALESCE(revoked_at < now() at time zone 'utc', false) as revoked,
-         'write_api' = any(string_to_array(scopes, ' ')) as allow_api_write
+         'write_api' = any(string_to_array(coalesce(scopes,''), ' ')) as allow_api_write
        FROM oauth_access_tokens
        WHERE token = $1)"_M);
 
