@@ -32,24 +32,24 @@ template <typename T>
 void write_element(const T &, output_formatter &formatter);
 
 template <>
-inline void write_element<node>(const node &n, output_formatter &formatter) {
+inline void write_element<xmlparser::node>(const xmlparser::node &n, output_formatter &formatter) {
   formatter.write_node(n.m_info, n.m_lon, n.m_lat, n.m_tags);
 }
 
 template <>
-inline void write_element<way>(const way &w, output_formatter &formatter) {
+inline void write_element<xmlparser::way>(const xmlparser::way &w, output_formatter &formatter) {
   formatter.write_way(w.m_info, w.m_nodes, w.m_tags);
 }
 
 template <>
-inline void write_element<relation>(const relation &r, output_formatter &formatter) {
+inline void write_element<xmlparser::relation>(const xmlparser::relation &r, output_formatter &formatter) {
   formatter.write_relation(r.m_info, r.m_members, r.m_tags);
 }
 
 struct static_data_selection : public data_selection {
-  explicit static_data_selection(database& db) : static_data_selection(db, {}, {}) {}
+  explicit static_data_selection(xmlparser::database& db) : static_data_selection(db, {}, {}) {}
 
-  explicit static_data_selection(database& db, const user_roles_t& m_user_roles, const oauth2_tokens& m_oauth2_tokens)
+  explicit static_data_selection(xmlparser::database& db, const user_roles_t& m_user_roles, const oauth2_tokens& m_oauth2_tokens)
   : m_db(db)
   , m_user_roles(m_user_roles)
   , m_oauth2_tokens(m_oauth2_tokens){}
@@ -57,15 +57,15 @@ struct static_data_selection : public data_selection {
   ~static_data_selection() override = default;
 
   void write_nodes(output_formatter &formatter) override {
-    write_elements<node>(m_historic_nodes, m_nodes, formatter);
+    write_elements<xmlparser::node>(m_historic_nodes, m_nodes, formatter);
   }
 
   void write_ways(output_formatter &formatter) override {
-    write_elements<way>(m_historic_ways, m_ways, formatter);
+    write_elements<xmlparser::way>(m_historic_ways, m_ways, formatter);
   }
 
   void write_relations(output_formatter &formatter) override {
-    write_elements<relation>(m_historic_relations, m_relations, formatter);
+    write_elements<xmlparser::relation>(m_historic_relations, m_relations, formatter);
   }
 
   void write_changesets(output_formatter &formatter,
@@ -73,7 +73,7 @@ struct static_data_selection : public data_selection {
     for (osm_changeset_id_t id : m_changesets) {
       auto itr = m_db.m_changesets.find(id);
       if (itr != m_db.m_changesets.end()) {
-        const changeset &c = itr->second;
+        const auto &c = itr->second;
         formatter.write_changeset(
           c.m_info, c.m_tags, m_include_changeset_comments,
           c.m_comments, now);
@@ -82,27 +82,27 @@ struct static_data_selection : public data_selection {
   }
 
   visibility_t check_node_visibility(osm_nwr_id_t id) override {
-    return check_visibility<node>(id);
+    return check_visibility<xmlparser::node>(id);
   }
 
   visibility_t check_way_visibility(osm_nwr_id_t id) override {
-    return check_visibility<way>(id);
+    return check_visibility<xmlparser::way>(id);
   }
 
   visibility_t check_relation_visibility(osm_nwr_id_t id) override {
-    return check_visibility<relation>(id);
+    return check_visibility<xmlparser::relation>(id);
   }
 
   int select_nodes(const std::vector<osm_nwr_id_t> &ids) override {
-    return select<node>(m_nodes, ids);
+    return select<xmlparser::node>(m_nodes, ids);
   }
 
   int select_ways(const std::vector<osm_nwr_id_t> &ids) override {
-    return select<way>(m_ways, ids);
+    return select<xmlparser::way>(m_ways, ids);
   }
 
   int select_relations(const std::vector<osm_nwr_id_t> &ids) override {
-    return select<relation>(m_relations, ids);
+    return select<xmlparser::relation>(m_relations, ids);
   }
 
   int select_nodes_from_bbox(const bbox &bounds, int max_nodes) override {
@@ -110,7 +110,7 @@ struct static_data_selection : public data_selection {
     const auto end = m_db.m_nodes.cend();
     for (auto itr = m_db.m_nodes.cbegin(); itr != end; ++itr) {
       auto next = itr; ++next;
-      const node &n = itr->second;
+      const auto &n = itr->second;
       if ((next == end || next->second.m_info.id != n.m_info.id) &&
           (n.m_lon >= bounds.minlon) && (n.m_lon <= bounds.maxlon) &&
           (n.m_lat >= bounds.minlat) && (n.m_lat <= bounds.maxlat) &&
@@ -128,9 +128,9 @@ struct static_data_selection : public data_selection {
 
   void select_nodes_from_relations() override {
     for (osm_nwr_id_t id : m_relations) {
-      auto r = find_current<relation>(id);
+      auto r = find_current<xmlparser::relation>(id);
       if (r) {
-        for (const member_info &m : r->get().m_members) {
+        for (const auto &m : r->get().m_members) {
           if (m.type == element_type::node) {
             m_nodes.insert(m.ref);
           }
@@ -143,7 +143,7 @@ struct static_data_selection : public data_selection {
     const auto end = m_db.m_ways.cend();
     for (auto itr = m_db.m_ways.cbegin(); itr != end; ++itr) {
       auto next = itr; ++next;
-      const way &w = itr->second;
+      const auto &w = itr->second;
       if (next == end || next->second.m_info.id != w.m_info.id) {
         for (osm_nwr_id_t node_id : w.m_nodes) {
           if (m_nodes.contains(node_id)) {
@@ -157,9 +157,9 @@ struct static_data_selection : public data_selection {
 
   void select_ways_from_relations() override {
     for (osm_nwr_id_t id : m_relations) {
-      auto r = find_current<relation>(id);
+      auto r = find_current<xmlparser::relation>(id);
       if (r) {
-        for (const member_info &m : r->get().m_members) {
+        for (const auto &m : r->get().m_members) {
           if (m.type == element_type::way) {
             m_ways.insert(m.ref);
           }
@@ -172,9 +172,9 @@ struct static_data_selection : public data_selection {
     const auto end = m_db.m_relations.cend();
     for (auto itr = m_db.m_relations.cbegin(); itr != end; ++itr) {
       auto next = itr; ++next;
-      const relation &r = itr->second;
+      const auto &r = itr->second;
       if (next == end || next->second.m_info.id != r.m_info.id) {
-        for (const member_info &m : r.m_members) {
+        for (const auto &m : r.m_members) {
           if (m.type == element_type::way && m_ways.contains(m.ref)) {
             m_relations.insert(r.m_info.id);
             break;
@@ -186,7 +186,7 @@ struct static_data_selection : public data_selection {
 
   void select_nodes_from_way_nodes() override {
     for (osm_nwr_id_t id : m_ways) {
-      auto w = find_current<way>(id);
+      auto w = find_current<xmlparser::way>(id);
       if (w) {
         m_nodes.insert(w->get().m_nodes.begin(), w->get().m_nodes.end());
       }
@@ -222,7 +222,7 @@ struct static_data_selection : public data_selection {
 
   void select_relations_members_of_relations() override {
     for (osm_nwr_id_t id : m_relations) {
-      auto r = find_current<relation>(id);
+      auto r = find_current<xmlparser::relation>(id);
       if (r) {
         for (const member_info &m : r->get().m_members) {
           if (m.type == element_type::relation) {
@@ -234,27 +234,27 @@ struct static_data_selection : public data_selection {
   }
 
   int select_historical_nodes(const std::vector<osm_edition_t> &editions) override {
-    return select_historical<node>(m_historic_nodes, editions);
+    return select_historical<xmlparser::node>(m_historic_nodes, editions);
   }
 
   int select_nodes_with_history(const std::vector<osm_nwr_id_t> &ids) override {
-    return select_historical_all<node>(m_historic_nodes, ids);
+    return select_historical_all<xmlparser::node>(m_historic_nodes, ids);
   }
 
   int select_historical_ways(const std::vector<osm_edition_t> &editions) override  {
-    return select_historical<way>(m_historic_ways, editions);
+    return select_historical<xmlparser::way>(m_historic_ways, editions);
   }
 
   int select_ways_with_history(const std::vector<osm_nwr_id_t> &ids) override {
-    return select_historical_all<way>(m_historic_ways, ids);
+    return select_historical_all<xmlparser::way>(m_historic_ways, ids);
   }
 
   int select_historical_relations(const std::vector<osm_edition_t> &editions) override {
-    return select_historical<relation>(m_historic_relations, editions);
+    return select_historical<xmlparser::relation>(m_historic_relations, editions);
   }
 
   int select_relations_with_history(const std::vector<osm_nwr_id_t> &ids) override {
-    return select_historical_all<relation>(m_historic_relations, ids);
+    return select_historical_all<xmlparser::relation>(m_historic_relations, ids);
   }
 
   void set_redactions_visible(bool visible) override {
@@ -267,9 +267,9 @@ struct static_data_selection : public data_selection {
     std::unordered_set<osm_changeset_id_t> changesets(ids.begin(), ids.end());
 
     int selected = 0;
-    selected += select_by_changesets<node>(m_historic_nodes, changesets);
-    selected += select_by_changesets<way>(m_historic_ways, changesets);
-    selected += select_by_changesets<relation>(m_historic_relations, changesets);
+    selected += select_by_changesets<xmlparser::node>(m_historic_nodes, changesets);
+    selected += select_by_changesets<xmlparser::way>(m_historic_ways, changesets);
+    selected += select_by_changesets<xmlparser::relation>(m_historic_relations, changesets);
 
     return selected;
   }
@@ -482,7 +482,7 @@ private:
     return selected;
   }
 
-  database& m_db;
+  xmlparser::database& m_db;
   std::set<osm_changeset_id_t> m_changesets;
   std::set<osm_nwr_id_t> m_nodes;
   std::set<osm_nwr_id_t> m_ways;
@@ -497,17 +497,17 @@ private:
 };
 
 template <>
-const std::map<id_version, node> &static_data_selection::map_of<node>() const {
+const std::map<id_version, xmlparser::node> &static_data_selection::map_of<xmlparser::node>() const {
   return m_db.m_nodes;
 }
 
 template <>
-const std::map<id_version, way> &static_data_selection::map_of<way>() const {
+const std::map<id_version, xmlparser::way> &static_data_selection::map_of<xmlparser::way>() const {
   return m_db.m_ways;
 }
 
 template <>
-const std::map<id_version, relation> &static_data_selection::map_of<relation>() const {
+const std::map<id_version, xmlparser::relation> &static_data_selection::map_of<xmlparser::relation>() const {
   return m_db.m_relations;
 }
 
@@ -530,7 +530,7 @@ struct factory : public data_selection::factory {
   }
 
 private:
-  std::unique_ptr<database> m_database;
+  std::unique_ptr<xmlparser::database> m_database;
   user_roles_t m_user_roles;
   oauth2_tokens m_oauth2_tokens;
 };

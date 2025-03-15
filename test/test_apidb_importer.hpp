@@ -14,7 +14,7 @@
 #include "xmlparser.hpp"
 #include "test_types.hpp"
 
-void populate_database(Transaction_Manager &m, const database &db,
+void populate_database(Transaction_Manager &m, const xmlparser::database &db,
                        const user_roles_t &user_roles,
                        const oauth2_tokens &oauth2_tokens);
 

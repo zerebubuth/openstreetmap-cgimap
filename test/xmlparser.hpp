@@ -18,6 +18,8 @@
 
 using api06::id_version;
 
+namespace xmlparser {
+
 struct node {
   element_info m_info;
   double m_lon;
@@ -50,7 +52,9 @@ struct database {
   std::map<id_version, relation> m_relations;
 };
 
-std::unique_ptr<database> parse_xml(const char *filename);
-std::unique_ptr<database> parse_xml_from_string(const std::string &payload);
+} // namespace xmlparser
+
+std::unique_ptr<xmlparser::database> parse_xml(const char *filename);
+std::unique_ptr<xmlparser::database> parse_xml_from_string(const std::string &payload);
 
 #endif

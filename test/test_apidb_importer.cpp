@@ -81,7 +81,6 @@ void copy_ways_to_current_ways(Transaction_Manager &m) {
   SELECT TRUE;
 
   )");
-
 }
 
 void copy_relations_to_current_relations(Transaction_Manager &m) {
@@ -172,7 +171,7 @@ void create_users(
             "INSERT INTO users (id, email, pass_crypt, creation_time, "
             "display_name, data_public) VALUES ($1, $2, $3, $4, $5, $6)");
 
-  for (const auto [id, name] : user_display_names) {
+  for (const auto &[id, name] : user_display_names) {
     auto rc =
         m.exec_prepared("create_user", id, fmt::format("user_{}@demo.abc", id),
                         "", "2025-01-01T00:00:00Z", name, true);
@@ -198,7 +197,7 @@ void create_user_roles(Transaction_Manager &m, const user_roles_t &user_roles) {
         )
         INSERT INTO user_roles (id, user_id, role, created_at, updated_at, granter_id)
         SELECT * FROM tmp_user_role
-    )"_M);
+    )");
 
   std::vector<int64_t> ids;
   std::vector<osm_user_id_t> user_ids;
@@ -213,19 +212,19 @@ void create_user_roles(Transaction_Manager &m, const user_roles_t &user_roles) {
   for (const auto &[user_id, rs] : user_roles) {
     using enum osm_user_role_t;
 
-    for (const auto & role: rs) {
+    for (const auto &role : rs) {
       ids.emplace_back(id_counter++);
       user_ids.emplace_back(user_id);
       switch (role) {
-        case administrator:
-          roles.emplace_back("administrator");
-          break;
-        case importer:
-          roles.emplace_back("importer");
-          break;
-        case moderator:
-          roles.emplace_back("moderator");
-          break;
+      case administrator:
+        roles.emplace_back("administrator");
+        break;
+      case importer:
+        roles.emplace_back("importer");
+        break;
+      case moderator:
+        roles.emplace_back("moderator");
+        break;
       }
       created_ats.emplace_back(current_time);
       updated_ats.emplace_back(current_time);
@@ -233,12 +232,12 @@ void create_user_roles(Transaction_Manager &m, const user_roles_t &user_roles) {
     }
   }
 
-  auto r = m.exec_prepared("user_roles_insert", ids, user_ids, roles, created_ats, updated_ats, granter_ids);
-
+  auto r = m.exec_prepared("user_roles_insert", ids, user_ids, roles,
+                           created_ats, updated_ats, granter_ids);
 }
 
-
-void create_oauth2_tokens(Transaction_Manager &m, const oauth2_tokens &oauth2_tokens) {
+void create_oauth2_tokens(Transaction_Manager &m,
+                          const oauth2_tokens &oauth2_tokens) {
   if (oauth2_tokens.empty())
     return;
 
@@ -269,7 +268,7 @@ void create_oauth2_tokens(Transaction_Manager &m, const oauth2_tokens &oauth2_to
         )
         INSERT INTO oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes)
         SELECT * FROM tmp_token
-    )"_M);
+    )");
 
   std::vector<int64_t> ids;
   std::vector<int64_t> resource_owner_ids;
@@ -295,12 +294,14 @@ void create_oauth2_tokens(Transaction_Manager &m, const oauth2_tokens &oauth2_to
     scopes.emplace_back("");
   }
 
-  auto r = m.exec_prepared("oauth2_tokens_insert", ids, resource_owner_ids, application_ids, tokens, refresh_tokens, expires_ins, revoked_ats, created_ats, scopes);
+  auto r = m.exec_prepared("oauth2_tokens_insert", ids, resource_owner_ids,
+                           application_ids, tokens, refresh_tokens, expires_ins,
+                           revoked_ats, created_ats, scopes);
 }
 
-
-void create_changesets(Transaction_Manager &m,
-                       const decltype(database::m_changesets) changesets) {
+void create_changesets(
+    Transaction_Manager &m,
+    const decltype(xmlparser::database::m_changesets) changesets) {
 
   if (!changesets.empty()) {
 
@@ -322,7 +323,7 @@ void create_changesets(Transaction_Manager &m,
 	      )
 	      INSERT INTO changesets (id, user_id, created_at, closed_at, min_lat, max_lat, min_lon, max_lon, num_changes)
 	      SELECT * FROM tmp_changeset
-	  )"_M);
+	  )");
 
       std::vector<osm_changeset_id_t> ids;
       std::vector<osm_user_id_t> user_ids;
@@ -342,9 +343,9 @@ void create_changesets(Transaction_Manager &m,
         user_ids.emplace_back(changeset.m_info.uid.value_or(0));
         created_ats.emplace_back(changeset.m_info.created_at);
         closed_ats.emplace_back(changeset.m_info.closed_at);
-        min_lats.emplace_back(static_cast<int64_t>(
-            round(changeset.m_info.bounding_box->minlat *
-                  global_settings::get_scale())));
+        min_lats.emplace_back(
+            static_cast<int64_t>(round(changeset.m_info.bounding_box->minlat *
+                                       global_settings::get_scale())));
         max_lats.emplace_back(
             static_cast<int64_t>(round(changeset.m_info.bounding_box->maxlat *
                                        global_settings::get_scale())));
@@ -377,7 +378,7 @@ void create_changesets(Transaction_Manager &m,
 	      )
 	      INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes)
 	      SELECT * FROM tmp_changeset
-	  )"_M);
+	  )");
 
       std::vector<osm_changeset_id_t> ids;
       std::vector<osm_user_id_t> user_ids;
@@ -402,7 +403,9 @@ void create_changesets(Transaction_Manager &m,
   }
 }
 
-void create_changeset_tags(Transaction_Manager &m, const decltype(database::m_changesets) changesets) {
+void create_changeset_tags(
+    Transaction_Manager &m,
+    const decltype(xmlparser::database::m_changesets) changesets) {
 
   if (changesets.empty())
     return;
@@ -418,7 +421,7 @@ void create_changeset_tags(Transaction_Manager &m, const decltype(database::m_ch
         )
         INSERT INTO changeset_tags (changeset_id, k, v)
         SELECT * FROM tmp_tag
-    )"_M);
+    )");
 
   std::vector<osm_changeset_id_t> changeset_ids;
   std::vector<std::string> keys;
@@ -432,11 +435,13 @@ void create_changeset_tags(Transaction_Manager &m, const decltype(database::m_ch
     }
   }
 
-  auto r = m.exec_prepared("changeset_tags_insert", changeset_ids, keys, values);
-
+  auto r =
+      m.exec_prepared("changeset_tags_insert", changeset_ids, keys, values);
 }
 
-void create_changeset_discussions(Transaction_Manager &m, const decltype(database::m_changesets) changesets) {
+void create_changeset_discussions(
+    Transaction_Manager &m,
+    const decltype(xmlparser::database::m_changesets) changesets) {
 
   if (changesets.empty())
     return;
@@ -455,7 +460,7 @@ void create_changeset_discussions(Transaction_Manager &m, const decltype(databas
         )
         INSERT INTO changeset_comments (id, changeset_id, author_id, body, created_at, visible)
         SELECT * FROM tmp_comment
-    )"_M);
+    )");
 
   std::vector<int64_t> ids;
   std::vector<osm_changeset_id_t> changeset_ids;
@@ -475,9 +480,8 @@ void create_changeset_discussions(Transaction_Manager &m, const decltype(databas
     }
   }
 
-  auto r = m.exec_prepared("changeset_comments_insert", ids, changeset_ids, author_ids, bodies, created_ats, visibles);
-
-
+  auto r = m.exec_prepared("changeset_comments_insert", ids, changeset_ids,
+                           author_ids, bodies, created_ats, visibles);
 }
 
 void changeset_tags_insert(Transaction_Manager &m, osm_changeset_id_t changeset,
@@ -497,7 +501,7 @@ void changeset_tags_insert(Transaction_Manager &m, osm_changeset_id_t changeset,
 	      )
 	      INSERT INTO changeset_tags (changeset_id, k, v)
 	      SELECT * FROM tmp_tag
-	  )"_M);
+	  )");
 
   std::vector<osm_changeset_id_t> cs;
   std::vector<std::string> ks;
@@ -513,7 +517,7 @@ void changeset_tags_insert(Transaction_Manager &m, osm_changeset_id_t changeset,
 }
 
 void nodes_insert(Transaction_Manager &m,
-                          const decltype(database::m_nodes) &nodes) {
+                  const decltype(xmlparser::database::m_nodes) &nodes) {
   if (nodes.empty())
     return;
 
@@ -533,7 +537,7 @@ void nodes_insert(Transaction_Manager &m,
 	      )
 	      INSERT INTO nodes (node_id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
 	      SELECT * FROM tmp_node
-	  )"_M);
+	  )");
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<int64_t> latitudes;
@@ -558,12 +562,12 @@ void nodes_insert(Transaction_Manager &m,
   }
 
   auto r =
-      m.exec_prepared("nodes_insert", ids, latitudes, longitudes,
-                      changeset_ids, visibles, timestamps, tiles, versions);
+      m.exec_prepared("nodes_insert", ids, latitudes, longitudes, changeset_ids,
+                      visibles, timestamps, tiles, versions);
 }
 
 void ways_insert(Transaction_Manager &m,
-                         const decltype(database::m_ways) &ways) {
+                 const decltype(xmlparser::database::m_ways) &ways) {
 
   if (ways.empty())
     return;
@@ -581,7 +585,7 @@ void ways_insert(Transaction_Manager &m,
 				)
 				INSERT INTO ways (way_id, changeset_id, "timestamp", visible, version)
 				SELECT * FROM tmp_way
-		)"_M);
+		)");
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<osm_changeset_id_t> changeset_ids;
@@ -597,12 +601,12 @@ void ways_insert(Transaction_Manager &m,
     versions.emplace_back(id_version.version.value_or(1));
   }
 
-  auto r = m.exec_prepared("ways_insert", ids, changeset_ids,
-                           timestamps, visibles, versions);
+  auto r = m.exec_prepared("ways_insert", ids, changeset_ids, timestamps,
+                           visibles, versions);
 }
 
 void relations_insert(Transaction_Manager &m,
-                              const decltype(database::m_relations) &rels) {
+                      const decltype(xmlparser::database::m_relations) &rels) {
 
   if (rels.empty())
     return;
@@ -620,7 +624,7 @@ void relations_insert(Transaction_Manager &m,
 		)
 		INSERT INTO relations (relation_id, changeset_id, "timestamp", visible, version)
 		SELECT * FROM tmp_relation
-		)"_M);
+		)");
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<osm_changeset_id_t> changeset_ids;
@@ -636,12 +640,12 @@ void relations_insert(Transaction_Manager &m,
     versions.emplace_back(id_version.version.value_or(1));
   }
 
-  auto r = m.exec_prepared("relations_insert", ids, changeset_ids,
-                           timestamps, visibles, versions);
+  auto r = m.exec_prepared("relations_insert", ids, changeset_ids, timestamps,
+                           visibles, versions);
 }
 
 void way_nodes_insert(Transaction_Manager &m,
-                              const decltype(database::m_ways) &ways) {
+                      const decltype(xmlparser::database::m_ways) &ways) {
 
   if (ways.empty())
     return;
@@ -658,7 +662,7 @@ void way_nodes_insert(Transaction_Manager &m,
 		)
 		INSERT INTO way_nodes (way_id, node_id, version, sequence_id)
 		SELECT * FROM tmp_way_node
-		)"_M);
+		)");
 
   std::vector<osm_nwr_id_t> way_ids;
   std::vector<osm_nwr_id_t> node_ids;
@@ -675,12 +679,12 @@ void way_nodes_insert(Transaction_Manager &m,
     }
   }
 
-  auto r = m.exec_prepared("way_nodes_insert", way_ids, node_ids,
-                           versions, sequence_ids);
+  auto r = m.exec_prepared("way_nodes_insert", way_ids, node_ids, versions,
+                           sequence_ids);
 }
 
 void node_tags_insert(Transaction_Manager &m,
-                              const decltype(database::m_nodes) &nodes) {
+                      const decltype(xmlparser::database::m_nodes) &nodes) {
   if (nodes.empty())
     return;
 
@@ -697,7 +701,7 @@ void node_tags_insert(Transaction_Manager &m,
 	      )
 	      INSERT INTO node_tags (node_id, version, k, v)
 	      SELECT * FROM tmp_tag
-	  )"_M);
+	  )");
 
   std::vector<osm_nwr_id_t> ns;
   std::vector<int64_t> versions;
@@ -717,7 +721,8 @@ void node_tags_insert(Transaction_Manager &m,
 }
 
 template <typename T>
-void create_redactions(Transaction_Manager &m, osm_user_id_t uid, const T &objs) {
+void create_redactions(Transaction_Manager &m, osm_user_id_t uid,
+                       const T &objs) {
 
   if (objs.empty())
     return;
@@ -742,7 +747,7 @@ void create_redactions(Transaction_Manager &m, osm_user_id_t uid, const T &objs)
           created_at = EXCLUDED.created_at,
           updated_at = EXCLUDED.updated_at,
           user_id = EXCLUDED.user_id
-    )"_M);
+    )");
 
   std::vector<int64_t> ids;
   std::vector<std::string> titles;
@@ -762,11 +767,12 @@ void create_redactions(Transaction_Manager &m, osm_user_id_t uid, const T &objs)
     }
   }
 
-  auto r = m.exec_prepared("redactions_upsert", ids, titles, descriptions, created_ats, updated_ats, user_ids);
-
+  auto r = m.exec_prepared("redactions_upsert", ids, titles, descriptions,
+                           created_ats, updated_ats, user_ids);
 }
 
-void node_redactions(Transaction_Manager &m, const decltype(database::m_nodes) &nodes) {
+void node_redactions(Transaction_Manager &m,
+                     const decltype(xmlparser::database::m_nodes) &nodes) {
 
   m.prepare("node_redactions_update",
             R"(
@@ -782,7 +788,7 @@ void node_redactions(Transaction_Manager &m, const decltype(database::m_nodes) &
         FROM tmp_node_redaction
         WHERE nodes.node_id = tmp_node_redaction.node_id
         AND nodes.version = tmp_node_redaction.version
-    )"_M);
+    )");
 
   std::vector<osm_nwr_id_t> node_ids;
   std::vector<osm_version_t> versions;
@@ -796,11 +802,12 @@ void node_redactions(Transaction_Manager &m, const decltype(database::m_nodes) &
     }
   }
 
-  auto r = m.exec_prepared("node_redactions_update", node_ids, versions, redaction_ids);
-
+  auto r = m.exec_prepared("node_redactions_update", node_ids, versions,
+                           redaction_ids);
 }
 
-void way_redactions(Transaction_Manager &m, const decltype(database::m_ways) &ways) {
+void way_redactions(Transaction_Manager &m,
+                    const decltype(xmlparser::database::m_ways) &ways) {
 
   m.prepare("way_redactions_update",
             R"(
@@ -816,7 +823,7 @@ void way_redactions(Transaction_Manager &m, const decltype(database::m_ways) &wa
         FROM tmp_way_redaction
         WHERE ways.way_id = tmp_way_redaction.way_id
         AND ways.version = tmp_way_redaction.version
-    )"_M);
+    )");
 
   std::vector<osm_nwr_id_t> way_ids;
   std::vector<osm_version_t> versions;
@@ -830,11 +837,13 @@ void way_redactions(Transaction_Manager &m, const decltype(database::m_ways) &wa
     }
   }
 
-  auto r = m.exec_prepared("way_redactions_update", way_ids, versions, redaction_ids);
-
+  auto r = m.exec_prepared("way_redactions_update", way_ids, versions,
+                           redaction_ids);
 }
 
-void relation_redactions(Transaction_Manager &m, const decltype(database::m_relations) &relations) {
+void relation_redactions(
+    Transaction_Manager &m,
+    const decltype(xmlparser::database::m_relations) &relations) {
 
   m.prepare("relation_redactions_update",
             R"(
@@ -850,7 +859,7 @@ void relation_redactions(Transaction_Manager &m, const decltype(database::m_rela
         FROM tmp_relation_redaction
         WHERE relations.relation_id = tmp_relation_redaction.relation_id
         AND relations.version = tmp_relation_redaction.version
-    )"_M);
+    )");
 
   std::vector<osm_nwr_id_t> relation_ids;
   std::vector<osm_version_t> versions;
@@ -864,12 +873,12 @@ void relation_redactions(Transaction_Manager &m, const decltype(database::m_rela
     }
   }
 
-  auto r = m.exec_prepared("relation_redactions_update", relation_ids, versions, redaction_ids);
-
+  auto r = m.exec_prepared("relation_redactions_update", relation_ids, versions,
+                           redaction_ids);
 }
 
 void way_tags_insert(Transaction_Manager &m,
-                             const decltype(database::m_ways) &ways) {
+                     const decltype(xmlparser::database::m_ways) &ways) {
 
   if (ways.empty())
     return;
@@ -887,7 +896,7 @@ void way_tags_insert(Transaction_Manager &m,
 	      )
 	      INSERT INTO way_tags (way_id, k, v, version)
 	      SELECT * FROM tmp_tag
-	  )"_M);
+	  )");
 
   std::vector<osm_nwr_id_t> ws;
   std::vector<std::string> ks;
@@ -907,7 +916,8 @@ void way_tags_insert(Transaction_Manager &m,
 }
 
 void relation_tags_insert(
-    Transaction_Manager &m, const decltype(database::m_relations) &relations) {
+    Transaction_Manager &m,
+    const decltype(xmlparser::database::m_relations) &relations) {
   if (relations.empty())
     return;
 
@@ -924,7 +934,7 @@ void relation_tags_insert(
 	      )
 	      INSERT INTO relation_tags (relation_id, k, v, version)
 	      SELECT * FROM tmp_tag
-	  )"_M);
+	  )");
 
   std::vector<osm_nwr_id_t> rs;
   std::vector<std::string> ks;
@@ -958,7 +968,8 @@ std::string convert_element_type_name(element_type elt) noexcept {
 }
 
 void relation_members_insert(
-    Transaction_Manager &m, const decltype(database::m_relations) &relations) {
+    Transaction_Manager &m,
+    const decltype(xmlparser::database::m_relations) &relations) {
   if (relations.empty())
     return;
 
@@ -977,7 +988,7 @@ void relation_members_insert(
 	)
 	INSERT INTO relation_members (relation_id, member_type, member_id, member_role, version, sequence_id)
 	SELECT * FROM tmp_relation_member
-	)"_M);
+	)");
 
   std::vector<osm_nwr_id_t> relation_ids;
   std::vector<std::string> member_types;
@@ -999,13 +1010,11 @@ void relation_members_insert(
   }
 
   auto r =
-      m.exec_prepared("relation_members_insert", relation_ids,
-                      member_types, member_ids, member_roles, versions, sequence_ids);
+      m.exec_prepared("relation_members_insert", relation_ids, member_types,
+                      member_ids, member_roles, versions, sequence_ids);
 }
 
-
-
-void populate_database(Transaction_Manager &m, const database &db,
+void populate_database(Transaction_Manager &m, const xmlparser::database &db,
                        const user_roles_t &user_roles,
                        const oauth2_tokens &oauth2_tokens) {
 
@@ -1015,8 +1024,7 @@ void populate_database(Transaction_Manager &m, const database &db,
   std::set<osm_redaction_id_t> redaction_ids;
 
   auto process_info = [&](const auto &info) {
-    user_display_names[info.uid.value_or(0)] =
-        info.display_name.value_or("");
+    user_display_names[info.uid.value_or(0)] = info.display_name.value_or("");
     changeset_object_counts[info.changeset]++;
     changeset_uid[info.changeset] = info.uid.value_or(0);
     if (info.redaction)
@@ -1036,7 +1044,8 @@ void populate_database(Transaction_Manager &m, const database &db,
   }
 
   for (const auto &[id, changeset] : db.m_changesets) {
-    user_display_names[changeset.m_info.uid.value_or(0)] = changeset.m_info.display_name.value_or("");
+    user_display_names[changeset.m_info.uid.value_or(0)] =
+        changeset.m_info.display_name.value_or("");
   }
 
   for (const auto &[user_id, _] : user_roles) {
@@ -1060,8 +1069,8 @@ void populate_database(Transaction_Manager &m, const database &db,
 
   // create dummy changesets if no changesets available
   if (changesets.empty()) {
-    for (const auto & cs : changeset_object_counts) {
-      changeset c;
+    for (const auto &cs : changeset_object_counts) {
+      xmlparser::changeset c;
       c.m_info.created_at = "2025-01-01T00:00:00Z";
       c.m_info.closed_at = "2025-01-01T01:00:00Z";
       c.m_info.uid = changeset_uid[cs.first];
