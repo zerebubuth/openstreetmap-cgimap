@@ -91,12 +91,10 @@ std::vector<fs::path> get_test_cases() {
 
 TEST_CASE_METHOD( DatabaseTestsFixture, "readonly_pgsql core", "[core][db]" ) {
 
-  user_roles_t user_roles;
-  oauth2_tokens oauth2_tokens;
-  null_rate_limiter limiter;
-  routes route;
-
   SECTION("Initialize test data") {
+
+    user_roles_t user_roles;
+    oauth2_tokens oauth2_tokens;
 
     if (test_directory.empty()) {
       FAIL("No test directory specified. Missing --test-directory command line option.");
@@ -128,7 +126,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "readonly_pgsql core", "[core][db]" ) {
   }
 
   SECTION("Execute test cases") {
-    // Note: Current Catch2 version does not support test cases with dynamic names
+
+    null_rate_limiter limiter;
+    routes route;
 
     auto sel_factory = tdb.get_data_selection_factory();
 
@@ -139,20 +139,20 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "readonly_pgsql core", "[core][db]" ) {
 
     // Execute actual test cases
     for (fs::path test_case : test_cases) {
-      std::string generator = fmt::format(PACKAGE_STRING " (test {})", test_case.string());
-      INFO(fmt::format("Running test case {}", test_case.c_str()));
+      SECTION("Execute single testcase " + test_case.filename().string()) {
+        std::string generator = fmt::format(PACKAGE_STRING " (test {})", test_case.string());
+        test_request req;
 
-      test_request req;
+        // set up request headers from test case
+        std::ifstream in(test_case, std::ios::binary);
+        setup_request_headers(req, in);
 
-      // set up request headers from test case
-      std::ifstream in(test_case, std::ios::binary);
-      setup_request_headers(req, in);
+        // execute the request
+        REQUIRE_NOTHROW(process_request(req, limiter, generator, route, *sel_factory, nullptr));
 
-      // execute the request
-      REQUIRE_NOTHROW(process_request(req, limiter, generator, route, *sel_factory, nullptr));
-
-      CAPTURE(req.body().str());
-      REQUIRE_NOTHROW(check_response(in, req.buffer()));
+        CAPTURE(req.body().str());
+        REQUIRE_NOTHROW(check_response(in, req.buffer()));
+      }
     }
   }
 }
