@@ -3,6 +3,29 @@
 ############
 if(BUILD_TESTING)
 
+    set(DB_SCHEMA "${CMAKE_CURRENT_SOURCE_DIR}/structure.sql")
+
+    # Function to add test with conditional virtualenv command
+    function(add_test_with_virtualenv test_name)
+        if(ENABLE_PGVIRTUALENV)
+            set(TEST_COMMAND pg_virtualenv)
+        endif()
+
+        list(APPEND TEST_COMMAND $<TARGET_FILE:${test_name}> --db-schema ${DB_SCHEMA})
+        add_test(NAME ${test_name} COMMAND ${TEST_COMMAND})
+    endfunction()
+
+    # Function to add test with conditional virtualenv command
+    function(add_test_with_virtualenv_and_directory test_name target test_directory)
+        if(ENABLE_PGVIRTUALENV)
+            set(TEST_COMMAND pg_virtualenv)
+        endif()
+
+        list(APPEND TEST_COMMAND $<TARGET_FILE:${target}> --test-directory ${test_directory} --db-schema ${DB_SCHEMA})
+        add_test(NAME ${test_name} COMMAND ${TEST_COMMAND})
+    endfunction()
+
+
     ##################
     # cgimap_staticxml
     ##################
@@ -193,8 +216,7 @@ if(BUILD_TESTING)
             Boost::program_options
             catch2)
 
-        add_test(NAME test_apidb_backend_nodes
-            COMMAND pg_virtualenv "$<TARGET_FILE:test_apidb_backend_nodes>" --db-schema "${CMAKE_CURRENT_SOURCE_DIR}/structure.sql")
+        add_test_with_virtualenv(test_apidb_backend_nodes)
 
 
         ###########################
@@ -214,9 +236,7 @@ if(BUILD_TESTING)
             Boost::program_options
             catch2)
 
-        add_test(NAME test_apidb_backend_oauth2
-            COMMAND pg_virtualenv "$<TARGET_FILE:test_apidb_backend_oauth2>" --db-schema "${CMAKE_CURRENT_SOURCE_DIR}/structure.sql")
-
+        add_test_with_virtualenv(test_apidb_backend_oauth2)
 
         #############################
         # test_apidb_backend_historic
@@ -235,9 +255,7 @@ if(BUILD_TESTING)
             Boost::program_options
             catch2)
 
-        add_test(NAME test_apidb_backend_historic
-            COMMAND pg_virtualenv "$<TARGET_FILE:test_apidb_backend_historic>" --db-schema "${CMAKE_CURRENT_SOURCE_DIR}/structure.sql")
-
+        add_test_with_virtualenv(test_apidb_backend_historic)
 
         ##########################
         # test_apidb_backend_roles
@@ -256,8 +274,7 @@ if(BUILD_TESTING)
             Boost::program_options
             catch2)
 
-        add_test(NAME test_apidb_backend_roles
-            COMMAND pg_virtualenv "$<TARGET_FILE:test_apidb_backend_roles>" --db-schema "${CMAKE_CURRENT_SOURCE_DIR}/structure.sql")
+        add_test_with_virtualenv(test_apidb_backend_roles)
 
 
         ###############################
@@ -277,8 +294,7 @@ if(BUILD_TESTING)
             Boost::program_options
             catch2)
 
-        add_test(NAME test_apidb_backend_changesets
-            COMMAND pg_virtualenv "$<TARGET_FILE:test_apidb_backend_changesets>" --db-schema "${CMAKE_CURRENT_SOURCE_DIR}/structure.sql")
+        add_test_with_virtualenv(test_apidb_backend_changesets)
 
 
         ########################################
@@ -298,8 +314,7 @@ if(BUILD_TESTING)
             Boost::program_options
             catch2)
 
-        add_test(NAME test_apidb_backend_changeset_downloads
-            COMMAND pg_virtualenv "$<TARGET_FILE:test_apidb_backend_changeset_downloads>" --db-schema "${CMAKE_CURRENT_SOURCE_DIR}/structure.sql")
+        add_test_with_virtualenv(test_apidb_backend_changeset_downloads)
 
 
         ######################################
@@ -319,8 +334,7 @@ if(BUILD_TESTING)
             Threads::Threads
             catch2)
 
-        add_test(NAME test_apidb_backend_changeset_uploads
-            COMMAND pg_virtualenv "$<TARGET_FILE:test_apidb_backend_changeset_uploads>" --db-schema "${CMAKE_CURRENT_SOURCE_DIR}/structure.sql")
+        add_test_with_virtualenv(test_apidb_backend_changeset_uploads)
 
 
     #########################
@@ -343,11 +357,10 @@ if(BUILD_TESTING)
         Boost::program_options
         PQXX::PQXX)
 
-
     file(GLOB test_apidb_backend_core_dirs LIST_DIRECTORIES true "${CMAKE_CURRENT_SOURCE_DIR}/*.testcore")
     foreach (test ${test_apidb_backend_core_dirs})
     get_filename_component (TName "${test}" NAME_WE)
-    add_test(NAME "${TName}.db.testcore" COMMAND pg_virtualenv "$<TARGET_FILE:test_apidb_backend_core>" --test-directory "${test}" --db-schema "${CMAKE_CURRENT_SOURCE_DIR}/structure.sql")
+    add_test_with_virtualenv_and_directory("${TName}.db.testcore" test_apidb_backend_core "${test}")
     endforeach ()
 
 
