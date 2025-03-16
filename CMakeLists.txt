@@ -165,6 +165,25 @@ if(CLANG_TIDY)
     )
 endif()
 
+########################################
+# Optional coverage report generation
+########################################
+
+if(ENABLE_COVERAGE)
+    # Path for storing the coverage report
+    set(COVERAGE_REPORT_DIR "${CMAKE_BINARY_DIR}/report")
+
+    # Create target for generating the coverage report
+    add_custom_target(generate_coverage_report
+        COMMAND mkdir -p ${COVERAGE_REPORT_DIR}
+        COMMAND lcov --base-directory ${CMAKE_CURRENT_SOURCE_DIR} --directory ${CMAKE_BINARY_DIR} --capture --output-file ${COVERAGE_REPORT_DIR}/coverage.info
+        COMMAND lcov --remove ${COVERAGE_REPORT_DIR}/coverage.info '/usr/*' '${CMAKE_CURRENT_SOURCE_DIR}/contrib/catch2/*'
+                '${CMAKE_CURRENT_SOURCE_DIR}/contrib/libxml++/*' --output-file ${COVERAGE_REPORT_DIR}/coverage_cleaned.info
+        COMMAND genhtml -o ${COVERAGE_REPORT_DIR}/ ${COVERAGE_REPORT_DIR}/coverage_cleaned.info
+        COMMAND lcov --list ${COVERAGE_REPORT_DIR}/coverage_cleaned.info
+        COMMENT "Generating code coverage report"
+    )
+endif()
 
 #############################################################
 # Install
