@@ -81,6 +81,8 @@ bool test_formatter::changeset_t::operator==(const changeset_t &other) const {
          (!m_include_comments || m_comments == other.m_comments);
 }
 
+// LCOV_EXCL_START
+
 mime::type test_formatter::mime_type() const {
   throw std::runtime_error("Unimplemented");
 }
@@ -112,6 +114,8 @@ void test_formatter::start_action(action_type type) {
 
 void test_formatter::end_action(action_type type) {
 }
+
+// LCOV_EXCL_STOP
 
 void test_formatter::write_node(const element_info &elem, double lon, double lat,
                                 const tags_t &tags) {

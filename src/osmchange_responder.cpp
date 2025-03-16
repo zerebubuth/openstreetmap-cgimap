@@ -52,6 +52,8 @@ struct sorting_formatter : public output_formatter {
 
   ~sorting_formatter() override = default;
 
+  // LCOV_EXCL_START
+
   [[nodiscard]] mime::type mime_type() const override {
     throw std::runtime_error("sorting_formatter::mime_type unimplemented");
   }
@@ -91,6 +93,8 @@ struct sorting_formatter : public output_formatter {
     throw std::runtime_error("sorting_formatter::end_changeset unimplemented");
   }
 
+  // LCOV_EXCL_STOP
+
   void write_node(
     const element_info &elem,
     double lon, double lat,
@@ -126,6 +130,8 @@ struct sorting_formatter : public output_formatter {
 
     m_elements.emplace_back(std::move(rel));
   }
+
+  // LCOV_EXCL_START
 
   void write_changeset(
     const changeset_info &,
@@ -171,6 +177,8 @@ struct sorting_formatter : public output_formatter {
     // actions - they're added by this code.
     throw std::runtime_error("Unexpected call to end_action.");
   }
+
+    // LCOV_EXCL_STOP
 
   void write(output_formatter &fmt) {
     std::sort(m_elements.begin(), m_elements.end());

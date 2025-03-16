@@ -16,6 +16,8 @@ text_formatter::text_formatter(std::unique_ptr<text_writer> w) : writer(std::mov
 
 mime::type text_formatter::mime_type() const { return mime::type::text_plain; }
 
+// LCOV_EXCL_START
+
 void text_formatter::start_document(
   const std::string &generator, const std::string &root_name) {
   // nothing needed here
@@ -49,11 +51,6 @@ void text_formatter::start_action(action_type type) {
 
 void text_formatter::end_action(action_type type) {
   // nothing needed here
-}
-
-void text_formatter::error(const std::exception &e) {
-
-  writer->text(e.what());
 }
 
 void text_formatter::write_tags(const tags_t &) {
@@ -96,15 +93,19 @@ void text_formatter::write_diffresult_create_modify(const element_type elem,
   // nothing needed here
 }
 
-
 void text_formatter::write_diffresult_delete(const element_type elem,
                                             const osm_nwr_signed_id_t old_id)
 {
   // nothing needed here
 }
 
-
+// LCOV_EXCL_STOP
 
 void text_formatter::flush() { writer->flush(); }
 
 void text_formatter::error(const std::string &s) { writer->error(s); }
+
+void text_formatter::error(const std::exception &e) {
+
+  writer->text(e.what());
+}
