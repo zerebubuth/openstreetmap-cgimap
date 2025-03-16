@@ -26,47 +26,6 @@ if(BUILD_TESTING)
     endfunction()
 
 
-    ##################
-    # cgimap_staticxml
-    ##################
-    add_library(cgimap_staticxml)
-
-    target_include_directories(cgimap_staticxml PUBLIC
-        .)
-
-    target_sources(cgimap_staticxml PRIVATE
-        xmlparser.cpp
-        staticxml.cpp)
-
-    target_link_libraries(cgimap_staticxml
-        cgimap_common_compiler_options
-        LibXml2::LibXml2
-        cgimap_core)
-
-    ###########
-    # test_core
-    ###########
-    add_executable(test_core
-        test_core.cpp
-        test_core_helper.cpp
-        test_request.cpp)
-
-    target_link_libraries(test_core
-        cgimap_common_compiler_options
-        cgimap_core
-        cgimap_staticxml
-        catch2
-        Boost::program_options
-        PQXX::PQXX)
-
-
-    file(GLOB test_core_test_dirs LIST_DIRECTORIES true "${CMAKE_CURRENT_SOURCE_DIR}/*.testcore")
-    foreach (test ${test_core_test_dirs})
-    get_filename_component (TName "${test}" NAME_WE)
-    add_test(NAME "${TName}.testcore" COMMAND test_core --test-directory "${test}")
-    endforeach ()
-
-
     ####################
     # test_parse_id_list
     ####################
@@ -183,7 +142,6 @@ if(BUILD_TESTING)
         COMMAND test_parse_osmchange_xml_input)
 
 
-
     ############################
     # test_parse_changeset_input
     ############################
@@ -200,141 +158,136 @@ if(BUILD_TESTING)
         COMMAND test_parse_changeset_input)
 
 
-        ##########################
-        # test_apidb_backend_nodes
-        ##########################
-        add_executable(test_apidb_backend_nodes
-            test_apidb_backend_nodes.cpp
-            test_formatter.cpp
-            test_database.cpp
-            test_request.cpp)
+    ##########################
+    # test_apidb_backend_nodes
+    ##########################
+    add_executable(test_apidb_backend_nodes
+        test_apidb_backend_nodes.cpp
+        test_formatter.cpp
+        test_database.cpp
+        test_request.cpp)
 
-        target_link_libraries(test_apidb_backend_nodes
-            cgimap_common_compiler_options
-            cgimap_core
-            cgimap_apidb
-            Boost::program_options
-            catch2)
+    target_link_libraries(test_apidb_backend_nodes
+        cgimap_common_compiler_options
+        cgimap_core
+        cgimap_apidb
+        Boost::program_options
+        catch2)
 
-        add_test_with_virtualenv(test_apidb_backend_nodes)
-
-
-        ###########################
-        # test_apidb_backend_oauth2
-        ###########################
-        add_executable(test_apidb_backend_oauth2
-            test_apidb_backend_oauth2.cpp
-            test_formatter.cpp
-            test_database.cpp
-            test_request.cpp)
-
-        target_link_libraries(test_apidb_backend_oauth2
-            cgimap_common_compiler_options
-            cgimap_core
-            cgimap_apidb
-            cgimap_staticxml
-            Boost::program_options
-            catch2)
-
-        add_test_with_virtualenv(test_apidb_backend_oauth2)
-
-        #############################
-        # test_apidb_backend_historic
-        #############################
-        add_executable(test_apidb_backend_historic
-            test_apidb_backend_historic.cpp
-            test_formatter.cpp
-            test_database.cpp
-            test_request.cpp)
-
-        target_link_libraries(test_apidb_backend_historic
-            cgimap_common_compiler_options
-            cgimap_core
-            cgimap_apidb
-            cgimap_staticxml
-            Boost::program_options
-            catch2)
-
-        add_test_with_virtualenv(test_apidb_backend_historic)
-
-        ##########################
-        # test_apidb_backend_roles
-        ##########################
-        add_executable(test_apidb_backend_roles
-            test_apidb_backend_roles.cpp
-            test_formatter.cpp
-            test_database.cpp
-            test_request.cpp)
-
-        target_link_libraries(test_apidb_backend_roles
-            cgimap_common_compiler_options
-            cgimap_core
-            cgimap_apidb
-            cgimap_staticxml
-            Boost::program_options
-            catch2)
-
-        add_test_with_virtualenv(test_apidb_backend_roles)
+    add_test_with_virtualenv(test_apidb_backend_nodes)
 
 
-        ###############################
-        # test_apidb_backend_changesets
-        ###############################
-        add_executable(test_apidb_backend_changesets
-            test_apidb_backend_changesets.cpp
-            test_formatter.cpp
-            test_database.cpp
-            test_request.cpp)
+    ###########################
+    # test_apidb_backend_oauth2
+    ###########################
+    add_executable(test_apidb_backend_oauth2
+        test_apidb_backend_oauth2.cpp
+        test_formatter.cpp
+        test_database.cpp
+        test_request.cpp)
 
-        target_link_libraries(test_apidb_backend_changesets
-            cgimap_common_compiler_options
-            cgimap_core
-            cgimap_apidb
-            cgimap_staticxml
-            Boost::program_options
-            catch2)
+    target_link_libraries(test_apidb_backend_oauth2
+        cgimap_common_compiler_options
+        cgimap_core
+        cgimap_apidb
+        Boost::program_options
+        catch2)
 
-        add_test_with_virtualenv(test_apidb_backend_changesets)
+    add_test_with_virtualenv(test_apidb_backend_oauth2)
+
+    #############################
+    # test_apidb_backend_historic
+    #############################
+    add_executable(test_apidb_backend_historic
+        test_apidb_backend_historic.cpp
+        test_formatter.cpp
+        test_database.cpp
+        test_request.cpp)
+
+    target_link_libraries(test_apidb_backend_historic
+        cgimap_common_compiler_options
+        cgimap_core
+        cgimap_apidb
+        Boost::program_options
+        catch2)
+
+    add_test_with_virtualenv(test_apidb_backend_historic)
+
+    ##########################
+    # test_apidb_backend_roles
+    ##########################
+    add_executable(test_apidb_backend_roles
+        test_apidb_backend_roles.cpp
+        test_formatter.cpp
+        test_database.cpp
+        test_request.cpp)
+
+    target_link_libraries(test_apidb_backend_roles
+        cgimap_common_compiler_options
+        cgimap_core
+        cgimap_apidb
+        Boost::program_options
+        catch2)
+
+    add_test_with_virtualenv(test_apidb_backend_roles)
 
 
-        ########################################
-        # test_apidb_backend_changeset_downloads
-        ########################################
-        add_executable(test_apidb_backend_changeset_downloads
-            test_apidb_backend_changeset_downloads.cpp
-            test_formatter.cpp
-            test_database.cpp
-            test_request.cpp)
+    ###############################
+    # test_apidb_backend_changesets
+    ###############################
+    add_executable(test_apidb_backend_changesets
+        test_apidb_backend_changesets.cpp
+        test_formatter.cpp
+        test_database.cpp
+        test_request.cpp)
 
-        target_link_libraries(test_apidb_backend_changeset_downloads
-            cgimap_common_compiler_options
-            cgimap_core
-            cgimap_apidb
-            cgimap_staticxml
-            Boost::program_options
-            catch2)
+    target_link_libraries(test_apidb_backend_changesets
+        cgimap_common_compiler_options
+        cgimap_core
+        cgimap_apidb
+        Boost::program_options
+        catch2)
 
-        add_test_with_virtualenv(test_apidb_backend_changeset_downloads)
+    add_test_with_virtualenv(test_apidb_backend_changesets)
 
 
-        ######################################
-        # test_apidb_backend_changeset_uploads
-        ######################################
-        add_executable(test_apidb_backend_changeset_uploads
-            test_apidb_backend_changeset_uploads.cpp
-            test_formatter.cpp
-            test_database.cpp
-            test_request.cpp)
+    ########################################
+    # test_apidb_backend_changeset_downloads
+    ########################################
+    add_executable(test_apidb_backend_changeset_downloads
+        test_apidb_backend_changeset_downloads.cpp
+        test_formatter.cpp
+        test_database.cpp
+        test_request.cpp)
 
-        target_link_libraries(test_apidb_backend_changeset_uploads
-            cgimap_common_compiler_options
-            cgimap_core
-            cgimap_apidb
-            Boost::program_options
-            Threads::Threads
-            catch2)
+    target_link_libraries(test_apidb_backend_changeset_downloads
+        cgimap_common_compiler_options
+        cgimap_core
+        cgimap_apidb
+        Boost::program_options
+        catch2)
 
-        add_test_with_virtualenv(test_apidb_backend_changeset_uploads)
+    add_test_with_virtualenv(test_apidb_backend_changeset_downloads)
+
+
+    ######################################
+    # test_apidb_backend_changeset_uploads
+    ######################################
+    add_executable(test_apidb_backend_changeset_uploads
+        test_apidb_backend_changeset_uploads.cpp
+        test_formatter.cpp
+        test_database.cpp
+        test_request.cpp)
+
+    target_link_libraries(test_apidb_backend_changeset_uploads
+        cgimap_common_compiler_options
+        cgimap_core
+        cgimap_apidb
+        Boost::program_options
+        Threads::Threads
+        catch2)
+
+    add_test_with_virtualenv(test_apidb_backend_changeset_uploads)
 
 
     #########################
@@ -367,22 +320,20 @@ if(BUILD_TESTING)
     # define check alias target for autotools compatibility
     add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
 
-    add_dependencies(check test_core
-                           test_parse_id_list
+    add_dependencies(check test_parse_id_list
                            test_oauth2
                            test_http
                            test_parse_time
                            test_parse_options
                            test_parse_osmchange_xml_input
-                           test_parse_changeset_input)
-
-      add_dependencies(check test_apidb_backend_nodes
-                             test_apidb_backend_oauth2
-                             test_apidb_backend_historic
-                             test_apidb_backend_changesets
-                             test_apidb_backend_changeset_downloads
-                             test_apidb_backend_changeset_uploads
-                             test_apidb_backend_roles
-                             test_apidb_backend_core)
+                           test_parse_changeset_input
+                           test_apidb_backend_nodes
+                           test_apidb_backend_oauth2
+                           test_apidb_backend_historic
+                           test_apidb_backend_changesets
+                           test_apidb_backend_changeset_downloads
+                           test_apidb_backend_changeset_uploads
+                           test_apidb_backend_roles
+                           test_apidb_backend_core)
 
 endif()
