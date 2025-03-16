@@ -20,9 +20,9 @@ COPY . ./
 
 # Compile, install and remove source
 RUN mkdir build && cd build && \
-     CXXFLAGS="-Wall -Wextra -Wpedantic -Wno-unused-parameter" cmake .. -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release && \
+     CXXFLAGS="-Wall -Wextra -Wpedantic -Wno-unused-parameter" cmake .. -DBUILD_SHARED_LIBS=OFF -DENABLE_PGVIRTUALENV=OFF -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release && \
      make -j${nproc} && \
-     ctest --output-on-failure && \
+     pg_virtualenv ctest --output-on-failure && \
      cmake --build . -t package
 
 FROM debian:trixie-slim
