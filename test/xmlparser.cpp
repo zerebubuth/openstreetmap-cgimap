@@ -20,6 +20,7 @@
 #include <fmt/core.h>
 #include <libxml/parser.h>
 
+namespace xmlparser {
 
 template <typename T>
 std::optional<T> opt_attribute(std::string_view name, const xmlChar **attributes) {
@@ -84,7 +85,7 @@ void parse_changeset_info(changeset_info &info, const xmlChar **attributes) {
 }
 
 struct xml_parser {
-  explicit xml_parser(database *db)
+  explicit xml_parser(xmlparser::database *db)
     : m_db(db) {}
 
   static void start_element(void *ctx, const xmlChar *name_cstr,
@@ -214,12 +215,12 @@ struct xml_parser {
     throw std::runtime_error(fmt::format("XML ERROR: {}", buffer));
   }
 
-  database *m_db = nullptr;
-  node *m_cur_node = nullptr;
-  way *m_cur_way = nullptr;
-  relation *m_cur_rel = nullptr;
+  xmlparser::database *m_db = nullptr;
+  xmlparser::node *m_cur_node = nullptr;
+  xmlparser::way *m_cur_way = nullptr;
+  xmlparser::relation *m_cur_rel = nullptr;
   tags_t *m_cur_tags = nullptr;
-  changeset *m_cur_changeset = nullptr;
+  xmlparser::changeset *m_cur_changeset = nullptr;
   bool m_in_text = false;
 };
 
@@ -234,10 +235,12 @@ xmlSAXHandler create_xml_sax_handler() {
   return handler;
 }
 
-std::unique_ptr<database> parse_xml(const char *filename) {
-  xmlSAXHandler handler = create_xml_sax_handler();
-  auto db = std::make_unique<database>();
-  xml_parser parser(db.get());
+} // namespace xmlparser
+
+std::unique_ptr<xmlparser::database> parse_xml(const char *filename) {
+  xmlSAXHandler handler = xmlparser::create_xml_sax_handler();
+  auto db = std::make_unique<xmlparser::database>();
+  xmlparser::xml_parser parser(db.get());
   int status = xmlSAXUserParseFile(&handler, &parser, filename);
   if (status != 0) {
     const auto err = xmlGetLastError();
@@ -250,10 +253,10 @@ std::unique_ptr<database> parse_xml(const char *filename) {
   return db;
 }
 
-std::unique_ptr<database> parse_xml_from_string(const std::string &payload) {
-  xmlSAXHandler handler = create_xml_sax_handler();
-  auto db = std::make_unique<database>();
-  xml_parser parser(db.get());
+std::unique_ptr<xmlparser::database> parse_xml_from_string(const std::string &payload) {
+  xmlSAXHandler handler = xmlparser::create_xml_sax_handler();
+  auto db = std::make_unique<xmlparser::database>();
+  xmlparser::xml_parser parser(db.get());
   int status = xmlSAXUserParseMemory(&handler, &parser, payload.c_str(), payload.size());
   if (status != 0) {
     const auto err = xmlGetLastError();

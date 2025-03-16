@@ -27,21 +27,18 @@
 // the changeset cache is used to look up user display names.
 void extract_nodes(
   const pqxx::result &rows, output_formatter &formatter,
-  std::function<void(const element_info&)> notify,
   std::map<osm_changeset_id_t, changeset> &cc);
 
 // extract ways from the results of the query and write them to the formatter.
 // the changeset cache is used to look up user display names.
 void extract_ways(
   const pqxx::result &rows, output_formatter &formatter,
-  std::function<void(const element_info&)> notify,
   std::map<osm_changeset_id_t, changeset> &cc);
 
 // extract relations from the results of the query and write them to the
 // formatter. the changeset cache is used to look up user display names.
 void extract_relations(
   const pqxx::result &rows, output_formatter &formatter,
-  std::function<void(const element_info&)> notify,
   std::map<osm_changeset_id_t, changeset> &cc);
 
 void extract_changesets(
