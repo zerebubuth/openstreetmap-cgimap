@@ -13,6 +13,10 @@
 #include "test_request.hpp"
 #include "test_types.hpp"
 
+#include <filesystem>
+#include <istream>
+#include <set>
+
 namespace fs = std::filesystem;
 
 void setup_request_headers(test_request &req, std::istream &in);

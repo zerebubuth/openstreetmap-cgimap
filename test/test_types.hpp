@@ -7,8 +7,11 @@
  * For a full list of authors see the git log.
  */
 
- #ifndef TEST_TEST_TYPES_HPP
- #define TEST_TEST_TYPES_HPP
+#ifndef TEST_TEST_TYPES_HPP
+#define TEST_TEST_TYPES_HPP
+
+#include <set>
+#include "cgimap/types.hpp"
 
 struct oauth2_token_detail_t
 {

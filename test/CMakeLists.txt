@@ -25,6 +25,22 @@ if(BUILD_TESTING)
         add_test(NAME ${test_name} COMMAND ${TEST_COMMAND})
     endfunction()
 
+    ####################
+    # test_core_check
+    ####################
+    add_executable(test_core_check
+        test_core_check.cpp
+        test_core_helper.cpp
+        test_request.cpp)
+
+    target_link_libraries(test_core_check
+        cgimap_common_compiler_options
+        cgimap_core
+        Boost::program_options
+        catch2)
+
+    add_test(NAME test_core_check
+        COMMAND test_core_check)
 
     ####################
     # test_parse_id_list
@@ -321,6 +337,7 @@ if(BUILD_TESTING)
     add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
 
     add_dependencies(check test_parse_id_list
+                           test_core_check
                            test_oauth2
                            test_http
                            test_parse_time
