@@ -22,15 +22,12 @@ openstreetmap-cgimap \- FCGI version of the OpenStreetMap API
 [\fB\-\-host \fIHOST\fR]
 [\fB\-\-username \fIUSER\fR]
 [\fB\-\-password \fIPASS\fR]
-[\fB\-\-charset \fICHARSET\fR]
-[\fB\-\-cachesize \fISIZE\fR]
 [\fB\-\-dbport \fIPORT\fR]
 ] [
 [\fB\-\-update\-dbname \fIUPDATEDBNAME\fR]
 [\fB\-\-update\-host \fIUPDATEHOST\fR]
 [\fB\-\-update\-username \fIUPDATEUSER\fR]
 [\fB\-\-update\-password \fIUPDATEPASS\fR]
-[\fB\-\-update\-charset \fIUPDATECHARSET\fR]
 [\fB\-\-update\-dbport \fIUPDATEPORT\fR]
 ] [
 [\fB\-\-file \fIFILE\fR]
@@ -93,14 +90,6 @@ Database user name.
 .BR \-\-password =\fIPASS\fR
 Database password.
 .TP
-.BR \-\-charset =\fICHARSET\fR
-Database character set.
-Default is utf8.
-.TP
-.BR \-\-cachesize =\fISIZE\fR
-Maximum size of changeset cache.
-Default is 1000.
-.TP
 .BR \-\-dbport =\fIPORT\fR
 Database port number or UNIX socket file name.
 .TP
@@ -115,9 +104,6 @@ Database user name to use for API write operations, if different from \-\-userna
 .TP
 .BR \-\-update\-password =\fIUPDATEPASS\fR
 Database password to use for API write operations, if different from \-\-password.
-.TP
-.BR \-\-update\-charset =\fIUPDATECHARSET\fR
-Database character set to use for API write operations, if different from \-\-charset.
 .TP
 .BR \-\-update\-dbport =\fIUPDATEPORT\fR
 Database port number or UNIX socket file name to use for API write operations, if different from \-\-dbport.

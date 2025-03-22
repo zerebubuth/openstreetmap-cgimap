@@ -26,8 +26,6 @@ struct apidb_backend : public backend {
       ("host", po::value<std::string>(), "database server host")
       ("username", po::value<std::string>(), "database user name")
       ("password", po::value<std::string>(), "database password")
-      ("charset", po::value<std::string>()->default_value("utf8"),
-       "database character set")
       ("disable-api-write", "disable API write operations")
       ("dbport", po::value<std::string>(),
        "database port number or UNIX socket file name")
@@ -39,8 +37,6 @@ struct apidb_backend : public backend {
        "database user name for API write operations, if different from --username")
       ("update-password", po::value<std::string>(),
        "database password for API write operations, if different from --password")
-      ("update-charset", po::value<std::string>(),
-       "database character set for API write operations, if different from --charset")
       ("update-dbport", po::value<std::string>(),
        "database port for API write operations, if different from --dbport");
     // clang-format on

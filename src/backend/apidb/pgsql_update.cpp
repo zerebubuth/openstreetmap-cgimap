@@ -143,13 +143,7 @@ pgsql_update::factory::factory(const po::variables_map &opts)
     m_errorhandler(m_connection) {
 
   check_postgres_version(m_connection);
-
-  // set the connections to use the appropriate charset.
-  std::string db_charset = opts["charset"].as<std::string>();
-  if (opts.count("update-charset")) {
-     db_charset = opts["update-charset"].as<std::string>();
-  }
-  m_connection.set_client_encoding(db_charset);
+  m_connection.set_client_encoding("utf8");
 
   // set the connection to readonly transaction, if disable-api-write flag is set
   if (opts.count("disable-api-write") != 0) {

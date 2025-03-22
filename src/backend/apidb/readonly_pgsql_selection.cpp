@@ -972,7 +972,7 @@ readonly_pgsql_selection::factory::factory(const po::variables_map &opts)
   check_postgres_version(m_connection);
 
   // set the connections to use the appropriate charset.
-  m_connection.set_client_encoding(opts["charset"].as<std::string>());
+  m_connection.set_client_encoding("utf8");
 
 #if PQXX_VERSION_MAJOR < 7
   // set the connection to use readonly transaction.
