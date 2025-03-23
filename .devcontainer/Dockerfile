@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim
+FROM debian:bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -12,7 +12,8 @@ RUN apt-get update -qq && \
        libboost-program-options-dev libcrypto++-dev libyajl-dev \
        libpqxx-dev zlib1g-dev libfmt-dev \
        postgresql-15 postgresql-server-dev-all dpkg-dev file \
-       clang-tidy cppcheck ninja-build locales \
+       clang-tidy cppcheck ninja-build locales clang-19 \
+       dh-cmake dh-cmake-compat dh-sequence-cmake debhelper postgresql-all \
        --no-install-recommends && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
