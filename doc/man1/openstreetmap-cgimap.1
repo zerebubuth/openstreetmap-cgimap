@@ -14,7 +14,7 @@ Display help message and exit.
 .BR \-\-daemon
 Run the program as a daemon, forking multiple instances
 for parallel processing of requests.
-
+.IP
 In non-daemon mode, only a single process is active and handles requests.
 When the process terminates, it must be restarted externally.
 .TP
@@ -85,14 +85,14 @@ Database password to use for API write operations, if different from \-\-passwor
 .TP
 .BR \-\-update\-dbport =\fIUPDATEPORT\fR
 Database port number or UNIX socket file name to use for API write operations, if different from \-\-dbport.
-.TP
-.BR \-\-disable-api-write
-Disables all database write operations. Useful for database maintenance, or during fallover to a read-only mirror.
 .LP
 \fB--update-*\fR parameters can be used to set up a read-only mirror scenario:
 \fB--update-*\fR config options point to the active database,
 while the other database parameters point to the read-only mirror.
 .SS ADVANCED SETTINGS
+.TP
+.BR \-\-disable-api-write
+Disables all database write operations. Useful for database maintenance, or during fallover to a read-only mirror.
 .TP
 .BR \-\-bbox-size-limit-upload =\fIARG\fR
 Enables a limit on the bounding box (bbox) size for changeset uploads.
@@ -124,12 +124,10 @@ being closed. Default setting is 24 hours.
 Defines the time that a changeset will remain open after the last edit
 was made. If no edits are made within this time, the changeset will automatically
 close.
-.TP
 .SS EXPERT SETTINGS
 Parameters in this section should not be changed in a production environment without
-adjusting corresponding settings on Rails as well.
-Due to the high likelihood of causing all sorts of issues for data consumers,
-it's best not to touch them.
+adjusting corresponding settings on Rails as well. Due to the high likelihood
+of causing all sorts of issues for data consumers, it's best not to touch them.
 .TP
 .BR \-\-max-changeset-elements =\fIARG\fR
 Specifies the maximum number of changes (created, modified or deleted elements)
@@ -150,7 +148,14 @@ Defines the maximum number of members allowed per relation. Default is 32000 mem
 .BR \-\-max-element-tags =\fIARG\fR
 Specifies the maximum number of tags allowed per element (node/way/relation).
 By default, the number is unlimited.
-.SS ENVIRONMENT
+.SH "EXIT STATUS"
+.TP
+.B 0
+Successful program execution.
+.TP
+.B 1
+Program error, see console output or logfile for details.
+.SH ENVIRONMENT
 To convert a command line option to an environment variable prepend
 \fBCGIMAP_\fR to the option, replace hyphen characters by an underscore,
 and capitalize it.
