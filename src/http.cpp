@@ -17,7 +17,6 @@
 #include <cctype>   // for toupper, isxdigit
 #include <cstdlib>
 #include <ranges>
-#include <sstream>
 #include <string_view>
 
 
@@ -173,31 +172,6 @@ method_not_allowed::method_not_allowed(http::method method)
 
 std::string urldecode(const std::string &s) { return form_urldecode(s); }
 
-std::string urlencode(const std::string &s) {
-  static const char hex[] = { '0', '1', '2', '3', '4', '5', '6', '7',
-                              '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
-  std::ostringstream ostr;
-
-  for (char c : s) {
-    if (((c >= 'a') && (c <= 'z')) ||
-        ((c >= 'A') && (c <= 'Z')) ||
-        ((c >= '0') && (c <= '9')) ||
-        (c == '-') ||
-        (c == '.') ||
-        (c == '_') ||
-        (c == '~')) {
-      ostr << c;
-
-    } else {
-      auto idx = (unsigned char)(c);
-      ostr << "%" << hex[idx >> 4] << hex[idx & 0xf];
-    }
-  }
-
-  std::string rv(ostr.str());
-  return rv;
-}
-
 std::vector<std::pair<std::string, std::string>> parse_params(const std::string &p) {
   // Split the query string into components
   std::vector<std::pair<std::string, std::string>> queryKVPairs;
@@ -335,16 +309,16 @@ const std::map<method, std::string> METHODS = {
 } // anonymous namespace
 
 std::string list_methods(method m) {
-  std::ostringstream result;
+  std::string result;
 
   bool first = true;
   for (auto const &pair : METHODS) {
     if ((m & pair.first) == pair.first) {
-      if (first) { first = false; } else { result << ", "; }
-      result << pair.second;
+      if (first) { first = false; } else { result += ", "; }
+      result += pair.second;
     }
   }
-  return result.str();
+  return result;
 }
 
 std::optional<method> parse_method(const std::string &s) {
@@ -357,12 +331,6 @@ std::optional<method> parse_method(const std::string &s) {
     }
   }
   return result;
-}
-
-std::ostream &operator<<(std::ostream &out, method m) {
-  std::string s = list_methods(m);
-  out << "methods{" << s << "}";
-  return out;
 }
 
 unsigned long parse_content_length(const std::string &content_length_str) {

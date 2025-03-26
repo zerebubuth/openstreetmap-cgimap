@@ -15,7 +15,6 @@
 #include <vector>
 #include <exception>
 #include <optional>
-#include <ostream>
 
 #ifdef HAVE_LIBZ
 #include "cgimap/zlib.hpp"
@@ -220,12 +219,6 @@ public:
  */
 std::string urldecode(const std::string &s);
 
-/**
- * Encodes a string to canonical url-encoding.
- *
- * This is compatible with the OAuth 1.0a definition of url-encoding.
- */
-std::string urlencode(const std::string &s);
 
 /**
  * Parses a query string into an array of key-value pairs.
@@ -331,8 +324,6 @@ std::optional<method> parse_method(const std::string &);
 
 // parse CONTENT_LENGTH HTTP header
 unsigned long parse_content_length(const std::string &);
-
-std::ostream &operator<<(std::ostream &, method);
 
 } // namespace http
 
