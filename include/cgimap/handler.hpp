@@ -39,9 +39,6 @@ public:
 
   bool is_available(mime::type) const;
 
-  // quick hack to get "extra" response headers.
-  virtual std::string extra_response_headers() const;
-
 private:
   mime::type mime_type;
 };
@@ -54,8 +51,8 @@ using responder_ptr_t = std::unique_ptr<responder>;
  */
 class handler {
 public:
-  static constexpr http::method default_methods = http::method::GET | 
-                                                  http::method::HEAD | 
+  static constexpr http::method default_methods = http::method::GET |
+                                                  http::method::HEAD |
                                                   http::method::OPTIONS;
 
   handler(mime::type default_type = mime::type::unspecified_type,
@@ -91,8 +88,8 @@ public:
                           http::method methods = http::method::POST | http::method::OPTIONS);
 
   // Responder used to update the database
-  virtual responder_ptr_t responder(data_update &, 
-                                    const std::string & payload, 
+  virtual responder_ptr_t responder(data_update &,
+                                    const std::string & payload,
                                     const RequestContext& req_ctx) const = 0;
 
   // Optional responder to return XML response back to caller of the API method

@@ -16,14 +16,6 @@ std::vector<mime::type> text_responder::types_available() const {
   return {mime::type::text_plain};
 }
 
-void text_responder::add_response_header(const std::string &line) {
-  extra_headers << line << "\r\n";
-}
-
-std::string text_responder::extra_response_headers() const {
-  return extra_headers.str();
-}
-
 void text_responder::write(output_formatter& fmt,
                            const std::string &generator,
                            const std::chrono::system_clock::time_point &now)

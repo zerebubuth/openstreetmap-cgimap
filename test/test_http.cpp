@@ -28,21 +28,6 @@ struct test_responder : responder {
     const std::chrono::system_clock::time_point &now) override {}
 };
 
-TEST_CASE("http_check_urlencoding", "[http]") {
-  // RFC 3986 section 2.5
-  CHECK(http::urlencode("ア") == "%E3%82%A2");
-  CHECK(http::urlencode("À") == "%C3%80");
-
-  // RFC 3986 - unreserved characters not encoded
-  CHECK(http::urlencode("abcdefghijklmnopqrstuvwxyz") == "abcdefghijklmnopqrstuvwxyz");
-  CHECK(http::urlencode("ABCDEFGHIJKLMNOPQRSTUVWXYZ") == "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-  CHECK(http::urlencode("0123456789") == "0123456789");
-  CHECK(http::urlencode("-._~") == "-._~");
-
-  // RFC 3986 - % must be encoded
-  CHECK(http::urlencode("%") == "%25");
-}
-
 TEST_CASE("http_check_urldecoding", "[http]") {
   CHECK(http::urldecode("%E3%82%A2") == "ア");
   CHECK(http::urldecode("%C3%80") == "À");

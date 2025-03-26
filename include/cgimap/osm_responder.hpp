@@ -14,7 +14,6 @@
 #include "cgimap/bbox.hpp"
 
 #include <optional>
-#include <sstream>
 
 /**
  * utility class - use this as a base class when the derived class is going to
@@ -36,19 +35,10 @@ public:
   // lists the standard types that OSM format can respond in, currently XML and JSON
   std::vector<mime::type> types_available() const override;
 
-  // quick hack to add headers to the response
-  std::string extra_response_headers() const override;
-
 protected:
   // optional bounds element - this is only for information and has no effect on
   // behaviour other than whether the bounds element gets written.
   std::optional<bbox> bounds;
-
-  // quick hack to provide extra response headers like Content-Disposition.
-  std::ostringstream extra_headers;
-
-  // adds an extra response header.
-  void add_response_header(const std::string &);
 };
 
 #endif /* OSM_RESPONDER_HPP */
