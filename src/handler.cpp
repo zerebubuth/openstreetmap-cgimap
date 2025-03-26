@@ -20,8 +20,6 @@ bool responder::is_available(mime::type mt) const {
 
 mime::type responder::resource_type() const { return mime_type; }
 
-std::string responder::extra_response_headers() const { return {}; }
-
 handler::handler(mime::type default_type,
                  http::method methods)
   : mime_type(default_type),

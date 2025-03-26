@@ -15,11 +15,3 @@ osm_responder::osm_responder(mime::type mt, std::optional<bbox> b)
 std::vector<mime::type> osm_responder::types_available() const {
   return {mime::type::application_xml, mime::type::application_json};
 }
-
-void osm_responder::add_response_header(const std::string &line) {
-  extra_headers << line << "\r\n";
-}
-
-std::string osm_responder::extra_response_headers() const {
-  return extra_headers.str();
-}
