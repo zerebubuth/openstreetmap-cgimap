@@ -19,7 +19,6 @@
 #include <cmath>
 #include <cstdlib>
 #include <cwchar>
-#include <ostream>
 #include <string>
 #include <string_view>
 #include <ranges>
@@ -208,11 +207,6 @@ public:
 	}
 
 	bool operator==(const bbox_t& bbox) const = default;
-
-	friend std::ostream& operator<< (std::ostream& os, const bbox_t& bbox) {
-	    os << "[" << bbox.minlat << "," << bbox.minlon << "," << bbox.maxlat << "," << bbox.maxlon << "]";
-	    return os;
-	}
 
 	long linear_size() const {
 	  return ((maxlon - minlon) + (maxlat - minlat));

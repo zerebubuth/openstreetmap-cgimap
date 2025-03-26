@@ -16,7 +16,6 @@
 
 #include <array>
 #include <stdexcept>
-#include <sstream>
 #include <fcgiapp.h>
 #include <cerrno>
 #include <cstring>
@@ -143,25 +142,16 @@ void fcgi_request::dispose() { FCGX_Finish_r(&m_impl->req); }
 
 int fcgi_request::accept_r() {
   int status = FCGX_Accept_r(&m_impl->req);
-  if (status < 0) {
-    if (errno != EINTR) {
-      std::ostringstream out;
-
-      if (errno == ENOTSOCK) {
-        out << "FCGI port or UNIX socket not set properly, please use the "
-               "--socket option (caused by ENOTSOCK).";
-
+  if (status < 0 && errno != EINTR) {
+    if (errno == ENOTSOCK) {
+      throw std::runtime_error("FCGI port or UNIX socket not set properly, please use the --socket option (caused by ENOTSOCK).");
+    } else {
+      char err_buf[1024];
+      if (strerror_r(errno, err_buf, sizeof(err_buf) == 0)) {    // NOLINT(modernize-use-nullptr)
+        throw std::runtime_error(fmt::format("error accepting request: {}", err_buf));
       } else {
-        char err_buf[1024];
-        out << "error accepting request: ";
-        if (strerror_r(errno, err_buf, sizeof err_buf) == 0) {   // NOLINT(modernize-use-nullptr)
-          out << err_buf;
-        } else {
-          out << "error encountered while getting error message";
-        }
+        throw std::runtime_error("error accepting request: error encountered while getting error message");
       }
-
-      throw std::runtime_error(out.str());
     }
   }
 
