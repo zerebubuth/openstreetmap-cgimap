@@ -49,8 +49,8 @@ std::string test_request::get_payload() {
   // TODO: still a bit too much duplication from fcgi_request.cpp::get_payload
 
   // fetch and parse the content length
-  const char *content_length_str = m_params.find("CONTENT_LENGTH") != m_params.end() ? m_params["CONTENT_LENGTH"].c_str() : nullptr;
-  const char *content_encoding = m_params.find("HTTP_CONTENT_ENCODING") != m_params.end() ? m_params["HTTP_CONTENT_ENCODING"].c_str() : nullptr;
+  const char *content_length_str = m_params.contains("CONTENT_LENGTH") ? m_params["CONTENT_LENGTH"].c_str() : nullptr;
+  const char *content_encoding = m_params.contains("HTTP_CONTENT_ENCODING") ? m_params["HTTP_CONTENT_ENCODING"].c_str() : nullptr;
 
   auto content_encoding_handler = http::get_content_encoding_handler(
          std::string(content_encoding == nullptr ? "" : content_encoding));
