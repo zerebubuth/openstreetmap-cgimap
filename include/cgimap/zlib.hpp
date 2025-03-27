@@ -27,14 +27,21 @@ public:
   /**
    * Output mode.
    */
-  enum mode { zlib, gzip };
+  enum class mode { zlib, gzip };
 
   /**
    * Methods.
    */
   zlib_output_buffer(output_buffer& o, mode m);
-  zlib_output_buffer(const zlib_output_buffer &old);
+
+  zlib_output_buffer(const zlib_output_buffer &old) = delete;
+  zlib_output_buffer& operator=(const zlib_output_buffer &old) = delete;
+
+  zlib_output_buffer(zlib_output_buffer &&old) = delete;
+  zlib_output_buffer& operator=(zlib_output_buffer &&old) = delete;
+
   ~zlib_output_buffer() override = default;
+
   int write(const char *buffer, int len) override;
   int written() const override;
   int close() override;
