@@ -16,22 +16,16 @@
 
 namespace {
 
-  element_type as_elem_type(object_type o) { // @suppress("No return")
+element_type as_elem_type(object_type o) {
 
-    switch (o) {
-
-      case object_type::node:
-	return element_type::node;
-      case object_type::way:
-	return element_type::way;
-      case object_type::relation:
-	return element_type::relation;
-
-    }
-
-    throw std::runtime_error("Unhandled object_type in as_elem_type.");
+  if (o == object_type::node) {
+    return element_type::node;
+  } else if (o == object_type::way) {
+    return element_type::way;
+  } else {
+    return element_type::relation;
   }
-
+}
 }
 
 osm_diffresult_responder::osm_diffresult_responder(mime::type mt)

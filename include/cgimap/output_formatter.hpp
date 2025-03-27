@@ -58,13 +58,13 @@ struct element_info {
 
   element_info() = default;
 
-  element_info(osm_nwr_id_t id_, osm_nwr_id_t version_,
-               osm_changeset_id_t changeset_,
-               const std::string &timestamp_,
-               const std::optional<osm_user_id_t> &uid_,
-               const std::optional<std::string> &display_name_,
-               bool visible_,
-               std::optional<osm_redaction_id_t> redaction_ = {});
+  element_info(osm_nwr_id_t id, osm_nwr_id_t version,
+               osm_changeset_id_t changeset,
+               const std::string &timestamp,
+               const std::optional<osm_user_id_t> &uid,
+               const std::optional<std::string> &display_name,
+               bool visible,
+               std::optional<osm_redaction_id_t> redaction = {});
 
   bool operator==(const element_info &other) const = default;
 
@@ -87,14 +87,14 @@ struct element_info {
 struct changeset_info {
   changeset_info() = default;
   changeset_info(const changeset_info &) = default;
-  changeset_info(osm_changeset_id_t id_,
-                 const std::string &created_at_,
-                 const std::string &closed_at_,
-                 const std::optional<osm_user_id_t> &uid_,
-                 const std::optional<std::string> &display_name_,
-                 const std::optional<bbox> &bounding_box_,
-                 size_t num_changes_,
-                 size_t comments_count_);
+  changeset_info(osm_changeset_id_t id,
+                 const std::string &created_at,
+                 const std::string &closed_at,
+                 const std::optional<osm_user_id_t> &uid,
+                 const std::optional<std::string> &display_name,
+                 const std::optional<bbox> &bounding_box,
+                 size_t num_changes,
+                 size_t comments_count);
 
   bool operator==(const changeset_info &other) const = default;
 

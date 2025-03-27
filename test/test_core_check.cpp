@@ -15,6 +15,7 @@
 #include <filesystem>
 #include <set>
 #include <sstream>
+#include <string_view>
 
 struct ExceptionSubstringMatcher : Catch::MatcherBase<std::runtime_error> {
   std::string m_text;
@@ -22,7 +23,7 @@ struct ExceptionSubstringMatcher : Catch::MatcherBase<std::runtime_error> {
   ExceptionSubstringMatcher(char const *text) : m_text(text) {}
 
   bool match(std::runtime_error const &arg) const override {
-    return std::string(arg.what()).find(m_text) != std::string::npos;
+    return std::string_view(arg.what()).find(m_text) != std::string_view::npos;
   }
 
   std::string describe() const override {
