@@ -31,11 +31,14 @@ struct bbox {
    */
   bool parse(const std::string &s);
 
+  #ifdef ENABLE_EXPERIMENTAL
   /**
    * Reduce or increate the coordinates to ensure that they are all
    * valid lat/lon values.
    */
   void clip_to_world();
+
+  #endif
 
   /**
    * Returns true if this instance is a valid bounding box, i.e: the

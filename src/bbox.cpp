@@ -39,12 +39,8 @@ bool bbox::parse(const std::string &s) {
   return true;
 }
 
-void bbox::clip_to_world() {
-  minlon = std::max(minlon, -180.0);
-  minlat = std::max(minlat, -90.0);
-  maxlon = std::min(maxlon, 180.0);
-  maxlat = std::min(maxlat, 90.0);
-}
+
+double bbox::area() const { return (maxlon - minlon) * (maxlat - minlat); }
 
 bool bbox::valid() const {
   return (minlon >= -180.0) && (minlon <= 180.0) &&
@@ -54,4 +50,13 @@ bool bbox::valid() const {
          (minlon <= maxlon) && (minlat <= maxlat);
 }
 
-double bbox::area() const { return (maxlon - minlon) * (maxlat - minlat); }
+
+#ifdef ENABLE_EXPERIMENTAL
+
+void bbox::clip_to_world() {
+  minlon = std::max(minlon, -180.0);
+  minlat = std::max(minlat, -90.0);
+  maxlon = std::min(maxlon, 180.0);
+  maxlat = std::min(maxlat, 90.0);
+}
+#endif
