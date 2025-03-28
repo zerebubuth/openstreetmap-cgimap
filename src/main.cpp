@@ -51,6 +51,9 @@ static std::atomic<bool> reload_requested = false;
 
 static_assert(std::atomic<bool>::is_always_lock_free);
 
+constexpr auto MIN_CHILD_RUNTIME_MS = 1000ms;
+constexpr int SOCKET_BACKLOG = 5;
+
 /**
  * SIGTERM handler.
  */
@@ -85,6 +88,36 @@ std::string get_generator_string() {
   }
 
   return (fmt::format(PACKAGE_STRING " ({:d} {})", getpid(), hostname));
+}
+
+void process_environment_variables(const po::options_description &desc,
+                                   po::variables_map &options) {
+
+  std::set<std::string> valid_options;
+  for (const auto &d : desc.options()) {
+    valid_options.insert(d->long_name());
+  }
+
+  po::store(po::parse_environment(desc,
+    [&desc, &valid_options](const std::string &name) {
+
+      // convert an environment variable name to an option name
+      if (!name.starts_with("CGIMAP_")) {
+        return std::string();
+      }
+      auto option = name.substr(7);
+      // convert to lower case and replace '_' with '-'
+      for (auto &c : option) {
+        c = (c == '_' ? '-' : std::tolower(c));
+      }
+      if (valid_options.contains(option)) {
+        return option;
+      }
+      else {
+        std::cout << "Ignoring unknown environment variable: " << name << std::endl;
+        return std::string();
+      }
+    }), options);
 }
 
 /**
@@ -138,32 +171,15 @@ void get_options(int argc, char **argv, po::variables_map &options) {
   po::store(po::parse_command_line(argc, argv, desc), options);
 
   // Show help after parsing command line parameters
-  if (options.count("help")) {
+  if (options.contains("help")) {
     std::cout << desc << std::endl;
     output_backend_options(std::cout);
     exit(0);
   }
 
-  po::store(po::parse_environment(desc,
-    [&desc](const std::string &name) {
-          std::string option;
-          // convert an environment variable name to an option name
-          if (name.starts_with("CGIMAP_")) {
-            std::transform(name.begin() + 7, name.end(),
-                           std::back_inserter(option),
-                           [](unsigned char c) {
-                           return c == '_' ? '-' : std::tolower(c);
-                   });
-            for (const auto &d : desc.options()) {
-              if (d->long_name() == option)
-                return option;
-            }
-            std::cout << "Ignoring unknown environment variable: " << name << std::endl;
-          }
-          return std::string("");
-        }), options);
+  process_environment_variables(desc, options);
 
-  if (options.count("configfile")) {
+  if (options.contains("configfile")) {
     auto config_fname = options["configfile"].as<std::string>();
     std::ifstream ifs(config_fname.c_str());
     if(ifs.fail()) {
@@ -175,7 +191,7 @@ void get_options(int argc, char **argv, po::variables_map &options) {
   po::notify(options);
 
   // for ability to accept both the old --port option in addition to socket if not available.
-  if (options.count("daemon") != 0 && options.count("socket") == 0 && options.count("port") == 0) {
+  if (options.contains("daemon") && !options.contains("socket") && !options.contains("port")) {
     throw std::runtime_error("an FCGI port number or UNIX socket is required in daemon mode");
   }
 }
@@ -188,7 +204,7 @@ void process_requests(int socket, const po::variables_map &options) {
   // generator string - identifies the cgimap instance.
   auto generator = get_generator_string();
   // open any log file
-  if (options.count("logfile")) {
+  if (options.contains("logfile")) {
     logger::initialise(options["logfile"].as<std::string>());
   }
 
@@ -212,16 +228,15 @@ void process_requests(int socket, const po::variables_map &options) {
   while (!terminate_requested) {
     // process any reload request
     if (reload_requested) {
-      if (options.count("logfile")) {
+      if (options.contains("logfile")) {
         logger::initialise(options["logfile"].as<std::string>());
       }
-
       reload_requested = false;
     }
 
     // get the next request
     if (req.accept_r() >= 0) {
-      std::chrono::system_clock::time_point now(std::chrono::system_clock::now());
+      const auto now(std::chrono::system_clock::now());
       req.set_current_time(now);
       process_request(req, limiter, generator, route, *factory, update_factory.get());
     }
@@ -255,10 +270,9 @@ void install_signal_handlers() {
  * make the process into a daemon by detaching from the console.
  */
 void daemonise() {
-  pid_t pid = 0;
 
   // fork to make sure we aren't a session leader
-  if ((pid = fork()) < 0) {
+  if (pid_t pid; (pid = fork()) < 0) {
     throw std::runtime_error("fork failed.");
   } else if (pid > 0) {
     exit(0);
@@ -277,90 +291,106 @@ void daemonise() {
   close(2);
 }
 
-
-void daemon_mode(const po::variables_map &options, int socket)
-{
-  size_t instances = 0;
-
-  {
-    int opt_instances = options["instances"].as<int>();
-    if (opt_instances > 0) {
-      instances = opt_instances;
-    } else {
-      throw std::runtime_error(
-          "Number of instances must be strictly positive.");
-    }
+void validate_instances(const po::variables_map &options) {
+  int opt = options["instances"].as<int>();
+  if (opt <= 0) {
+      throw std::runtime_error("Number of instances must be strictly positive.");
   }
-
-  bool children_terminated = false;
-  std::set<pid_t> children;
-
-  // make ourselves into a daemon
-  daemonise();
-
-  // record our pid if requested
-  if (options.count("pidfile")) {
-    std::ofstream pidfile(options["pidfile"].as<std::string>().c_str());
-    pidfile << getpid() << std::endl;
-  }
-
-  // loop until we have been asked to stop and have no more children
-  while (!terminate_requested || !children.empty()) {
-    pid_t pid{};
-
-    // start more children if we don't have enough
-    while (!terminate_requested && (children.size() < instances)) {
-      if ((pid = fork()) < 0) {
-        throw std::runtime_error("fork failed.");
-      } else if (pid == 0) {
-        const auto start = std::chrono::steady_clock::now();
-        try {
-          process_requests(socket, options);
-        } catch(...) {
-          const auto end = std::chrono::steady_clock::now();
-          const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-          if (elapsed < 1000ms) {
-            std::this_thread::sleep_for(1000ms - elapsed);
-          }
-          throw;
-        }
-        exit(0);
-      }
-
-      children.insert(pid);
-    }
-
-    // wait for a child to exit
-    if ((pid = wait(nullptr)) >= 0) {
-      children.erase(pid);
-    } else if (errno != EINTR) {
-      throw std::runtime_error("wait failed.");
-    }
-
-    // pass on any termination request to our children
-    if (terminate_requested && !children_terminated) {
-      for (auto pid : children) { kill(pid, SIGTERM); }
-
-      children_terminated = true;
-    }
-
-    // pass on any reload request to our children
-    if (reload_requested) {
-      for (auto pid : children) { kill(pid, SIGHUP); }
-
-      reload_requested = false;
-    }
-  }
-
-  // remove any pid file
-  if (options.count("pidfile")) {
-    remove(options["pidfile"].as<std::string>().c_str());
+  else if (opt > 100) {
+      throw std::runtime_error("Number of instances must not exceed 100.");
   }
 }
 
+void write_pidfile(const po::variables_map &options) {
+  if (options.contains("pidfile")) {
+      std::ofstream pidfile(options["pidfile"].as<std::string>().c_str());
+      if (!pidfile) {
+          throw std::runtime_error("Failed to write to pidfile.");
+      }
+      pidfile << getpid() << std::endl;
+  }
+}
+
+void remove_pidfile(const po::variables_map &options) {
+  if (options.contains("pidfile")) {
+      remove(options["pidfile"].as<std::string>().c_str());
+  }
+}
+
+
+[[noreturn]] void handle_child_process(int socket, const po::variables_map &options) {
+  const auto start = std::chrono::steady_clock::now();
+  try {
+      process_requests(socket, options);
+  } catch (...) {
+      const auto end = std::chrono::steady_clock::now();
+      const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+      if (elapsed < MIN_CHILD_RUNTIME_MS) {
+          std::this_thread::sleep_for(MIN_CHILD_RUNTIME_MS - elapsed);
+      }
+      throw;
+  }
+  exit(0);
+}
+
+void spawn_children(int socket, const po::variables_map &options, std::set<pid_t> &children, int instances) {
+  while (!terminate_requested && (children.size() < instances)) {
+      if (pid_t pid; (pid = fork()) < 0) {
+          throw std::runtime_error("fork failed.");
+      } else if (pid == 0) {
+          handle_child_process(socket, options);
+      } else {
+          children.insert(pid);
+      }
+  }
+}
+
+void wait_for_children(std::set<pid_t> &children) {
+  if (pid_t pid; (pid = wait(nullptr)) >= 0) {
+      children.erase(pid);
+  } else if (errno != EINTR) {
+      throw std::runtime_error("wait failed.");
+  }
+}
+
+void signal_children(const std::set<pid_t> &children, int signal) {
+  for (auto pid : children) {
+      kill(pid, signal);
+  }
+}
+
+void daemon_mode(const po::variables_map &options, int socket) {
+  validate_instances(options);
+
+  const int instances = options["instances"].as<int>();
+  bool children_terminated = false;
+  std::set<pid_t> children;
+
+  daemonise();
+  write_pidfile(options);
+
+  while (!terminate_requested || !children.empty()) {
+      spawn_children(socket, options, children, instances);
+      wait_for_children(children);
+
+      if (terminate_requested && !children_terminated) {
+          signal_children(children, SIGTERM);
+          children_terminated = true;
+      }
+
+      if (reload_requested) {
+          signal_children(children, SIGHUP);
+          reload_requested = false;
+      }
+  }
+
+  remove_pidfile(options);
+}
+
+
 void non_daemon_mode(const po::variables_map &options, int socket)
 {
-  if (options.count("instances") && !options["instances"].defaulted()) {
+  if (options.contains("instances") && !options["instances"].defaulted()) {
     std::cerr << "[WARN] The --instances parameter is ignored in non-daemon mode, running as single process only.\n"
                  "[WARN] If the process terminates, it must be restarted externally.\n";
   }
@@ -368,32 +398,27 @@ void non_daemon_mode(const po::variables_map &options, int socket)
   install_signal_handlers();
 
   // record our pid if requested
-  if (options.count("pidfile")) {
-    std::ofstream pidfile(options["pidfile"].as<std::string>().c_str());
-    pidfile << getpid() << std::endl;
-  }
+  write_pidfile(options);
 
   // do work here
   process_requests(socket, options);
 
   // remove any pid file
-  if (options.count("pidfile")) {
-    remove(options["pidfile"].as<std::string>().c_str());
-  }
+  remove_pidfile(options);
 }
 
 int init_socket(const po::variables_map &options)
 {
   int socket = 0;
 
-  if (options.count("socket")) {
-    if ((socket = fcgi_request::open_socket(options["socket"].as<std::string>(), 5)) < 0) {
+  if (options.contains("socket")) {
+    if ((socket = fcgi_request::open_socket(options["socket"].as<std::string>(), SOCKET_BACKLOG)) < 0) {
       throw std::runtime_error("Couldn't open FCGX socket.");
     }
     // fall back to the old --port option if socket isn't available.
-  } else if (options.count("port")) {
+  } else if (options.contains("port")) {
     auto sock_str = fmt::format(":{:d}", options["port"].as<int>());
-    if ((socket = fcgi_request::open_socket(sock_str, 5)) < 0) {
+    if ((socket = fcgi_request::open_socket(sock_str, SOCKET_BACKLOG)) < 0) {
       throw std::runtime_error("Couldn't open FCGX socket (from port).");
     }
   }
@@ -420,7 +445,7 @@ int main(int argc, char **argv) {
     auto socket = init_socket(options);
 
     // are we supposed to run as a daemon?
-    if (options.count("daemon")) {
+    if (options.contains("daemon")) {
       daemon_mode(options, socket);
     } else {
       non_daemon_mode(options, socket);
