@@ -18,7 +18,10 @@
 namespace {
 
 struct element {
-  struct lonlat { double m_lon, m_lat; };
+  struct lonlat {
+    double m_lon;
+    double m_lat;
+  };
 
   element_type m_type;
   element_info m_info;

@@ -277,7 +277,7 @@ std::unique_ptr<encoding> choose_encoding(const std::string &accept_encoding) {
   }
 }
 
-std::unique_ptr<ZLibBaseDecompressor> get_content_encoding_handler(const std::string &content_encoding) {
+std::unique_ptr<ZLibBaseDecompressor> get_content_encoding_handler(std::string_view content_encoding) {
 
   if (content_encoding.empty())
     return std::make_unique<IdentityDecompressor>();

@@ -12,6 +12,7 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 #include <exception>
 #include <optional>
@@ -267,7 +268,7 @@ public:
   deflate() : encoding("deflate"){}
 
   std::unique_ptr<output_buffer> buffer(output_buffer& out) override {
-    return std::make_unique<zlib_output_buffer>(out, zlib_output_buffer::zlib);
+    return std::make_unique<zlib_output_buffer>(out, zlib_output_buffer::mode::zlib);
   }
 };
 
@@ -275,7 +276,7 @@ class gzip : public encoding {
 public:
   gzip() : encoding("gzip"){}
   std::unique_ptr<output_buffer> buffer(output_buffer& out) override {
-    return std::make_unique<zlib_output_buffer>(out, zlib_output_buffer::gzip);
+    return std::make_unique<zlib_output_buffer>(out, zlib_output_buffer::mode::gzip);
   }
 };
 #endif /* HAVE_LIBZ */
@@ -297,7 +298,7 @@ public:
  */
 std::unique_ptr<http::encoding> choose_encoding(const std::string &accept_encoding);
 
-std::unique_ptr<ZLibBaseDecompressor> get_content_encoding_handler(const std::string &content_encoding);
+std::unique_ptr<ZLibBaseDecompressor> get_content_encoding_handler(std::string_view content_encoding);
 
 
 

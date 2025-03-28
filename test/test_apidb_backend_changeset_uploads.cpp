@@ -120,14 +120,14 @@ struct CGImapListener : Catch::TestEventListenerBase, DatabaseTestsFixture {
 CATCH_REGISTER_LISTENER( CGImapListener )
 
 
-std::string get_compressed_payload(std::string_view payload)
+std::string get_compressed_payload(std::string_view payload, zlib_output_buffer::mode mode = zlib_output_buffer::mode::gzip)
 {
   std::stringstream body;
   std::stringstream output;
 
   // gzip compress payload
   test_output_buffer test_ob(output, body);
-  zlib_output_buffer zlib_ob(test_ob, zlib_output_buffer::gzip);
+  zlib_output_buffer zlib_ob(test_ob, mode);
   zlib_ob.write(payload.data(), payload.size());
   zlib_ob.close();
 
@@ -2536,7 +2536,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
 
   }
 
-  SECTION("Compressed upload")
+  SECTION("Compressed upload gzip")
   {
     std::string payload = R"(<?xml version="1.0" encoding="UTF-8"?>
         <osmChange version="0.6" generator="iD">
@@ -2551,6 +2551,31 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     req.set_header("HTTP_CONTENT_ENCODING", "gzip");
 
     req.set_payload(get_compressed_payload(payload));
+
+    // execute the request
+    process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
+
+    CAPTURE(req.body().str());
+
+    REQUIRE(req.response_status() == 200);
+  }
+
+  SECTION("Compressed upload deflate")
+  {
+    std::string payload = R"(<?xml version="1.0" encoding="UTF-8"?>
+        <osmChange version="0.6" generator="iD">
+        <create>
+          <node id="-5" lon="11" lat="46" version="0" changeset="1">
+             <tag k="highway" v="bus_stop" />
+          </node>
+       </create>
+       </osmChange>)";
+
+    // set up request headers from test case
+    req.set_header("HTTP_CONTENT_ENCODING", "deflate");
+    req.set_header("HTTP_ACCEPT_ENCODING", "deflate");
+
+    req.set_payload(get_compressed_payload(payload, zlib_output_buffer::mode::zlib));
 
     // execute the request
     process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());

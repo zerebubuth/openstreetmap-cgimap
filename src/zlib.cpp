@@ -20,10 +20,10 @@ zlib_output_buffer::zlib_output_buffer(output_buffer& o,
   int windowBits;
 
   switch (m) {
-  case zlib:
+  case mode::zlib:
     windowBits = 15;
     break;
-  case gzip:
+  case mode::gzip:
     windowBits = 15 + 16;
     break;
   }
@@ -41,12 +41,6 @@ zlib_output_buffer::zlib_output_buffer(output_buffer& o,
   stream.avail_in = 0;
   stream.next_out = (Bytef *)outbuf;
   stream.avail_out = sizeof(outbuf);
-}
-
-zlib_output_buffer::zlib_output_buffer(const zlib_output_buffer &old)
-    : out(old.out), stream(old.stream) {
-  std::copy(old.outbuf, (const char *)old.stream.next_out, outbuf);
-  stream.next_out = (Bytef *)outbuf + (sizeof(outbuf) - stream.avail_out);
 }
 
 int zlib_output_buffer::write(const char *buffer, int len) {
@@ -123,8 +117,7 @@ ZLibBaseDecompressor::ZLibBaseDecompressor(int windowBits) {
   stream.opaque = Z_NULL;
   stream.avail_in = 0;
   stream.next_in = Z_NULL;
-  int retval = inflateInit2(&stream, windowBits);
-  if (retval != Z_OK) {
+  if (inflateInit2(&stream, windowBits) != Z_OK) {
     throw std::bad_alloc();
   }
   use_decompression = true;

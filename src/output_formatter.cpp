@@ -13,43 +13,43 @@
 
 #include <chrono>
 
-element_info::element_info(osm_nwr_id_t id_, osm_nwr_id_t version_,
-                           osm_changeset_id_t changeset_,
-                           const std::string &timestamp_,
-                           const std::optional<osm_user_id_t> &uid_,
-                           const std::optional<std::string> &display_name_,
-                           bool visible_,
-                           std::optional<osm_redaction_id_t> redaction_)
-  : id(id_), 
-    version(version_), 
-    changeset(changeset_),
-    timestamp(timestamp_), 
-    uid(uid_), 
-    display_name(display_name_),
-    visible(visible_), 
-    redaction(redaction_) 
+element_info::element_info(osm_nwr_id_t id, osm_nwr_id_t version,
+                           osm_changeset_id_t changeset,
+                           const std::string &timestamp,
+                           const std::optional<osm_user_id_t> &uid,
+                           const std::optional<std::string> &display_name,
+                           bool visible,
+                           std::optional<osm_redaction_id_t> redaction)
+  : id(id),
+    version(version),
+    changeset(changeset),
+    timestamp(timestamp),
+    uid(uid),
+    display_name(display_name),
+    visible(visible),
+    redaction(redaction)
 {}
 
-changeset_info::changeset_info(osm_changeset_id_t id_,
-                               const std::string &created_at_,
-                               const std::string &closed_at_,
-                               const std::optional<osm_user_id_t> &uid_,
-                               const std::optional<std::string> &display_name_,
-                               const std::optional<bbox> &bounding_box_,
-                               size_t num_changes_,
-                               size_t comments_count_)
-  : id(id_),
-    created_at(created_at_),
-    closed_at(closed_at_),
-    uid(uid_),
-    display_name(display_name_),
-    bounding_box(bounding_box_),
-    num_changes(num_changes_),
-    comments_count(comments_count_)
+changeset_info::changeset_info(osm_changeset_id_t id,
+                               const std::string &created_at,
+                               const std::string &closed_at,
+                               const std::optional<osm_user_id_t> &uid,
+                               const std::optional<std::string> &display_name,
+                               const std::optional<bbox> &bounding_box,
+                               size_t num_changes,
+                               size_t comments_count)
+  : id(id),
+    created_at(created_at),
+    closed_at(closed_at),
+    uid(uid),
+    display_name(display_name),
+    bounding_box(bounding_box),
+    num_changes(num_changes),
+    comments_count(comments_count)
 {}
 
 bool changeset_info::is_open_at(const std::chrono::system_clock::time_point &now) const {
-  const std::chrono::system_clock::time_point closed_at_time = parse_time(closed_at);
+  const auto closed_at_time = parse_time(closed_at);
   return (closed_at_time > now) && (num_changes <= global_settings::get_changeset_max_elements());  // according to changeset.rb, is_open
 }
 
@@ -65,8 +65,8 @@ changeset_comment_info::changeset_comment_info(osm_changeset_comment_id_t id,
     author_display_name(std::move(author_display_name))
 {}
 
-member_info::member_info(element_type type_, osm_nwr_id_t ref_, std::string role_)
-  : type(type_),
-    ref(ref_),
-    role(std::move(role_))
+member_info::member_info(element_type type, osm_nwr_id_t ref, std::string role)
+  : type(type),
+    ref(ref),
+    role(std::move(role))
 {}

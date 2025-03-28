@@ -22,7 +22,7 @@ struct UserInfo
     osm_user_id_t id = {};
     std::set<osm_user_role_t> user_roles = {};
     bool allow_api_write = false;
-    bool has_role(osm_user_role_t role) const { return user_roles.count(role) > 0; }
+    bool has_role(osm_user_role_t role) const { return user_roles.contains(role); }
 };
 
 struct RequestContext

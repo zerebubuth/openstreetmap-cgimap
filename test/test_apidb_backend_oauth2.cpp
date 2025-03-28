@@ -37,7 +37,7 @@ struct recording_rate_limiter : public rate_limiter {
   }
 
   bool saw_key(const std::string &key) const {
-    return m_keys_seen.count(key) > 0;
+    return m_keys_seen.contains(key);
   }
 
 private:
@@ -168,35 +168,35 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_user_id_for_oauth2_token", "[oauth2
     tdb.run_sql(R"(
 
       INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public)
-      VALUES 
+      VALUES
         (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true),
         (2, 'user_2@example.com', '', '2021-03-12T01:33:43Z', 'user_2', true);
-  
-     INSERT INTO oauth_applications (id, owner_type, owner_id, name, uid, secret, redirect_uri, scopes, confidential, created_at, updated_at) 
-         VALUES (3, 'User', 1, 'App 1', 'dHKmvGkmuoMjqhCNmTJkf-EcnA61Up34O1vOHwTSvU8', '965136b8fb8d00e2faa2faaaed99c0ec10225518d0c8d9fb1d2af701e87eb68c', 
+
+     INSERT INTO oauth_applications (id, owner_type, owner_id, name, uid, secret, redirect_uri, scopes, confidential, created_at, updated_at)
+         VALUES (3, 'User', 1, 'App 1', 'dHKmvGkmuoMjqhCNmTJkf-EcnA61Up34O1vOHwTSvU8', '965136b8fb8d00e2faa2faaaed99c0ec10225518d0c8d9fb1d2af701e87eb68c',
                 'http://demo.localhost:3000', 'write_api read_gpx', false, '2021-04-12 17:53:30', '2021-04-12 17:53:30');
-  
+
      INSERT INTO oauth_applications (id, owner_type, owner_id, name, uid, secret, redirect_uri, scopes, confidential, created_at, updated_at)
          VALUES (4, 'User', 2, 'App 2', 'WNr9KjjzA9uNCXXBHG1AReR2jdottwlKYOz7CLgjUAk', 'cdd6f17bc32eb96b33839db59ae5873777e95864cd936ae445f2dedec8787212',
                 'http://localhost:3000/demo', 'write_prefs write_diary', true, '2021-04-13 18:59:11', '2021-04-13 18:59:11');
-  
+
      INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
          VALUES (67, 1, 3, '4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8', NULL, NULL, NULL, '2021-04-14 19:38:21', 'write_api', '');
-  
+
      INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
          VALUES (68, 1, 3, '1187c28b93ab4a14e3df6a61ef46a24d7d4d7964c1d56eb2bfd197b059798c1d', NULL, NULL, '2021-04-15 06:11:01', '2021-04-14 22:06:58', 'write_api', '');
-  
+
      INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
          VALUES (69, 1, 3, '9d3e411efa288369a509d8798d17b2a669f331452cdd5d86cd696dad46517e6d', NULL, NULL, NULL, '2021-04-14 19:38:21', 'read_prefs write_api', '');
-  
+
      INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
          VALUES (70, 1, 3, 'e466d2ba2ff5da35fdaa7547eb6c27ae0461c7a4acc05476c0a33b1b1d0788cd', NULL, NULL, NULL, '2021-04-14 19:38:21', 'read_prefs read_gpx', '');
-  
+
      INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
          VALUES (71, 1, 3, 'f0e6f310ee3a9362fe00cee4328ad318a1fa6c770b2e19975271da99a6407476', NULL, 3600, NULL, now() at time zone 'utc' - '2 hours' :: interval, 'write_api', '');
-  
+
      INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
-         VALUES (72, 1, 3, 'b1294a183bf64f4d9a97f24ed84ce88e3ab6e7ada78114d6e600bdb63831237b', NULL, 3600, NULL, now() at time zone 'utc' - '30 minutes' :: interval, 'write_api', ''); 
+         VALUES (72, 1, 3, 'b1294a183bf64f4d9a97f24ed84ce88e3ab6e7ada78114d6e600bdb63831237b', NULL, 3600, NULL, now() at time zone 'utc' - '30 minutes' :: interval, 'write_api', '');
 
     )");
   }
@@ -272,21 +272,21 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_oauth2_end_to_end", "[oauth2][db]" 
     tdb.run_sql(R"(
 
       INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public, status)
-      VALUES 
+      VALUES
         (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true, 'confirmed'),
         (2, 'user_2@example.com', '', '2021-03-12T01:33:43Z', 'user_2', true, 'active'),
         (1000, 'user_1000@example.com', '', '2021-04-12T01:33:43Z', 'user_1000', true, 'pending');
-  
-      INSERT INTO oauth_applications (id, owner_type, owner_id, name, uid, secret, redirect_uri, scopes, confidential, created_at, updated_at) 
-         VALUES (3, 'User', 1, 'App 1', 'dHKmvGkmuoMjqhCNmTJkf-EcnA61Up34O1vOHwTSvU8', '965136b8fb8d00e2faa2faaaed99c0ec10225518d0c8d9fb1d2af701e87eb68c', 
+
+      INSERT INTO oauth_applications (id, owner_type, owner_id, name, uid, secret, redirect_uri, scopes, confidential, created_at, updated_at)
+         VALUES (3, 'User', 1, 'App 1', 'dHKmvGkmuoMjqhCNmTJkf-EcnA61Up34O1vOHwTSvU8', '965136b8fb8d00e2faa2faaaed99c0ec10225518d0c8d9fb1d2af701e87eb68c',
                 'http://demo.localhost:3000', 'write_api read_gpx', false, '2021-04-12 17:53:30', '2021-04-12 17:53:30');
-  
+
       INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
          VALUES (67, 1, 3, '1yi2RI2WhIVMLoLaDLg0nrPJPU4WQSIX4Hh_jxfRRxI', NULL, NULL, NULL, '2021-04-14 19:38:21.991429', 'write_api', '');
-  
+
       INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
          VALUES (72, 1, 3, '4ea5b956c8882db030a5a799cb45eb933bb6dd2f196a44f68167d96fbc8ec3f1', NULL, NULL, NULL, '2021-04-14 19:38:21.991429', 'read_prefs', '');
-  
+
       INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
          VALUES (78, 1000, 3, '2KxONxvhoSji9F8dz_WO6UZOzRdmQ0ISB0ovnZrJnhM', NULL, NULL, NULL, '2021-04-14 19:38:21.991429', 'write_api', '');
     )");
