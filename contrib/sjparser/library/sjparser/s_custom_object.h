@@ -78,10 +78,8 @@ class SCustomObject : public Object<ParserTs...> {
   template <typename CallbackT = std::nullptr_t>
   SCustomObject(TypeHolder<ValueType> type,
                 std::tuple<Member<std::string, ParserTs>...> members,
-                CallbackT on_finish = nullptr,
-                std::enable_if_t<std::is_constructible_v<Callback, CallbackT>>
-                    * /*unused*/
-                = nullptr);
+                CallbackT on_finish = nullptr)
+        requires std::is_constructible_v<Callback, CallbackT>;
 
   /** @brief Constructor.
    *
@@ -173,8 +171,8 @@ template <typename TypeT, typename... ParserTs>
 template <typename CallbackT>
 SCustomObject<TypeT, ParserTs...>::SCustomObject(
     TypeHolder<TypeT> type,
-    std::tuple<Member<std::string, ParserTs>...> members, CallbackT on_finish,
-    std::enable_if_t<std::is_constructible_v<Callback, CallbackT>> * /*unused*/)
+    std::tuple<Member<std::string, ParserTs>...> members, CallbackT on_finish)
+      requires std::is_constructible_v<Callback, CallbackT>
     : SCustomObject{type, std::move(members), ObjectOptions{},
                     std::move(on_finish)} {}
 

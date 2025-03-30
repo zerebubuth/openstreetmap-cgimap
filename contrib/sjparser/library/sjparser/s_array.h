@@ -126,7 +126,7 @@ template <typename ParserT> SArray(ParserT &&) -> SArray<ParserT>;
 template <typename ParserT>
 template <typename CallbackT>
 SArray<ParserT>::SArray(ParserT &&parser, CallbackT on_finish)
-    : Array<ParserT>{std::forward<ParserT>(parser)},
+    : Array<ParserT>{std::move(parser)},
       _on_finish{std::move(on_finish)} {
   static_assert(std::is_base_of_v<TokenParser, ParserType>,
                 "Invalid parser used in SArray");
