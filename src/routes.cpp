@@ -62,6 +62,17 @@
 
 #include <fmt/core.h>
 
+// The following two concepts validate that the handler has been derived from
+// the appropriate based class. NoPayload is suitable for GET requests, while
+// POST and PUT requests require a payload enabled handler, which also passes
+// the HTTP body to the handler class.
+
+template <typename Handler>
+concept NoPayload = std::is_base_of_v<handler, Handler> &&    // rule requires handler subclass
+                    !std::is_base_of_v<payload_enabled_handler, Handler>;  // rule cannot use payload enabled handler subclass
+
+template <typename Handler>
+concept Payload = std::is_base_of_v<payload_enabled_handler, Handler>; // Payload enabled handler subclass required
 
 /**
  * maps router DSL expressions to constructors for handlers. this means it's
@@ -95,11 +106,12 @@ struct router {
       if (begin != parts.end())
         return false; // no match
 
-      ptr.reset(std::apply(
+      ptr = std::apply(
           [&params](auto &&...args) {
-            return new Handler(params, std::forward<decltype(args)>(args)...);
+            return std::make_unique<Handler>(
+                params, std::forward<decltype(args)>(args)...);
           },
-          sequence));
+          sequence);
 
       return true;
     }
@@ -109,38 +121,25 @@ struct router {
       Rule r;
   };
 
-  /* add a match all methods rule (a DSL expression) which constructs the Handler
-   * type when the rule matches. the Rule type can be inferred,
-   * so generally this can be written as
-   *  r.all<Handler>(...);
-   */
-
   // add rule to match HTTP GET method only
-  template <typename Handler, typename Rule> 
+  template <NoPayload Handler, typename Rule>
   router& GET(Rule&& r) {
-
-    static_assert(std::is_base_of_v<handler, Handler>, "GET rule requires handler subclass");
-    static_assert(!std::is_base_of_v<payload_enabled_handler, Handler>, "GET rule cannot use payload enabled handler subclass");
 
     rules_get.push_back(std::make_unique<rule<Handler, Rule> >(std::forward<Rule>(r)));
     return *this;
   }
 
   // add rule to match HTTP POST method only
-  template <typename Handler, typename Rule> 
+  template <Payload Handler, typename Rule>
   router& POST(Rule&& r) {
-
-    static_assert(std::is_base_of_v<payload_enabled_handler, Handler>, "POST rule requires payload enabled handler subclass");
 
     rules_post.push_back(std::make_unique<rule<Handler, Rule> >(std::forward<Rule>(r)));
     return *this;
   }
 
   // add rule to match HTTP PUT method only
-  template <typename Handler, typename Rule> 
+  template <Payload Handler, typename Rule>
   router& PUT(Rule&& r) {
-
-    static_assert(std::is_base_of_v<payload_enabled_handler, Handler>, "PUT rule requires payload enabled handler subclass");
 
     rules_put.push_back(std::make_unique<rule<Handler, Rule> >(std::forward<Rule>(r)));
     return *this;
@@ -168,31 +167,31 @@ struct router {
 
     // Process HEAD like GET, as per rfc2616: The HEAD method is identical to
     // GET except that the server MUST NOT return a message-body in the response.
-    for (const auto& rptr : rules_get) {
+    for (const auto &rptr : rules_get) {
       if (rptr->invoke_if(p, params, hptr)) {
-          if (*maybe_method == http::method::GET    ||
-        *maybe_method == http::method::HEAD   ||
-        *maybe_method == http::method::OPTIONS)
-            return hptr;
-          allowed_methods |= http::method::GET | http::method::HEAD;
+        if (*maybe_method == http::method::GET ||
+            *maybe_method == http::method::HEAD ||
+            *maybe_method == http::method::OPTIONS)
+          return hptr;
+        allowed_methods |= http::method::GET | http::method::HEAD;
       }
     }
 
-    for (const auto& rptr : rules_post) {
+    for (const auto &rptr : rules_post) {
       if (rptr->invoke_if(p, params, hptr)) {
-          if (*maybe_method == http::method::POST||
-        *maybe_method == http::method::OPTIONS)
-            return hptr;
-          allowed_methods |= http::method::POST;
+        if (*maybe_method == http::method::POST ||
+            *maybe_method == http::method::OPTIONS)
+          return hptr;
+        allowed_methods |= http::method::POST;
       }
     }
 
-    for (const auto& rptr : rules_put) {
+    for (const auto &rptr : rules_put) {
       if (rptr->invoke_if(p, params, hptr)) {
-          if (*maybe_method == http::method::PUT||
-        *maybe_method == http::method::OPTIONS)
-            return hptr;
-          allowed_methods |= http::method::PUT;
+        if (*maybe_method == http::method::PUT ||
+            *maybe_method == http::method::OPTIONS)
+          return hptr;
+        allowed_methods |= http::method::PUT;
       }
     }
 
