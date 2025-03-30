@@ -29,6 +29,8 @@ namespace SJParser {
 
 class ArrayParser : public TokenParser {
  public:
+  using TokenParser::on;
+
   void reset() override;
 
   void on(NullT /*unused*/) override;

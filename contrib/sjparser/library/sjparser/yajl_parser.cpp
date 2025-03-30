@@ -92,6 +92,7 @@ void YajlParser::checkDispatcherStack() const {
   } else {
     yajl_error = "Unknown YAJL error\n";  // LCOV_EXCL_LINE
   }
+  // START OF cgimap addition (comment out to run sjparser unit tests) ---
   std::string error_offset =
       "\nError occurred at offset "
       + std::to_string(yajl_get_bytes_consumed(_yajl_handle.get())) + ".";
@@ -101,6 +102,7 @@ void YajlParser::checkDispatcherStack() const {
   if (!yajl_error.empty()) {
     yajl_error += error_offset;
   }
+  // END OF cgimap addition ---
   throw ParsingError(_sjparser_error, yajl_error);
 }
 
