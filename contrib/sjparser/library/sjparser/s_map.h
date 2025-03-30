@@ -164,13 +164,13 @@ template <typename CallbackT>
 SMap<ParserT>::SMap(
     ParserT &&parser, CallbackT on_finish)
     requires std::is_constructible_v<Callback, CallbackT>
-    : SMap{std::move(parser), nullptr, std::move(on_finish)} {}
+    : SMap{std::forward<ParserT>(parser), nullptr, std::move(on_finish)} {}
 
 template <typename ParserT>
 template <typename ElementCallbackT, typename CallbackT>
 SMap<ParserT>::SMap(ParserT &&parser, ElementCallbackT on_element,
                     CallbackT on_finish)
-    : Map<ParserT>{std::move(parser)},
+    : Map<ParserT>{std::forward<ParserT>(parser)},
       _on_element{std::move(on_element)},
       _on_finish{std::move(on_finish)} {
   static_assert(std::is_base_of_v<TokenParser, ParserType>,

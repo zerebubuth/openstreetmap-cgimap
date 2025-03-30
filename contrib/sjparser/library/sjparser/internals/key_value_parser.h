@@ -58,6 +58,8 @@ class KeyValueParser : public TokenParser {
   void setDispatcher(Dispatcher *dispatcher) noexcept override;
   void reset() override;
 
+  using TokenParser::on;
+
   void on(MapStartT /*unused*/) override;
   void on(MapEndT /*unused*/) override;
 

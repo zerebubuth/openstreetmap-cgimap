@@ -67,7 +67,7 @@ template <typename ValueT>
 void Value<ValueT>::on(TokenSecondaryType<ValueT> value) {
   if constexpr (!std::is_same_v<TokenSecondaryType<ValueT>, SJParser::DummyT>) {
     setNotEmpty();
-    _value = value;
+    _value = static_cast<decltype(_value)>(value);
     endParsing();
   }
 }
