@@ -66,10 +66,8 @@ class Object : public KeyValueParser<std::string, ParserTs...> {
    */
   template <typename CallbackT = std::nullptr_t>
   explicit Object(std::tuple<Member<std::string, ParserTs>...> members,
-                  CallbackT on_finish = nullptr,
-                  std::enable_if_t<std::is_constructible_v<Callback, CallbackT>>
-                      * /*unused*/
-                  = nullptr);
+                  CallbackT on_finish = nullptr)
+    requires std::is_constructible_v<Callback, CallbackT>;
 
   /** @brief Constructor.
    *
@@ -157,8 +155,8 @@ namespace SJParser {
 template <typename... ParserTs>
 template <typename CallbackT>
 Object<ParserTs...>::Object(
-    std::tuple<Member<std::string, ParserTs>...> members, CallbackT on_finish,
-    std::enable_if_t<std::is_constructible_v<Callback, CallbackT>> * /*unused*/)
+    std::tuple<Member<std::string, ParserTs>...> members, CallbackT on_finish)
+    requires std::is_constructible_v<Callback, CallbackT>
     : Object{std::move(members), ObjectOptions{}, std::move(on_finish)} {}
 
 template <typename... ParserTs>
@@ -200,7 +198,7 @@ template <typename... ParserTs> void Object<ParserTs...>::finish() {
 
   try {
     MemberChecker<0, ParserTs...>(*this);
-  } catch (std::exception &e) {
+  } catch (std::exception &) {
     TokenParser::unset();
     throw;
   }

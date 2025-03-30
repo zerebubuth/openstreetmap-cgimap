@@ -62,10 +62,8 @@ template <typename ParserT> class Map : public TokenParser {
    * If the callback returns false, parsing will be stopped with an error.
    */
   template <typename CallbackT = std::nullptr_t>
-  explicit Map(ParserT &&parser, CallbackT on_finish = nullptr,
-               std::enable_if_t<std::is_constructible_v<Callback, CallbackT>>
-                   * /*unused*/
-               = nullptr);
+  explicit Map(ParserT &&parser, CallbackT on_finish = nullptr)
+  requires std::is_constructible_v<Callback, CallbackT>;
 
   /** @brief Constructor.
    *
@@ -155,16 +153,15 @@ template <typename ParserT> Map(ParserT &&) -> Map<ParserT>;
 
 template <typename ParserT>
 template <typename CallbackT>
-Map<ParserT>::Map(
-    ParserT &&parser, CallbackT on_finish,
-    std::enable_if_t<std::is_constructible_v<Callback, CallbackT>> * /*unused*/)
-    : Map{std::forward<ParserT>(parser), nullptr, std::move(on_finish)} {}
+Map<ParserT>::Map(ParserT &&parser, CallbackT on_finish)
+  requires std::is_constructible_v<Callback, CallbackT>
+    : Map{std::move(parser), nullptr, std::move(on_finish)} {}
 
 template <typename ParserT>
 template <typename ElementCallbackT, typename CallbackT>
 Map<ParserT>::Map(ParserT &&parser, ElementCallbackT on_element,
                   CallbackT on_finish)
-    : _parser{std::forward<ParserT>(parser)},
+    : _parser{std::move(parser)},
       _on_element{std::move(on_element)},
       _on_finish{std::move(on_finish)} {
   static_assert(std::is_base_of_v<TokenParser, ParserType>,

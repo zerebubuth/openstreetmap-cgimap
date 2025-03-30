@@ -62,10 +62,8 @@ template <typename... ParserTs> class SAutoObject : public Object<ParserTs...> {
   template <typename CallbackT = std::nullptr_t>
   explicit SAutoObject(
       std::tuple<Member<std::string, ParserTs>...> members,
-      CallbackT on_finish = nullptr,
-      std::enable_if_t<std::is_constructible_v<Callback, CallbackT>>
-          * /*unused*/
-      = nullptr);
+      CallbackT on_finish = nullptr)
+      requires std::is_constructible_v<Callback, CallbackT>;
 
   /** @brief Constructor.
    *
@@ -157,8 +155,8 @@ template <typename... ParserTs> class SAutoObject : public Object<ParserTs...> {
 template <typename... ParserTs>
 template <typename CallbackT>
 SAutoObject<ParserTs...>::SAutoObject(
-    std::tuple<Member<std::string, ParserTs>...> members, CallbackT on_finish,
-    std::enable_if_t<std::is_constructible_v<Callback, CallbackT>> * /*unused*/)
+    std::tuple<Member<std::string, ParserTs>...> members, CallbackT on_finish)
+    requires std::is_constructible_v<Callback, CallbackT>
     : SAutoObject{std::move(members), ObjectOptions{}, std::move(on_finish)} {}
 
 template <typename... ParserTs>
