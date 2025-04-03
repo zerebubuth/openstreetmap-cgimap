@@ -99,11 +99,11 @@ void check_xmlattr(const pt::ptree &expected, const pt::ptree &actual) {
   std::set<std::string> exp_keys;
   std::set<std::string> act_keys;
 
-  for (const auto &val : expected) {
-    exp_keys.insert(val.first);
+  for (const auto &[key, _] : expected) {
+    exp_keys.insert(key);
   }
-  for (const auto &val : actual) {
-    act_keys.insert(val.first);
+  for (const auto &[key, _] : actual) {
+    act_keys.insert(key);
   }
 
   // Check if expected and actual keys are different

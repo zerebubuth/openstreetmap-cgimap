@@ -708,10 +708,10 @@ void node_tags_insert(Transaction_Manager &m,
   std::vector<std::string> ks;
   std::vector<std::string> vs;
 
-  for (const auto &node : nodes) {
-    for (const auto &[key, value] : node.second.m_tags) {
-      ns.emplace_back(node.first.id);
-      versions.emplace_back(node.first.version.value_or(1));
+  for (const auto &[id_version, node] : nodes) {
+    for (const auto &[key, value] : node.m_tags) {
+      ns.emplace_back(id_version.id);
+      versions.emplace_back(id_version.version.value_or(1));
       ks.emplace_back(escape(key));
       vs.emplace_back(escape(value));
     }
@@ -903,12 +903,12 @@ void way_tags_insert(Transaction_Manager &m,
   std::vector<std::string> vs;
   std::vector<int64_t> versions;
 
-  for (const auto &way : ways) {
-    for (const auto &[key, value] : way.second.m_tags) {
-      ws.emplace_back(way.first.id);
+  for (const auto &[id_version, way] : ways) {
+    for (const auto &[key, value] : way.m_tags) {
+      ws.emplace_back(id_version.id);
       ks.emplace_back(escape(key));
       vs.emplace_back(escape(value));
-      versions.emplace_back(way.first.version.value_or(1));
+      versions.emplace_back(id_version.version.value_or(1));
     }
   }
 
@@ -941,12 +941,12 @@ void relation_tags_insert(
   std::vector<std::string> vs;
   std::vector<int64_t> versions;
 
-  for (const auto &relation : relations) {
-    for (const auto &[key, value] : relation.second.m_tags) {
-      rs.emplace_back(relation.first.id);
+  for (const auto &[id_version, relation] : relations) {
+    for (const auto &[key, value] : relation.m_tags) {
+      rs.emplace_back(id_version.id);
       ks.emplace_back(escape(key));
       vs.emplace_back(escape(value));
-      versions.emplace_back(relation.first.version.value_or(1));
+      versions.emplace_back(id_version.version.value_or(1));
     }
   }
 
