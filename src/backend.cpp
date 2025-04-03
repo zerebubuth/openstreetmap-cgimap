@@ -62,7 +62,7 @@ void registry::setup_options(int argc, char *argv[],
 
   po::variables_map vm = first_pass_arguments(argc, argv, desc);
 
-  if (!vm.count("help")) {
+  if (!vm.contains("help")) {
     desc.add(backend_ptr->options());
   }
 }

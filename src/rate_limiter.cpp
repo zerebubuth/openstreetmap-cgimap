@@ -30,7 +30,7 @@ struct memcached_rate_limiter::state {
 memcached_rate_limiter::memcached_rate_limiter(
     const boost::program_options::variables_map &options) {
 
-  if (!options.count("memcache"))
+  if (!options.contains("memcache"))
     return;
 
   if ((ptr = memcached_create(nullptr)) != nullptr) {

@@ -29,12 +29,12 @@ namespace {
 void connopt(std::ostringstream &ostr, const po::variables_map &options,
     const std::string &param, const std::string &pg_param)
 {
-  if (options.count("update-" + param))
+  if (options.contains("update-" + param))
   {
     ostr << " " << pg_param << "="
         << options["update-" + param].as< std::string >();
   }
-  else if (options.count(param))
+  else if (options.contains(param))
   {
     ostr << " " << pg_param << "=" << options[param].as< std::string >();
   }
@@ -44,8 +44,8 @@ std::string connect_db_str(const po::variables_map &options) {
   // build the connection string.
   std::ostringstream ostr;
 
-  if (options.count("dbname") == 0 &&
-      options.count("update-dbname") == 0) {
+  if (options.contains("dbname") == 0 &&
+      options.contains("update-dbname") == 0) {
     throw std::runtime_error("Must provide either one of --dbname or "
                              "--update-dbname to configure database "
                              "name for update (API write) connections.");
@@ -146,7 +146,7 @@ pgsql_update::factory::factory(const po::variables_map &opts)
   m_connection.set_client_encoding("utf8");
 
   // set the connection to readonly transaction, if disable-api-write flag is set
-  if (opts.count("disable-api-write") != 0) {
+  if (opts.contains("disable-api-write") != 0) {
     m_api_write_disabled = true;
 #if PQXX_VERSION_MAJOR < 7
     m_connection.set_variable("default_transaction_read_only", "true");

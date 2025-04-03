@@ -56,7 +56,7 @@ void global_settings_via_options::set_new_options(const po::variables_map &optio
 }
 
 void global_settings_via_options::set_payload_max_size(const po::variables_map &options)  {
-  if (options.count("max-payload")) {
+  if (options.contains("max-payload")) {
     auto payload_max_size = options["max-payload"].as<long>();
     if (payload_max_size <= 0)
       throw std::invalid_argument("max-payload must be a positive number");
@@ -65,7 +65,7 @@ void global_settings_via_options::set_payload_max_size(const po::variables_map &
 }
 
 void global_settings_via_options::set_map_max_nodes(const po::variables_map &options)  {
-  if (options.count("map-nodes")) {
+  if (options.contains("map-nodes")) {
     auto map_max_nodes = options["map-nodes"].as<int>();
     if (map_max_nodes <= 0)
 	throw std::invalid_argument("map-nodes must be a positive number");
@@ -74,7 +74,7 @@ void global_settings_via_options::set_map_max_nodes(const po::variables_map &opt
 }
 
 void global_settings_via_options::set_map_area_max(const po::variables_map &options) {
-  if (options.count("map-area")) {
+  if (options.contains("map-area")) {
    m_map_area_max = options["map-area"].as<double>();
    if (m_map_area_max <= 0)
      throw std::invalid_argument("map-area must be a positive number");
@@ -82,7 +82,7 @@ void global_settings_via_options::set_map_area_max(const po::variables_map &opti
 }
 
 void global_settings_via_options::set_changeset_timeout_open_max(const po::variables_map &options) {
-  if (options.count("changeset-timeout-open")) {
+  if (options.contains("changeset-timeout-open")) {
     m_changeset_timeout_open_max = options["changeset-timeout-open"].as<std::string>();
     if (!validate_timeout(m_changeset_timeout_open_max))
       throw std::invalid_argument("Invalid changeset max open timeout value");
@@ -90,7 +90,7 @@ void global_settings_via_options::set_changeset_timeout_open_max(const po::varia
 }
 
 void global_settings_via_options::set_changeset_timeout_idle(const po::variables_map &options)  {
-  if (options.count("changeset-timeout-idle")) {
+  if (options.contains("changeset-timeout-idle")) {
     m_changeset_timeout_idle = options["changeset-timeout-idle"].as<std::string>();
     if (!validate_timeout(m_changeset_timeout_idle)) {
       throw std::invalid_argument("Invalid changeset idle timeout value");
@@ -99,7 +99,7 @@ void global_settings_via_options::set_changeset_timeout_idle(const po::variables
 }
 
 void global_settings_via_options::set_changeset_max_elements(const po::variables_map &options)  {
-  if (options.count("max-changeset-elements")) {
+  if (options.contains("max-changeset-elements")) {
     auto changeset_max_elements = options["max-changeset-elements"].as<int>();
     if (changeset_max_elements <= 0)
       throw std::invalid_argument("max-changeset-elements must be a positive number");
@@ -108,7 +108,7 @@ void global_settings_via_options::set_changeset_max_elements(const po::variables
 }
 
 void global_settings_via_options::set_way_max_nodes(const po::variables_map &options)  {
-  if (options.count("max-way-nodes")) {
+  if (options.contains("max-way-nodes")) {
     auto way_max_nodes = options["max-way-nodes"].as<int>();
     if (way_max_nodes <= 0)
       throw std::invalid_argument("max-way-nodes must be a positive number");
@@ -117,7 +117,7 @@ void global_settings_via_options::set_way_max_nodes(const po::variables_map &opt
 }
 
 void global_settings_via_options::set_scale(const po::variables_map &options) {
-  if (options.count("scale")) {
+  if (options.contains("scale")) {
     m_scale = options["scale"].as<long>();
     if (m_scale <= 0)
       throw std::invalid_argument("scale must be a positive number");
@@ -125,7 +125,7 @@ void global_settings_via_options::set_scale(const po::variables_map &options) {
 }
 
 void global_settings_via_options::set_relation_max_members(const po::variables_map &options) {
-  if (options.count("max-relation-members")) {
+  if (options.contains("max-relation-members")) {
     auto relation_max_members = options["max-relation-members"].as<int>();
     if (relation_max_members <= 0)
       throw std::invalid_argument("max-relation-members must be a positive number");
@@ -134,7 +134,7 @@ void global_settings_via_options::set_relation_max_members(const po::variables_m
 }
 
 void global_settings_via_options::set_element_max_tags(const po::variables_map &options) {
-  if (options.count("max-element-tags")) {
+  if (options.contains("max-element-tags")) {
     auto element_max_tags = options["max-element-tags"].as<int>();
     if (element_max_tags <= 0)
       throw std::invalid_argument("max-element-tags must be a positive number");
@@ -143,7 +143,7 @@ void global_settings_via_options::set_element_max_tags(const po::variables_map &
 }
 
 void global_settings_via_options::set_ratelimiter_ratelimit(const po::variables_map &options) {
-  if (options.count("ratelimit")) {
+  if (options.contains("ratelimit")) {
     auto parsed_bytes_per_sec = options["ratelimit"].as<long>();
     if (parsed_bytes_per_sec <= 0)
       throw std::invalid_argument("ratelimit must be greater than zero");
@@ -152,7 +152,7 @@ void global_settings_via_options::set_ratelimiter_ratelimit(const po::variables_
     m_ratelimiter_ratelimit = parsed_bytes_per_sec;
   }
 
-  if (options.count("moderator-ratelimit")) {
+  if (options.contains("moderator-ratelimit")) {
     auto parsed_bytes_per_sec = options["moderator-ratelimit"].as<long>();
     if (parsed_bytes_per_sec <= 0)
       throw std::invalid_argument("moderator-ratelimit must be greater than zero");
@@ -163,7 +163,7 @@ void global_settings_via_options::set_ratelimiter_ratelimit(const po::variables_
 }
 
 void global_settings_via_options::set_ratelimiter_maxdebt(const po::variables_map &options) {
- if (options.count("maxdebt")) {
+ if (options.contains("maxdebt")) {
     auto parsed_max_bytes = options["maxdebt"].as<long>();
     if (parsed_max_bytes <= 0)
       throw std::invalid_argument("maxdebt must be greater than zero");
@@ -172,7 +172,7 @@ void global_settings_via_options::set_ratelimiter_maxdebt(const po::variables_ma
     m_ratelimiter_maxdebt = parsed_max_bytes * 1024 * 1024;
   }
 
-  if (options.count("moderator-maxdebt")) {
+  if (options.contains("moderator-maxdebt")) {
     auto parsed_max_bytes = options["moderator-maxdebt"].as<long>();
     if (parsed_max_bytes <= 0)
       throw std::invalid_argument("moderator-maxdebt must be greater than zero");
@@ -183,13 +183,13 @@ void global_settings_via_options::set_ratelimiter_maxdebt(const po::variables_ma
 }
 
 void global_settings_via_options::set_ratelimiter_upload(const po::variables_map &options) {
-  if (options.count("ratelimit-upload")) {
+  if (options.contains("ratelimit-upload")) {
     m_ratelimiter_upload = options["ratelimit-upload"].as<bool>();
   }
 }
 
 void global_settings_via_options::set_bbox_size_limiter_upload(const po::variables_map &options) {
-  if (options.count("bbox-size-limit-upload")) {
+  if (options.contains("bbox-size-limit-upload")) {
     m_bbox_size_limiter_upload = options["bbox-size-limit-upload"].as<bool>();
   }
 }
