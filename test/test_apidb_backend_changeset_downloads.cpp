@@ -54,32 +54,30 @@ struct CGImapListener : Catch::TestEventListenerBase, DatabaseTestsFixture {
 
 CATCH_REGISTER_LISTENER( CGImapListener )
 
-
 TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_select_node", "[changeset][db]" ) {
 
   auto sel = tdb.get_data_selection();
 
   SECTION("Initialize test data") {
 
-    tdb.run_sql(
-      "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-      "VALUES "
-      "  (1, 'user_1@example.com', '', '2017-03-19T19:13:00Z', 'user_1', true); "
+    tdb.run_sql(R"(
+      INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public)
+      VALUES
+        (1, 'user_1@example.com', '', '2017-03-19T19:13:00Z', 'user_1', true);
 
-      "INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes) "
-      "VALUES "
-      "  (1, 1, '2017-03-19T19:13:00Z', '2017-03-19T19:13:00Z', 1);"
+      INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes)
+      VALUES
+        (1, 1, '2017-03-19T19:13:00Z', '2017-03-19T19:13:00Z', 1);
 
-      "INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, \"timestamp\", tile, version) "
-      " VALUES "
-      "  (1, 90000000, 90000000, 1, true,  '2017-03-19T19:13:00Z', 3229120632, 1); "
+      INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
+      VALUES
+        (1, 90000000, 90000000, 1, true,  '2017-03-19T19:13:00Z', 3229120632, 1);
 
-      "INSERT INTO nodes (node_id, latitude, longitude, changeset_id, visible, "
-      "                   \"timestamp\", tile, version, redaction_id) "
-      "VALUES "
-      "  (1, 90000000, 90000000, 1, true,  '2017-03-19T19:13:00Z', 3229120632, 1, NULL);"
-      );
-
+      INSERT INTO nodes (node_id, latitude, longitude, changeset_id, visible,
+                         "timestamp", tile, version, redaction_id)
+      VALUES
+        (1, 90000000, 90000000, 1, true,  '2017-03-19T19:13:00Z', 3229120632, 1, NULL);
+      )");
   }
 
   SECTION("Perform node checks") {
@@ -106,36 +104,36 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_select_way", "[changeset
 
   SECTION("Initialize test data") {
 
-  tdb.run_sql(
-    "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-    "VALUES "
-    "  (1, 'user_1@example.com', '', '2017-03-19T19:57:00Z', 'user_1', true); "
+  tdb.run_sql(R"(
+    INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public)
+    VALUES
+      (1, 'user_1@example.com', '', '2017-03-19T19:57:00Z', 'user_1', true);
 
-    "INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes) "
-    "VALUES "
-    "  (1, 1, '2017-03-19T19:13:00Z', '2017-03-19T19:57:00Z', 1),"
-    "  (2, 1, '2017-03-19T19:13:00Z', '2017-03-19T19:57:00Z', 2);"
+    INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes)
+    VALUES
+      (1, 1, '2017-03-19T19:13:00Z', '2017-03-19T19:57:00Z', 1),
+      (2, 1, '2017-03-19T19:13:00Z', '2017-03-19T19:57:00Z', 2);
 
-    "INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, \"timestamp\", tile, version) "
-    " VALUES "
-    "  (1, 90000000, 90000000, 1, true,  '2017-03-19T19:57:00Z', 3229120632, 1); "
+    INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
+    VALUES
+      (1, 90000000, 90000000, 1, true,  '2017-03-19T19:57:00Z', 3229120632, 1);
 
-    "INSERT INTO nodes (node_id, latitude, longitude, changeset_id, visible, "
-    "                   \"timestamp\", tile, version, redaction_id) "
-    "VALUES "
-    "  (1, 90000000, 90000000, 1, true,  '2017-03-19T19:57:00Z', 3229120632, 1, NULL);"
+    INSERT INTO nodes (node_id, latitude, longitude, changeset_id, visible,
+                       "timestamp", tile, version, redaction_id)
+    VALUES
+      (1, 90000000, 90000000, 1, true,  '2017-03-19T19:57:00Z', 3229120632, 1, NULL);
 
-    "INSERT INTO ways (way_id, changeset_id, \"timestamp\", visible, "
-    "                  version, redaction_id) "
-    "VALUES "
-    "  (1, 2, '2017-03-19T19:57:00Z', true, 2, NULL), "
-    "  (1, 2, '2017-03-19T19:57:00Z', true, 1, NULL); "
+    INSERT INTO ways (way_id, changeset_id, "timestamp", visible,
+                      version, redaction_id)
+    VALUES
+      (1, 2, '2017-03-19T19:57:00Z', true, 2, NULL),
+      (1, 2, '2017-03-19T19:57:00Z', true, 1, NULL);
 
-    "INSERT INTO way_nodes (way_id, version, node_id, sequence_id) "
-    "VALUES "
-    "  (1, 2, 1, 1), "
-    "  (1, 1, 1, 1); "
-    );
+    INSERT INTO way_nodes (way_id, version, node_id, sequence_id)
+    VALUES
+      (1, 2, 1, 1),
+      (1, 1, 1, 1);
+    )");
   }
 
   SECTION("Perform way checks") {
@@ -167,36 +165,35 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_select_relation", "[chan
 
   SECTION("Initialize test data") {
 
-    tdb.run_sql(
-      "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-      "VALUES "
-      "  (1, 'user_1@example.com', '', '2017-03-19T20:15:00Z', 'user_1', true); "
+    tdb.run_sql(R"(
+      INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public)
+      VALUES
+        (1, 'user_1@example.com', '', '2017-03-19T20:15:00Z', 'user_1', true);
 
-      "INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes) "
-      "VALUES "
-      "  (1, 1, '2017-03-19T19:13:00Z', '2017-03-19T20:15:00Z', 1),"
-      "  (2, 1, '2017-03-19T19:13:00Z', '2017-03-19T20:15:00Z', 1);"
+      INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes)
+      VALUES
+        (1, 1, '2017-03-19T19:13:00Z', '2017-03-19T20:15:00Z', 1),
+        (2, 1, '2017-03-19T19:13:00Z', '2017-03-19T20:15:00Z', 1);
 
-      "INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, \"timestamp\", tile, version) "
-      " VALUES "
-      "  (1, 90000000, 90000000, 1, true,  '2017-03-19T20:15:00Z', 3229120632, 1); "
+      INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
+      VALUES
+        (1, 90000000, 90000000, 1, true,  '2017-03-19T20:15:00Z', 3229120632, 1);
 
-      "INSERT INTO nodes (node_id, latitude, longitude, changeset_id, visible, "
-      "                   \"timestamp\", tile, version, redaction_id) "
-      "VALUES "
-      "  (1, 90000000, 90000000, 1, true,  '2017-03-19T20:15:00Z', 3229120632, 1, NULL);"
+      INSERT INTO nodes (node_id, latitude, longitude, changeset_id, visible,
+                         "timestamp", tile, version, redaction_id)
+      VALUES
+        (1, 90000000, 90000000, 1, true,  '2017-03-19T20:15:00Z', 3229120632, 1, NULL);
 
-      "INSERT INTO relations (relation_id, changeset_id, \"timestamp\", "
-      "                       visible, version, redaction_id) "
-      "VALUES "
-      "  (1, 2, '2017-03-19T20:15:00Z', true, 1, NULL); "
+      INSERT INTO relations (relation_id, changeset_id, "timestamp",
+                             visible, version, redaction_id)
+      VALUES
+        (1, 2, '2017-03-19T20:15:00Z', true, 1, NULL);
 
-      "INSERT INTO relation_members (relation_id, member_type, member_id, "
-      "                              member_role, sequence_id, version) "
-      "VALUES "
-      "  (1, 'Node', 1, 'foo', 1, 1); "
-      );
-
+      INSERT INTO relation_members (relation_id, member_type, member_id,
+                                    member_role, sequence_id, version)
+      VALUES
+        (1, 'Node', 1, 'foo', 1, 1);
+      )");
   }
 
   SECTION("Perform relation checks") {
@@ -222,32 +219,32 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_redacted", "[changeset][
 
   SECTION("Initialize test data") {
 
-    tdb.run_sql(
-      "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-      "VALUES "
-      "  (1, 'user_1@example.com', '', '2017-03-19T20:18:00Z', 'user_1', true); "
+    tdb.run_sql(R"(
+      INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public)
+      VALUES
+        (1, 'user_1@example.com', '', '2017-03-19T20:18:00Z', 'user_1', true);
 
-      "INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes) "
-      "VALUES "
-      "  (1, 1, '2017-03-19T20:18:00Z', '2017-03-19T20:18:00Z', 1),"
-      "  (2, 1, '2017-03-19T20:18:00Z', '2017-03-19T20:18:00Z', 1),"
-      "  (3, 1, '2017-03-19T20:18:00Z', '2017-03-19T20:18:00Z', 1);"
+      INSERT INTO changesets (id, user_id, created_at, closed_at, num_changes)
+      VALUES
+        (1, 1, '2017-03-19T20:18:00Z', '2017-03-19T20:18:00Z', 1),
+        (2, 1, '2017-03-19T20:18:00Z', '2017-03-19T20:18:00Z', 1),
+        (3, 1, '2017-03-19T20:18:00Z', '2017-03-19T20:18:00Z', 1);
 
-      "INSERT INTO redactions (id, title, description, created_at, updated_at, user_id) "
-      "VALUES "
-      "  (1, 'test redaction', 'test redaction description', '2017-03-19T20:18:00Z', '2017-03-19T20:18:00Z', 1); "
+      INSERT INTO redactions (id, title, description, created_at, updated_at, user_id)
+      VALUES
+        (1, 'test redaction', 'test redaction description', '2017-03-19T20:18:00Z', '2017-03-19T20:18:00Z', 1);
 
-      "INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, \"timestamp\", tile, version) "
-      " VALUES "
-      "  (1, 0, 0, 3, true,  '2017-03-19T20:18:00Z', 3221225472, 3); "
+      INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
+      VALUES
+        (1, 0, 0, 3, true,  '2017-03-19T20:18:00Z', 3221225472, 3);
 
-      "INSERT INTO nodes (node_id, latitude, longitude, changeset_id, visible, "
-      "                   \"timestamp\", tile, version, redaction_id) "
-      "VALUES "
-      "  (1, 0, 0, 1, true,  '2017-03-19T20:18:00Z', 3221225472, 1, NULL),"
-      "  (1, 0, 0, 2, true,  '2017-03-19T20:18:00Z', 3221225472, 2, 1),"
-      "  (1, 0, 0, 3, true,  '2017-03-19T20:18:00Z', 3221225472, 3, NULL);"
-      );
+      INSERT INTO nodes (node_id, latitude, longitude, changeset_id, visible,
+                         "timestamp", tile, version, redaction_id)
+      VALUES
+        (1, 0, 0, 1, true,  '2017-03-19T20:18:00Z', 3221225472, 1, NULL),
+        (1, 0, 0, 2, true,  '2017-03-19T20:18:00Z', 3221225472, 2, 1),
+        (1, 0, 0, 3, true,  '2017-03-19T20:18:00Z', 3221225472, 3, NULL);
+      )");
   }
 
   SECTION("Perform redaction checks") {
@@ -258,7 +255,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_redacted", "[changeset][
 
       test_formatter f;
       sel->write_nodes(f);
-      REQUIRE(f.m_nodes.size() == 0); // number of nodes (0) written for regular user from changeset 2
+      REQUIRE(f.m_nodes.empty()); // number of nodes (0) written for regular user from changeset 2
     }
 
     // as a moderator, should have all redacted elements shown.
@@ -295,8 +292,7 @@ int main(int argc, char *argv[]) {
 
   session.cli(cli);
 
-  int returnCode = session.applyCommandLine(argc, argv);
-  if (returnCode != 0)
+  if (int returnCode = session.applyCommandLine(argc, argv); returnCode != 0)
     return returnCode;
 
   if (!test_db_sql.empty())
