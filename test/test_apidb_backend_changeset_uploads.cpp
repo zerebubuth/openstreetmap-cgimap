@@ -59,22 +59,22 @@ public:
   bool get_bbox_size_limiter_upload() const override { return true; }
 };
 
-std::unique_ptr<xmlDoc, void (*)(xmlDoc *)> getDocument(const std::string &document)
+std::unique_ptr< xmlDoc, decltype(&xmlFreeDoc) > getDocument(const std::string &document)
 {
-  return {xmlReadDoc((xmlChar *)(document.c_str()), nullptr, nullptr, XML_PARSE_PEDANTIC | XML_PARSE_NONET), xmlFreeDoc};
+  return {xmlReadDoc((const xmlChar *)(document.c_str()), nullptr, nullptr, XML_PARSE_PEDANTIC | XML_PARSE_NONET), &xmlFreeDoc};
 }
 
 std::optional<std::string> getXPath(xmlDoc* doc, const std::string& xpath)
 {
-  std::unique_ptr< xmlXPathContext, void (*)(xmlXPathContextPtr) > xpathCtx =
-      { xmlXPathNewContext(doc), xmlXPathFreeContext };
+  std::unique_ptr< xmlXPathContext, decltype(&xmlXPathFreeContext) > xpathCtx =
+      { xmlXPathNewContext(doc), &xmlXPathFreeContext };
 
   if (xpathCtx == nullptr)
     throw std::runtime_error("xpathCtx is null");
 
-  std::unique_ptr< xmlXPathObject, void (*)(xmlXPathObjectPtr) > result =
-     { xmlXPathEvalExpression((xmlChar*) xpath.c_str(), xpathCtx.get()),
-      xmlXPathFreeObject };
+  std::unique_ptr< xmlXPathObject, decltype(&xmlXPathFreeObject) > result =
+     { xmlXPathEvalExpression((const xmlChar*) xpath.c_str(), xpathCtx.get()),
+      &xmlXPathFreeObject };
 
   if (xmlXPathNodeSetIsEmpty(result->nodesetval))
     return {};
