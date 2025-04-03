@@ -301,7 +301,7 @@ void create_oauth2_tokens(Transaction_Manager &m,
 
 void create_changesets(
     Transaction_Manager &m,
-    const decltype(xmlparser::database::m_changesets) changesets) {
+    const decltype(xmlparser::database::m_changesets) &changesets) {
 
   if (!changesets.empty()) {
 
@@ -387,7 +387,7 @@ void create_changesets(
       std::vector<int64_t> num_changes;
 
       for (const auto &[id, changeset] : changesets) {
-        if ((changeset.m_info.bounding_box))
+        if (changeset.m_info.bounding_box)
           continue;
 
         ids.emplace_back(id);
@@ -405,7 +405,7 @@ void create_changesets(
 
 void create_changeset_tags(
     Transaction_Manager &m,
-    const decltype(xmlparser::database::m_changesets) changesets) {
+    const decltype(xmlparser::database::m_changesets) &changesets) {
 
   if (changesets.empty())
     return;
@@ -441,7 +441,7 @@ void create_changeset_tags(
 
 void create_changeset_discussions(
     Transaction_Manager &m,
-    const decltype(xmlparser::database::m_changesets) changesets) {
+    const decltype(xmlparser::database::m_changesets) &changesets) {
 
   if (changesets.empty())
     return;
@@ -485,7 +485,7 @@ void create_changeset_discussions(
 }
 
 void changeset_tags_insert(Transaction_Manager &m, osm_changeset_id_t changeset,
-                           std::map<std::string, std::string> &tags) {
+                           const std::map<std::string, std::string> &tags) {
   if (tags.empty())
     return;
 

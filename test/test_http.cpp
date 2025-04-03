@@ -17,7 +17,7 @@
 
 struct test_responder : responder {
 
-  test_responder(mime::type t) : responder(t) {}
+  using responder::responder;
 
   std::vector<mime::type> types_available() const override {
     return {mime::type::application_json, mime::type::application_xml};
