@@ -21,10 +21,7 @@ po::variables_map first_pass_arguments(int argc, char *argv[],
                                       const po::options_description &desc) {
   // copy args because boost::program_options seems to destructively consume
   // them
-  std::vector<std::string> args;
-  for (int i = 1; i < argc; ++i) {
-    args.emplace_back(argv[i]);
-  }
+  std::vector<std::string> args(argv + 1, argv + argc);
 
   po::variables_map vm;
   // we parse the command line arguments allowing unregistered values so that
