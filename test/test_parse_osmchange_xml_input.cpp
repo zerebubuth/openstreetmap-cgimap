@@ -23,7 +23,7 @@
 class Test_Parser_Callback : public api06::Parser_Callback {
 
 public:
-  Test_Parser_Callback() {}
+  Test_Parser_Callback() = default;
 
   void start_document() override { start_executed = true; }
 
