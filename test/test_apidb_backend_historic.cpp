@@ -909,8 +909,7 @@ int main(int argc, char *argv[]) {
 
   session.cli(cli);
 
-  int returnCode = session.applyCommandLine(argc, argv);
-  if (returnCode != 0)
+  if (int returnCode = session.applyCommandLine(argc, argv); returnCode != 0)
     return returnCode;
 
   if (!test_db_sql.empty())
