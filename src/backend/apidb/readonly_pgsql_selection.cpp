@@ -29,16 +29,16 @@ std::string connect_db_str(const po::variables_map &options) {
   // build the connection string.
   std::ostringstream ostr;
   ostr << "dbname=" << options["dbname"].as<std::string>();
-  if (options.count("host")) {
+  if (options.contains("host")) {
     ostr << " host=" << options["host"].as<std::string>();
   }
-  if (options.count("username")) {
+  if (options.contains("username")) {
     ostr << " user=" << options["username"].as<std::string>();
   }
-  if (options.count("password")) {
+  if (options.contains("password")) {
     ostr << " password=" << options["password"].as<std::string>();
   }
-  if (options.count("dbport")) {
+  if (options.contains("dbport")) {
     ostr << " port=" << options["dbport"].as<std::string>();
   }
 

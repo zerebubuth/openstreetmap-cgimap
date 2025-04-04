@@ -53,7 +53,7 @@ std::string test_request::get_payload() {
   const char *content_encoding = m_params.contains("HTTP_CONTENT_ENCODING") ? m_params["HTTP_CONTENT_ENCODING"].c_str() : nullptr;
 
   auto content_encoding_handler = http::get_content_encoding_handler(
-         std::string(content_encoding == nullptr ? "" : content_encoding));
+         std::string_view(content_encoding == nullptr ? "" : content_encoding));
 
   unsigned long content_length = 0;
   unsigned long result_length = 0;
@@ -70,9 +70,9 @@ std::string test_request::get_payload() {
   try {
     std::string content_decompressed = content_encoding_handler->decompress(content);
     result += content_decompressed;
-  } catch (std::bad_alloc& e) {
+  } catch (std::bad_alloc&) {
       throw http::server_error("Decompression failed due to memory issue");
-  } catch (std::runtime_error& e) {
+  } catch (std::runtime_error&) {
       throw http::bad_request("Payload cannot be decompressed according to Content-Encoding");
   }
 

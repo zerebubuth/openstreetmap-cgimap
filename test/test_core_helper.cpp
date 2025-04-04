@@ -99,11 +99,11 @@ void check_xmlattr(const pt::ptree &expected, const pt::ptree &actual) {
   std::set<std::string> exp_keys;
   std::set<std::string> act_keys;
 
-  for (const auto &val : expected) {
-    exp_keys.insert(val.first);
+  for (const auto &[key, _] : expected) {
+    exp_keys.insert(key);
   }
-  for (const auto &val : actual) {
-    act_keys.insert(val.first);
+  for (const auto &[key, _] : actual) {
+    act_keys.insert(key);
   }
 
   // Check if expected and actual keys are different
@@ -137,7 +137,7 @@ void check_xmlattr(const pt::ptree &expected, const pt::ptree &actual) {
   }
 }
 
-void check_extra_entries(pt::ptree::const_iterator &exp_itr, const pt::ptree &expected,
+void check_extra_entries(const pt::ptree::const_iterator &exp_itr, const pt::ptree &expected,
                              pt::ptree::const_iterator &act_itr, const pt::ptree &actual) {
 
   if (exp_itr == expected.end()) {
@@ -153,7 +153,7 @@ void check_extra_entries(pt::ptree::const_iterator &exp_itr, const pt::ptree &ex
   }
 }
 
-void check_missing_entries(pt::ptree::const_iterator &act_itr, const pt::ptree &actual,
+void check_missing_entries(const pt::ptree::const_iterator &act_itr, const pt::ptree &actual,
                            pt::ptree::const_iterator &exp_itr, const pt::ptree &expected) {
 
   if (act_itr == actual.end()) {
@@ -184,11 +184,9 @@ void check_recursive_tree(const pt::ptree &expected, const pt::ptree &actual, bo
     return;
   }
 
-  if (is_json) {
-    if (expected.data() != actual.data()) {
-      throw std::runtime_error(fmt::format("Expected '{}', but got '{}'",
-                                expected.data(), actual.data()));
-    }
+  if (is_json && expected.data() != actual.data()) {
+    throw std::runtime_error(fmt::format("Expected '{}', but got '{}'",
+                              expected.data(), actual.data()));
   }
 
   while (true) {
@@ -313,8 +311,7 @@ void check_content_body_plain(std::istream &expected, std::istream &actual) {
 
     if (!std::equal(exp_buf, exp_buf + exp_num, act_buf)) {
       throw std::runtime_error(
-        fmt::format("Returned content differs: expected \"{}\", actual "
-                       "\"{}\" - responses are different.", exp, act));
+        fmt::format(R"(Returned content differs: expected "{}", actual "{}" - responses are different.)", exp, act));
     }
 
     if (expected.eof() && actual.eof()) {
