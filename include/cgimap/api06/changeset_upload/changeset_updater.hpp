@@ -12,6 +12,7 @@
 
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
+#include "cgimap/api06/changeset_upload/changeset_stats.hpp"
 
 #include <map>
 #include <string>
@@ -26,7 +27,7 @@ public:
 
   virtual void lock_current_changeset(bool check_max_elements_limit) = 0;
 
-  virtual void update_changeset(uint32_t num_new_changes, bbox_t bbox) = 0;
+  virtual void update_changeset(const changeset_upload_stats &num_new_changes, const bbox_t &bbox) = 0;
 
   virtual bbox_t get_bbox() const = 0;
 

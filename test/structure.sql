@@ -385,6 +385,20 @@ CREATE TABLE public.changesets (
     num_changes integer DEFAULT 0 NOT NULL
 );
 
+--- Preliminary changesets table columns for enhanced changeset stats
+--- see https://github.com/openstreetmap/openstreetmap-website/issues/5758
+
+ALTER TABLE public.changesets
+   ADD COLUMN num_created_nodes integer DEFAULT 0 NOT NULL,
+   ADD COLUMN num_modified_nodes integer DEFAULT 0 NOT NULL,
+   ADD COLUMN num_deleted_nodes integer DEFAULT 0 NOT NULL,
+   ADD COLUMN num_created_ways integer DEFAULT 0 NOT NULL,
+   ADD COLUMN num_modified_ways integer DEFAULT 0 NOT NULL,
+   ADD COLUMN num_deleted_ways integer DEFAULT 0 NOT NULL,
+   ADD COLUMN num_created_relations integer DEFAULT 0 NOT NULL,
+   ADD COLUMN num_modified_relations integer DEFAULT 0 NOT NULL,
+   ADD COLUMN num_deleted_relations integer DEFAULT 0 NOT NULL;
+
 
 --
 -- Name: changesets_id_seq; Type: SEQUENCE; Schema: public; Owner: -

@@ -18,7 +18,6 @@
 #include <fmt/core.h>
 #include <pqxx/pqxx>
 
-
 ApiDB_Changeset_Updater::ApiDB_Changeset_Updater(Transaction_Manager &_m,
                                                  const RequestContext& _req_ctx,
                                                  osm_changeset_id_t _changeset)
@@ -56,16 +55,21 @@ void ApiDB_Changeset_Updater::lock_current_changeset(bool check_max_elements_lim
 
 }
 
-void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
-                                               const bbox_t bbox) {
+void ApiDB_Changeset_Updater::update_changeset(
+    const changeset_upload_stats &new_changes, const bbox_t &bbox) {
+
+  const uint32_t num_new_changes = new_changes.get_total();
 
   // Don't raise an exception when reaching exactly changeset_max_elements!
-  if (cs_num_changes + num_new_changes > global_settings::get_changeset_max_elements()) {
+  if (cs_num_changes + num_new_changes >
+      global_settings::get_changeset_max_elements()) {
 
-      auto r = m.exec(
-	  R"(SELECT to_char((now() at time zone 'utc'),'YYYY-MM-DD HH24:MI:SS "UTC"') as current_time)");
+    auto r = m.exec(
+        R"(SELECT to_char((now() at time zone 'utc'),'YYYY-MM-DD HH24:MI:SS "UTC"') as current_time)");
 
-      throw http::conflict(fmt::format("The changeset {:d} was closed at {}", changeset, r[0]["current_time"].as<std::string>()));
+    throw http::conflict(fmt::format("The changeset {:d} was closed at {}",
+                                     changeset,
+                                     r[0]["current_time"].as<std::string>()));
   }
 
   cs_num_changes += num_new_changes;
@@ -83,64 +87,97 @@ void ApiDB_Changeset_Updater::update_changeset(const uint32_t num_new_changes,
    changeset.rb:
    set the auto-close time to be one hour in the future unless
    that would make it more than 24h long, in which case clip to
-   24h, as this has been decided is a reasonable time limit.
-
-   */
-
-  m.prepare("changeset_update_w_bbox",
-	    R"(
-       UPDATE changesets
-       SET num_changes = ($1 :: integer),
-           min_lat = $2,
-           min_lon = $3,
-           max_lat = $4,
-           max_lon = $5,
-           closed_at =
-             CASE
-                WHEN (closed_at - created_at) >
-                     (($6 ::interval) - ($7 ::interval)) THEN
-                  created_at + ($6 ::interval)
-                ELSE
-                  now() at time zone 'utc' + ($7 ::interval)
-             END
-       WHERE id = $8
-
-       )"_M);
-
-  m.prepare("changeset_update",
-	    R"(
-       UPDATE changesets
-       SET num_changes = ($1 :: integer),
-           closed_at =
-             CASE
-                WHEN (closed_at - created_at) >
-                     (($2 ::interval) - ($3 ::interval)) THEN
-                  created_at + ($2 ::interval)
-                ELSE
-                  now() at time zone 'utc' + ($3 ::interval)
-             END
-       WHERE id = $4
-
-       )"_M);
+   24h, as this has been decided is a reasonable time limit.  */
 
   if (valid_bbox) {
-      auto r = m.exec_prepared("changeset_update_w_bbox", cs_num_changes, cs_bbox.minlat, cs_bbox.minlon,
-			  cs_bbox.maxlat, cs_bbox.maxlon,
-			  global_settings::get_changeset_timeout_open_max(),
-			  global_settings::get_changeset_timeout_idle(), changeset);
-      if (r.affected_rows() != 1)
-	throw http::server_error("Cannot update changeset");
+
+    m.prepare("changeset_update_w_bbox",
+      R"(
+        UPDATE changesets
+        SET num_changes = ($1 :: integer),
+            min_lat = $2,
+            min_lon = $3,
+            max_lat = $4,
+            max_lon = $5,
+            closed_at =
+              CASE
+                  WHEN (closed_at - created_at) >
+                      (($6 ::interval) - ($7 ::interval)) THEN
+                    created_at + ($6 ::interval)
+                  ELSE
+                    now() at time zone 'utc' + ($7 ::interval)
+              END
+        WHERE id = $8
+    )"_M);
+
+    auto r = m.exec_prepared(
+        "changeset_update_w_bbox", cs_num_changes, cs_bbox.minlat,
+        cs_bbox.minlon, cs_bbox.maxlat, cs_bbox.maxlon,
+        global_settings::get_changeset_timeout_open_max(),
+        global_settings::get_changeset_timeout_idle(), changeset);
+    if (r.affected_rows() != 1)
+      throw http::server_error("Cannot update changeset");
+
   } else {
-      auto r = m.exec_prepared("changeset_update", cs_num_changes,
-			       global_settings::get_changeset_timeout_open_max(),
-			       global_settings::get_changeset_timeout_idle(), changeset);
-      if (r.affected_rows() != 1)
-	throw http::server_error("Cannot update changeset");
+
+    m.prepare("changeset_update",
+          R"(
+        UPDATE changesets
+        SET num_changes = ($1 :: integer),
+            closed_at =
+              CASE
+                  WHEN (closed_at - created_at) >
+                      (($2 ::interval) - ($3 ::interval)) THEN
+                    created_at + ($2 ::interval)
+                  ELSE
+                    now() at time zone 'utc' + ($3 ::interval)
+              END
+        WHERE id = $4
+    )"_M);
+
+    auto r = m.exec_prepared("changeset_update", cs_num_changes,
+                             global_settings::get_changeset_timeout_open_max(),
+                             global_settings::get_changeset_timeout_idle(),
+                             changeset);
+    if (r.affected_rows() != 1)
+      throw http::server_error("Cannot update changeset");
   }
+
+  changeset_update_enhanced_stats(new_changes);
 }
 
-void ApiDB_Changeset_Updater::changeset_update_users_cs_count()
-{
+void ApiDB_Changeset_Updater::changeset_update_enhanced_stats(
+    const changeset_upload_stats &new_changes) {
+  if (global_settings::get_changeset_enhanced_stats() && new_changes.get_total() > 0) {
+
+    m.prepare("changeset_update_enhanced_stats",
+              R"(
+        UPDATE changesets
+        SET num_created_nodes = num_created_nodes + $1,
+            num_modified_nodes = num_modified_nodes + $2,
+            num_deleted_nodes = num_deleted_nodes + $3,
+
+            num_created_ways = num_created_ways + $4,
+            num_modified_ways = num_modified_ways + $5,
+            num_deleted_ways = num_deleted_ways + $6,
+
+            num_created_relations = num_created_relations + $7,
+            num_modified_relations = num_modified_relations + $8,
+            num_deleted_relations = num_deleted_relations + $9
+        WHERE id = $10
+        )"_M);
+
+    auto r = m.exec_prepared("changeset_update_enhanced_stats",
+                             new_changes.node.num_create, new_changes.node.num_modify, new_changes.node.num_delete,
+                             new_changes.way.num_create, new_changes.way.num_modify, new_changes.way.num_delete,
+                             new_changes.relation.num_create, new_changes.relation.num_modify, new_changes.relation.num_delete,
+                             changeset);
+    if (r.affected_rows() != 1)
+      throw http::server_error(
+          "Cannot update changeset - changeset_update_enhanced_stats");
+  }
+}
+void ApiDB_Changeset_Updater::changeset_update_users_cs_count() {
 
   m.prepare (
       "update_users",
@@ -172,7 +209,7 @@ void ApiDB_Changeset_Updater::api_update_changeset(const std::map<std::string, s
   lock_current_changeset(false);
   changeset_delete_tags();
   changeset_insert_tags(tags);
-  update_changeset(0, {});
+  update_changeset({}, {});
 }
 
 void ApiDB_Changeset_Updater::api_close_changeset()

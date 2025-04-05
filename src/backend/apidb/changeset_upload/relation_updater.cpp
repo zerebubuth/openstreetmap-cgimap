@@ -864,7 +864,7 @@ void ApiDB_Relation_Updater::lock_future_members(
          *  be set to visible by update_current_relations before committing.
          */
 
-        if (std::ranges::find(already_locked_relations, 
+        if (std::ranges::find(already_locked_relations,
                               rm.member_id) == already_locked_relations.end()) {
           relation_ids.push_back(rm.member_id);
         }
@@ -1776,9 +1776,10 @@ void ApiDB_Relation_Updater::delete_current_relation_tags(
   auto r = m.exec_prepared("delete_current_relation_tags", ids);
 }
 
-uint32_t ApiDB_Relation_Updater::get_num_changes() const {
-  return (ct.created_relation_ids.size() + ct.modified_relation_ids.size() +
-          ct.deleted_relation_ids.size());
+changeset_upload_stats::element_stats ApiDB_Relation_Updater::get_stats() const {
+  return {ct.created_relation_ids.size(),
+          ct.modified_relation_ids.size(),
+          ct.deleted_relation_ids.size()};
 }
 
 bbox_t ApiDB_Relation_Updater::bbox() const { return m_bbox; }
