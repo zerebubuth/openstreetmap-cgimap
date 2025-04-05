@@ -60,6 +60,12 @@ public:
   bool get_bbox_size_limiter_upload() const override { return true; }
 };
 
+class global_setting_enable_changeset_enhanced_stats : public global_settings_default {
+public:
+  // enable changeset enhanced stats
+  bool get_changeset_enhanced_stats() const override { return true; }
+};
+
 std::unique_ptr< xmlDoc, decltype(&xmlFreeDoc) > getDocument(const std::string &document)
 {
   return {xmlReadDoc((const xmlChar *)(document.c_str()), nullptr, nullptr, XML_PARSE_PEDANTIC | XML_PARSE_NONET), &xmlFreeDoc};
@@ -1987,8 +1993,7 @@ std::vector<api06::diffresult_t> process_payload(test_database &tdb, osm_changes
 
   auto diffresult = change_tracking.assemble_diffresult();
 
-  changeset_updater->update_changeset(handler.get_num_changes(),
-      handler.get_bbox());
+  changeset_updater->update_changeset(handler.get_stats(), handler.get_bbox());
 
   upd->commit();
 
@@ -2024,11 +2029,13 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][up
   }
 
   SECTION("Trying to add CHANGESET_MAX_ELEMENTS to empty changeset - should succeed") {
-    REQUIRE_NOTHROW(changeset_updater->update_changeset(global_settings::get_changeset_max_elements(), {}));  // use undefined bbox
+    changeset_upload_stats stats{global_settings::get_changeset_max_elements(), 0, 0};
+    REQUIRE_NOTHROW(changeset_updater->update_changeset(stats, {}));  // use undefined bbox
   }
 
   SECTION("Trying to add CHANGESET_MAX_ELEMENTS + 1 to empty changeset - should fail") {
-    REQUIRE_THROWS_AS(changeset_updater->update_changeset(global_settings::get_changeset_max_elements() + 1, {}), http::conflict);
+    changeset_upload_stats stats{global_settings::get_changeset_max_elements() + 1, 0, 0};
+    REQUIRE_THROWS_AS(changeset_updater->update_changeset(stats, {}), http::conflict);
   }
 }
 
@@ -2166,6 +2173,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
 
   const std::string bearertoken = "Bearer 4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8";
   const std::string generator = "Test";
+
+  auto test_settings = std::make_unique< global_setting_enable_changeset_enhanced_stats >();
+  global_settings::set_configuration(std::move(test_settings));
 
   const std::optional<std::string> none{};
 
@@ -2599,6 +2609,54 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     REQUIRE(getXPath(doc.get(), "/diffResult/node[4]/@old_id") == "-1");
     REQUIRE(getXPath(doc.get(), "/diffResult/node[4]/@new_id") == none);
     REQUIRE(getXPath(doc.get(), "/diffResult/node[4]/@new_version") == none);
+
+    // Check that total over enhanced changeset stats matches num_changes
+    REQUIRE_NOTHROW(tdb.run_sql(R"( DO $$ BEGIN ASSERT (
+                                        SELECT num_changes -
+                                               num_created_nodes - num_modified_nodes - num_deleted_nodes -
+                                               num_created_ways - num_modified_ways - num_deleted_ways -
+                                               num_created_relations - num_modified_relations - num_deleted_relations
+                                        FROM changesets
+                                        WHERE id = 1) = 0, 'mismatch in enhanced changeset stats'; END; $$; )"));
+
+    // Check nodes
+    REQUIRE_NOTHROW(tdb.run_sql(R"( DO $$ BEGIN ASSERT (
+                                      SELECT COUNT(*) FROM changesets WHERE id = 1 AND num_created_nodes = 6) = 1,
+                                      'mismatch in num_created_nodes'; END; $$; )"));
+
+     REQUIRE_NOTHROW(tdb.run_sql(R"( DO $$ BEGIN ASSERT (
+                                      SELECT COUNT(*) FROM changesets WHERE id = 1 AND num_modified_nodes = 2) = 1,
+                                      'mismatch in num_modified_nodes'; END; $$; )"));
+
+    REQUIRE_NOTHROW(tdb.run_sql(R"( DO $$ BEGIN ASSERT (
+                                      SELECT COUNT(*) FROM changesets WHERE id = 1 AND num_deleted_nodes = 3) = 1,
+                                      'mismatch in num_deleted_nodes'; END; $$; )"));
+
+    // Check ways
+    REQUIRE_NOTHROW(tdb.run_sql(R"( DO $$ BEGIN ASSERT (
+                                      SELECT COUNT(*) FROM changesets WHERE id = 1 AND num_created_ways = 2) = 1,
+                                      'mismatch in num_created_ways'; END; $$; )"));
+
+    REQUIRE_NOTHROW(tdb.run_sql(R"( DO $$ BEGIN ASSERT (
+                                      SELECT COUNT(*) FROM changesets WHERE id = 1 AND num_modified_ways = 1) = 1,
+                                      'mismatch in num_modified_ways'; END; $$; )"));
+
+    REQUIRE_NOTHROW(tdb.run_sql(R"( DO $$ BEGIN ASSERT (
+                                      SELECT COUNT(*) FROM changesets WHERE id = 1 AND num_deleted_ways = 1) = 1,
+                                      'mismatch in num_deleted_ways'; END; $$; )"));
+
+    // Check relations
+    REQUIRE_NOTHROW(tdb.run_sql(R"( DO $$ BEGIN ASSERT (
+                                      SELECT COUNT(*) FROM changesets WHERE id = 1 AND num_created_relations = 3) = 1,
+                                      'mismatch in num_created_relations'; END; $$; )"));
+
+    REQUIRE_NOTHROW(tdb.run_sql(R"( DO $$ BEGIN ASSERT (
+                                      SELECT COUNT(*) FROM changesets WHERE id = 1 AND num_modified_relations = 2) = 1,
+                                      'mismatch in num_modified_relations'; END; $$; )"));
+
+    REQUIRE_NOTHROW(tdb.run_sql(R"( DO $$ BEGIN ASSERT (
+                                      SELECT COUNT(*) FROM changesets WHERE id = 1 AND num_deleted_relations = 1) = 1,
+                                      'mismatch in num_deleted_relations'; END; $$; )"));
 
   }
 

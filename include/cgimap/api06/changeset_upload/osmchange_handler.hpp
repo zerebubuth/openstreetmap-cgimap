@@ -48,7 +48,7 @@ public:
 
   void process_relation(const Relation &relation, operation op, bool if_unused) override;
 
-  unsigned int get_num_changes() const;
+  changeset_upload_stats get_stats() const;
 
   bbox_t get_bbox() const;
 

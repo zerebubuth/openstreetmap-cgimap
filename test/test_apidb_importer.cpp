@@ -163,6 +163,63 @@ void update_changesets(Transaction_Manager &m) {
      )");
 }
 
+void update_changeset_enhanced_stats(Transaction_Manager &m) {
+
+  m.exec(R"(
+
+    WITH node_stat AS (
+      select changeset_id,
+            count(1) filter (where version=1) as num_created,
+            count(1) filter (where version>1 and visible = true) as num_modified,
+            count(1) filter (where version>1 and visible = false) as num_deleted
+      from nodes
+      group by changeset_id
+    ),
+    way_stat AS (
+      select changeset_id,
+            count(1) filter (where version=1) as num_created,
+            count(1) filter (where version>1 and visible = true) as num_modified,
+            count(1) filter (where version>1 and visible = false) as num_deleted
+      from ways
+    group by changeset_id
+    ),
+    rel_stat AS (
+      select changeset_id,
+            count(1) filter (where version=1) as num_created,
+            count(1) filter (where version>1 and visible = true) as num_modified,
+            count(1) filter (where version>1 and visible = false) as num_deleted
+      from relations
+      group by changeset_id
+    ),
+    update_nodes AS (
+      UPDATE changesets
+            SET num_created_nodes = node_stat.num_created,
+                num_modified_nodes = node_stat.num_modified,
+                num_deleted_nodes = node_stat.num_deleted
+            FROM node_stat
+            WHERE changesets.id = node_stat.changeset_id
+    ),
+    update_ways AS (
+      UPDATE changesets
+            SET num_created_ways = way_stat.num_created,
+                num_modified_ways = way_stat.num_modified,
+                num_deleted_ways = way_stat.num_deleted
+            FROM way_stat
+            WHERE changesets.id = way_stat.changeset_id
+    ),
+    update_relations AS (
+      UPDATE changesets
+            SET num_created_relations = rel_stat.num_created,
+                num_modified_relations = rel_stat.num_modified,
+                num_deleted_relations = rel_stat.num_deleted
+            FROM rel_stat
+            WHERE changesets.id = rel_stat.changeset_id
+    )
+    SELECT TRUE;
+
+  )");
+}
+
 void create_users(
     Transaction_Manager &m,
     const std::map<osm_user_id_t, std::string> &user_display_names) {
@@ -1107,4 +1164,5 @@ void populate_database(Transaction_Manager &m, const xmlparser::database &db,
   // Update stats for user and changesets
   update_users(m);
   update_changesets(m);
+  update_changeset_enhanced_stats(m);
 }
