@@ -37,7 +37,6 @@ endif()
 ###############
 # build options
 ###############
-option(ENABLE_CRYPTOPP "Enable Crypto++ library" ON)
 option(ENABLE_BROTLI "Enable Brotli library" ON)
 option(ENABLE_FMT_HEADER "Enable FMT header only mode" ON)
 option(ENABLE_COVERAGE "Compile with coverage info collection" OFF)
@@ -94,12 +93,6 @@ target_compile_definitions(cgimap_common_compiler_options INTERFACE
 find_package(ZLIB REQUIRED)
 target_compile_definitions(cgimap_common_compiler_options INTERFACE
     HAVE_LIBZ=$<BOOL:${ZLIB_FOUND}>)
-
-if (ENABLE_CRYPTOPP)
-     find_package(CryptoPP REQUIRED)
-endif()
-target_compile_definitions(cgimap_common_compiler_options INTERFACE
-    HAVE_CRYPTOPP=$<BOOL:${CryptoPP_FOUND}>)
 
 find_package(YAJL 2 REQUIRED)
 target_compile_definitions(cgimap_common_compiler_options INTERFACE

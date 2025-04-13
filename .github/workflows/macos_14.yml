@@ -12,7 +12,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install boost cryptopp fmt fcgi yajl libmemcached libpqxx postgresql
+          brew install boost fmt fcgi yajl libmemcached libpqxx postgresql
 
       - name: build
         run: |
