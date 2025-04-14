@@ -165,6 +165,21 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_user_id_for_oauth2_token", "[oauth2
 
   SECTION("Initialize test data") {
 
+    /*
+      Test data:
+
+      SHA256 hash value => Original Bearer token
+
+      "deb2029737bcfaaf9e937aea6b5d585a1bf93be9d21672d0f98c479c52592130" => "6GGXRGoDog0i6mRyrBonFmJORQhWZMhZH5WNWLd0qcs"
+      "b708e84f9f2135b2ebd4a87529a6d0da976939e37958ac63f5790d8e3f4eb7db" => "H4TeKX-zE_VLH.UT33_n6x__yZ8~BA~aQL+wfxQN/cADu7BMMA====="
+      "f3565d87316a9f5eb134f3d129e76fc82798d4ede12b59f4b3f2094aa61b0ce2" => "nFRBLFyNXPKY1fiTHAIfVsjQYkCD2KoRuH66upvueaQ"
+      "42ad2fc9589b134e57cecab938873490aebfb0c7c6430f3c62485a693c6be62d" => "pwnMeCjSmIfQ9hXVYfAyFLFnE9VOADNvwGMKv4Ylaf0"
+      "4ea5b956c8882db030a5a799cb45eb933bb6dd2f196a44f68167d96fbc8ec3f1" => "hCXrz5B5fCBHusp0EuD2IGwYSxS8bkAnVw2_aLEdxig"
+
+       To generate sha256 hashed values, use the following command:
+       echo -n "6GGXRGoDog0i6mRyrBonFmJORQhWZMhZH5WNWLd0qcs" | sha256sum
+    */
+
     tdb.run_sql(R"(
 
       INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public)
@@ -181,32 +196,31 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_user_id_for_oauth2_token", "[oauth2
                 'http://localhost:3000/demo', 'write_prefs write_diary', true, '2021-04-13 18:59:11', '2021-04-13 18:59:11');
 
      INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
-         VALUES (67, 1, 3, '4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8', NULL, NULL, NULL, '2021-04-14 19:38:21', 'write_api', '');
+         VALUES (67, 1, 3, 'deb2029737bcfaaf9e937aea6b5d585a1bf93be9d21672d0f98c479c52592130', NULL, NULL, NULL, '2021-04-14 19:38:21', 'write_api', '');
 
      INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
-         VALUES (68, 1, 3, '1187c28b93ab4a14e3df6a61ef46a24d7d4d7964c1d56eb2bfd197b059798c1d', NULL, NULL, '2021-04-15 06:11:01', '2021-04-14 22:06:58', 'write_api', '');
+         VALUES (68, 1, 3, '4ea5b956c8882db030a5a799cb45eb933bb6dd2f196a44f68167d96fbc8ec3f1', NULL, NULL, '2021-04-15 06:11:01', '2021-04-14 22:06:58', 'write_api', '');
 
      INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
          VALUES (69, 1, 3, '9d3e411efa288369a509d8798d17b2a669f331452cdd5d86cd696dad46517e6d', NULL, NULL, NULL, '2021-04-14 19:38:21', 'read_prefs write_api', '');
 
      INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
-         VALUES (70, 1, 3, 'e466d2ba2ff5da35fdaa7547eb6c27ae0461c7a4acc05476c0a33b1b1d0788cd', NULL, NULL, NULL, '2021-04-14 19:38:21', 'read_prefs read_gpx', '');
+         VALUES (70, 1, 3, 'f3565d87316a9f5eb134f3d129e76fc82798d4ede12b59f4b3f2094aa61b0ce2', NULL, NULL, NULL, '2021-04-14 19:38:21', 'read_prefs read_gpx', '');
 
      INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
-         VALUES (71, 1, 3, 'f0e6f310ee3a9362fe00cee4328ad318a1fa6c770b2e19975271da99a6407476', NULL, 3600, NULL, now() at time zone 'utc' - '2 hours' :: interval, 'write_api', '');
+         VALUES (71, 1, 3, '42ad2fc9589b134e57cecab938873490aebfb0c7c6430f3c62485a693c6be62d', NULL, 3600, NULL, now() at time zone 'utc' - '2 hours' :: interval, 'write_api', '');
 
      INSERT INTO public.oauth_access_tokens (id, resource_owner_id, application_id, token, refresh_token, expires_in, revoked_at, created_at, scopes, previous_refresh_token)
-         VALUES (72, 1, 3, 'b1294a183bf64f4d9a97f24ed84ce88e3ab6e7ada78114d6e600bdb63831237b', NULL, 3600, NULL, now() at time zone 'utc' - '30 minutes' :: interval, 'write_api', '');
+         VALUES (72, 1, 3, 'b708e84f9f2135b2ebd4a87529a6d0da976939e37958ac63f5790d8e3f4eb7db', NULL, 3600, NULL, now() at time zone 'utc' - '30 minutes' :: interval, 'write_api', '');
 
     )");
   }
 
   // Note: Tokens in this unit tests are considered to be opaque strings, tokens are used for db lookups as-is.
   // It doesn't matter if they have been previously stored as plain or sha256-hashed tokens.
-  // Also see test_oauth2.cpp for oauth2::validate_bearer_token tests, which include auth token hash calculation
 
   SECTION("Valid token w/ write API scope") {
-    const auto user_id = sel->get_user_id_for_oauth2_token("4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8", expired, revoked, allow_api_write);
+    const auto user_id = sel->get_user_id_for_oauth2_token("6GGXRGoDog0i6mRyrBonFmJORQhWZMhZH5WNWLd0qcs", expired, revoked, allow_api_write);
     CHECK(user_id == 1);
     REQUIRE(allow_api_write);
     REQUIRE_FALSE(expired);
@@ -219,7 +233,7 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_user_id_for_oauth2_token", "[oauth2
   }
 
   SECTION("Revoked token") {
-    const auto user_id = sel->get_user_id_for_oauth2_token("1187c28b93ab4a14e3df6a61ef46a24d7d4d7964c1d56eb2bfd197b059798c1d", expired, revoked, allow_api_write);
+    const auto user_id = sel->get_user_id_for_oauth2_token("hCXrz5B5fCBHusp0EuD2IGwYSxS8bkAnVw2_aLEdxig", expired, revoked, allow_api_write);
     CHECK(user_id == 1);
     REQUIRE(allow_api_write);
     REQUIRE_FALSE(expired);
@@ -227,7 +241,7 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_user_id_for_oauth2_token", "[oauth2
   }
 
   SECTION("Two scopes, including write_api") {
-    const auto user_id = sel->get_user_id_for_oauth2_token("4f41f2328befed5a33bcabdf14483081c8df996cbafc41e313417776e8fafae8", expired, revoked, allow_api_write);
+    const auto user_id = sel->get_user_id_for_oauth2_token("6GGXRGoDog0i6mRyrBonFmJORQhWZMhZH5WNWLd0qcs", expired, revoked, allow_api_write);
     CHECK(user_id == 1);
     REQUIRE(allow_api_write);
     REQUIRE_FALSE(expired);
@@ -235,7 +249,7 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_user_id_for_oauth2_token", "[oauth2
   }
 
   SECTION("Two scopes, not write_api") {
-    const auto user_id = sel->get_user_id_for_oauth2_token("e466d2ba2ff5da35fdaa7547eb6c27ae0461c7a4acc05476c0a33b1b1d0788cd", expired, revoked, allow_api_write);
+    const auto user_id = sel->get_user_id_for_oauth2_token("nFRBLFyNXPKY1fiTHAIfVsjQYkCD2KoRuH66upvueaQ", expired, revoked, allow_api_write);
     CHECK(user_id == 1);
     REQUIRE_FALSE(allow_api_write);
     REQUIRE_FALSE(expired);
@@ -243,7 +257,7 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_user_id_for_oauth2_token", "[oauth2
   }
 
   SECTION("expired token") {
-    const auto user_id = sel->get_user_id_for_oauth2_token("f0e6f310ee3a9362fe00cee4328ad318a1fa6c770b2e19975271da99a6407476", expired, revoked, allow_api_write);
+    const auto user_id = sel->get_user_id_for_oauth2_token("pwnMeCjSmIfQ9hXVYfAyFLFnE9VOADNvwGMKv4Ylaf0", expired, revoked, allow_api_write);
     CHECK(user_id == 1);
     REQUIRE(allow_api_write);
     REQUIRE(expired);
@@ -251,7 +265,7 @@ TEST_CASE_METHOD(DatabaseTestsFixture, "test_user_id_for_oauth2_token", "[oauth2
   }
 
   SECTION("token to expire in about 30 minutes") {
-    const auto user_id = sel->get_user_id_for_oauth2_token("b1294a183bf64f4d9a97f24ed84ce88e3ab6e7ada78114d6e600bdb63831237b", expired, revoked, allow_api_write);
+    const auto user_id = sel->get_user_id_for_oauth2_token("H4TeKX-zE_VLH.UT33_n6x__yZ8~BA~aQL+wfxQN/cADu7BMMA=====", expired, revoked, allow_api_write);
     CHECK(user_id == 1);
     REQUIRE(allow_api_write);
     REQUIRE_FALSE(expired);

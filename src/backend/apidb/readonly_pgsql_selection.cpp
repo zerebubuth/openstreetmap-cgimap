@@ -865,7 +865,8 @@ std::optional< osm_user_id_t > readonly_pgsql_selection::get_user_id_for_oauth2_
          COALESCE(revoked_at < now() at time zone 'utc', false) as revoked,
          'write_api' = any(string_to_array(coalesce(scopes,''), ' ')) as allow_api_write
        FROM oauth_access_tokens
-       WHERE token = $1)"_M);
+       WHERE token = $1
+          OR token = encode(sha256($1::bytea), 'hex'))"_M);
 
   auto res = m.exec_prepared("oauth2_access_token", token_id);
 

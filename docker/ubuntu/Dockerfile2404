@@ -6,7 +6,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -qq && \
     apt-get install -y gcc g++ make cmake wget ca-certificates unzip pkg-config \
        libfcgi-dev libxml2-dev libmemcached-dev libbrotli-dev \
-       libboost-program-options-dev libcrypto++-dev libyajl-dev \
+       libboost-program-options-dev libyajl-dev \
        libpq-dev zlib1g-dev libfmt-dev \
        postgresql-16 postgresql-server-dev-all dpkg-dev file \
        --no-install-recommends && \

@@ -9,7 +9,7 @@ RUN apt-get update -qq && \
        gcovr lcov strace ltrace rsync zip sudo \
        tar curl unzip pkg-config bash-completion aria2 \
        libfcgi-dev libxml2-dev libmemcached-dev libbrotli-dev \
-       libboost-program-options-dev libcrypto++-dev libyajl-dev \
+       libboost-program-options-dev libyajl-dev \
        libpqxx-dev zlib1g-dev libfmt-dev \
        postgresql-15 postgresql-server-dev-all dpkg-dev file \
        clang-tidy cppcheck ninja-build locales clang-19 \

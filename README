@@ -32,7 +32,7 @@ Software Requirements:
 
 ```bash
     sudo apt-get install libxml2-dev libpqxx-dev libfcgi-dev zlib1g-dev libbrotli-dev \
-         libboost-program-options-dev libfmt-dev libmemcached-dev libcrypto++-dev libyajl-dev
+         libboost-program-options-dev libfmt-dev libmemcached-dev libyajl-dev
 ```
 
 Note that the full set of packages needed from a fresh install (tested
