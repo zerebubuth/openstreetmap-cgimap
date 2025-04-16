@@ -56,24 +56,21 @@ namespace http {
  *
  * Not directly constructable - use the derived classes instead.
  */
-class exception : public std::exception {
+class exception : public std::runtime_error {
 private:
   /// numerical status code, for more information see
   /// http://en.wikipedia.org/wiki/List_of_HTTP_status_codes
   const int code_;
 
-  /// specific error message, meant entirely for humans to read.
-  const std::string message_;
-
 protected:
-  exception(int c, std::string m);
+  explicit exception(int c, const std::string& m);
+  explicit exception(int c, const char* m);
 
 public:
   ~exception() noexcept override = default;
 
   int code() const;
   const char* header() const;
-  const char* what() const noexcept override;
 };
 
 /**
@@ -85,6 +82,7 @@ public:
 class server_error : public exception {
 public:
   explicit server_error(const std::string &message);
+  explicit server_error(const char* message);
 };
 
 /**
@@ -94,6 +92,7 @@ public:
 class bad_request : public exception {
 public:
   explicit bad_request(const std::string &message);
+  explicit bad_request(const char* message);
 };
 
 /**
@@ -104,6 +103,7 @@ public:
 class forbidden : public exception {
 public:
    explicit forbidden(const std::string &message);
+   explicit forbidden(const char* message);
 };
 
 /**
@@ -125,6 +125,7 @@ public:
 class not_acceptable : public exception {
 public:
   explicit not_acceptable(const std::string &message);
+  explicit not_acceptable(const char* message);
 };
 
 /**
@@ -135,6 +136,7 @@ public:
 class conflict : public exception {
 public:
   explicit conflict(const std::string &message);
+  explicit conflict(const char* message);
 };
 
 /**
@@ -144,6 +146,7 @@ public:
 class precondition_failed : public exception {
 public:
   explicit precondition_failed(const std::string &message);
+  explicit precondition_failed(const char* message);
   const char *what() const noexcept override;
 private:
   std::string fullstring;
@@ -157,6 +160,7 @@ private:
 class payload_too_large : public exception {
 public:
   explicit payload_too_large(const std::string &message);
+  explicit payload_too_large(const char* message);
 };
 
 
@@ -168,6 +172,7 @@ public:
 class too_many_requests : public exception {
 public:
   explicit too_many_requests(const std::string &message);
+  explicit too_many_requests(const char* message);
 };
 
 
@@ -178,6 +183,7 @@ public:
 class not_found : public exception {
 public:
   explicit not_found(const std::string &uri);
+  explicit not_found(const char* uri);
 };
 
 /**
@@ -195,7 +201,8 @@ public:
 class gone : public exception {
 public:
   // TODO: fix up so that error message is meaningful
-  explicit gone(const std::string &message = "");
+  explicit gone(const std::string &message);
+  explicit gone(const char* message = "");
 };
 
 /**
@@ -204,6 +211,7 @@ public:
 class unauthorized : public exception {
 public:
   explicit unauthorized(const std::string &message);
+  explicit unauthorized(const char* message);
 };
 
 /**
@@ -213,6 +221,7 @@ public:
 class unsupported_media_type : public exception {
 public:
   explicit unsupported_media_type(const std::string &message);
+  explicit unsupported_media_type(const char* message);
 };
 
 /**
