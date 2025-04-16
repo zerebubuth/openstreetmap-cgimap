@@ -33,7 +33,7 @@ public:
   /**
    * returns the handler which matches a request, or throws a 404 error.
    */
-  handler_ptr_t operator()(request &req) const;
+  std::unique_ptr<handler> operator()(request &req) const;
 
 private:
   // common prefix of all routes

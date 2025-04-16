@@ -83,7 +83,7 @@ struct router {
   // interface through which all matches and constructions are performed.
   struct rule_base {
     virtual ~rule_base() = default;
-    virtual bool invoke_if(const std::vector<std::string_view> &, request &, handler_ptr_t &) = 0;
+    virtual std::unique_ptr<handler> invoke_if(const std::vector<std::string_view> &, request &) = 0;
   };
 
   // concrete rule match / constructor class
@@ -91,29 +91,27 @@ struct router {
   struct rule : public rule_base {
     explicit constexpr rule(Rule&& r) : r(std::forward<Rule>(r)) {}
 
-    // try to match the expression. if it succeeds, call the provided function
-    // with the provided params and the matched DSL arguments.
-    bool invoke_if(const std::vector<std::string_view> &parts,
-                   request &params,
-                   handler_ptr_t &ptr) override {
+    // try to match the expression. if it succeeds, call the Handler constructor
+    // with the request ("params") and the matched DSL arguments ("sequence", a tuple).
+    std::unique_ptr<handler> invoke_if(const std::vector<std::string_view> &parts,
+                                       request &params) override {
 
       auto begin = parts.begin();
       auto [sequence, error] = r.match(begin, parts.end());
 
-      if (error)
-        return false;
+      if (error)  // no match
+        return nullptr;
 
-      if (begin != parts.end())
-        return false; // no match
+      if (begin != parts.end()) // still some unmatched parts left
+        return nullptr;
 
-      ptr = std::apply(
+      // construct new Handler instance with matched parameters
+      return std::apply(
           [&params](auto &&...args) {
             return std::make_unique<Handler>(
                 params, std::forward<decltype(args)>(args)...);
           },
           sequence);
-
-      return true;
     }
 
     private:
@@ -150,9 +148,7 @@ struct router {
    * and the matched params.
    */
 
-  handler_ptr_t match(const std::vector<std::string_view> &p, request &params) const {
-
-    handler_ptr_t hptr;
+   std::unique_ptr<handler> match(const std::vector<std::string_view> &p, request &params) const {
 
     http::method allowed_methods = http::method::OPTIONS;
 
@@ -163,12 +159,12 @@ struct router {
     auto maybe_method = http::parse_method(fcgi_get_env(params, "REQUEST_METHOD"));
 
     if (!maybe_method)
-      return hptr;
+      return nullptr;
 
     // Process HEAD like GET, as per rfc2616: The HEAD method is identical to
     // GET except that the server MUST NOT return a message-body in the response.
     for (const auto &rptr : rules_get) {
-      if (rptr->invoke_if(p, params, hptr)) {
+      if (auto hptr = rptr->invoke_if(p, params); hptr) {
         if (*maybe_method == http::method::GET ||
             *maybe_method == http::method::HEAD ||
             *maybe_method == http::method::OPTIONS)
@@ -178,7 +174,7 @@ struct router {
     }
 
     for (const auto &rptr : rules_post) {
-      if (rptr->invoke_if(p, params, hptr)) {
+      if (auto hptr = rptr->invoke_if(p, params); hptr) {
         if (*maybe_method == http::method::POST ||
             *maybe_method == http::method::OPTIONS)
           return hptr;
@@ -187,7 +183,7 @@ struct router {
     }
 
     for (const auto &rptr : rules_put) {
-      if (rptr->invoke_if(p, params, hptr)) {
+      if (auto hptr = rptr->invoke_if(p, params); hptr) {
         if (*maybe_method == http::method::PUT ||
             *maybe_method == http::method::OPTIONS)
           return hptr;
@@ -204,7 +200,7 @@ struct router {
     }
 
     // return pointer to nothing if no matches found.
-    return hptr;
+    return nullptr;
   }
 
 private:
@@ -292,7 +288,7 @@ namespace {
   return {path, unspecified_type};
 }
 
-handler_ptr_t route_resource(request &req, const std::string &path,
+std::unique_ptr<handler> route_resource(request &req, const std::string &path,
                              const router * r) {
 
   // strip off the format-spec, if there is one
@@ -315,10 +311,10 @@ handler_ptr_t route_resource(request &req, const std::string &path,
 }
 } // anonymous namespace
 
-handler_ptr_t routes::operator()(request &req) const {
+std::unique_ptr<handler> routes::operator()(request &req) const {
   // full path from request handler
   auto path = get_request_path(req);
-  handler_ptr_t hptr;
+  std::unique_ptr<handler> hptr;
   // check the prefix
   if (path.starts_with(common_prefix)) {
     hptr = route_resource(req, std::string(path, common_prefix.size()), r.get());
