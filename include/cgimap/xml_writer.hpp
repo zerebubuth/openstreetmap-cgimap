@@ -53,7 +53,8 @@ public:
   template<typename T>
   inline void attribute(const std::string &name, T value) { attribute(name.c_str(), value); }
 
-  template<typename TInteger, std::enable_if_t<std::is_integral_v<TInteger>, bool> = true>
+  template<typename TInteger>
+  requires std::is_integral_v<TInteger>
   void attribute(const char *name, TInteger value) {
     static_assert(sizeof(value) <= 8);
     std::array<char, 32> buf;
