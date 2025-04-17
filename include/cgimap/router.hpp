@@ -91,7 +91,8 @@ struct match_string : public ops<match_string> {
 
   // implicit constructor intended, so that the use of this class is
   // hidden and easier / nicer to read.
-  match_string(const char *s);
+  template <int N>
+  inline match_string(const char (&c)[N]) : str(std::string_view(c, N - 1)) {}
 
   // copy just copies the held string
   match_string(const match_string &m) = default;

@@ -15,8 +15,6 @@
 
 namespace match {
 
-match_string::match_string(const char *s) : str(std::string_view(s)) {}
-
 std::pair<match_string::match_type, bool> match_string::match(part_iterator &begin,
                                              const part_iterator &end) const noexcept {
   bool matches = false;
