@@ -24,11 +24,7 @@ namespace api06 {
 
   struct payload_error : public http::bad_request {
 
-    std::string error_code;
-    std::string error_string;
-
-    explicit payload_error(const std::string &message)
-      : http::bad_request(message), error_string(message) {}
+    using bad_request::bad_request;
   };
 
   class OSMObject {
