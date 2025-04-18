@@ -37,7 +37,7 @@ public:
 
 private:
   // common prefix of all routes
-  std::string common_prefix;
+  std::string_view common_prefix;
 
   // object which actually does the routing.
   std::unique_ptr<router> r;
