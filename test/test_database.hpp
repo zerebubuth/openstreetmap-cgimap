@@ -55,6 +55,13 @@ struct test_database {
   // create table structure and fill with fake data.
   void setup(const std::filesystem::path& sql_file = "test/structure.sql");
 
+  // specify additional command line parameters to test advanced parameters
+  template <typename T>
+  inline void add_vm_param(std::string key, T value) {
+    vm.emplace(key, po::variable_value(value, false));
+    vm.notify();
+  }
+
   // return a data selection factory pointing at the current database
   [[nodiscard]] std::shared_ptr<data_selection::factory> get_data_selection_factory() const;
 

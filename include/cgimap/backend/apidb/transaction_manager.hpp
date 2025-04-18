@@ -22,6 +22,31 @@
 #include <pqxx/pqxx>
 
 
+class pqxx_stats {
+
+  public:
+    pqxx_stats() = default;
+
+    void log_statement_stats(std::string_view statement, const pqxx::result &res) const {
+      logger::message(fmt::format("Executed prepared statement {} in {:d} ms, returning {:d} rows, {:d} affected rows",
+        statement, get_elapsed(), res.size(), res.affected_rows()));
+    }
+
+    void log_commit_stats() const {
+      logger::message(fmt::format("COMMIT transaction in {:d} ms", get_elapsed()));
+    }
+
+  private:
+
+    int64_t get_elapsed() const {
+      const auto end = std::chrono::steady_clock::now();
+      const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+      return elapsed.count();
+    }
+
+    std::chrono::steady_clock::time_point start{std::chrono::steady_clock::now()};
+};
+
 #if PQXX_VERSION_MAJOR >= 7
 
 class Stream_Wrapper
@@ -144,34 +169,26 @@ public:
                     const std::string &description = std::string());
 
   void commit() {
-    const auto start = std::chrono::steady_clock::now();
+    pqxx_stats stats;
+
     m_txn.commit();
-    const auto end = std::chrono::steady_clock::now();
 
-    const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-
-    logger::message(fmt::format("COMMIT transaction in {:d} ms", elapsed.count()));
+    stats.log_commit_stats();
   }
 
   template<typename... Args>
   [[nodiscard]] pqxx::result exec_prepared(const std::string &statement, Args&&... args) {
 
-    const auto start = std::chrono::steady_clock::now();
+    pqxx_stats stats;
 
 #if PQXX_LIBRARY_VERSION_COMPARE(PQXX_VERSION_MAJOR, PQXX_VERSION_MINOR, PQXX_VERSION_PATCH, 7, 9, 3)
     auto res(m_txn.exec_prepared(statement, std::forward<Args>(args)...));
 #else
     auto res(m_txn.exec(pqxx::prepped{statement}, pqxx::params{std::forward<Args>(args)...}));
 #endif
-    const auto end = std::chrono::steady_clock::now();
 
-    const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    stats.log_statement_stats(statement, res);
 
-    logger::message(fmt::format("Executed prepared statement {} in {:d} ms, returning {:d} rows, {:d} affected rows",
-                               statement,
-                               elapsed.count(),
-			       res.size(),
-			       res.affected_rows()));
     return res;
   }
 

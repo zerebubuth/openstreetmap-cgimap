@@ -162,7 +162,3 @@ int xml_writer::writeAttribute(const char* name, const char* value) {
   return rc;
 }
 
-// TODO: move this to its own file
-
-xml_writer::write_error::write_error(const char *message)
-    : std::runtime_error(message) {}

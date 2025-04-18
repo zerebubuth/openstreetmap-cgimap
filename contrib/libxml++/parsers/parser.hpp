@@ -87,12 +87,6 @@ public:
    */
   void get_parser_options(int& set_options, int& clear_options) const noexcept;
 
-  /** Parse an XML document from a file.
-   * @throw exception
-   * @param filename The path to the file.
-   */
-  virtual void parse_file(const std::string& filename) = 0;
-
   /** Parse an XML document from raw memory.
    * @throw exception
    * @param contents The XML document as an array of bytes.
@@ -105,12 +99,6 @@ public:
    * @param contents The XML document as a string.
    */
   virtual void parse_memory(const std::string& contents) = 0;
-
-  /** Parse an XML document from a stream.
-   * @throw exception
-   * @param in The stream.
-   */
-  virtual void parse_stream(std::istream& in) = 0;
 
 protected:
   virtual void initialize_context();
@@ -148,16 +136,6 @@ private:
   struct Impl;
   std::unique_ptr<Impl> pimpl_;
 };
-
-/** Equivalent to Parser::parse_stream().
- *
- * @newin{2,38}
- */
-inline std::istream& operator>>(std::istream& in, Parser& parser)
-{
-  parser.parse_stream(in);
-  return in;
-}
 
 } // namespace xmlpp
 

@@ -77,6 +77,9 @@ test_database::test_database() {
     w.commit();
     m_db_name = db_name;
 
+    vm.emplace("dbname", po::variable_value(m_db_name, false));
+    vm.notify();
+
   } catch (const std::exception &e) {
     throw setup_error(fmt::format("Unable to set up test database: {}", e.what()));
 
@@ -94,17 +97,9 @@ void test_database::setup(const std::filesystem::path& sql_file) {
   pqxx::connection conn(fmt::format("dbname={}", m_db_name));
   setup_schema(conn, sql_file);
 
-  std::shared_ptr<backend> apidb = make_apidb_backend();
-
-  {
-    po::options_description desc = apidb->options();
-    const char *argv[] = { "", "--dbname", m_db_name.c_str() };
-    int argc = sizeof(argv) / sizeof(*argv);
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    vm.notify();
-    m_readonly_factory = apidb->create(vm);
-    m_update_factory = apidb->create_data_update(vm);
-  }
+  auto apidb = make_apidb_backend();
+  m_readonly_factory = apidb->create(vm);
+  m_update_factory = apidb->create_data_update(vm);
 }
 
 test_database::~test_database() {

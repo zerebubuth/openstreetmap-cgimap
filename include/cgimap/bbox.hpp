@@ -16,7 +16,6 @@
  * Container for a simple lat/lon bounding box.
  */
 struct bbox {
-  double minlat{0.0}, minlon{0.0}, maxlat{0.0}, maxlon{0.0};
 
   bbox(double minlat_, double minlon_, double maxlat_, double maxlon_);
 
@@ -51,6 +50,11 @@ struct bbox {
    * The area of this bounding box in square degrees.
    */
   double area() const;
+
+  double minlat{0.0};
+  double minlon{0.0};
+  double maxlat{0.0};
+  double maxlon{0.0};
 };
 
 #endif /* BBOX_HPP */

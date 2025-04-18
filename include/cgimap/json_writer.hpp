@@ -46,7 +46,8 @@ public:
   void entry(bool b);
   void entry(double d);
 
-  template<typename TInteger, std::enable_if_t<std::is_integral_v<TInteger>, bool> = true>
+  template<typename TInteger>
+  requires std::is_integral_v<TInteger>
   void entry(TInteger i) {
 
     const char* str = nullptr;
@@ -70,9 +71,8 @@ public:
     yajl_gen_number(gen, str, len);
   }
 
-  template <typename T,
-            std::enable_if_t<std::is_convertible_v<T&&, std::string_view>,
-                             bool> = true>
+  template <typename T>
+  requires std::is_convertible_v<T, std::string_view>
   void entry(T&& s)
   {
     auto sv = std::string_view(s);

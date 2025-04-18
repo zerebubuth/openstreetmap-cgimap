@@ -12,15 +12,15 @@
 #include <string>
 #include <vector>
 
+#include <fmt/core.h>
 #include <pqxx/pqxx>
 
 #include "cgimap/backend/apidb/utils.hpp"
 
-void check_postgres_version(pqxx::connection_base &conn) {
+void check_postgres_version(const pqxx::connection_base &conn) {
   auto version = conn.server_version();
-  if (version < 90400) {
-    throw std::runtime_error("Expected Postgres version 9.4+, currently installed version "
-      + std::to_string(version));
+  if (version < 110000) {
+    throw std::runtime_error(fmt::format("Expected Postgres version 11+, currently installed version {}", version));
   }
 }
 

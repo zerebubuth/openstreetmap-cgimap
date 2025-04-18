@@ -189,7 +189,7 @@ using multiline_raw_string::operator"" _M;
  * some queries (e.g: LATERAL join) and functions (multi-parameter unnest) only
  * became available in later versions of postgresql.
  */
-void check_postgres_version(pqxx::connection_base &conn);
+void check_postgres_version(const pqxx::connection_base &conn);
 
 // parses psql array based on specs given
 // https://www.postgresql.org/docs/current/static/arrays.html#ARRAYS-IO

@@ -13,10 +13,6 @@
 #include <charconv>
 #include <cctype>
 
-namespace match {
-
-match_string::match_string(const char *s) : str(std::string_view(s)) {}
-
 std::pair<match_string::match_type, bool> match_string::match(part_iterator &begin,
                                              const part_iterator &end) const noexcept {
   bool matches = false;
@@ -49,6 +45,7 @@ std::pair<match_osm_id::match_type, bool> match_osm_id::match(part_iterator &beg
   return {match_type(), true};
 }
 
-extern const match_begin root_; // @suppress("Unused variable declaration in file scope")
-extern const match_osm_id osm_id_; // @suppress("Unused variable declaration in file scope")
+namespace match {
+  extern const match_begin root_; // @suppress("Unused variable declaration in file scope")
+  extern const match_osm_id osm_id_; // @suppress("Unused variable declaration in file scope")
 }

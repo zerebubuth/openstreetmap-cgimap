@@ -43,7 +43,7 @@ public:
    */
   class write_error : public std::runtime_error {
   public:
-    explicit write_error(const char *message);
+    using std::runtime_error::runtime_error;
   };
 };
 
