@@ -10,6 +10,7 @@
 #include "cgimap/request_helpers.hpp"
 #include "cgimap/zlib.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <cstring>
 
