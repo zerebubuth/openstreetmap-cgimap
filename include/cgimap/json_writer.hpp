@@ -72,7 +72,7 @@ public:
   }
 
   template <typename T>
-  requires std::is_convertible_v<T&&, std::string_view>
+  requires std::is_convertible_v<T, std::string_view>
   void entry(T&& s)
   {
     auto sv = std::string_view(s);
