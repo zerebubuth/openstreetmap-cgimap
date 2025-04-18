@@ -17,7 +17,6 @@
 #include <utility>
 #include <vector>
 
-namespace match {
 
 template<typename ... input_t>
 using tuple_cat_t = decltype(std::tuple_cat(std::declval<input_t>()...));
@@ -125,9 +124,11 @@ struct match_begin : public ops<match_begin> {
   }
 };
 
+namespace match {
 // match items, given nicer names so that expressions are easier to read.
-static constexpr match_begin root_;
-static constexpr match_osm_id osm_id_;
+  static constexpr match_begin root_;
+  static constexpr match_osm_id osm_id_;
 }
+
 
 #endif /* ROUTER_HPP */
