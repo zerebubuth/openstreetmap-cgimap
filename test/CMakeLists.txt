@@ -306,6 +306,25 @@ if(BUILD_TESTING)
     add_test_with_virtualenv(test_apidb_backend_changeset_uploads)
 
 
+    ##################################
+    # test_apidb_backend_disable_write
+    ##################################
+    add_executable(test_apidb_backend_disable_write
+    test_apidb_backend_disable_write.cpp
+        test_formatter.cpp
+        test_database.cpp
+        test_request.cpp)
+
+    target_link_libraries(test_apidb_backend_disable_write
+        cgimap_common_compiler_options
+        cgimap_core
+        cgimap_apidb
+        Boost::program_options
+        Threads::Threads
+        catch2)
+
+    add_test_with_virtualenv(test_apidb_backend_disable_write)
+
     #########################
     # test_apidb_backend_core
     #########################
@@ -350,6 +369,7 @@ if(BUILD_TESTING)
                            test_apidb_backend_changesets
                            test_apidb_backend_changeset_downloads
                            test_apidb_backend_changeset_uploads
+                           test_apidb_backend_disable_write
                            test_apidb_backend_roles
                            test_apidb_backend_core)
 
