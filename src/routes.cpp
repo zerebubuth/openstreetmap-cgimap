@@ -54,7 +54,6 @@
 #include "cgimap/mime_types.hpp"
 
 #include <memory>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -76,7 +75,7 @@ concept Payload = std::is_base_of_v<payload_enabled_handler, Handler>; // Payloa
 
 /**
  * maps router DSL expressions to constructors for handlers. this means it's
- * possible to write .add<Type>(root_/int_/int_) and have the Type handler
+ * possible to write .add<Type>(root/int/int) and have the Type handler
  * constructed with the request and two ints as parameters.
  */
 struct router {
@@ -148,7 +147,7 @@ struct router {
    * and the matched params.
    */
 
-   std::unique_ptr<handler> match(const std::vector<std::string_view> &p, request &params) const {
+  std::unique_ptr<handler> match(const std::vector<std::string_view> &p, request &params) const {
 
     http::method allowed_methods = http::method::OPTIONS;
 
@@ -213,58 +212,70 @@ private:
 
 routes::routes()
     : common_prefix("/api/0.6/"),
-      r(std::make_unique<router>())
+      r(get_default_router())
 #ifdef ENABLE_API07
       ,
       experimental_prefix("/api/0.7/"),
-      r_experimental(new router())
+      r_experimental(get_experimental_router())
 #endif /* ENABLE_API07 */
 {
-  using match::root_;
-  using match::osm_id_;
+}
 
-  {
-    using namespace api06;
-    r->GET<map_handler>(root_ / "map")
-      .GET<node_ways_handler>(root_ / "node" / osm_id_ / "ways")
-      .GET<node_relations_handler>(root_ / "node" / osm_id_ / "relations")
+std::unique_ptr<router> routes::get_default_router()
+{
+  auto r = std::make_unique<router>();
+  using match::root;
+  using match::osm_id;
 
-    // make sure that *_version_handler is listed before matching *_handler
-      .GET<node_history_handler>(root_ / "node" / osm_id_ / "history")
-      .GET<node_version_handler>(root_ / "node" / osm_id_ / osm_id_ )
-      .GET<node_handler>(root_ / "node" / osm_id_)
-      .GET<nodes_handler>(root_ / "nodes")
+  using namespace api06;
+  r->GET<map_handler>(root / "map")
+    .GET<node_ways_handler>(root / "node" / osm_id / "ways")
+    .GET<node_relations_handler>(root / "node" / osm_id / "relations")
 
-      .GET<way_full_handler>(root_ / "way" / osm_id_ / "full")
-      .GET<way_relations_handler>(root_ / "way" / osm_id_ / "relations")
-      .GET<way_history_handler>(root_ / "way" / osm_id_ / "history")
-      .GET<way_version_handler>(root_ / "way" / osm_id_ / osm_id_ )
-      .GET<way_handler>(root_ / "way" / osm_id_)
-      .GET<ways_handler>(root_ / "ways")
+  // make sure that *_version_handler is listed before matching handler
+    .GET<node_history_handler>(root / "node" / osm_id / "history")
+    .GET<node_version_handler>(root / "node" / osm_id / osm_id)
+    .GET<node_handler>(root / "node" / osm_id)
+    .GET<nodes_handler>(root / "nodes")
 
-      .GET<relation_full_handler>(root_ / "relation" / osm_id_ / "full")
-      .GET<relation_relations_handler>(root_ / "relation" / osm_id_ / "relations")
-      .GET<relation_history_handler>(root_ / "relation" / osm_id_ / "history")
-      .GET<relation_version_handler>(root_ / "relation" / osm_id_ / osm_id_ )
-      .GET<relation_handler>(root_ / "relation" / osm_id_)
-      .GET<relations_handler>(root_ / "relations")
+    .GET<way_full_handler>(root / "way" / osm_id / "full")
+    .GET<way_relations_handler>(root / "way" / osm_id / "relations")
+    .GET<way_history_handler>(root / "way" / osm_id / "history")
+    .GET<way_version_handler>(root / "way" / osm_id / osm_id)
+    .GET<way_handler>(root / "way" / osm_id)
+    .GET<ways_handler>(root / "ways")
 
-      .GET<changeset_download_handler>(root_ / "changeset" / osm_id_ / "download")
-      .POST<changeset_upload_handler>(root_ / "changeset" / osm_id_ / "upload")
-      .PUT<changeset_close_handler>(root_ / "changeset" / osm_id_ / "close")
-      .PUT<changeset_create_handler>(root_ / "changeset" / "create")
-      .PUT<changeset_update_handler>(root_ / "changeset" / osm_id_)
-      .GET<changeset_handler>(root_ / "changeset" / osm_id_);
-  }
+    .GET<relation_full_handler>(root / "relation" / osm_id / "full")
+    .GET<relation_relations_handler>(root / "relation" / osm_id / "relations")
+    .GET<relation_history_handler>(root / "relation" / osm_id / "history")
+    .GET<relation_version_handler>(root / "relation" / osm_id / osm_id)
+    .GET<relation_handler>(root / "relation" / osm_id)
+    .GET<relations_handler>(root / "relations")
+
+    .GET<changeset_download_handler>(root / "changeset" / osm_id / "download")
+    .POST<changeset_upload_handler>(root / "changeset" / osm_id / "upload")
+    .PUT<changeset_close_handler>(root / "changeset" / osm_id / "close")
+    .PUT<changeset_create_handler>(root / "changeset" / "create")
+    .PUT<changeset_update_handler>(root / "changeset" / osm_id)
+    .GET<changeset_handler>(root / "changeset" / osm_id);
+
+  return r;
+}
 
 #ifdef ENABLE_API07
-  {
-    using namespace api07;
-    r_experimental->GET<map_handler>(root_ / "map")
-                   .GET<map_handler>(root_ / "map" / "tile" / osm_id_);
-  }
-#endif /* ENABLE_API07 */
+std::unique_ptr<router> routes::get_experimental_router()
+{
+  auto r = std::make_unique<router>();
+  using match::root;
+  using match::osm_id;
+
+  using namespace api07;
+  r->GET<map_handler>(root / "map")
+    .GET<map_handler>(root / "map" / "tile" / osm_id);
+
+  return r;
 }
+#endif /* ENABLE_API07 */
 
 routes::~routes() = default;
 

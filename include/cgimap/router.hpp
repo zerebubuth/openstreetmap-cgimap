@@ -90,8 +90,9 @@ struct match_string : public ops<match_string> {
 
   // implicit constructor intended, so that the use of this class is
   // hidden and easier / nicer to read.
-  template <int N>
-  inline match_string(const char (&c)[N]) : str(std::string_view(c, N - 1)) {}
+  template <typename T>
+  requires std::is_convertible_v<T, std::string_view>
+  match_string(T&& s) : str(std::forward<T>(s)) {}
 
   // copy just copies the held string
   match_string(const match_string &m) = default;
@@ -126,8 +127,8 @@ struct match_begin : public ops<match_begin> {
 
 namespace match {
 // match items, given nicer names so that expressions are easier to read.
-  static constexpr match_begin root_;
-  static constexpr match_osm_id osm_id_;
+  static constexpr match_begin root;
+  static constexpr match_osm_id osm_id;
 }
 
 

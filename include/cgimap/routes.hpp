@@ -36,18 +36,21 @@ public:
   std::unique_ptr<handler> operator()(request &req) const;
 
 private:
+  std::unique_ptr<router> get_default_router();
+  std::unique_ptr<router> get_experimental_router();
+
   // common prefix of all routes
-  std::string_view common_prefix;
+  const std::string_view common_prefix;
 
   // object which actually does the routing.
-  std::unique_ptr<router> r;
+  const std::unique_ptr<router> r;
 
 #ifdef ENABLE_API07
   // common prefix of API 0.7 routes.
-  std::string experimental_prefix;
+  const std::string experimental_prefix;
 
   // and an API 0.7 router object
-  std::unique_ptr<router> r_experimental;
+  const std::unique_ptr<router> r_experimental;
 #endif /* ENABLE_API07 */
 };
 
