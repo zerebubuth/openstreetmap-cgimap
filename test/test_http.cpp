@@ -163,6 +163,14 @@ TEST_CASE("http_check_accept_header_parsing", "[http]") {
     CHECK(choose_best_mime_type(header, tr2, "/demo") == mime::type::application_json);
   }
 
+  SECTION("test: parse_content_length") {
+    CHECK(http::parse_content_length("1000") == 1000);
+    REQUIRE_THROWS_AS(http::parse_content_length("-1000"), http::bad_request);
+    REQUIRE_THROWS_AS(http::parse_content_length("abc"), http::bad_request);
+    REQUIRE_THROWS_AS(http::parse_content_length("123456 abc"), http::bad_request);
+    REQUIRE_THROWS_AS(http::parse_content_length("123456789012345"), http::payload_too_large);
+  }
+
 }
 
 
