@@ -63,8 +63,10 @@ private:
   const int code_;
 
 protected:
-  explicit exception(int c, const std::string& m);
-  explicit exception(int c, const char* m);
+  template <typename T>
+  exception(int c, T&& m) :
+    std::runtime_error(std::forward<T>(m)),
+    code_(c) {}
 
 public:
   ~exception() noexcept override = default;
@@ -81,8 +83,8 @@ public:
  */
 class server_error : public exception {
 public:
-  explicit server_error(const std::string &message);
-  explicit server_error(const char* message);
+  template <typename T>
+  explicit server_error(T&& message) : exception(500, std::forward<T>(message)) {}
 };
 
 /**
@@ -91,8 +93,8 @@ public:
  */
 class bad_request : public exception {
 public:
-  explicit bad_request(const std::string &message);
-  explicit bad_request(const char* message);
+  template <typename T>
+  explicit bad_request(T&& message) : exception(400, std::forward<T>(message)) {}
 };
 
 /**
@@ -102,8 +104,8 @@ public:
 
 class forbidden : public exception {
 public:
-   explicit forbidden(const std::string &message);
-   explicit forbidden(const char* message);
+  template <typename T>
+  explicit forbidden(T&& message) : exception(403, std::forward<T>(message)) {}
 };
 
 /**
@@ -124,8 +126,8 @@ public:
  */
 class not_acceptable : public exception {
 public:
-  explicit not_acceptable(const std::string &message);
-  explicit not_acceptable(const char* message);
+  template <typename T>
+  explicit not_acceptable(T&& message) : exception(406, std::forward<T>(message)) {}
 };
 
 /**
@@ -135,8 +137,8 @@ public:
  */
 class conflict : public exception {
 public:
-  explicit conflict(const std::string &message);
-  explicit conflict(const char* message);
+  template <typename T>
+  explicit conflict(T&& message) : exception(409, std::forward<T>(message)) {}
 };
 
 /**
@@ -145,9 +147,15 @@ public:
  */
 class precondition_failed : public exception {
 public:
-  explicit precondition_failed(const std::string &message);
-  explicit precondition_failed(const char* message);
-  const char *what() const noexcept override;
+  template <typename T>
+  explicit precondition_failed(T&& message) :
+    exception(412, std::forward<T>(message)),
+    fullstring("Precondition failed: " + std::string(message)) {}
+
+  const char *what() const noexcept override {
+    return fullstring.c_str();
+  }
+
 private:
   std::string fullstring;
 };
@@ -159,8 +167,8 @@ private:
 
 class payload_too_large : public exception {
 public:
-  explicit payload_too_large(const std::string &message);
-  explicit payload_too_large(const char* message);
+  template <typename T>
+  explicit payload_too_large(T&& message) : exception(413, std::forward<T>(message)) {}
 };
 
 
@@ -171,8 +179,8 @@ public:
 
 class too_many_requests : public exception {
 public:
-  explicit too_many_requests(const std::string &message);
-  explicit too_many_requests(const char* message);
+  template <typename T>
+  explicit too_many_requests(T&& message) : exception(429, std::forward<T>(message)) {}
 };
 
 
@@ -182,8 +190,8 @@ public:
  */
 class not_found : public exception {
 public:
-  explicit not_found(const std::string &uri);
-  explicit not_found(const char* uri);
+  template <typename T>
+  explicit not_found(T&& message) : exception(404, std::forward<T>(message)) {}
 };
 
 /**
@@ -210,8 +218,8 @@ public:
  */
 class unauthorized : public exception {
 public:
-  explicit unauthorized(const std::string &message);
-  explicit unauthorized(const char* message);
+  template <typename T>
+  explicit unauthorized(T&& message) : exception(401, std::forward<T>(message)) {}
 };
 
 /**
@@ -220,8 +228,8 @@ public:
  */
 class unsupported_media_type : public exception {
 public:
-  explicit unsupported_media_type(const std::string &message);
-  explicit unsupported_media_type(const char* message);
+  template <typename T>
+  explicit unsupported_media_type(T&& message) : exception(415, std::forward<T>(message)) {}
 };
 
 /**
