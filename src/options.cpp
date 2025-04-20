@@ -103,6 +103,8 @@ void global_settings_via_options::set_changeset_max_elements(const po::variables
     auto changeset_max_elements = options["max-changeset-elements"].as<int>();
     if (changeset_max_elements <= 0)
       throw std::invalid_argument("max-changeset-elements must be a positive number");
+    if (changeset_max_elements > 50000)
+      throw std::invalid_argument("max-changeset-elements must not exceed 50000");
     m_changeset_max_elements = changeset_max_elements;
   }
 }
