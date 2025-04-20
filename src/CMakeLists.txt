@@ -8,7 +8,6 @@ target_include_directories(cgimap_core PUBLIC
 
 target_sources(cgimap_core PRIVATE
     backend.cpp
-    backend.cpp
     bbox.cpp
     brotli.cpp
     choose_formatter.cpp
