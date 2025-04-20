@@ -68,14 +68,8 @@ xml_writer::~xml_writer() noexcept {
   // close and flush the xml writer object. note - if this fails then
   // there isn't much we can do, as this object is going to be deleted
   // anyway.
-  try {
-    xmlTextWriterEndDocument(writer);
-  } catch (...) {
-    // don't do anything here or we risk FUBARing the entire program.
-    // it might not be possible to end the document because the output
-    // stream went away. if so, then there is nothing to do but try
-    // and reclaim the extra memory.
-  }
+
+  xmlTextWriterEndDocument(writer);
   xmlFreeTextWriter(writer);
 }
 
