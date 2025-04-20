@@ -67,6 +67,10 @@ void truncate_all_tables(pqxx::connection& conn) {
  * fake data for testing.
  */
 test_database::test_database() {
+
+ // initialize logger with dummy location
+ logger::initialise("/dev/null");
+
   try {
     std::string db_name = random_db_name();
 
