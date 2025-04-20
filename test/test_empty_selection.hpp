@@ -6,7 +6,7 @@
  * Copyright (C) 2006-2023 by the CGImap developer community.
  * For a full list of authors see the git log.
  */
- 
+
 
 #ifndef TEST_EMPTY_SELECTION
 #define TEST_EMPTY_SELECTION
@@ -21,6 +21,8 @@ class empty_data_selection : public data_selection {
 public:
 
   ~empty_data_selection() override = default;
+
+  // LCOV_EXCL_START
 
   void write_nodes(output_formatter &formatter) override {}
   void write_ways(output_formatter &formatter) override {}
@@ -78,6 +80,8 @@ public:
       return std::make_unique<Transaction_Owner_Void>();
     }
   };
+
+  // LCOV_EXCL_STOP
 };
 
 
