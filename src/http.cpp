@@ -114,73 +114,8 @@ std::string format_header(int status, const headers_t &headers) {
   return hdr;
 }
 
-exception::exception(int c, const std::string& m)
-    : std::runtime_error(m), code_(c)  {}
-
-exception::exception(int c, const char *m)
-    : std::runtime_error(m), code_(c)  {}
-
 int exception::code() const { return code_; }
-
 const char *exception::header() const { return status_message(code()); }
-
-server_error::server_error(const std::string &message)
-    : exception(500, message) {}
-
-server_error::server_error(const char *message)
-    : exception(500, message) {}
-
-bad_request::bad_request(const std::string &message)
-    : exception(400, message) {}
-
-bad_request::bad_request(const char *message)
-    : exception(400, message) {}
-
-forbidden::forbidden(const std::string &message)
-    : exception(403, message) {}
-
-forbidden::forbidden(const char *message)
-    : exception(403, message) {}
-
-not_found::not_found(const std::string &uri)
-    : exception(404, uri) {}
-
-not_found::not_found(const char *uri)
-    : exception(404, uri) {}
-
-not_acceptable::not_acceptable(const std::string &message)
-    : exception(406, message) {}
-
-not_acceptable::not_acceptable(const char *message)
-    : exception(406, message) {}
-
-conflict::conflict(const std::string &message)
-    : exception(409, message) {}
-
-conflict::conflict(const char *message)
-    : exception(409, message) {}
-
-precondition_failed::precondition_failed(const std::string &message)
-    : exception(412, message),
-      fullstring("Precondition failed: " + message) {}
-
-precondition_failed::precondition_failed(const char *message)
-    : exception(412, message),
-      fullstring("Precondition failed: " + std::string(message)) {}
-
-const char *precondition_failed::what() const noexcept { return fullstring.c_str(); }
-
-payload_too_large::payload_too_large(const std::string &message)
-    : exception(413, message) {}
-
-payload_too_large::payload_too_large(const char *message)
-    : exception(413, message) {}
-
-too_many_requests::too_many_requests(const std::string &message)
-    : exception(429, message) {}
-
-too_many_requests::too_many_requests(const char *message)
-    : exception(429, message) {}
 
 bandwidth_limit_exceeded::bandwidth_limit_exceeded(int retry_seconds)
     : exception(509, fmt::format("You have downloaded too much data. Please try again in {} seconds.", retry_seconds)), retry_seconds(retry_seconds) {}
@@ -191,22 +126,9 @@ gone::gone(const std::string &message)
 gone::gone(const char *message)
     : exception(410, message) {}
 
-unsupported_media_type::unsupported_media_type(const std::string &message)
-    : exception(415, message) {}
-
-unsupported_media_type::unsupported_media_type(const char *message)
-    : exception(415, message) {}
-
-unauthorized::unauthorized(const std::string &message)
-  : exception(401, message) {}
-
-unauthorized::unauthorized(const char *message)
-  : exception(401, message) {}
-
 method_not_allowed::method_not_allowed(http::method method)
    :  exception(405, http::list_methods(method)),
       allowed_methods(method) {}
-
 
 std::string urldecode(const std::string &s) { return form_urldecode(s); }
 
