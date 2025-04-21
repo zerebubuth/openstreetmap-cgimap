@@ -2538,7 +2538,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
 
   SECTION("Compressed upload gzip")
   {
-    std::string payload = R"(<?xml version="1.0" encoding="UTF-8"?>
+    const std::string payload = R"(<?xml version="1.0" encoding="UTF-8"?>
         <osmChange version="0.6" generator="iD">
         <create>
           <node id="-5" lon="11" lat="46" version="0" changeset="1">
@@ -2547,10 +2547,13 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
        </create>
        </osmChange>)";
 
+    auto compressed_payload = get_compressed_payload(payload);
+
     // set up request headers from test case
     req.set_header("HTTP_CONTENT_ENCODING", "gzip");
+    req.set_header("CONTENT_LENGTH", std::to_string(compressed_payload.size()));
 
-    req.set_payload(get_compressed_payload(payload));
+    req.set_payload(compressed_payload);
 
     // execute the request
     process_request(req, limiter, generator, route, *sel_factory, upd_factory.get());
@@ -2573,7 +2576,11 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
 
     // set up request headers from test case
     req.set_header("HTTP_CONTENT_ENCODING", "deflate");
-    req.set_header("HTTP_ACCEPT_ENCODING", "deflate");
+    #if HAVE_BROTLI
+      req.set_header("HTTP_ACCEPT_ENCODING", "br");
+    #else
+      req.set_header("HTTP_ACCEPT_ENCODING", "deflate");
+    #endif
 
     req.set_payload(get_compressed_payload(payload, zlib_output_buffer::mode::zlib));
 

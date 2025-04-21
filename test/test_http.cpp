@@ -80,6 +80,8 @@ TEST_CASE("http_check_choose_encoding", "[http]") {
   CHECK(http::choose_encoding("zstd;q=1.0, unknown;q=0.8, br;q=0.9")->name() == "br");
   CHECK(http::choose_encoding("gzip, deflate, br")->name() == "br");
 #endif
+  // test unsupported encoding
+  CHECK_THROWS_AS(http::choose_encoding("zstd"), http::not_acceptable);
 }
 
 TEST_CASE("http_check_accept_header_parsing", "[http]") {
@@ -163,6 +165,21 @@ TEST_CASE("http_check_accept_header_parsing", "[http]") {
     CHECK(choose_best_mime_type(header, tr2, "/demo") == mime::type::application_json);
   }
 
+  SECTION("test: parse_content_length") {
+    CHECK(http::parse_content_length("1000") == 1000);
+    REQUIRE_THROWS_AS(http::parse_content_length("-1000"), http::bad_request);
+    REQUIRE_THROWS_AS(http::parse_content_length("abc"), http::bad_request);
+    REQUIRE_THROWS_AS(http::parse_content_length("123456 abc"), http::bad_request);
+    REQUIRE_THROWS_AS(http::parse_content_length("123456789012345"), http::payload_too_large);
+  }
+
+  SECTION("test: get_content_encoding_handler") {
+    CHECK(http::get_content_encoding_handler("identity"));
+    CHECK(http::get_content_encoding_handler("gzip"));
+    CHECK(http::get_content_encoding_handler("deflate"));
+    CHECK_THROWS_AS(http::get_content_encoding_handler("br"), http::unsupported_media_type);
+    CHECK_THROWS_AS(http::get_content_encoding_handler("unknown"), http::unsupported_media_type);
+  }
 }
 
 
