@@ -139,7 +139,7 @@ private:
       const std::vector<relation_t> &relations);
 
   bbox_t calc_rel_member_difference_bbox(
-      std::vector<ApiDB_Relation_Updater::rel_member_difference_t> &diff,
+      const std::vector<ApiDB_Relation_Updater::rel_member_difference_t> &diff,
       bool process_new_elements);
 
   bbox_t calc_relation_bbox(const std::vector<osm_nwr_id_t> &ids);
@@ -175,7 +175,8 @@ private:
 
   void
   extend_deletion_block_to_relation_children (
-      const std::set<osm_nwr_id_t> & direct_relation_ids, std::set<osm_nwr_id_t> ids_if_unused,
+      const std::set<osm_nwr_id_t> &direct_relation_ids,
+      const std::set<osm_nwr_id_t> &ids_if_unused,
       std::set<osm_nwr_id_t> &relations_to_exclude_from_deletion);
   std::set<osm_nwr_id_t>
   collect_recursive_relation_rel_member_ids (

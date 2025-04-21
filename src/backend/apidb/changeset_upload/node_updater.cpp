@@ -343,8 +343,8 @@ void ApiDB_Node_Updater::insert_new_nodes_to_current_table(
   const auto id_col(r.column_number("id"));
 
   for (const auto &row : r) {
-    ct.created_node_ids.push_back({row[old_id_col].as<osm_nwr_signed_id_t>(),
-                                  row[id_col].as<osm_nwr_id_t>(), 1});
+    ct.created_node_ids.emplace_back(row[old_id_col].as<osm_nwr_signed_id_t>(),
+                                     row[id_col].as<osm_nwr_id_t>(), 1);
   }
 
 }
@@ -452,12 +452,13 @@ void ApiDB_Node_Updater::check_current_node_versions(
   auto r = m.exec_prepared("check_current_node_versions", ids, versions);
 
   if (!r.empty()) {
+    const auto &row = r[0];
     throw http::conflict(
         fmt::format(
              "Version mismatch: Provided {:d}, server had: {:d} of Node {:d}",
-         r[0]["expected_version"].as<osm_version_t>(),
-         r[0]["actual_version"].as<osm_version_t>(),
-         r[0]["id"].as<osm_nwr_id_t>()));
+         row["expected_version"].as<osm_version_t>(),
+         row["actual_version"].as<osm_version_t>(),
+         row["id"].as<osm_nwr_id_t>()));
   }
 }
 
@@ -517,10 +518,10 @@ std::set<osm_nwr_id_t> ApiDB_Node_Updater::determine_already_deleted_nodes(
 
     if (ids_if_unused.contains(id)) {
 
-      ct.skip_deleted_node_ids.push_back({
+      ct.skip_deleted_node_ids.emplace_back(
             id_to_old_id[ row["id"].as<osm_nwr_id_t>() ],
 	          row["id"].as<osm_nwr_id_t>(),
-            row["version"].as<osm_version_t>()});
+            row["version"].as<osm_version_t>());
     }
   }
 
@@ -641,9 +642,10 @@ void ApiDB_Node_Updater::update_current_nodes(
 
   // update modified nodes table
   for (const auto &row : r)
-    ct.modified_node_ids.push_back({id_to_old_id[row[id_col].as<osm_nwr_id_t>()],
-                                   row[id_col].as<osm_nwr_id_t>(),
-                                   row[version_col].as<osm_version_t>()});
+    ct.modified_node_ids.emplace_back(
+            id_to_old_id[row[id_col].as<osm_nwr_id_t>()],
+            row[id_col].as<osm_nwr_id_t>(),
+            row[version_col].as<osm_version_t>());
 }
 
 void ApiDB_Node_Updater::delete_current_nodes(
@@ -920,7 +922,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
   // We will simply skip those nodes from now on
 
   if (!nodes_to_exclude_from_deletion.empty()) {
-    std::erase_if(updated_nodes, [&](const node_t &a) {
+    std::erase_if(updated_nodes, [&nodes_to_exclude_from_deletion](const node_t &a) {
                          return nodes_to_exclude_from_deletion.contains(a.id);
                        });
 
@@ -947,10 +949,10 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
       // should not lead to an error. All we can do now is to return old_id,
       // new_id and the current version to the caller
 
-      ct.skip_deleted_node_ids.push_back(
-          { id_to_old_id[row["id"].as<osm_nwr_id_t>()],
+      ct.skip_deleted_node_ids.emplace_back(
+          id_to_old_id[row["id"].as<osm_nwr_id_t>()],
 	          row["id"].as<osm_nwr_id_t>(),
-            row["version"].as<osm_version_t>() });
+            row["version"].as<osm_version_t>());
     }
   }
 
