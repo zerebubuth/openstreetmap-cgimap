@@ -20,7 +20,7 @@ using pqxx_field = pqxx::field;
 
 struct elem_columns
 {
-  elem_columns(const pqxx::result &rows) :
+  explicit elem_columns(const pqxx::result &rows) :
 
     id_col(rows.column_number("id")),
     version_col(rows.column_number("version")),
@@ -37,7 +37,7 @@ struct elem_columns
 
 struct changeset_columns
 {
-  changeset_columns(const pqxx::result &rows) :
+  explicit changeset_columns(const pqxx::result &rows) :
     id_col(rows.column_number("id")),
     created_at_col(rows.column_number("created_at")),
     closed_at_col(rows.column_number("closed_at")),
@@ -60,7 +60,7 @@ struct changeset_columns
 
 struct tag_columns
 {
-  tag_columns(const pqxx::result &rows) :
+  explicit tag_columns(const pqxx::result &rows) :
     tag_k_col(rows.column_number("tag_k")),
     tag_v_col(rows.column_number("tag_v"))
   {}
@@ -71,7 +71,7 @@ struct tag_columns
 
 struct node_extra_columns
 {
-  node_extra_columns(const pqxx::result &rows) :
+  explicit node_extra_columns(const pqxx::result &rows) :
     longitude_col(rows.column_number("longitude")),
     latitude_col(rows.column_number("latitude"))
  {}
@@ -82,7 +82,7 @@ struct node_extra_columns
 
 struct way_extra_columns
 {
-  way_extra_columns(const pqxx::result &rows) :
+  explicit way_extra_columns(const pqxx::result &rows) :
     node_ids_col(rows.column_number("node_ids"))
  {}
 
@@ -91,7 +91,7 @@ struct way_extra_columns
 
 struct relation_extra_columns
 {
-  relation_extra_columns(const pqxx::result &rows) :
+  explicit relation_extra_columns(const pqxx::result &rows) :
     member_types_col(rows.column_number("member_types")),
     member_ids_col(rows.column_number("member_ids")),
     member_roles_col(rows.column_number("member_roles"))
@@ -104,7 +104,7 @@ struct relation_extra_columns
 
 struct comments_columns
 {
-  comments_columns(const pqxx::result &rows) :
+  explicit comments_columns(const pqxx::result &rows) :
 
     comment_id_col(rows.column_number("comment_id")),
     comment_author_id_col(rows.column_number("comment_author_id")),
@@ -179,7 +179,7 @@ std::optional<T> extract_optional(const pqxx_field &f) {
   auto min_lon = extract_optional<int64_t>(row[col.min_lon_col]);
   auto max_lon = extract_optional<int64_t>(row[col.max_lon_col]);
 
-  if (bool(min_lat) && bool(min_lon) && bool(max_lat) && bool(max_lon)) {
+  if (min_lat && min_lon && max_lat && max_lon) {
     elem.bounding_box = bbox(double(*min_lat) / global_settings::get_scale(),
                              double(*min_lon) / global_settings::get_scale(),
                              double(*max_lat) / global_settings::get_scale(),
