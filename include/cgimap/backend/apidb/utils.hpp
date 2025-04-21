@@ -17,6 +17,8 @@
 
 #include <pqxx/pqxx>
 
+#include "cgimap/util.hpp"
+
 /* Unindent SQL statements in raw strings */
 
 #if !defined(__cpp_lib_constexpr_vector)
@@ -201,5 +203,7 @@ std::vector<T> psql_array_ids_to_vector(const pqxx::field& field);
 
 template <typename T>
 std::vector<T> psql_array_ids_to_vector(std::string_view str);
+
+void extract_bbox_from_row(const pqxx::row &row, bbox_t &result);
 
 #endif /* CGIMAP_BACKEND_APIDB_UTILS_HPP */

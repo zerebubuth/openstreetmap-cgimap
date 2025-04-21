@@ -24,6 +24,18 @@ void check_postgres_version(const pqxx::connection_base &conn) {
   }
 }
 
+void extract_bbox_from_row(const pqxx::row &row, bbox_t &result) {
+
+  if (row["minlat"].is_null())
+    return;
+
+  result.minlat = row["minlat"].as<int64_t>();
+  result.minlon = row["minlon"].as<int64_t>();
+  result.maxlat = row["maxlat"].as<int64_t>();
+  result.maxlon = row["maxlon"].as<int64_t>();
+}
+
+
 std::vector<std::string> psql_array_to_vector(const pqxx::field& field, int size_hint) {
   return psql_array_to_vector(std::string_view(field.c_str(), field.size()), size_hint);
 }

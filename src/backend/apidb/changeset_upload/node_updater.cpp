@@ -547,11 +547,8 @@ ApiDB_Node_Updater::calc_node_bbox(const std::vector<osm_nwr_id_t> &ids) {
 
   auto r = m.exec_prepared("calc_node_bbox", ids);
 
-  if (!(r.empty() || r[0]["minlat"].is_null())) {
-    bbox.minlat = r[0]["minlat"].as<int64_t>();
-    bbox.minlon = r[0]["minlon"].as<int64_t>();
-    bbox.maxlat = r[0]["maxlat"].as<int64_t>();
-    bbox.maxlon = r[0]["maxlon"].as<int64_t>();
+  if (!r.empty()) {
+    extract_bbox_from_row(r[0], bbox);
   }
 
   return bbox;

@@ -1136,11 +1136,8 @@ bbox_t ApiDB_Relation_Updater::calc_rel_member_difference_bbox(
 
     auto r = m.exec_prepared("calc_node_bbox_rel_member", node_ids);
 
-    if (!(r.empty() || r[0]["minlat"].is_null())) {
-      bbox_nodes.minlat = r[0]["minlat"].as<int64_t>();
-      bbox_nodes.minlon = r[0]["minlon"].as<int64_t>();
-      bbox_nodes.maxlat = r[0]["maxlat"].as<int64_t>();
-      bbox_nodes.maxlon = r[0]["maxlon"].as<int64_t>();
+    if (!r.empty()) {
+       extract_bbox_from_row(r[0], bbox_nodes);
     }
 
     result.expand(bbox_nodes);
@@ -1166,11 +1163,8 @@ bbox_t ApiDB_Relation_Updater::calc_rel_member_difference_bbox(
 
     auto r = m.exec_prepared("calc_way_bbox_rel_member", way_ids);
 
-    if (!(r.empty() || r[0]["minlat"].is_null())) {
-      bbox_ways.minlat = r[0]["minlat"].as<int64_t>();
-      bbox_ways.minlon = r[0]["minlon"].as<int64_t>();
-      bbox_ways.maxlat = r[0]["maxlat"].as<int64_t>();
-      bbox_ways.maxlon = r[0]["maxlon"].as<int64_t>();
+    if (!r.empty()) {
+       extract_bbox_from_row(r[0], bbox_ways);
     }
 
     result.expand(bbox_ways);
@@ -1219,11 +1213,8 @@ bbox_t ApiDB_Relation_Updater::calc_relation_bbox(
 
   auto rn = m.exec_prepared("calc_relation_bbox_nodes", ids);
 
-  if (!(rn.empty() || rn[0]["minlat"].is_null())) {
-    bbox.minlat = rn[0]["minlat"].as<int64_t>();
-    bbox.minlon = rn[0]["minlon"].as<int64_t>();
-    bbox.maxlat = rn[0]["maxlat"].as<int64_t>();
-    bbox.maxlon = rn[0]["maxlon"].as<int64_t>();
+  if (!rn.empty()) {
+    extract_bbox_from_row(rn[0], bbox);
   }
 
   m.prepare("calc_relation_bbox_ways",
@@ -1245,13 +1236,9 @@ bbox_t ApiDB_Relation_Updater::calc_relation_bbox(
 
   auto rw = m.exec_prepared("calc_relation_bbox_ways", ids);
 
-  if (!(rw.empty() || rw[0]["minlat"].is_null())) {
+  if (!rw.empty()) {
     bbox_t bbox_way;
-
-    bbox_way.minlat = rw[0]["minlat"].as<int64_t>();
-    bbox_way.minlon = rw[0]["minlon"].as<int64_t>();
-    bbox_way.maxlat = rw[0]["maxlat"].as<int64_t>();
-    bbox_way.maxlon = rw[0]["maxlon"].as<int64_t>();
+    extract_bbox_from_row(rw[0], bbox_way);
     bbox.expand(bbox_way);
   }
 
