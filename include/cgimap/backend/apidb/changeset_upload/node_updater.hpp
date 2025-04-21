@@ -69,7 +69,7 @@ private:
   void replace_old_ids_in_nodes(
       std::vector<node_t> &create_nodes,
       const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
-          &created_node_id_mapping);
+          &created_node_id_mapping) const;
 
   void check_unique_placeholder_ids(const std::vector<node_t> &create_nodes);
 
@@ -78,7 +78,7 @@ private:
   void lock_current_nodes(const std::vector<osm_nwr_id_t> &ids);
 
   std::vector<std::vector<ApiDB_Node_Updater::node_t> >
-  build_packages(const std::vector<node_t> &nodes);
+  build_packages(const std::vector<node_t> &nodes) const;
 
   void check_current_node_versions(const std::vector<node_t> &nodes);
 

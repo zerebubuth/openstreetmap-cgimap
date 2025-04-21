@@ -94,11 +94,17 @@ private:
       const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
           &created_way_id_mapping,
       const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
-          &created_relation_id_mapping);
+          &created_relation_id_mapping) const;
+
+  void replace_old_ids_in_relation_member(
+    ApiDB_Relation_Updater::relation_t &cr,
+    const std::map<osm_nwr_signed_id_t, osm_nwr_id_t> &map_nodes,
+    const std::map<osm_nwr_signed_id_t, osm_nwr_id_t> &map_ways,
+    const std::map<osm_nwr_signed_id_t, osm_nwr_id_t> &map_relations) const;
 
   void check_unique_placeholder_ids(const std::vector<relation_t> &create_relations);
 
-  void check_forward_relation_placeholders(const std::vector<relation_t> &create_relations);
+  void check_forward_relation_placeholders(const std::vector<relation_t> &create_relations) const;
 
   void insert_new_relations_to_current_table(
       const std::vector<relation_t> &create_relations);
@@ -106,7 +112,7 @@ private:
   void lock_current_relations(const std::vector<osm_nwr_id_t> &ids);
 
   std::vector<std::vector<ApiDB_Relation_Updater::relation_t>>
-  build_packages(const std::vector<relation_t> &relations);
+  build_packages(const std::vector<relation_t> &relations) const;
 
   void
   check_current_relation_versions(const std::vector<relation_t> &relations);
@@ -191,6 +197,7 @@ private:
   std::vector<relation_t> delete_relations;
 
   std::set<osm_nwr_signed_id_t> create_placeholder_ids;
+
 };
 
 #endif

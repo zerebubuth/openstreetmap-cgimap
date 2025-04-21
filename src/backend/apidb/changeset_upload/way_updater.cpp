@@ -25,8 +25,6 @@
 
 #include <fmt/core.h>
 
-
-
 ApiDB_Way_Updater::ApiDB_Way_Updater(Transaction_Manager &_m,
                                      const RequestContext& _req_ctx,
                                      api06::OSMChange_Tracking &ct)
@@ -55,9 +53,11 @@ void ApiDB_Way_Updater::add_way(osm_changeset_id_t changeset_id,
   assert(nodes.size() <= global_settings::get_way_max_nodes());
 
   osm_sequence_id_t node_seq = 0;
-  for (const auto &node : nodes)
+  for (const auto &node : nodes) {
+    ++node_seq;
     new_way.way_nodes.emplace_back(
-        (node < 0 ? 0 : static_cast<osm_nwr_id_t>(node)), ++node_seq, node);
+        (node < 0 ? 0 : static_cast<osm_nwr_id_t>(node)), node_seq, node);
+  }
 
   create_ways.push_back(new_way);
 
@@ -279,7 +279,7 @@ void ApiDB_Way_Updater::replace_old_ids_in_ways(
     const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
         &created_node_id_mapping,
     const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
-        &created_way_id_mapping) {
+        &created_way_id_mapping) const {
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_ways;
   for (auto &i : created_way_id_mapping) {
     auto [_, inserted] = map_ways.insert({ i.old_id, i.new_id });
@@ -306,17 +306,23 @@ void ApiDB_Way_Updater::replace_old_ids_in_ways(
       cw.id = entry->second;
     }
 
-    for (auto &wn : cw.way_nodes) {
-      if (wn.old_node_id < 0) {
-        auto entry = map_nodes.find(wn.old_node_id);
-        if (entry == map_nodes.end())
-          throw http::bad_request(
-              fmt::format(
-                   "Placeholder node not found for reference {:d} in way {:d}",
-               wn.old_node_id, cw.old_id));
-        wn.node_id = entry->second;
-      }
-    }
+    replace_old_ids_in_way_member(cw, map_nodes);
+  }
+}
+
+void ApiDB_Way_Updater::replace_old_ids_in_way_member(
+    ApiDB_Way_Updater::way_t &cw,
+    const std::map<osm_nwr_signed_id_t, osm_nwr_id_t> &map_nodes) const {
+  for (auto &wn : cw.way_nodes) {
+    if (wn.old_node_id >= 0)
+      continue;
+
+    auto entry = map_nodes.find(wn.old_node_id);
+    if (entry == map_nodes.end())
+      throw http::bad_request(fmt::format(
+          "Placeholder node not found for reference {:d} in way {:d}",
+          wn.old_node_id, cw.old_id));
+    wn.node_id = entry->second;
   }
 }
 
@@ -456,7 +462,7 @@ void ApiDB_Way_Updater::lock_current_ways(
  */
 
 std::vector<std::vector<ApiDB_Way_Updater::way_t>>
-ApiDB_Way_Updater::build_packages(const std::vector<way_t> &ways) {
+ApiDB_Way_Updater::build_packages(const std::vector<way_t> &ways) const {
 
   std::vector<std::vector<ApiDB_Way_Updater::way_t>> result;
 

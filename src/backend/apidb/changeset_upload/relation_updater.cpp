@@ -23,8 +23,6 @@
 
 #include <fmt/core.h>
 
-
-
 ApiDB_Relation_Updater::ApiDB_Relation_Updater(Transaction_Manager &_m,
                                                const RequestContext& _req_ctx,
                                                api06::OSMChange_Tracking &ct)
@@ -333,10 +331,12 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
     const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
         &created_way_id_mapping,
     const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
-        &created_relation_id_mapping) {
+        &created_relation_id_mapping) const {
+
+  using tmp_id_map = std::map<osm_nwr_signed_id_t, osm_nwr_id_t>;
 
   // Prepare mapping tables
-  std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_relations;
+  tmp_id_map map_relations;
   for (auto &i : created_relation_id_mapping) {
     auto [_, inserted] = map_relations.insert({ i.old_id, i.new_id });
     if (!inserted)
@@ -344,7 +344,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
           fmt::format("Duplicate relation placeholder id {:d}.", i.old_id));
   }
 
-  std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_ways;
+  tmp_id_map map_ways;
   for (auto &i : created_way_id_mapping) {
     auto [_, inserted] = map_ways.insert({ i.old_id, i.new_id });
     if (!inserted)
@@ -352,7 +352,7 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
           fmt::format("Duplicate way placeholder id {:d}.", i.old_id));
   }
 
-  std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_nodes;
+  tmp_id_map map_nodes;
   for (auto &i : created_node_id_mapping) {
     auto [_, inserted] = map_nodes.insert({ i.old_id, i.new_id });
     if (!inserted)
@@ -374,32 +374,44 @@ void ApiDB_Relation_Updater::replace_old_ids_in_relations(
       cr.id = entry->second;
     }
 
-    for (auto &mbr : cr.members) {
-      if (mbr.old_member_id < 0) {
-        if (mbr.member_type == "Node") {
-          auto entry = map_nodes.find(mbr.old_member_id);
-          if (entry == map_nodes.end())
-            throw http::bad_request(
-                fmt::format("Placeholder node not found for reference {:d} in relation {:d}",
-                 mbr.old_member_id, cr.old_id));
-          mbr.member_id = entry->second;
-        } else if (mbr.member_type == "Way") {
-          auto entry = map_ways.find(mbr.old_member_id);
-          if (entry == map_ways.end())
-            throw http::bad_request(
-                fmt::format("Placeholder way not found for reference {:d} in relation {:d}",
-                 mbr.old_member_id, cr.old_id));
-          mbr.member_id = entry->second;
+    replace_old_ids_in_relation_member(cr, map_nodes, map_ways, map_relations);
+  }
+}
 
-        } else if (mbr.member_type == "Relation") {
-          auto entry = map_relations.find(mbr.old_member_id);
-          if (entry == map_relations.end())
-            throw http::bad_request(
-                fmt::format("Placeholder relation not found for reference {:d} in relation {:d}",
-                 mbr.old_member_id, cr.old_id));
-          mbr.member_id = entry->second;
-        }
-      }
+void ApiDB_Relation_Updater::replace_old_ids_in_relation_member(
+    ApiDB_Relation_Updater::relation_t &cr,
+    const std::map<osm_nwr_signed_id_t, osm_nwr_id_t> &map_nodes,
+    const std::map<osm_nwr_signed_id_t, osm_nwr_id_t> &map_ways,
+    const std::map<osm_nwr_signed_id_t, osm_nwr_id_t> &map_relations) const {
+
+  for (auto &mbr : cr.members) {
+    if (mbr.old_member_id >= 0)
+      continue;
+
+    if (mbr.member_type == "Node") {
+      auto entry = map_nodes.find(mbr.old_member_id);
+      if (entry == map_nodes.end())
+        throw http::bad_request(fmt::format(
+            "Placeholder node not found for reference {:d} in relation {:d}",
+            mbr.old_member_id, cr.old_id));
+      mbr.member_id = entry->second;
+
+    } else if (mbr.member_type == "Way") {
+      auto entry = map_ways.find(mbr.old_member_id);
+      if (entry == map_ways.end())
+        throw http::bad_request(fmt::format(
+            "Placeholder way not found for reference {:d} in relation {:d}",
+            mbr.old_member_id, cr.old_id));
+      mbr.member_id = entry->second;
+
+    } else if (mbr.member_type == "Relation") {
+      auto entry = map_relations.find(mbr.old_member_id);
+      if (entry == map_relations.end())
+        throw http::bad_request(
+            fmt::format("Placeholder relation not found for reference {:d} in "
+                        "relation {:d}",
+                        mbr.old_member_id, cr.old_id));
+      mbr.member_id = entry->second;
     }
   }
 }
@@ -433,7 +445,7 @@ void ApiDB_Relation_Updater::check_unique_placeholder_ids(
 */
 
 void ApiDB_Relation_Updater::check_forward_relation_placeholders(
-   const std::vector<relation_t> &create_relations) {
+   const std::vector<relation_t> &create_relations) const {
 
   std::set<osm_nwr_signed_id_t> placeholder_ids;
 
@@ -554,7 +566,7 @@ void ApiDB_Relation_Updater::lock_current_relations(
 
 std::vector<std::vector<ApiDB_Relation_Updater::relation_t>>
 ApiDB_Relation_Updater::build_packages(
-    const std::vector<relation_t> &relations) {
+    const std::vector<relation_t> &relations) const {
 
   std::vector<std::vector<ApiDB_Relation_Updater::relation_t>> result;
 
@@ -1502,7 +1514,7 @@ ApiDB_Relation_Updater::remove_blocked_relations_from_deletion_list (
   if (relations_to_exclude_from_deletion.empty())
     return;
 
-  std::erase_if(updated_relations, [&](const relation_t &a) {
+  std::erase_if(updated_relations, [&relations_to_exclude_from_deletion](const relation_t &a) {
 				    return relations_to_exclude_from_deletion.contains(a.id); });
 
   // Return old_id, new_id and current version to the caller in case of

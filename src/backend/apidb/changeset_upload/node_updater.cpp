@@ -53,9 +53,9 @@ void ApiDB_Node_Updater::add_node(double lat, double lon,
     new_node.tags.emplace_back(key, value);
   create_nodes.push_back(new_node);
 
-  ct.osmchange_orig_sequence.push_back({ operation::op_create,
+  ct.osmchange_orig_sequence.emplace_back(operation::op_create,
                                           object_type::node, new_node.old_id,
-                                          new_node.version, false });
+                                          new_node.version, false);
 }
 
 void ApiDB_Node_Updater::modify_node(double lat, double lon,
@@ -75,9 +75,9 @@ void ApiDB_Node_Updater::modify_node(double lat, double lon,
     modify_node.tags.emplace_back(key, value);
   modify_nodes.push_back(modify_node);
 
-  ct.osmchange_orig_sequence.push_back({ operation::op_modify,
+  ct.osmchange_orig_sequence.emplace_back(operation::op_modify,
                                           object_type::node, modify_node.old_id,
-                                          modify_node.version, false });
+                                          modify_node.version, false);
 }
 
 void ApiDB_Node_Updater::delete_node(osm_changeset_id_t changeset_id,
@@ -92,9 +92,9 @@ void ApiDB_Node_Updater::delete_node(osm_changeset_id_t changeset_id,
 
   delete_nodes.push_back(delete_node);
 
-  ct.osmchange_orig_sequence.push_back({ operation::op_delete,
+  ct.osmchange_orig_sequence.emplace_back(operation::op_delete,
                                           object_type::node, delete_node.old_id,
-                                          delete_node.version, if_unused });
+                                          delete_node.version, if_unused);
 }
 
 void ApiDB_Node_Updater::process_new_nodes() {
@@ -239,7 +239,7 @@ void ApiDB_Node_Updater::process_delete_nodes() {
 void ApiDB_Node_Updater::replace_old_ids_in_nodes(
     std::vector<node_t> &nodes,
     const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
-        &created_node_id_mapping) {
+        &created_node_id_mapping) const {
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map;
 
   for (auto &i : created_node_id_mapping) {
@@ -390,7 +390,7 @@ void ApiDB_Node_Updater::lock_current_nodes(
  */
 
 std::vector<std::vector<ApiDB_Node_Updater::node_t>>
-ApiDB_Node_Updater::build_packages(const std::vector<node_t> &nodes) {
+ApiDB_Node_Updater::build_packages(const std::vector<node_t> &nodes) const {
 
   std::vector<std::vector<ApiDB_Node_Updater::node_t>> result;
 
