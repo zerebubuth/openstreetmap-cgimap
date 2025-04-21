@@ -338,7 +338,7 @@ std::string list_methods(method m);
 
 // parse a single method string into a http::method enum, or return none
 // if it's not a known value.
-std::optional<method> parse_method(const std::string &);
+std::optional<method> parse_method(std::string_view s);
 
 // parse CONTENT_LENGTH HTTP header
 unsigned long parse_content_length(const std::string &);

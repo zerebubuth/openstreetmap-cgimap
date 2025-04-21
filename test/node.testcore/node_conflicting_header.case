@@ -1,0 +1,10 @@
+# .json URL suffix conflicts with Accept header
+Request-Method: GET
+Request-URI: /api/0.6/node/1.json
+# FastCGI uses slightly different http headers in some cases.
+# the following corresponds to an Accept: header
+Http-Accept: application/xml
+---
+!Content-Disposition:
+Status: 406 Not Acceptable
+---

@@ -271,26 +271,25 @@ const std::map<method, std::string> METHODS = {
 std::string list_methods(method m) {
   std::string result;
 
-  bool first = true;
   for (auto const &pair : METHODS) {
     if ((m & pair.first) == pair.first) {
-      if (first) { first = false; } else { result += ", "; }
+      if (!result.empty()) {
+        result += ", ";
+      }
       result += pair.second;
     }
   }
   return result;
 }
 
-std::optional<method> parse_method(const std::string &s) {
-  std::optional<method> result;
+std::optional<method> parse_method(std::string_view s) {
 
   for (auto const &pair : METHODS) {
     if (pair.second == s) {
-      result = pair.first;
-      break;
+      return pair.first;
     }
   }
-  return result;
+  return {};
 }
 
 unsigned long parse_content_length(const std::string &content_length_str) {

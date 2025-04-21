@@ -1,0 +1,7 @@
+Request-Method: PATCH
+Request-URI: /api/0.6/node/1
+Accept-Encoding: unknown
+---
+!Content-Disposition:
+Status: 404 Not Found
+---
