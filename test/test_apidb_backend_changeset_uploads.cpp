@@ -485,6 +485,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
 
     upd->commit();
 
+    REQUIRE(node_updater->bbox() == bbox_t(-25.3448570, 131.0325171, -25.34, 131.2325171));
+    REQUIRE(way_updater->bbox() == bbox_t(-25.3448570, 131.0325171, -25.3448570, 131.2325171));
+
     REQUIRE(change_tracking.created_way_ids.size() == 1);
     REQUIRE(change_tracking.created_way_ids[0].new_version == 1);
     REQUIRE(change_tracking.created_way_ids[0].old_id == -1);
@@ -751,6 +754,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     way_updater->process_delete_ways();
     upd->commit();
 
+    REQUIRE(way_updater->bbox() == bbox_t(-25.34, 131.23, -25.34, 131.23));
+
     way_version++;
 
     REQUIRE(change_tracking.deleted_way_ids.size() == 1);
@@ -900,6 +905,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
 
     upd->commit();
 
+    REQUIRE(rel_updater->bbox() == bbox_t(-25.3448570, 131.0325171, -25.3448570, 131.2325171));
+
     REQUIRE(change_tracking.created_relation_ids.size() == 1);
     REQUIRE(change_tracking.created_relation_ids[0].new_version == 1);
     REQUIRE(change_tracking.created_relation_ids[0].old_id == -1);
@@ -987,6 +994,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     rel_updater->process_new_relations();
 
     upd->commit();
+
+    REQUIRE(rel_updater->bbox() == bbox_t(-25.3448570, 131.0325171, -25.3448570, 131.2325171));
 
     REQUIRE(change_tracking.created_relation_ids.size() == 1);
     REQUIRE(change_tracking.created_relation_ids[0].new_version == 1);
@@ -1462,6 +1471,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     rel_updater->delete_relation(1, relation_id, relation_version, false);
     rel_updater->process_delete_relations();
     upd->commit();
+
+    REQUIRE(rel_updater->bbox() == bbox_t(-25.3448570, 131.0325171, -25.3448570, 131.2325171));
 
     relation_version++;
 
