@@ -25,8 +25,6 @@
 
 #include <fmt/core.h>
 
-
-
 ApiDB_Way_Updater::ApiDB_Way_Updater(Transaction_Manager &_m,
                                      const RequestContext& _req_ctx,
                                      api06::OSMChange_Tracking &ct)
@@ -55,15 +53,17 @@ void ApiDB_Way_Updater::add_way(osm_changeset_id_t changeset_id,
   assert(nodes.size() <= global_settings::get_way_max_nodes());
 
   osm_sequence_id_t node_seq = 0;
-  for (const auto &node : nodes)
-    new_way.way_nodes.push_back(
-        { (node < 0 ? 0 : static_cast<osm_nwr_id_t>(node)), ++node_seq, node });
+  for (const auto &node : nodes) {
+    ++node_seq;
+    new_way.way_nodes.emplace_back(
+        (node < 0 ? 0 : static_cast<osm_nwr_id_t>(node)), node_seq, node);
+  }
 
   create_ways.push_back(new_way);
 
-  ct.osmchange_orig_sequence.push_back({ operation::op_create,
+  ct.osmchange_orig_sequence.emplace_back(operation::op_create,
                                          object_type::way, new_way.old_id,
-                                         new_way.version, false });
+                                         new_way.version, false);
 }
 
 void ApiDB_Way_Updater::modify_way(osm_changeset_id_t changeset_id,
@@ -87,15 +87,17 @@ void ApiDB_Way_Updater::modify_way(osm_changeset_id_t changeset_id,
   assert(nodes.size() <= global_settings::get_way_max_nodes());
 
   osm_sequence_id_t node_seq = 0;
-  for (const auto &node : nodes)
-    modify_way.way_nodes.push_back(
-        { (node < 0 ? 0 : static_cast<osm_nwr_id_t>(node)), ++node_seq, node });
+  for (const auto &node : nodes) {
+    ++node_seq;
+    modify_way.way_nodes.emplace_back(
+        (node < 0 ? 0 : static_cast<osm_nwr_id_t>(node)), node_seq, node);
+  }
 
   modify_ways.push_back(modify_way);
 
-  ct.osmchange_orig_sequence.push_back({ operation::op_modify,
+  ct.osmchange_orig_sequence.emplace_back(operation::op_modify,
                                          object_type::way, modify_way.old_id,
-                                         modify_way.version, false });
+                                         modify_way.version, false);
 }
 
 void ApiDB_Way_Updater::delete_way(osm_changeset_id_t changeset_id,
@@ -112,9 +114,9 @@ void ApiDB_Way_Updater::delete_way(osm_changeset_id_t changeset_id,
 
   delete_ways.push_back(delete_way);
 
-  ct.osmchange_orig_sequence.push_back({ operation::op_delete,
+  ct.osmchange_orig_sequence.emplace_back(operation::op_delete,
                                          object_type::way, delete_way.old_id,
-                                         delete_way.version, if_unused });
+                                         delete_way.version, if_unused);
 }
 
 void ApiDB_Way_Updater::process_new_ways() {
@@ -277,7 +279,7 @@ void ApiDB_Way_Updater::replace_old_ids_in_ways(
     const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
         &created_node_id_mapping,
     const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
-        &created_way_id_mapping) {
+        &created_way_id_mapping) const {
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map_ways;
   for (auto &i : created_way_id_mapping) {
     auto [_, inserted] = map_ways.insert({ i.old_id, i.new_id });
@@ -304,17 +306,23 @@ void ApiDB_Way_Updater::replace_old_ids_in_ways(
       cw.id = entry->second;
     }
 
-    for (auto &wn : cw.way_nodes) {
-      if (wn.old_node_id < 0) {
-        auto entry = map_nodes.find(wn.old_node_id);
-        if (entry == map_nodes.end())
-          throw http::bad_request(
-              fmt::format(
-                   "Placeholder node not found for reference {:d} in way {:d}",
-               wn.old_node_id, cw.old_id));
-        wn.node_id = entry->second;
-      }
-    }
+    replace_old_ids_in_way_member(cw, map_nodes);
+  }
+}
+
+void ApiDB_Way_Updater::replace_old_ids_in_way_member(
+    ApiDB_Way_Updater::way_t &cw,
+    const std::map<osm_nwr_signed_id_t, osm_nwr_id_t> &map_nodes) const {
+  for (auto &wn : cw.way_nodes) {
+    if (wn.old_node_id >= 0)
+      continue;
+
+    auto entry = map_nodes.find(wn.old_node_id);
+    if (entry == map_nodes.end())
+      throw http::bad_request(fmt::format(
+          "Placeholder node not found for reference {:d} in way {:d}",
+          wn.old_node_id, cw.old_id));
+    wn.node_id = entry->second;
   }
 }
 
@@ -380,8 +388,8 @@ void ApiDB_Way_Updater::insert_new_ways_to_current_table(
   const auto id_col(r.column_number("id"));
 
   for (const auto &row : r)
-    ct.created_way_ids.push_back({ row[old_id_col].as<osm_nwr_signed_id_t>(),
-                                    row[id_col].as<osm_nwr_id_t>(), 1 });
+    ct.created_way_ids.emplace_back(row[old_id_col].as<osm_nwr_signed_id_t>(),
+                                    row[id_col].as<osm_nwr_id_t>(), 1);
 }
 
 bbox_t ApiDB_Way_Updater::calc_way_bbox(const std::vector<osm_nwr_id_t> &ids) {
@@ -407,11 +415,8 @@ bbox_t ApiDB_Way_Updater::calc_way_bbox(const std::vector<osm_nwr_id_t> &ids) {
 
   auto r = m.exec_prepared("calc_way_bbox", ids);
 
-  if (!(r.empty() || r[0]["minlat"].is_null())) {
-    bbox.minlat = r[0]["minlat"].as<int64_t>();
-    bbox.minlon = r[0]["minlon"].as<int64_t>();
-    bbox.maxlat = r[0]["maxlat"].as<int64_t>();
-    bbox.maxlon = r[0]["maxlon"].as<int64_t>();
+  if (!r.empty()) {
+    extract_bbox_from_row(r[0], bbox);
   }
 
   return bbox;
@@ -457,7 +462,7 @@ void ApiDB_Way_Updater::lock_current_ways(
  */
 
 std::vector<std::vector<ApiDB_Way_Updater::way_t>>
-ApiDB_Way_Updater::build_packages(const std::vector<way_t> &ways) {
+ApiDB_Way_Updater::build_packages(const std::vector<way_t> &ways) const {
 
   std::vector<std::vector<ApiDB_Way_Updater::way_t>> result;
 
@@ -516,12 +521,13 @@ void ApiDB_Way_Updater::check_current_way_versions(
       m.exec_prepared("check_current_way_versions", ids, versions);
 
   if (!r.empty()) {
+    const auto &row = r[0];
     throw http::conflict(
         fmt::format(
              "Version mismatch: Provided {:d}, server had: {:d} of Way {:d}",
-         r[0]["expected_version"].as<osm_version_t>(),
-         r[0]["actual_version"].as<osm_version_t>(),
-         r[0]["id"].as<osm_nwr_id_t>()));
+         row["expected_version"].as<osm_version_t>(),
+         row["actual_version"].as<osm_version_t>(),
+         row["id"].as<osm_nwr_id_t>()));
   }
 }
 
@@ -580,10 +586,10 @@ std::set<osm_nwr_id_t> ApiDB_Way_Updater::determine_already_deleted_ways(
     // current version to the caller
     if (ids_if_unused.contains(id)) {
 
-      ct.skip_deleted_way_ids.push_back(
-          { id_to_old_id[row[id_col].as<osm_nwr_id_t>()],
-	    row[id_col].as<osm_nwr_id_t>(),
-            row[version_col].as<osm_version_t>() });
+      ct.skip_deleted_way_ids.emplace_back(
+          id_to_old_id[row[id_col].as<osm_nwr_id_t>()],
+	        row[id_col].as<osm_nwr_id_t>(),
+          row[version_col].as<osm_version_t>());
     }
   }
 
@@ -706,9 +712,9 @@ void ApiDB_Way_Updater::update_current_ways(const std::vector<way_t> &ways,
   // update modified ways table
   for (const auto &row : r) {
     if (visible)
-      ct.modified_way_ids.push_back({id_to_old_id[row[id_col].as<osm_nwr_id_t>()],
-                                    row[id_col].as<osm_nwr_id_t>(),
-                                    row[version_col].as<osm_version_t>()});
+      ct.modified_way_ids.emplace_back(id_to_old_id[row[id_col].as<osm_nwr_id_t>()],
+                                       row[id_col].as<osm_nwr_id_t>(),
+                                       row[version_col].as<osm_version_t>());
     else
       ct.deleted_way_ids.push_back({ id_to_old_id[row[id_col].as<osm_nwr_id_t>()] });
   }
@@ -992,10 +998,10 @@ ApiDB_Way_Updater::is_way_still_referenced(const std::vector<way_t> &ways) {
       // should not lead to an error. All we can do now is to return old_id,
       // new_id and the current version to the caller
 
-      ct.skip_deleted_way_ids.push_back({
+      ct.skip_deleted_way_ids.emplace_back(
           id_to_old_id[row[id_col].as<osm_nwr_id_t>()],
 	        row[id_col].as<osm_nwr_id_t>(),
-          row[version_col].as<osm_version_t>()});
+          row[version_col].as<osm_version_t>());
     }
   }
 

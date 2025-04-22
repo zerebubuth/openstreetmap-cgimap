@@ -85,7 +85,11 @@ private:
       const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
           &created_node_id_mapping,
       const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
-          &created_way_id_mapping);
+          &created_way_id_mapping) const;
+
+  void replace_old_ids_in_way_member(
+    ApiDB_Way_Updater::way_t &cw,
+    const std::map<osm_nwr_signed_id_t, osm_nwr_id_t> &map_nodes) const;
 
   void check_unique_placeholder_ids(const std::vector<way_t> &create_ways);
 
@@ -96,7 +100,7 @@ private:
   void lock_current_ways(const std::vector<osm_nwr_id_t> &ids);
 
   std::vector<std::vector<ApiDB_Way_Updater::way_t> >
-  build_packages(const std::vector<way_t> &ways);
+  build_packages(const std::vector<way_t> &ways) const;
 
   void check_current_way_versions(const std::vector<way_t> &ways);
 

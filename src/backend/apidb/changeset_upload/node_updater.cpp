@@ -53,9 +53,9 @@ void ApiDB_Node_Updater::add_node(double lat, double lon,
     new_node.tags.emplace_back(key, value);
   create_nodes.push_back(new_node);
 
-  ct.osmchange_orig_sequence.push_back({ operation::op_create,
+  ct.osmchange_orig_sequence.emplace_back(operation::op_create,
                                           object_type::node, new_node.old_id,
-                                          new_node.version, false });
+                                          new_node.version, false);
 }
 
 void ApiDB_Node_Updater::modify_node(double lat, double lon,
@@ -75,9 +75,9 @@ void ApiDB_Node_Updater::modify_node(double lat, double lon,
     modify_node.tags.emplace_back(key, value);
   modify_nodes.push_back(modify_node);
 
-  ct.osmchange_orig_sequence.push_back({ operation::op_modify,
+  ct.osmchange_orig_sequence.emplace_back(operation::op_modify,
                                           object_type::node, modify_node.old_id,
-                                          modify_node.version, false });
+                                          modify_node.version, false);
 }
 
 void ApiDB_Node_Updater::delete_node(osm_changeset_id_t changeset_id,
@@ -92,9 +92,9 @@ void ApiDB_Node_Updater::delete_node(osm_changeset_id_t changeset_id,
 
   delete_nodes.push_back(delete_node);
 
-  ct.osmchange_orig_sequence.push_back({ operation::op_delete,
+  ct.osmchange_orig_sequence.emplace_back(operation::op_delete,
                                           object_type::node, delete_node.old_id,
-                                          delete_node.version, if_unused });
+                                          delete_node.version, if_unused);
 }
 
 void ApiDB_Node_Updater::process_new_nodes() {
@@ -239,7 +239,7 @@ void ApiDB_Node_Updater::process_delete_nodes() {
 void ApiDB_Node_Updater::replace_old_ids_in_nodes(
     std::vector<node_t> &nodes,
     const std::vector<api06::OSMChange_Tracking::object_id_mapping_t>
-        &created_node_id_mapping) {
+        &created_node_id_mapping) const {
   std::map<osm_nwr_signed_id_t, osm_nwr_id_t> map;
 
   for (auto &i : created_node_id_mapping) {
@@ -343,8 +343,8 @@ void ApiDB_Node_Updater::insert_new_nodes_to_current_table(
   const auto id_col(r.column_number("id"));
 
   for (const auto &row : r) {
-    ct.created_node_ids.push_back({row[old_id_col].as<osm_nwr_signed_id_t>(),
-                                  row[id_col].as<osm_nwr_id_t>(), 1});
+    ct.created_node_ids.emplace_back(row[old_id_col].as<osm_nwr_signed_id_t>(),
+                                     row[id_col].as<osm_nwr_id_t>(), 1);
   }
 
 }
@@ -390,7 +390,7 @@ void ApiDB_Node_Updater::lock_current_nodes(
  */
 
 std::vector<std::vector<ApiDB_Node_Updater::node_t>>
-ApiDB_Node_Updater::build_packages(const std::vector<node_t> &nodes) {
+ApiDB_Node_Updater::build_packages(const std::vector<node_t> &nodes) const {
 
   std::vector<std::vector<ApiDB_Node_Updater::node_t>> result;
 
@@ -452,12 +452,13 @@ void ApiDB_Node_Updater::check_current_node_versions(
   auto r = m.exec_prepared("check_current_node_versions", ids, versions);
 
   if (!r.empty()) {
+    const auto &row = r[0];
     throw http::conflict(
         fmt::format(
              "Version mismatch: Provided {:d}, server had: {:d} of Node {:d}",
-         r[0]["expected_version"].as<osm_version_t>(),
-         r[0]["actual_version"].as<osm_version_t>(),
-         r[0]["id"].as<osm_nwr_id_t>()));
+         row["expected_version"].as<osm_version_t>(),
+         row["actual_version"].as<osm_version_t>(),
+         row["id"].as<osm_nwr_id_t>()));
   }
 }
 
@@ -517,10 +518,10 @@ std::set<osm_nwr_id_t> ApiDB_Node_Updater::determine_already_deleted_nodes(
 
     if (ids_if_unused.contains(id)) {
 
-      ct.skip_deleted_node_ids.push_back({
+      ct.skip_deleted_node_ids.emplace_back(
             id_to_old_id[ row["id"].as<osm_nwr_id_t>() ],
 	          row["id"].as<osm_nwr_id_t>(),
-            row["version"].as<osm_version_t>()});
+            row["version"].as<osm_version_t>());
     }
   }
 
@@ -546,11 +547,8 @@ ApiDB_Node_Updater::calc_node_bbox(const std::vector<osm_nwr_id_t> &ids) {
 
   auto r = m.exec_prepared("calc_node_bbox", ids);
 
-  if (!(r.empty() || r[0]["minlat"].is_null())) {
-    bbox.minlat = r[0]["minlat"].as<int64_t>();
-    bbox.minlon = r[0]["minlon"].as<int64_t>();
-    bbox.maxlat = r[0]["maxlat"].as<int64_t>();
-    bbox.maxlon = r[0]["maxlon"].as<int64_t>();
+  if (!r.empty()) {
+    extract_bbox_from_row(r[0], bbox);
   }
 
   return bbox;
@@ -641,9 +639,10 @@ void ApiDB_Node_Updater::update_current_nodes(
 
   // update modified nodes table
   for (const auto &row : r)
-    ct.modified_node_ids.push_back({id_to_old_id[row[id_col].as<osm_nwr_id_t>()],
-                                   row[id_col].as<osm_nwr_id_t>(),
-                                   row[version_col].as<osm_version_t>()});
+    ct.modified_node_ids.emplace_back(
+            id_to_old_id[row[id_col].as<osm_nwr_id_t>()],
+            row[id_col].as<osm_nwr_id_t>(),
+            row[version_col].as<osm_version_t>());
 }
 
 void ApiDB_Node_Updater::delete_current_nodes(
@@ -920,7 +919,7 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
   // We will simply skip those nodes from now on
 
   if (!nodes_to_exclude_from_deletion.empty()) {
-    std::erase_if(updated_nodes, [&](const node_t &a) {
+    std::erase_if(updated_nodes, [&nodes_to_exclude_from_deletion](const node_t &a) {
                          return nodes_to_exclude_from_deletion.contains(a.id);
                        });
 
@@ -947,10 +946,10 @@ ApiDB_Node_Updater::is_node_still_referenced(const std::vector<node_t> &nodes) {
       // should not lead to an error. All we can do now is to return old_id,
       // new_id and the current version to the caller
 
-      ct.skip_deleted_node_ids.push_back(
-          { id_to_old_id[row["id"].as<osm_nwr_id_t>()],
+      ct.skip_deleted_node_ids.emplace_back(
+          id_to_old_id[row["id"].as<osm_nwr_id_t>()],
 	          row["id"].as<osm_nwr_id_t>(),
-            row["version"].as<osm_version_t>() });
+            row["version"].as<osm_version_t>());
     }
   }
 
