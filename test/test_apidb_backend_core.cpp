@@ -68,6 +68,21 @@ struct CGImapListener : Catch::TestEventListenerBase, DatabaseTestsFixture {
     void testCaseEnded( Catch::TestCaseStats const& testCaseStats ) override {
       tdb.testcase_ended();
     }
+
+    void sectionStarting( Catch::SectionInfo const& sectionInfo ) override {
+      // Special code to simulate a database error. This will only trigger
+      // if the test case file name contains "inject_db_error".
+      if (sectionInfo.name.find("inject_db_error") != std::string::npos) {
+        tdb.run_sql(R"( ALTER TABLE users RENAME TO users_2 )");
+      }
+    }
+
+    void sectionEnded( Catch::SectionStats const& sectionStats ) override {
+      // Revert the database error simulation.
+      if (sectionStats.sectionInfo.name.find("inject_db_error") != std::string::npos) {
+         tdb.run_sql(R"( ALTER TABLE users_2 RENAME TO users )");
+      }
+    }
 };
 
 CATCH_REGISTER_LISTENER( CGImapListener )

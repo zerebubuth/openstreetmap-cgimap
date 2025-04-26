@@ -15,10 +15,10 @@
 #include <optional>
 
 
-osm_current_responder::osm_current_responder(mime::type mt, 
+osm_current_responder::osm_current_responder(mime::type mt,
                                              data_selection &s,
                                              std::optional<bbox> b)
-    : osm_responder(mt, b), 
+    : osm_responder(mt, b),
       sel(s) {}
 
 
@@ -37,13 +37,12 @@ void osm_current_responder::write(output_formatter& fmt,
     sel.write_nodes(fmt);      // write all selected nodes
     sel.write_ways(fmt);       // all selected ways
     sel.write_relations(fmt);  // all selected relations
-    fmt.end_element();
 
   } catch (const std::exception &e) {
     logger::message(fmt::format("Caught error in osm_current_responder: {}",
                       e.what()));
     fmt.error(e);
   }
-
+  fmt.end_element();
   fmt.end_document();
 }

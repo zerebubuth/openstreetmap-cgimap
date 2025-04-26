@@ -33,13 +33,12 @@ void osm_changeset_responder::write(output_formatter& fmt,
     // write changeset
     sel.write_changesets(fmt, now);
 
-    fmt.end_changeset(multi_selection);
-
   } catch (const std::exception &e) {
     logger::message(fmt::format("Caught error in osm_changeset_responder: {}",
                       e.what()));
     fmt.error(e);
   }
 
+  fmt.end_changeset(multi_selection);
   fmt.end_document();
 }

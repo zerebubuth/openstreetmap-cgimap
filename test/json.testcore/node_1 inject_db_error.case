@@ -1,0 +1,19 @@
+# File name "inject_db_error" implies that a database error is being injected during test execution
+Request-Method: GET
+Request-URI: /api/0.6/node/1
+HTTP-Accept: application/json
+---
+Content-Type: application/json; charset=utf-8
+!Content-Disposition:
+Status: 200 OK
+---
+{ "version": "0.6",
+  "generator": "***",
+  "copyright": "***",
+  "attribution": "***",
+  "license": "***",
+  "elements": [
+    { "error": "***" }
+  ]
+}
+
