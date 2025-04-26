@@ -1,0 +1,11 @@
+# File name "inject_db_error" implies that a database error is being injected during test execution
+Request-Method: GET
+Request-URI: /api/0.6/relation/1
+---
+Content-Type: application/xml; charset=utf-8
+!Content-Disposition:
+Status: 200 OK
+---
+<osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
+<error>***</error>
+</osm>
