@@ -238,7 +238,13 @@ void process_requests(int socket, const po::variables_map &options) {
     if (req.accept_r() >= 0) {
       const auto now(std::chrono::system_clock::now());
       req.set_current_time(now);
-      process_request(req, limiter, generator, route, *factory, update_factory.get());
+      try {
+        process_request(req, limiter, generator, route, *factory, update_factory.get());
+      } catch (...) {
+        // Attempt to properly finish up FCGI request (so that clients will see the error message)
+        req.dispose();
+        throw;
+      }
     }
   }
 
