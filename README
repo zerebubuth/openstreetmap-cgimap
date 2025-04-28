@@ -14,7 +14,7 @@ This tool is useful for replacing certain API endpoints with optimized versions 
 
 * **Efficient Interaction with PostgreSQL Database**: It connects directly to the PostgreSQL-backed OSM database (APIDB) without requiring the OSM website application.
 
-* **Bulk enabled database operations**: Mass database operations avoid unnecessary roundtrips for improved performance.
+* **Bulk-enabled database operations**: Mass database operations avoid unnecessary roundtrips for improved performance.
 
 
 ## Prerequisites
@@ -117,7 +117,7 @@ to the executable. See `./openstreetmap-cgimap --help` for a list of options.
 Besides, rate limiting parameters need to be configured according to your needs.
 
 To convert a command line option to an environment variable prepend `CGIMAP_` to
-the option, convert hyphens to underscores, and capatalize it.
+the option, convert hyphens to underscores, and capitalize it.
 For example, the option `--moderator-ratelimit` becomes the environment variable
 `CGIMAP_MODERATOR_RATELIMIT`.
 
@@ -142,7 +142,7 @@ An example of this can be found in
 
 ### Database Permissions
 
-Ensure the database user has proper permissions to read and update APIDB tables. Refer to the [OSM chef repo](https://github.com/openstreetmap/chef/blob/master/cookbooks/db/recipes/master.rb) for a list of required permissions for cgimap. We recommended to use a dedicated database user for cgimap, as well as a dedicated OS user to run cgimap.
+Ensure the database user has proper permissions to read and update APIDB tables. Refer to the [OSM chef repo](https://github.com/openstreetmap/chef/blob/master/cookbooks/db/recipes/master.rb) for a list of required permissions for cgimap. We recommend using a dedicated database user for cgimap, as well as a dedicated OS user to run cgimap.
 
 ## Use with a Web Server
 
@@ -154,7 +154,7 @@ A sample lighttd.conf file is provided, which can be used for testing purposes o
 
 	sudo apt-get install lighttpd
 
-Edit the supplied lighttpd.config file to include your cgimap path and run it with the lighttpd like
+Edit the supplied lighttpd.config file to include your cgimap path and run it with the lighttpd, like:
 
 	/usr/sbin/lighttpd -f lighttpd.conf
 
@@ -163,11 +163,11 @@ You can then access the running instance at `http://localhost:31337/api/0.6/map?
 
 ### Configuring Apache as FastCGI proxy
 
-Fcgi programs can be deployed with Apache using `mod_fastcgi_handler`,
+FCGI programs can be deployed with Apache using `mod_fastcgi_handler`,
 `mod_fcgid`, `mod_fastcgi`, and on recent versions `mod_proxy_fcgi`.
 
 A sample Apache configuration file that will work in conjunction with cgimap as a
-daemon is supplied in `scripts/cgimap.conf`. To use this on a Ubuntu-based
+daemon is supplied in `scripts/cgimap.conf`. To use this on a Debian- or Ubuntu-based
 system you need to copy the configuration to where Apache will read it and
 create an api directory:
 
@@ -189,7 +189,7 @@ By the way, the OSMF _api.openstreetmap.org_ instance runs cgimap as a daemon an
 
 You can build a Docker image using one of the provided Dockerfiles underneath docker/
 
-    docker build -f docker/debian/Dockerfile_bookwork . -t cgimap:bookworm
+    docker build -f docker/debian/Dockerfile_bookworm . -t cgimap:bookworm
 
 Once the image is built, you can run cgimap in a container. For more details, refer to the Docker documentation.
 
@@ -222,7 +222,7 @@ If you are using Visual Studio Code, you can set up a DevContainer to develop, b
 
 This setup running on Debian Bookworm (like the official OSMF instance) ensures that you have all necessary dependencies inside the container. You can also build and deploy Debian packages using dpkg-buildpackage inside the DevContainer.
 
-Developing on WSL2 is also possible. Start vscode inside WSL2, and continue with opening the repository as described earlier.
+Developing on WSL2 is also supported. Start vscode inside WSL2, and continue with opening the repository as described earlier.
 
 ## Running Tests
 
