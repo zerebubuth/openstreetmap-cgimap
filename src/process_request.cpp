@@ -131,7 +131,7 @@ void respond_error(const http::exception &e, request &r) {
     std::string message(e.what());
 
     std::string message_error_header = message.substr(0, 250);                           // limit HTTP header to 250 chars
-    std::replace(message_error_header.begin(), message_error_header.end(), '\n', ' ');   // replace newline by space (newlines screw up HTTP header)
+    std::ranges::replace(message_error_header, '\n', ' ');   // replace newline by space (newlines screw up HTTP header)
 
     r.status(e.code())
       .add_header("Content-Type", "text/plain")
