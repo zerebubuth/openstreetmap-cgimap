@@ -2397,6 +2397,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     REQUIRE(getXPath(doc.get(), "/diffResult/relation[3]/@new_id") == "18000000002");
     REQUIRE(getXPath(doc.get(), "/diffResult/relation[3]/@new_version") == "1");
 
+    // check that relation member sequence_ids don't start with 0
+    REQUIRE(tdb.run_sql("SELECT * from current_relation_members WHERE sequence_id = 0") == 0);
   }
 
   SECTION("Try to add, modify and delete nodes, ways, relations in changeset")
@@ -2495,6 +2497,9 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_end_to_end", "[changeset
     REQUIRE(getXPath(doc.get(), "/diffResult/relation[4]/@old_id") == "18000000000");
     REQUIRE(getXPath(doc.get(), "/diffResult/relation[4]/@new_id") == "18000000000");
     REQUIRE(getXPath(doc.get(), "/diffResult/relation[4]/@new_version") == "2");
+
+    // check that relation member sequence_ids don't start with 0
+    REQUIRE(tdb.run_sql("SELECT * from current_relation_members WHERE sequence_id = 0") == 0);
   }
 
   SECTION("Multiple operations on the same node id -1")
