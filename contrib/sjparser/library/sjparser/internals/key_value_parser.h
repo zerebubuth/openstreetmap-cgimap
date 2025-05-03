@@ -27,6 +27,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <map>
 
 #include "default_value.h"
 #include "dispatcher.h"
@@ -78,7 +79,7 @@ class KeyValueParser : public TokenParser {
   template <std::size_t n>
   static constexpr bool has_value_type = IsStorageParser<ParserType<n>>;
 
-  using ParsersMapType = std::unordered_map<InternalNameType, TokenParser *>;
+  using ParsersMapType = std::map<InternalNameType, TokenParser *>;
 
   // Returns ValueType<n> if it is available, otherwise ParserType<n>
   template <size_t n> [[nodiscard]] auto &get();
