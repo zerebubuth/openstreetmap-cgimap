@@ -56,7 +56,7 @@ public:
   [[nodiscard]] bool is_valid(operation op) const override {
 
     if (op == operation::op_delete)
-      return (is_valid());
+      return (OSMObject::is_valid(op));
 
     if (m_way_nodes.empty()) {
       throw http::precondition_failed(
@@ -72,7 +72,7 @@ public:
             m_way_nodes.size(), id(0), way_max_nodes));
     }
 
-    return (is_valid());
+    return (OSMObject::is_valid(op));
   }
 
   [[nodiscard]] std::string get_type_name() const override { return "Way"; }
@@ -84,7 +84,6 @@ public:
 
 private:
   std::vector<osm_nwr_signed_id_t> m_way_nodes;
-  using OSMObject::is_valid;
 };
 
 } // namespace api06

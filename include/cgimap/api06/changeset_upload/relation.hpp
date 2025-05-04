@@ -123,10 +123,10 @@ public:
 
   [[nodiscard]] std::string get_type_name() const override { return "Relation"; }
 
-  bool is_valid(operation op) const {
+  [[nodiscard]] bool is_valid(operation op) const override {
 
     if (op == operation::op_delete)
-      return (is_valid());
+      return (OSMObject::is_valid(op));
 
     auto max_members = global_settings::get_relation_max_members();
 
@@ -138,7 +138,7 @@ public:
                       *max_members));
     }
 
-    return (is_valid());
+    return (OSMObject::is_valid(op));
   }
 
   bool operator==(const Relation &o) const {
@@ -148,7 +148,6 @@ public:
 
 private:
   std::vector<RelationMember> m_relation_member;
-  using OSMObject::is_valid;
 };
 
 } // namespace api06

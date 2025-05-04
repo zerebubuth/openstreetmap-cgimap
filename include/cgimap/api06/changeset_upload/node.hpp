@@ -106,12 +106,12 @@ public:
     m_lon = lon;
   }
 
-  bool is_valid(operation op) const {
+  [[nodiscard]] bool is_valid(operation op) const override {
 
     if (op == operation::op_delete)
-      return (is_valid());
+      return (OSMObject::is_valid(op));
 
-    return (is_valid() && m_lat && m_lon);
+    return (OSMObject::is_valid(op) && m_lat && m_lon);
   }
 
   [[nodiscard]] std::string get_type_name() const override { return "Node"; }
@@ -125,7 +125,6 @@ public:
 private:
   std::optional<double> m_lat;
   std::optional<double> m_lon;
-  using OSMObject::is_valid;
 };
 
 } // namespace api06
