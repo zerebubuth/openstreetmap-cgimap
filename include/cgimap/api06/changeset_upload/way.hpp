@@ -27,11 +27,6 @@ public:
 
   ~Way() override = default;
 
-  void add_way_nodes(const std::vector<osm_nwr_signed_id_t>& way_nodes) {
-    for (auto const wn : way_nodes)
-      m_way_nodes.emplace_back(wn);
-  }
-
   void add_way_node(osm_nwr_signed_id_t waynode) {
     if (waynode == 0) {
       throw payload_error("Way node value may not be 0");
