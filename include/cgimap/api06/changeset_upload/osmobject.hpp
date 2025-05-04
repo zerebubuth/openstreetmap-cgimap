@@ -111,18 +111,18 @@ namespace api06 {
         throw payload_error("Unexpected parsing error");
     }
 
-    osm_changeset_id_t changeset() const { return *m_changeset; }
+    [[nodiscard]] osm_changeset_id_t changeset() const { return *m_changeset; }
 
-    osm_version_t version() const { return *m_version; }
+    [[nodiscard]] osm_version_t version() const { return *m_version; }
 
-    osm_nwr_signed_id_t id() const { return *m_id; }
-    osm_nwr_signed_id_t id(osm_nwr_signed_id_t d) const { return m_id.value_or(d); }
+    [[nodiscard]] osm_nwr_signed_id_t id() const { return *m_id; }
+    [[nodiscard]] osm_nwr_signed_id_t id(osm_nwr_signed_id_t d) const { return m_id.value_or(d); }
 
-    constexpr bool has_changeset() const {  return m_changeset.has_value(); }
-    constexpr bool has_id() const { return m_id.has_value(); };
-    constexpr bool has_version() const { return m_version.has_value(); }
+    [[nodiscard]] constexpr bool has_changeset() const {  return m_changeset.has_value(); }
+    [[nodiscard]] constexpr bool has_id() const { return m_id.has_value(); };
+    [[nodiscard]] constexpr bool has_version() const { return m_version.has_value(); }
 
-    std::map<std::string, std::string> tags() const { return m_tags; }
+    [[nodiscard]] std::map<std::string, std::string> tags() const { return m_tags; }
 
     void add_tags(const std::map<std::string, std::string>& tags) {
       for (const auto& [key, value] : tags) {
@@ -130,26 +130,26 @@ namespace api06 {
       }
     }
 
-    void add_tag(const std::string& key, const std::string& value) {
+    void add_tag(const std::string &key, const std::string &value) {
 
       if (key.empty()) {
-	  throw payload_error(fmt::format("Key may not be empty in {}", to_string()));
+        throw payload_error(
+            fmt::format("Key may not be empty in {}", to_string()));
       }
 
       if (unicode_strlen(key) > 255) {
-	  throw payload_error(
-	      fmt::format("Key has more than 255 unicode characters in {}",  to_string()));
+        throw payload_error(fmt::format(
+            "Key has more than 255 unicode characters in {}", to_string()));
       }
 
       if (unicode_strlen(value) > 255) {
-	  throw payload_error(
-	      fmt::format("Value has more than 255 unicode characters in {}", to_string()));
+        throw payload_error(fmt::format(
+            "Value has more than 255 unicode characters in {}", to_string()));
       }
 
-      if (!(m_tags.insert({key, value}))
-	  .second) {
-	  throw payload_error(
-	       fmt::format("{} has duplicate tags with key {}", to_string(), key));
+      if (!(m_tags.insert({ key, value })).second) {
+        throw payload_error(
+            fmt::format("{} has duplicate tags with key {}", to_string(), key));
       }
     }
 
@@ -170,7 +170,7 @@ namespace api06 {
 
     virtual std::string get_type_name() const = 0;
 
-    virtual std::string to_string() const {
+    [[nodiscard]] virtual std::string to_string() const {
 
       return fmt::format("{} {:d}", get_type_name(), m_id.value_or(0));
     }

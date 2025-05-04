@@ -25,9 +25,9 @@ public:
 
   ~Node() override = default;
 
-  double lat() const { return *m_lat; }
+  [[nodiscard]] double lat() const { return *m_lat; }
 
-  double lon() const { return *m_lon; }
+  [[nodiscard]] double lon() const { return *m_lon; }
 
   void set_lat(const std::string &lat) {
 
@@ -114,7 +114,7 @@ public:
     return (is_valid() && m_lat && m_lon);
   }
 
-  std::string get_type_name() const override { return "Node"; }
+  [[nodiscard]] std::string get_type_name() const override { return "Node"; }
 
   bool operator==(const Node &o) const {
     return (OSMObject::operator==(o) &&

@@ -56,9 +56,9 @@ public:
       throw payload_error("Unexpected parsing error");
   }
 
-  const std::vector<osm_nwr_signed_id_t> &nodes() const { return m_way_nodes; }
+  [[nodiscard]] const std::vector<osm_nwr_signed_id_t> &nodes() const { return m_way_nodes; }
 
-  bool is_valid(operation op) const {
+  [[nodiscard]] bool is_valid(operation op) const override {
 
     if (op == operation::op_delete)
       return (is_valid());
@@ -80,7 +80,7 @@ public:
     return (is_valid());
   }
 
-  std::string get_type_name() const override { return "Way"; }
+  [[nodiscard]] std::string get_type_name() const override { return "Way"; }
 
   bool operator==(const Way &o) const {
     return (OSMObject::operator==(o) &&
