@@ -27,6 +27,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "internals/default_value.h"
 #include "internals/traits.h"
+#include "internals/token_parser.h"
 
 namespace SJParser {
 
@@ -36,6 +37,15 @@ enum class Presence {
   Optional
 };
 
+template <typename NameT>
+concept ValidNameType = std::is_same_v<NameT, int64_t> ||
+            std::is_same_v<NameT, bool> ||
+            std::is_same_v<NameT, double> ||
+            std::is_same_v<NameT, std::string>;
+
+template <typename ParserT>
+concept ValidParserType = std::is_base_of_v<TokenParser, std::decay_t<ParserT>>;
+
 /** @brief Member of object parsers specification.
  *
  * This structure holds a specification of individual member for object parsers.
@@ -44,7 +54,7 @@ enum class Presence {
  *
  * @tparam ParserT Type of member parser
  */
-template <typename NameT, typename ParserT> struct Member {
+template <ValidNameType NameT, ValidParserType ParserT> struct Member {
   /** Member name */
   NameT name;
   /** Member parser */
@@ -106,9 +116,6 @@ template <typename NameT, typename ParserT> struct Member {
   Member(const Member &) = delete;
   Member &operator=(const Member &) = delete;
   /** @endcond */
-
- private:
-  constexpr void checkTemplateParameters();
 };
 
 template <typename ParserT>
@@ -149,22 +156,21 @@ Member(NameT, ParserT &&, Presence, ValueT) -> Member<NameT, ParserT>;
 
 /****************************** Implementations *******************************/
 
-template <typename NameT, typename ParserT>
+template <ValidNameType NameT, ValidParserType ParserT>
 Member<NameT, ParserT>::Member(NameT name, ParserT &&parser)
     : name{std::move(name)}, parser{std::forward<ParserT>(parser)} {
-  checkTemplateParameters();
+
 }
 
-template <typename NameT, typename ParserT>
+template <ValidNameType NameT, ValidParserType ParserT>
 Member<NameT, ParserT>::Member(NameT name, ParserT &&parser,
                                Presence /*presence*/)
     : name{std::move(name)},
       parser{std::forward<ParserT>(parser)},
       optional{true} {
-  checkTemplateParameters();
 }
 
-template <typename NameT, typename ParserT>
+template <ValidNameType NameT, ValidParserType ParserT>
 template <typename ParserU>
 Member<NameT, ParserT>::Member(NameT name, ParserT &&parser,
                                Presence /*presence*/,
@@ -173,17 +179,17 @@ Member<NameT, ParserT>::Member(NameT name, ParserT &&parser,
       parser{std::forward<ParserT>(parser)},
       optional{true},
       default_value{std::move(default_value)} {
-  checkTemplateParameters();
+
 }
 
-template <typename NameT, typename ParserT>
+template <ValidNameType NameT, ValidParserType ParserT>
 Member<NameT, ParserT>::Member(Member &&other) noexcept
     : name{std::move(other.name)},
       parser{std::forward<ParserT>(other.parser)},
       optional{other.optional},
       default_value{std::move(other.default_value)} {}
 
-template <typename NameT, typename ParserT>
+template <ValidNameType NameT, ValidParserType ParserT>
 Member<NameT, ParserT> &Member<NameT, ParserT>::operator=(
     Member &&other) noexcept {
   name = std::move(other.name);
@@ -192,22 +198,6 @@ Member<NameT, ParserT> &Member<NameT, ParserT>::operator=(
   default_value = std::move(other.default_value);
 
   return *this;
-}
-
-template <typename NameT, typename ParserT>
-constexpr void Member<NameT, ParserT>::checkTemplateParameters() {
-  // Formatting disabled because of a bug in clang-format
-  // clang-format off
-  static_assert(
-      std::is_same_v<NameT, int64_t>
-      || std::is_same_v<NameT, bool>
-      || std::is_same_v<NameT, double>
-      || std::is_same_v<NameT, std::string>,
-      "Invalid type used for Member name, only int64_t, bool, double or "
-      "std::string are allowed");
-  // clang-format on
-  static_assert(std::is_base_of_v<TokenParser, std::decay_t<ParserT>>,
-                "Invalid parser used in Member");
 }
 
 }  // namespace SJParser

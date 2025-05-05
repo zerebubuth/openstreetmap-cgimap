@@ -53,7 +53,9 @@ template <typename ParserT> class Array : public ArrayParser {
    * If the callback returns false, parsing will be stopped with an error.
    */
   template <typename CallbackT = std::nullptr_t>
-  explicit Array(ParserT &&parser, CallbackT on_finish = nullptr);
+  explicit Array(ParserT &&parser, CallbackT on_finish = nullptr)
+    requires (std::is_constructible_v<Callback, CallbackT> &&
+              std::is_base_of_v<TokenParser, ParserType>);
 
   /** Move constructor. */
   Array(Array &&other) noexcept;
@@ -100,11 +102,9 @@ template <typename ParserT> Array(ParserT &&) -> Array<ParserT>;
 template <typename ParserT>
 template <typename CallbackT>
 Array<ParserT>::Array(ParserT &&parser, CallbackT on_finish)
+    requires (std::is_constructible_v<Callback, CallbackT> &&
+              std::is_base_of_v<TokenParser, ParserType>)
     : _parser{std::forward<ParserT>(parser)}, _on_finish{std::move(on_finish)} {
-  static_assert(std::is_base_of_v<TokenParser, ParserType>,
-                "Invalid parser used in Array");
-  static_assert(std::is_constructible_v<Callback, CallbackT>,
-                "Invalid callback type");
   setParserPtr(&_parser);
 }
 

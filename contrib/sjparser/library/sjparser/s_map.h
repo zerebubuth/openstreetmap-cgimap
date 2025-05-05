@@ -88,7 +88,9 @@ template <typename ParserT> class SMap : public Map<ParserT> {
    */
   template <typename ElementCallbackT, typename CallbackT = std::nullptr_t>
   SMap(ParserT &&parser, ElementCallbackT on_element,
-       CallbackT on_finish = nullptr);
+       CallbackT on_finish = nullptr)
+       requires (std::is_constructible_v<Callback, CallbackT> &&
+                 std::is_base_of_v<TokenParser, ParserType>);
 
   /** Move constructor. */
   SMap(SMap &&other) noexcept;
@@ -170,14 +172,11 @@ template <typename ParserT>
 template <typename ElementCallbackT, typename CallbackT>
 SMap<ParserT>::SMap(ParserT &&parser, ElementCallbackT on_element,
                     CallbackT on_finish)
+    requires (std::is_constructible_v<Callback, CallbackT> &&
+              std::is_base_of_v<TokenParser, ParserType>)
     : Map<ParserT>{std::forward<ParserT>(parser)},
       _on_element{std::move(on_element)},
-      _on_finish{std::move(on_finish)} {
-  static_assert(std::is_base_of_v<TokenParser, ParserType>,
-                "Invalid parser used in Map");
-  static_assert(std::is_constructible_v<Callback, CallbackT>,
-                "Invalid callback type");
-}
+      _on_finish{std::move(on_finish)} {}
 
 template <typename ParserT>
 SMap<ParserT>::SMap(SMap &&other) noexcept

@@ -59,7 +59,9 @@ template <typename ParserT> class SArray : public Array<ParserT> {
    * If the callback returns false, parsing will be stopped with an error.
    */
   template <typename CallbackT = std::nullptr_t>
-  explicit SArray(ParserT &&parser, CallbackT on_finish = nullptr);
+  explicit SArray(ParserT &&parser, CallbackT on_finish = nullptr)
+    requires(std::is_constructible_v<Callback, CallbackT> &&
+             std::is_base_of_v<TokenParser, ParserType>);
 
   /** Move constructor. */
   SArray(SArray &&other) noexcept;
@@ -126,13 +128,10 @@ template <typename ParserT> SArray(ParserT &&) -> SArray<ParserT>;
 template <typename ParserT>
 template <typename CallbackT>
 SArray<ParserT>::SArray(ParserT &&parser, CallbackT on_finish)
+    requires(std::is_constructible_v<Callback, CallbackT> &&
+             std::is_base_of_v<TokenParser, ParserType>)
     : Array<ParserT>{std::forward<ParserT>(parser)},
-      _on_finish{std::move(on_finish)} {
-  static_assert(std::is_base_of_v<TokenParser, ParserType>,
-                "Invalid parser used in SArray");
-  static_assert(std::is_constructible_v<Callback, CallbackT>,
-                "Invalid callback type");
-}
+      _on_finish{std::move(on_finish)} {}
 
 template <typename ParserT>
 SArray<ParserT>::SArray(SArray &&other) noexcept

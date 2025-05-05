@@ -83,7 +83,8 @@ class Object : public KeyValueParser<std::string, ParserTs...> {
    */
   template <typename CallbackT = std::nullptr_t>
   Object(std::tuple<Member<std::string, ParserTs>...> members,
-         ObjectOptions options, CallbackT on_finish = nullptr);
+         ObjectOptions options, CallbackT on_finish = nullptr)
+    requires std::is_constructible_v<Callback, CallbackT>;
 
   /** Move constructor. */
   Object(Object &&other) noexcept;
@@ -164,10 +165,8 @@ template <typename CallbackT>
 Object<ParserTs...>::Object(
     std::tuple<Member<std::string, ParserTs>...> members, ObjectOptions options,
     CallbackT on_finish)
-    : KVParser{std::move(members), options}, _on_finish{std::move(on_finish)} {
-  static_assert(std::is_constructible_v<Callback, CallbackT>,
-                "Invalid callback type");
-}
+    requires std::is_constructible_v<Callback, CallbackT>
+    : KVParser{std::move(members), options}, _on_finish{std::move(on_finish)} {}
 
 template <typename... ParserTs>
 Object<ParserTs...>::Object(Object &&other) noexcept

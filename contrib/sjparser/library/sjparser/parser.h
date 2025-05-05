@@ -53,7 +53,8 @@ class Parser : public ImplHolder::type {
    * wrapper for it.
    */
   explicit Parser(ParserT &&parser,
-                  ImplHolder implementation = TypeHolder<YajlParser>{});
+                  ImplHolder implementation = TypeHolder<YajlParser>{})
+    requires(std::is_base_of_v<TokenParser, ParserType>);
 
   /** @brief Root parser getter.
    *
@@ -72,9 +73,9 @@ template <typename ParserT> Parser(ParserT &&) -> Parser<ParserT>;
 template <typename ParserT, typename ImplHolder>
 Parser<ParserT, ImplHolder>::Parser(ParserT &&parser,
                                     ImplHolder /*implementation*/)
+   requires(std::is_base_of_v<TokenParser, ParserType>)
     : _parser{std::forward<ParserT>(parser)} {
-  static_assert(std::is_base_of_v<TokenParser, ParserType>,
-                "Invalid parser used in Parser");
+
   this->setTokenParser(&_parser);
 }
 

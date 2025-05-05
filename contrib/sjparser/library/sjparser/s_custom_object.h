@@ -99,7 +99,8 @@ class SCustomObject : public Object<ParserTs...> {
   template <typename CallbackT = std::nullptr_t>
   SCustomObject(TypeHolder<ValueType> type,
                 std::tuple<Member<std::string, ParserTs>...> members,
-                ObjectOptions options, CallbackT on_finish = nullptr);
+                ObjectOptions options, CallbackT on_finish = nullptr)
+                requires std::is_constructible_v<Callback, CallbackT>;
 
   /** Move constructor. */
   SCustomObject(SCustomObject &&other) noexcept;
@@ -182,11 +183,9 @@ SCustomObject<TypeT, ParserTs...>::SCustomObject(
     TypeHolder<TypeT> /*type*/,
     std::tuple<Member<std::string, ParserTs>...> members, ObjectOptions options,
     CallbackT on_finish)
+    requires std::is_constructible_v<Callback, CallbackT>
     : Object<ParserTs...>{std::move(members), options},
-      _on_finish{std::move(on_finish)} {
-  static_assert(std::is_constructible_v<Callback, CallbackT>,
-                "Invalid callback type");
-}
+      _on_finish{std::move(on_finish)} {}
 
 template <typename TypeT, typename... ParserTs>
 SCustomObject<TypeT, ParserTs...>::SCustomObject(SCustomObject &&other) noexcept
