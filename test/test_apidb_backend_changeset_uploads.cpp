@@ -230,6 +230,17 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_nodes", "[changeset][upload
         Catch::Message("Placeholder IDs must be unique for created elements."));
   }
 
+  SECTION("Create node with positive old id")
+  {
+    api06::OSMChange_Tracking change_tracking{};
+    auto sel = tdb.get_data_selection();
+    auto upd = tdb.get_data_update();
+    auto node_updater = upd->get_node_updater(ctx, change_tracking);
+
+    REQUIRE_THROWS_MATCHES(node_updater->add_node(0, 0, 1, 2, {}), http::bad_request,
+        Catch::Message("Placeholder IDs must be negative for created elements."));
+  }
+
   SECTION("Change existing node")
   {
     api06::OSMChange_Tracking change_tracking{};
@@ -569,6 +580,23 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
     way_updater->add_way(1, -1, { -1, -2}, { {"highway", "path"}});
     REQUIRE_THROWS_MATCHES(way_updater->process_new_ways(), http::bad_request,
         Catch::Message("Placeholder node not found for reference -1 in way -1"));
+  }
+
+  SECTION("Create way with positive old id")
+  {
+    api06::OSMChange_Tracking change_tracking{};
+    auto sel = tdb.get_data_selection();
+    auto upd = tdb.get_data_update();
+    auto node_updater = upd->get_node_updater(ctx, change_tracking);
+    auto way_updater = upd->get_way_updater(ctx, change_tracking);
+
+    node_updater->add_node(0, 0 , 1, -1, {});
+    node_updater->add_node(10, 20 , 1, -2, {});
+    node_updater->process_new_nodes();
+
+    REQUIRE_THROWS_MATCHES(way_updater->add_way(1, 1234, { -1,  -2}, { {"highway", "path"}}),
+        http::bad_request,
+        Catch::Message("Placeholder IDs must be negative for created elements."));
   }
 
   SECTION("Change existing way")
@@ -1075,6 +1103,17 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
     rel_updater->add_relation(1, -1, {}, {{"key", "value"}});
     REQUIRE_THROWS_MATCHES(rel_updater->process_new_relations(), http::bad_request,
         Catch::Message("Placeholder IDs must be unique for created elements."));
+  }
+
+  SECTION("Create relation with positive old id")
+  {
+    api06::OSMChange_Tracking change_tracking{};
+    auto sel = tdb.get_data_selection();
+    auto upd = tdb.get_data_update();
+    auto rel_updater = upd->get_relation_updater(ctx, change_tracking);
+
+    REQUIRE_THROWS_MATCHES(rel_updater->add_relation(1, 1234, {}, {}), http::bad_request,
+       Catch::Message("Placeholder IDs must be negative for created elements."));
   }
 
   SECTION("Create one relation with self reference")

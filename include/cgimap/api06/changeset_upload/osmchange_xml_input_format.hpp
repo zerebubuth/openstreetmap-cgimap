@@ -107,16 +107,16 @@ protected:
     case context::in_modify:
 
       if (element == "node") {
-        m_node.reset(new Node{});
+        m_node = std::make_unique<Node>();
         init_object(*m_node, attrs);
         init_node(*m_node, attrs);
         m_context.push_back(context::node);
       } else if (element == "way") {
-        m_way.reset(new Way{});
+        m_way = std::make_unique<Way>();
         init_object(*m_way, attrs);
         m_context.push_back(context::way);
       } else if (element == "relation") {
-        m_relation.reset(new Relation{});
+        m_relation = std::make_unique<Relation>();
         init_object(*m_relation, attrs);
         m_context.push_back(context::relation);
       } else {
@@ -222,7 +222,7 @@ protected:
         };
       }
       m_callback.process_node(*m_node, m_operation, m_if_unused);
-      m_node.reset(new Node{});
+      m_node = std::make_unique<Node>();
       m_context.pop_back();
       break;
     case context::way:
@@ -235,7 +235,7 @@ protected:
       }
 
       m_callback.process_way(*m_way, m_operation, m_if_unused);
-      m_way.reset(new Way{});
+      m_way = std::make_unique<Way>();
       m_context.pop_back();
       break;
     case context::relation:
@@ -247,7 +247,7 @@ protected:
         };
       }
       m_callback.process_relation(*m_relation, m_operation, m_if_unused);
-      m_relation.reset(new Relation{});
+      m_relation = std::make_unique<Relation>();
       m_context.pop_back();
       break;
     case context::in_object:

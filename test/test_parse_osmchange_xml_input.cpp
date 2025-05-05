@@ -174,6 +174,10 @@ TEST_CASE("Create node, redefined lat attribute", "[osmchange][node][xml]") {
   REQUIRE_THROWS_AS(process_testmsg(R"(<osmChange><create><node changeset="858" id="-1" lat="-90.00" lon="-180.00" lat="20"/></create></osmChange>)"), http::bad_request);
 }
 
+TEST_CASE("Create node, positive placeholder id", "[osmchange][node][xml]") {
+  REQUIRE_THROWS_AS(process_testmsg(R"(<osmChange><create><node changeset="858" id="1234" lat="-90.00" lon="-180.00" lat="20"/></create></osmChange>)"), http::bad_request);
+}
+
 TEST_CASE("Create valid node", "[osmchange][node][xml]") {
   auto i = GENERATE(R"(<osmChange><create><node changeset="858" id="-1" lat="90.00" lon="180.00"/></create></osmChange>)",
                     R"(<osmChange><create><node changeset="858" id="-1" lat="-90.00" lon="-180.00"/></create></osmChange>)");
@@ -438,6 +442,11 @@ TEST_CASE("Create way, node ref missing", "[osmchange][way][xml]") {
     R"(<osmChange><create><way changeset="858" id="-1"><nd ref="1"/><nd /><tag k="key" v="value"/></way></create></osmChange>)"), http::bad_request);
 }
 
+TEST_CASE("Create way, positive placeholder id", "[osmchange][way][xml]") {
+  REQUIRE_THROWS_AS(process_testmsg(
+    R"(<osmChange><create><way changeset="858" id="1234"><nd ref="-1"/><tag k="key" v="value"/></way></create></osmChange>)"), http::bad_request);
+}
+
 TEST_CASE("Delete way, no version", "[osmchange][way][xml]") {
   REQUIRE_THROWS_AS(process_testmsg(
     R"(<osmChange><delete><way changeset="858" id="-1"/></delete></osmChange>)"),
@@ -466,6 +475,11 @@ TEST_CASE("Delete way", "[osmchange][way][xml]") {
 TEST_CASE("Create relation, id missing", "[osmchange][relation][xml]") {
   REQUIRE_THROWS_AS(process_testmsg(
     R"(<osmChange><create><relation changeset="972"><member type="node" ref="1" role="stop"/></relation></create></osmChange>)"), http::bad_request);
+}
+
+TEST_CASE("Create relation, positive placeholder id", "[osmchange][relation][xml]") {
+  REQUIRE_THROWS_AS(process_testmsg(
+    R"(<osmChange><create><relation changeset="972" id="1234"><member type="node" ref="1" role="stop"/></relation></create></osmChange>)"), http::bad_request);
 }
 
 TEST_CASE("Create relation, member ref missing", "[osmchange][relation][xml]") {

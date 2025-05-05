@@ -25,9 +25,9 @@ public:
 
   ~Node() override = default;
 
-  double lat() const { return *m_lat; }
+  [[nodiscard]] double lat() const { return *m_lat; }
 
-  double lon() const { return *m_lon; }
+  [[nodiscard]] double lon() const { return *m_lon; }
 
   void set_lat(const std::string &lat) {
 
@@ -106,15 +106,15 @@ public:
     m_lon = lon;
   }
 
-  bool is_valid(operation op) const {
+  [[nodiscard]] bool is_valid(operation op) const override {
 
     if (op == operation::op_delete)
-      return (is_valid());
+      return (OSMObject::is_valid(op));
 
-    return (is_valid() && m_lat && m_lon);
+    return (OSMObject::is_valid(op) && m_lat && m_lon);
   }
 
-  std::string get_type_name() const override { return "Node"; }
+  [[nodiscard]] std::string get_type_name() const override { return "Node"; }
 
   bool operator==(const Node &o) const {
     return (OSMObject::operator==(o) &&
@@ -125,7 +125,6 @@ public:
 private:
   std::optional<double> m_lat;
   std::optional<double> m_lon;
-  using OSMObject::is_valid;
 };
 
 } // namespace api06

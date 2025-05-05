@@ -38,6 +38,10 @@ void ApiDB_Way_Updater::add_way(osm_changeset_id_t changeset_id,
                                 const api06::WayNodeList &nodes,
                                 const api06::TagList &tags) {
 
+  if (old_id >= 0) {
+    throw http::bad_request("Placeholder IDs must be negative for created elements.");
+  }
+
   way_t new_way{
     .version = 1,
     .changeset_id = changeset_id,

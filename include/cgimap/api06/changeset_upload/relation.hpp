@@ -79,7 +79,7 @@ public:
       throw payload_error("Unexpected parsing error");
   }
 
-  bool is_valid() const {
+  [[nodiscard]] bool is_valid() const {
 
     if (!m_type)
       throw payload_error("Missing 'type' attribute in Relation member");
@@ -90,11 +90,11 @@ public:
     return (m_ref && m_type);
   }
 
-  std::string type() const { return *m_type; }
+  [[nodiscard]] std::string type() const { return *m_type; }
 
-  std::string role() const { return m_role; }
+  [[nodiscard]] std::string role() const { return m_role; }
 
-  osm_nwr_signed_id_t ref() const { return *m_ref; }
+  [[nodiscard]] osm_nwr_signed_id_t ref() const { return *m_ref; }
 
   bool operator==(const RelationMember &o) const = default;
 
@@ -110,11 +110,6 @@ public:
 
   ~Relation() override = default;
 
-  void add_members(std::vector<RelationMember>&& members) {
-    for (auto& mbr : members)
-      add_member(mbr);
-  }
-
   void add_member(RelationMember &member) {
     if (!member.is_valid())
       throw payload_error(
@@ -122,16 +117,16 @@ public:
     m_relation_member.emplace_back(member);
   }
 
-  const std::vector<RelationMember> &members() const {
+  [[nodiscard]] const std::vector<RelationMember> &members() const {
     return m_relation_member;
   }
 
-  std::string get_type_name() const override { return "Relation"; }
+  [[nodiscard]] std::string get_type_name() const override { return "Relation"; }
 
-  bool is_valid(operation op) const {
+  [[nodiscard]] bool is_valid(operation op) const override {
 
     if (op == operation::op_delete)
-      return (is_valid());
+      return (OSMObject::is_valid(op));
 
     auto max_members = global_settings::get_relation_max_members();
 
@@ -143,7 +138,7 @@ public:
                       *max_members));
     }
 
-    return (is_valid());
+    return (OSMObject::is_valid(op));
   }
 
   bool operator==(const Relation &o) const {
@@ -153,7 +148,6 @@ public:
 
 private:
   std::vector<RelationMember> m_relation_member;
-  using OSMObject::is_valid;
 };
 
 } // namespace api06

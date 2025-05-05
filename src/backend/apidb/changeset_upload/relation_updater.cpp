@@ -36,6 +36,10 @@ void ApiDB_Relation_Updater::add_relation(osm_changeset_id_t changeset_id,
                                           const RelationMemberList &members,
                                           const TagList &tags) {
 
+  if (old_id >= 0) {
+    throw http::bad_request("Placeholder IDs must be negative for created elements.");
+  }
+
   relation_t new_relation{
     .version = 1,
     .changeset_id = changeset_id,

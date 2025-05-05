@@ -42,6 +42,10 @@ void ApiDB_Node_Updater::add_node(double lat, double lon,
                                   osm_nwr_signed_id_t old_id,
                                   const api06::TagList &tags) {
 
+  if (old_id >= 0) {
+    throw http::bad_request("Placeholder IDs must be negative for created elements.");
+  }
+
   node_t new_node{ .version = 1,
                    .lat = static_cast<int64_t>(round(lat * global_settings::get_scale())),
                    .lon = static_cast<int64_t>(round(lon * global_settings::get_scale())),
