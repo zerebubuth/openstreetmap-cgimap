@@ -52,7 +52,7 @@ public:
 
   void process_delete_relations() override;
 
-  unsigned int get_num_changes() const override;
+  changeset_upload_stats::element_stats get_stats() const override;
 
   bbox_t bbox() const override;
 

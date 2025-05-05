@@ -39,7 +39,7 @@ void OSMChange_Handler::check_osm_object(const OSMObject &o) const {
          o.changeset(), changeset));
 }
 
-void OSMChange_Handler::process_node(const Node &node, 
+void OSMChange_Handler::process_node(const Node &node,
                                      operation op,
                                      bool if_unused) {
 
@@ -102,7 +102,7 @@ void OSMChange_Handler::process_way(const Way &way, operation op,
   }
 }
 
-void OSMChange_Handler::process_relation(const Relation &relation, 
+void OSMChange_Handler::process_relation(const Relation &relation,
                                          operation op,
                                          bool if_unused) {
 
@@ -139,10 +139,10 @@ void OSMChange_Handler::finish_processing() {
   handle_new_state(state::st_finished);
 }
 
-uint32_t OSMChange_Handler::get_num_changes() const {
-  return (node_updater.get_num_changes() + 
-          way_updater.get_num_changes() +
-          relation_updater.get_num_changes());
+changeset_upload_stats OSMChange_Handler::get_stats() const {
+  return {node_updater.get_stats(),
+          way_updater.get_stats(),
+          relation_updater.get_stats()};
 }
 
 bbox_t OSMChange_Handler::get_bbox() const {

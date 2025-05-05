@@ -34,7 +34,7 @@ changeset_upload_responder::changeset_upload_responder(mime::type mt,
                                                        const std::string &payload,
                                                        const RequestContext& req_ctx)
     : osm_diffresult_responder(mt) {
-  
+
   if (!req_ctx.user.has_value())
   {
     throw http::server_error("Cannot upload to changeset - no user id");
@@ -59,7 +59,7 @@ changeset_upload_responder::changeset_upload_responder(mime::type mt,
   // store diffresult for output handling in class osm_diffresult_responder
   m_diffresult = change_tracking.assemble_diffresult();
 
-  const auto new_changes = handler.get_num_changes();
+  const auto new_changes = handler.get_stats().get_total();
 
   if (global_settings::get_ratelimiter_upload()) {
 
@@ -74,7 +74,7 @@ changeset_upload_responder::changeset_upload_responder(mime::type mt,
     }
   }
 
-  changeset_updater->update_changeset(new_changes, handler.get_bbox());
+  changeset_updater->update_changeset(handler.get_stats(), handler.get_bbox());
 
   if (global_settings::get_bbox_size_limiter_upload()) {
 
@@ -114,8 +114,8 @@ responder_ptr_t changeset_upload_handler::responder(data_selection &) const {
       "changeset_upload_handler: data_selection unsupported");
 }
 
-responder_ptr_t changeset_upload_handler::responder(data_update & upd, 
-                                                    const std::string &payload, 
+responder_ptr_t changeset_upload_handler::responder(data_update & upd,
+                                                    const std::string &payload,
                                                     const RequestContext& req_ctx) const {
   return std::make_unique<changeset_upload_responder>(mime_type, upd, id, payload, req_ctx);
 }

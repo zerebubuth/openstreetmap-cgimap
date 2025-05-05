@@ -972,9 +972,10 @@ void ApiDB_Node_Updater::delete_current_node_tags(
   auto r = m.exec_prepared("delete_current_node_tags", ids);
 }
 
-uint32_t ApiDB_Node_Updater::get_num_changes() const {
-  return (ct.created_node_ids.size() + ct.modified_node_ids.size() +
-          ct.deleted_node_ids.size());
+changeset_upload_stats::element_stats ApiDB_Node_Updater::get_stats() const {
+  return {ct.created_node_ids.size(),
+          ct.modified_node_ids.size(),
+          ct.deleted_node_ids.size()};
 }
 
 bbox_t ApiDB_Node_Updater::bbox() const { return m_bbox; }
