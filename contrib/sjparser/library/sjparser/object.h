@@ -108,23 +108,15 @@ class Object : public KeyValueParser<std::string, ParserTs...> {
   void setFinishCallback(Callback on_finish);
 
  protected:
-  /** @cond INTERNAL */
-  template <size_t, typename...> struct MemberChecker {
-    explicit MemberChecker(Object<ParserTs...> & /*parser*/) {}
-  };
-
-  template <size_t n, typename ParserT, typename... ParserTDs>
-  struct MemberChecker<n, ParserT, ParserTDs...>
-      : private MemberChecker<n + 1, ParserTDs...> {
-    explicit MemberChecker(Object<ParserTs...> &parser);
-  };
-  /** @endcond */
+  void checkMember();
 
  private:
   using KVParser::on;
   void on(MapKeyT key) override;
 
   void finish() override;
+
+  void checkMember(const auto& member);
 
   Callback _on_finish;
 };
@@ -196,7 +188,7 @@ template <typename... ParserTs> void Object<ParserTs...>::finish() {
   }
 
   try {
-    MemberChecker<0, ParserTs...>(*this);
+    checkMember();
   } catch (std::exception &) {
     TokenParser::unset();
     throw;
@@ -207,12 +199,14 @@ template <typename... ParserTs> void Object<ParserTs...>::finish() {
   }
 }
 
-template <typename... ParserTs>
-template <size_t n, typename ParserT, typename... ParserTDs>
-Object<ParserTs...>::MemberChecker<n, ParserT, ParserTDs...>::MemberChecker(
-    Object<ParserTs...> &parser)
-    : MemberChecker<n + 1, ParserTDs...>{parser} {
-  auto &member = parser.memberParsers().template get<n>();
+template <typename... ParserTs> void Object<ParserTs...>::checkMember() {
+  std::apply([&](auto &&...member) {
+    (checkMember(member), ...);
+  }, this->memberParsers().parsers());
+}
+
+template <typename... ParserTs> void Object<ParserTs...>::checkMember(const auto& mbr) {
+  auto &member = mbr;
 
   if (!member.parser.isSet() && !member.optional) {
     throw std::runtime_error("Mandatory member " + member.name

@@ -125,6 +125,8 @@ class KeyValueParser : public TokenParser {
       return std::get<n>(mbr_parsers);
     }
 
+    [[nodiscard]] auto &parsers() const { return mbr_parsers; }
+
     void registerParsers(ParsersMapType &parsers_map);
 
    private:
