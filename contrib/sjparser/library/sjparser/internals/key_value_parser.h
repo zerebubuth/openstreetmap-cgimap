@@ -229,9 +229,9 @@ void KeyValueParser<NameT, ParserTs...>::onMember(TokenType<NameT> member) {
   }
 
   if (_options.unknown_member == Reaction::Error) {
-    std::stringstream error;
-    error << "Unexpected member " << member;
-    throw std::runtime_error(error.str());
+    std::string error{"Unexpected member "};
+    error.append(member);
+    throw std::runtime_error(error);
   }
 
   dispatcher()->pushParser(&_ignore_parser);
@@ -315,9 +315,8 @@ template <typename NameT, typename... ParserTs>
 void KeyValueParser<NameT, ParserTs...>::MemberParsers::check_duplicate(
     bool inserted, NameT &name) const {
   if (!inserted) {
-    std::stringstream error;
-    error << "Member " << name << " appears more than once";
-    throw std::runtime_error(error.str());
+    std::string error{"Member " + name + " appears more than once"};
+    throw std::runtime_error(error);
   }
 }
 

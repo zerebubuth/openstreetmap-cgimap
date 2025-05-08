@@ -26,16 +26,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 namespace SJParser {
 
 template <typename ValueT>
-OptionalValue<ValueT>::OptionalValue(Callback on_finish) : _on_finish{std::move(on_finish)} {
-  // Formatting disabled because of a bug in clang-format
-  // clang-format off
-  if constexpr (std::is_same_v<ValueT, int64_t>
-                || std::is_same_v<ValueT, bool>
-                || std::is_same_v<ValueT, double>) {
-    _value = 0;
-  }
-  // clang-format on
-}
+OptionalValue<ValueT>::OptionalValue(Callback on_finish) : _on_finish{std::move(on_finish)} {}
 
 template <typename ValueT>
 OptionalValue<ValueT>::OptionalValue(OptionalValue &&other) noexcept
@@ -79,13 +70,10 @@ template <typename ValueT> void OptionalValue<ValueT>::finish() {
 }
 
 template <typename ValueT> const OptionalValue<ValueT>::ValueType &OptionalValue<ValueT>::get() const {
-  // checkSet();
   return _value;
 }
 
 template <typename ValueT> OptionalValue<ValueT>::ValueType &&OptionalValue<ValueT>::pop() {
-  // TODO: CHECK
-  checkSet();
   unset();
   return std::move(_value);
 }
