@@ -69,11 +69,11 @@ template <typename ValueT> void OptionalValue<ValueT>::finish() {
   }
 }
 
-template <typename ValueT> const OptionalValue<ValueT>::ValueType &OptionalValue<ValueT>::get() const {
+template <typename ValueT> const typename OptionalValue<ValueT>::ValueType &OptionalValue<ValueT>::get() const {
   return _value;
 }
 
-template <typename ValueT> OptionalValue<ValueT>::ValueType &&OptionalValue<ValueT>::pop() {
+template <typename ValueT> typename OptionalValue<ValueT>::ValueType &&OptionalValue<ValueT>::pop() {
   unset();
   return std::move(_value);
 }
