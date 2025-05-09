@@ -25,6 +25,8 @@ List of changes to sjparser:
 * Replaced stringstream by string operations
 * Removed checkTemplateParameters(), now checked by c++20 ValidNameType concept
 * Replaced MemberChecked recursive TMP by std::apply and checkMember method
+* Replaced ValueSetter recursive TMP
+
 
 
 

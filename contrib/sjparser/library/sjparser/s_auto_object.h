@@ -137,15 +137,10 @@ template <typename... ParserTs> class SAutoObject : public Object<ParserTs...> {
   using Object<ParserTs...>::get;
   using Object<ParserTs...>::pop;
 
-  template <size_t, typename...> struct ValueSetter {
-    ValueSetter(ValueType & /*value*/, SAutoObject<ParserTs...> & /*parser*/) {}
-  };
+  void valueSetter(ValueType& _value);
 
-  template <size_t n, typename ParserT, typename... ParserTDs>
-  struct ValueSetter<n, ParserT, ParserTDs...>
-      : private ValueSetter<n + 1, ParserTDs...> {
-    ValueSetter(ValueType &value, SAutoObject<ParserTs...> &parser);
-  };
+  template <size_t n>
+  void valueSetter(ValueType& _value, auto& parser);
 
   ValueType _value;
   Callback _on_finish;
@@ -211,7 +206,7 @@ template <typename... ParserTs> void SAutoObject<ParserTs...>::finish() {
   }
 
   try {
-    ValueSetter<0, ParserTs...>(_value, *this);
+    valueSetter(_value);
   } catch (std::exception &e) {
     TokenParser::unset();
     throw std::runtime_error(std::string("Can not set value: ") + e.what());
@@ -231,12 +226,18 @@ template <typename... ParserTs> void SAutoObject<ParserTs...>::reset() {
 }
 
 template <typename... ParserTs>
-template <size_t n, typename ParserT, typename... ParserTDs>
-SAutoObject<ParserTs...>::ValueSetter<n, ParserT, ParserTDs...>::ValueSetter(
-    ValueType &value, SAutoObject<ParserTs...> &parser)
-    : ValueSetter<n + 1, ParserTDs...>{value, parser} {
-  auto &member = parser.memberParsers().template get<n>();
+void SAutoObject<ParserTs...>::valueSetter(ValueType &value) {
+  auto &parsers = this->memberParsers().parsers();
+  [&]<std::size_t... Indices>(std::index_sequence<Indices...>) {
+    std::apply(
+        [&](auto &&...member) { ((valueSetter<Indices>(value, member)), ...); },
+        parsers);
+  }(std::index_sequence_for<ParserTs...>{});
+}
 
+template <typename... ParserTs>
+template <size_t n>
+void SAutoObject<ParserTs...>::valueSetter(ValueType &value, auto &member) {
   if (member.parser.isSet()) {
     std::get<n>(value) = member.parser.pop();
   } else if (member.optional) {
