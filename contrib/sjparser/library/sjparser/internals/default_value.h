@@ -27,10 +27,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace SJParser {
 
-template <typename ParserT, typename = std::void_t<>> struct DefaultValue {};
-
 template <typename ParserT>
-struct DefaultValue<ParserT, ValueTypeTest<ParserT>> {
-  std::optional<typename std::decay_t<ParserT>::ValueType> value;
+struct DefaultValue{};
+
+template <HasValueType ParserT>
+struct DefaultValue<ParserT> {
+    std::optional<typename std::decay_t<ParserT>::ValueType> value;
 };
+
 }  // namespace SJParser
