@@ -27,6 +27,8 @@ List of changes to sjparser:
 * Replaced MemberChecked recursive TMP by std::apply and checkMember method
 * Replaced ValueSetter recursive TMP
 * Remove support for structured binding and special std::tuple_size/std::tuple_element implementations
+* Member name as string_view
+
 
 
 

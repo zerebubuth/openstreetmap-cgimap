@@ -226,8 +226,8 @@ TEST(Object, ObjectWithCallbackError) {
 TEST(Object, StdStringiMemberNames) {
   std::string buf(R"({"string": "value", "integer": 10})");
 
-  std::string string_name = "string";
-  std::string integer_name = "integer";
+  std::string_view string_name = "string";
+  std::string_view integer_name = "integer";
 
   Parser parser{Object{std::tuple{Member{string_name, Value<std::string>{}},
                                   Member{integer_name, Value<int64_t>{}}}}};

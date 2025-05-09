@@ -61,7 +61,7 @@ template <typename... ParserTs> class SAutoObject : public Object<ParserTs...> {
    */
   template <typename CallbackT = std::nullptr_t>
   explicit SAutoObject(
-      std::tuple<Member<std::string, ParserTs>...> members,
+      std::tuple<Member<std::string_view, ParserTs>...> members,
       CallbackT on_finish = nullptr)
       requires std::is_constructible_v<Callback, CallbackT>;
 
@@ -78,7 +78,7 @@ template <typename... ParserTs> class SAutoObject : public Object<ParserTs...> {
    * If the callback returns false, parsing will be stopped with an error.
    */
   template <typename CallbackT = std::nullptr_t>
-  SAutoObject(std::tuple<Member<std::string, ParserTs>...> members,
+  SAutoObject(std::tuple<Member<std::string_view, ParserTs>...> members,
               ObjectOptions options, CallbackT on_finish = nullptr)
               requires std::is_constructible_v<Callback, CallbackT>;
 
@@ -151,14 +151,14 @@ template <typename... ParserTs> class SAutoObject : public Object<ParserTs...> {
 template <typename... ParserTs>
 template <typename CallbackT>
 SAutoObject<ParserTs...>::SAutoObject(
-    std::tuple<Member<std::string, ParserTs>...> members, CallbackT on_finish)
+    std::tuple<Member<std::string_view, ParserTs>...> members, CallbackT on_finish)
     requires std::is_constructible_v<Callback, CallbackT>
     : SAutoObject{std::move(members), ObjectOptions{}, std::move(on_finish)} {}
 
 template <typename... ParserTs>
 template <typename CallbackT>
 SAutoObject<ParserTs...>::SAutoObject(
-    std::tuple<Member<std::string, ParserTs>...> members, ObjectOptions options,
+    std::tuple<Member<std::string_view, ParserTs>...> members, ObjectOptions options,
     CallbackT on_finish)
     requires std::is_constructible_v<Callback, CallbackT>
     : Object<ParserTs...>{std::move(members), options},
@@ -242,12 +242,12 @@ void SAutoObject<ParserTs...>::valueSetter(ValueType &value, auto &member) {
     std::get<n>(value) = member.parser.pop();
   } else if (member.optional) {
     if (!member.default_value.value) {
-      throw std::runtime_error("Optional member " + member.name
+      throw std::runtime_error("Optional member " + std::string(member.name)
                                + " does not have a default value");
     }
     std::get<n>(value) = *member.default_value.value;
   } else {
-    throw std::runtime_error("Mandatory member " + member.name
+    throw std::runtime_error("Mandatory member " + std::string(member.name)
                              + " is not present");
   }
 }

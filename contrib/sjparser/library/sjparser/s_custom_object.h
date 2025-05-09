@@ -77,7 +77,7 @@ class SCustomObject : public Object<ParserTs...> {
    */
   template <typename CallbackT = std::nullptr_t>
   SCustomObject(TypeHolder<ValueType> type,
-                std::tuple<Member<std::string, ParserTs>...> members,
+                std::tuple<Member<std::string_view, ParserTs>...> members,
                 CallbackT on_finish = nullptr)
         requires std::is_constructible_v<Callback, CallbackT>;
 
@@ -98,7 +98,7 @@ class SCustomObject : public Object<ParserTs...> {
    */
   template <typename CallbackT = std::nullptr_t>
   SCustomObject(TypeHolder<ValueType> type,
-                std::tuple<Member<std::string, ParserTs>...> members,
+                std::tuple<Member<std::string_view, ParserTs>...> members,
                 ObjectOptions options, CallbackT on_finish = nullptr)
                 requires std::is_constructible_v<Callback, CallbackT>;
 
@@ -172,7 +172,7 @@ template <typename TypeT, typename... ParserTs>
 template <typename CallbackT>
 SCustomObject<TypeT, ParserTs...>::SCustomObject(
     TypeHolder<TypeT> type,
-    std::tuple<Member<std::string, ParserTs>...> members, CallbackT on_finish)
+    std::tuple<Member<std::string_view, ParserTs>...> members, CallbackT on_finish)
       requires std::is_constructible_v<Callback, CallbackT>
     : SCustomObject{type, std::move(members), ObjectOptions{},
                     std::move(on_finish)} {}
@@ -181,7 +181,7 @@ template <typename TypeT, typename... ParserTs>
 template <typename CallbackT>
 SCustomObject<TypeT, ParserTs...>::SCustomObject(
     TypeHolder<TypeT> /*type*/,
-    std::tuple<Member<std::string, ParserTs>...> members, ObjectOptions options,
+    std::tuple<Member<std::string_view, ParserTs>...> members, ObjectOptions options,
     CallbackT on_finish)
     requires std::is_constructible_v<Callback, CallbackT>
     : Object<ParserTs...>{std::move(members), options},

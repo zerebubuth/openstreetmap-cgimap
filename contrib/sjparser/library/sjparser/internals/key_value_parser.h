@@ -317,7 +317,7 @@ template <typename NameT, typename... ParserTs>
 void KeyValueParser<NameT, ParserTs...>::MemberParsers::check_duplicate(
     bool inserted, NameT &name) const {
   if (!inserted) {
-    std::string error{"Member " + name + " appears more than once"};
+    std::string error{"Member " + std::string(name) + " appears more than once"};
     throw std::runtime_error(error);
   }
 }

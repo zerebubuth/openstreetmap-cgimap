@@ -41,7 +41,7 @@ template <typename NameT>
 concept ValidNameType = std::is_same_v<NameT, int64_t> ||
             std::is_same_v<NameT, bool> ||
             std::is_same_v<NameT, double> ||
-            std::is_same_v<NameT, std::string>;
+            std::is_same_v<NameT, std::string_view>;
 
 template <typename ParserT>
 concept ValidParserType = std::is_base_of_v<TokenParser, std::decay_t<ParserT>>;
@@ -119,7 +119,7 @@ template <ValidNameType NameT, ValidParserType ParserT> struct Member {
 };
 
 template <typename ParserT>
-Member(const char *, ParserT &&) -> Member<std::string, ParserT>;
+Member(const char *, ParserT &&) -> Member<std::string_view, ParserT>;
 
 template <typename ParserT> Member(int, ParserT &&) -> Member<int64_t, ParserT>;
 
@@ -130,7 +130,7 @@ template <typename NameT, typename ParserT>
 Member(NameT, ParserT &&) -> Member<NameT, ParserT>;
 
 template <typename ParserT>
-Member(const char *, ParserT &&, Presence) -> Member<std::string, ParserT>;
+Member(const char *, ParserT &&, Presence) -> Member<std::string_view, ParserT>;
 
 template <typename ParserT>
 Member(int, ParserT &&, Presence) -> Member<int64_t, ParserT>;
@@ -143,7 +143,7 @@ Member(NameT, ParserT &&, Presence) -> Member<NameT, ParserT>;
 
 template <typename ParserT, typename ValueT>
 Member(const char *, ParserT &&, Presence, ValueT)
-    -> Member<std::string, ParserT>;
+    -> Member<std::string_view, ParserT>;
 
 template <typename ParserT, typename ValueT>
 Member(int, ParserT &&, Presence, ValueT) -> Member<int64_t, ParserT>;
