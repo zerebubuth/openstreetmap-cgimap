@@ -26,6 +26,7 @@ List of changes to sjparser:
 * Removed checkTemplateParameters(), now checked by c++20 ValidNameType concept
 * Replaced MemberChecked recursive TMP by std::apply and checkMember method
 * Replaced ValueSetter recursive TMP
+* Remove support for structured binding and special std::tuple_size/std::tuple_element implementations
 
 
 

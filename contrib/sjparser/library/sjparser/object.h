@@ -123,24 +123,6 @@ class Object : public KeyValueParser<std::string, ParserTs...> {
 
 }  // namespace SJParser
 
-namespace std {
-
-/* clang-tidy cert-dcl58-cpp is complaining about these specializations, but
- * they are completely legal according to the standard.
- */
-
-template <typename... ParserTs>
-struct tuple_size<SJParser::Object<ParserTs...>>  // NOLINT
-    : std::integral_constant<std::size_t, sizeof...(ParserTs)> {};
-
-template <std::size_t n, typename... ParserTs>
-struct tuple_element<n, SJParser::Object<ParserTs...>> {  // NOLINT
-  using type =
-      decltype(std::declval<SJParser::Object<ParserTs...>>().template get<n>());
-};
-
-}  // namespace std
-
 namespace SJParser {
 
 /****************************** Implementations *******************************/
