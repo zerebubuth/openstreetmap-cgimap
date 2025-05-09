@@ -17,6 +17,14 @@ List of changes to sjparser:
 * Typo fixes
 * Removed union.h and s_union.h, as well as standalone/embedded (s_)union test cases (not relevant)
 * Removed doxygen & documentation directory (see original repo for documentation)
+* Changed compile target to c++20
+* Introduced new OptionalValue, to store value as std::optional
+* Replaced static_asserts by c++20 requires clause
+* Changed ValueType checker to c++20 requires
+* Changed ParsersMapType to std::map in key value parser
+* Replaced stringstream by string operations
+* Removed checkTemplateParameters(), now checked by c++20 ValidNameType concept
+* Replaced MemberChecked recursive TMP by std::apply and checkMember method
 
 
 
