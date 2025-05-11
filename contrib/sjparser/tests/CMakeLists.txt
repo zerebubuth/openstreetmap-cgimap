@@ -15,6 +15,7 @@ add_executable(sjparser_tests
   src/ignore.cpp
   src/parser.cpp
   src/member.cpp
+  src/optional_value.cpp
 )
 set_property(TARGET sjparser_tests PROPERTY SJPARSER_HEADERS
   src/test_parser.h
