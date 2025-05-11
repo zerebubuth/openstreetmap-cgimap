@@ -65,7 +65,7 @@ class Object : public KeyValueParser<std::string_view, ParserTs...> {
    * If the callback returns false, parsing will be stopped with an error.
    */
   template <typename CallbackT = std::nullptr_t>
-  explicit Object(std::tuple<Member<std::string_view, ParserTs>...> members,
+  explicit Object(std::tuple<Member<std::string_view, ParserTs>...> &&members,
                   CallbackT on_finish = nullptr)
     requires std::is_constructible_v<Callback, CallbackT>;
 
@@ -82,7 +82,7 @@ class Object : public KeyValueParser<std::string_view, ParserTs...> {
    * If the callback returns false, parsing will be stopped with an error.
    */
   template <typename CallbackT = std::nullptr_t>
-  Object(std::tuple<Member<std::string_view, ParserTs>...> members,
+  Object(std::tuple<Member<std::string_view, ParserTs>...> &&members,
          ObjectOptions options, CallbackT on_finish = nullptr)
     requires std::is_constructible_v<Callback, CallbackT>;
 
@@ -130,17 +130,17 @@ namespace SJParser {
 template <typename... ParserTs>
 template <typename CallbackT>
 Object<ParserTs...>::Object(
-    std::tuple<Member<std::string_view, ParserTs>...> members, CallbackT on_finish)
+    std::tuple<Member<std::string_view, ParserTs>...> && members, CallbackT on_finish)
     requires std::is_constructible_v<Callback, CallbackT>
-    : Object{std::move(members), ObjectOptions{}, std::move(on_finish)} {}
+    : Object{std::forward<std::tuple<Member<std::string_view, ParserTs>...>>(members), ObjectOptions{}, std::move(on_finish)} {}
 
 template <typename... ParserTs>
 template <typename CallbackT>
 Object<ParserTs...>::Object(
-    std::tuple<Member<std::string_view, ParserTs>...> members, ObjectOptions options,
+    std::tuple<Member<std::string_view, ParserTs>...> && members, ObjectOptions options,
     CallbackT on_finish)
     requires std::is_constructible_v<Callback, CallbackT>
-    : KVParser{std::move(members), options}, _on_finish{std::move(on_finish)} {}
+    : KVParser{std::forward<std::tuple<Member<std::string_view, ParserTs>...>>(members), options}, _on_finish{std::move(on_finish)} {}
 
 template <typename... ParserTs>
 Object<ParserTs...>::Object(Object &&other) noexcept

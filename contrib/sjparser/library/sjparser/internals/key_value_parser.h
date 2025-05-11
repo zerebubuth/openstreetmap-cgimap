@@ -44,7 +44,7 @@ class KeyValueParser : public TokenParser {
  public:
   using InternalNameType = TokenType<NameT>;
 
-  explicit KeyValueParser(std::tuple<Member<NameT, ParserTs>...> members,
+  explicit KeyValueParser(std::tuple<Member<NameT, ParserTs>...> &&members,
                           ObjectOptions options = {});
 
   KeyValueParser(KeyValueParser &&other) noexcept;
@@ -116,8 +116,8 @@ class KeyValueParser : public TokenParser {
     MemberParsers &operator=(MemberParsers &&other) noexcept = default;
 
     MemberParsers(ParsersMapType &parsers_map,
-                  std::tuple<Member<NameT, ParserTs>...> &members)
-        : mbr_parsers(to_member_parser_tuple(members)) {
+                  std::tuple<Member<NameT, ParserTs>...> &&members)
+        : mbr_parsers(to_member_parser_tuple(std::forward<std::tuple<Member<NameT, ParserTs>...>>(members))) {
       registerParsers(parsers_map);
     }
 
@@ -137,10 +137,10 @@ class KeyValueParser : public TokenParser {
     void check_duplicate(bool inserted, NameT &name) const;
 
     [[nodiscard]] auto to_member_parser_tuple(
-        std::tuple<Member<NameT, ParserTs>...> &members) {
+        std::tuple<Member<NameT, ParserTs>...> &&members) {
       return (std::apply(
           [](auto &&...xs) {
-            return (std::tuple{MemberParser<ParserTs>(xs)...});
+            return (std::tuple{std::forward<MemberParser<ParserTs>>(MemberParser<ParserTs>(xs))...});
           },
           members));
     }
@@ -162,8 +162,8 @@ class KeyValueParser : public TokenParser {
 
 template <typename NameT, typename... ParserTs>
 KeyValueParser<NameT, ParserTs...>::KeyValueParser(
-    std::tuple<Member<NameT, ParserTs>...> members, ObjectOptions options)
-    : _member_parsers(_parsers_map, members), _options{options} {}
+    std::tuple<Member<NameT, ParserTs>...> &&members, ObjectOptions options)
+    : _member_parsers(_parsers_map, std::forward<std::tuple<Member<NameT, ParserTs>...>>(members)), _options{options} {}
 
 template <typename NameT, typename... ParserTs>
 KeyValueParser<NameT, ParserTs...>::KeyValueParser(
