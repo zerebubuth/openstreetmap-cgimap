@@ -242,10 +242,11 @@ void SAutoObject<ParserTs...>::valueSetter(ValueType &value, auto &member) {
     std::get<n>(value) = member.parser.pop();
   } else if (member.optional) {
     if (!member.default_value.value) {
-      throw std::runtime_error("Optional member " + std::string(member.name)
-                               + " does not have a default value");
+      // SAutoObject call fall back to the default initializer
+      std::get<n>(value) = typename std::decay_t<decltype(member.parser)>::ValueType{};
+    } else {
+      std::get<n>(value) = *member.default_value.value;
     }
-    std::get<n>(value) = *member.default_value.value;
   } else {
     throw std::runtime_error("Mandatory member " + std::string(member.name)
                              + " is not present");
