@@ -391,33 +391,24 @@ TEST(SAutoObject, MissingMember) {
   }
 }
 
+
 TEST(SAutoObject, OptionalMember) {
+  // For SAutoObject, fallback to default constructed value if
+  // no default value was provided
   std::string buf(R"({"bool": true})");
 
   Parser parser{SAutoObject{
       std::tuple{Member{"bool", Value<bool>{}},
                  Member{"string", Value<std::string>{}, Presence::Optional}}}};
 
-  try {
-    parser.parse(buf);
-    FAIL() << "No exception thrown";
-  } catch (ParsingError &e) {
-    ASSERT_FALSE(parser.parser().isSet());
-    ASSERT_EQ(
-        "Can not set value: Optional member string does not have a default "
-        "value",
-        e.sjparserError());
+  ASSERT_NO_THROW(parser.parse(buf));
+  ASSERT_NO_THROW(parser.finish());
 
-    ASSERT_EQ(
-        R"(parse error: client cancelled parse via callback return value
-                          {"bool": true}
-                     (right here) ------^
-)",
-        e.parserError());
-  } catch (...) {
-    FAIL() << "Invalid exception thrown";
-  }
+  ASSERT_EQ(true, std::get<0>(parser.parser().get()));
+  ASSERT_FALSE(parser.parser().parser<1>().isSet());
+  ASSERT_EQ("", std::get<1>(parser.parser().get()));
 }
+
 
 TEST(SAutoObject, OptionalMemberWithDefaultValue) {
   std::string buf(R"({"bool": true})");

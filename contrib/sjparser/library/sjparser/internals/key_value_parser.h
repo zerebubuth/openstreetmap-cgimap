@@ -27,6 +27,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <map>
 
 #include "default_value.h"
 #include "dispatcher.h"
@@ -43,7 +44,7 @@ class KeyValueParser : public TokenParser {
  public:
   using InternalNameType = TokenType<NameT>;
 
-  explicit KeyValueParser(std::tuple<Member<NameT, ParserTs>...> members,
+  explicit KeyValueParser(std::tuple<Member<NameT, ParserTs>...> &&members,
                           ObjectOptions options = {});
 
   KeyValueParser(KeyValueParser &&other) noexcept;
@@ -78,7 +79,7 @@ class KeyValueParser : public TokenParser {
   template <std::size_t n>
   static constexpr bool has_value_type = IsStorageParser<ParserType<n>>;
 
-  using ParsersMapType = std::unordered_map<InternalNameType, TokenParser *>;
+  using ParsersMapType = std::map<InternalNameType, TokenParser *>;
 
   // Returns ValueType<n> if it is available, otherwise ParserType<n>
   template <size_t n> [[nodiscard]] auto &get();
@@ -115,14 +116,16 @@ class KeyValueParser : public TokenParser {
     MemberParsers &operator=(MemberParsers &&other) noexcept = default;
 
     MemberParsers(ParsersMapType &parsers_map,
-                  std::tuple<Member<NameT, ParserTs>...> &members)
-        : mbr_parsers(to_member_parser_tuple(members)) {
+                  std::tuple<Member<NameT, ParserTs>...> &&members)
+        : mbr_parsers(to_member_parser_tuple(std::forward<std::tuple<Member<NameT, ParserTs>...>>(members))) {
       registerParsers(parsers_map);
     }
 
     template <size_t n> [[nodiscard]] auto &get() {
       return std::get<n>(mbr_parsers);
     }
+
+    [[nodiscard]] auto &parsers() { return mbr_parsers; }
 
     void registerParsers(ParsersMapType &parsers_map);
 
@@ -134,10 +137,10 @@ class KeyValueParser : public TokenParser {
     void check_duplicate(bool inserted, NameT &name) const;
 
     [[nodiscard]] auto to_member_parser_tuple(
-        std::tuple<Member<NameT, ParserTs>...> &members) {
+        std::tuple<Member<NameT, ParserTs>...> &&members) {
       return (std::apply(
           [](auto &&...xs) {
-            return (std::tuple{MemberParser<ParserTs>(xs)...});
+            return (std::tuple{std::forward<MemberParser<ParserTs>>(MemberParser<ParserTs>(xs))...});
           },
           members));
     }
@@ -159,8 +162,8 @@ class KeyValueParser : public TokenParser {
 
 template <typename NameT, typename... ParserTs>
 KeyValueParser<NameT, ParserTs...>::KeyValueParser(
-    std::tuple<Member<NameT, ParserTs>...> members, ObjectOptions options)
-    : _member_parsers(_parsers_map, members), _options{options} {}
+    std::tuple<Member<NameT, ParserTs>...> &&members, ObjectOptions options)
+    : _member_parsers(_parsers_map, std::forward<std::tuple<Member<NameT, ParserTs>...>>(members)), _options{options} {}
 
 template <typename NameT, typename... ParserTs>
 KeyValueParser<NameT, ParserTs...>::KeyValueParser(
@@ -228,9 +231,9 @@ void KeyValueParser<NameT, ParserTs...>::onMember(TokenType<NameT> member) {
   }
 
   if (_options.unknown_member == Reaction::Error) {
-    std::stringstream error;
-    error << "Unexpected member " << member;
-    throw std::runtime_error(error.str());
+    std::string error{"Unexpected member "};
+    error.append(member);
+    throw std::runtime_error(error);
   }
 
   dispatcher()->pushParser(&_ignore_parser);
@@ -314,9 +317,8 @@ template <typename NameT, typename... ParserTs>
 void KeyValueParser<NameT, ParserTs...>::MemberParsers::check_duplicate(
     bool inserted, NameT &name) const {
   if (!inserted) {
-    std::stringstream error;
-    error << "Member " << name << " appears more than once";
-    throw std::runtime_error(error.str());
+    std::string error{"Member " + std::string(name) + " appears more than once"};
+    throw std::runtime_error(error);
   }
 }
 

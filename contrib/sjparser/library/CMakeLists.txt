@@ -4,6 +4,7 @@ add_library(sjparser STATIC
   sjparser/parsing_error.cpp
   sjparser/yajl_parser.cpp
   sjparser/value.cpp
+  sjparser/optional_value.cpp
 
   sjparser/internals/token_parser.cpp
   sjparser/internals/dispatcher.cpp
@@ -15,6 +16,7 @@ set_property(TARGET sjparser PROPERTY SJPARSER_HEADERS
   sjparser/sjparser.h
   sjparser/parsing_error.h
   sjparser/value.h
+  sjparser/optional_value.h
   sjparser/object.h
   sjparser/s_array.h
   sjparser/map.h

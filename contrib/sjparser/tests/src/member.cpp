@@ -47,7 +47,7 @@ TEST(Member, MandatoryWithLvalueParser) {
 TEST(Member, MandatoryWithConstCharName) {
   Member member{"test", Value<bool>{}};
 
-  ASSERT_TRUE((std::is_same_v<decltype(member.name), std::string>));
+  ASSERT_TRUE((std::is_same_v<decltype(member.name), std::string_view>));
 }
 
 TEST(Member, MandatoryWithBoolName) {

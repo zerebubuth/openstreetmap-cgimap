@@ -44,10 +44,10 @@ namespace SJParser {
  */
 
 template <typename... ParserTs>
-class Object : public KeyValueParser<std::string, ParserTs...> {
+class Object : public KeyValueParser<std::string_view, ParserTs...> {
  protected:
   /** @cond INTERNAL Internal typedef */
-  using KVParser = KeyValueParser<std::string, ParserTs...>;
+  using KVParser = KeyValueParser<std::string_view, ParserTs...>;
   /** @endcond */
 
  public:
@@ -65,7 +65,7 @@ class Object : public KeyValueParser<std::string, ParserTs...> {
    * If the callback returns false, parsing will be stopped with an error.
    */
   template <typename CallbackT = std::nullptr_t>
-  explicit Object(std::tuple<Member<std::string, ParserTs>...> members,
+  explicit Object(std::tuple<Member<std::string_view, ParserTs>...> &&members,
                   CallbackT on_finish = nullptr)
     requires std::is_constructible_v<Callback, CallbackT>;
 
@@ -82,8 +82,9 @@ class Object : public KeyValueParser<std::string, ParserTs...> {
    * If the callback returns false, parsing will be stopped with an error.
    */
   template <typename CallbackT = std::nullptr_t>
-  Object(std::tuple<Member<std::string, ParserTs>...> members,
-         ObjectOptions options, CallbackT on_finish = nullptr);
+  Object(std::tuple<Member<std::string_view, ParserTs>...> &&members,
+         ObjectOptions options, CallbackT on_finish = nullptr)
+    requires std::is_constructible_v<Callback, CallbackT>;
 
   /** Move constructor. */
   Object(Object &&other) noexcept;
@@ -107,17 +108,7 @@ class Object : public KeyValueParser<std::string, ParserTs...> {
   void setFinishCallback(Callback on_finish);
 
  protected:
-  /** @cond INTERNAL */
-  template <size_t, typename...> struct MemberChecker {
-    explicit MemberChecker(Object<ParserTs...> & /*parser*/) {}
-  };
-
-  template <size_t n, typename ParserT, typename... ParserTDs>
-  struct MemberChecker<n, ParserT, ParserTDs...>
-      : private MemberChecker<n + 1, ParserTDs...> {
-    explicit MemberChecker(Object<ParserTs...> &parser);
-  };
-  /** @endcond */
+  void checkMember();
 
  private:
   using KVParser::on;
@@ -125,28 +116,12 @@ class Object : public KeyValueParser<std::string, ParserTs...> {
 
   void finish() override;
 
+  void checkMember(const auto& member);
+
   Callback _on_finish;
 };
 
 }  // namespace SJParser
-
-namespace std {
-
-/* clang-tidy cert-dcl58-cpp is complaining about these specializations, but
- * they are completely legal according to the standard.
- */
-
-template <typename... ParserTs>
-struct tuple_size<SJParser::Object<ParserTs...>>  // NOLINT
-    : std::integral_constant<std::size_t, sizeof...(ParserTs)> {};
-
-template <std::size_t n, typename... ParserTs>
-struct tuple_element<n, SJParser::Object<ParserTs...>> {  // NOLINT
-  using type =
-      decltype(std::declval<SJParser::Object<ParserTs...>>().template get<n>());
-};
-
-}  // namespace std
 
 namespace SJParser {
 
@@ -155,19 +130,17 @@ namespace SJParser {
 template <typename... ParserTs>
 template <typename CallbackT>
 Object<ParserTs...>::Object(
-    std::tuple<Member<std::string, ParserTs>...> members, CallbackT on_finish)
+    std::tuple<Member<std::string_view, ParserTs>...> && members, CallbackT on_finish)
     requires std::is_constructible_v<Callback, CallbackT>
-    : Object{std::move(members), ObjectOptions{}, std::move(on_finish)} {}
+    : Object{std::forward<std::tuple<Member<std::string_view, ParserTs>...>>(members), ObjectOptions{}, std::move(on_finish)} {}
 
 template <typename... ParserTs>
 template <typename CallbackT>
 Object<ParserTs...>::Object(
-    std::tuple<Member<std::string, ParserTs>...> members, ObjectOptions options,
+    std::tuple<Member<std::string_view, ParserTs>...> && members, ObjectOptions options,
     CallbackT on_finish)
-    : KVParser{std::move(members), options}, _on_finish{std::move(on_finish)} {
-  static_assert(std::is_constructible_v<Callback, CallbackT>,
-                "Invalid callback type");
-}
+    requires std::is_constructible_v<Callback, CallbackT>
+    : KVParser{std::forward<std::tuple<Member<std::string_view, ParserTs>...>>(members), options}, _on_finish{std::move(on_finish)} {}
 
 template <typename... ParserTs>
 Object<ParserTs...>::Object(Object &&other) noexcept
@@ -197,7 +170,7 @@ template <typename... ParserTs> void Object<ParserTs...>::finish() {
   }
 
   try {
-    MemberChecker<0, ParserTs...>(*this);
+    checkMember();
   } catch (std::exception &) {
     TokenParser::unset();
     throw;
@@ -208,15 +181,17 @@ template <typename... ParserTs> void Object<ParserTs...>::finish() {
   }
 }
 
-template <typename... ParserTs>
-template <size_t n, typename ParserT, typename... ParserTDs>
-Object<ParserTs...>::MemberChecker<n, ParserT, ParserTDs...>::MemberChecker(
-    Object<ParserTs...> &parser)
-    : MemberChecker<n + 1, ParserTDs...>{parser} {
-  auto &member = parser.memberParsers().template get<n>();
+template <typename... ParserTs> void Object<ParserTs...>::checkMember() {
+  std::apply([&](auto &&...member) {
+    (checkMember(member), ...);
+  }, this->memberParsers().parsers());
+}
+
+template <typename... ParserTs> void Object<ParserTs...>::checkMember(const auto& mbr) {
+  auto &member = mbr;
 
   if (!member.parser.isSet() && !member.optional) {
-    throw std::runtime_error("Mandatory member " + member.name
+    throw std::runtime_error("Mandatory member " + std::string(member.name)
                              + " is not present");
   }
 }

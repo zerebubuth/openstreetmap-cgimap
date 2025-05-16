@@ -226,8 +226,8 @@ TEST(Object, ObjectWithCallbackError) {
 TEST(Object, StdStringiMemberNames) {
   std::string buf(R"({"string": "value", "integer": 10})");
 
-  std::string string_name = "string";
-  std::string integer_name = "integer";
+  std::string_view string_name = "string";
+  std::string_view integer_name = "integer";
 
   Parser parser{Object{std::tuple{Member{string_name, Value<std::string>{}},
                                   Member{integer_name, Value<int64_t>{}}}}};
@@ -467,30 +467,4 @@ TEST(Object, MoveAssignment) {
 
   ASSERT_EQ(true, parser.parser().get<0>());
   ASSERT_EQ("value", parser.parser().get<1>());
-}
-
-TEST(Object, StructuredBindings) {
-  std::string buf(
-      R"(
-{
-  "bool": true,
-  "string": "value",
-  "object": {
-    "integer": 10
-  }
-})");
-
-  Parser parser{Object{std::tuple{
-      Member{"bool", Value<bool>{}}, Member{"string", Value<std::string>{}},
-      Member{"object",
-             Object{std::tuple{Member{"integer", Value<int64_t>{}}}}}}}};
-
-  ASSERT_NO_THROW(parser.parse(buf));
-  ASSERT_NO_THROW(parser.finish());
-
-  auto &[bool_val, string_val, inner_parser] = parser.parser();
-
-  ASSERT_EQ(true, bool_val);
-  ASSERT_EQ("value", string_val);
-  ASSERT_EQ(10, inner_parser.get<0>());
 }

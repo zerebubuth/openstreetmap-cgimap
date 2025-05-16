@@ -27,16 +27,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace SJParser {
 
-template <typename ParserT>
-using ValueTypeTest = std::void_t<typename std::decay_t<ParserT>::ValueType>;
-
-template <typename, typename = std::void_t<>>
-struct IsStorageParserTest : public std::false_type {};
+template <typename T>
+concept HasValueType = requires { typename std::decay_t<T>::ValueType; };
 
 template <typename ParserT>
-struct IsStorageParserTest<ParserT, ValueTypeTest<ParserT>>
-    : public std::true_type {};
-
-template <typename ParserT>
-constexpr bool IsStorageParser = IsStorageParserTest<ParserT>::value;
+constexpr bool IsStorageParser = HasValueType<ParserT>;
 }  // namespace SJParser
