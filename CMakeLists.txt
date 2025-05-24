@@ -85,7 +85,11 @@ find_package(PQXX 6.0 REQUIRED)
 find_package(LibXml2 2.6.31 REQUIRED)
 find_package(Libmemcached REQUIRED)
 
-find_package(Boost 1.43 REQUIRED COMPONENTS program_options)
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)
+endif()
+
+find_package(Boost 1.74 REQUIRED COMPONENTS program_options)
 target_compile_definitions(cgimap_common_compiler_options INTERFACE
     HAVE_BOOST=$<BOOL:${Boost_FOUND}>
     HAVE_BOOST_PROGRAM_OPTIONS=$<BOOL:${Boost_PROGRAM_OPTIONS_FOUND}>)
