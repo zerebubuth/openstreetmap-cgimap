@@ -58,3 +58,4 @@ parser.hpp, saxparser.[ch]pp
 
 chunked parsing, parse_file, parse_stream and operator>> have been removed
 
+Added on_characters handler

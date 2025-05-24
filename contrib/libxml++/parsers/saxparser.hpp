@@ -57,6 +57,7 @@ protected:
   virtual void on_end_element(const char* name);
   virtual void on_warning(const std::string& text);
   virtual void on_error(const std::string& text);
+  virtual void on_characters(const std::string& characters);
 
   // provides current location information to parser to provide option
   // to enhance exception with location information
