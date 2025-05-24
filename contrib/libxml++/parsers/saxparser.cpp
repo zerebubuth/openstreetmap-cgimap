@@ -23,6 +23,7 @@ struct SaxParserCallback
   static void end_document(void* context);
   static void start_element(void* context, const xmlChar* name, const xmlChar** p);
   static void end_element(void* context, const xmlChar* name);
+  static void characters(void* context, const xmlChar* ch, int len);
   static void warning(void* context, const char* fmt, ...);
   static void error(void* context, const char* fmt, ...);
   static void fatal_error(void* context, const char* fmt, ...);
@@ -51,7 +52,7 @@ SaxParser::SaxParser()
     SaxParserCallback::start_element, // startElement
     SaxParserCallback::end_element, // endElement
     nullptr, // reference
-    nullptr, // characters
+    SaxParserCallback::characters, // characters
     nullptr, // ignorableWhitespace
     nullptr, // processingInstruction
     nullptr, // comment
@@ -94,6 +95,10 @@ void SaxParser::on_start_element(const char* name,
 }
 
 void SaxParser::on_end_element(const char* name)
+{
+}
+
+void SaxParser::on_characters(const std::string&)
 {
 }
 
@@ -242,6 +247,25 @@ void SaxParserCallback::end_element(void* context, const xmlChar* name)
      } catch(...) {
         parser->on_enhance_exception(the_context->input);
      }
+  }
+  catch (...)
+  {
+    parser->handle_exception();
+  }
+}
+
+void SaxParserCallback::characters(void * context, const xmlChar* ch, int len)
+{
+  auto the_context = static_cast<_xmlParserCtxt*>(context);
+  auto parser = static_cast<SaxParser*>(the_context->_private);
+
+  try
+  {
+    try {
+      parser->on_characters(std::string(reinterpret_cast<const char *>(ch), len) );
+    } catch(...) {
+      parser->on_enhance_exception(the_context->input);
+    }
   }
   catch (...)
   {
