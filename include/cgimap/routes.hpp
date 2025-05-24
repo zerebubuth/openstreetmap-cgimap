@@ -27,8 +27,8 @@ public:
 
   routes(const routes &) = delete;
   routes& operator=(const routes &) = delete;
-  routes(routes &&) = default;
-  routes& operator=(routes &&) = default;
+  routes(routes &&) = delete;
+  routes& operator=(routes &&) = delete;
 
   /**
    * returns the handler which matches a request, or throws a 404 error.
