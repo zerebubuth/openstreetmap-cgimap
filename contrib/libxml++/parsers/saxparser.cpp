@@ -261,8 +261,11 @@ void SaxParserCallback::characters(void * context, const xmlChar* ch, int len)
 
   try
   {
-    parser->on_characters(
-        std::string(reinterpret_cast<const char *>(ch), len) );
+    try {
+      parser->on_characters(std::string(reinterpret_cast<const char *>(ch), len) );
+    } catch(...) {
+      parser->on_enhance_exception(the_context->input);
+    }
   }
   catch (...)
   {
