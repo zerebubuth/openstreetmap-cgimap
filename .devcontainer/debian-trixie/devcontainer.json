@@ -1,12 +1,12 @@
 {
-	"name": "C++ openstreetmap-cgimap",
+	"name": "C++ openstreetmap-cgimap - Debian trixie",
 	"build": {
 		"args": {
 			"REMOTE_USER": "${localEnv:USER}",
 			"REMOTE_UID": "${localEnv:REMOTE_UID:1000}",
 			"REMOTE_GID": "${localEnv:REMOTE_GID:1000}"
 		},
-		"dockerfile": "Dockerfile"
+		"dockerfile": "Dockerfile.trixie"
 	},
 	"runArgs": [
 		"--cap-add=SYS_PTRACE",
