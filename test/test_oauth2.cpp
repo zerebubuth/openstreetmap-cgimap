@@ -13,7 +13,6 @@
 #include "cgimap/oauth2.hpp"
 #include "test_request.hpp"
 #include "test_empty_selection.hpp"
-#include "cgimap/backend/apidb/transaction_manager.hpp"
 
 #define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
