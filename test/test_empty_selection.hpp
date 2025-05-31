@@ -14,8 +14,32 @@
 #include <memory>
 
 #include "cgimap/data_selection.hpp"
-#include "cgimap/backend/apidb/transaction_manager.hpp"
 
+// Note: implementation independent from backend/apidb/transaction_manager.cpp
+
+class Transaction_Owner_Base
+{
+public:
+  Transaction_Owner_Base() = default;
+  virtual void get_transaction() = 0;
+  virtual void get_prep_stmt() = 0;
+  virtual ~Transaction_Owner_Base() = default;
+};
+
+class Transaction_Owner_Void : public Transaction_Owner_Base
+{
+public:
+  explicit Transaction_Owner_Void() = default;
+  inline void get_transaction() override {
+    throw std::runtime_error ("get_transaction is not supported by Transaction_Owner_Void");
+  }
+
+  inline void get_prep_stmt() override {
+    throw std::runtime_error ("get_prep_stmt is not supported by Transaction_Owner_Void");
+  }
+
+  ~Transaction_Owner_Void() override = default;
+};
 
 class empty_data_selection : public data_selection {
 public:
