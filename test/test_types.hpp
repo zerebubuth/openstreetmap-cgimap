@@ -10,7 +10,9 @@
 #ifndef TEST_TEST_TYPES_HPP
 #define TEST_TEST_TYPES_HPP
 
+#include <map>
 #include <set>
+#include <string>
 #include "cgimap/types.hpp"
 
 struct oauth2_token_detail_t

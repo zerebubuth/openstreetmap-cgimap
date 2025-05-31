@@ -14,7 +14,6 @@
 #include <string>
 #include <string_view>
 #include <vector>
-#include <exception>
 #include <optional>
 
 #ifdef HAVE_LIBZ
