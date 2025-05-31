@@ -149,7 +149,7 @@ public:
   template <typename T>
   explicit precondition_failed(T&& message) :
     exception(412, std::forward<T>(message)),
-    fullstring("Precondition failed: " + std::string(message)) {}
+    fullstring("Precondition failed: " + std::string(exception::what())) {}
 
   const char *what() const noexcept override {
     return fullstring.c_str();
