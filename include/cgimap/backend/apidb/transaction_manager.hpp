@@ -136,21 +136,6 @@ private:
   std::set<std::string>& m_prep_stmt;
 };
 
-class Transaction_Owner_Void : public Transaction_Owner_Base
-{
-public:
-  explicit Transaction_Owner_Void() = default;
-  inline pqxx::transaction_base& get_transaction() override {
-    throw std::runtime_error ("get_transaction is not supported by Transaction_Owner_Void");
-  }
-
-  inline std::set<std::string>& get_prep_stmt() override {
-    throw std::runtime_error ("get_prep_stmt is not supported by Transaction_Owner_Void");
-  }
-
-  ~Transaction_Owner_Void() override = default;
-};
-
 
 #define PQXX_LIBRARY_VERSION_COMPARE(major1, minor1, patch1, major2, minor2, patch2)   \
     ((major1) < (major2)) ||                                              \

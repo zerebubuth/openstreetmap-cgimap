@@ -7,7 +7,6 @@
  * For a full list of authors see the git log.
  */
 
-#include "cgimap/process_request.hpp"
 #include "cgimap/time.hpp"
 #include "cgimap/util.hpp"
 
@@ -17,7 +16,6 @@
 #include <boost/property_tree/json_parser.hpp>
 
 #include <filesystem>
-#include <fstream>
 #include <vector>
 #include <sstream>
 #include <iostream>
