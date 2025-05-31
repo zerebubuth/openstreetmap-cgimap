@@ -22,6 +22,10 @@ static std::unique_ptr<std::ostream> stream;
 static pid_t pid;
 
 void initialise(const std::string &filename) {
+  if (filename.empty()) {
+    stream.reset();
+    return;
+  }
   stream = std::make_unique<std::ofstream>(filename, std::ios_base::out | std::ios_base::app);
   pid = getpid();
 }
