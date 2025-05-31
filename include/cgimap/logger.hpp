@@ -21,7 +21,7 @@ namespace logger {
 /**
  * Initialise logging.
  */
-void initialise(const std::string &filename);
+void initialise(const std::string &filename = "");
 
 /**
  * Log a message.

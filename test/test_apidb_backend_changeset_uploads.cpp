@@ -23,6 +23,7 @@
 
 #include <sys/time.h>
 
+#include "cgimap/logger.hpp"
 #include "cgimap/options.hpp"
 #include "cgimap/rate_limiter.hpp"
 #include "cgimap/routes.hpp"
@@ -115,6 +116,12 @@ struct CGImapListener : Catch::TestEventListenerBase, DatabaseTestsFixture {
   void testCaseEnded(Catch::TestCaseStats const& testCaseStats ) override {
     tdb.testcase_ended();
   }
+
+  void sectionStarting( Catch::SectionInfo const& sectionInfo ) override {
+    logger::initialise("/dev/null");
+  }
+
+  void sectionEnded( Catch::SectionStats const& sectionStats ) override {}
 };
 
 CATCH_REGISTER_LISTENER( CGImapListener )
@@ -601,6 +608,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_ways", "[changeset][upload]
 
   SECTION("Change existing way")
   {
+    logger::initialise(); // disable logger in this section, since it lacks multithreading support
+
     api06::OSMChange_Tracking change_tracking{};
     auto upd = tdb.get_data_update();
     auto way_updater = upd->get_way_updater(ctx, change_tracking);
@@ -1851,6 +1860,8 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
       }
 
       SECTION("Create new relation") {
+
+        logger::initialise(); // disable logger in this section, since it lacks multithreading support
 
         api06::OSMChange_Tracking change_tracking_new_rel{};
 
