@@ -157,7 +157,7 @@ pgsql_update::factory::factory(const po::variables_map &opts)
 }
 
 std::unique_ptr<data_update>
-pgsql_update::factory::make_data_update(Transaction_Owner_Base& to) {
+pgsql_update::factory::make_data_update(Transaction_Owner_Base& to) const {
   return std::make_unique<pgsql_update>(to, m_api_write_disabled);
 }
 
