@@ -41,6 +41,7 @@ std::string connect_db_str(const po::variables_map &options) {
   if (options.contains("dbport")) {
     ostr << " port=" << options["dbport"].as<std::string>();
   }
+  ostr << " fallback_application_name=openstreetmap-cgimap";
 
   return ostr.str();
 }
