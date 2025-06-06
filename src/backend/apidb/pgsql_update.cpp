@@ -57,6 +57,8 @@ std::string connect_db_str(const po::variables_map &options) {
   connopt(ostr, options, "password", "password");
   connopt(ostr, options, "dbport", "port");
 
+  ostr << " fallback_application_name=openstreetmap-cgimap";
+
   return ostr.str();
 }
 
