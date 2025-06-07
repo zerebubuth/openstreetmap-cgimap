@@ -114,7 +114,7 @@ void process_environment_variables(const po::options_description &desc,
         return option;
       }
       else {
-        std::cout << "Ignoring unknown environment variable: " << name << std::endl;
+        std::cout << "Ignoring unknown environment variable: " << name << '\n';
         return std::string();
       }
     }), options);
@@ -139,7 +139,7 @@ void get_options(int argc, char **argv, po::variables_map &options) {
     ("maxdebt", po::value<long>(), "maximum debt (in Mb) to allow each client before rate limiting")
     ("moderator-maxdebt", po::value<long>(), "maximum debt (in Mb) to allow each moderator before rate limiting")
     ("port", po::value<int>(), "FCGI port number (e.g. 8000) to listen on. This option is for backwards compatibility, please use --socket for new configurations.")
-    ("socket", po::value<std::string>(), "FCGI port number (e.g. :8000, or 127.0.0.1:8000) or UNIX domain socket to listen on")
+    ("socket", po::value<std::string>(), "FCGI socket (e.g. :8000, or 127.0.0.1:8000) or UNIX domain socket to listen on")
     ("configfile", po::value<std::string>(), "Config file")
     ;
   // clang-format on
@@ -172,7 +172,7 @@ void get_options(int argc, char **argv, po::variables_map &options) {
 
   // Show help after parsing command line parameters
   if (options.contains("help")) {
-    std::cout << desc << std::endl;
+    std::cout << desc << '\n';
     output_backend_options(std::cout);
     exit(0);
   }
@@ -278,7 +278,7 @@ void install_signal_handlers() {
 void daemonise() {
 
   // fork to make sure we aren't a session leader
-  if (pid_t pid; (pid = fork()) < 0) {
+  if (pid_t pid = fork(); pid < 0) {
     throw std::runtime_error("fork failed.");
   } else if (pid > 0) {
     exit(0);
@@ -313,7 +313,7 @@ void write_pidfile(const po::variables_map &options) {
       if (!pidfile) {
           throw std::runtime_error("Failed to write to pidfile.");
       }
-      pidfile << getpid() << std::endl;
+      pidfile << getpid() << '\n';
   }
 }
 
@@ -341,7 +341,7 @@ void remove_pidfile(const po::variables_map &options) {
 
 void spawn_children(int socket, const po::variables_map &options, std::set<pid_t> &children, int instances) {
   while (!terminate_requested && (children.size() < instances)) {
-      if (pid_t pid; (pid = fork()) < 0) {
+      if (pid_t pid = fork(); pid < 0) {
           throw std::runtime_error("fork failed.");
       } else if (pid == 0) {
           handle_child_process(socket, options);
@@ -352,7 +352,7 @@ void spawn_children(int socket, const po::variables_map &options, std::set<pid_t
 }
 
 void wait_for_children(std::set<pid_t> &children) {
-  if (pid_t pid; (pid = wait(nullptr)) >= 0) {
+  if (pid_t pid = wait(nullptr); pid >= 0) {
       children.erase(pid);
   } else if (errno != EINTR) {
       throw std::runtime_error("wait failed.");
@@ -415,20 +415,25 @@ void non_daemon_mode(const po::variables_map &options, int socket)
 
 int init_socket(const po::variables_map &options)
 {
-  int socket = 0;
-
   if (options.contains("socket")) {
-    if ((socket = fcgi_request::open_socket(options["socket"].as<std::string>(), SOCKET_BACKLOG)) < 0) {
+    int socket = fcgi_request::open_socket(options["socket"].as<std::string>(), SOCKET_BACKLOG);
+    if (socket < 0) {
       throw std::runtime_error("Couldn't open FCGX socket.");
     }
-    // fall back to the old --port option if socket isn't available.
-  } else if (options.contains("port")) {
+    return socket;
+  }
+
+  // fall back to the old --port option if socket isn't available.
+  if (options.contains("port")) {
     auto sock_str = fmt::format(":{:d}", options["port"].as<int>());
-    if ((socket = fcgi_request::open_socket(sock_str, SOCKET_BACKLOG)) < 0) {
+    int socket = fcgi_request::open_socket(sock_str, SOCKET_BACKLOG);
+    if (socket < 0) {
       throw std::runtime_error("Couldn't open FCGX socket (from port).");
     }
+    return socket;
   }
-  return socket;
+
+  throw std::runtime_error("Missing FCGI socket parameter");
 }
 
 } // anonymous namespace
@@ -457,14 +462,14 @@ int main(int argc, char **argv) {
       non_daemon_mode(options, socket);
     }
   } catch (const po::error & e) {
-    std::cerr << "Error: " << e.what() << "\n(\"openstreetmap-cgimap --help\" for help)" << std::endl;
+    std::cerr << "Error: " << e.what() << "\n(\"openstreetmap-cgimap --help\" for help)" << '\n';
     return 1;
 
   } catch (const pqxx::sql_error &er) {
     logger::message(er.what());
     // Catch-all for query related postgres exceptions
-    std::cerr << "Error: " << er.what() << std::endl
-              << "Caused by: " << er.query() << std::endl;
+    std::cerr << "Error: " << er.what() << '\n'
+              << "Caused by: " << er.query() << '\n';
     return 1;
 
 #if PQXX_VERSION_MAJOR < 7
@@ -472,14 +477,14 @@ int main(int argc, char **argv) {
   } catch (const pqxx::pqxx_exception &e) {
     // Catch-all for any other postgres exceptions
     logger::message(e.base().what());
-    std::cerr << "Error: " << e.base().what() << std::endl;
+    std::cerr << "Error: " << e.base().what() << '\n';
     return 1;
 
 #endif
 
   } catch (const std::exception &e) {
     logger::message(e.what());
-    std::cerr << "Error: " << e.what() << std::endl;
+    std::cerr << "Error: " << e.what() << '\n';
     return 1;
   }
 
