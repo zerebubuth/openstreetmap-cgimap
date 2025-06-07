@@ -120,7 +120,7 @@ struct match_osm_id : public ops<match_osm_id> {
 struct match_begin : public ops<match_begin> {
   using match_type = std::tuple<>;
   match_begin() = default;
-  inline std::pair<match_type, bool> match(const part_iterator&, const part_iterator&) const noexcept{
+  [[nodiscard]] inline std::pair<match_type, bool> match(const part_iterator&, const part_iterator&) const noexcept{
     return {match_type(), false};
   }
 };
