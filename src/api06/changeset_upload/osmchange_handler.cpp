@@ -3,7 +3,7 @@
  *
  * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
  *
- * Copyright (C) 2009-2024 by the CGImap developer community.
+ * Copyright (C) 2009-2025 by the openstreetmap-cgimap developer community.
  * For a full list of authors see the git log.
  */
 
@@ -39,7 +39,7 @@ void OSMChange_Handler::check_osm_object(const OSMObject &o) const {
          o.changeset(), changeset));
 }
 
-void OSMChange_Handler::process_node(const Node &node, 
+void OSMChange_Handler::process_node(const Node &node,
                                      operation op,
                                      bool if_unused) {
 
@@ -102,7 +102,7 @@ void OSMChange_Handler::process_way(const Way &way, operation op,
   }
 }
 
-void OSMChange_Handler::process_relation(const Relation &relation, 
+void OSMChange_Handler::process_relation(const Relation &relation,
                                          operation op,
                                          bool if_unused) {
 
@@ -140,7 +140,7 @@ void OSMChange_Handler::finish_processing() {
 }
 
 uint32_t OSMChange_Handler::get_num_changes() const {
-  return (node_updater.get_num_changes() + 
+  return (node_updater.get_num_changes() +
           way_updater.get_num_changes() +
           relation_updater.get_num_changes());
 }

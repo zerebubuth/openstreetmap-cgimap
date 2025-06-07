@@ -3,7 +3,7 @@
  *
  * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
  *
- * Copyright (C) 2009-2024 by the CGImap developer community.
+ * Copyright (C) 2009-2025 by the openstreetmap-cgimap developer community.
  * For a full list of authors see the git log.
  */
 
@@ -22,8 +22,8 @@ namespace api06 {
 
 class changeset_close_responder : public text_responder {
 public:
-  changeset_close_responder(mime::type, 
-                            data_update &, 
+  changeset_close_responder(mime::type,
+                            data_update &,
                             osm_changeset_id_t,
                             const std::string &,
                             const RequestContext& req_ctx);

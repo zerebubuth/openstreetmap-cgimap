@@ -3,7 +3,7 @@
  *
  * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
  *
- * Copyright (C) 2009-2024 by the CGImap developer community.
+ * Copyright (C) 2009-2025 by the openstreetmap-cgimap developer community.
  * For a full list of authors see the git log.
  */
 
@@ -34,7 +34,7 @@ changeset_upload_responder::changeset_upload_responder(mime::type mt,
                                                        const std::string &payload,
                                                        const RequestContext& req_ctx)
     : osm_diffresult_responder(mt) {
-  
+
   if (!req_ctx.user.has_value())
   {
     throw http::server_error("Cannot upload to changeset - no user id");
@@ -114,8 +114,8 @@ responder_ptr_t changeset_upload_handler::responder(data_selection &) const {
       "changeset_upload_handler: data_selection unsupported");
 }
 
-responder_ptr_t changeset_upload_handler::responder(data_update & upd, 
-                                                    const std::string &payload, 
+responder_ptr_t changeset_upload_handler::responder(data_update & upd,
+                                                    const std::string &payload,
                                                     const RequestContext& req_ctx) const {
   return std::make_unique<changeset_upload_responder>(mime_type, upd, id, payload, req_ctx);
 }

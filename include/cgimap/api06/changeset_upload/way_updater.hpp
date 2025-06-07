@@ -3,7 +3,7 @@
  *
  * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
  *
- * Copyright (C) 2009-2024 by the CGImap developer community.
+ * Copyright (C) 2009-2025 by the openstreetmap-cgimap developer community.
  * For a full list of authors see the git log.
  */
 
@@ -32,19 +32,19 @@ public:
   virtual ~Way_Updater() = default;
 
   virtual void add_way(osm_changeset_id_t changeset_id,
-                       osm_nwr_signed_id_t old_id, 
+                       osm_nwr_signed_id_t old_id,
                        const WayNodeList &nodes,
                        const TagList &tags) = 0;
 
-  virtual void modify_way(osm_changeset_id_t changeset_id, 
+  virtual void modify_way(osm_changeset_id_t changeset_id,
                           osm_nwr_id_t id,
-                          osm_version_t version, 
+                          osm_version_t version,
                           const WayNodeList &nodes,
                           const TagList &tags) = 0;
 
-  virtual void delete_way(osm_changeset_id_t changeset_id, 
+  virtual void delete_way(osm_changeset_id_t changeset_id,
                           osm_nwr_id_t id,
-                          osm_version_t version, 
+                          osm_version_t version,
                           bool if_unused) = 0;
 
   virtual void process_new_ways() = 0;
