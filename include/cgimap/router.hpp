@@ -94,11 +94,7 @@ struct match_string : public ops<match_string> {
   requires std::is_convertible_v<T, std::string_view>
   match_string(T&& s) : str(std::forward<T>(s)) {}
 
-  // copy just copies the held string
-  match_string(const match_string &m) = default;
-
   std::pair<match_type, bool> match(part_iterator &begin, const part_iterator &end) const noexcept;
-
 private:
   std::string_view str;
 };
