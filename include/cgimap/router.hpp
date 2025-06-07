@@ -3,7 +3,7 @@
  *
  * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
  *
- * Copyright (C) 2009-2024 by the CGImap developer community.
+ * Copyright (C) 2009-2025 by the openstreetmap-cgimap developer community.
  * For a full list of authors see the git log.
  */
 
@@ -94,11 +94,7 @@ struct match_string : public ops<match_string> {
   requires std::is_convertible_v<T, std::string_view>
   match_string(T&& s) : str(std::forward<T>(s)) {}
 
-  // copy just copies the held string
-  match_string(const match_string &m) = default;
-
   std::pair<match_type, bool> match(part_iterator &begin, const part_iterator &end) const noexcept;
-
 private:
   std::string_view str;
 };
@@ -120,7 +116,7 @@ struct match_osm_id : public ops<match_osm_id> {
 struct match_begin : public ops<match_begin> {
   using match_type = std::tuple<>;
   match_begin() = default;
-  inline std::pair<match_type, bool> match(const part_iterator&, const part_iterator&) const noexcept{
+  [[nodiscard]] inline std::pair<match_type, bool> match(const part_iterator&, const part_iterator&) const noexcept{
     return {match_type(), false};
   }
 };

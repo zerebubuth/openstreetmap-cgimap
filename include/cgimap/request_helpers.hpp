@@ -3,7 +3,7 @@
  *
  * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
  *
- * Copyright (C) 2009-2024 by the CGImap developer community.
+ * Copyright (C) 2009-2025 by the openstreetmap-cgimap developer community.
  * For a full list of authors see the git log.
  */
 
@@ -20,7 +20,7 @@
  * Lookup a string from the request environment. Throws 500 error if the
  * string isn't there and no default value is given.
  */
-std::string fcgi_get_env(const request &req, 
+std::string fcgi_get_env(const request &req,
                          const char *name,
                          const char *default_value = nullptr);
 

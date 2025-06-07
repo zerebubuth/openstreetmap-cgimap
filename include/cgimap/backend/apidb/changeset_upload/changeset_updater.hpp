@@ -3,7 +3,7 @@
  *
  * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
  *
- * Copyright (C) 2009-2024 by the CGImap developer community.
+ * Copyright (C) 2009-2025 by the openstreetmap-cgimap developer community.
  * For a full list of authors see the git log.
  */
 
@@ -23,7 +23,7 @@ class ApiDB_Changeset_Updater : public api06::Changeset_Updater {
 
 public:
   ApiDB_Changeset_Updater(Transaction_Manager &_m,
-                          const RequestContext& _req_ctx, 
+                          const RequestContext& _req_ctx,
                           osm_changeset_id_t _changeset);
 
   ~ApiDB_Changeset_Updater() override = default;

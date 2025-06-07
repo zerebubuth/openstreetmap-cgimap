@@ -3,7 +3,7 @@
  *
  * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
  *
- * Copyright (C) 2009-2024 by the CGImap developer community.
+ * Copyright (C) 2009-2025 by the openstreetmap-cgimap developer community.
  * For a full list of authors see the git log.
  */
 
@@ -12,7 +12,7 @@
 
 namespace api06 {
 
-node_relations_responder::node_relations_responder(mime::type mt, 
+node_relations_responder::node_relations_responder(mime::type mt,
                                                    osm_nwr_id_t id,
                                                    data_selection &w)
     : osm_current_responder(mt, w) {

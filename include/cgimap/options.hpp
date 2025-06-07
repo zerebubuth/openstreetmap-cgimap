@@ -3,7 +3,7 @@
  *
  * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
  *
- * Copyright (C) 2009-2024 by the CGImap developer community.
+ * Copyright (C) 2009-2025 by the openstreetmap-cgimap developer community.
  * For a full list of authors see the git log.
  */
 
@@ -24,84 +24,84 @@ class global_settings_base {
 public:
   virtual ~global_settings_base();
 
-  virtual uint32_t get_payload_max_size() const = 0;
-  virtual uint32_t get_map_max_nodes() const = 0;
-  virtual double get_map_area_max() const = 0;
-  virtual std::string get_changeset_timeout_open_max() const = 0;
-  virtual std::string get_changeset_timeout_idle() const = 0;
-  virtual uint32_t get_changeset_max_elements() const = 0;
-  virtual uint32_t get_way_max_nodes() const = 0;
-  virtual int64_t get_scale() const = 0;
-  virtual std::optional<uint32_t> get_relation_max_members() const = 0;
-  virtual std::optional<uint32_t> get_element_max_tags() const = 0;
-  virtual uint32_t get_ratelimiter_ratelimit(bool) const = 0;
-  virtual uint32_t get_ratelimiter_maxdebt(bool) const = 0;
-  virtual bool get_ratelimiter_upload() const = 0;
-  virtual bool get_bbox_size_limiter_upload() const = 0;
+  [[nodiscard]] virtual uint32_t get_payload_max_size() const = 0;
+  [[nodiscard]] virtual uint32_t get_map_max_nodes() const = 0;
+  [[nodiscard]] virtual double get_map_area_max() const = 0;
+  [[nodiscard]] virtual std::string get_changeset_timeout_open_max() const = 0;
+  [[nodiscard]] virtual std::string get_changeset_timeout_idle() const = 0;
+  [[nodiscard]] virtual uint32_t get_changeset_max_elements() const = 0;
+  [[nodiscard]] virtual uint32_t get_way_max_nodes() const = 0;
+  [[nodiscard]] virtual int64_t get_scale() const = 0;
+  [[nodiscard]] virtual std::optional<uint32_t> get_relation_max_members() const = 0;
+  [[nodiscard]] virtual std::optional<uint32_t> get_element_max_tags() const = 0;
+  [[nodiscard]] virtual uint32_t get_ratelimiter_ratelimit(bool) const = 0;
+  [[nodiscard]] virtual uint32_t get_ratelimiter_maxdebt(bool) const = 0;
+  [[nodiscard]] virtual bool get_ratelimiter_upload() const = 0;
+  [[nodiscard]] virtual bool get_bbox_size_limiter_upload() const = 0;
 };
 
 class global_settings_default : public global_settings_base {
 
 public:
-  uint32_t get_payload_max_size() const override {
+  [[nodiscard]] uint32_t get_payload_max_size() const override {
     return 50000000L;
   }
 
-  uint32_t get_map_max_nodes() const override {
+  [[nodiscard]] uint32_t get_map_max_nodes() const override {
     return 50000;
   }
 
-  double get_map_area_max() const override {
+  [[nodiscard]] double get_map_area_max() const override {
      return 0.25;
   }
 
-  std::string get_changeset_timeout_open_max() const override {
+  [[nodiscard]] std::string get_changeset_timeout_open_max() const override {
      return "1 day";
   }
 
-  std::string get_changeset_timeout_idle() const override {
+  [[nodiscard]] std::string get_changeset_timeout_idle() const override {
      return "1 hour";
   }
 
-  uint32_t get_changeset_max_elements() const override {
+  [[nodiscard]] uint32_t get_changeset_max_elements() const override {
      return 10000;
   }
 
-  uint32_t get_way_max_nodes() const override {
+  [[nodiscard]] uint32_t get_way_max_nodes() const override {
      return 2000;
   }
 
-  int64_t get_scale() const override {
+  [[nodiscard]] int64_t get_scale() const override {
      return 10000000L;
   }
 
-  std::optional<uint32_t> get_relation_max_members() const override {
+  [[nodiscard]] std::optional<uint32_t> get_relation_max_members() const override {
      return {};  // default: unlimited
   }
 
-  std::optional<uint32_t> get_element_max_tags() const override {
+  [[nodiscard]] std::optional<uint32_t> get_element_max_tags() const override {
      return {};  // default: unlimited
   }
 
-  uint32_t get_ratelimiter_ratelimit(bool moderator) const override {
+  [[nodiscard]] uint32_t get_ratelimiter_ratelimit(bool moderator) const override {
     if (moderator) {
        return 1024 * 1024; // 1MB/s
     }
     return 100 * 1024; // 100 KB/s
   }
 
-  uint32_t get_ratelimiter_maxdebt(bool moderator) const override {
+  [[nodiscard]] uint32_t get_ratelimiter_maxdebt(bool moderator) const override {
     if (moderator) {
        return 1024 * 1024 * 1024; // 1GB
     }
     return 250 * 1024 * 1024; // 250 MB
   }
 
-  bool get_ratelimiter_upload() const override {
+  [[nodiscard]] bool get_ratelimiter_upload() const override {
     return false;
   }
 
-  bool get_bbox_size_limiter_upload() const override {
+  [[nodiscard]] bool get_bbox_size_limiter_upload() const override {
     return false;
   }
 };
@@ -124,65 +124,65 @@ public:
     set_new_options(options);
   }
 
-  uint32_t get_payload_max_size() const override {
+  [[nodiscard]] uint32_t get_payload_max_size() const override {
     return m_payload_max_size;
   }
 
-  uint32_t get_map_max_nodes() const override {
+  [[nodiscard]] uint32_t get_map_max_nodes() const override {
     return m_map_max_nodes;
   }
 
-  double get_map_area_max() const override {
+  [[nodiscard]] double get_map_area_max() const override {
      return m_map_area_max;
   }
 
-  std::string get_changeset_timeout_open_max() const override {
+  [[nodiscard]] std::string get_changeset_timeout_open_max() const override {
      return m_changeset_timeout_open_max;
   }
 
-  std::string get_changeset_timeout_idle() const override {
+  [[nodiscard]] std::string get_changeset_timeout_idle() const override {
      return m_changeset_timeout_idle;
   }
 
-  uint32_t get_changeset_max_elements() const override {
+  [[nodiscard]] uint32_t get_changeset_max_elements() const override {
      return m_changeset_max_elements;
   }
 
-  uint32_t get_way_max_nodes() const override {
+  [[nodiscard]] uint32_t get_way_max_nodes() const override {
      return m_way_max_nodes;
   }
 
-  int64_t get_scale() const override {
+  [[nodiscard]] int64_t get_scale() const override {
      return m_scale;
   }
 
-  std::optional<uint32_t> get_relation_max_members() const override {
+  [[nodiscard]] std::optional<uint32_t> get_relation_max_members() const override {
      return m_relation_max_members;
   }
 
-  std::optional<uint32_t> get_element_max_tags() const override {
+  [[nodiscard]] std::optional<uint32_t> get_element_max_tags() const override {
      return m_element_max_tags;
   }
 
-  uint32_t get_ratelimiter_ratelimit(bool moderator) const override {
+  [[nodiscard]] uint32_t get_ratelimiter_ratelimit(bool moderator) const override {
     if (moderator) {
        return m_moderator_ratelimiter_ratelimit;
     }
     return m_ratelimiter_ratelimit;
   }
 
-  uint32_t get_ratelimiter_maxdebt(bool moderator) const override {
+  [[nodiscard]] uint32_t get_ratelimiter_maxdebt(bool moderator) const override {
     if (moderator) {
        return m_moderator_ratelimiter_maxdebt;
     }
     return m_ratelimiter_maxdebt;
   }
 
-  bool get_ratelimiter_upload() const override {
+ [[nodiscard]]  bool get_ratelimiter_upload() const override {
     return m_ratelimiter_upload;
   }
 
-  bool get_bbox_size_limiter_upload() const override {
+ [[nodiscard]]  bool get_bbox_size_limiter_upload() const override {
     return m_bbox_size_limiter_upload;
   }
 

@@ -3,7 +3,7 @@
  *
  * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
  *
- * Copyright (C) 2009-2024 by the CGImap developer community.
+ * Copyright (C) 2009-2025 by the openstreetmap-cgimap developer community.
  * For a full list of authors see the git log.
  */
 
@@ -103,9 +103,12 @@ struct sorting_formatter : public output_formatter {
     double lon, double lat,
     const tags_t &tags) override {
 
-    element node{
-      element_type::node, elem, tags, element::lonlat{lon, lat},
-        nodes_t(), members_t()};
+    element node{ .m_type = element_type::node,
+                  .m_info = elem,
+                  .m_tags = tags,
+                  .m_lonlat = element::lonlat{ .m_lon = lon, .m_lat = lat },
+                  .m_nds = nodes_t(),
+                  .m_members = members_t() };
 
     m_elements.emplace_back(std::move(node));
   }
@@ -115,9 +118,12 @@ struct sorting_formatter : public output_formatter {
     const nodes_t &nodes,
     const tags_t &tags) override {
 
-    element way{
-      element_type::way, elem, tags, element::lonlat{},
-        nodes, members_t()};
+    element way{ .m_type = element_type::way,
+                 .m_info = elem,
+                 .m_tags = tags,
+                 .m_lonlat = element::lonlat{},
+                 .m_nds = nodes,
+                 .m_members = members_t() };
 
     m_elements.emplace_back(std::move(way));
   }
@@ -127,9 +133,12 @@ struct sorting_formatter : public output_formatter {
     const members_t &members,
     const tags_t &tags) override {
 
-    element rel{
-      element_type::relation, elem, tags, element::lonlat{},
-        nodes_t(), members};
+    element rel{ .m_type = element_type::relation,
+                 .m_info = elem,
+                 .m_tags = tags,
+                 .m_lonlat = element::lonlat{},
+                 .m_nds = nodes_t(),
+                 .m_members = members };
 
     m_elements.emplace_back(std::move(rel));
   }

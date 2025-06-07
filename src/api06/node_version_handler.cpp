@@ -3,7 +3,7 @@
  *
  * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
  *
- * Copyright (C) 2009-2024 by the CGImap developer community.
+ * Copyright (C) 2009-2025 by the openstreetmap-cgimap developer community.
  * For a full list of authors see the git log.
  */
 
@@ -12,9 +12,9 @@
 
 namespace api06 {
 
-node_version_responder::node_version_responder(mime::type mt, 
-                                               osm_nwr_id_t id, 
-                                               osm_version_t v, 
+node_version_responder::node_version_responder(mime::type mt,
+                                               osm_nwr_id_t id,
+                                               osm_version_t v,
                                                data_selection &w)
     : osm_current_responder(mt, w) {
 
@@ -23,7 +23,7 @@ node_version_responder::node_version_responder(mime::type mt,
   }
 }
 
-node_version_handler::node_version_handler(const request &, osm_nwr_id_t id, osm_version_t v) : 
+node_version_handler::node_version_handler(const request &, osm_nwr_id_t id, osm_version_t v) :
   id(id), v(v) {}
 
 std::string node_version_handler::log_name() const { return "node"; }

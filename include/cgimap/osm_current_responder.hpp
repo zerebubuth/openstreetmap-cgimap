@@ -3,7 +3,7 @@
  *
  * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
  *
- * Copyright (C) 2009-2024 by the CGImap developer community.
+ * Copyright (C) 2009-2025 by the openstreetmap-cgimap developer community.
  * For a full list of authors see the git log.
  */
 
@@ -24,7 +24,7 @@ class osm_current_responder : public osm_responder {
 public:
   // construct, passing the mime type down to the responder.
   // optional bounds are stored at this level, but available to derived classes.
-  osm_current_responder(mime::type, 
+  osm_current_responder(mime::type,
                         data_selection &s,
                         std::optional<bbox> bounds = {});
 
