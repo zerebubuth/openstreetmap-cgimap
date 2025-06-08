@@ -45,16 +45,7 @@ json_writer::~json_writer() noexcept {
   }
 
   yajl_gen_free(gen);
-
-  try {
-    out.close();
-  } catch (...) {
-    // don't do anything here or we risk FUBARing the entire program.
-    // it might not be possible to end the document because the output
-    // stream went away. if so, then there is nothing to do but try
-    // and reclaim the extra memory.
-  }
-
+  out.close();
 }
 
 void json_writer::start_object() {

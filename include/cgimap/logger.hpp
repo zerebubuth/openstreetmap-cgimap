@@ -26,7 +26,7 @@ void initialise(const std::string &filename = "");
 /**
  * Log a message.
  */
-void message(std::string_view m);
+void message(std::string_view m) noexcept;
 }
 
 #endif /* LOGGER_HPP */

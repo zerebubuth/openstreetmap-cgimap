@@ -59,7 +59,7 @@ int request::put(std::string_view str) {
   return get_buffer().write(str);
 }
 
-void request::flush() { get_buffer().flush(); }
+int request::flush() { return get_buffer().flush(); }
 
 void request::finish() {
   check_workflow(status_FINISHED);

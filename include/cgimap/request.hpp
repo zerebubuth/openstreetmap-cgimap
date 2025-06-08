@@ -80,7 +80,7 @@ struct request {
   int put(std::string_view str);
 
   // call this to flush output to the client.
-  void flush();
+  int flush();
 
   /******************** RESPONSE FINISHING FUNCTIONS ************************/
 
