@@ -140,6 +140,7 @@ void ApiDB_Node_Updater::process_modify_nodes() {
   // Use new_ids as a result of inserting nodes in tmp table
   replace_old_ids_in_nodes(modify_nodes, ct.created_node_ids);
 
+  ids.reserve(modify_nodes.size());
   for (const auto &id : modify_nodes)
     ids.push_back(id.id);
 
@@ -194,6 +195,7 @@ void ApiDB_Node_Updater::process_delete_nodes() {
   // Use new_ids as a result of inserting nodes in tmp table
   replace_old_ids_in_nodes(delete_nodes, ct.created_node_ids);
 
+  ids.reserve(delete_nodes.size());
   for (const auto &node : delete_nodes)
     ids.push_back(node.id);
 
@@ -758,8 +760,8 @@ std::vector<osm_nwr_id_t> ApiDB_Node_Updater::insert_new_current_node_tags(
   auto stream = m.to_stream("current_node_tags", "node_id, k, v");
 
   for (const auto &node : nodes) {
-    for (const auto &tag : node.tags) {
-      stream.write_values(node.id, tag.first, tag.second);
+    for (const auto &[key, value] : node.tags) {
+      stream.write_values(node.id, key, value);
       ids.emplace_back(node.id);
     }
   }

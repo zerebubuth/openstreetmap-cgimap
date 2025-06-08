@@ -420,7 +420,7 @@ void process_request(request &req, rate_limiter &limiter,
 
   try {
 
-    RequestContext req_ctx{req};
+    RequestContext req_ctx{.req=req};
 
     std::setlocale(LC_ALL, "C.UTF-8");
 

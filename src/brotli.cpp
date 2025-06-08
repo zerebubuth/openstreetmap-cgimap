@@ -6,8 +6,8 @@
  * Copyright (C) 2009-2025 by the openstreetmap-cgimap developer community.
  * For a full list of authors see the git log.
  */
- 
- 
+
+
 #include "cgimap/brotli.hpp"
 
 #include <stdexcept>

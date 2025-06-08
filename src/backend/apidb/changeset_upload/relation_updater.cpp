@@ -169,6 +169,7 @@ void ApiDB_Relation_Updater::process_modify_relations() {
 
   std::vector<osm_nwr_id_t> ids;
 
+  ids.reserve(modify_relations.size());
   for (const auto &id : modify_relations)
     ids.push_back(id.id);
 
@@ -279,6 +280,7 @@ void ApiDB_Relation_Updater::process_delete_relations() {
   replace_old_ids_in_relations(delete_relations, ct.created_node_ids,
                                ct.created_way_ids, ct.created_relation_ids);
 
+  ids.reserve(delete_relations.size());
   for (const auto &id : delete_relations)
     ids.push_back(id.id);
 
@@ -1373,8 +1375,8 @@ std::vector<osm_nwr_id_t>  ApiDB_Relation_Updater::insert_new_current_relation_t
   auto stream = m.to_stream("current_relation_tags", "relation_id, k, v");
 
   for (const auto &relation : relations) {
-    for (const auto &tag : relation.tags) {
-      stream.write_values(relation.id, tag.first, tag.second);
+    for (const auto &[key, value] : relation.tags) {
+      stream.write_values(relation.id, key, value);
       ids.emplace_back(relation.id);
     }
   }
