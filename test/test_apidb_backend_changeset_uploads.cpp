@@ -889,18 +889,18 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_single_relations", "[changeset][up
 
   SECTION("Initialize test data") {
 
-    tdb.run_sql(
-        "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-        "VALUES "
-        "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true), "
-        "  (2, 'user_2@example.com', '', '2013-11-14T02:10:00Z', 'user_2', false); "
+    tdb.run_sql(R"(
+      INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public)
+      VALUES
+        (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true),
+        (2, 'user_2@example.com', '', '2013-11-14T02:10:00Z', 'user_2', false);
 
-        "INSERT INTO changesets (id, user_id, created_at, closed_at) "
-        "VALUES "
-        "  (1, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'), "
-        "  (2, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'), "
-        "  (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z');"
-    );
+      INSERT INTO changesets (id, user_id, created_at, closed_at)
+      VALUES
+        (1, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'),
+        (2, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'),
+        (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z');
+    )");
   }
 
 
@@ -2009,18 +2009,18 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset_update", "[changeset][up
   auto changeset_updater = upd->get_changeset_updater(ctx, 1);
 
   SECTION("Initialize test data") {
-    tdb.run_sql(
-        "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-        "VALUES "
-        "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true), "
-        "  (2, 'user_2@example.com', '', '2013-11-14T02:10:00Z', 'user_2', false); "
+    tdb.run_sql(R"(
+      INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public)
+      VALUES
+        (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true),
+        (2, 'user_2@example.com', '', '2013-11-14T02:10:00Z', 'user_2', false);
 
-        "INSERT INTO changesets (id, user_id, created_at, closed_at) "
-        "VALUES "
-        "  (1, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval), "
-        "  (2, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'), "
-        "  (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z');"
-    );
+      INSERT INTO changesets (id, user_id, created_at, closed_at)
+      VALUES
+        (1, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval),
+        (2, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'),
+        (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z');
+    )");
   }
 
   SECTION("Trying to add CHANGESET_MAX_ELEMENTS to empty changeset - should succeed") {
@@ -2036,18 +2036,18 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_osmchange_message", "[changeset][u
 
   SECTION("Initialize test data") {
 
-  tdb.run_sql(
-      "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-      "VALUES "
-      "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true), "
-      "  (2, 'user_2@example.com', '', '2013-11-14T02:10:00Z', 'user_2', false); "
+  tdb.run_sql(R"(
+      INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public)
+      VALUES
+        (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true),
+        (2, 'user_2@example.com', '', '2013-11-14T02:10:00Z', 'user_2', false);
 
-      "INSERT INTO changesets (id, user_id, created_at, closed_at) "
-      "VALUES "
-      "  (1, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval), "
-      "  (2, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'), "
-      "  (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z');"
-  );
+      INSERT INTO changesets (id, user_id, created_at, closed_at)
+      VALUES
+        (1, 1, now() at time zone 'utc', now() at time zone 'utc' + '1 hour' ::interval),
+        (2, 1, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z'),
+        (4, 2, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z');
+  )");
   }
 
 

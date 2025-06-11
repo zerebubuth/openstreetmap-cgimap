@@ -55,14 +55,7 @@ bool parseQValue(std::string_view param, double &qValue) {
 } // namespace
 
 AcceptHeader::AcceptHeader(std::string_view header) {
-
-  acceptedTypes = parse(header);
-
-  std::ranges::sort(acceptedTypes,
-            [](const AcceptElement &a, const AcceptElement &b) {
-              return std::tie(a.q, a.type, a.subtype) >
-                     std::tie(b.q, b.type, b.subtype);
-            });
+  auto acceptedTypes = parse(header);
 
   for (const auto &acceptedType : acceptedTypes)
     mapping[acceptedType.mimeType] = acceptedType.q;
@@ -91,7 +84,6 @@ AcceptHeader::AcceptHeader(std::string_view header) {
     auto itr = mapping.find(mime::type::any_type);
     if (itr != mapping.end()) {
       best = available.front();
-      score = itr->second;
     }
   }
 

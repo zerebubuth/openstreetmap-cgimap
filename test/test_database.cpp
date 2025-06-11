@@ -118,7 +118,7 @@ test_database::~test_database() {
     m_readonly_factory.reset();
   }
   if (m_update_factory) {
-      m_update_factory.reset();
+    m_update_factory.reset();
   }
 
   if (!m_db_name.empty()) {
@@ -133,15 +133,13 @@ test_database::~test_database() {
     } catch (const std::exception &e) {
       // nothing we can do here in the destructor except complain
       // loudly.
-      std::cerr << "Unable to drop database: " << e.what() << std::endl;
+      std::cerr << "Unable to drop database: " << e.what() << '\n';
 
     } catch (...) {
-      std::cerr << "Unable to drop database due to unknown exception."
-                << std::endl;
+      std::cerr << "Unable to drop database due to unknown exception.\n";
     }
   }
 }
-
 
 void test_database::testcase_starting() {
 

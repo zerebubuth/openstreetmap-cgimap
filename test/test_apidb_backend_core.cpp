@@ -96,7 +96,7 @@ std::vector<fs::path> get_test_cases() {
   std::vector<fs::path> test_cases;
 
   for (const auto& entry : fs::directory_iterator(test_directory)) {
-    fs::path filename = entry.path();
+    const fs::path& filename = entry.path();
     if (filename.extension() == ".case") {
       test_cases.push_back(filename);
     }
@@ -153,7 +153,7 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "readonly_pgsql core", "[core][db]" ) {
     }
 
     // Execute actual test cases
-    for (fs::path test_case : test_cases) {
+    for (const fs::path& test_case : test_cases) {
       SECTION("Execute single testcase " + test_case.filename().string()) {
         std::string generator = fmt::format(PACKAGE_STRING " (test {})", test_case.string());
         test_request req;

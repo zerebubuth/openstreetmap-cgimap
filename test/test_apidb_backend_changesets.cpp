@@ -74,23 +74,21 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_negative_changeset_ids", "[changes
 
   SECTION("Initialize test data") {
 
-    tdb.run_sql(
-      "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-      "VALUES "
-      "  (-1, 'osmosis@osmosis.com', '', '2016-04-16T15:09:00Z', 'osmosis', false);"
+    tdb.run_sql(R"(
+      INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public)
+      VALUES
+        (-1, 'osmosis@osmosis.com', '', '2016-04-16T15:09:00Z', 'osmosis', false);
 
-      "INSERT INTO changesets (id, user_id, created_at, closed_at) "
-      "VALUES "
-      "  (-1, -1, '2016-04-16T15:09:00Z', '2016-04-16T15:09:00Z'), "
-      "  (0, -1, '2016-04-16T15:09:00Z', '2016-04-16T15:09:00Z'); "
+      INSERT INTO changesets (id, user_id, created_at, closed_at)
+      VALUES
+        (-1, -1, '2016-04-16T15:09:00Z', '2016-04-16T15:09:00Z'),
+        (0, -1, '2016-04-16T15:09:00Z', '2016-04-16T15:09:00Z');
 
-      "INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, \"timestamp\", tile, version) "
-      " VALUES "
-      "  (6, 90000000, 90000000,  0, true,  '2016-04-16T15:09:00Z', 3229120632, 1), "
-      "  (7, 90000000, 90000000, -1, true,  '2016-04-16T15:09:00Z', 3229120632, 1); "
-      );
-
-
+      INSERT INTO current_nodes (id, latitude, longitude, changeset_id, visible, "timestamp", tile, version)
+       VALUES
+        (6, 90000000, 90000000,  0, true,  '2016-04-16T15:09:00Z', 3229120632, 1),
+        (7, 90000000, 90000000, -1, true,  '2016-04-16T15:09:00Z', 3229120632, 1);
+      )");
   }
 
   SECTION("Validate data") {
@@ -127,15 +125,15 @@ TEST_CASE_METHOD( DatabaseTestsFixture, "test_changeset", "[changeset][db]" ) {
   auto sel = tdb.get_data_selection();
 
   SECTION("Initialize test data") {
-    tdb.run_sql(
-      "INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public) "
-      "VALUES "
-      "  (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true); "
+    tdb.run_sql(R"(
+      INSERT INTO users (id, email, pass_crypt, creation_time, display_name, data_public)
+      VALUES
+        (1, 'user_1@example.com', '', '2013-11-14T02:10:00Z', 'user_1', true);
 
-      "INSERT INTO changesets (id, user_id, min_lat, max_lat, min_lon, max_lon, created_at, closed_at, num_changes) "
-      "VALUES "
-      "  (1, 1, 387436644, 535639226, -91658156, 190970588, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 2);"
-      );
+      INSERT INTO changesets (id, user_id, min_lat, max_lat, min_lon, max_lon, created_at, closed_at, num_changes)
+      VALUES
+        (1, 1, 387436644, 535639226, -91658156, 190970588, '2013-11-14T02:10:00Z', '2013-11-14T03:10:00Z', 2);
+      )");
   }
 
   SECTION("Validate data") {

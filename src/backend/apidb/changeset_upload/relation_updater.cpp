@@ -551,7 +551,7 @@ void ApiDB_Relation_Updater::lock_current_relations(
 
   if (!r.empty()) {
     std::vector<osm_nwr_id_t> missing_ids;
-    missing_ids.reserve(ids.size());
+    missing_ids.reserve(r.size());
 
     const auto id_col(r.column_number("id"));
 
@@ -603,6 +603,9 @@ void ApiDB_Relation_Updater::check_current_relation_versions(
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<osm_version_t> versions;
+
+  ids.reserve(relations.size());
+  versions.reserve(relations.size());
 
   for (const auto &r : relations) {
     ids.push_back(r.id);
@@ -673,7 +676,7 @@ ApiDB_Relation_Updater::determine_already_deleted_relations(
       m.exec_prepared("already_deleted_relations", ids_to_be_deleted);
 
   for (const auto &row : r) {
-    osm_nwr_id_t id = row["id"].as<osm_nwr_id_t>();
+    auto id = row["id"].as<osm_nwr_id_t>();
 
     // OsmChange documents wants to delete a relation that is already deleted,
     // and the if-unused flag hasn't been set!

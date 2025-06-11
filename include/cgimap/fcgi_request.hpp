@@ -22,7 +22,7 @@ struct fcgi_request : public request {
   std::string get_payload() override;
 
   // getting and setting the current time
-  std::chrono::system_clock::time_point get_current_time() const override;
+  [[nodiscard]] std::chrono::system_clock::time_point get_current_time() const override;
   // need to be able to set the time, since the fcgi_request is
   // actually wrapping the whole socket and so persists over
   // several calls.

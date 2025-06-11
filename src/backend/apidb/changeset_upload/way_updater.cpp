@@ -447,7 +447,7 @@ void ApiDB_Way_Updater::lock_current_ways(
 
   if (!r.empty()) {
     std::vector<osm_nwr_id_t> missing_ids;
-    missing_ids.reserve(ids.size());
+    missing_ids.reserve(r.size());
 
     const auto id_col(r.column_number("id"));
 
@@ -498,6 +498,9 @@ void ApiDB_Way_Updater::check_current_way_versions(
 
   std::vector<osm_nwr_id_t> ids;
   std::vector<osm_version_t> versions;
+
+  ids.reserve(ways.size());
+  versions.reserve(ways.size());
 
   for (const auto &w : ways) {
     ids.push_back(w.id);

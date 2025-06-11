@@ -85,7 +85,7 @@ std::string fcgi_request::get_payload() {
   const char *content_encoding = FCGX_GetParam("HTTP_CONTENT_ENCODING",  m_impl->req.envp);
 
   auto content_encoding_handler = http::get_content_encoding_handler(
-         std::string(content_encoding == nullptr ? "" : content_encoding));
+         std::string_view(content_encoding == nullptr ? "" : content_encoding));
 
   unsigned long content_length = 0;
   unsigned long curr_content_length = 0;

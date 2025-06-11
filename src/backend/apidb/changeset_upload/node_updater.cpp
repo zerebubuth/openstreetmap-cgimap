@@ -53,6 +53,8 @@ void ApiDB_Node_Updater::add_node(double lat, double lon,
                    .changeset_id = changeset_id,
                    .old_id = old_id};
 
+  new_node.tags.reserve(tags.size());
+
   for (const auto &[key, value] : tags)
     new_node.tags.emplace_back(key, value);
   create_nodes.push_back(new_node);
@@ -74,6 +76,8 @@ void ApiDB_Node_Updater::modify_node(double lat, double lon,
                       .tile = xy2tile(lon2x(lon), lat2y(lat)),
                       .changeset_id = changeset_id,
                       .old_id = static_cast<osm_nwr_signed_id_t>(id)};
+
+  modify_node.tags.reserve(tags.size());
 
   for (const auto &[key, value] : tags)
     modify_node.tags.emplace_back(key, value);
@@ -376,7 +380,7 @@ void ApiDB_Node_Updater::lock_current_nodes(
 
   if (!r.empty()) {
     std::vector<osm_nwr_id_t> missing_ids;
-    missing_ids.reserve(ids.size());
+    missing_ids.reserve(r.size());
 
     const auto id_col(r.column_number("id"));
 

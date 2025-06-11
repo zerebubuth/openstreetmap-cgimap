@@ -54,7 +54,6 @@ public:
   [[nodiscard]] mime::type most_acceptable_of(const std::vector<mime::type> &available) const;
 
 private:
-  std::vector<AcceptHeader::AcceptElement> acceptedTypes;  ///< Sorted list of accepted types
   std::map<mime::type, double> mapping;      ///< MIME type to q-value mapping
 
   /**

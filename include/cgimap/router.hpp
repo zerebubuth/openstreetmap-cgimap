@@ -48,10 +48,10 @@ template <typename LeftType, typename RightType> struct match_and;
  * match_string("bar")).
  */
 template <typename Self> struct ops {
-  match_and<Self, match_string> operator/(const match_string &rhs) const {
+  match_and<Self, match_string> operator/(const match_string &rhs) const noexcept {
     return match_and<Self, match_string>(*static_cast<const Self *>(this), rhs);
   }
-  match_and<Self, match_osm_id> operator/(const match_osm_id &rhs) const {
+  match_and<Self, match_osm_id> operator/(const match_osm_id &rhs) const noexcept {
     return match_and<Self, match_osm_id>(*static_cast<const Self *>(this), rhs);
   }
 };
@@ -66,7 +66,7 @@ struct match_and : public ops<match_and<LeftType, RightType> > {
 
   match_and(const LeftType &l, const RightType &r) : lhs(l), rhs(r) {}
 
-  std::pair<match_type, bool> match(part_iterator &begin, const part_iterator &end) const {
+  std::pair<match_type, bool> match(part_iterator &begin, const part_iterator &end) const noexcept {
     auto [ lval, lerror ] = lhs.match(begin, end);
     if (lerror)
       return {match_type(), true};
