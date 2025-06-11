@@ -2,6 +2,7 @@
 # See debhelper(7) (uncomment to enable)
 # output every command that modifies files on the build system.
 #export DH_VERBOSE = 1
+export DEB_BUILD_MAINT_OPTIONS=optimize=+lto
 
 %:
 	dh $@ --parallel --builddirectory=build --buildsystem=cmake+ninja
@@ -10,4 +11,9 @@ override_dh_auto_test:
 	pg_virtualenv dh_auto_test --no-parallel
 
 override_dh_auto_configure:
-	dh_auto_configure -- -DCMAKE_LIBRARY_PATH=$(DEB_HOST_MULTIARCH) -DENABLE_PGVIRTUALENV=OFF -DBUILD_TESTING=ON -DBUILD_SHARED_LIBS=OFF
+	dh_auto_configure -- \
+		-DCMAKE_LIBRARY_PATH=$(DEB_HOST_MULTIARCH) \
+		-DENABLE_PGVIRTUALENV=OFF \
+		-DBUILD_TESTING=ON \
+		-DBUILD_SHARED_LIBS=OFF \
+		$(shell if ! dpkg-vendor --is Ubuntu; then echo -DENABLE_FMT_HEADER=OFF; fi)
