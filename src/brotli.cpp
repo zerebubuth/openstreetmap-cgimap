@@ -3,14 +3,14 @@
  *
  * This file is part of openstreetmap-cgimap (https://github.com/zerebubuth/openstreetmap-cgimap/).
  *
- * Copyright (C) 2006-2023 by the CGImap developer community.
+ * Copyright (C) 2009-2025 by the openstreetmap-cgimap developer community.
  * For a full list of authors see the git log.
  */
- 
- 
+
+
 #include "cgimap/brotli.hpp"
 
-#include <stdexcept>
+#include <cassert>
 
 #if HAVE_BROTLI
 
@@ -56,11 +56,11 @@ int brotli_output_buffer::compress(const char *data, int data_length, bool last)
 }
 
 
-int brotli_output_buffer::write(const char *buffer, int len) {
+int brotli_output_buffer::write(const char *buffer, int len) noexcept {
   return compress(buffer, len, false);
 }
 
-int brotli_output_buffer::close() {
+int brotli_output_buffer::close() noexcept {
   if (!flushed)
     flush();
 
@@ -72,12 +72,13 @@ int brotli_output_buffer::close() {
 int brotli_output_buffer::written() const { return bytes_in; }
 
 
-void brotli_output_buffer::flush() {
-  if (flushed)
-    throw std::runtime_error("Brotli does not support multiple flush operations");
+int brotli_output_buffer::flush() noexcept {
+
+  assert(!flushed); // brotli does not support multiple flush operations
 
   compress(nullptr, 0, true);
   flushed = true;
+  return 0;
 }
 
 #endif

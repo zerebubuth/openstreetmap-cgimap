@@ -42,13 +42,14 @@ public:
 
   ~zlib_output_buffer() override = default;
 
-  int write(const char *buffer, int len) override;
+  using output_buffer::write;
+  int write(const char *buffer, int len) noexcept override;
   int written() const override;
-  int close() override;
-  void flush() override;
+  int close() noexcept override;
+  int flush() noexcept override;
 
 private:
-  void flush_output();
+  int flush_output() noexcept;
 
   output_buffer& out;
   // keep track of bytes written because the z_stream struct doesn't seem to

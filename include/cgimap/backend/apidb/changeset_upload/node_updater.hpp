@@ -32,6 +32,12 @@ public:
 
   ~ApiDB_Node_Updater() override = default;
 
+  // Non-copyable and non-movable
+  ApiDB_Node_Updater(const ApiDB_Node_Updater&) = delete;
+  ApiDB_Node_Updater& operator=(const ApiDB_Node_Updater&) = delete;
+  ApiDB_Node_Updater(ApiDB_Node_Updater&&) = delete;
+  ApiDB_Node_Updater& operator=(ApiDB_Node_Updater&&) = delete;
+
   void add_node(double lat, double lon, osm_changeset_id_t changeset_id,
                 osm_nwr_signed_id_t old_id, const api06::TagList &tags) override;
 

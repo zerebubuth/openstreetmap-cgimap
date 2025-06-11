@@ -108,12 +108,13 @@ namespace {
  */
 class fcgi_output_buffer : public output_buffer {
 public:
-  int write(const char *buffer, int len) override {
+  using output_buffer::write;
+  int write(const char *buffer, int len) noexcept override {
     w += len;
     return r.put(buffer, len);
   }
 
-  int close() override {
+  int close() noexcept override {
     // we don't actually close the request output, as that happens
     // automatically on the next call to accept.
     return 0;
@@ -121,10 +122,10 @@ public:
 
   [[nodiscard]] int written() const override { return w; }
 
-  void flush() override {
+  int flush() noexcept override {
     // there's a note that says this causes too many writes and decreases
     // efficiency, but we're only calling it once...
-    r.flush();
+    return r.flush();
   }
 
   ~fcgi_output_buffer() override = default;

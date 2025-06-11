@@ -34,7 +34,8 @@ struct fcgi_buffer : public output_buffer {
 
   ~fcgi_buffer() override = default;
 
-  int write(const char *buffer, int len) override {
+  using output_buffer::write;
+  int write(const char *buffer, int len) noexcept override {
     int bytes = FCGX_PutStr(buffer, len, m_req.out);
     if (bytes >= 0) {
       m_written += bytes;
@@ -44,9 +45,9 @@ struct fcgi_buffer : public output_buffer {
 
   [[nodiscard]] int written() const override { return m_written; }
 
-  int close() override { return FCGX_FClose(m_req.out); }
+  int close() noexcept override { return FCGX_FClose(m_req.out); }
 
-  void flush() override { FCGX_FFlush(m_req.out); }
+  int flush() noexcept override { return FCGX_FFlush(m_req.out); }
 
 private:
   FCGX_Request m_req;

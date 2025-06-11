@@ -30,7 +30,7 @@ void initialise(const std::string &filename) {
   pid = getpid();
 }
 
-void message(std::string_view m) {
+void message(std::string_view m) noexcept {
   if (stream) {
     time_t now = time(nullptr);
     *stream << "[" << std::put_time( std::gmtime( &now ), "%FT%T") << " #" << pid << "] " << m

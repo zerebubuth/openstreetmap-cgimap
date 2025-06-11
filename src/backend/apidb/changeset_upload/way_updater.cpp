@@ -13,7 +13,6 @@
 #include "cgimap/backend/apidb/utils.hpp"
 #include "cgimap/backend/apidb/transaction_manager.hpp"
 #include "cgimap/http.hpp"
-#include "cgimap/options.hpp"
 #include "cgimap/util.hpp"
 
 #include <algorithm>
@@ -168,6 +167,7 @@ void ApiDB_Way_Updater::process_modify_ways() {
   replace_old_ids_in_ways(modify_ways, ct.created_node_ids,
                           ct.created_way_ids);
 
+  ids.reserve(modify_ways.size());
   for (const auto &id : modify_ways)
     ids.push_back(id.id);
 
@@ -230,6 +230,7 @@ void ApiDB_Way_Updater::process_delete_ways() {
   replace_old_ids_in_ways(delete_ways, ct.created_node_ids,
                           ct.created_way_ids);
 
+  ids.reserve(delete_ways.size());
   for (const auto &id : delete_ways)
     ids.push_back(id.id);
 
@@ -776,8 +777,8 @@ std::vector<osm_nwr_id_t> ApiDB_Way_Updater::insert_new_current_way_tags(
   auto stream = m.to_stream("current_way_tags", "way_id, k, v");
 
   for (const auto &way : ways) {
-    for (const auto &tag : way.tags) {
-      stream.write_values(way.id, tag.first, tag.second);
+    for (const auto &[key, value] : way.tags) {
+      stream.write_values(way.id, key, value);
       ids.emplace_back(way.id);
     }
   }

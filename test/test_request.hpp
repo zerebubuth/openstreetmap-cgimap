@@ -31,10 +31,11 @@ struct test_output_buffer : public output_buffer {
   test_output_buffer(test_output_buffer&&) = delete;
   test_output_buffer& operator=(test_output_buffer&&) = delete;
 
-  int write(const char *buffer, int len) override;
+  using output_buffer::write;
+  int write(const char *buffer, int len) noexcept override;
   [[nodiscard]] int written() const override;
-  int close() override;
-  void flush() override;
+  int close() noexcept override;
+  int flush() noexcept override;
 
 private:
   std::ostream &m_out;

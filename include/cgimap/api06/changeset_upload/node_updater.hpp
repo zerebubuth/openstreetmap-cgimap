@@ -25,6 +25,11 @@ using TagList = std::map<std::string, std::string>;
 class Node_Updater {
 
 public:
+  Node_Updater() = default;
+  Node_Updater(const Node_Updater&) = delete;
+  Node_Updater& operator=(const Node_Updater&) = delete;
+  Node_Updater(Node_Updater&&) = delete;
+  Node_Updater& operator=(Node_Updater&&) = delete;
   virtual ~Node_Updater() = default;
 
   virtual void add_node(double lat, double lon, osm_changeset_id_t changeset_id,

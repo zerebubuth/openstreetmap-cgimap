@@ -12,6 +12,7 @@
 #include <cstring>
 
 #include "cgimap/zlib.hpp"
+#include "cgimap/logger.hpp"
 #include "cgimap/output_writer.hpp"
 
 zlib_output_buffer::zlib_output_buffer(output_buffer& o,
@@ -43,7 +44,7 @@ zlib_output_buffer::zlib_output_buffer(output_buffer& o,
   stream.avail_out = sizeof(outbuf);
 }
 
-int zlib_output_buffer::write(const char *buffer, int len) {
+int zlib_output_buffer::write(const char *buffer, int len) noexcept {
   assert(stream.avail_in == 0);
 
   if (len > 0) {
@@ -59,7 +60,8 @@ int zlib_output_buffer::write(const char *buffer, int len) {
     }
 
     if (status != Z_OK) {
-      throw output_writer::write_error("deflate failed");
+      logger::message("deflate failed");
+      return -1;
     }
 
     if (stream.avail_out == 0) {
@@ -72,7 +74,7 @@ int zlib_output_buffer::write(const char *buffer, int len) {
   return len;
 }
 
-int zlib_output_buffer::close() {
+int zlib_output_buffer::close() noexcept {
   int status = 0;
 
   assert(stream.avail_in == 0);
@@ -85,11 +87,13 @@ int zlib_output_buffer::close() {
   if (status == Z_STREAM_END) {
     out.write(outbuf, sizeof(outbuf) - stream.avail_out);
   } else {
-    throw output_writer::write_error("deflate failed");
+    logger::message("deflate failed");
+    return -1;
   }
 
   if (deflateEnd(&stream) != Z_OK) {
-    throw output_writer::write_error("deflateEnd failed");
+    logger::message("deflateEnd failed");
+    return -1;
   }
 
   return out.close();
@@ -97,14 +101,16 @@ int zlib_output_buffer::close() {
 
 int zlib_output_buffer::written() const { return bytes_in; }
 
-void zlib_output_buffer::flush_output() {
-  out.write(outbuf, sizeof(outbuf) - stream.avail_out);
+int zlib_output_buffer::flush_output() noexcept {
+  int rc = out.write(outbuf, sizeof(outbuf) - stream.avail_out);
 
   stream.next_out = (Bytef *)outbuf;
   stream.avail_out = sizeof(outbuf);
+
+  return (rc < 0 ? -1 : 0);
 }
 
-void zlib_output_buffer::flush() { flush_output(); }
+int zlib_output_buffer::flush() noexcept { return flush_output(); }
 
 /*******************************************************************************/
 

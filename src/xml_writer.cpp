@@ -15,31 +15,43 @@
 #include <fmt/core.h>
 #include <fmt/compile.h>
 
-
-static int wrap_write(void *context, const char *buffer, int len) {
+// C-style callback functions are called from xmlOutputBufferCreateIO.
+// Functions cannot throw, return -1 if an error occurred.
+static int wrap_write(void *context, const char *buffer, int len) noexcept {
   auto *out = static_cast<output_buffer *>(context);
 
   if (out == nullptr) {
-    throw xml_writer::write_error("Output buffer was NULL in wrap_write().");
+    return -1;
   }
 
   return out->write(buffer, len);
 }
 
-static int wrap_close(void *context) {
+static int wrap_close(void *context) noexcept {
   auto *out = static_cast<output_buffer *>(context);
 
   if (out == nullptr) {
-    throw xml_writer::write_error("Output buffer was NULL in wrap_close().");
+    return -1;
   }
 
   return out->close();
+}
+
+static void callback_generic_error(void* ctx, const char* msg, ...)
+{
+  // we can't do much with the error here, in particular we don't want to write it to stderr.
+  // xml_writer methods still get an rc=-1 from libxml2 functions and throw an exception.
+  // so nothing to do here...
 }
 
 // create a new XML writer using writer callback functions
 xml_writer::xml_writer(output_buffer &out, bool indent) {
   xmlOutputBufferPtr output_buffer =
       xmlOutputBufferCreateIO(wrap_write, wrap_close, &out, nullptr);
+
+  // set our own error handler (xmlpp::parser.cpp also calls this function, and we may be
+  // left with a non-functioning xmlpp error handler if we don't define our own here)
+  xmlSetGenericErrorFunc(output_buffer->context, &callback_generic_error);
 
   // allocate a writer using the output buffer object
   writer = xmlNewTextWriter(output_buffer);

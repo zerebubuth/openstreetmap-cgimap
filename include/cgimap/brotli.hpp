@@ -27,14 +27,19 @@
  */
 class brotli_output_buffer : public output_buffer {
 public:
+  explicit brotli_output_buffer(output_buffer& o);
 
-  brotli_output_buffer(output_buffer& o);
   brotli_output_buffer(const brotli_output_buffer &old) = delete;
+  brotli_output_buffer& operator=(const brotli_output_buffer&) = delete;
+  brotli_output_buffer(brotli_output_buffer&&) = delete;
+  brotli_output_buffer& operator=(brotli_output_buffer&&) = delete;
   ~brotli_output_buffer() override = default;
-  int write(const char *buffer, int len) override;
+
+  using output_buffer::write;
+  int write(const char *buffer, int len) noexcept override;
   int written() const override;
-  int close() override;
-  void flush() override;
+  int close() noexcept override;
+  int flush() noexcept override;
 
 private:
   int compress(const char *data, int data_length, bool last);

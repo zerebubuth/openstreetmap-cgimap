@@ -17,7 +17,7 @@ test_output_buffer::test_output_buffer(std::ostream &out, std::ostream &body)
   : m_out(out), m_body(body) {
 }
 
-int test_output_buffer::write(const char *buffer, int len) {
+int test_output_buffer::write(const char *buffer, int len) noexcept {
   m_body.write(buffer, len);
   m_out.write(buffer, len);
   m_written += len;
@@ -28,11 +28,11 @@ int test_output_buffer::written() const {
   return m_written;
 }
 
-int test_output_buffer::close() {
+int test_output_buffer::close() noexcept {
   return 0;
 }
 
-void test_output_buffer::flush() {}
+int test_output_buffer::flush() noexcept { return 0; }
 
 const char *test_request::get_param(const char *key) const {
   std::string key_str(key);
