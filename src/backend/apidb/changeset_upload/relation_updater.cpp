@@ -1786,9 +1786,10 @@ void ApiDB_Relation_Updater::delete_current_relation_tags(
   auto r = m.exec_prepared("delete_current_relation_tags", ids);
 }
 
-uint32_t ApiDB_Relation_Updater::get_num_changes() const {
-  return (ct.created_relation_ids.size() + ct.modified_relation_ids.size() +
-          ct.deleted_relation_ids.size());
+changeset_upload_stats::element_stats ApiDB_Relation_Updater::get_stats() const {
+  return {ct.created_relation_ids.size(),
+          ct.modified_relation_ids.size(),
+          ct.deleted_relation_ids.size()};
 }
 
 bbox_t ApiDB_Relation_Updater::bbox() const { return m_bbox; }

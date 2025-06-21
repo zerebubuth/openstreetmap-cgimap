@@ -25,6 +25,7 @@ void global_settings_via_options::init_fallback_values(const global_settings_bas
   m_changeset_timeout_open_max = def.get_changeset_timeout_open_max();
   m_changeset_timeout_idle = def.get_changeset_timeout_idle();
   m_changeset_max_elements = def.get_changeset_max_elements();
+  m_changeset_enhanced_stats = def.get_changeset_enhanced_stats();
   m_way_max_nodes = def.get_way_max_nodes();
   m_scale = def.get_scale();
   m_relation_max_members = def.get_relation_max_members();
@@ -45,6 +46,7 @@ void global_settings_via_options::set_new_options(const po::variables_map &optio
   set_changeset_timeout_open_max(options);
   set_changeset_timeout_idle(options);
   set_changeset_max_elements(options);
+  set_changeset_enhanced_stats(options);
   set_way_max_nodes(options);
   set_scale(options);
   set_relation_max_members(options);
@@ -106,6 +108,12 @@ void global_settings_via_options::set_changeset_max_elements(const po::variables
     if (changeset_max_elements > 50000)
       throw std::invalid_argument("max-changeset-elements must not exceed 50000");
     m_changeset_max_elements = changeset_max_elements;
+  }
+}
+
+void global_settings_via_options::set_changeset_enhanced_stats(const po::variables_map &options)  {
+  if (options.contains("changeset-enhanced-stats")) {
+    m_changeset_enhanced_stats = options["changeset-enhanced-stats"].as<bool>();
   }
 }
 
