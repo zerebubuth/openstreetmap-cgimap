@@ -1,9 +1,9 @@
 # Disable linters during build of contrib libraries
 disable_build_lint()
 
-add_subdirectory(Catch2)
-add_subdirectory(libxml++)
-add_subdirectory(sjparser)
+add_subdirectory(Catch2 EXCLUDE_FROM_ALL)
+add_subdirectory(libxml++ EXCLUDE_FROM_ALL)
+add_subdirectory(sjparser EXCLUDE_FROM_ALL)
 
 target_link_libraries(Catch2 PUBLIC cgimap_common_compiler_options)
 target_link_libraries(Catch2WithMain PUBLIC cgimap_common_compiler_options)
