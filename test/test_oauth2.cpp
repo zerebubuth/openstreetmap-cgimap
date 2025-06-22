@@ -14,8 +14,7 @@
 #include "test_request.hpp"
 #include "test_empty_selection.hpp"
 
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 
 namespace {
 
@@ -165,21 +164,21 @@ TEST_CASE("test_validate_bearer_token", "[oauth2]") {
   SECTION("Test invalid bearer token") {
     req.set_header("HTTP_AUTHORIZATION","Bearer nFRBLFyNXPKY1fiTHAIfVsjQYkCD2KoRuH66upvueaQ");
     REQUIRE_THROWS_MATCHES(static_cast<void>(oauth2::validate_bearer_token(req, *sel, allow_api_write)), http::unauthorized,
-        Catch::Message("invalid_token"));
+        Catch::Matchers::Message("invalid_token"));
   }
 
   SECTION("Test expired bearer token") {
     req.set_header("HTTP_AUTHORIZATION","Bearer pwnMeCjSmIfQ9hXVYfAyFLFnE9VOADNvwGMKv4Ylaf0");
     REQUIRE_THROWS_MATCHES(static_cast<void>(oauth2::validate_bearer_token(req, *sel, allow_api_write)),
                       http::unauthorized,
-                      Catch::Message("token_expired"));
+                      Catch::Matchers::Message("token_expired"));
   }
 
   SECTION("Test revoked bearer token") {
     req.set_header("HTTP_AUTHORIZATION","Bearer hCXrz5B5fCBHusp0EuD2IGwYSxS8bkAnVw2_aLEdxig");
     REQUIRE_THROWS_MATCHES(static_cast<void>(oauth2::validate_bearer_token(req, *sel, allow_api_write)),
                       http::unauthorized,
-                      Catch::Message("token_revoked"));
+                      Catch::Matchers::Message("token_revoked"));
   }
 
   SECTION("Test valid bearer token, no api_write") {

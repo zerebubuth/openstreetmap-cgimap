@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.16)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -174,7 +174,7 @@ if(ENABLE_COVERAGE)
     add_custom_target(generate_coverage_report
         COMMAND mkdir -p ${COVERAGE_REPORT_DIR}
         COMMAND lcov --base-directory ${CMAKE_CURRENT_SOURCE_DIR} --directory ${CMAKE_BINARY_DIR} --capture --output-file ${COVERAGE_REPORT_DIR}/coverage.info
-        COMMAND lcov --remove ${COVERAGE_REPORT_DIR}/coverage.info '/usr/*' '${CMAKE_CURRENT_SOURCE_DIR}/contrib/catch2/*'
+        COMMAND lcov --remove ${COVERAGE_REPORT_DIR}/coverage.info '/usr/*' '${CMAKE_CURRENT_SOURCE_DIR}/contrib/Catch2/*'
                 '${CMAKE_CURRENT_SOURCE_DIR}/contrib/libxml++/*' --output-file ${COVERAGE_REPORT_DIR}/coverage_cleaned.info
         COMMAND genhtml -o ${COVERAGE_REPORT_DIR}/ ${COVERAGE_REPORT_DIR}/coverage_cleaned.info
         COMMAND lcov --list ${COVERAGE_REPORT_DIR}/coverage_cleaned.info

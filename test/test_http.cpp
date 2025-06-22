@@ -11,9 +11,7 @@
 #include "cgimap/http.hpp"
 #include "cgimap/choose_formatter.hpp"
 
-
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 
 struct test_responder : responder {
 

@@ -15,8 +15,7 @@
 #include "test_formatter.hpp"
 #include "test_database.hpp"
 
-#define CATCH_CONFIG_RUNNER
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 
 
 class DatabaseTestsFixture
@@ -34,9 +33,9 @@ protected:
 
 test_database DatabaseTestsFixture::tdb{};
 
-struct CGImapListener : Catch::TestEventListenerBase, DatabaseTestsFixture {
+struct CGImapListener : Catch::EventListenerBase, DatabaseTestsFixture {
 
-    using TestEventListenerBase::TestEventListenerBase; // inherit constructor
+    using Catch::EventListenerBase::EventListenerBase; // inherit constructor
 
     void testRunStarting( Catch::TestRunInfo const& testRunInfo ) override {
       // load database schema when starting up tests
@@ -282,7 +281,7 @@ int main(int argc, char *argv[]) {
 
   std::filesystem::path test_db_sql{ "test/structure.sql" };
 
-  using namespace Catch::clara;
+  using namespace Catch::Clara;
   auto cli =
       session.cli()
       | Opt(test_db_sql,

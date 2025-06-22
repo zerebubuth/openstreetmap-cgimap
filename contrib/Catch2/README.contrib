@@ -1,0 +1,5 @@
+Source: https://github.com/catchorg/Catch2
+Revision: v3.8.1
+Commit: 2b60af89e23d28eefc081bc930831ee9d45ea58b
+
+Update via `git subtree pull --prefix=contrib/Catch2/ --squash https://github.com/catchorg/Catch2.git <remote-ref>`
