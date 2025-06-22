@@ -35,6 +35,33 @@ void extract_bbox_from_row(const pqxx::row &row, bbox_t &result) {
   result.maxlon = row["maxlon"].as<int64_t>();
 }
 
+/**
+ * From: https://www.postgresql.org/docs/current/libpq-connect.html
+ * Keyword/Value Connection Strings
+ *
+ * To write an empty value, or a value containing spaces, surround it
+ * with single quotes, for example keyword = 'a value'. Single quotes and
+ * backslashes within a value must be escaped with a backslash, i.e., \' and \\.
+ */
+
+std::string escape_pg_value(const std::string &value) {
+  std::string escaped;
+  bool needs_quotes = value.empty();
+  for (char c : value) {
+    if (c == '\'' || c == '\\') {
+      escaped += '\\';
+      needs_quotes = true;
+    }
+    if (c == ' ') {
+      needs_quotes = true;
+    }
+    escaped += c;
+  }
+  if (needs_quotes) {
+    return "'" + escaped + "'";
+  }
+  return escaped;
+}
 
 std::vector<std::string> psql_array_to_vector(const pqxx::field& field, int size_hint) {
   return psql_array_to_vector(std::string_view(field.c_str(), field.size()), size_hint);

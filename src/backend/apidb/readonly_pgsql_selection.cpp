@@ -25,21 +25,23 @@ namespace po = boost::program_options;
 
 
 namespace {
+
 std::string connect_db_str(const po::variables_map &options) {
-  // build the connection string.
+
   std::ostringstream ostr;
-  ostr << "dbname=" << options["dbname"].as<std::string>();
+  ostr << "dbname=" << escape_pg_value(options["dbname"].as<std::string>());
   if (options.contains("host")) {
-    ostr << " host=" << options["host"].as<std::string>();
+    ostr << " host=" << escape_pg_value(options["host"].as<std::string>());
   }
   if (options.contains("username")) {
-    ostr << " user=" << options["username"].as<std::string>();
+    ostr << " user=" << escape_pg_value(options["username"].as<std::string>());
   }
   if (options.contains("password")) {
-    ostr << " password=" << options["password"].as<std::string>();
+    ostr << " password="
+         << escape_pg_value(options["password"].as<std::string>());
   }
   if (options.contains("dbport")) {
-    ostr << " port=" << options["dbport"].as<std::string>();
+    ostr << " port=" << escape_pg_value(options["dbport"].as<std::string>());
   }
   ostr << " fallback_application_name=openstreetmap-cgimap";
 
