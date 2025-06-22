@@ -15,7 +15,7 @@
 
 #include <boost/program_options.hpp>
 
-#include <catch2/catch_all.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 namespace po = boost::program_options;
 

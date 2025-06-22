@@ -10,7 +10,7 @@
 /* -*- coding: utf-8 -*- */
 #include "cgimap/util.hpp"
 
-#include <catch2/catch_all.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("util_escape", "[util]") {
   CHECK(escape("") == "\"\"");

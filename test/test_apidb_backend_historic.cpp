@@ -15,7 +15,10 @@
 #include "test_formatter.hpp"
 #include "test_database.hpp"
 
-#include <catch2/catch_all.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/reporters/catch_reporter_event_listener.hpp>
+#include <catch2/reporters/catch_reporter_registrars.hpp>
+#include <catch2/catch_session.hpp>
 
 
 class DatabaseTestsFixture

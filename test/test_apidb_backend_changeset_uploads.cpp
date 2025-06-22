@@ -38,7 +38,12 @@
 #include "test_database.hpp"
 #include "test_request.hpp"
 
-#include <catch2/catch_all.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
+#include <catch2/reporters/catch_reporter_event_listener.hpp>
+#include <catch2/reporters/catch_reporter_registrars.hpp>
+#include <catch2/catch_session.hpp>
 
 using Catch::Matchers::StartsWith;
 using Catch::Matchers::EndsWith;

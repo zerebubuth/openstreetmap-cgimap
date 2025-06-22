@@ -12,7 +12,7 @@
 #include <ctime>
 #include <stdexcept>
 
-#include <catch2/catch_all.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("Parse time", "[time]")
 {
