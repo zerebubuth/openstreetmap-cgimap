@@ -10,8 +10,7 @@
 #include "cgimap/api06/handler_utils.hpp"
 #include "test_request.hpp"
 
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include <string_view>
 #include <string>

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.16)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -39,6 +39,7 @@ endif()
 ###############
 option(ENABLE_BROTLI "Enable Brotli library" ON)
 option(ENABLE_FMT_HEADER "Enable FMT header only mode" ON)
+option(USE_BUNDLED_CATCH2 "Use Catch2 library included in contrib/, use system library otherwise" ON)
 option(ENABLE_COVERAGE "Compile with coverage info collection" OFF)
 option(ENABLE_PROFILING "Compile with profiling" OFF)
 option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
@@ -116,6 +117,9 @@ find_package(fmt 6.0 REQUIRED)
 target_link_libraries(cgimap_common_compiler_options INTERFACE
     $<IF:$<BOOL:${ENABLE_FMT_HEADER}>,fmt::fmt-header-only,fmt::fmt>)
 
+if(BUILD_TESTING AND NOT USE_BUNDLED_CATCH2)
+    find_package(Catch2 3 REQUIRED)
+endif()
 
 ###########################
 # source subdirectories
@@ -174,7 +178,7 @@ if(ENABLE_COVERAGE)
     add_custom_target(generate_coverage_report
         COMMAND mkdir -p ${COVERAGE_REPORT_DIR}
         COMMAND lcov --base-directory ${CMAKE_CURRENT_SOURCE_DIR} --directory ${CMAKE_BINARY_DIR} --capture --output-file ${COVERAGE_REPORT_DIR}/coverage.info
-        COMMAND lcov --remove ${COVERAGE_REPORT_DIR}/coverage.info '/usr/*' '${CMAKE_CURRENT_SOURCE_DIR}/contrib/catch2/*'
+        COMMAND lcov --remove ${COVERAGE_REPORT_DIR}/coverage.info '/usr/*' '${CMAKE_CURRENT_SOURCE_DIR}/contrib/Catch2/*'
                 '${CMAKE_CURRENT_SOURCE_DIR}/contrib/libxml++/*' --output-file ${COVERAGE_REPORT_DIR}/coverage_cleaned.info
         COMMAND genhtml -o ${COVERAGE_REPORT_DIR}/ ${COVERAGE_REPORT_DIR}/coverage_cleaned.info
         COMMAND lcov --list ${COVERAGE_REPORT_DIR}/coverage_cleaned.info

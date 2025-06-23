@@ -16,8 +16,11 @@
 #include "test_database.hpp"
 #include "test_request.hpp"
 
-#define CATCH_CONFIG_RUNNER
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
+#include <catch2/reporters/catch_reporter_event_listener.hpp>
+#include <catch2/reporters/catch_reporter_registrars.hpp>
+#include <catch2/catch_session.hpp>
 
 using Catch::Matchers::Equals;
 
@@ -37,9 +40,9 @@ protected:
 
 test_database DatabaseTestsFixture::tdb{};
 
-struct CGImapListener : Catch::TestEventListenerBase, DatabaseTestsFixture {
+struct CGImapListener : Catch::EventListenerBase, DatabaseTestsFixture {
 
-  using TestEventListenerBase::TestEventListenerBase; // inherit constructor
+  using Catch::EventListenerBase::EventListenerBase; // inherit constructor
 
   void testRunStarting(Catch::TestRunInfo const& testRunInfo ) override {
     // disable db write operations
@@ -125,7 +128,7 @@ int main(int argc, char *argv[]) {
 
   std::filesystem::path test_db_sql{ "test/structure.sql" };
 
-  using namespace Catch::clara;
+  using namespace Catch::Clara;
   auto cli =
       session.cli()
       | Opt(test_db_sql,

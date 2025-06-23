@@ -9,13 +9,13 @@
 
 #include "test_core_helper.hpp"
 
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
 
 #include <sstream>
 #include <string_view>
 
-struct ExceptionSubstringMatcher : Catch::MatcherBase<std::runtime_error> {
+struct ExceptionSubstringMatcher : Catch::Matchers::MatcherBase<std::runtime_error> {
   std::string m_text;
 
   ExceptionSubstringMatcher(char const *text) : m_text(text) {}

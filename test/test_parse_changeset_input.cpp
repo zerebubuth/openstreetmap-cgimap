@@ -11,8 +11,9 @@
 
 #include <sstream>
 
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
 
 namespace {
 
@@ -108,7 +109,7 @@ TEST_CASE("Tag: Key with max 255 unicode characters, <= 255", "[changeset]") {
 TEST_CASE("Tag: Key with max 255 unicode characters, > 255", "[changeset]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
       fmt::format( R"(<osm><changeset><tag k="{}" v="value"/></changeset></osm>)", repeat("😎", 256))),
-    http::bad_request, Catch::Message("Key has more than 255 unicode characters at line 1, column 292"));
+    http::bad_request, Catch::Matchers::Message("Key has more than 255 unicode characters at line 1, column 292"));
 }
 
 
@@ -123,6 +124,6 @@ TEST_CASE("Tag: Value with max 255 unicode characters, <= 255", "[changeset]") {
 TEST_CASE("Tag: Value with max 255 unicode characters, > 255", "[changeset]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
       fmt::format( R"(<osm><changeset><tag k="key" v="{}"/></changeset></osm>)", repeat("😎", 256))),
-    http::bad_request, Catch::Message("Value has more than 255 unicode characters at line 1, column 290"));
+    http::bad_request, Catch::Matchers::Message("Value has more than 255 unicode characters at line 1, column 290"));
 }
 

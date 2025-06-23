@@ -17,8 +17,9 @@
 #include <memory>
 #include <sstream>
 
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
 
 class Test_Parser_Callback : public api06::Parser_Callback {
 
@@ -91,7 +92,7 @@ TEST_CASE("Misspelled osmchange xml", "[osmchange][xml]") {
 
 TEST_CASE("osmchange: Unknown action", "[osmchange][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(R"(<osmChange><dummy/></osmChange>)"), http::bad_request,
-    Catch::Message("Unknown action dummy, choices are create, modify, delete at line 1, column 18"));
+    Catch::Matchers::Message("Unknown action dummy, choices are create, modify, delete at line 1, column 18"));
 }
 
 TEST_CASE("osmchange: Empty create action", "[osmchange][xml]") {
@@ -108,7 +109,7 @@ TEST_CASE("osmchange: Empty delete action", "[osmchange][xml]") {
 
 TEST_CASE("osmchange: create invalid object", "[osmchange][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(R"(<osmChange><create><bla/></create></osmChange>)"), http::bad_request,
-    Catch::Message("Unknown element bla, expecting node, way or relation at line 1, column 24"));
+    Catch::Matchers::Message("Unknown element bla, expecting node, way or relation at line 1, column 24"));
 }
 
 
@@ -167,7 +168,7 @@ TEST_CASE("Create node, lon non-finite float", "[osmchange][node][xml]") {
 
 TEST_CASE("Create node, changeset missing", "[osmchange][node][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(R"(<osmChange><create><node id="-1" lat="-90.00" lon="-180.00"/></create></osmChange>)"), http::bad_request,
-    Catch::Message("Changeset id is missing for Node -1 at line 1, column 60"));
+    Catch::Matchers::Message("Changeset id is missing for Node -1 at line 1, column 60"));
 }
 
 TEST_CASE("Create node, redefined lat attribute", "[osmchange][node][xml]") {
@@ -194,7 +195,7 @@ TEST_CASE("Modify node, invalid version", "[osmchange][node][xml]") {
 
 TEST_CASE("Modify node, invalid, negative version", "[osmchange][node][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(R"(<osmChange><modify><node changeset="858" version="-1" id="123"/></modify></osmChange>)"), http::bad_request,
-    Catch::Message("Version may not be negative at line 1, column 63"));
+    Catch::Matchers::Message("Version may not be negative at line 1, column 63"));
 }
 
 
@@ -244,7 +245,7 @@ TEST_CASE("Create node, duplicate key dup1", "[osmchange][node][xml]") {
                        <tag k="dup1" v="value3"/>
                        <tag k="key3" v="value4"/>
                        </node></create></osmChange>)"),
-    http::bad_request, Catch::Message("Node -1 has duplicate tags with key dup1 at line 4, column 48"));
+    http::bad_request, Catch::Matchers::Message("Node -1 has duplicate tags with key dup1 at line 4, column 48"));
 }
 
 TEST_CASE("Create node, tag without value", "[osmchange][node][xml]") {
@@ -272,7 +273,7 @@ TEST_CASE("Create node, tag value with > 255 unicode characters", "[osmchange][n
   REQUIRE_THROWS_MATCHES(process_testmsg(
     fmt::format(R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">
                            <tag k="key" v="{}"/></node></create></osmChange>)", repeat("😎", 256))),
-    http::bad_request, Catch::Message("Value has more than 255 unicode characters in Node -1 at line 2, column 301"));
+    http::bad_request, Catch::Matchers::Message("Value has more than 255 unicode characters in Node -1 at line 2, column 301"));
 }
 
 TEST_CASE("Create node, tag key with <= 255 unicode characters", "[osmchange][node][xml]") {
@@ -288,7 +289,7 @@ TEST_CASE("Create node, tag key with > 255 unicode characters", "[osmchange][nod
   REQUIRE_THROWS_MATCHES(process_testmsg(
     fmt::format(R"(<osmChange><create><node changeset="858" id="-1" lat="-1" lon="2">
                            <tag k="{}" v="value"/></node></create></osmChange>)", repeat("😎", 256))),
-    http::bad_request, Catch::Message("Key has more than 255 unicode characters in Node -1 at line 2, column 303"));
+    http::bad_request, Catch::Matchers::Message("Key has more than 255 unicode characters in Node -1 at line 2, column 303"));
 }
 
 TEST_CASE("Create valid node, tag value with ampersand character", "[osmchange][node][xml]") {
@@ -387,13 +388,13 @@ TEST_CASE("Create way, only changeset", "[osmchange][way][xml]") {
 TEST_CASE("Create way, missing changeset", "[osmchange][way][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
     R"(<osmChange><create><way id="-1"/></create></osmChange>)"),
-    http::bad_request, Catch::Message("Changeset id is missing for Way -1 at line 1, column 32"));
+    http::bad_request, Catch::Matchers::Message("Changeset id is missing for Way -1 at line 1, column 32"));
 }
 
 TEST_CASE("Create way, missing node ref", "[osmchange][way][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
     R"(<osmChange><create><way changeset="858" id="-1"/></create></osmChange>)"),
-    http::precondition_failed, Catch::Message("Precondition failed: Way -1 must have at least one node"));
+    http::precondition_failed, Catch::Matchers::Message("Precondition failed: Way -1 must have at least one node"));
 }
 
 TEST_CASE("Create way, node refs < max way nodes", "[osmchange][way][xml]") {
@@ -413,7 +414,7 @@ TEST_CASE("Create way, node refs >= max way nodes", "[osmchange][way][xml]") {
     node_refs += fmt::format(R"(<nd ref="-{}"/>)", j);
     REQUIRE_THROWS_MATCHES(process_testmsg(
       fmt::format(R"(<osmChange><create><way changeset="858" id="-1">{}</way></create></osmChange>)", node_refs)),
-      http::bad_request, Catch::Message(fmt::format("You tried to add {} nodes to way -1, however only {} are allowed", j, global_settings::get_way_max_nodes())));
+      http::bad_request, Catch::Matchers::Message(fmt::format("You tried to add {} nodes to way -1, however only {} are allowed", j, global_settings::get_way_max_nodes())));
   }
 }
 
@@ -456,13 +457,13 @@ TEST_CASE("Delete way, no version", "[osmchange][way][xml]") {
 TEST_CASE("Delete way, no id", "[osmchange][way][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
     R"(<osmChange><delete><way changeset="858" version="1"/></delete></osmChange>)"),
-    http::bad_request, Catch::Message(fmt::format("Mandatory field id missing in object at line 1, column 52")));
+    http::bad_request, Catch::Matchers::Message(fmt::format("Mandatory field id missing in object at line 1, column 52")));
 }
 
 TEST_CASE("Delete way, no changeset", "[osmchange][way][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
     R"(<osmChange><delete><way id="-1" version="1"/></delete></osmChange>)"),
-    http::bad_request, Catch::Message(fmt::format("Changeset id is missing for Way -1 at line 1, column 44")));
+    http::bad_request, Catch::Matchers::Message(fmt::format("Changeset id is missing for Way -1 at line 1, column 44")));
 }
 
 TEST_CASE("Delete way", "[osmchange][way][xml]") {
@@ -538,19 +539,19 @@ TEST_CASE("Create relation, role with > 255 unicode characters", "[osmchange][re
                            <member type="node" role="{}" ref="123"/>
                   </relation></create></osmChange>)",
            repeat("😎", 256))),
-    http::bad_request, Catch::Message("Relation Role has more than 255 unicode characters at line 2, column 321"));
+    http::bad_request, Catch::Matchers::Message("Relation Role has more than 255 unicode characters at line 2, column 321"));
 }
 
 TEST_CASE("Delete relation, no version", "[osmchange][relation][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
     R"(<osmChange><delete><relation changeset="972" id="-1"/></delete></osmChange>)"),
-    http::bad_request, Catch::Message(fmt::format("Version is required when updating Relation -1 at line 1, column 53")));
+    http::bad_request, Catch::Matchers::Message(fmt::format("Version is required when updating Relation -1 at line 1, column 53")));
 }
 
 TEST_CASE("Delete relation, no id", "[osmchange][relation][xml]") {
   REQUIRE_THROWS_MATCHES(process_testmsg(
     R"(<osmChange><delete><relation changeset="972" version="1"/></delete></osmChange>)"),
-    http::bad_request, Catch::Message(fmt::format("Mandatory field id missing in object at line 1, column 57")));
+    http::bad_request, Catch::Matchers::Message(fmt::format("Mandatory field id missing in object at line 1, column 57")));
 }
 
 TEST_CASE("Delete relation", "[osmchange][relation][xml]") {

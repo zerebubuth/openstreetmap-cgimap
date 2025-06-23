@@ -37,7 +37,7 @@ if(BUILD_TESTING)
         cgimap_common_compiler_options
         cgimap_core
         Boost::program_options
-        catch2)
+        Catch2::Catch2WithMain)
 
     add_test(NAME test_core_check
         COMMAND test_core_check)
@@ -53,7 +53,7 @@ if(BUILD_TESTING)
         cgimap_common_compiler_options
         cgimap_core
         Boost::program_options
-        catch2)
+        Catch2::Catch2WithMain)
 
     add_test(NAME test_parse_id_list
         COMMAND test_parse_id_list)
@@ -71,7 +71,7 @@ if(BUILD_TESTING)
         cgimap_core
         Boost::program_options
         PQXX::PQXX
-        catch2)
+        Catch2::Catch2WithMain)
 
     add_test(NAME test_oauth2
         COMMAND test_oauth2)
@@ -87,7 +87,7 @@ if(BUILD_TESTING)
         cgimap_common_compiler_options
         cgimap_core
         Boost::program_options
-        catch2)
+        Catch2::Catch2WithMain)
 
     add_test(NAME test_http
         COMMAND test_http)
@@ -103,7 +103,7 @@ if(BUILD_TESTING)
         cgimap_common_compiler_options
         cgimap_core
         Boost::program_options
-        catch2)
+        Catch2::Catch2WithMain)
 
     add_test(NAME test_utils
         COMMAND test_utils)
@@ -120,7 +120,7 @@ if(BUILD_TESTING)
         cgimap_core
         Boost::program_options
         PQXX::PQXX
-        catch2)
+        Catch2::Catch2WithMain)
 
     add_test(NAME test_parse_options
         COMMAND test_parse_options)
@@ -136,7 +136,7 @@ if(BUILD_TESTING)
         cgimap_core
         Boost::program_options
         PQXX::PQXX
-        catch2)
+        Catch2::Catch2WithMain)
 
     add_test(NAME test_parse_time
         COMMAND test_parse_time)
@@ -152,7 +152,7 @@ if(BUILD_TESTING)
         cgimap_common_compiler_options
         cgimap_core
         Boost::program_options
-        catch2)
+        Catch2::Catch2WithMain)
 
     add_test(NAME test_parse_osmchange_xml_input
         COMMAND test_parse_osmchange_xml_input)
@@ -168,7 +168,7 @@ if(BUILD_TESTING)
         cgimap_common_compiler_options
         cgimap_core
         Boost::program_options
-        catch2)
+        Catch2::Catch2WithMain)
 
     add_test(NAME test_parse_changeset_input
         COMMAND test_parse_changeset_input)
@@ -188,7 +188,7 @@ if(BUILD_TESTING)
         cgimap_core
         cgimap_apidb
         Boost::program_options
-        catch2)
+        Catch2::Catch2)
 
     add_test_with_virtualenv(test_apidb_backend_nodes)
 
@@ -207,7 +207,7 @@ if(BUILD_TESTING)
         cgimap_core
         cgimap_apidb
         Boost::program_options
-        catch2)
+        Catch2::Catch2)
 
     add_test_with_virtualenv(test_apidb_backend_oauth2)
 
@@ -225,7 +225,7 @@ if(BUILD_TESTING)
         cgimap_core
         cgimap_apidb
         Boost::program_options
-        catch2)
+        Catch2::Catch2)
 
     add_test_with_virtualenv(test_apidb_backend_historic)
 
@@ -243,7 +243,7 @@ if(BUILD_TESTING)
         cgimap_core
         cgimap_apidb
         Boost::program_options
-        catch2)
+        Catch2::Catch2)
 
     add_test_with_virtualenv(test_apidb_backend_roles)
 
@@ -262,7 +262,7 @@ if(BUILD_TESTING)
         cgimap_core
         cgimap_apidb
         Boost::program_options
-        catch2)
+        Catch2::Catch2)
 
     add_test_with_virtualenv(test_apidb_backend_changesets)
 
@@ -281,7 +281,7 @@ if(BUILD_TESTING)
         cgimap_core
         cgimap_apidb
         Boost::program_options
-        catch2)
+        Catch2::Catch2)
 
     add_test_with_virtualenv(test_apidb_backend_changeset_downloads)
 
@@ -301,7 +301,7 @@ if(BUILD_TESTING)
         cgimap_apidb
         Boost::program_options
         Threads::Threads
-        catch2)
+        Catch2::Catch2)
 
     add_test_with_virtualenv(test_apidb_backend_changeset_uploads)
 
@@ -321,7 +321,7 @@ if(BUILD_TESTING)
         cgimap_apidb
         Boost::program_options
         Threads::Threads
-        catch2)
+        Catch2::Catch2)
 
     add_test_with_virtualenv(test_apidb_backend_disable_write)
 
@@ -341,7 +341,7 @@ if(BUILD_TESTING)
         cgimap_common_compiler_options
         cgimap_core
         cgimap_apidb
-        catch2
+        Catch2::Catch2
         Boost::program_options
         PQXX::PQXX)
 
