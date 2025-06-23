@@ -32,11 +32,11 @@ void connopt(std::ostringstream &ostr, const po::variables_map &options,
   if (options.contains("update-" + param))
   {
     ostr << " " << pg_param << "="
-        << options["update-" + param].as< std::string >();
+        << escape_pg_value(options["update-" + param].as< std::string >());
   }
   else if (options.contains(param))
   {
-    ostr << " " << pg_param << "=" << options[param].as< std::string >();
+    ostr << " " << pg_param << "=" << escape_pg_value(options[param].as< std::string >());
   }
 }
 

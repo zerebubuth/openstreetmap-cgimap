@@ -206,4 +206,6 @@ std::vector<T> psql_array_ids_to_vector(std::string_view str);
 
 void extract_bbox_from_row(const pqxx::row &row, bbox_t &result);
 
+std::string escape_pg_value(const std::string &value);
+
 #endif /* CGIMAP_BACKEND_APIDB_UTILS_HPP */

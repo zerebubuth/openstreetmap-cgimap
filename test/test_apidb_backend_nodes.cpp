@@ -269,6 +269,33 @@ TEST_CASE("psql_array_ids_to_vector", "[nodb]") {
   }
 }
 
+TEST_CASE("escape_pg_value", "[nodb]") {
+
+  SECTION("Empty string") {
+    REQUIRE(escape_pg_value("") == "''");
+  }
+
+  SECTION("Simple string") {
+    REQUIRE(escape_pg_value("abc") == "abc");
+  }
+
+  SECTION("String with single quote") {
+    REQUIRE(escape_pg_value("O'Rly?") == "'O\\'Rly?'");
+  }
+
+  SECTION("String with backslash") {
+    REQUIRE(escape_pg_value("\\path") == "'\\\\path'");
+  }
+
+  SECTION("String with only single quote") {
+    REQUIRE(escape_pg_value("'") == "'\\''");
+  }
+
+  SECTION("String with space") {
+    REQUIRE(escape_pg_value("a value") == "'a value'");
+  }
+}
+
 int main(int argc, char *argv[]) {
   Catch::Session session;
 
