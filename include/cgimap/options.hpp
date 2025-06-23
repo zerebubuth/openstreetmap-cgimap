@@ -30,6 +30,7 @@ public:
   [[nodiscard]] virtual std::string get_changeset_timeout_open_max() const = 0;
   [[nodiscard]] virtual std::string get_changeset_timeout_idle() const = 0;
   [[nodiscard]] virtual uint32_t get_changeset_max_elements() const = 0;
+  [[nodiscard]] virtual bool get_changeset_enhanced_stats() const = 0;
   [[nodiscard]] virtual uint32_t get_way_max_nodes() const = 0;
   [[nodiscard]] virtual int64_t get_scale() const = 0;
   [[nodiscard]] virtual std::optional<uint32_t> get_relation_max_members() const = 0;
@@ -65,6 +66,10 @@ public:
 
   [[nodiscard]] uint32_t get_changeset_max_elements() const override {
      return 10000;
+  }
+
+ [[nodiscard]] bool get_changeset_enhanced_stats() const override {
+     return false;
   }
 
   [[nodiscard]] uint32_t get_way_max_nodes() const override {
@@ -148,6 +153,10 @@ public:
      return m_changeset_max_elements;
   }
 
+  [[nodiscard]] bool get_changeset_enhanced_stats() const override {
+     return m_changeset_enhanced_stats;
+  }
+
   [[nodiscard]] uint32_t get_way_max_nodes() const override {
      return m_way_max_nodes;
   }
@@ -195,6 +204,7 @@ private:
   void set_changeset_timeout_open_max(const po::variables_map &options);
   void set_changeset_timeout_idle(const po::variables_map &options);
   void set_changeset_max_elements(const po::variables_map &options);
+  void set_changeset_enhanced_stats(const po::variables_map &options);
   void set_way_max_nodes(const po::variables_map &options);
   void set_scale(const po::variables_map &options);
   void set_relation_max_members(const po::variables_map &options);
@@ -211,6 +221,7 @@ private:
   std::string m_changeset_timeout_open_max;
   std::string m_changeset_timeout_idle;
   uint32_t m_changeset_max_elements;
+  bool m_changeset_enhanced_stats;
   uint32_t m_way_max_nodes;
   int64_t m_scale;
   std::optional<uint32_t> m_relation_max_members;
@@ -247,6 +258,9 @@ public:
 
   // Maximum number of elements permitted in one changeset
   static uint32_t get_changeset_max_elements() { return settings->get_changeset_max_elements(); }
+
+  // Update enhanced changeset stats (num_create, num_modify, num_delete)
+  static bool get_changeset_enhanced_stats() { return settings->get_changeset_enhanced_stats(); }
 
   // Maximum number of nodes permitted in a way
   static uint32_t get_way_max_nodes() { return settings->get_way_max_nodes(); }
