@@ -39,6 +39,7 @@ endif()
 ###############
 option(ENABLE_BROTLI "Enable Brotli library" ON)
 option(ENABLE_FMT_HEADER "Enable FMT header only mode" ON)
+option(USE_BUNDLED_CATCH2 "Use Catch2 library included in contrib/, use system library otherwise" ON)
 option(ENABLE_COVERAGE "Compile with coverage info collection" OFF)
 option(ENABLE_PROFILING "Compile with profiling" OFF)
 option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
@@ -116,6 +117,9 @@ find_package(fmt 6.0 REQUIRED)
 target_link_libraries(cgimap_common_compiler_options INTERFACE
     $<IF:$<BOOL:${ENABLE_FMT_HEADER}>,fmt::fmt-header-only,fmt::fmt>)
 
+if(BUILD_TESTING AND NOT USE_BUNDLED_CATCH2)
+    find_package(Catch2 3 REQUIRED)
+endif()
 
 ###########################
 # source subdirectories
