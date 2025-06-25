@@ -167,10 +167,22 @@ using comments_t = std::vector<changeset_comment_info>;
  * of course, that we want any other formats ;-)
  */
 struct output_formatter {
+  #ifndef CGIMAP_COPYRIGHT_MESSAGE
+    #error "CGIMAP_COPYRIGHT_MESSAGE is not defined"
+  #endif
+
+  #ifndef CGIMAP_ATTRIBUTION_MESSAGE
+    #error "CGIMAP_ATTRIBUTION_MESSAGE is not defined"
+  #endif
+
+  #ifndef CGIMAP_LICENSE_MESSAGE
+    #error "CGIMAP_LICENSE_MESSAGE is not defined"
+  #endif
+
   static constexpr const char * API_VERSION = "0.6";
-  static constexpr const char * COPYRIGHT = "OpenStreetMap and contributors";
-  static constexpr const char * ATTRIBUTION = "http://www.openstreetmap.org/copyright";
-  static constexpr const char * LICENSE = "http://opendatacommons.org/licenses/odbl/1-0/";
+  static constexpr const char * COPYRIGHT = CGIMAP_COPYRIGHT_MESSAGE;
+  static constexpr const char * ATTRIBUTION = CGIMAP_ATTRIBUTION_MESSAGE;
+  static constexpr const char * LICENSE = CGIMAP_LICENSE_MESSAGE;
 
   virtual ~output_formatter() = default;
 
