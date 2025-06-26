@@ -54,6 +54,7 @@ endif()
 set(CGIMAP_COPYRIGHT_MESSAGE "OpenStreetMap and contributors" CACHE STRING "Copyright message")
 set(CGIMAP_ATTRIBUTION_MESSAGE "http://www.openstreetmap.org/copyright" CACHE STRING "Attribution message")
 set(CGIMAP_LICENSE_MESSAGE "http://opendatacommons.org/licenses/odbl/1-0/" CACHE STRING "License message")
+mark_as_advanced(CGIMAP_COPYRIGHT_MESSAGE CGIMAP_ATTRIBUTION_MESSAGE CGIMAP_LICENSE_MESSAGE)
 
 
 include(CTest)
