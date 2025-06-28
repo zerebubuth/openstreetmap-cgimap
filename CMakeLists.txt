@@ -51,6 +51,10 @@ else()
     option(BUILD_TESTING "Compile test suite" OFF)
 endif()
 
+set(CGIMAP_COPYRIGHT_MESSAGE "OpenStreetMap and contributors" CACHE STRING "Copyright message")
+set(CGIMAP_ATTRIBUTION_MESSAGE "http://www.openstreetmap.org/copyright" CACHE STRING "Attribution message")
+set(CGIMAP_LICENSE_MESSAGE "http://opendatacommons.org/licenses/odbl/1-0/" CACHE STRING "License message")
+mark_as_advanced(CGIMAP_COPYRIGHT_MESSAGE CGIMAP_ATTRIBUTION_MESSAGE CGIMAP_LICENSE_MESSAGE)
 
 
 include(CTest)
@@ -63,8 +67,13 @@ include(BuildLint)
 add_library(cgimap_common_compiler_options INTERFACE)
 
 target_compile_features(cgimap_common_compiler_options INTERFACE cxx_std_20)
+
 target_compile_definitions(cgimap_common_compiler_options INTERFACE CMAKE=1
-                           BOOST_BIND_GLOBAL_PLACEHOLDERS)
+                           BOOST_BIND_GLOBAL_PLACEHOLDERS
+                           CGIMAP_COPYRIGHT_MESSAGE="${CGIMAP_COPYRIGHT_MESSAGE}"
+                           CGIMAP_ATTRIBUTION_MESSAGE="${CGIMAP_ATTRIBUTION_MESSAGE}"
+                           CGIMAP_LICENSE_MESSAGE="${CGIMAP_LICENSE_MESSAGE}")
+
 target_add_autotools_compatibility_definitions(cgimap_common_compiler_options)
 
 if(ENABLE_COVERAGE)

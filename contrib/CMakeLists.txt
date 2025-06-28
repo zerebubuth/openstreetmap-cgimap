@@ -3,6 +3,7 @@ disable_build_lint()
 
 if(USE_BUNDLED_CATCH2)
     add_subdirectory(Catch2 EXCLUDE_FROM_ALL)
+    mark_as_advanced(CATCH_DEVELOPMENT_BUILD CATCH_ENABLE_REPRODUCIBLE_BUILD CATCH_INSTALL_DOCS CATCH_INSTALL_EXTRAS)
     target_link_libraries(Catch2 PUBLIC cgimap_common_compiler_options)
     target_link_libraries(Catch2WithMain PUBLIC cgimap_common_compiler_options)
 endif()
