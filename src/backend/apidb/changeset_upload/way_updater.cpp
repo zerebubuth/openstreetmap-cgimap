@@ -1040,9 +1040,10 @@ void ApiDB_Way_Updater::delete_current_way_nodes(
   auto r = m.exec_prepared("delete_current_way_nodes", ids);
 }
 
-uint32_t ApiDB_Way_Updater::get_num_changes() const {
-  return (ct.created_way_ids.size() + ct.modified_way_ids.size() +
-          ct.deleted_way_ids.size());
+changeset_upload_stats::element_stats ApiDB_Way_Updater::get_stats() const {
+  return {ct.created_way_ids.size(),
+          ct.modified_way_ids.size(),
+          ct.deleted_way_ids.size()};
 }
 
 bbox_t ApiDB_Way_Updater::bbox() const { return m_bbox; }
