@@ -10,6 +10,13 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+--
 -- Name: btree_gist; Type: EXTENSION; Schema: -; Owner: -
 --
 
@@ -172,6 +179,63 @@ CREATE FUNCTION public.api_rate_limit(user_id bigint) RETURNS integer
       SELECT COALESCE(SUM(changesets.num_changes), 0) INTO STRICT recent_changes FROM changesets WHERE changesets.user_id = api_rate_limit.user_id AND changesets.created_at >= CURRENT_TIMESTAMP AT TIME ZONE 'UTC' - '1 hour'::interval;
 
       RETURN max_changes - recent_changes;
+    END;
+    $$;
+
+
+--
+-- Name: api_size_limit(bigint); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.api_size_limit(user_id bigint) RETURNS bigint
+    LANGUAGE plpgsql STABLE
+    AS $$
+    DECLARE
+      min_size_limit int8 := 10000000;
+      initial_size_limit int8 := 30000000;
+      max_size_limit int8 := 5400000000;
+      days_to_max_size_limit int4 := 28;
+      importer_size_limit int8 := 5400000000;
+      moderator_size_limit int8 := 5400000000;
+      roles text[];
+      last_block timestamp without time zone;
+      first_change timestamp without time zone;
+      active_reports int4;
+      time_since_first_change double precision;
+      size_limit int8;
+    BEGIN
+      SELECT ARRAY_AGG(user_roles.role) INTO STRICT roles FROM user_roles WHERE user_roles.user_id = api_size_limit.user_id;
+
+      IF 'moderator' = ANY(roles) THEN
+        size_limit := moderator_size_limit;
+      ELSIF 'importer' = ANY(roles) THEN
+        size_limit := importer_size_limit;
+      ELSE
+        SELECT user_blocks.created_at INTO last_block FROM user_blocks WHERE user_blocks.user_id = api_size_limit.user_id ORDER BY user_blocks.created_at DESC LIMIT 1;
+
+        IF FOUND THEN
+          SELECT changesets.created_at INTO first_change FROM changesets WHERE changesets.user_id = api_size_limit.user_id AND changesets.created_at > last_block ORDER BY changesets.created_at LIMIT 1;
+        ELSE
+          SELECT changesets.created_at INTO first_change FROM changesets WHERE changesets.user_id = api_size_limit.user_id ORDER BY changesets.created_at LIMIT 1;
+        END IF;
+
+        IF NOT FOUND THEN
+          first_change := CURRENT_TIMESTAMP AT TIME ZONE 'UTC';
+        END IF;
+
+        SELECT COUNT(*) INTO STRICT active_reports
+        FROM issues INNER JOIN reports ON reports.issue_id = issues.id
+        WHERE issues.reported_user_id = api_size_limit.user_id AND issues.status = 'open' AND reports.updated_at >= COALESCE(issues.resolved_at, '1970-01-01');
+
+        time_since_first_change := EXTRACT(EPOCH FROM CURRENT_TIMESTAMP AT TIME ZONE 'UTC' - first_change);
+
+        size_limit := max_size_limit * POWER(time_since_first_change, 2) / POWER(days_to_max_size_limit * 24 * 60 * 60, 2);
+        size_limit := GREATEST(initial_size_limit, LEAST(max_size_limit, FLOOR(size_limit)));
+        size_limit := size_limit / POWER(2, active_reports);
+        size_limit := GREATEST(min_size_limit, LEAST(max_size_limit, size_limit));
+      END IF;
+
+      RETURN size_limit;
     END;
     $$;
 
@@ -382,22 +446,17 @@ CREATE TABLE public.changesets (
     min_lon integer,
     max_lon integer,
     closed_at timestamp without time zone NOT NULL,
-    num_changes integer DEFAULT 0 NOT NULL
+    num_changes integer DEFAULT 0 NOT NULL,
+    num_created_nodes integer DEFAULT 0 NOT NULL,
+    num_modified_nodes integer DEFAULT 0 NOT NULL,
+    num_deleted_nodes integer DEFAULT 0 NOT NULL,
+    num_created_ways integer DEFAULT 0 NOT NULL,
+    num_modified_ways integer DEFAULT 0 NOT NULL,
+    num_deleted_ways integer DEFAULT 0 NOT NULL,
+    num_created_relations integer DEFAULT 0 NOT NULL,
+    num_modified_relations integer DEFAULT 0 NOT NULL,
+    num_deleted_relations integer DEFAULT 0 NOT NULL
 );
-
---- Preliminary changesets table columns for enhanced changeset stats
---- see https://github.com/openstreetmap/openstreetmap-website/issues/5758
-
-ALTER TABLE public.changesets
-   ADD COLUMN num_created_nodes integer DEFAULT 0 NOT NULL,
-   ADD COLUMN num_modified_nodes integer DEFAULT 0 NOT NULL,
-   ADD COLUMN num_deleted_nodes integer DEFAULT 0 NOT NULL,
-   ADD COLUMN num_created_ways integer DEFAULT 0 NOT NULL,
-   ADD COLUMN num_modified_ways integer DEFAULT 0 NOT NULL,
-   ADD COLUMN num_deleted_ways integer DEFAULT 0 NOT NULL,
-   ADD COLUMN num_created_relations integer DEFAULT 0 NOT NULL,
-   ADD COLUMN num_modified_relations integer DEFAULT 0 NOT NULL,
-   ADD COLUMN num_deleted_relations integer DEFAULT 0 NOT NULL;
 
 
 --
@@ -427,51 +486,6 @@ CREATE TABLE public.changesets_subscribers (
     subscriber_id bigint NOT NULL,
     changeset_id bigint NOT NULL
 );
-
-
---
--- Name: client_applications; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.client_applications (
-    id integer NOT NULL,
-    name character varying,
-    url character varying,
-    support_url character varying,
-    callback_url character varying,
-    key character varying(50),
-    secret character varying(50),
-    user_id integer,
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone,
-    allow_read_prefs boolean DEFAULT false NOT NULL,
-    allow_write_prefs boolean DEFAULT false NOT NULL,
-    allow_write_diary boolean DEFAULT false NOT NULL,
-    allow_write_api boolean DEFAULT false NOT NULL,
-    allow_read_gpx boolean DEFAULT false NOT NULL,
-    allow_write_gpx boolean DEFAULT false NOT NULL,
-    allow_write_notes boolean DEFAULT false NOT NULL
-);
-
-
---
--- Name: client_applications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.client_applications_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: client_applications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.client_applications_id_seq OWNED BY public.client_applications.id;
 
 
 --
@@ -1054,6 +1068,16 @@ ALTER SEQUENCE public.note_comments_id_seq OWNED BY public.note_comments.id;
 
 
 --
+-- Name: note_subscriptions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.note_subscriptions (
+    user_id bigint NOT NULL,
+    note_id bigint NOT NULL
+);
+
+
+--
 -- Name: notes; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1065,7 +1089,10 @@ CREATE TABLE public.notes (
     updated_at timestamp without time zone NOT NULL,
     created_at timestamp without time zone NOT NULL,
     status public.note_status_enum NOT NULL,
-    closed_at timestamp without time zone
+    closed_at timestamp without time zone,
+    description text DEFAULT ''::text NOT NULL,
+    user_id bigint,
+    user_ip inet
 );
 
 
@@ -1202,38 +1229,6 @@ ALTER SEQUENCE public.oauth_applications_id_seq OWNED BY public.oauth_applicatio
 
 
 --
--- Name: oauth_nonces; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.oauth_nonces (
-    id bigint NOT NULL,
-    nonce character varying,
-    "timestamp" integer,
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone
-);
-
-
---
--- Name: oauth_nonces_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.oauth_nonces_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: oauth_nonces_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.oauth_nonces_id_seq OWNED BY public.oauth_nonces.id;
-
-
---
 -- Name: oauth_openid_requests; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1261,55 +1256,6 @@ CREATE SEQUENCE public.oauth_openid_requests_id_seq
 --
 
 ALTER SEQUENCE public.oauth_openid_requests_id_seq OWNED BY public.oauth_openid_requests.id;
-
-
---
--- Name: oauth_tokens; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.oauth_tokens (
-    id integer NOT NULL,
-    user_id integer,
-    type character varying(20),
-    client_application_id integer,
-    token character varying(50),
-    secret character varying(50),
-    authorized_at timestamp without time zone,
-    invalidated_at timestamp without time zone,
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone,
-    allow_read_prefs boolean DEFAULT false NOT NULL,
-    allow_write_prefs boolean DEFAULT false NOT NULL,
-    allow_write_diary boolean DEFAULT false NOT NULL,
-    allow_write_api boolean DEFAULT false NOT NULL,
-    allow_read_gpx boolean DEFAULT false NOT NULL,
-    allow_write_gpx boolean DEFAULT false NOT NULL,
-    callback_url character varying,
-    verifier character varying(20),
-    scope character varying,
-    valid_to timestamp without time zone,
-    allow_write_notes boolean DEFAULT false NOT NULL
-);
-
-
---
--- Name: oauth_tokens_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.oauth_tokens_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: oauth_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.oauth_tokens_id_seq OWNED BY public.oauth_tokens.id;
 
 
 --
@@ -1432,6 +1378,38 @@ CREATE TABLE public.schema_migrations (
 
 
 --
+-- Name: social_links; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.social_links (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    url character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: social_links_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.social_links_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: social_links_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.social_links_id_seq OWNED BY public.social_links.id;
+
+
+--
 -- Name: user_blocks; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1445,7 +1423,8 @@ CREATE TABLE public.user_blocks (
     revoker_id bigint,
     created_at timestamp without time zone,
     updated_at timestamp without time zone,
-    reason_format public.format_enum DEFAULT 'markdown'::public.format_enum NOT NULL
+    reason_format public.format_enum DEFAULT 'markdown'::public.format_enum NOT NULL,
+    deactivates_at timestamp without time zone
 );
 
 
@@ -1564,7 +1543,6 @@ CREATE TABLE public.users (
     pass_salt character varying,
     email_valid boolean DEFAULT false NOT NULL,
     new_email character varying,
-    creation_ip character varying,
     languages character varying,
     status public.user_status_enum DEFAULT 'pending'::public.user_status_enum NOT NULL,
     terms_agreed timestamp without time zone,
@@ -1579,7 +1557,12 @@ CREATE TABLE public.users (
     image_use_gravatar boolean DEFAULT false NOT NULL,
     auth_provider character varying,
     home_tile bigint,
-    tou_agreed timestamp without time zone
+    tou_agreed timestamp without time zone,
+    diary_comments_count integer DEFAULT 0,
+    note_comments_count integer DEFAULT 0,
+    creation_address inet,
+    home_location_name character varying,
+    company character varying
 );
 
 
@@ -1680,13 +1663,6 @@ ALTER TABLE ONLY public.changeset_comments ALTER COLUMN id SET DEFAULT nextval('
 --
 
 ALTER TABLE ONLY public.changesets ALTER COLUMN id SET DEFAULT nextval('public.changesets_id_seq'::regclass);
-
-
---
--- Name: client_applications id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_applications ALTER COLUMN id SET DEFAULT nextval('public.client_applications_id_seq'::regclass);
 
 
 --
@@ -1809,24 +1785,10 @@ ALTER TABLE ONLY public.oauth_applications ALTER COLUMN id SET DEFAULT nextval('
 
 
 --
--- Name: oauth_nonces id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.oauth_nonces ALTER COLUMN id SET DEFAULT nextval('public.oauth_nonces_id_seq'::regclass);
-
-
---
 -- Name: oauth_openid_requests id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.oauth_openid_requests ALTER COLUMN id SET DEFAULT nextval('public.oauth_openid_requests_id_seq'::regclass);
-
-
---
--- Name: oauth_tokens id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.oauth_tokens ALTER COLUMN id SET DEFAULT nextval('public.oauth_tokens_id_seq'::regclass);
 
 
 --
@@ -1841,6 +1803,13 @@ ALTER TABLE ONLY public.redactions ALTER COLUMN id SET DEFAULT nextval('public.r
 --
 
 ALTER TABLE ONLY public.reports ALTER COLUMN id SET DEFAULT nextval('public.reports_id_seq'::regclass);
+
+
+--
+-- Name: social_links id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.social_links ALTER COLUMN id SET DEFAULT nextval('public.social_links_id_seq'::regclass);
 
 
 --
@@ -1933,14 +1902,6 @@ ALTER TABLE ONLY public.changeset_tags
 
 ALTER TABLE ONLY public.changesets
     ADD CONSTRAINT changesets_pkey PRIMARY KEY (id);
-
-
---
--- Name: client_applications client_applications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_applications
-    ADD CONSTRAINT client_applications_pkey PRIMARY KEY (id);
 
 
 --
@@ -2120,6 +2081,14 @@ ALTER TABLE ONLY public.note_comments
 
 
 --
+-- Name: note_subscriptions note_subscriptions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.note_subscriptions
+    ADD CONSTRAINT note_subscriptions_pkey PRIMARY KEY (user_id, note_id);
+
+
+--
 -- Name: notes notes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2152,27 +2121,11 @@ ALTER TABLE ONLY public.oauth_applications
 
 
 --
--- Name: oauth_nonces oauth_nonces_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.oauth_nonces
-    ADD CONSTRAINT oauth_nonces_pkey PRIMARY KEY (id);
-
-
---
 -- Name: oauth_openid_requests oauth_openid_requests_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.oauth_openid_requests
     ADD CONSTRAINT oauth_openid_requests_pkey PRIMARY KEY (id);
-
-
---
--- Name: oauth_tokens oauth_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.oauth_tokens
-    ADD CONSTRAINT oauth_tokens_pkey PRIMARY KEY (id);
 
 
 --
@@ -2221,6 +2174,14 @@ ALTER TABLE ONLY public.reports
 
 ALTER TABLE ONLY public.schema_migrations
     ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+
+
+--
+-- Name: social_links social_links_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.social_links
+    ADD CONSTRAINT social_links_pkey PRIMARY KEY (id);
 
 
 --
@@ -2505,6 +2466,13 @@ CREATE INDEX index_changeset_comments_on_author_id_and_created_at ON public.chan
 
 
 --
+-- Name: index_changeset_comments_on_author_id_and_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_changeset_comments_on_author_id_and_id ON public.changeset_comments USING btree (author_id, id);
+
+
+--
 -- Name: index_changeset_comments_on_changeset_id_and_created_at; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2540,17 +2508,10 @@ CREATE UNIQUE INDEX index_changesets_subscribers_on_subscriber_id_and_changeset_
 
 
 --
--- Name: index_client_applications_on_key; Type: INDEX; Schema: public; Owner: -
+-- Name: index_diary_comments_on_user_id_and_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_client_applications_on_key ON public.client_applications USING btree (key);
-
-
---
--- Name: index_client_applications_on_user_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_client_applications_on_user_id ON public.client_applications USING btree (user_id);
+CREATE INDEX index_diary_comments_on_user_id_and_id ON public.diary_comments USING btree (user_id, id);
 
 
 --
@@ -2565,6 +2526,13 @@ CREATE INDEX index_diary_entry_subscriptions_on_diary_entry_id ON public.diary_e
 --
 
 CREATE INDEX index_friends_on_user_id_and_created_at ON public.friends USING btree (user_id, created_at);
+
+
+--
+-- Name: index_gpx_files_on_user_id_and_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_gpx_files_on_user_id_and_id ON public.gpx_files USING btree (user_id, id);
 
 
 --
@@ -2638,6 +2606,27 @@ CREATE INDEX index_note_comments_on_created_at ON public.note_comments USING btr
 
 
 --
+-- Name: index_note_subscriptions_on_note_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_note_subscriptions_on_note_id ON public.note_subscriptions USING btree (note_id);
+
+
+--
+-- Name: index_notes_on_description; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_notes_on_description ON public.notes USING gin (to_tsvector('english'::regconfig, description));
+
+
+--
+-- Name: index_notes_on_user_id_and_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_notes_on_user_id_and_created_at ON public.notes USING btree (user_id, created_at) WHERE (user_id IS NOT NULL);
+
+
+--
 -- Name: index_oauth_access_grants_on_application_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2701,31 +2690,10 @@ CREATE UNIQUE INDEX index_oauth_applications_on_uid ON public.oauth_applications
 
 
 --
--- Name: index_oauth_nonces_on_nonce_and_timestamp; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX index_oauth_nonces_on_nonce_and_timestamp ON public.oauth_nonces USING btree (nonce, "timestamp");
-
-
---
 -- Name: index_oauth_openid_requests_on_access_grant_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX index_oauth_openid_requests_on_access_grant_id ON public.oauth_openid_requests USING btree (access_grant_id);
-
-
---
--- Name: index_oauth_tokens_on_token; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX index_oauth_tokens_on_token ON public.oauth_tokens USING btree (token);
-
-
---
--- Name: index_oauth_tokens_on_user_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX index_oauth_tokens_on_user_id ON public.oauth_tokens USING btree (user_id);
 
 
 --
@@ -2740,6 +2708,13 @@ CREATE INDEX index_reports_on_issue_id ON public.reports USING btree (issue_id);
 --
 
 CREATE INDEX index_reports_on_user_id ON public.reports USING btree (user_id);
+
+
+--
+-- Name: index_social_links_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_social_links_on_user_id ON public.social_links USING btree (user_id);
 
 
 --
@@ -2761,6 +2736,13 @@ CREATE INDEX index_user_blocks_on_user_id ON public.user_blocks USING btree (use
 --
 
 CREATE UNIQUE INDEX index_user_mutes_on_owner_id_and_subject_id ON public.user_mutes USING btree (owner_id, subject_id);
+
+
+--
+-- Name: index_users_on_creation_address; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_users_on_creation_address ON public.users USING gist (creation_address inet_ops);
 
 
 --
@@ -2987,14 +2969,6 @@ ALTER TABLE ONLY public.changesets
 
 
 --
--- Name: client_applications client_applications_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.client_applications
-    ADD CONSTRAINT client_applications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
-
-
---
 -- Name: current_node_tags current_node_tags_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3115,6 +3089,14 @@ ALTER TABLE ONLY public.diary_entry_subscriptions
 
 
 --
+-- Name: note_subscriptions fk_rails_2c1913f293; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.note_subscriptions
+    ADD CONSTRAINT fk_rails_2c1913f293 FOREIGN KEY (note_id) REFERENCES public.notes(id);
+
+
+--
 -- Name: oauth_access_grants fk_rails_330c32d8d9; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3128,6 +3110,14 @@ ALTER TABLE ONLY public.oauth_access_grants
 
 ALTER TABLE ONLY public.user_mutes
     ADD CONSTRAINT fk_rails_591dad3359 FOREIGN KEY (owner_id) REFERENCES public.users(id);
+
+
+--
+-- Name: social_links fk_rails_6034fd4f62; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.social_links
+    ADD CONSTRAINT fk_rails_6034fd4f62 FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -3152,6 +3142,14 @@ ALTER TABLE ONLY public.oauth_openid_requests
 
 ALTER TABLE ONLY public.active_storage_variant_records
     ADD CONSTRAINT fk_rails_993965df05 FOREIGN KEY (blob_id) REFERENCES public.active_storage_blobs(id);
+
+
+--
+-- Name: note_subscriptions fk_rails_a352f4eced; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.note_subscriptions
+    ADD CONSTRAINT fk_rails_a352f4eced FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -3331,19 +3329,11 @@ ALTER TABLE ONLY public.note_comments
 
 
 --
--- Name: oauth_tokens oauth_tokens_client_application_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: notes notes_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.oauth_tokens
-    ADD CONSTRAINT oauth_tokens_client_application_id_fkey FOREIGN KEY (client_application_id) REFERENCES public.client_applications(id);
-
-
---
--- Name: oauth_tokens oauth_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.oauth_tokens
-    ADD CONSTRAINT oauth_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+ALTER TABLE ONLY public.notes
+    ADD CONSTRAINT notes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -3533,6 +3523,27 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('23'),
 ('22'),
 ('21'),
+('20250704143751'),
+('20250506052030'),
+('20250304172798'),
+('20250304172758'),
+('20250217140049'),
+('20250212160355'),
+('20250206202905'),
+('20250121191749'),
+('20250105154621'),
+('20250104140952'),
+('20241030090336'),
+('20241023004427'),
+('20241022141247'),
+('20240913171951'),
+('20240912181413'),
+('20240910175616'),
+('20240822121603'),
+('20240813070506'),
+('20240724194738'),
+('20240618193051'),
+('20240605134916'),
 ('20240405083825'),
 ('20240307181018'),
 ('20240307180830'),
