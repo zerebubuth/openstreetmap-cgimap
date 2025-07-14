@@ -156,6 +156,7 @@ void get_options(int argc, char **argv, po::variables_map &options) {
     ("map-area", po::value<double>(), "max area size allowed for /map endpoint")
     ("changeset-timeout-open", po::value<std::string>(), "max open time period for a changeset")
     ("changeset-timeout-idle", po::value<std::string>(), "time period a changeset will remain open after last edit")
+    ("changeset-enhanced-stats", po::value<bool>(), "enable enhanced changeset stats")
     ("max-changeset-elements", po::value<int>(), "max number of elements allowed in one changeset")
     ("max-way-nodes", po::value<int>(), "max number of nodes allowed in one way")
     ("scale", po::value<long>(), "conversion factor from double lat/lon to internal int format")

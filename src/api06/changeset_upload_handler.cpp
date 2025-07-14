@@ -59,7 +59,7 @@ changeset_upload_responder::changeset_upload_responder(mime::type mt,
   // store diffresult for output handling in class osm_diffresult_responder
   m_diffresult = change_tracking.assemble_diffresult();
 
-  const auto new_changes = handler.get_num_changes();
+  const auto new_changes = handler.get_stats().get_total();
 
   if (global_settings::get_ratelimiter_upload()) {
 
@@ -74,7 +74,7 @@ changeset_upload_responder::changeset_upload_responder(mime::type mt,
     }
   }
 
-  changeset_updater->update_changeset(new_changes, handler.get_bbox());
+  changeset_updater->update_changeset(handler.get_stats(), handler.get_bbox());
 
   if (global_settings::get_bbox_size_limiter_upload()) {
 

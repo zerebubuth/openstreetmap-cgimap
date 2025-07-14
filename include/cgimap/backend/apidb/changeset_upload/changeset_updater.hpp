@@ -30,7 +30,8 @@ public:
 
   void lock_current_changeset(bool check_max_elements_limit) override;
 
-  void update_changeset(const uint32_t num_new_changes, const bbox_t bbox) override;
+  void update_changeset(const changeset_upload_stats &num_new_changes,
+                        const bbox_t &bbox) override;
 
   bbox_t get_bbox() const override;
 
@@ -46,6 +47,7 @@ private:
   void changeset_insert_subscriber ();
   void changeset_insert_tags (const std::map<std::string, std::string>& tags);
   void changeset_delete_tags ();
+  void changeset_update_enhanced_stats(const changeset_upload_stats &new_changes);
   void changeset_update_users_cs_count ();
   void changeset_insert_cs ();
 
