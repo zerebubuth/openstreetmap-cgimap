@@ -1,3 +1,20 @@
+openstreetmap-cgimap (2.1.0) UNRELEASED; urgency=medium
+
+  * Enhanced changeset statistics (#510).
+  * Replaced crypto++ with PostgreSQL sha256(#) for hashing (#511).
+  * Remove yajl build option; always enabled now (#464)
+  * Optimized diff upload performance using CTEs instead of temporary tables (#460).
+  * Limit max-changeset-elements to 50'000 changes (#516)
+  * Don't rate limit HTTP OPTIONS requests (#458)
+  * Fixed relation member sequence IDs starting from 0 (#523).
+  * Enforced negative placeholder IDs for create operations (#524).
+  * Escaped values in PostgreSQL connection strings (#535).
+  * Finish up FCGI request in case of exceptions (#522)
+  * Removed Boost dependencies in favor of standard alternatives
+    (#463), (#475), (#486), (#466)
+
+ -- mmd osm <mmd.osm@gmail.com>  Sun, 20 Jul 2025 00:00:00 +0000
+
 openstreetmap-cgimap (2.0.1) UNRELEASED; urgency=medium
 
   * Replace old openstreetmap-cgimap-bin package
