@@ -27,6 +27,8 @@ public:
 
   ~osm_diffresult_responder() override;
 
+  // lists the standard types that OSM format can respond in
+  std::vector<mime::type> types_available() const override;
 
   void write(output_formatter& f,
              const std::string &generator,

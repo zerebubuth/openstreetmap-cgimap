@@ -92,6 +92,8 @@ struct test_formatter : public output_formatter {
   [[nodiscard]] mime::type mime_type() const override;
   void start_document(const std::string &generator, const std::string &root_name) override;
   void end_document() override;
+  void start_diffresult() override;
+  void end_diffresult() override;
   void write_bounds(const bbox &bounds) override;
   void start_element() override;
   void end_element() override;
