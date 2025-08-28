@@ -74,7 +74,9 @@ int brotli_output_buffer::written() const { return bytes_in; }
 
 int brotli_output_buffer::flush() noexcept {
 
-  assert(!flushed); // brotli does not support multiple flush operations
+  if (flushed) { // brotli does not support multiple flush operations
+    return 0;
+  }
 
   compress(nullptr, 0, true);
   flushed = true;
