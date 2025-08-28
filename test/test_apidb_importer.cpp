@@ -166,57 +166,73 @@ void update_changesets(Transaction_Manager &m) {
 void update_changeset_enhanced_stats(Transaction_Manager &m) {
 
   m.exec(R"(
-
-    WITH node_stat AS (
-      select changeset_id,
-            count(1) filter (where version=1) as num_created,
-            count(1) filter (where version>1 and visible = true) as num_modified,
-            count(1) filter (where version>1 and visible = false) as num_deleted
-      from nodes
-      group by changeset_id
-    ),
-    way_stat AS (
-      select changeset_id,
-            count(1) filter (where version=1) as num_created,
-            count(1) filter (where version>1 and visible = true) as num_modified,
-            count(1) filter (where version>1 and visible = false) as num_deleted
-      from ways
-    group by changeset_id
-    ),
-    rel_stat AS (
-      select changeset_id,
-            count(1) filter (where version=1) as num_created,
-            count(1) filter (where version>1 and visible = true) as num_modified,
-            count(1) filter (where version>1 and visible = false) as num_deleted
-      from relations
-      group by changeset_id
-    ),
-    update_nodes AS (
-      UPDATE changesets
-            SET num_created_nodes = node_stat.num_created,
-                num_modified_nodes = node_stat.num_modified,
-                num_deleted_nodes = node_stat.num_deleted
-            FROM node_stat
-            WHERE changesets.id = node_stat.changeset_id
-    ),
-    update_ways AS (
-      UPDATE changesets
-            SET num_created_ways = way_stat.num_created,
-                num_modified_ways = way_stat.num_modified,
-                num_deleted_ways = way_stat.num_deleted
-            FROM way_stat
-            WHERE changesets.id = way_stat.changeset_id
-    ),
-    update_relations AS (
-      UPDATE changesets
-            SET num_created_relations = rel_stat.num_created,
-                num_modified_relations = rel_stat.num_modified,
-                num_deleted_relations = rel_stat.num_deleted
-            FROM rel_stat
-            WHERE changesets.id = rel_stat.changeset_id
-    )
-    SELECT TRUE;
-
+        WITH changes AS (
+            SELECT
+              nodes.changeset_id,
+              CASE WHEN nodes.version = 1 THEN 1 ELSE 0 END AS num_created_nodes,
+              CASE WHEN nodes.version > 1 AND nodes.visible THEN 1 ELSE 0 END AS num_modified_nodes,
+              CASE WHEN nodes.version > 1 AND NOT nodes.visible THEN 1 ELSE 0 END AS num_deleted_nodes,
+              0 AS num_created_ways,
+              0 AS num_modified_ways,
+              0 AS num_deleted_ways,
+              0 AS num_created_relations,
+              0 AS num_modified_relations,
+              0 AS num_deleted_relations
+            FROM nodes
+          UNION ALL
+            SELECT
+              ways.changeset_id,
+              0 AS num_created_nodes,
+              0 AS num_modified_nodes,
+              0 AS num_deleted_nodes,
+              CASE WHEN ways.version = 1 THEN 1 ELSE 0 END AS num_created_ways,
+              CASE WHEN ways.version > 1 AND ways.visible THEN 1 ELSE 0 END AS num_modified_ways,
+              CASE WHEN ways.version > 1 AND NOT ways.visible THEN 1 ELSE 0 END AS num_deleted_ways,
+              0 AS num_created_relations,
+              0 AS num_modified_relations,
+              0 AS num_deleted_relations
+            FROM ways
+          UNION ALL
+            SELECT
+              relations.changeset_id,
+              0 AS num_created_nodes,
+              0 AS num_modified_nodes,
+              0 AS num_deleted_nodes,
+              0 AS num_created_ways,
+              0 AS num_modified_ways,
+              0 AS num_deleted_ways,
+              CASE WHEN relations.version = 1 THEN 1 ELSE 0 END AS num_created_relations,
+              CASE WHEN relations.version > 1 AND relations.visible THEN 1 ELSE 0 END AS num_modified_relations,
+              CASE WHEN relations.version > 1 AND NOT relations.visible THEN 1 ELSE 0 END AS num_deleted_relations
+            FROM relations
+        ),
+        total AS (
+          SELECT
+            changes.changeset_id,
+            SUM(changes.num_created_nodes) AS num_created_nodes,
+            SUM(changes.num_modified_nodes) AS num_modified_nodes,
+            SUM(changes.num_deleted_nodes) AS num_deleted_nodes,
+            SUM(changes.num_created_ways) AS num_created_ways,
+            SUM(changes.num_modified_ways) AS num_modified_ways,
+            SUM(changes.num_deleted_ways) AS num_deleted_ways,
+            SUM(changes.num_created_relations) AS num_created_relations,
+            SUM(changes.num_modified_relations) AS num_modified_relations,
+            SUM(changes.num_deleted_relations) AS num_deleted_relations
+          FROM changes
+          GROUP BY changes.changeset_id
+        )
+        UPDATE changesets
+        SET num_created_nodes      = total.num_created_nodes,
+            num_modified_nodes     = total.num_modified_nodes,
+            num_deleted_nodes      = total.num_deleted_nodes,
+            num_created_ways       = total.num_created_ways,
+            num_modified_ways      = total.num_modified_ways,
+            num_deleted_ways       = total.num_deleted_ways,
+            num_created_relations  = total.num_created_relations,
+            num_modified_relations = total.num_modified_relations,
+            num_deleted_relations  = total.num_deleted_relations
+        FROM total
+        WHERE changesets.id = total.changeset_id
   )");
 }
 
