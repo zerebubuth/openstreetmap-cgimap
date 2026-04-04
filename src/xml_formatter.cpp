@@ -189,6 +189,9 @@ void xml_formatter::write_changeset(const changeset_info &elem,
 
   writer->attribute("comments_count", elem.comments_count);
   writer->attribute("changes_count", elem.num_changes);
+  writer->attribute("created_count", elem.num_created_elements);
+  writer->attribute("modified_count", elem.num_modified_elements);
+  writer->attribute("deleted_count", elem.num_deleted_elements);
 
   write_tags(tags);
 

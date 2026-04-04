@@ -8,7 +8,7 @@ Content-Type: application/xml; charset=utf-8
 !Content-Disposition:
 ---
 <osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
-  <changeset id="12" user="FakeUser1" uid="1" created_at="2020-01-01T12:34:56Z" closed_at="2020-01-01T13:12:11Z" open="false" comments_count="3" changes_count="0">
+  <changeset id="12" user="FakeUser1" uid="1" created_at="2020-01-01T12:34:56Z" closed_at="2020-01-01T13:12:11Z" open="false" comments_count="3" changes_count="0" created_count="0" deleted_count="0" modified_count="0">
     <discussion>
       <comment id="2" date="2020-01-02T12:00:00Z" uid="1" user="FakeUser1">
         <text>it was empty</text>

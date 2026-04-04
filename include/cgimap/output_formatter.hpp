@@ -94,7 +94,10 @@ struct changeset_info {
                  const std::optional<std::string> &display_name,
                  const std::optional<bbox> &bounding_box,
                  size_t num_changes,
-                 size_t comments_count);
+                 size_t comments_count,
+                 size_t num_created_elements = 0,
+                 size_t num_modified_elements = 0,
+                 size_t num_deleted_elements = 0);
 
   bool operator==(const changeset_info &other) const = default;
 
@@ -125,6 +128,12 @@ struct changeset_info {
   // if the changeset has a discussion attached, then this will
   // be the number of comments.
   size_t comments_count{0};
+  // the number of elements created in this changeset
+  size_t num_created_elements{0};
+  // the number of elements modified in this changeset
+  size_t num_modified_elements{0};
+  // the number of elements deleted in this changeset
+  size_t num_deleted_elements{0};
 };
 
 struct changeset_comment_info {
