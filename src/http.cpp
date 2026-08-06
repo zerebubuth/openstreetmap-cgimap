@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include <ranges>
 #include <string_view>
+#include <algorithm>
 
 
 namespace {
@@ -152,89 +153,74 @@ std::vector<std::pair<std::string, std::string>> parse_params(const std::string 
   return queryKVPairs;
 }
 
-std::unique_ptr<encoding> choose_encoding(const std::string &accept_encoding) {
+static const std::vector<const encoding*> supported_encodings = {{
+  // Order of elements determines chosen encoding for * wildcard value
+  #if HAVE_BROTLI
+  &brotli::instance(),
+  #endif
+  #ifdef HAVE_LIBZ
+  &gzip::instance(),
+  &deflate::instance(),
+  #endif
+  &identity::instance()
+}};
 
-  using namespace std::literals;
+const std::vector<const encoding*>& get_supported_encodings() {
+  return supported_encodings;
+}
 
-  std::vector<std::string_view> encodings;
+const encoding* choose_encoding(std::string_view accept_encoding) {
+  std::vector<std::pair<const encoding*, float>> potential_encodings{};
 
-  for (auto parts = std::ranges::views::split(accept_encoding, ", "sv); auto&& part : parts) {
-    encodings.emplace_back(&*part.begin(), std::ranges::distance(part));
-  }
+  HttpListView accept_encodings{accept_encoding};
+  
+  for (const auto& encoding_id : accept_encodings.values) {
+    for (const auto& enc : get_supported_encodings()) {
+      if (enc->matches(encoding_id.item)) {
+        float q = 1.0;
 
-  float identity_quality = 0.000;
-  float deflate_quality = 0.000;
-  float gzip_quality = 0.000;
-  float brotli_quality = 0.000;
+        for (const auto& param : encoding_id.parameters) {
+          if (param.key == "q") {
+            auto [last_parsed, ec] = std::from_chars(param.value.begin(), param.value.end(), q);
 
-  // set default if header empty
-  if (encodings.empty())
-    encodings.emplace_back("*");
+            if ((ec != std::errc()) || 
+                (last_parsed != param.value.end()) || 
+                !(std::isfinite(q) && 0.0 <= q && q <= 1.0)) {
+              throw http::bad_request("Malformed encoding quality value parameter");
+            }
+            break;
+          }
+        }
 
-  for (auto encoding : encodings) {
-
-    std::string name;
-    float quality = 0.0;
-
-    std::vector<std::string> what;
-
-    for (auto parts = std::ranges::views::split(encoding, ";q="sv); auto&& part : parts) {
-      what.emplace_back(std::string(&*part.begin(), std::ranges::distance(part)));
-    }
-
-    if (what.size() == 2) {
-      float q = std::stof(what[1]);
-      if (q >= 0 && q <= 1) {
-        name = what[0];
-        quality = q;
+        if (q == 1.0) {
+          // Short circuit using first accepted encoding with highest quality 1.0
+          return enc;
+        }
+        potential_encodings.emplace_back(enc, q);
       }
     }
-    else if (what.size() == 1) {
-      name = what[0];
-      quality = 1.0;
-    }
+  }
 
-    if (name == "identity") {
-      identity_quality = quality;
-    } else if (name == "deflate") {
-      deflate_quality = quality;
-    } else if (name == "gzip") {
-      gzip_quality = quality;
-    } else if (name == "br") {
-      brotli_quality = quality;
-    } else if (name == "*") {
-      if (identity_quality == 0.000)
-        identity_quality = quality;
-      if (deflate_quality == 0.000)
-        deflate_quality = quality;
-      if (gzip_quality == 0.000)
-        gzip_quality = quality;
-      if (brotli_quality == 0.000)
-        brotli_quality = quality;
+  std::ranges::stable_sort(potential_encodings, 
+                           std::ranges::greater(), 
+                           &std::pair<const encoding*, float>::second);
+
+  // Find first non 0 quality encoding
+  auto identity_encoding = &http::identity::instance();
+  bool identity_is_acceptable = true;
+  for (const auto& enc : potential_encodings) {
+    if (enc.second != 0.0) {
+      return enc.first;
+    } else if(enc.first->matches(identity_encoding->name())) {
+      identity_is_acceptable = false;
     }
   }
 
-#if HAVE_BROTLI
-  if (brotli_quality > 0.0 && brotli_quality >= identity_quality &&
-      brotli_quality >= deflate_quality &&
-      brotli_quality >= gzip_quality) {
-    return std::make_unique<brotli>();
+  if (!identity_is_acceptable) {
+    throw http::not_acceptable("No acceptable content encoding found.");
   }
-#endif
-#ifdef HAVE_LIBZ
-  if (deflate_quality > 0.0 && deflate_quality >= gzip_quality &&
-      deflate_quality >= identity_quality) {
-    return std::make_unique<deflate>();
-  } else if (gzip_quality > 0.0 && gzip_quality >= identity_quality) {
-    return std::make_unique<gzip>();
-  }
-#endif /* HAVE_LIBZ */
-  else if (identity_quality > 0.0) {
-    return std::make_unique<identity>();
-  } else {
-    throw http::not_acceptable("No acceptable content encoding found. Only "
-                               "identity and gzip are supported.");
-  }
+
+  return identity_encoding;
 }
 
 std::unique_ptr<ZLibBaseDecompressor> get_content_encoding_handler(std::string_view content_encoding) {
@@ -308,6 +294,53 @@ unsigned long parse_content_length(const std::string &content_length_str) {
     throw http::payload_too_large(fmt::format("CONTENT_LENGTH exceeds limit of {:d} bytes", global_settings::get_payload_max_size()));
 
   return length;
+}
+
+
+http::HttpParameterView http::HttpParameterView::parse(std::string_view param) {
+  auto param_parts = param 
+    | std::ranges::views::split('=') 
+    | std::ranges::views::transform([](const auto& x){ return trim(std::string_view{x.begin(), x.end()}); });
+
+  auto param_begin = param_parts.begin();
+  auto param_end = param_parts.end();
+
+  std::string_view param_key = pop_or_throw(param_begin, param_end, http::bad_request("Missing parameter key in http header list"));
+  if (param_key.empty()) {
+    throw http::bad_request("Empty parameter key in http header list");
+  }
+  std::string_view param_value = pop_or_throw(param_begin, param_end, http::bad_request("Missing parameter value in http header list"));
+  if (param_value.empty()) {
+    throw http::bad_request("Empty parameter value in http header list");
+  }
+
+  if (param_begin != param_end) {
+    throw http::bad_request("Malformed parameter in http header list");
+  }
+
+  return {param_key, param_value};
+}
+
+http::HttpItemView http::HttpItemView::parse(std::string_view list_value) {
+  auto params = list_value 
+    | std::ranges::views::split(';') 
+    | std::ranges::views::transform([](const auto& x){ return trim(std::string_view{x.begin(), x.end()}); });
+
+  if (std::ranges::empty(params)) {
+    throw http::bad_request("Malformed http header list value");
+  }
+
+  auto item = params.front();
+
+  if (item.empty()) {
+    throw http::bad_request("Malformed http header list value");
+  }
+
+  auto xs = params
+    | std::views::drop(1)
+    | std::views::transform(http::HttpParameterView::parse);
+
+  return http::HttpItemView{item, {xs.begin(), xs.end()}};
 }
 
 } // namespace http

@@ -90,13 +90,13 @@ std::string get_request_path(const request &req) {
 /**
  * get encoding to use for response.
  */
-std::unique_ptr<http::encoding> get_encoding(const request &req) {
+const http::encoding* get_encoding(const request &req) {
   const char *accept_encoding = req.get_param("HTTP_ACCEPT_ENCODING");
 
   if (accept_encoding) {
-    return http::choose_encoding(std::string(accept_encoding));
+    return http::choose_encoding(accept_encoding);
   } else {
-    return std::make_unique<http::identity>();
+    return &http::identity::instance();
   }
 }
 
