@@ -26,12 +26,20 @@ element_type as_elem_type(object_type o) {
     return element_type::relation;
   }
 }
-}
+
+} // namespace
 
 osm_diffresult_responder::osm_diffresult_responder(mime::type mt)
     : osm_responder(mt) {}
 
 osm_diffresult_responder::~osm_diffresult_responder() = default;
+
+std::vector<mime::type> osm_diffresult_responder::types_available() const {
+  std::vector<mime::type> types;
+  types.push_back(mime::type::application_xml);
+  types.push_back(mime::type::application_json);
+  return types;
+}
 
 void osm_diffresult_responder::write(output_formatter& fmt,
                                      const std::string &generator,
@@ -40,6 +48,8 @@ void osm_diffresult_responder::write(output_formatter& fmt,
 
   try {
     fmt.start_document(generator, "diffResult");
+
+    fmt.start_diffresult();
 
     // Iterate over all elements in the sequence defined in the osmChange
     // message
@@ -69,6 +79,8 @@ void osm_diffresult_responder::write(output_formatter& fmt,
 	break;
       }
     }
+
+    fmt.end_diffresult();
 
   } catch (const std::exception &e) {
     logger::message(fmt::format("Caught error in osm_diffresult_responder: {}",

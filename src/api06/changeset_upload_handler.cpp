@@ -15,6 +15,7 @@
 
 #include "cgimap/api06/changeset_upload/osmchange_handler.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_xml_input_format.hpp"
+#include "cgimap/api06/changeset_upload/osmchange_json_input_format.hpp"
 #include "cgimap/api06/changeset_upload/osmchange_tracking.hpp"
 #include "cgimap/api06/changeset_upload_handler.hpp"
 #include "cgimap/backend/apidb/changeset_upload/changeset_updater.hpp"
@@ -54,6 +55,9 @@ changeset_upload_responder::changeset_upload_responder(mime::type mt,
   // TODO: check HTTP Accept header
   if (mt != mime::type::application_json) {
     OSMChangeXMLParser(handler).process_message(payload);
+  }
+  else {
+    OSMChangeJSONParser(handler).process_message(payload);
   }
 
   // store diffresult for output handling in class osm_diffresult_responder

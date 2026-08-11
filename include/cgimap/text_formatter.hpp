@@ -40,6 +40,8 @@ public:
   void start_changeset(bool) override;
   void end_changeset(bool) override;
 
+  void start_diffresult() override;
+  void end_diffresult() override;
   void start_action(action_type type) override;
   void end_action(action_type type) override;
   void error(const std::exception &e) override;
