@@ -168,8 +168,10 @@ public:
 
 #if PQXX_LIBRARY_VERSION_COMPARE(PQXX_VERSION_MAJOR, PQXX_VERSION_MINOR, PQXX_VERSION_PATCH, 7, 9, 3)
     auto res(m_txn.exec_prepared(statement, std::forward<Args>(args)...));
-#else
+#elif PQXX_VERSION_MAJOR < 8
     auto res(m_txn.exec(pqxx::prepped{statement}, pqxx::params{std::forward<Args>(args)...}));
+#else
+    auto res(m_txn.exec(pqxx::prepped{statement}, pqxx::params{pqxx::conversion_context{pqxx::encoding_group::ascii_safe}, std::forward<Args>(args)...}));
 #endif
 
     stats.log_statement_stats(statement, res);

@@ -177,12 +177,12 @@ namespace multiline_raw_string {
 
     // the actual user-defined string literal operator
     template<string_wrapper str>
-    consteval decltype(auto) operator"" _M() {
+    consteval decltype(auto) operator""_M() {
         return do_unindent<str>();
     }
 }
 
-using multiline_raw_string::operator"" _M;
+using multiline_raw_string::operator""_M;
 
 #endif
 
@@ -191,12 +191,17 @@ using multiline_raw_string::operator"" _M;
  * some queries (e.g: LATERAL join) and functions (multi-parameter unnest) only
  * became available in later versions of postgresql.
  */
-void check_postgres_version(const pqxx::connection_base &conn);
+void check_postgres_version(const pqxx::connection &conn);
 
 // parses psql array based on specs given
 // https://www.postgresql.org/docs/current/static/arrays.html#ARRAYS-IO
 std::vector<std::string> psql_array_to_vector(std::string_view str, int size_hint = 0);
 std::vector<std::string> psql_array_to_vector(const pqxx::field& field, int size_hint = 0);
+#if PQXX_VERSION_MAJOR >= 8
+std::vector<std::string> psql_array_to_vector(const pqxx::field_ref& field, int size_hint = 0);
+#endif
+
+
 
 template <typename T>
 std::vector<T> psql_array_ids_to_vector(const pqxx::field& field);
@@ -204,7 +209,17 @@ std::vector<T> psql_array_ids_to_vector(const pqxx::field& field);
 template <typename T>
 std::vector<T> psql_array_ids_to_vector(std::string_view str);
 
+#if PQXX_VERSION_MAJOR >= 8
+template <typename T>
+std::vector<T> psql_array_ids_to_vector(const pqxx::field_ref& field) {
+  return psql_array_ids_to_vector<T>(field.view());
+}
+#endif
+
 void extract_bbox_from_row(const pqxx::row &row, bbox_t &result);
+#if PQXX_VERSION_MAJOR >= 8
+void extract_bbox_from_row(const pqxx::row_ref &row, bbox_t &result);
+#endif
 
 std::string escape_pg_value(const std::string &value);
 

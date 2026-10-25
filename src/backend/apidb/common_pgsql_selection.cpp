@@ -12,11 +12,11 @@
 #include "cgimap/options.hpp"
 
 #include <chrono>
+#include <string>
 
 namespace {
 
 using pqxx_tuple = pqxx::result::reference;
-using pqxx_field = pqxx::field;
 
 struct elem_columns
 {
@@ -145,8 +145,19 @@ struct comments_columns
   return elem;
 }
 
+#if PQXX_VERSION_MAJOR >= 8
 template <typename T>
-std::optional<T> extract_optional(const pqxx_field &f) {
+std::optional<T> extract_optional(const pqxx::field_ref &f) {
+  if (f.is_null()) {
+    return {};
+  } else {
+    return f.as<T>();
+  }
+}
+#endif
+
+template <typename T>
+std::optional<T> extract_optional(const pqxx::field &f) {
   if (f.is_null()) {
     return {};
   } else {
