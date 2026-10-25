@@ -196,7 +196,7 @@ public:
 /**
  * The client has exceeded the bandwidth limit.
  */
-class bandwidth_limit_exceeded : public exception {
+class bandwidth_limit_exceeded : public too_many_requests {
 public:
   explicit bandwidth_limit_exceeded(int retry_seconds);
   int retry_seconds;

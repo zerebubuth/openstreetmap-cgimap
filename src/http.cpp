@@ -97,8 +97,6 @@ const char *status_message(int code) {
     return "Unsupported Media Type";
   case 429:
     return "Too Many Requests";
-  case 509:
-    return "Bandwidth Limit Exceeded";
   default:
     return "Internal Server Error";
   }
@@ -118,7 +116,7 @@ int exception::code() const { return code_; }
 const char *exception::header() const { return status_message(code()); }
 
 bandwidth_limit_exceeded::bandwidth_limit_exceeded(int retry_seconds)
-    : exception(509, fmt::format("You have downloaded too much data. Please try again in {} seconds.", retry_seconds)), retry_seconds(retry_seconds) {}
+    : too_many_requests(fmt::format("You have downloaded too much data. Please try again in {} seconds.", retry_seconds)), retry_seconds(retry_seconds) {}
 
 gone::gone(const std::string &message)
     : exception(410, message) {}

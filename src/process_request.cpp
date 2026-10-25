@@ -139,7 +139,7 @@ void respond_error(const http::exception &e, request &r) {
       .add_header("Error", message_error_header)
       .add_header("Cache-Control", "no-cache");
 
-    if (e.code() == 509) {
+    if (e.code() == 429) {
       if (auto bandwidth_exception = dynamic_cast<const http::bandwidth_limit_exceeded*>(&e)) {
         r.add_header("Retry-After",
                       std::to_string(bandwidth_exception->retry_seconds));
