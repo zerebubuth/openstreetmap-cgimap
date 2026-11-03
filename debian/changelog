@@ -1,3 +1,12 @@
+openstreetmap-cgimap (2.1.1) UNRELEASED; urgency=medium
+
+  * Fix enhanced changeset stats backfilling (#538)
+  * Ignore multiple brotli flush requests (#539)
+  * Include libxml/xmlerror.h for xmlSetGenericErrorFunc (#543)
+  * Use 429 error code when the bandwidth limit is exceeded (#547)
+
+ -- mmd osm <mmd.osm@gmail.com>  Mon, 03 Nov 2026 00:00:00 +0000
+
 openstreetmap-cgimap (2.1.0) UNRELEASED; urgency=medium
 
   * Enhanced changeset statistics (#510).
