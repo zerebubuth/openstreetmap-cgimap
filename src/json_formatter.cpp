@@ -89,6 +89,16 @@ void json_formatter::end_document() {
   writer->end_object();
 }
 
+void json_formatter::start_diffresult() {
+
+  writer->object_key("diffResult");
+  writer->start_array();
+}
+
+void json_formatter::end_diffresult() {
+  writer->end_array();
+}
+
 void json_formatter::start_action(action_type type) {
 }
 
@@ -248,28 +258,22 @@ void json_formatter::write_diffresult_create_modify(const element_type elem,
                                             const osm_version_t new_version)
 {
 
-//  writer->start_object();
-//  writer->object_key("type");
-//  writer->entry_string(element_type_name(elem));
-//  writer->object_key("old_id");
-//  writer->entry_int(old_id);
-//  writer->object_key("new_id");
-//  writer->entry_int(new_id);
-//  writer->object_key("new_version");
-//  writer->entry_int(new_version);
-//  writer->end_object();
+  writer->start_object();
+  writer->property("type", element_type_name(elem));
+  writer->property("old_id", old_id);
+  writer->property("new_id", new_id);
+  writer->property("new_version", new_version);
+  writer->end_object();
 }
 
 
 void json_formatter::write_diffresult_delete(const element_type elem,
                                             const osm_nwr_signed_id_t old_id)
 {
-//  writer->start_object();
-//  writer->object_key("type");
-//  writer->entry_string(element_type_name(elem));
-//  writer->object_key("old_id");
-//  writer->entry_int(old_id);
-//  writer->end_object();
+  writer->start_object();
+  writer->property("type", element_type_name(elem));
+  writer->property("old_id", old_id);
+  writer->end_object();
 }
 
 void json_formatter::flush() { writer->flush(); }

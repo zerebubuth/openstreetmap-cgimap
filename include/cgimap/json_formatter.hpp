@@ -42,6 +42,8 @@ public:
   void start_changeset(bool) override;
   void end_changeset(bool) override;
 
+  void start_diffresult() override;
+  void end_diffresult() override;
   void start_action(action_type type) override;
   void end_action(action_type type) override;
   void error(const std::exception &e) override;
@@ -63,6 +65,7 @@ public:
 				      const osm_nwr_signed_id_t old_id,
 				      const osm_nwr_id_t new_id,
 				      const osm_version_t new_version) override;
+
   void write_diffresult_delete(const element_type elem,
 			       const osm_nwr_signed_id_t old_id) override;
 
