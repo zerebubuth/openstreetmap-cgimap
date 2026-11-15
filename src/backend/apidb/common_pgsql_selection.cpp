@@ -45,7 +45,10 @@ struct changeset_columns
     max_lat_col(rows.column_number("max_lat")),
     min_lon_col(rows.column_number("min_lon")),
     max_lon_col(rows.column_number("max_lon")),
-    num_changes_col(rows.column_number("num_changes"))
+    num_changes_col(rows.column_number("num_changes")),
+    num_created_col(rows.column_number("num_created")),
+    num_modified_col(rows.column_number("num_modified")),
+    num_deleted_col(rows.column_number("num_deleted"))
   {}
 
    const pqxx::row_size_type id_col;
@@ -56,6 +59,9 @@ struct changeset_columns
    const pqxx::row_size_type min_lon_col;
    const pqxx::row_size_type max_lon_col;
    const pqxx::row_size_type num_changes_col;
+   const pqxx::row_size_type num_created_col;
+   const pqxx::row_size_type num_modified_col;
+   const pqxx::row_size_type num_deleted_col;
 };
 
 struct tag_columns
@@ -189,6 +195,9 @@ std::optional<T> extract_optional(const pqxx_field &f) {
   }
 
   elem.num_changes = row[col.num_changes_col].as<size_t>();
+  elem.num_created_elements = row[col.num_created_col].as<size_t>();
+  elem.num_modified_elements = row[col.num_modified_col].as<size_t>();
+  elem.num_deleted_elements = row[col.num_deleted_col].as<size_t>();
 
   return elem;
 }

@@ -204,6 +204,9 @@ void json_formatter::write_changeset(const changeset_info &cs,
 
   writer->property("comments_count", cs.comments_count);
   writer->property("changes_count", cs.num_changes);
+  writer->property("created_count", cs.num_created_elements);
+  writer->property("modified_count", cs.num_modified_elements);
+  writer->property("deleted_count", cs.num_deleted_elements);
 
   if (!is_open) {
       writer->property("closed_at", cs.closed_at);

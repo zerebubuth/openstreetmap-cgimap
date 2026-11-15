@@ -37,7 +37,10 @@ changeset_info::changeset_info(osm_changeset_id_t id,
                                const std::optional<std::string> &display_name,
                                const std::optional<bbox> &bounding_box,
                                size_t num_changes,
-                               size_t comments_count)
+                               size_t comments_count,
+                               size_t num_created_elements,
+                               size_t num_modified_elements,
+                               size_t num_deleted_elements)
   : id(id),
     created_at(created_at),
     closed_at(closed_at),
@@ -45,7 +48,10 @@ changeset_info::changeset_info(osm_changeset_id_t id,
     display_name(display_name),
     bounding_box(bounding_box),
     num_changes(num_changes),
-    comments_count(comments_count)
+    comments_count(comments_count),
+    num_created_elements(num_created_elements),
+    num_modified_elements(num_modified_elements),
+    num_deleted_elements(num_deleted_elements)
 {}
 
 bool changeset_info::is_open_at(const std::chrono::system_clock::time_point &now) const {

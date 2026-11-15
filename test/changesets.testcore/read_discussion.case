@@ -5,10 +5,10 @@ Date: 2015-08-09T11:33:13Z
 ---
 Status: 200 OK
 Content-Type: application/xml; charset=utf-8
-!Content-Disposition: 
+!Content-Disposition:
 ---
 <osm version="0.6" generator="***" copyright="***" attribution="***" license="***">
-  <changeset id="1" user="FakeUser1" uid="1" created_at="2015-08-09T10:33:13Z" closed_at="2015-08-09T11:33:13Z" open="false" min_lat="51.5288506" min_lon="-0.1465242" max_lat="51.5288620" max_lon="-0.1464925" comments_count="1" changes_count="1">
+  <changeset id="1" user="FakeUser1" uid="1" created_at="2015-08-09T10:33:13Z" closed_at="2015-08-09T11:33:13Z" open="false" min_lat="51.5288506" min_lon="-0.1465242" max_lat="51.5288620" max_lon="-0.1464925" comments_count="1" changes_count="1"  created_count="1" deleted_count="0" modified_count="0">
     <tag k="created_by" v="manually"/>
     <discussion>
       <comment id="1" date="2015-08-09T10:33:13Z" uid="1" user="FakeUser1">
