@@ -17,22 +17,32 @@
 
 #include "cgimap/backend/apidb/utils.hpp"
 
-void check_postgres_version(const pqxx::connection_base &conn) {
+void check_postgres_version(const pqxx::connection &conn) {
   auto version = conn.server_version();
   if (version < 110000) {
     throw std::runtime_error(fmt::format("Expected Postgres version 11+, currently installed version {}", version));
   }
 }
 
-void extract_bbox_from_row(const pqxx::row &row, bbox_t &result) {
-
+template<typename psql_row_like>
+void extract_bbox_from_row_impl(const psql_row_like &row, bbox_t &result) {
   if (row["minlat"].is_null())
     return;
 
-  result.minlat = row["minlat"].as<int64_t>();
-  result.minlon = row["minlon"].as<int64_t>();
-  result.maxlat = row["maxlat"].as<int64_t>();
-  result.maxlon = row["maxlon"].as<int64_t>();
+  result.minlat = row["minlat"].template as<int64_t>();
+  result.minlon = row["minlon"].template as<int64_t>();
+  result.maxlat = row["maxlat"].template as<int64_t>();
+  result.maxlon = row["maxlon"].template as<int64_t>();
+}
+
+#if PQXX_VERSION_MAJOR >= 8
+void extract_bbox_from_row(const pqxx::row_ref &row, bbox_t &result) {
+  extract_bbox_from_row_impl(row, result);
+}
+#endif
+
+void extract_bbox_from_row(const pqxx::row &row, bbox_t &result) {
+  extract_bbox_from_row_impl(row, result);
 }
 
 /**
@@ -62,6 +72,12 @@ std::string escape_pg_value(const std::string &value) {
   }
   return escaped;
 }
+
+#if PQXX_VERSION_MAJOR >= 8
+std::vector<std::string> psql_array_to_vector(const pqxx::field_ref& field, int size_hint) {
+  return psql_array_to_vector(field.view(), size_hint);
+}
+#endif
 
 std::vector<std::string> psql_array_to_vector(const pqxx::field& field, int size_hint) {
   return psql_array_to_vector(std::string_view(field.c_str(), field.size()), size_hint);
