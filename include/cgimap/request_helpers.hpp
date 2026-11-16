@@ -42,7 +42,7 @@ std::string get_request_path(const request &req);
 /**
  * get encoding to use for response.
  */
-std::unique_ptr<http::encoding> get_encoding(const request &req);
+const http::encoding* get_encoding(const request &req);
 
 /**
  * return shared pointer to a buffer object which can be

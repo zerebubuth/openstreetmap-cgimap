@@ -13,6 +13,8 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <string_view>
+
 struct test_responder : responder {
 
   using responder::responder;
@@ -68,18 +70,79 @@ TEST_CASE("http_check_choose_encoding", "[http]") {
   CHECK(http::choose_encoding("deflate, gzip;q=1.0, *;q=0.5")->name() == "deflate");
   CHECK(http::choose_encoding("gzip;q=1.0, identity;q=0.8, *;q=0.1")->name() == "gzip");
   CHECK(http::choose_encoding("identity;q=0.8, gzip;q=1.0, *;q=0.1")->name() == "gzip");
+  CHECK(http::choose_encoding("identity ; q=0.8, gzip ;q=1.0, *; q=0.1")->name() == "gzip");
+  CHECK(http::choose_encoding("identity;q=0.8,gzip;q=1.0, *;q=0.1")->name() == "gzip");
   CHECK(http::choose_encoding("gzip")->name() == "gzip");
   CHECK(http::choose_encoding("identity")->name() == "identity");
-  CHECK(http::choose_encoding("*")->name() == "br");
   CHECK(http::choose_encoding("deflate")->name() == "deflate");
 #if HAVE_BROTLI
-  CHECK(http::choose_encoding("gzip, deflate, br")->name() == "br");
+  CHECK(http::choose_encoding("*")->name() == "br");
+  CHECK(http::choose_encoding("gzip, deflate, br")->name() == "gzip");
+  CHECK(http::choose_encoding("br, gzip, deflate")->name() == "br");
+  CHECK(http::choose_encoding("deflate, br, gzip")->name() == "deflate");
   CHECK(http::choose_encoding("zstd;q=1.0, deflate;q=0.8, br;q=0.9")->name() == "br");
   CHECK(http::choose_encoding("zstd;q=1.0, unknown;q=0.8, br;q=0.9")->name() == "br");
-  CHECK(http::choose_encoding("gzip, deflate, br")->name() == "br");
+#else
+  CHECK(http::choose_encoding("*")->name() == "gzip");
 #endif
   // test unsupported encoding
-  CHECK_THROWS_AS(http::choose_encoding("zstd"), http::not_acceptable);
+  CHECK(http::choose_encoding("zstd")->name() == "identity");
+  CHECK_THROWS_AS(http::choose_encoding("zstd, identity;q=0.0"), http::not_acceptable);
+  CHECK_THROWS_AS(http::choose_encoding("zstd, *;q=0.0"), http::not_acceptable);
+}
+
+TEST_CASE("http_check_choose_encoding bad param value", "[http]") {
+  CHECK_THROWS_AS(http::choose_encoding("gzip;q=a"), http::bad_request);
+  CHECK_THROWS_AS(http::choose_encoding("gzip;q=1.3"), http::bad_request);
+  CHECK_THROWS_AS(http::choose_encoding("gzip;q=-0.5"), http::bad_request);
+  CHECK_THROWS_AS(http::choose_encoding("gzip;q=0.34.56"), http::bad_request);
+}
+
+TEST_CASE("HttpListView parsing", "[http]") {
+  using namespace std::string_view_literals;
+
+  std::string_view header_string = "deflate, gzip;q=1.0;test=foo;a=b;c=d, *;q=0.5";
+  http::HttpListView h{header_string};
+
+  CHECK(h.values.size() == 3);
+
+  CHECK(h.values[0].item == "deflate"sv);
+
+  CHECK(h.values[1].item == "gzip"sv);
+  CHECK(h.values[1].parameters.size() == 4);
+  CHECK(h.values[1].parameters[0].key == "q"sv);
+  CHECK(h.values[1].parameters[0].value == "1.0"sv);
+  CHECK(h.values[1].parameters[1].key == "test"sv);
+  CHECK(h.values[1].parameters[1].value == "foo"sv);
+  CHECK(h.values[1].parameters[2].key == "a"sv);
+  CHECK(h.values[1].parameters[2].value == "b"sv);
+  CHECK(h.values[1].parameters[3].key == "c"sv);
+  CHECK(h.values[1].parameters[3].value == "d"sv);
+
+  CHECK(h.values[2].item == "*"sv);
+  CHECK(h.values[2].parameters.size() == 1);
+  CHECK(h.values[2].parameters[0].key == "q"sv);
+  CHECK(h.values[2].parameters[0].value == "0.5"sv);
+}
+
+TEST_CASE("HttpListView parsing malformed param", "[http]") {
+  using namespace std::string_view_literals;
+  CHECK_THROWS_AS(http::HttpListView{"deflate, gzip;q=1.0;test=foo=a=b;c=d, *;q=0.5"sv}, http::bad_request);
+  CHECK_THROWS_AS(http::HttpListView{" "sv}, http::bad_request);
+  CHECK_THROWS_AS(http::HttpListView{";"sv}, http::bad_request);
+  CHECK_THROWS_AS(http::HttpListView{","sv}, http::bad_request);
+  CHECK_THROWS_AS(http::HttpListView{"deflate, "sv}, http::bad_request);
+  CHECK_THROWS_AS(http::HttpListView{"deflate, ;"sv}, http::bad_request);
+  CHECK_THROWS_AS(http::HttpListView{"deflate , gzip ; "sv}, http::bad_request);
+  CHECK_THROWS_AS(http::HttpListView{"deflate , gzip ; q"sv}, http::bad_request);
+  CHECK_THROWS_AS(http::HttpListView{"deflate , gzip ; q="sv}, http::bad_request);
+  CHECK_THROWS_AS(http::HttpListView{"deflate , gzip ; q=0.5="sv}, http::bad_request);
+  CHECK_THROWS_AS(http::HttpListView{"deflate , gzip ; q=0.5;"sv}, http::bad_request);
+  CHECK_THROWS_AS(http::HttpListView{"deflate , gzip ; =0.5"sv}, http::bad_request);
+  CHECK_THROWS_AS(http::HttpListView{"deflate,, *;q=0.5"sv}, http::bad_request);
+  CHECK_THROWS_AS(http::HttpListView{"deflate, gzip;, *;q=0.5"sv}, http::bad_request);
+  CHECK_THROWS_AS(http::HttpListView{"deflate, gzip;q, *;q=0.5"sv}, http::bad_request);
+  CHECK_THROWS_AS(http::HttpListView{"deflate, gzip;q=, *;q=0.5"sv}, http::bad_request);
 }
 
 TEST_CASE("http_check_accept_header_parsing", "[http]") {

@@ -12,6 +12,7 @@
 
 #include "cgimap/types.hpp"
 #include "cgimap/util.hpp"
+#include "cgimap/http.hpp"
 
 #include <charconv>
 #include <map>

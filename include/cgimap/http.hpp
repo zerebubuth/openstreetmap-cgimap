@@ -15,6 +15,7 @@
 #include <string_view>
 #include <vector>
 #include <optional>
+#include <ranges>
 
 #ifdef HAVE_LIBZ
 #include "cgimap/zlib.hpp"
@@ -63,7 +64,7 @@ private:
 
 protected:
   template <typename T>
-  exception(int c, T&& m) :
+  constexpr exception(int c, T&& m) :
     std::runtime_error(std::forward<T>(m)),
     code_(c) {}
 
@@ -83,7 +84,7 @@ public:
 class server_error : public exception {
 public:
   template <typename T>
-  explicit server_error(T&& message) : exception(500, std::forward<T>(message)) {}
+  explicit constexpr server_error(T&& message) : exception(500, std::forward<T>(message)) {}
 };
 
 /**
@@ -93,7 +94,7 @@ public:
 class bad_request : public exception {
 public:
   template <typename T>
-  explicit bad_request(T&& message) : exception(400, std::forward<T>(message)) {}
+  explicit constexpr bad_request(T&& message) : exception(400, std::forward<T>(message)) {}
 };
 
 /**
@@ -104,7 +105,7 @@ public:
 class forbidden : public exception {
 public:
   template <typename T>
-  explicit forbidden(T&& message) : exception(403, std::forward<T>(message)) {}
+  explicit constexpr forbidden(T&& message) : exception(403, std::forward<T>(message)) {}
 };
 
 /**
@@ -126,7 +127,7 @@ public:
 class not_acceptable : public exception {
 public:
   template <typename T>
-  explicit not_acceptable(T&& message) : exception(406, std::forward<T>(message)) {}
+  explicit constexpr not_acceptable(T&& message) : exception(406, std::forward<T>(message)) {}
 };
 
 /**
@@ -137,7 +138,7 @@ public:
 class conflict : public exception {
 public:
   template <typename T>
-  explicit conflict(T&& message) : exception(409, std::forward<T>(message)) {}
+  explicit constexpr conflict(T&& message) : exception(409, std::forward<T>(message)) {}
 };
 
 /**
@@ -147,11 +148,11 @@ public:
 class precondition_failed : public exception {
 public:
   template <typename T>
-  explicit precondition_failed(T&& message) :
+  explicit constexpr precondition_failed(T&& message) :
     exception(412, std::forward<T>(message)),
     fullstring("Precondition failed: " + std::string(exception::what())) {}
 
-  const char *what() const noexcept override {
+  constexpr const char *what() const noexcept override {
     return fullstring.c_str();
   }
 
@@ -167,7 +168,7 @@ private:
 class payload_too_large : public exception {
 public:
   template <typename T>
-  explicit payload_too_large(T&& message) : exception(413, std::forward<T>(message)) {}
+  explicit constexpr payload_too_large(T&& message) : exception(413, std::forward<T>(message)) {}
 };
 
 
@@ -179,7 +180,7 @@ public:
 class too_many_requests : public exception {
 public:
   template <typename T>
-  explicit too_many_requests(T&& message) : exception(429, std::forward<T>(message)) {}
+  explicit constexpr too_many_requests(T&& message) : exception(429, std::forward<T>(message)) {}
 };
 
 
@@ -190,7 +191,7 @@ public:
 class not_found : public exception {
 public:
   template <typename T>
-  explicit not_found(T&& message) : exception(404, std::forward<T>(message)) {}
+  explicit constexpr not_found(T&& message) : exception(404, std::forward<T>(message)) {}
 };
 
 /**
@@ -218,7 +219,7 @@ public:
 class unauthorized : public exception {
 public:
   template <typename T>
-  explicit unauthorized(T&& message) : exception(401, std::forward<T>(message)) {}
+  explicit constexpr unauthorized(T&& message) : exception(401, std::forward<T>(message)) {}
 };
 
 /**
@@ -228,7 +229,7 @@ public:
 class unsupported_media_type : public exception {
 public:
   template <typename T>
-  explicit unsupported_media_type(T&& message) : exception(415, std::forward<T>(message)) {}
+  explicit constexpr unsupported_media_type(T&& message) : exception(415, std::forward<T>(message)) {}
 };
 
 /**
@@ -263,35 +264,55 @@ private:
   const std::string name_;
 
 public:
-  explicit encoding(std::string name) : name_(std::move(name)){}
+  explicit constexpr encoding(std::string name) : name_(std::move(name)){}
   virtual ~encoding() = default;
 
   const std::string &name() const { return name_; };
 
-  virtual std::unique_ptr<output_buffer>  buffer(output_buffer& out) {
+  constexpr bool matches(std::string_view encoding_id) const {
+    return encoding_id == name_ || encoding_id == "*";
+  }
+
+  virtual std::unique_ptr<output_buffer> buffer(output_buffer& out) const {
     return std::make_unique<identity_output_buffer>(out);
   }
 };
 
 class identity : public encoding {
 public:
-  identity() : encoding("identity"){};
+  constexpr identity() : encoding("identity"){};
+
+  static inline identity& instance() {
+    static identity instance_{};
+    return instance_;
+  }
 };
 
 #ifdef HAVE_LIBZ
 class deflate : public encoding {
 public:
-  deflate() : encoding("deflate"){}
+  constexpr deflate() : encoding("deflate"){}
 
-  std::unique_ptr<output_buffer> buffer(output_buffer& out) override {
+  static inline deflate& instance() {
+    static deflate instance_{};
+    return instance_;
+  }
+
+  std::unique_ptr<output_buffer> buffer(output_buffer& out) const override {
     return std::make_unique<zlib_output_buffer>(out, zlib_output_buffer::mode::zlib);
   }
 };
 
 class gzip : public encoding {
 public:
-  gzip() : encoding("gzip"){}
-  std::unique_ptr<output_buffer> buffer(output_buffer& out) override {
+  constexpr gzip() : encoding("gzip"){}
+
+  static inline gzip& instance() {
+    static gzip instance_{};
+    return instance_;
+  }
+
+  std::unique_ptr<output_buffer> buffer(output_buffer& out) const override {
     return std::make_unique<zlib_output_buffer>(out, zlib_output_buffer::mode::gzip);
   }
 };
@@ -301,8 +322,14 @@ public:
 
 class brotli : public encoding {
 public:
-  brotli() : encoding("br"){}
-  std::unique_ptr<output_buffer> buffer(output_buffer& out) override {
+  constexpr brotli() : encoding("br"){}
+
+  static inline brotli& instance() {
+    static brotli instance_{};
+    return instance_;
+  }
+
+  std::unique_ptr<output_buffer> buffer(output_buffer& out) const override {
     return std::make_unique<brotli_output_buffer>(out);
   }
 };
@@ -312,7 +339,7 @@ public:
  * Parses an Accept-Encoding header and returns the chosen
  * encoding.
  */
-std::unique_ptr<http::encoding> choose_encoding(const std::string &accept_encoding);
+const http::encoding* choose_encoding(std::string_view accept_encoding);
 
 std::unique_ptr<ZLibBaseDecompressor> get_content_encoding_handler(std::string_view content_encoding);
 
@@ -341,6 +368,46 @@ std::optional<method> parse_method(std::string_view s);
 
 // parse CONTENT_LENGTH HTTP header
 unsigned long parse_content_length(const std::string &);
+
+
+// Parsing view for HTTP header list values.
+// views into input string, does NOT copy values -> beware dangling references
+
+struct HttpParameterView {
+  std::string_view key;
+  std::string_view value;
+
+  static HttpParameterView parse(std::string_view param);
+};
+
+struct HttpItemView {
+  std::string_view item;
+  std::vector<HttpParameterView> parameters;
+
+  static HttpItemView parse(std::string_view list_value);
+};
+
+struct HttpListView {
+  std::vector<HttpItemView> values;
+
+  static constexpr auto parse(std::string_view header) {
+    auto xs = header 
+      | std::ranges::views::split(',')
+      | std::ranges::views::transform([](const auto& x){ return std::string_view{x.begin(), x.end()}; })
+      | std::ranges::views::transform(HttpItemView::parse);
+
+    if (std::ranges::empty(xs)) {
+      throw bad_request("Invalid empty http header");
+    }
+
+    return xs;
+  }
+
+  explicit constexpr HttpListView(std::string_view header) : values{/* C++23: {std::from_range_t, parse(header)} */} {
+    auto xs = parse(header);
+    values = {xs.begin(), xs.end()};
+  }
+};
 
 } // namespace http
 
